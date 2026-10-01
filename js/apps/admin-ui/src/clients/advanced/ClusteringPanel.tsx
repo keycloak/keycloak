@@ -88,7 +88,7 @@ export const ClusteringPanel = ({
         <FormGroup
           label={t("nodeReRegistrationTimeout")}
           fieldId="kc-node-reregistration-timeout"
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("nodeReRegistrationTimeoutHelp")}
               fieldLabelId="nodeReRegistrationTimeout"

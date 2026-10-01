@@ -17,7 +17,7 @@ export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {
   return (
     <FormGroup
       label={t("logic")}
-      labelIcon={<HelpItem helpText={t("logicHelp")} fieldLabelId="logic" />}
+      labelHelp={<HelpItem helpText={t("logicHelp")} fieldLabelId="logic" />}
       fieldId="logic"
       hasNoPaddingTop
     >
@@ -37,7 +37,7 @@ export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {
                 name="logic"
                 onChange={() => field.onChange(type)}
                 label={t(`logicType.${type.toLowerCase()}`)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
                 isDisabled={isDisabled}
               />
             ))}

@@ -115,7 +115,7 @@ export const DownloadDialog = ({
             <FormGroup
               fieldId="type"
               label={t("formatOption")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("downloadType")}
                   fieldLabelId="formatOption"
@@ -165,7 +165,7 @@ export const DownloadDialog = ({
               <FormGroup
                 fieldId="details"
                 label={t("details")}
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("detailsHelp")}
                     fieldLabelId="details"

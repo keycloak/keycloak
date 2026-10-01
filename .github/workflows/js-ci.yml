@@ -99,6 +99,27 @@ jobs:
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
         working-directory: js
 
+  ui-shared-pf6:
+    name: UI Shared PF6
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-ui-shared-pf6"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/pnpm-setup
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
+
+      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        working-directory: js
+
   account-ui:
     name: Account UI
     needs: conditional
@@ -305,6 +326,7 @@ jobs:
       - build-keycloak
       - admin-client
       - ui-shared
+      - ui-shared-pf6
       - account-ui
       - account-ui-e2e
       - admin-ui

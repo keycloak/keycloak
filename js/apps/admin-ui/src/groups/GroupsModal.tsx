@@ -12,6 +12,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useGroupResource } from "../context/group-resource/GroupResourceContext";
@@ -268,18 +271,42 @@ export const GroupsModal = ({
   };
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={
-        rename
-          ? t("editGroup")
-          : duplicateId
-            ? t("duplicateAGroup")
-            : t("createAGroup")
-      }
-      isOpen
-      onClose={handleModalToggle}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen onClose={handleModalToggle}>
+      <ModalHeader
+        title={
+          rename
+            ? t("editGroup")
+            : duplicateId
+              ? t("duplicateAGroup")
+              : t("createAGroup")
+        }
+      />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form
+            id="group-form"
+            isHorizontal
+            onSubmit={handleSubmit(submitForm)}
+          >
+            {duplicateId && (
+              <Alert
+                variant="warning"
+                component="h2"
+                isInline
+                title={t("duplicateGroupWarning")}
+              />
+            )}
+            <TextControl
+              name="name"
+              label={t("name")}
+              rules={{ required: t("required") }}
+              autoFocus
+            />
+            <TextControl name="description" label={t("description")} />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           formState={formState}
           data-testid={`${rename ? "rename" : duplicateId ? "duplicate" : "create"}Group`}
@@ -289,7 +316,7 @@ export const GroupsModal = ({
           allowNonDirty
         >
           {t(rename ? "edit" : duplicateId ? "duplicate" : "create")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -298,28 +325,8 @@ export const GroupsModal = ({
           onClick={handleModalToggle}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
-          {duplicateId && (
-            <Alert
-              variant="warning"
-              component="h2"
-              isInline
-              title={t("duplicateGroupWarning")}
-            />
-          )}
-          <TextControl
-            name="name"
-            label={t("name")}
-            rules={{ required: t("required") }}
-            autoFocus
-          />
-          <TextControl name="description" label={t("description")} />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

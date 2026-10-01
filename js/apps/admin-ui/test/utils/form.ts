@@ -32,7 +32,7 @@ async function logSwitchDebug(switchElement: Locator, messageParts: string[]) {
 }
 
 export async function assertRequiredFieldError(page: Page, field: string) {
-  await expect(page.getByTestId(field + "-helper")).toHaveText(/required/i);
+  await expect(page.getByTestId(field + "-helper")).toContainText(/required/i);
 }
 
 export async function assertFieldError(
@@ -40,7 +40,7 @@ export async function assertFieldError(
   field: string,
   text: string,
 ) {
-  await expect(page.getByTestId(field + "-helper")).toHaveText(text);
+  await expect(page.getByTestId(field + "-helper")).toContainText(text);
 }
 
 export async function selectItem(

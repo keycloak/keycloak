@@ -4,7 +4,14 @@ import {
   KeycloakDataTable,
   ListEmptyState,
 } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,12 +60,42 @@ export const OrganizationModal = ({
   };
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={t(TITLES[mode])}
-      isOpen
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen onClose={onClose}>
+      <ModalHeader title={t(TITLES[mode])} />
+      <ModalBody>
+        <KeycloakDataTable
+          loader={loader}
+          isPaginated
+          ariaLabelKey="organizationsList"
+          searchPlaceholderKey="searchOrganization"
+          canSelectAll
+          onSelect={(rows) => setSelectedRows([...rows])}
+          isRowDisabled={isRowDisabled}
+          columns={[
+            {
+              name: "name",
+              displayKey: "organizationName",
+            },
+            {
+              name: "description",
+              cellRenderer: (row) => (
+                <TableText wrapModifier="truncate">{row.description}</TableText>
+              ),
+            },
+          ]}
+          isRadio={isRadio}
+          emptyState={
+            <ListEmptyState
+              hasIcon={false}
+              message={t("emptyOrganizations")}
+              instructions={t("emptyOrganizationsInstructions")}
+            /> /* This component doesn't ever get rendered on the user join org screen if there are
+        no organizations so this doesn't actually change any functionality there.
+        Empty message when searching already handled within KeycloakDataTable. */
+          }
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid={mode === "add" ? "add" : "join"}
           key="confirm"
@@ -70,7 +107,7 @@ export const OrganizationModal = ({
           isDisabled={selectedRows.length === 0}
         >
           {t(mode)}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -78,40 +115,8 @@ export const OrganizationModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        loader={loader}
-        isPaginated
-        ariaLabelKey="organizationsList"
-        searchPlaceholderKey="searchOrganization"
-        canSelectAll
-        onSelect={(rows) => setSelectedRows([...rows])}
-        isRowDisabled={isRowDisabled}
-        columns={[
-          {
-            name: "name",
-            displayKey: "organizationName",
-          },
-          {
-            name: "description",
-            cellRenderer: (row) => (
-              <TableText wrapModifier="truncate">{row.description}</TableText>
-            ),
-          },
-        ]}
-        isRadio={isRadio}
-        emptyState={
-          <ListEmptyState
-            hasIcon={false}
-            message={t("emptyOrganizations")}
-            instructions={t("emptyOrganizationsInstructions")}
-          /> /* This component doesn't ever get rendered on the user join org screen if there are
-        no organizations so this doesn't actually change any functionality there.
-        Empty message when searching already handled within KeycloakDataTable. */
-        }
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
