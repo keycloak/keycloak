@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -105,6 +106,28 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
             org.junit.Assert.assertTrue(context.contains("Sign in to test"));
 
             events.clear();
+        } finally {
+            // Revert keytab configuration
+            updateUserStorageProvider(kerberosProviderRep -> kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, origKeytab.get()));
+        }
+    }
+
+    @Test
+    public void spnegoWithInvalidKeytabTest() throws Exception {
+        // Update kerberos configuration with the keytab with invalid credentials
+        AtomicReference<String> origKeytab = new AtomicReference<>();
+        updateUserStorageProvider(kerberosProviderRep -> {
+            String keytab = kerberosProviderRep.getConfig().getFirst(KerberosConstants.KEYTAB);
+            origKeytab.set(keytab);
+            kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB,
+                    Paths.get(keytab).getParent().resolve("http-invalid.keytab").toString());
+        });
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        try {
+            testAppHelper.startLogin("jduke", "theduke");
+            loginPage.assertCurrent();
+            Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         } finally {
             // Revert keytab configuration
             updateUserStorageProvider(kerberosProviderRep -> kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, origKeytab.get()));
