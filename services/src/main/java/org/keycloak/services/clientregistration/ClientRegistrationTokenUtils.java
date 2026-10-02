@@ -80,16 +80,8 @@ public class ClientRegistrationTokenUtils {
         return new JWSBuilder().jsonContent(regToken).sign(signer);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins, null);
-    }
-
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins, String provider) {
         return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins, provider);
-    }
-
-    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
-        return updateRegistrationAccessToken(session, realm, client, registrationAuth, webOrigins, null);
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins, String provider) {
