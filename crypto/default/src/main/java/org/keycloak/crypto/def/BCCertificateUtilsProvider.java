@@ -23,6 +23,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CertificatePolicies;
@@ -88,10 +90,10 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
                                                  String subject) {
         try {
-            X500Name subjectDN = new X500Name("CN=" + subject);
+            X500Name subjectDN = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, subject).build();
 
             // Serial Number
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom random = new SecureRandom();
             BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
 
             // Validity
@@ -169,7 +171,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
     @Override
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
         try {
-            X500Name subjectDN = new X500Name("CN=" + subject);
+            X500Name subjectDN = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, subject).build();
             Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
             SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(caKeyPair.getPublic().getEncoded());
 
