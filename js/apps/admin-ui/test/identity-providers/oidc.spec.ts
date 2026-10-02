@@ -48,12 +48,15 @@ test.describe.serial("OIDC identity provider test", () => {
     await assertInvalidUrlNotification(page, "authorization");
     await clickRevertButton(page);
 
+    // Changing token destination fields clears the masked client secret; re-enter it to save.
     await setUrl(page, "token", "invalid");
+    await page.getByTestId("config.clientSecret").fill(secret);
     await clickSaveButton(page);
     await assertInvalidUrlNotification(page, "token");
     await clickRevertButton(page);
 
     await setUrl(page, "tokenIntrospection", "invalid");
+    await page.getByTestId("config.clientSecret").fill(secret);
     await clickSaveButton(page);
     await assertInvalidUrlNotification(page, "tokenIntrospection");
     await clickRevertButton(page);
