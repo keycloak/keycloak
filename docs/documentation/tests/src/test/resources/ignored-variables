@@ -52,4 +52,3 @@ param
 3
 4
 5
-method=&quot;GET&quot;,outcome=&quot;SUCCESS&quot;,status=&quot;200&quot;,uri=&quot;/realms/{realm
