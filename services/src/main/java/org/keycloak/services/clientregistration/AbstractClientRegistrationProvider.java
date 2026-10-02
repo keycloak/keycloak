@@ -104,7 +104,34 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                                 ClientPolicyEvent.REGISTER_NODE));
             }
 
+            stripPrivilegedAttributes(client);
+            if (!auth.isBearerToken() && Boolean.TRUE.equals(client.isServiceAccountsEnabled())) {
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Service accounts cannot be enabled via registration token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
+            if (!auth.isBearerToken() && Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Authorization services cannot be enabled via registration token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
+
+            // Guard the resolved model: a client type (e.g. "service-account") or
+            // other representation-to-model mapping may have enabled service accounts
+            // even though the submitted representation did not request it explicitly.
+            if (!auth.isBearerToken() && clientModel.isServiceAccountsEnabled()) {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Service accounts cannot be enabled via registration token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
 
             if (client.getDefaultRoles() != null) {
                 for (String name : client.getDefaultRoles()) {
@@ -135,7 +162,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client.setSecret(clientModel.getSecret());
 
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth, getAllowedOrigins());
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth, getAllowedOrigins(), auth.getEndpoint());
             client.setRegistrationAccessToken(registrationAccessToken);
 
             if (auth.isInitialAccessToken()) {
@@ -217,7 +244,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 );
             }
         }
-        ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+
+        stripPrivilegedAttributes(rep);
+        if (auth.isBearerToken()) {
+            ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+        } else if (rep.isServiceAccountsEnabled() != null && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
+            throw new ErrorResponseException(
+                    ErrorCodes.INVALID_CLIENT_METADATA,
+                    "Service accounts cannot be enabled or disabled via registration access token",
+                    Response.Status.BAD_REQUEST
+            );
+        }
 
         try {
             if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
@@ -253,7 +290,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken;
             if ((boolean) session.getAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED)) {
-                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth(), getAllowedOrigins());
+                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth(), getAllowedOrigins(), auth.getEndpoint());
             } else {
                 registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             }
@@ -383,5 +420,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
         allowedOrigins.addAll(ClientRegistrationPolicyManager.getAllowedOrigins(session, auth.resolveRegistrationAuth()));
         return allowedOrigins;
+    }
+
+    /**
+     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     *
+     * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
+     * without throwing an error.
+     */
+    private void stripPrivilegedAttributes(ClientRepresentation rep) {
+        if (auth.isBearerToken()) {
+            return; // Admin callers retain full write access
+        }
+        if (rep.getAttributes() == null || rep.getAttributes().isEmpty()) {
+            return;
+        }
+        rep.getAttributes().entrySet()
+                .removeIf(e -> e.getKey().startsWith("ssf."));
     }
 }
