@@ -98,9 +98,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
 
         RepresentationToModel.importAuthorizationSettings(rep, client, session);
 
-        // Restore service accounts state for non-Admin callers to prevent
-        // registration access tokens from re-enabling flags an admin deliberately disabled.
-        if (!auth.isBearerToken() && client.isServiceAccountsEnabled() != serviceAccountsEnabled) {
+        // Restore service accounts state to prevent registration
+        // access tokens from re-enabling an admin-disabled flag during authorization settings import.
+        if (auth.isRegistrationAccessToken() && client.isServiceAccountsEnabled() != serviceAccountsEnabled) {
             client.setServiceAccountsEnabled(serviceAccountsEnabled);
         }
     }

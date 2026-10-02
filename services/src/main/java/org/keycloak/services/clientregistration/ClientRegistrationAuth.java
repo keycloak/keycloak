@@ -141,11 +141,7 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public boolean isBearerToken() {
+    boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
@@ -319,19 +315,6 @@ public class ClientRegistrationAuth {
         if (endpoint.equals("openid-connect") || endpoint.equals("saml2-entity-descriptor")) {
             if (client != null && !endpoint.contains(client.getProtocol())) {
                 throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
-            }
-        }
-
-        // Every RAT must carry a 'registration_provider'
-        //claim (or the REGISTRATION_PROVIDER_ANY sentinel); tokens lacking it are rejected to prevent cross-provider escalation.
-        if (isRegistrationAccessToken()) {
-            String issuingProvider = (String) jwt.getOtherClaims()
-                    .get(RegistrationAccessToken.REGISTRATION_PROVIDER);
-            if (issuingProvider == null
-                    || (!RegistrationAccessToken.REGISTRATION_PROVIDER_ANY.equals(issuingProvider)
-                        && !issuingProvider.equals(endpoint)
-                        && !"install".equals(endpoint))) {
-                throw unauthorized("Registration access token not valid for this registration provider.");
             }
         }
     }

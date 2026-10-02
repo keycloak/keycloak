@@ -89,7 +89,6 @@ import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
-import org.keycloak.services.clientregistration.RegistrationAccessToken;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -355,10 +354,7 @@ public class ClientResource {
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.clients().requireManage(client);
 
-        // provider=REGISTRATION_PROVIDER_ANY: Non-forgeable sentinel allowing Admin-regenerated RATs
-        // to be accepted across all providers in ClientRegistrationAuth.checkClientProtocol.
-        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, client, RegistrationAuth.AUTHENTICATED,
-                null, RegistrationAccessToken.REGISTRATION_PROVIDER_ANY);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, client, RegistrationAuth.AUTHENTICATED, null);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         rep.setRegistrationAccessToken(token);

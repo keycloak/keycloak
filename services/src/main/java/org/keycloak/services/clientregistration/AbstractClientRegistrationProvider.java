@@ -104,34 +104,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                                 ClientPolicyEvent.REGISTER_NODE));
             }
 
+            // Service accounts and authorization services are
+            // allowed during registration via grant types; escalation risk is guarded on client update.
             stripPrivilegedAttributes(client);
-            if (!auth.isBearerToken() && Boolean.TRUE.equals(client.isServiceAccountsEnabled())) {
-                throw new ErrorResponseException(
-                        ErrorCodes.INVALID_CLIENT_METADATA,
-                        "Service accounts cannot be enabled via registration token",
-                        Response.Status.BAD_REQUEST
-                );
-            }
-            if (!auth.isBearerToken() && Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
-                throw new ErrorResponseException(
-                        ErrorCodes.INVALID_CLIENT_METADATA,
-                        "Authorization services cannot be enabled via registration token",
-                        Response.Status.BAD_REQUEST
-                );
-            }
-            ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
-            // Guard the resolved model: a client type (e.g. "service-account") or
-            // other representation-to-model mapping may have enabled service accounts
-            // even though the submitted representation did not request it explicitly.
-            if (!auth.isBearerToken() && clientModel.isServiceAccountsEnabled()) {
-                session.getTransactionManager().setRollbackOnly();
-                throw new ErrorResponseException(
-                        ErrorCodes.INVALID_CLIENT_METADATA,
-                        "Service accounts cannot be enabled via registration token",
-                        Response.Status.BAD_REQUEST
-                );
-            }
+            ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
                 for (String name : client.getDefaultRoles()) {
@@ -162,7 +139,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client.setSecret(clientModel.getSecret());
 
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth, getAllowedOrigins(), auth.getEndpoint());
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth, getAllowedOrigins());
             client.setRegistrationAccessToken(registrationAccessToken);
 
             if (auth.isInitialAccessToken()) {
@@ -246,15 +223,16 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         stripPrivilegedAttributes(rep);
-        if (auth.isBearerToken()) {
-            ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
-        } else if (rep.isServiceAccountsEnabled() != null && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
+        if (auth.isRegistrationAccessToken()
+                && rep.isServiceAccountsEnabled() != null
+                && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
             throw new ErrorResponseException(
                     ErrorCodes.INVALID_CLIENT_METADATA,
                     "Service accounts cannot be enabled or disabled via registration access token",
                     Response.Status.BAD_REQUEST
             );
         }
+        ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
 
         try {
             if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
@@ -290,7 +268,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken;
             if ((boolean) session.getAttribute(ClientRegistrationAccessTokenConstants.ROTATION_ENABLED)) {
-                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth(), getAllowedOrigins(), auth.getEndpoint());
+                registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth(), getAllowedOrigins());
             } else {
                 registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             }
