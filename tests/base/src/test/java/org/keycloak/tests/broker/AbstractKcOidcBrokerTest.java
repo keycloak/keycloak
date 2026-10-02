@@ -16,6 +16,7 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -73,6 +74,15 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         return IDP_OIDC_ALIAS;
     }
 
+    /**
+     * Real client secret used when {@link #configureBrokerEndpoints()} rewrites destination URLs.
+     * Admin GET returns a masked secret, and updating token/auth destinations with that mask clears
+     * the stored secret; subclasses with a non-default secret must override this.
+     */
+    protected String getBrokerClientSecret() {
+        return CLIENT_SECRET;
+    }
+
     @BeforeEach
     void configureBrokerEndpoints() {
         String providerBaseUrl = getProviderRealm().getBaseUrl();
@@ -87,6 +97,10 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
         config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
         config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+        // Rewriting tokenUrl (and related fields) with a masked secret would drop the stored credential.
+        if (ComponentRepresentation.SECRET_VALUE.equals(config.get("clientSecret"))) {
+            config.put("clientSecret", getBrokerClientSecret());
+        }
         getConsumerRealm().admin().identityProviders().get(getIdpAlias()).update(idp);
 
         // Provider-side client represents the consumer: its broker callback endpoints
