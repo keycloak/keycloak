@@ -10,6 +10,7 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,46 @@ public class DcrSsfPrivilegeEscalationTest extends AbstractClientRegistrationTes
         var found = managedRealm.admin().clients().findByClientId(dclientId);
         Assertions.assertFalse(found.get(0).isServiceAccountsEnabled(),
                 "serviceAccountsEnabled must remain false after rejected update");
+    }
+
+    @Test
+    public void serviceAccountsCannotBeReEnabledViaRatOnResourceServer() throws ClientRegistrationException {
+        // A client that is a resource server, but whose service account an admin has disabled
+        ClientRepresentation resourceServer = new ClientRepresentation();
+        resourceServer.setClientId("authz-resource-server");
+        resourceServer.setPublicClient(false);
+        resourceServer.setServiceAccountsEnabled(true);
+        resourceServer.setAuthorizationServicesEnabled(true);
+
+        String uuid;
+        try (var response = managedRealm.admin().clients().create(resourceServer)) {
+            assertEquals(201, response.getStatus());
+            uuid = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.cleanup().add(realm -> realm.clients().get(uuid).remove());
+
+        ClientRepresentation stored = managedRealm.admin().clients().get(uuid).toRepresentation();
+        stored.setServiceAccountsEnabled(false);
+        managedRealm.admin().clients().get(uuid).update(stored);
+
+        stored = managedRealm.admin().clients().get(uuid).toRepresentation();
+        Assertions.assertFalse(stored.isServiceAccountsEnabled(),
+                "Precondition: the administrator disabled service accounts");
+        Assertions.assertTrue(Boolean.TRUE.equals(stored.getAuthorizationServicesEnabled()),
+                "Precondition: the client is still a resource server");
+
+        // Update via a registration access token must not re-enable the flag
+        String rat = managedRealm.admin().clients().get(uuid)
+                .regenerateRegistrationAccessToken()
+                .getRegistrationAccessToken();
+
+        reg.auth(Auth.token(rat));
+        ClientRepresentation update = new ClientRepresentation();
+        update.setClientId("authz-resource-server");
+        reg.update(update);
+
+        Assertions.assertFalse(managedRealm.admin().clients().get(uuid).toRepresentation().isServiceAccountsEnabled(),
+                "serviceAccountsEnabled must not be re-enabled by the authorization settings import");
     }
 
     @Test
