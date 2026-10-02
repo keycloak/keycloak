@@ -19,8 +19,6 @@ package org.keycloak.crl.infinispan;
 
 import org.infinispan.Cache;
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -46,11 +44,6 @@ public class InfinispanCacheCrlProviderFactory implements CacheCrlProviderFactor
             synchronized (this) {
                 if (crlCache == null) {
                     crlCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CRL_CACHE_NAME);
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-
-                    cluster.registerListener(CRL_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-                        crlCache.clear();
-                    });
                 }
             }
         }

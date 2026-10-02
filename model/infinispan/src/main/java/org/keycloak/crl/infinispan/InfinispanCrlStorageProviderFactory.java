@@ -24,6 +24,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.crl.CrlStorageProviderFactory;
@@ -110,7 +112,14 @@ public class InfinispanCrlStorageProviderFactory implements CrlStorageProviderFa
         if (crlCache == null) {
             synchronized (this) {
                 if (crlCache == null) {
-                    this.crlCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CRL_CACHE_NAME);
+                    Cache<String, X509CRLEntry> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CRL_CACHE_NAME);
+
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(InfinispanCacheCrlProviderFactory.CRL_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        cache.clear();
+                    });
+                    // Set instance variable after registering the cluster listeners to avoid race condition when the event is received before the listener is registered
+                    this.crlCache = cache;
                 }
             }
         }

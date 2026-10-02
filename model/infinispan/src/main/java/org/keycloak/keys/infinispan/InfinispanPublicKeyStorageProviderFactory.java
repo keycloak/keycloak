@@ -26,6 +26,8 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -92,7 +94,19 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
         if (keysCache == null) {
             synchronized (this) {
                 if (keysCache == null) {
-                    this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
+                    Cache<String, PublicKeysEntry> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
+
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(InfinispanCachePublicKeyProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
+                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
+                        cache.remove(invalidationEvent.getCacheKey());
+                    });
+
+                    cluster.registerListener(InfinispanCachePublicKeyProviderFactory.KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        cache.clear();
+                    });
+                    // Set instance variable after registering the cluster listeners to avoid race condition when the event is received before the listener is registered
+                    this.keysCache = cache;
                 }
             }
         }
