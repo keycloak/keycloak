@@ -66,6 +66,16 @@ public class RedirectUtilsTest {
     }
 
     @Test
+    public void testVerifyRedirectUriRegistryNameHostnameCaseInsensitiveWildcard() {
+        Set<String> set = Stream.of("https://allowed_host/foo/*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://ALLOWED_HOST/foo/bar",
+                RedirectUtils.verifyRedirectUri(session, null, "https://ALLOWED_HOST/foo/bar", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://ALLOWED_HOST/Foo/bar", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://evil_host/foo/bar", set, false));
+    }
+
+    @Test
     public void testVerifyRedirectUriPercentEncodedAtNotUserInfo() {
         Set<String> set = Stream.of("myapp://good.com/callback").collect(Collectors.toSet());
 

@@ -117,6 +117,41 @@ public class UriUtils {
         return portSuffixFromAuthority(uri.getRawAuthority()) != null;
     }
 
+    /**
+     * Whether the URI authority is safe for wildcard redirect matching.
+     * <p>
+     * Allows hosts Java parses normally and RFC 3986 registry-names (e.g. underscores)
+     * that leave {@link URI#getHost()} null, while rejecting authorities with user-info
+     * or invalid ports. See CVE-2026-7504.
+     */
+    public static boolean isAuthoritySafeForWildcards(URI uri) {
+        if (uri == null) {
+            return false;
+        }
+        String authority = uri.getRawAuthority();
+        if (uri.getRawUserInfo() != null || (authority != null && authority.indexOf('@') >= 0)) {
+            return false;
+        }
+        if (authority == null || uri.getHost() != null) {
+            return true;
+        }
+        // Registry-name host (getHost() null): require a resolvable host and a valid port if present
+        String host = resolveHost(uri);
+        if (host == null || host.isEmpty()) {
+            return false;
+        }
+        String portSuffix = portSuffixFromAuthority(authority);
+        if (portSuffix == null || portSuffix.isEmpty()) {
+            return true;
+        }
+        try {
+            int port = Integer.parseInt(portSuffix);
+            return port >= 0 && port <= 65535;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     private static boolean hostsEqual(URI uriA, URI uriB) {
         String hostA = resolveHost(uriA);
         String hostB = resolveHost(uriB);

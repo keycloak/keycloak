@@ -224,9 +224,9 @@ public class RedirectUtils {
             "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|%252[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;|%3[bB]|%09|%0[aAdD]|%00|$)");
 
     private static boolean areWildcardsAllowed(URI redirectUri) {
-        // wildcars are only allowed if no user-info and no unparsed authority and no unsafe pattern in path
-        return redirectUri.getRawUserInfo() == null
-                && !(redirectUri.getRawAuthority() != null && redirectUri.getRawUserInfo() == null && redirectUri.getHost() == null && redirectUri.getPort() == -1)
+        // wildcards are only allowed if the authority is safely parseable (including
+        // registry-names Java leaves with getHost() null) and no unsafe pattern in path
+        return UriUtils.isAuthoritySafeForWildcards(redirectUri)
                 && (redirectUri.getRawPath() == null || !UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find());
     }
 

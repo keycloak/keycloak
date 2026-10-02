@@ -117,6 +117,20 @@ public class UriUtilsTest {
     }
 
     @Test
+    public void testIsAuthoritySafeForWildcards() {
+        assertTrue(UriUtils.isAuthoritySafeForWildcards(URI.create("https://example.com/foo")));
+        assertTrue(UriUtils.isAuthoritySafeForWildcards(URI.create("https://ALLOWED_HOST/foo")));
+        assertTrue(UriUtils.isAuthoritySafeForWildcards(URI.create("https://allowed_host:443/foo")));
+        assertTrue(UriUtils.isAuthoritySafeForWildcards(URI.create("myapp:callback")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://alice@example.com/foo")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://Alice@allowed_host/exact")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://test@something@test.com/path")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://test@test.com:-2/path")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://host:-2/path")));
+        assertFalse(UriUtils.isAuthoritySafeForWildcards(URI.create("https://foo:bar/path")));
+    }
+
+    @Test
     public void testStripQueryParam(){
         assertEquals("http://localhost",UriUtils.stripQueryParam("http://localhost?login_hint=michael","login_hint"));
         assertEquals("http://localhost",UriUtils.stripQueryParam("http://localhost?login_hint=michael@me.com","login_hint"));
