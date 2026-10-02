@@ -44,14 +44,19 @@ export async function assertFieldError(
 }
 
 /**
- * Click a dropdown trigger and pick an option from a single-select dropdown.
+ * Click a dropdown trigger and pick an option from a dropdown that closes after
+ * selection, then wait for the close to complete.
  *
- * After the option is selected, waits for the dropdown to close before
- * returning. This prevents race conditions where the dropdown-close re-render
- * clobbers a subsequent {@link Page.fill} on a controlled input.
+ * Waiting prevents race conditions where the dropdown-close re-render clobbers
+ * a subsequent {@link Page.fill} on a controlled input.
  *
- * For multi-select (typeaheadMulti) dropdowns that stay open after selection,
- * use {@link selectMultiItem} instead.
+ * Use this for all {@link KeycloakSelect} dropdowns — including
+ * `typeaheadMulti` variants — because `TypeaheadSelect`'s `onClick={toggle}`
+ * on the PF5 `Select` wrapper closes the dropdown on every click.
+ *
+ * Use {@link selectMultiItem} only for dropdowns that genuinely stay open after
+ * selection: `SelectControl` (which calls `event.stopPropagation()` in
+ * `onSelect`) and `UserSelect` (which has its own open-state management).
  */
 export async function selectItem(
   page: Page,
@@ -70,13 +75,17 @@ export async function selectItem(
 
 /**
  * Click a dropdown trigger and pick one or more options from a multi-select
- * dropdown, then close it with Escape.
+ * dropdown that stays open after each selection, then click the toggle to close.
  *
- * Unlike {@link selectItem}, the dropdown stays open between selections so the
- * caller can pick additional options in a single call.
+ * Only needed for components whose `onSelect` does **not** close the dropdown:
+ * - `SelectControl` / `TypeaheadSelectControl` with `typeaheadMulti`
+ * - `UserSelect` with `typeaheadMulti`
+ *
+ * For `KeycloakSelect` (including `typeaheadMulti`), use {@link selectItem} —
+ * it always closes after selection.
  *
  * ```ts
- * await selectMultiItem(page, "#locales", "Danish", "German");
+ * await selectMultiItem(page, "#supportedLocales", "Danish", "German");
  * ```
  */
 export async function selectMultiItem(
@@ -84,18 +93,28 @@ export async function selectMultiItem(
   field: Locator | string,
   ...values: (string | Locator)[]
 ) {
-  await openDropdown(page, field);
+  const element = typeof field === "string" ? page.locator(field) : field;
+  await openDropdown(page, element);
   for (const value of values) {
     await toOptionLocator(page, value).click();
   }
-  const lastOption = toOptionLocator(page, values[values.length - 1]);
+  const expandable = findExpandable(element);
   await expect(
-    lastOption,
+    expandable,
     "selectMultiItem: dropdown closed after selection — " +
       "use selectItem() for single-select dropdowns",
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(lastOption).toBeHidden();
+  ).toHaveAttribute("aria-expanded", "true");
+  // Click the toggle to close instead of pressing Escape, which could bubble
+  // up and close a parent modal dialog if focus is not on the typeahead input.
+  await element.click();
+  await expect(expandable).not.toHaveAttribute("aria-expanded", "true");
+}
+
+// The field element may be a combobox input (has aria-expanded itself) or a
+// container div wrapping a PF5 MenuToggle (aria-expanded is on a child button).
+function findExpandable(element: Locator): Locator {
+  const self = element.and(element.page().locator("[aria-expanded]"));
+  return self.or(element.locator("[aria-expanded]").first());
 }
 
 async function openDropdown(page: Page, field: Locator | string) {
