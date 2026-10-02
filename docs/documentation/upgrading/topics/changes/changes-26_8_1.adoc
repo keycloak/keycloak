@@ -17,3 +17,7 @@ Although no issues are expected, the previous behavior can be restored with the 
 bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round-trip true \
   --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
 ----
+
+=== Registration access tokens are rejected by client registration endpoints of a different protocol
+
+Updating or deleting a client through a client registration endpoint whose protocol does not match the client, such as using a SAML client's registration access token against the `openid-connect` endpoint, is now rejected with `400 invalid_client`, matching the behavior that already applied to read requests. Use the protocol-agnostic `clients-registrations/default` endpoint or the Admin REST API to manage clients of other protocols.
