@@ -101,6 +101,11 @@ public class SupportedCredentialConfiguration {
     @JsonIgnore
     private CredentialBuildConfig credentialBuildConfig;
 
+    // This is not a normative field for supported credential metadata,
+    // but enforces the position the proof signing key must occupy in attested_keys.
+    @JsonIgnore
+    private Integer requiredProofKeyIndex;
+
     /**
      * @param credentialScope                  The scope that holds the credentials configuration
      * @param globalSupportedSigningAlgorithms added as a parameter to avoid reading the global config from the session
@@ -123,6 +128,12 @@ public class SupportedCredentialConfiguration {
         credentialConfiguration.setFormat(format);
 
         KeyAttestationsRequired keyAttestationsRequired = KeyAttestationsRequired.parse(credentialScope);
+        Integer proofKeyIndex = credentialScope.getProofKeyIndex();
+        if (proofKeyIndex != null && proofKeyIndex != 0) {
+            throw new IllegalStateException(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX
+                    + " must be 0 but was " + proofKeyIndex + " in client scope: " + credentialScope.getName());
+        }
+        credentialConfiguration.setRequiredProofKeyIndex(proofKeyIndex);
         boolean bindingRequired = credentialScope.isBindingRequired();
         List<String> requiredProofTypes = credentialScope.getRequiredProofTypes();
         List<String> configuredBindingMethods = credentialScope.getCryptographicBindingMethods();
@@ -352,16 +363,25 @@ public class SupportedCredentialConfiguration {
         return this;
     }
 
+    public Integer getRequiredProofKeyIndex() {
+        return requiredProofKeyIndex;
+    }
+
+    public SupportedCredentialConfiguration setRequiredProofKeyIndex(Integer requiredProofKeyIndex) {
+        this.requiredProofKeyIndex = requiredProofKeyIndex;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SupportedCredentialConfiguration that = (SupportedCredentialConfiguration) o;
-        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(vct, that.vct) && Objects.equals(docType, that.docType) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(credentialMetadata, that.credentialMetadata) && Objects.equals(credentialBuildConfig, that.credentialBuildConfig);
+        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(vct, that.vct) && Objects.equals(docType, that.docType) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(credentialMetadata, that.credentialMetadata) && Objects.equals(credentialBuildConfig, that.credentialBuildConfig) && Objects.equals(requiredProofKeyIndex, that.requiredProofKeyIndex);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, credentialSigningAlgValuesSupported, vct, docType, credentialDefinition, proofTypesSupported, credentialMetadata, credentialBuildConfig);
+        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, credentialSigningAlgValuesSupported, vct, docType, credentialDefinition, proofTypesSupported, credentialMetadata, credentialBuildConfig, requiredProofKeyIndex);
     }
 }
