@@ -94,6 +94,14 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     private void updateAuthorizationSettings(ClientRepresentation rep, ResourceServerRepresentation authorizationSettings) {
         rep.setAuthorizationSettings(authorizationSettings);
         ClientModel client = session.getContext().getRealm().getClientByClientId(rep.getClientId());
+        boolean serviceAccountsEnabled = client.isServiceAccountsEnabled();
+
         RepresentationToModel.importAuthorizationSettings(rep, client, session);
+
+        // Restore service accounts state for non-Admin callers to prevent
+        // registration access tokens from re-enabling flags an admin deliberately disabled.
+        if (!auth.isBearerToken() && client.isServiceAccountsEnabled() != serviceAccountsEnabled) {
+            client.setServiceAccountsEnabled(serviceAccountsEnabled);
+        }
     }
 }
