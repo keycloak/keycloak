@@ -43,7 +43,7 @@ public class ButtonsMacrosTest {
                         "kcButtonDefaultClass", "legacy-secondary"));
 
         assertTrue(output.contains("class=\"legacy-actions"));
-        assertTrue(output.contains("class=\" legacy-secondary\" name="));
+        assertTrue(output.contains("class=\" legacy-secondary\""));
         assertTrue(output.contains("href=\"/back\" class=\" legacy-secondary "));
     }
 
@@ -102,6 +102,17 @@ public class ButtonsMacrosTest {
         assertTrue(output.contains("value=\"save\""));
         assertTrue(output.contains("formnovalidate=\"formnovalidate\""));
         assertTrue(output.contains("data-callback=\"onSubmitRecaptcha\""));
+    }
+
+    @Test
+    public void omitsUnspecifiedControlNamesAndIds() throws Exception {
+        String output = render("<@buttons.button label='Save'/>"
+                + "<@buttons.buttonLink href='/back' label='Back'/>", Map.of());
+
+        assertTrue(output.contains("<button "));
+        assertTrue(output.contains("<a href=\"/back\""));
+        assertFalse(output.contains("name=\"\""));
+        assertFalse(output.contains("id=\"\""));
     }
 
     private String render(String source, Map<String, String> properties) throws Exception {

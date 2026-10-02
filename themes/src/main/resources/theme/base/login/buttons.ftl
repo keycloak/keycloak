@@ -11,14 +11,14 @@
   <#if type == "secondary" && !properties.kcButtonSecondaryClass??>
     <#local variantClass = properties.kcButtonDefaultClass!>
   </#if>
-  <button class="${properties.kcButtonClass!} ${variantClass}<#if fullWidth> ${properties.kcButtonBlockClass!}</#if><#list class as c> ${properties[c]!}</#list><#if className?has_content> ${className}</#if>" name="${name}" id="${id}"
+  <button class="${properties.kcButtonClass!} ${variantClass}<#if fullWidth> ${properties.kcButtonBlockClass!}</#if><#list class as c> ${properties[c]!}</#list><#if className?has_content> ${className}</#if>"<#if name?has_content> name="${name}"</#if><#if id?has_content> id="${id}"</#if>
           type="submit" <#list attributes as attrName, attrVal>${attrName}="${attrVal}" </#list><#list extra as attrName, attrVal>${attrName}="${attrVal}" </#list>>
   <#if labelText?has_content>${labelText}<#else>${msg(label)}</#if>
   </button>
 </#macro>
 
 <#macro buttonLink href label id="" class=["kcButtonSecondaryClass", "kcButtonBlockClass"]>
-  <a id="${id}" href="${href}" class="${properties.kcButtonClass!}<#list class as c> <#if c == "kcButtonSecondaryClass">${properties[c]!(properties.kcButtonDefaultClass!'')}<#else>${properties[c]!}</#if></#list>">${msg(label)}</a>
+  <a<#if id?has_content> id="${id}"</#if> href="${href}" class="${properties.kcButtonClass!}<#list class as c> <#if c == "kcButtonSecondaryClass">${properties[c]!(properties.kcButtonDefaultClass!'')}<#else>${properties[c]!}</#if></#list>">${msg(label)}</a>
 </#macro>
 
 <#macro loginButton>
