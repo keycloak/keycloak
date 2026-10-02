@@ -112,9 +112,11 @@ export async function selectMultiItem(
 
 // The field element may be a combobox input (has aria-expanded itself) or a
 // container div wrapping a PF5 MenuToggle (aria-expanded is on a child button).
+// Use .first() so the union never resolves to two elements (e.g. a MenuToggle
+// wrapper that itself has aria-expanded AND contains a child with it).
 function findExpandable(element: Locator): Locator {
   const self = element.and(element.page().locator("[aria-expanded]"));
-  return self.or(element.locator("[aria-expanded]").first());
+  return self.or(element.locator("[aria-expanded]").first()).first();
 }
 
 async function openDropdown(page: Page, field: Locator | string) {
