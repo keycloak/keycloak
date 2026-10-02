@@ -40,6 +40,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -765,6 +766,65 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(errorString.contains("invalid_permission"));
             assertTrue(errorString.contains("permission can only be created for resources with user-managed access enabled"));
         }
+    }
+
+    /**
+     * CVE-2026-94217: resource names are unique per owner only, so different owners can own resources sharing the
+     * same name. Granted tickets for those resources must be resolved per-owner, a scope no owner granted must not
+     * come back just because the lookup is empty-scopes-means-all, and response_permissions_limit must still cap
+     * the result when several owners match.
+     */
+    @Test
+    public void testScopesFromDifferentOwnersWithSameResourceNameAreNotMerged() throws Exception {
+        ResourceRepresentation martaResource = addResource("Shared Resource", "marta", true, "ScopeA", "ScopeB", "ScopeC");
+        ResourceRepresentation aliceResource = addResource("Shared Resource", "alice", true, "ScopeA", "ScopeB", "ScopeC");
+        PermissionResource permissionResource = getAuthzClient().protection().permission();
+
+        grantScope(permissionResource, martaResource, "ScopeA");
+        grantScope(permissionResource, aliceResource, "ScopeB");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("Shared Resource", "ScopeA", "ScopeB");
+        List<Permission> permissions = authorize("kolo", "password", request);
+
+        assertEquals(2, permissions.size(), "Expected one independent permission per owner: " + permissions);
+        for (Permission p : permissions) {
+            if (martaResource.getId().equals(p.getResourceId())) {
+                assertEquals(Set.of("ScopeA"), p.getScopes(), "kolo should only have ScopeA on marta's resource");
+            } else if (aliceResource.getId().equals(p.getResourceId())) {
+                assertEquals(Set.of("ScopeB"), p.getScopes(), "kolo should only have ScopeB on alice's resource");
+            } else {
+                fail("Unexpected resource in permissions: " + p.getResourceId());
+            }
+        }
+
+        // nobody granted ScopeC, so no permission should be resolved for either owner's resource
+        AuthorizationRequest scopeCRequest = new AuthorizationRequest();
+        scopeCRequest.addPermission("Shared Resource", "ScopeC");
+        try {
+            authorize("kolo", "password", scopeCRequest);
+            fail("ScopeC was never granted by any owner");
+        } catch (RuntimeException expected) {
+            assertTrue(expected.getCause().toString().contains("invalid_resource"));
+        }
+
+        // alice also grants ScopeA; now marta and alice both match, limit must cap the result at one resource
+        grantScope(permissionResource, aliceResource, "ScopeA");
+        request = new AuthorizationRequest();
+        request.addPermission("Shared Resource", "ScopeA");
+        Metadata metadata = new Metadata();
+        metadata.setLimit(1);
+        request.setMetadata(metadata);
+        assertEquals(1, authorize("kolo", "password", request).size(), "response_permissions_limit=1 must be honored");
+    }
+
+    private void grantScope(PermissionResource permissionResource, ResourceRepresentation resource, String scopeName) {
+        PermissionTicketRepresentation grant = new PermissionTicketRepresentation();
+        grant.setResource(resource.getId());
+        grant.setScopeName(scopeName);
+        grant.setRequesterName("kolo");
+        grant.setGranted(true);
+        permissionResource.create(grant);
     }
 
     private List<Permission> authorize(String userName, String password, AuthorizationRequest request) {
