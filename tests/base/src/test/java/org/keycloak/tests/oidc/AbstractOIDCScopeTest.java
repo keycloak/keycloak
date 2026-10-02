@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc;
+package org.keycloak.tests.oidc;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,49 +25,53 @@ import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
+import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Deprecated(forRemoval = true)
-public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractOIDCScopeTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectOAuthClient
+    OAuthClient oauth;
 
-    @Page
-    protected LoginPage loginPage;
+    @InjectEvents
+    Events events;
 
-    @Page
-    protected OAuthGrantPage grantPage;
+    @InjectPage
+    LoginPage loginPage;
 
-    @Page
-    protected ErrorPage errorPage;
+    @InjectPage
+    LoginTotpPage loginTotpPage;
+
+    @InjectPage
+    OAuthGrantPage grantPage;
+
+    @InjectPage
+    ErrorPage errorPage;
 
 
-    protected AbstractOIDCScopeTest.Tokens sendTokenRequest(EventRepresentation loginEvent, String userId, String expectedScope, String clientId) {
+    protected Tokens sendTokenRequest(EventRepresentation loginEvent, String userId, String expectedScope, String clientId) {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.client(clientId, "password").doAccessTokenRequest(code);
         Assertions.assertEquals(200, response.getStatusCode());
-
-        // Test scopes
-        log.info("expectedScopes = " + expectedScope);
-        log.info("responseScopes = " + response.getScope());
+        
         assertScopes(expectedScope, response.getScope());
 
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
@@ -87,7 +91,7 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         // Test scope in the event
         assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));
 
-        return new AbstractOIDCScopeTest.Tokens(idToken, accessToken, response.getRefreshToken());
+        return new Tokens(idToken, accessToken, response.getRefreshToken());
     }
 
     public static void assertScopes(String expectedScope, String receivedScope) {

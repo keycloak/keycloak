@@ -18,318 +18,81 @@
 package org.keycloak.tests.oidc;
 
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.AuthenticationExecutionExportBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.ProtocolMapperBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.account.custom.CustomAuthFlowOTPTest.LoginTotpPage;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.TokenUtil;
 
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.tests.oauth.RefreshTokenTest.assertScopes;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
 @KeycloakIntegrationTest
-public class AcrAuthFlowTest {
+public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
 
-    @InjectRealm(config = AcrAuthFlowRealmConfig.class)
+    @InjectRealm(config = AcrAuthFlowRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
+    @InjectUser(config = AcrUserConfig.class)
+    ManagedUser user;
 
-    @InjectOAuthClient(config = AcrClientConfig.class)
-    OAuthClient oauth;
-
-    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
-    Keycloak adminClient;
-
-    @InjectEvents
-    Events events;
+    @InjectClient(config = AcrClientConfig.class)
+    ManagedClient client;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
-
     // config
-    private static String CLIENT_ID = "test-app";
-    private static String CLIENT_SECRET = "password";
-    private static String PASSWORD = "password";
     private static String TOTP_SECRET = "totpsecret";
     private static String PASSWORD_FLOW_ALIAS = "password-flow";
     private static String PASSWORD_OTP_FLOW_ALIAS = "password-otp-flow";
 
-    // pages
-    @InjectPage
-    protected LoginTotpPage loginTotpPage;
-
-    @InjectPage
-    protected LoginPage loginPage;
-
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-    private String userId;
-
-    protected Logger log = Logger.getLogger(this.getClass());
-
-
-    static class Tokens {
-        final IDToken idToken;
-        final AccessToken accessToken;
-        final String refreshToken;
-
-        private Tokens(IDToken idToken, AccessToken accessToken, String refreshToken) {
-            this.idToken = idToken;
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
-        }
-    }
-
-
-    protected Tokens sendTokenRequest(EventRepresentation loginEvent, String userId, String expectedScope, String clientId) {
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-
-        String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response = oauth.client(clientId, "password").doAccessTokenRequest(code);
-        Assertions.assertEquals(200, response.getStatusCode());
-
-        // Test scopes
-        log.info("expectedScopes = " + expectedScope);
-        log.info("responseScopes = " + response.getScope());
-        assertScopes(expectedScope, response.getScope());
-
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-
-        // Test scope in the access token
-        assertScopes(expectedScope, accessToken.getScope());
-
-        EventRepresentation codeToTokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
-                .sessionId(sessionId)
-                .userId(userId)
-                .clientId(clientId)
-                .details(Details.CODE_ID, codeId)
-                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
-
-        // Test scope in the event
-        assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));
-
-        return new Tokens(idToken, accessToken, response.getRefreshToken());
-    }
-
-    private static String getAcrToLoaMappingForClient() throws IOException {
-        Map<String, Integer> acrLoaMap = new HashMap<>();
-        acrLoaMap.put("default", 1);
-        acrLoaMap.put("acr-password", 2);
-        acrLoaMap.put("acr-otp", 3);
-        return JsonSerialization.writeValueAsString(acrLoaMap);
-    }
-
-    /**
-     * Helper function to create a test user, optionally with OTP configured
-     *
-     * @param username   The username of the user to create
-     * @param password   The password to set on the user
-     * @param totpSecret If set, will configure a totp authenticator with this secret
-     * @return
-     */
-
-    private static UserRepresentation createTestUser(String username, String password, String totpSecret) {
-        UserBuilder builder = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
-                .username(username)
-                .enabled(true)
-                .email(username + "@email.com")
-                .firstName(username)
-                .lastName(username)
-                .password(password);
-
-        if (totpSecret != null) {
-            builder.totpSecret(totpSecret);
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Helper function to create the ACR scope and protocol mapper.
-     *
-     * @return The created scope object
-     */
-    private static ClientScopeRepresentation createScope() {
-        ProtocolMapperRepresentation protocolMapper = createMapper();
-        return new ClientScopeRepresentation() {{
-            setId(KeycloakModelUtils.generateId());
-            setName("acr-test-scope");
-            setProtocol("openid-connect");
-            setAttributes(new HashMap<>() {{
-                put(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "false");
-                put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
-            }});
-            setProtocolMappers(Collections.singletonList(protocolMapper));
-        }};
-    }
-
-    /**
-     * Helper function to create the acr protocol mapper.
-     *
-     * @return The created protocol mapper
-     */
-    private static ProtocolMapperRepresentation createMapper() {
-        return new ProtocolMapperRepresentation() {{
-            setId(KeycloakModelUtils.generateId());
-            setName("acr-test-mapper");
-            setProtocol("openid-connect");
-            setProtocolMapper("oidc-acr-mapper");
-            setConfig(new HashMap<>() {{
-                put("id.token.claim", "true");
-                put("access.token.claim", "true");
-            }});
-        }};
-    }
-
-
-    /**
-     * Setup for the test cases
-     */
-    @BeforeEach
-    public void setupTest() {
-        oauth.client(CLIENT_ID);
-        createPasswordFlow();
-        createOTPFlow();
-
-        userId = managedRealm.admin().users().search("test-user").stream()
-                .findFirst()
-                .orElseThrow()
-                .getId();
-
-        // Configure ACR LOA mapping on test-app client
-        managedRealm.admin().clients().findByClientId(CLIENT_ID).stream()
-                .findFirst()
-                .ifPresent(client -> {
-                    try {
-                        client.setAttributes(Collections.singletonMap(
-                                Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
-                        managedRealm.admin().clients().get(client.getId()).update(client);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-
-        // needed otherwise multiple OTP tests will fail due to token reuse
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        realmRep.setOtpPolicyCodeReusable(true);
-        managedRealm.admin().update(realmRep);
-    }
-
-    /**
-     * Reset clients post test
-     */
-    @AfterEach
-    public void cleanupTest() {
-        try {
-            ClientPoliciesRepresentation clientPolicies = JsonSerialization.readValue("{}", ClientPoliciesRepresentation.class);
-            managedRealm.admin().clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
-
-            ClientProfilesRepresentation clientProfilesRepresentation = JsonSerialization.readValue("{}", ClientProfilesRepresentation.class);
-
-            managedRealm.admin().clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
-        } catch (Exception e) {
-            Assertions.fail();
-        }
-
-    }
-
-    /**
-     * Helper function to create an authentication flow with the password authenticator
-     */
-    private void createPasswordFlow() {
-        runOnServer.run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(PASSWORD_FLOW_ALIAS));
-        runOnServer
-                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(PASSWORD_FLOW_ALIAS)
-                        // remove cookie, kerberos, and idp from browser flow
-                        .removeExecution(2).removeExecution(1).removeExecution(0)
-                        .inForms(forms -> forms.clear()
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID, null)
-                        ));
-    }
-
-    /**
-     * Helper function to create an authentication flow with the password and otp authenticators
-     */
-    private void createOTPFlow() {
-        runOnServer.run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(PASSWORD_OTP_FLOW_ALIAS));
-        runOnServer
-                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(PASSWORD_OTP_FLOW_ALIAS)
-                        // remove cookie, kerberos, and idp from browser flow
-                        .removeExecution(2).removeExecution(1).removeExecution(0)
-                        .inForms(forms -> forms.clear()
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID, null)
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID, null)
-                        ));
-    }
 
     /**
      * Test the ACR auth flow map for the password auth flow
@@ -337,31 +100,31 @@ public class AcrAuthFlowTest {
      */
     @Test
     public void testAuthFlow() {
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         loginWithAcr(new ArrayList<>() {{
             add("acr-password");
         }});
 
-        authenticatePassword(PASSWORD);
-        Tokens tokens = assertLoginWithAcr(userId, "acr-password");
+        authenticatePassword(user.getPassword());
+        Tokens tokens = assertLoginWithAcr(user.getId(), "acr-password");
 
-        logout(userId, tokens);
+        logout(user.getId(), tokens);
     }
 
     @Test
     public void testAuthFlowWithoutLoaConfig() {
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS);
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS);
 
         loginWithAcr(new ArrayList<>() {{
             add("acr-password");
         }});
 
-        authenticatePassword(PASSWORD);
-        Tokens tokens = assertLoginWithAcr(userId, "default");
+        authenticatePassword(user.getPassword());
+        Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
-        logout(userId, tokens);
+        logout(user.getId(), tokens);
     }
 
 
@@ -372,18 +135,18 @@ public class AcrAuthFlowTest {
     @Test
     public void testAuthFlowOTP() {
 
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         loginWithAcr(new ArrayList<>() {{
             add("acr-otp");
         }});
 
-        authenticatePassword(PASSWORD);
+        authenticatePassword(user.getPassword());
         authenticateTOTP(TOTP_SECRET);
-        Tokens tokens = assertLoginWithAcr(userId, "acr-otp");
+        Tokens tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
-        logout(userId, tokens);
+        logout(user.getId(), tokens);
     }
 
     /**
@@ -397,11 +160,11 @@ public class AcrAuthFlowTest {
             add("acr-password");
         }});
 
-        authenticatePassword(PASSWORD);
+        authenticatePassword(user.getPassword());
         authenticateTOTP(TOTP_SECRET);
-        Tokens tokens = assertLoginWithAcr(userId, "default");
+        Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
-        logout(userId, tokens);
+        logout(user.getId(), tokens);
     }
 
     /**
@@ -413,36 +176,35 @@ public class AcrAuthFlowTest {
     public void testSessionReAuth() {
         Tokens tokens;
 
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
-        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
 
         // initial login
         loginWithAcr(new ArrayList<>() {{
             add("acr-password");
         }});
-        authenticatePassword(PASSWORD);
-        assertLoginWithAcr(userId, "acr-password");
+        authenticatePassword(user.getPassword());
+        assertLoginWithAcr(user.getId(), "acr-password");
 
         // ensure re-auth forced with different acr
         loginWithAcr(new ArrayList<>() {{
             add("acr-otp");
         }});
-        authenticatePassword(PASSWORD);
+        authenticatePassword(user.getPassword());
         authenticateTOTP(TOTP_SECRET);
-        tokens = assertLoginWithAcr(userId, "acr-otp");
+        tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
-        logout(userId, tokens);
+        logout(user.getId(), tokens);
     }
 
-    private void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias) {
-        setAcrClientPolicy(adminClient, realm, acr, alias, null);
+    private void setAcrClientPolicy(String acr, String alias) {
+        setAcrClientPolicy(acr, alias, null);
     }
 
-    public static void setAcrClientPolicy(Keycloak adminClient, String realm, String acr, String alias, Integer loa) {
+    private void setAcrClientPolicy(String acr, String alias, Integer loa) {
 
         try {
-
-            ClientProfilesRepresentation clientProfiles = adminClient.realm(realm).clientPoliciesProfilesResource().getProfiles(false);
+            ClientProfilesRepresentation clientProfiles = managedRealm.admin().clientPoliciesProfilesResource().getProfiles(false);
             AuthenticationFlowSelectorExecutor.Configuration aliasConfiguration = new AuthenticationFlowSelectorExecutor.Configuration();
             aliasConfiguration.setAuthFlowAlias(alias);
             if (loa != null) {
@@ -458,10 +220,10 @@ public class AcrAuthFlowTest {
             String json = clientProfilesBuilder.toString();
 
             clientProfiles = JsonSerialization.readValue(json, ClientProfilesRepresentation.class);
-            adminClient.realm(realm).clientPoliciesProfilesResource().updateProfiles(clientProfiles);
+            managedRealm.admin().clientPoliciesProfilesResource().updateProfiles(clientProfiles);
 
 
-            ClientPoliciesRepresentation clientPolicies = adminClient.realm(realm).clientPoliciesPoliciesResource().getPolicies(false);
+            ClientPoliciesRepresentation clientPolicies = managedRealm.admin().clientPoliciesPoliciesResource().getPolicies(false);
 
             AcrCondition.Configuration acrConfiguration = new AcrCondition.Configuration();
             acrConfiguration.setAcrProperty(acr);
@@ -480,7 +242,7 @@ public class AcrAuthFlowTest {
             json = clientPoliciesBuilder.toString();
 
             clientPolicies = json == null ? null : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
-            adminClient.realm(realm).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
+            managedRealm.admin().clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
         } catch (Exception e) {
             Assertions.fail();
         }
@@ -506,19 +268,9 @@ public class AcrAuthFlowTest {
         ClaimsRepresentation claims = new ClaimsRepresentation();
         claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
 
+        oauth.client(client.getClientId(), "password");
         oauth.loginForm().claims(claims).open();
     }
-
-    /**
-     * Helper function to fetch the authentication flow ID based on the alias
-     *
-     * @param alias The alias to search for
-     * @return The flow ID
-     */
-    private String findFlowByAlias(String alias) {
-        return managedRealm.admin().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
-    }
-
 
     /**
      * Helper function to log out the specified user
@@ -532,7 +284,7 @@ public class AcrAuthFlowTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGOUT)
                 .sessionId(tokens.idToken.getSessionState())
-                .clientId(CLIENT_ID)
+                .clientId(client.getClientId())
                 .userId(userId)
                 .withoutDetails(Details.REDIRECT_URI);
     }
@@ -578,7 +330,7 @@ public class AcrAuthFlowTest {
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId).getEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid", client.getClientId());
         assertAcr(tokens.idToken, expectedAcr);
         assertAcr(tokens.accessToken, expectedAcr);
 
@@ -592,9 +344,7 @@ public class AcrAuthFlowTest {
      * @param expectedAcr The expected acr values in the token
      */
     private void assertAcr(IDToken token, String expectedAcr) {
-        log.infof("Expected acr = %s", expectedAcr);
         String acr = token.getAcr();
-        log.infof("Response acr = %s", acr);
         if (expectedAcr != null) {
             Assertions.assertNotNull(acr);
         }
@@ -606,30 +356,60 @@ public class AcrAuthFlowTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            UserBuilder userBuilder = UserBuilder.create("test-user")
+            return realm.name("test")
+                    .authenticationFlows(
+                            AuthenticationFlowBuilder.create(PASSWORD_FLOW_ALIAS, "Browser based authentication", AuthenticationFlow.BASIC_FLOW, true, false)
+                                    .authenticationExecutions(AuthenticationExecutionExportBuilder.alias(
+                                            PASSWORD_FLOW_ALIAS + " forms", AuthenticationExecutionModel.Requirement.ALTERNATIVE.name(), 30, false)),
+                            AuthenticationFlowBuilder.create(PASSWORD_FLOW_ALIAS + " forms", "Username, password, otp and other auth forms.", AuthenticationFlow.BASIC_FLOW, false, false)
+                                    .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator(
+                                            UsernamePasswordFormFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED.name(), 10, false)),
+                            AuthenticationFlowBuilder.create(PASSWORD_OTP_FLOW_ALIAS, "Browser based authentication", AuthenticationFlow.BASIC_FLOW, true, false)
+                                    .authenticationExecutions(AuthenticationExecutionExportBuilder.alias(
+                                            PASSWORD_OTP_FLOW_ALIAS + " forms", AuthenticationExecutionModel.Requirement.ALTERNATIVE.name(), 30, false)),
+                            AuthenticationFlowBuilder.create(PASSWORD_OTP_FLOW_ALIAS + " forms", "Username, password, otp and other auth forms.", AuthenticationFlow.BASIC_FLOW, false, false)
+                                    .authenticationExecutions(
+                                            AuthenticationExecutionExportBuilder.authenticator(UsernamePasswordFormFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED.name(), 10, false),
+                                            AuthenticationExecutionExportBuilder.authenticator(OTPFormAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED.name(), 20, false)))
+                    .clientScopes(ClientScopeBuilder.create()
+                            .name("acr-test-scope")
+                            .protocol("openid-connect")
+                            .attribute(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "false")
+                            .attribute(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false")
+                            .mappers(ProtocolMapperBuilder.create()
+                                    .name("acr-test-mapper")
+                                    .protocol("openid-connect")
+                                    .protocolMapper("oidc-acr-mapper")
+                                    .config("id.token.claim", "true")
+                                    .config("access.token.claim", "true")
+                                    .build()))
+                    .otpCodeReusable(true)
+                    .defaultClientScopes("acr-test-scope");
+        }
+    }
+
+    private static class AcrUserConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("test-user")
                     .email("test-user@email.com")
                     .firstName("test-user")
                     .lastName("test-user")
-                    .password(PASSWORD)
+                    .password("password")
                     .totpSecret(TOTP_SECRET);
-            ClientScopeRepresentation scope = createScope();
-
-            return realm.name("test")
-                    .users(userBuilder)
-                    .clientScopes(scope)
-                    .update(testRealm -> {
-                        testRealm.setDefaultDefaultClientScopes(Collections.singletonList(scope.getName()));
-                    });
         }
     }
 
     private static class AcrClientConfig implements ClientConfig {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return client.clientId(CLIENT_ID)
-                    .secret(CLIENT_SECRET)
+            return client.clientId("acr-client")
+                    .secret("password")
+                    .redirectUris("*")
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(true)
+                    .attribute(Constants.ACR_LOA_MAP, "{\"default\":1,\"acr-password\":2,\"acr-otp\":3}")
                     .defaultClientScopes("acr-test-scope");
         }
     }
