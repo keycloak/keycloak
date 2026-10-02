@@ -118,6 +118,7 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.StringUtil;
 
@@ -1243,6 +1244,7 @@ public class UserResource {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
