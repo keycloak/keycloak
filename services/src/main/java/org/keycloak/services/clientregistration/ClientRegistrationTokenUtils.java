@@ -57,19 +57,18 @@ public class ClientRegistrationTokenUtils {
 
         if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();
-        } else {
-            RegistrationAccessToken regToken = new RegistrationAccessToken();
-            regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
-
-            regToken.type(auth.getJwt().getType());
-            regToken.id(auth.getJwt().getId());
-            regToken.issuedNow();
-            regToken.issuer(auth.getJwt().getIssuer());
-            regToken.audience(auth.getJwt().getIssuer());
-
-            String token = new JWSBuilder().jsonContent(regToken).sign(signer);
-            return token;
         }
+
+        RegistrationAccessToken regToken = new RegistrationAccessToken();
+        regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
+
+        regToken.type(auth.getJwt().getType());
+        regToken.id(auth.getJwt().getId());
+        regToken.issuedNow();
+        regToken.issuer(auth.getJwt().getIssuer());
+        regToken.audience(auth.getJwt().getIssuer());
+
+        return new JWSBuilder().jsonContent(regToken).sign(signer);
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
