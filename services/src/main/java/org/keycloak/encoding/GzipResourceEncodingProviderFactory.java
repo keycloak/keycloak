@@ -51,6 +51,18 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     }
 
     @Override
+    public void clearCache() {
+        File dir = cacheDir;
+        if (dir != null) {
+            try {
+                FileUtils.cleanDirectory(dir);
+            } catch (IOException e) {
+                logger.warn("Failed to clear gzip cache directory", e);
+            }
+        }
+    }
+
+    @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()
