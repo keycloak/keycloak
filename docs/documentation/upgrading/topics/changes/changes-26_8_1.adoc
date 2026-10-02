@@ -4,6 +4,10 @@
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== FIPS provider selection can use Brisbane
+
+When the FIPS feature is enabled, BouncyCastle FIPS remains the default. To evaluate Brisbane, enable the `brisbane` feature at build time. Brisbane requires Java 25 or later, native access, and a configured OpenSSL FIPS provider.
+
 === Kerberos username/password authenticator performs local service-ticket round trip
 
 Previously, the Kerberos provider authenticated the user only against the KDC server by performing an AS-REQ/AS-REP exchange. Consequently, authentication could succeed against an unintended or rogue KDC if it was inadvertently selected. This applied only to direct Kerberos username and password authentication, never to browser-based SPNEGO/negotiate authentication.
