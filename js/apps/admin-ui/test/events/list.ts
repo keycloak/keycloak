@@ -1,5 +1,5 @@
 import { type Page, expect } from "@playwright/test";
-import { selectItem, switchOn } from "../utils/form.ts";
+import { selectMultiItem, switchOn } from "../utils/form.ts";
 
 export async function goToEventsConfig(page: Page) {
   await page.getByRole("link", { name: "Event configs" }).click();
@@ -49,7 +49,8 @@ export async function fillSearchPanel(
 ) {
   if (userId) await page.getByTestId("userId-searchField").fill(userId);
   if (client) await page.getByTestId("client-searchField").fill(client);
-  if (eventType) await selectItem(page, page.getByLabel("Select"), eventType);
+  if (eventType)
+    await selectMultiItem(page, page.getByLabel("Select"), eventType);
 }
 
 export async function fillAdminEventsSearchPanel(
@@ -57,13 +58,13 @@ export async function fillAdminEventsSearchPanel(
   { resourceType, operationType }: AdminEventsSearchParam,
 ) {
   if (resourceType)
-    await selectItem(
+    await selectMultiItem(
       page,
       page.getByLabel("select-resourceTypes"),
       resourceType,
     );
   if (operationType)
-    await selectItem(
+    await selectMultiItem(
       page,
       page.getByLabel("select-operationTypes"),
       operationType,

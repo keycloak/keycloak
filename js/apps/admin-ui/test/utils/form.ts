@@ -95,6 +95,7 @@ export async function selectMultiItem(
       "use selectItem() for single-select dropdowns",
   ).toBeVisible();
   await page.keyboard.press("Escape");
+  await expect(lastOption).toBeHidden();
 }
 
 async function openDropdown(page: Page, field: Locator | string) {
