@@ -238,6 +238,8 @@
         </surefire.system.args>
 
         <!-- Testframework Settings -->
+        <!-- Include surefire.system.args (--add-opens) so tests can use reflection
+             into System.getenv()'s internal map (e.g. AuthzClientTest#setEnv). -->
         <testframework.surefire.args>
             ${surefire.system.args}
             -XX:+ExitOnOutOfMemoryError
