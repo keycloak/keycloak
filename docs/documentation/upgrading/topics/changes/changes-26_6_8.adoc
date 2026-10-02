@@ -10,6 +10,14 @@ The `client-updater-source-groups` client policy condition now matches groups by
 
 Only the conditions configured with the simple name of a subgroup need to be updated to the full path of that group, for example `/topGroup/level2group`.
 
+=== Disabled clients are no longer added to the token audience
+
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
+This change addresses CVE-2026-93999.
+
+For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
