@@ -115,8 +115,13 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
     }
 
     private void createUser(ManagedRealm realm, String username, String password, String firstName, String lastName, String email) {
+        createUser(realm, username, password, firstName, lastName, email, false);
+    }
+
+    private void createUser(ManagedRealm realm, String username, String password, String firstName, String lastName, String email, boolean emailVerified) {
         UserBuilder builder = UserBuilder.create(username)
                 .email(email)
+                .emailVerified(emailVerified)
                 .password(password)
                 .enabled(true);
         if (firstName != null) {
@@ -176,7 +181,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
         final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
         final String username = "firstandlastname";
         final String email = "firstnamelastname@example.org";
-        createUser(providerRealm, username, USER_PASSWORD, firstname, lastname, email);
+        createUser(providerRealm, username, USER_PASSWORD, firstname, lastname, email, true);
         createUser(consumerRealm, username, "THIS PASSWORD IS USELESS", null, null, email);
 
         logInWithIdp(username, USER_PASSWORD);
