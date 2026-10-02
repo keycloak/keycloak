@@ -141,7 +141,11 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    private boolean isBearerToken() {
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
@@ -317,6 +321,19 @@ public class ClientRegistrationAuth {
                 throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
             }
         }
+
+        // Every RAT must carry a 'registration_provider'
+        //claim (or the REGISTRATION_PROVIDER_ANY sentinel); tokens lacking it are rejected to prevent cross-provider escalation.
+        if (isRegistrationAccessToken()) {
+            String issuingProvider = (String) jwt.getOtherClaims()
+                    .get(RegistrationAccessToken.REGISTRATION_PROVIDER);
+            if (issuingProvider == null
+                    || (!RegistrationAccessToken.REGISTRATION_PROVIDER_ANY.equals(issuingProvider)
+                        && !issuingProvider.equals(endpoint)
+                        && !"install".equals(endpoint))) {
+                throw unauthorized("Registration access token not valid for this registration provider.");
+            }
+        }
     }
 
     private RegistrationAuth requireUpdateAuth(ClientModel client) {
@@ -336,6 +353,7 @@ public class ClientRegistrationAuth {
             }
         } else if (isRegistrationAccessToken()) {
             if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 return getRegistrationAuth();
             }
         }

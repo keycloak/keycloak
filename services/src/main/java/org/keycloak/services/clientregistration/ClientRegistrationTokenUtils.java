@@ -57,31 +57,50 @@ public class ClientRegistrationTokenUtils {
 
         if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();
-        } else {
-            RegistrationAccessToken regToken = new RegistrationAccessToken();
-            regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
-
-            regToken.type(auth.getJwt().getType());
-            regToken.id(auth.getJwt().getId());
-            regToken.issuedNow();
-            regToken.issuer(auth.getJwt().getIssuer());
-            regToken.audience(auth.getJwt().getIssuer());
-
-            String token = new JWSBuilder().jsonContent(regToken).sign(signer);
-            return token;
         }
+
+        RegistrationAccessToken regToken = new RegistrationAccessToken();
+        regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
+        // The jwt field is typed as AccessToken but for RATs it deserialises
+        // to AccessToken with the provider claim in otherClaims(). This works
+        // today because the JSON key names match. If the parse type changes,
+        // revisit this.
+        String existingProvider = (String) auth.getJwt().getOtherClaims()
+                .get(RegistrationAccessToken.REGISTRATION_PROVIDER);
+        if (existingProvider != null) {
+            regToken.setRegistrationProvider(existingProvider);
+        }
+
+        regToken.type(auth.getJwt().getType());
+        regToken.id(auth.getJwt().getId());
+        regToken.issuedNow();
+        regToken.issuer(auth.getJwt().getIssuer());
+        regToken.audience(auth.getJwt().getIssuer());
+
+        return new JWSBuilder().jsonContent(regToken).sign(signer);
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins);
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins, null);
+    }
+
+    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins, String provider) {
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins, provider);
     }
 
     public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
+        return updateRegistrationAccessToken(session, realm, client, registrationAuth, webOrigins, null);
+    }
+
+    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins, String provider) {
         String id = SecretGenerator.getInstance().generateSecureID();
         client.setRegistrationToken(id);
 
         RegistrationAccessToken regToken = new RegistrationAccessToken();
         regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
+        if (provider != null) {
+            regToken.setRegistrationProvider(provider);
+        }
 
         return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0, webOrigins);
     }
