@@ -18,8 +18,6 @@
 package org.keycloak.keys.infinispan;
 
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -49,20 +47,6 @@ public class InfinispanCachePublicKeyProviderFactory implements CachePublicKeyPr
             synchronized (this) {
                 if (keysCache == null) {
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
-
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
-
-                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
-                        keysCache.remove(invalidationEvent.getCacheKey());
-
-                    });
-
-                    cluster.registerListener(KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-
-                        keysCache.clear();
-
-                    });
                 }
             }
         }
