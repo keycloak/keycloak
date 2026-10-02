@@ -158,6 +158,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testPemAcceptedWithBrisbaneInFipsStrictMode() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--fips-mode=strict", "--features=fips,brisbane");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
     public void testPemAcceptedInFipsNonStrictMode() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
                 "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
@@ -237,6 +245,14 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "--https-key-store-file=server.p12", "--https-key-store-password=pass",
                 "--fips-mode=strict");
         assertError(nonRunningPicocli, "appears to be PKCS12 based on its extension, but FIPS strict mode requires BCFKS");
+    }
+
+    @Test
+    public void testFipsStrictAcceptsPkcs12WithBrisbane() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev",
+                "--https-key-store-file=server.p12", "--https-key-store-password=pass",
+                "--fips-mode=strict", "--features=fips,brisbane");
+        assertNoError(nonRunningPicocli);
     }
 
     @Test

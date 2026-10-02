@@ -52,7 +52,7 @@ public class ElytronRsaKeyEncryptionJWEAlgorithmProvider implements JWEAlgorithm
     }
 
     private Cipher getCipherProvider() throws Exception {
-        return Cipher.getInstance(jcaAlgorithmName);
+        return WildFlyElytronProvider.getCipher(jcaAlgorithmName);
     }
 
     protected void initCipher(Cipher cipher, int mode, Key key) throws Exception {

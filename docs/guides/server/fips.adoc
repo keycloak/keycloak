@@ -36,8 +36,8 @@ fips-mode-setup --enable
 
 {project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;
 however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library is not shipped with {project_name} as
-{project_name} cannot provide official support of it. Therefore, to run in FIPS compliant mode, you need to download BouncyCastle-FIPS bits and add them to the {project_name} distribution.
-When {project_name} executes in fips mode, it will use the BCFIPS bits instead of the default BouncyCastle bits, which achieves FIPS compliance.
+{project_name} cannot provide official support of it. To use BouncyCastle FIPS, download its FIPS bits and add them to the {project_name} distribution.
+When BouncyCastle FIPS is selected, {project_name} uses the BCFIPS bits instead of the default BouncyCastle bits.
 
 === BouncyCastle FIPS bits
 
@@ -48,6 +48,14 @@ BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/downlo
 * bctls-fips version ${properties["bouncycastle.bctls-fips.version"]}.
 * bcpkix-fips version ${properties["bouncycastle.pkixfips.version"]}.
 * bcutil-fips version ${properties["bouncycastle.bcutilfips.version"]}.
+
+=== Brisbane prototype
+
+The `--features=fips,brisbane` switch selects Brisbane for FIPS mode. The `brisbane` feature requires `fips`; without `brisbane`, the `fips` feature uses BouncyCastle FIPS.
+Brisbane uses the JipherJCE provider. It requires Java 25 or later, `--enable-native-access=ALL-UNNAMED`, and an OpenSSL FIPS library, provider, and configuration available to Jipher. The prototype resolves the Jipher JAR from JitPack as `com.github.slaskawi:brisbane:${properties["brisbane.version"]}`.
+This integration has not been validated as a FIPS-compliant Keycloak deployment.
+
+With the `brisbane` feature, `--fips-mode=strict` sets Jipher's `FIPS_STRICT` enforcement policy; `non-strict` sets `FIPS`. The BCFKS keystore defaults described below apply when BouncyCastle FIPS is selected.
 
 == Generating keystore
 
@@ -104,7 +112,7 @@ Similar options are needed when you are doing any other manipulation with keysto
 
 == Running the server.
 
-To run the server with BCFIPS in non-approved mode, enter the following command::
+To run the server with BCFIPS in non-approved mode, enter the following command. Install the BouncyCastle FIPS bits first:
 
 <@kc.start parameters="--features=fips --hostname=localhost --https-key-store-password=passwordpassword --log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE"/>
 
@@ -115,14 +123,13 @@ NOTE: You can disable logging in production if everything works as expected.
 
 == Strict mode
 
-There is the `fips-mode` option, which is automatically set to `non-strict` when the `fips` feature is enabled. This means to run BCFIPS in the "non-approved mode".
-The more secure alternative is to use `--features=fips --fips-mode=strict` in which case BouncyCastle FIPS will use "approved mode".
-Using that option results in stricter security requirements on cryptography and security algorithms.
+The `fips-mode` option defaults to `non-strict` when the `fips` feature is enabled. With BouncyCastle, this runs BCFIPS in "non-approved mode"; `strict` runs BCFIPS in "approved mode". With Brisbane, the modes select Jipher's `FIPS` and `FIPS_STRICT` enforcement policies, respectively.
+Use `--features=fips --fips-mode=strict` for BouncyCastle or `--features=fips,brisbane --fips-mode=strict` for Brisbane.
 
-NOTE: In strict mode, the default keystore type (as well as default truststore type) is BCFKS. If you want to use a different keystore type
+NOTE: In strict mode with BouncyCastle, the default keystore type (as well as default truststore type) is BCFKS. If you want to use a different keystore type
 it is required to use the option `--https-key-store-type` with appropriate type. A similar command might be needed for the truststore as well if you want to use it.
 
-When starting the server, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
+When starting with BouncyCastle, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
 
 [source]
 ----
@@ -131,8 +138,7 @@ FIPS1402Provider created: KC(BCFIPS version 2.0103 Approved Mode, FIPS-JVM: enab
 
 === Cryptography restrictions in strict mode
 
-* As mentioned in the previous section, strict mode may not work with `pkcs12` keystore. It is required to use another keystore (like `bcfks`) as mentioned earlier. Also `jks` and `pkcs12` keystores are not
-supported in {project_name} when using strict mode. Some examples are importing or generating a keystore of an OIDC or SAML client in the Admin Console or for a `java-keystore` provider in the realm keys.
+* With BouncyCastle in strict mode, `jks` and `pkcs12` keystores are not supported. Use `bcfks` for the server keystore and for keystores of OIDC or SAML clients and realm keys.
 
 * User passwords must be 14 characters or longer. {project_name} uses PBKDF2 based password encoding by default. BCFIPS approved mode requires passwords to be at least 112 bits
 (effectively 14 characters) with PBKDF2 algorithm. If you want to allow a shorter password, set the property `max-padding-length` of provider `pbkdf2-sha512` of SPI `password-hashing`

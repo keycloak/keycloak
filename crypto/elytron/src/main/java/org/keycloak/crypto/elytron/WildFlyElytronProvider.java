@@ -44,6 +44,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
@@ -54,10 +55,18 @@ import org.keycloak.jose.jwe.alg.RSAWrapperAlgorithmProvider;
 
 public class WildFlyElytronProvider implements CryptoProvider {
 
+    static Cipher getCipher(String transformation) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        CryptoProvider cryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
+        Provider provider = cryptoProvider instanceof WildFlyElytronProvider ? cryptoProvider.getBouncyCastleProvider() : null;
+        return provider == null ? Cipher.getInstance(transformation) : Cipher.getInstance(transformation, provider);
+    }
+
     private Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public WildFlyElytronProvider() {
         providers.put(CryptoConstants.A128KW, new AesKeyWrapAlgorithmProvider());
+        // Existing JOSE RSA1_5 support substitutes a random CEK after unwrap failure; Brisbane rejects this algorithm.
+        // codeql[java/rsa-without-oaep]
         providers.put(CryptoConstants.RSA1_5, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding")));
         providers.put(CryptoConstants.RSA_OAEP, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding")));
         providers.put(CryptoConstants.RSA_OAEP_256, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")));
