@@ -74,14 +74,14 @@ public class ProxyHostnameV2DistTest {
 
     @Test
     void testTrustedProxiesWithInvalidAddress(KeycloakRunner runner) {
-        CLIResult result = runner.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
-        result.assertError("1.0.0.0:8080 is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
+        CLIResult result = runner.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=@@@invalid");
+        result.assertError("@@@invalid is not a valid proxy address.");
     }
 
     @Test
     void testTrustedProxiesWithCompressedIPv6LogsWarning(KeycloakRunner runner) {
         CLIResult result = runner.run("start-dev", "--hostname-strict=false", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=::1");
-        result.assertMessage("proxy-trusted-addresses value '::1' was automatically converted to '::1/128'");
+        result.assertMessage("proxy-trusted-addresses value '::1' is a bare IPv6 address and was automatically converted to '[::1]'");
     }
 
     @Test
