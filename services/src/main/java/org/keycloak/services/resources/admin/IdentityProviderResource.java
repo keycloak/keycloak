@@ -223,8 +223,9 @@ public class IdentityProviderResource {
                 updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
                         ? identityProviderModel.getConfig().get("clientSecret") : null);
             } else {
-                // Sensitive destination/auth fields changed — do not forward the stored secret
-                updated.getConfig().remove("clientSecret");
+                // Sensitive destination/auth fields changed — require re-entry (same pattern as LDAP)
+                throw new IllegalArgumentException(
+                        "Client secret must be re-entered when the token URL, client ID, authentication method, or related destination settings are changed");
             }
         }
 
