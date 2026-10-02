@@ -1,6 +1,6 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 import type { Page } from "@playwright/test";
-import { selectItem } from "../utils/form.ts";
+import { selectMultiItem } from "../utils/form.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { assertRowExists, clickRowKebabItem } from "../utils/table.ts";
 
@@ -28,7 +28,7 @@ export async function fillPermissionForm(page: Page, data: PermissionForm) {
   const entries = Object.entries(data);
   for (const [key, value] of entries) {
     if (key === "scopes") {
-      await selectItem(page, "#scopes", value[0]);
+      await selectMultiItem(page, "#scopes", value[0]);
       continue;
     }
     if (key === "enforcementMode") {

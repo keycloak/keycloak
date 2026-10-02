@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import { clickSelectRow } from "./table.ts";
 
 function isPageClosedError(error: unknown): boolean {
@@ -43,11 +43,61 @@ export async function assertFieldError(
   await expect(page.getByTestId(field + "-helper")).toHaveText(text);
 }
 
+/**
+ * Click a dropdown trigger and pick an option from a single-select dropdown.
+ *
+ * After the option is selected, waits for the dropdown to close before
+ * returning. This prevents race conditions where the dropdown-close re-render
+ * clobbers a subsequent {@link Page.fill} on a controlled input.
+ *
+ * For multi-select (typeaheadMulti) dropdowns that stay open after selection,
+ * use {@link selectMultiItem} instead.
+ */
 export async function selectItem(
   page: Page,
   field: Locator | string,
-  value: string,
+  value: string | Locator,
 ) {
+  await openDropdown(page, field);
+  const option = toOptionLocator(page, value);
+  await option.click();
+  await expect(
+    option,
+    "selectItem: dropdown stayed open after selection — " +
+      "use selectMultiItem() for multi-select (typeaheadMulti) dropdowns",
+  ).toBeHidden();
+}
+
+/**
+ * Click a dropdown trigger and pick one or more options from a multi-select
+ * dropdown, then close it with Escape.
+ *
+ * Unlike {@link selectItem}, the dropdown stays open between selections so the
+ * caller can pick additional options in a single call.
+ *
+ * ```ts
+ * await selectMultiItem(page, "#locales", "Danish", "German");
+ * ```
+ */
+export async function selectMultiItem(
+  page: Page,
+  field: Locator | string,
+  ...values: (string | Locator)[]
+) {
+  await openDropdown(page, field);
+  for (const value of values) {
+    await toOptionLocator(page, value).click();
+  }
+  const lastOption = toOptionLocator(page, values[values.length - 1]);
+  await expect(
+    lastOption,
+    "selectMultiItem: dropdown closed after selection — " +
+      "use selectItem() for single-select dropdowns",
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+}
+
+async function openDropdown(page: Page, field: Locator | string) {
   const element = typeof field === "string" ? page.locator(field) : field;
   await expect(element).toBeVisible();
   await expect(element).toBeEnabled();
@@ -59,7 +109,12 @@ export async function selectItem(
     }
     await element.click({ force: true, timeout: 3_000 });
   }
-  await page.getByRole("option", { name: value, exact: true }).click();
+}
+
+function toOptionLocator(page: Page, value: string | Locator) {
+  return typeof value === "string"
+    ? page.getByRole("option", { name: value, exact: true })
+    : value;
 }
 
 export async function assertSelectValue(field: Locator, value: string) {
@@ -119,10 +174,6 @@ export async function assertSaveButtonIsDisabled(page: Page) {
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("cancel").click();
-}
-
-async function clickOption(page: Page, option: string) {
-  await page.getByRole("option", { name: option }).click();
 }
 
 type SwitchClickResult = {
@@ -320,6 +371,5 @@ export async function changeTimeUnit(
   unit: "Seconds" | "Minutes" | "Hours" | "Days",
   inputType: string,
 ) {
-  await page.locator(inputType).click();
-  await clickOption(page, unit);
+  await selectItem(page, inputType, unit);
 }
