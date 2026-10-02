@@ -166,6 +166,11 @@
             <artifactId>keycloak-admin-cli</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client-tests</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

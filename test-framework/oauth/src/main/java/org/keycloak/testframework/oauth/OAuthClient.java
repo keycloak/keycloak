@@ -35,6 +35,10 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         this(baseUrl, httpClient, managedWebDriver, null);
     }
 
+    public OAuthClient newConfig() {
+        return new OAuthClient(baseUrl, httpClient().get(), managedWebDriver, clientResource);
+    }
+
     @Override
     public void fillLoginForm(String username, String password) {
         LoginPage loginPage = new LoginPage(managedWebDriver);
