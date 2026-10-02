@@ -84,6 +84,14 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setDisplayNameHtml(displayNameHtml);
     }
 
+    public String getDisplayNameShort() {
+        return delegate.getDisplayNameShort();
+    }
+
+    public void setDisplayNameShort(String displayNameShort) {
+        delegate.setDisplayNameShort(displayNameShort);
+    }
+
     public boolean isEnabled() {
         return delegate.isEnabled();
     }

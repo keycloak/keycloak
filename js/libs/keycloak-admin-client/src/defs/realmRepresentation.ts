@@ -53,6 +53,7 @@ export default interface RealmRepresentation {
   directGrantFlow?: string;
   displayName?: string;
   displayNameHtml?: string;
+  displayNameShort?: string;
   dockerAuthenticationFlow?: string;
   duplicateEmailsAllowed?: boolean;
   editUsernameAllowed?: boolean;
