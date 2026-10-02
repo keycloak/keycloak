@@ -76,6 +76,8 @@ public class AuthzClientTest {
         Field field = env.getClass().getDeclaredField("m");
         field.setAccessible(true);
         ((Map<String, String>) field.get(env)).put(key, value);
+        Assertions.assertEquals(value, System.getenv(key),
+                "Failed to mutate System.getenv() for " + key + "; reflection into the env map no longer works");
     }
 
     private static void restoreEnv(String key, String previousValue) throws Exception {
