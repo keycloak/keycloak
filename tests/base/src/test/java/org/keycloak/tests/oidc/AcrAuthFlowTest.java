@@ -71,7 +71,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.account.custom.CustomAuthFlowOTPTest.LoginTotpPage;
+import org.keycloak.tests.account.custom.AbstractCustomAuthFlowOTPTest.LoginTotpPage;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;

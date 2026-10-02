@@ -139,16 +139,18 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         skipOtpForHttpHeader.setType(STRING_TYPE);
         skipOtpForHttpHeader.setName(SKIP_OTP_FOR_HTTP_HEADER);
         skipOtpForHttpHeader.setLabel("Skip OTP for Header");
-        skipOtpForHttpHeader.setHelpText("OTP is skipped if a HTTP request header does matches the given pattern." +
-                "Can be used to specify trusted networks via: X-Forwarded-Host: (1.2.3.4|1.2.3.5)." +
-                "In this case requests from 1.2.3.4 and 1.2.3.5 come from a trusted source.");
+        skipOtpForHttpHeader.setHelpText("OTP is skipped if a HTTP request header matches the given pattern. " +
+                "Can be used to specify trusted networks via: X-Forwarded-Host: (1.2.3.4|1.2.3.5). " +
+                "In this case requests from 1.2.3.4 and 1.2.3.5 come from a trusted source. " +
+                "Should only be used when Keycloak is configured in reverse proxy mode.");
         skipOtpForHttpHeader.setDefaultValue("");
 
         ProviderConfigProperty forceOtpForHttpHeader = new ProviderConfigProperty();
         forceOtpForHttpHeader.setType(STRING_TYPE);
         forceOtpForHttpHeader.setName(FORCE_OTP_FOR_HTTP_HEADER);
         forceOtpForHttpHeader.setLabel("Force OTP for Header");
-        forceOtpForHttpHeader.setHelpText("OTP required if a HTTP request header matches the given pattern.");
+        forceOtpForHttpHeader.setHelpText("OTP required if a HTTP request header matches the given pattern. " +
+                "Should only be used when Keycloak is configured in reverse proxy mode.");
         forceOtpForHttpHeader.setDefaultValue("");
 
         ProviderConfigProperty defaultOutcome = new ProviderConfigProperty();
