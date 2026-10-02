@@ -33,6 +33,18 @@ public class RegistrationAccessToken extends JsonWebToken {
     @JsonProperty(REGISTRATION_AUTH)
     protected String registrationAuth;
 
+    public static final String REGISTRATION_PROVIDER = "registration_provider";
+
+    /**
+     * Sentinel value for {@code registration_provider} stored in RATs issued via the
+     * Admin API ({@code POST .../registration-access-token}). Such tokens are not bound
+     * to any specific DCR endpoint and are accepted by all providers.
+     */
+    public static final String REGISTRATION_PROVIDER_ANY = "*";
+
+    @JsonProperty(REGISTRATION_PROVIDER)
+    private String registrationProvider;
+
     @JsonProperty("allowed-origins")
     protected Set<String> allowedOrigins;
 
@@ -50,5 +62,13 @@ public class RegistrationAccessToken extends JsonWebToken {
 
     public void setAllowedOrigins(Set<String> allowedOrigins) {
         this.allowedOrigins = allowedOrigins;
+    }
+
+    public String getRegistrationProvider() {
+        return registrationProvider;
+    }
+
+    public void setRegistrationProvider(String registrationProvider) {
+        this.registrationProvider = registrationProvider;
     }
 }
