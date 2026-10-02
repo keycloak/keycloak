@@ -29,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 MAX_BODY_CHARS = 2000
@@ -231,12 +232,10 @@ COPILOT_SAFETY_FLAGS = [
     "--no-remote",
     "--no-remote-export",
     "--disallow-temp-dir",
-    "--deny-url='*'",
-    "--deny-tool='shell(*)'",
-    "--deny-tool='read'",
-    "--deny-tool='write'",
-    "--no-workspace-context",
-    "--ignore-local-config"
+    "--deny-url=*",
+    "--deny-tool=shell(*)",
+    "--deny-tool=read",
+    "--deny-tool=write",
 ]
 
 
@@ -247,21 +246,34 @@ def call_copilot(prompt):
     visibility. Uses the 'copilot' CLI directly (installed via npm
     @github/copilot). In GitHub Actions, set COPILOT_GITHUB_TOKEN to
     ${{ github.token }} with copilot-requests: write permission.
-    Falls back to 'gh copilot' for local use.
+    Runs from an empty temporary directory to avoid loading repository
+    context or local configuration. Falls back to 'gh copilot' for local
+    use if the standalone executable is missing. Reports CLI errors on stderr.
     """
-    for cmd in [
-        ["copilot", "-s", "--no-ask-user"] + COPILOT_SAFETY_FLAGS,
-        ["gh", "copilot", "-s"] + COPILOT_SAFETY_FLAGS,
-    ]:
-        try:
-            result = subprocess.run(
-                cmd, input=prompt,
-                capture_output=True, text=True, timeout=60,
-            )
+    flags = ["-s", "--no-ask-user"] + COPILOT_SAFETY_FLAGS
+    with tempfile.TemporaryDirectory(prefix="auto-label-") as work_dir:
+        for cmd in [
+            ["copilot"] + flags,
+            ["gh", "copilot", "--"] + flags,
+        ]:
+            try:
+                result = subprocess.run(
+                    cmd, input=prompt, cwd=work_dir,
+                    capture_output=True, text=True, timeout=60,
+                )
+            except FileNotFoundError:
+                continue
+            except subprocess.TimeoutExpired:
+                print("  Copilot CLI timed out after 60s", file=sys.stderr)
+                return None
+
             if result.returncode == 0:
                 return result.stdout.strip()
-        except FileNotFoundError:
-            continue
+
+            print(f"  Copilot CLI failed (exit {result.returncode}): "
+                  f"{result.stderr.strip() or result.stdout.strip()}",
+                  file=sys.stderr)
+            return None
 
     print("  Copilot CLI not available", file=sys.stderr)
     return None
