@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc.utils;
 
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
@@ -48,9 +49,13 @@ import org.keycloak.models.RealmModel;
 
 
     public static JWK toJwk(KeyWrapper key) {
+        String algorithm = key.getAlgorithmOrDefault();
+        if (KeyType.AKP.equals(key.getType()) && algorithm == null) {
+            throw new IllegalArgumentException("An algorithm is required for AKP keys");
+        }
         JWKBuilder b = JWKBuilder.create()
                 .kid(key.getKid())
-                .algorithm(key.getAlgorithmOrDefault());
+                .algorithm(algorithm);
         List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
                 .filter(certs -> !certs.isEmpty())
                 .orElseGet(() -> Optional.ofNullable(key.getCertificate())
@@ -62,6 +67,12 @@ import org.keycloak.models.RealmModel;
             return b.ec(key.getPublicKey(), certificates, key.getUse());
         } else if (key.getType().equals(KeyType.OKP)) {
             return b.okp(key.getPublicKey(), key.getUse());
+        } else if (key.getType().equals(KeyType.AKP)) {
+            JWK jwk = b.akp((PublicKey) key.getPublicKey());
+            if (key.getUse() != null) {
+                jwk.setPublicKeyUse(key.getUse().getSpecName());
+            }
+            return jwk;
         }
         return null;
     }

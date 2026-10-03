@@ -263,7 +263,7 @@ public class AuthenticationManager {
               .withChecks(VALIDATE_IDENTITY_COOKIE);
 
             String kid = verifier.getHeader().getKeyId();
-            String algorithm = verifier.getHeader().getAlgorithm().name();
+            String algorithm = verifier.getHeader().getRawAlgorithm();
 
             SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(kid);
             verifier.verifierContext(signatureVerifier);
@@ -1575,7 +1575,7 @@ public class AuthenticationManager {
             }
 
             String kid = verifier.getHeader().getKeyId();
-            String algorithm = verifier.getHeader().getAlgorithm().name();
+            String algorithm = verifier.getHeader().getRawAlgorithm();
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
             if (signatureProvider == null) {

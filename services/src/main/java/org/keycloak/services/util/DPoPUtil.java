@@ -193,7 +193,7 @@ public class DPoPUtil {
             throw new VerificationException("No alg in DPoP header");
         }
 
-        String algorithm = header.getAlgorithm().name();
+        String algorithm = header.getRawAlgorithm();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
@@ -223,7 +223,7 @@ public class DPoPUtil {
             }
         }
 
-        key.setAlgorithm(header.getAlgorithm().name());
+        key.setAlgorithm(header.getRawAlgorithm());
 
         SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);
