@@ -1010,6 +1010,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String credentialId) {
+        IssuedVerifiableCredentialModel credential = localStorage().getIssuedVerifiableCredentialById(credentialId);
+        if (credential == null && getFederatedStorage() != null) {
+            credential = getFederatedStorage().getIssuedVerifiableCredentialById(credentialId);
+        }
+        return credential;
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         if (localStorage().removeIssuedVerifiableCredential(credentialId)) {
             return true;
@@ -1030,8 +1039,20 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void removeExpiredIssuedVerifiableCredentials() {
-        localStorage().removeExpiredIssuedVerifiableCredentials();
-        if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
+        removeExpiredIssuedVerifiableCredentialsWithCount();
+    }
+
+    @Override
+    public int removeExpiredIssuedVerifiableCredentialsWithCount() {
+        int removed = localStorage().removeExpiredIssuedVerifiableCredentialsWithCount();
+        if (getFederatedStorage() != null) {
+            int federatedRemoved = getFederatedStorage().removeExpiredIssuedVerifiableCredentialsWithCount();
+            if (removed < 0 || federatedRemoved < 0) {
+                return -1;
+            }
+            removed += federatedRemoved;
+        }
+        return removed;
     }
 
     @Override
