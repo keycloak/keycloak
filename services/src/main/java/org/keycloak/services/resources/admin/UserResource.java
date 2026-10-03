@@ -53,6 +53,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
@@ -568,6 +569,11 @@ public class UserResource {
     })
     public void removeFederatedIdentity(final @Parameter(description = "Social login provider id") @PathParam("provider") String provider) {
         auth.users().requireManage(user);
+        FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, provider);
+        if (link == null) {
+            throw new NotFoundException("Link not found");
+        }
+        IdpVerifyAccountLinkActionTokenHandler.clearUserVerified(session, user, link);
         if (!session.users().removeFederatedIdentity(realm, user, provider)) {
             throw new NotFoundException("Link not found");
         }

@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -326,6 +327,8 @@ public class LinkedAccountsResource {
         if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.isFederated() || isPasswordSet())) {
             throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER), Response.Status.BAD_REQUEST);
         }
+
+        IdpVerifyAccountLinkActionTokenHandler.clearUserVerified(session, user, link);
 
         session.users().removeFederatedIdentity(realm, user, providerAlias);
 

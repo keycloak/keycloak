@@ -35,6 +35,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -126,6 +127,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
+                authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_CROSS_BROWSER, Boolean.TRUE.toString());
             }
 
             setUserVerifiedSingleObject(token, realm, session, user);
@@ -145,18 +147,43 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
     private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
-        String userId = user.getId();
-        String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(user.getId(), token.getIdentityProviderAlias(), token.getExternalId()),
+                singleObjectLifespan, Map.of());
     }
 
-    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
+    /**
+     * If a cross-browser account-link proof exists for this federated identity, remove it.
+     * Used when the user explicitly unlinks the identity provider so a residual proof cannot
+     * silently restore it. Proofs are keyed by the persisted federated user id ({@link FederatedIdentityModel#getUserId()}).
+     */
+    public static void clearUserVerified(KeycloakSession session, UserModel user, String idpAlias, String federatedUserId) {
+        if (session == null || user == null || idpAlias == null || federatedUserId == null) {
+            return;
+        }
+        session.singleUseObjects().remove(getUserVerifiedSingleObjectKey(user.getId(), idpAlias, federatedUserId));
+    }
+
+    /**
+     * Revoke outstanding account-link proofs for a federated identity being removed.
+     */
+    public static void clearUserVerified(KeycloakSession session, UserModel user, FederatedIdentityModel link) {
+        if (link == null) {
+            return;
+        }
+        clearUserVerified(session, user, link.getIdentityProvider(), link.getUserId());
+    }
+
+    /**
+     * Atomically consume the cross-browser account-link proof and run {@code runnable} only if this
+     * caller won the consume. Returns {@code false} if no proof was present (already consumed or never created).
+     */
+    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String federatedUserId, Runnable runnable) {
         if (user == null) {
             return false;
         }
 
         SingleUseObjectProvider singleObjects = session.singleUseObjects();
-        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), externalId);
+        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), federatedUserId);
         boolean isUserVerified = singleObjects.remove(singleObjectKey) != null;
 
         if (isUserVerified) {
@@ -166,7 +193,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+    static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
         return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
