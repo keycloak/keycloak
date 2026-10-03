@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9
+FROM registry.access.redhat.com/ubi9@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132
 
 ENV VERSION=18
 ENV PGUSER=enterprisedb
