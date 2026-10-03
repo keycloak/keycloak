@@ -21,12 +21,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -45,6 +50,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String ROLE_CONFIG = "role";
+    public static final String EXPAND_COMPOSITE_ROLES_CONFIG = "expand.composite.roles";
 
     static {
         ProviderConfigProperty property;
@@ -53,6 +59,14 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
         property.setLabel("Role");
         property.setHelpText("Role you want added to the token.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(EXPAND_COMPOSITE_ROLES_CONFIG);
+        property.setLabel("Expand composite roles");
+        property.setHelpText("If the role is a composite role, also add the roles it is composed of to the token. If off, only the role itself is added.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("false");
         configProperties.add(property);
     }
 
@@ -126,6 +140,25 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
         } else {
             AccessToken.Access access = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, true);
             access.addRole(role);
+        }
+
+        if (Boolean.parseBoolean(mappingModel.getConfig().get(EXPAND_COMPOSITE_ROLES_CONFIG))) {
+            addCompositeRoles(role, session, clientSessionCtx);
+        }
+    }
+
+    private void addCompositeRoles(String role, KeycloakSession session, ClientSessionContext clientSessionCtx) {
+        RealmModel realm = clientSessionCtx.getClientSession().getRealm();
+        RoleModel roleModel = KeycloakModelUtils.getRoleFromString(session, realm, role);
+        if (roleModel == null || !roleModel.isComposite()) {
+            return;
+        }
+
+        for (RoleModel composite : RoleUtils.expandCompositeRoles(Set.of(roleModel))) {
+            AccessToken.Access access = composite.isClientRole()
+                    ? RoleResolveUtil.getResolvedClientRoles(session, clientSessionCtx, ((ClientModel) composite.getContainer()).getClientId(), true)
+                    : RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, true);
+            access.addRole(composite.getName());
         }
     }
 
