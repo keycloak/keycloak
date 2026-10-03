@@ -51,8 +51,11 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
+import org.keycloak.protocol.oidc.endpoints.ClientAttestationChallengeEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -71,6 +74,7 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuthErrorException.INVALID_CLIENT_ATTESTATION;
+import static org.keycloak.OAuthErrorException.USE_ATTESTATION_CHALLENGE;
 
 
 /**
@@ -87,6 +91,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
     public static final String PROVIDER_ID = "attestation-based";
     public static final String OAUTH_CLIENT_ATTESTATION_HEADER = "OAuth-Client-Attestation";
     public static final String OAUTH_CLIENT_ATTESTATION_POP_HEADER = "OAuth-Client-Attestation-PoP";
+    public static final String OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER = "OAuth-Client-Attestation-Challenge";
 
     public static final String OAUTH_CLIENT_ATTESTATION_JWT_TYPE = "oauth-client-attestation+jwt";
     public static final String OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE = "oauth-client-attestation-pop+jwt";
@@ -135,6 +140,12 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             ClientModel clientModel = context.getClient();
             abcaResult.setAttestedClient(clientModel);
 
+        } catch (ClientAttestationChallengeException ex) {
+            ServicesLogger.LOGGER.errorValidatingAssertion(ex);
+            Response response = Response.fromResponse(ClientAuthUtil.errorResponse(BAD_REQUEST.getStatusCode(), USE_ATTESTATION_CHALLENGE, ex.getMessage()))
+                    .header(OAUTH_CLIENT_ATTESTATION_CHALLENGE_HEADER, ex.getChallenge())
+                    .build();
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_ATTESTATION, response);
         } catch (Exception ex) {
             ServicesLogger.LOGGER.errorValidatingAssertion(ex);
             Response response = ClientAuthUtil.errorResponse(BAD_REQUEST.getStatusCode(), INVALID_CLIENT_ATTESTATION, ex.getMessage());
@@ -142,7 +153,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         }
 
         // Error Message specifically related to the use of client attestations
-        // [TODO] use_attestation_challenge MUST be used when the Client Attestation PoP JWT is not using an expected server-provided challenge.
         // [TODO] use_fresh_attestation MUST be used when the Client Attestation JWT is deemed to be not fresh enough to be acceptable by the server.
         // [TODO] invalid_client_attestation MAY be used in addition to the more general invalid_client error code as defined in [RFC6749] if the attestation or its proof of possession could not be successfully verified
     }
@@ -490,13 +500,66 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
         }
 
+        validateClientAttestationChallenge(session, attestationPoPJwt);
+
         abcaResult.setAttestationPoPJwt(attestationPoPJwt);
 
         // [TODO] The authorization server can utilize the jti value for replay attack detection
         // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
 
-        // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
         // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
+    }
+
+    private void validateClientAttestationChallenge(KeycloakSession session, ClientAttestationPoPJwt attestationPoPJwt)
+            throws ClientAttestationChallengeException, TokenVerificationException {
+        String challenge = attestationPoPJwt.getChallenge();
+        if (Strings.isEmpty(challenge)) {
+            return;
+        }
+
+        CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+        if (cNonceHandler == null) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client attestation challenge validation is not available");
+        }
+        if (!cNonceHandler.supportsCNonceConsumption()) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client attestation challenge consumption is not available");
+        }
+
+        WellKnownProvider oidcProvider = session.getProvider(WellKnownProvider.class, OIDCWellKnownProviderFactory.PROVIDER_ID);
+        OIDCConfigurationRepresentation oidcConfig = (OIDCConfigurationRepresentation) oidcProvider.getConfig();
+
+        try {
+            Map<String, Object> challengeDetails = Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                    ClientAttestationChallengeEndpoint.getChallengeEndpoint(session.getContext()));
+            List<String> challengeAudiences = List.of(oidcConfig.getIssuer());
+            if (cNonceHandler.supportsCNonceTokenRetrieval()) {
+                JsonWebToken challengeToken = cNonceHandler.verifyCNonceAndGetToken(challenge,
+                        challengeAudiences, challengeDetails);
+                cNonceHandler.consumeCNonce(challenge, challengeToken);
+            } else {
+                cNonceHandler.verifyCNonce(challenge, challengeAudiences, challengeDetails);
+                cNonceHandler.consumeCNonce(challenge);
+            }
+        } catch (Exception ex) {
+            throw new ClientAttestationChallengeException(
+                    "Client Attestation PoP JWT challenge is invalid: " + ex.getMessage(),
+                    ClientAttestationChallengeEndpoint.buildChallenge(session),
+                    ex);
+        }
+    }
+
+    private static class ClientAttestationChallengeException extends Exception {
+
+        private final String challenge;
+
+        private ClientAttestationChallengeException(String message, String challenge, Throwable cause) {
+            super(message, cause);
+            this.challenge = challenge;
+        }
+
+        private String getChallenge() {
+            return challenge;
+        }
     }
 
     public static class ABCAResult {

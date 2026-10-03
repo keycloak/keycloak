@@ -47,6 +47,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.ClientAttestationChallengeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
@@ -166,6 +167,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         if (clientAuthMethodsSupported.contains(ATTEST_JWT_CLIENT_AUTH)) {
             config.setClientAttestationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
             config.setClientAttestationPopSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+            config.setChallengeEndpoint(ClientAttestationChallengeEndpoint.challengeUrl(backendUriInfo.getBaseUriBuilder())
+                    .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         }
 
         config.setAuthorizationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
