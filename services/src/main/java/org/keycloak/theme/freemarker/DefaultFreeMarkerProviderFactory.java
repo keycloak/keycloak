@@ -48,4 +48,11 @@ public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFacto
         return "default";
     }
 
+    @Override
+    public void clearCache() {
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
 }

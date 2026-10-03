@@ -51,6 +51,22 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     }
 
     @Override
+    public void clearCache() {
+        File dir = cacheDir;
+        if (dir == null) {
+            // not yet initialized by a create() call, but a cache directory from a previous run might still exist
+            dir = new File(new File(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache"), Version.RESOURCES_VERSION);
+        }
+        if (dir.isDirectory()) {
+            try {
+                FileUtils.cleanDirectory(dir);
+            } catch (IOException e) {
+                logger.warn("Failed to clear gzip cache directory", e);
+            }
+        }
+    }
+
+    @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()
