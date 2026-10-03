@@ -66,6 +66,7 @@ public class LDAPQuery implements AutoCloseable {
     private final LDAPStorageProvider ldapFedProvider;
 
     private int limit;
+    private boolean requireCompleteResults;
     private PaginationContext paginationContext;
     private LDAPContextManager ldapContextManager;
     private LdapName searchDn;
@@ -162,6 +163,15 @@ public class LDAPQuery implements AutoCloseable {
 
     public int getLimit() {
         return limit;
+    }
+
+    public boolean isRequireCompleteResults() {
+        return requireCompleteResults;
+    }
+
+    public LDAPQuery setRequireCompleteResults(boolean requireCompleteResults) {
+        this.requireCompleteResults = requireCompleteResults;
+        return this;
     }
 
     public PaginationContext getPaginationContext() {
