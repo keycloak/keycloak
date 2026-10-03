@@ -28,6 +28,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -862,6 +863,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             throw invalidResourceIndicator();
         }
 
+        // enable resource indicators for this client
+        OIDCAdvancedConfigWrapper.fromClientModel(clientModel).setResourceIndicatorsEnabled(true);
         // allow-listed: attach an audience mapper for the resource so ResourceIndicatorsPostProcessor can resolve it.
         ensureResourceIndicatorAudienceMapper(clientModel, resource);
     }
