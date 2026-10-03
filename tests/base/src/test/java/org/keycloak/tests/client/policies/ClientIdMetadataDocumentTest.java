@@ -7,7 +7,6 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.CibaConfig;
@@ -1421,5 +1420,41 @@ public class ClientIdMetadataDocumentTest {
             client.setScope("address phone");
             return client;
         }
+    }
+}
+
+@KeycloakIntegrationTest(config = ClientIdMetadataDocumentJwtGrantDisabledTest.JwtAuthorizationGrantDisabledServerConfig.class)
+public class ClientIdMetadataDocumentJwtGrantDisabledTest extends ClientIdMetadataDocumentTest {
+
+    public static class JwtAuthorizationGrantDisabledServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS)
+                    .featuresDisabled(Profile.Feature.JWT_AUTHORIZATION_GRANT);
+        }
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithJwtGrantWhenFeatureDisabled() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        cimd.getRepresentation().setTokenEndpointAuthMethod(null);
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        oauth.client(CLIENT_ID);
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+        Assertions.assertEquals("invalid request", errorPage.getError());
     }
 }
