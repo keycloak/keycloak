@@ -41,6 +41,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.PreLogoutRequestContext;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.UriType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -207,6 +208,18 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 }
                 if (isAuthFlowWithRedirectEnabled(client)) {
                     verifyRedirectUri(redirectUriParam, true);
+                }
+                return;
+            }
+            case PRE_LOGOUT_REQUEST:{
+                ClientModel client = ((PreLogoutRequestContext) context).getClient();
+                String postLogoutRedirectUriParam = ((PreLogoutRequestContext)context).getPostLogoutRedirectUri();
+                if (client == null) {
+                    throw invalidRedirectUri("Invalid parameter: clientId");
+                }
+
+                if (postLogoutRedirectUriParam != null) {
+                    verifyRedirectUri(postLogoutRedirectUriParam, true);
                 }
                 return;
             }
