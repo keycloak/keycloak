@@ -1,0 +1,16 @@
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Scope mapping listings filter roles by visibility
+// https://github.com/keycloak/keycloak/issues/53480
+
+The Admin REST API endpoints for reading the scope mappings of a client or a client scope (`GET /admin/realms/\{realm}/clients/\{id}/scope-mappings` and `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings`, including their `realm`, `realm/composite`, `clients/\{client}` and `clients/\{client}/composite` sub-resources) now filter out roles that the caller is allowed neither to view nor to map to users or to client scopes.
+Previously, any caller with permission to view the client or the client scope could see all the roles in its scope, including realm roles without the `view-realm` role and client roles without a *view* permission on the client they belong to.
+After upgrading, callers may see fewer results from these endpoints if the scope contains roles that they are allowed neither to view nor to map.
+Roles that the caller is allowed only to map to client scopes are returned without their attributes, even when `briefRepresentation=false` is requested.
+For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
+With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
+In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.

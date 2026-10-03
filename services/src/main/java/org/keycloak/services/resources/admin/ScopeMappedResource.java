@@ -111,6 +111,7 @@ public class ScopeMappedResource {
 
         MappingsRepresentation all = new MappingsRepresentation();
         List<RoleRepresentation> realmRep = scopeContainer.getRealmScopeMappingsStream()
+                .filter(auth.roles()::canViewScopeMapping)
                 .map(ModelToRepresentation::toBriefRepresentation)
                 .collect(Collectors.toList());
         if (!realmRep.isEmpty()) {
@@ -119,7 +120,7 @@ public class ScopeMappedResource {
 
         Stream<ClientModel> clients = realm.getClientsStream();
         Map<String, ClientMappingsRepresentation> clientMappings = clients
-                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer))
+                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer, auth.roles()::canViewScopeMapping))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(ClientMappingsRepresentation::getClient, Function.identity()));
 
@@ -148,6 +149,7 @@ public class ScopeMappedResource {
         }
 
         return scopeContainer.getRealmScopeMappingsStream()
+                .filter(auth.roles()::canViewScopeMapping)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
@@ -200,11 +202,10 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
-        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
-                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
         return realm.getRolesStream()
                 .filter(scopeContainer::hasScope)
-                .map(toBriefRepresentation);
+                .filter(auth.roles()::canViewScopeMapping)
+                .map(toRepresentation(auth, briefRepresentation));
     }
 
     /**
@@ -282,5 +283,18 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
         return new ScopeMappedClientResource(realm, auth, this.scopeContainer, session, clientModel, adminEvent, managePermission, viewPermission);
+    }
+
+    /**
+     * Roles are returned with their attributes only to administrators that can view them. Administrators that can only
+     * map a role to client scopes get its brief representation, as when listing the available roles.
+     */
+    static Function<RoleModel, RoleRepresentation> toRepresentation(AdminPermissionEvaluator auth, boolean briefRepresentation) {
+        if (briefRepresentation) {
+            return ModelToRepresentation::toBriefRepresentation;
+        }
+        return role -> auth.roles().canView(role)
+                ? ModelToRepresentation.toRepresentation(role)
+                : ModelToRepresentation.toBriefRepresentation(role);
     }
 }
