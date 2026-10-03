@@ -197,8 +197,15 @@ public class BCFIPSEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
 
         try {
-            ECPoint point = new ECPoint(x, y);
             X9ECParameters ecParams = NISTNamedCurves.getByName(crv);
+
+            // Defense-in-depth: validate that the point lies on the named curve
+            org.bouncycastle.math.ec.ECPoint bcPoint = ecParams.getCurve().createPoint(x, y);
+            if (!bcPoint.isValid()) {
+                throw new IllegalArgumentException("Invalid EC point: not on the named curve");
+            }
+
+            ECPoint point = new ECPoint(x, y);
             ECParameterSpec params = new ECDomainParameterSpec(
                     new ECDomainParameters(ecParams.getCurve(), ecParams.getG(), ecParams.getN(), ecParams.getH()));
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
