@@ -23,7 +23,7 @@ export class ClientScopes extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ClientScopeRepresentation | undefined
+    ClientScopeRepresentation | null
   >({
     method: "GET",
     path: "/client-scopes/{id}",
@@ -134,7 +134,7 @@ export class ClientScopes extends Resource<{ realm?: string }> {
 
   public findProtocolMapper = this.makeRequest<
     { id: string; mapperId: string },
-    ProtocolMapperRepresentation | undefined
+    ProtocolMapperRepresentation | null
   >({
     method: "GET",
     path: "/client-scopes/{id}/protocol-mappers/models/{mapperId}",

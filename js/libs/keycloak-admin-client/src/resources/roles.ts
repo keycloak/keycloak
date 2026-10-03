@@ -33,7 +33,7 @@ export class Roles extends Resource<{ realm?: string }> {
 
   public findOneByName = this.makeRequest<
     { name: string },
-    RoleRepresentation | undefined
+    RoleRepresentation | null
   >({
     method: "GET",
     path: "/roles/{name}",
@@ -78,7 +78,7 @@ export class Roles extends Resource<{ realm?: string }> {
 
   public findOneById = this.makeRequest<
     { id: string },
-    RoleRepresentation | undefined
+    RoleRepresentation | null
   >({
     method: "GET",
     path: "/roles-by-id/{id}",

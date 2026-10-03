@@ -32,7 +32,8 @@ export default function Page() {
   }
 
   useFetch(
-    async () => adminClient.components.findOne({ id: id! }),
+    async () =>
+      (await adminClient.components.findOne({ id: id! })) ?? undefined,
     setPageData,
     [id],
   );

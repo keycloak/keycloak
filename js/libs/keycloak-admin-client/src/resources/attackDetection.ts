@@ -2,15 +2,14 @@ import Resource from "./resource.js";
 import type KeycloakAdminClient from "../index.js";
 
 export class AttackDetection extends Resource<{ realm?: string }> {
-  public findOne = this.makeRequest<
-    { id: string },
-    Record<string, any> | undefined
-  >({
-    method: "GET",
-    path: "/users/{id}",
-    urlParamKeys: ["id"],
-    catchNotFound: true,
-  });
+  public findOne = this.makeRequest<{ id: string }, Record<string, any> | null>(
+    {
+      method: "GET",
+      path: "/users/{id}",
+      urlParamKeys: ["id"],
+      catchNotFound: true,
+    },
+  );
 
   public del = this.makeRequest<{ id: string }, void>({
     method: "DELETE",
