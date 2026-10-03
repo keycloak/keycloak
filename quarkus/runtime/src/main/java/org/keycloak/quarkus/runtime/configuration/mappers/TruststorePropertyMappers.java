@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.util.List;
 
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -20,6 +21,10 @@ public class TruststorePropertyMappers implements PropertyMapperGrouping {
                 fromOption(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY)
                         .paramLabel(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY.getKey())
                         .to("kc.spi-truststore--file--hostname-verification-policy")
+                        .build(),
+                fromOption(TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD)
+                        .paramLabel("reload period")
+                        .to("quarkus.tls.\"" + SystemTruststoreReload.TLS_BUCKET_NAME + "\".reload-period")
                         .build()
         );
     }

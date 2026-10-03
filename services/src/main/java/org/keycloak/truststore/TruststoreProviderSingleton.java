@@ -17,15 +17,23 @@
 
 package org.keycloak.truststore;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 class TruststoreProviderSingleton {
 
-    static private TruststoreProvider provider;
+    private static final Collection<Runnable> onTruststoreProviderChangeListeners = List.of(SSLSocketFactory::reset);
+    private static volatile TruststoreProvider provider;
 
-    static void set(TruststoreProvider tp) {
-        provider = tp;
+    static void setAndNotifyListeners(TruststoreProvider tp) {
+        if (tp != provider) {
+            provider = tp;
+        }
+        // always notify listeners in case delegate has changed
+        onTruststoreProviderChangeListeners.forEach(Runnable::run);
     }
 
     static TruststoreProvider get() {

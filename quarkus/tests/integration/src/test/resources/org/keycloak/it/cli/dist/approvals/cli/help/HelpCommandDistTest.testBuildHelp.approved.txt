@@ -112,6 +112,17 @@ Tracing:
                      Enables the OpenTelemetry tracing. Default: false. Available only when
                        'opentelemetry' feature is enabled.
 
+Truststore:
+
+--truststore-paths-reload-period <reload period>
+                     Interval on which to reload the system truststore material referenced by the
+                       truststore-paths option and the automatically discovered CA certificates.
+                       May be an ISO 8601 duration value, an integer number of seconds, or an
+                       integer followed by one of [ms, h, m, s, d]. If not set, the system
+                       truststore is not reloaded automatically. When the reload period is
+                       configured, there must be at least one truststore source: a truststore-paths
+                       entry, a file under conf/truststores, or a discovered cluster CA certificate.
+
 Security:
 
 --fips-mode <mode>   Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on
