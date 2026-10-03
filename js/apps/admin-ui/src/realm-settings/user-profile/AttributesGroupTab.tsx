@@ -14,6 +14,7 @@ import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
 import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
+import { deleteLocalizationKeys } from "./localization";
 import { useUserProfile } from "./UserProfileContext";
 import useLocale from "../../utils/useLocale";
 import { useAdminClient } from "../../admin-client";
@@ -55,51 +56,20 @@ export const AttributesGroupTab = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const groups = (config?.groups ?? []).filter(
-        (group) => group !== groupToDelete,
+        (group) => group.name !== groupToDelete?.name,
       );
-      const translationsForDisplayHeaderToDelete =
-        groupToDelete?.displayHeader?.substring(
-          2,
-          groupToDelete.displayHeader.length - 1,
-        );
-      const translationsForDisplayDescriptionToDelete =
-        groupToDelete?.displayDescription?.substring(
-          2,
-          groupToDelete.displayDescription.length - 1,
-        );
 
       try {
-        await Promise.all(
-          combinedLocales.map(async (locale) => {
-            try {
-              await adminClient.realms.getRealmLocalizationTexts({
-                realm,
-                selectedLocale: locale,
-              });
-
-              await adminClient.realms.deleteRealmLocalizationTexts({
-                realm,
-                selectedLocale: locale,
-                key: translationsForDisplayHeaderToDelete,
-              });
-
-              await adminClient.realms.deleteRealmLocalizationTexts({
-                realm,
-                selectedLocale: locale,
-                key: translationsForDisplayDescriptionToDelete,
-              });
-
-              const updatedData =
-                await adminClient.realms.getRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                });
-              setTableData([updatedData]);
-            } catch {
-              console.error(`Error removing translations for ${locale}`);
-            }
-          }),
-        );
+        await deleteLocalizationKeys({
+          adminClient,
+          realm,
+          locales: combinedLocales,
+          translationValues: [
+            groupToDelete?.displayHeader,
+            groupToDelete?.displayDescription,
+          ],
+          setTableData,
+        });
 
         await save(
           { ...config, groups },
