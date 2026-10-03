@@ -150,4 +150,41 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-48735-drop-mssql-client-att-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-48735-add-mssql-client-att-value-prefix">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <not>
+                    <columnExists tableName="CLIENT_ATTRIBUTES" columnName="VALUE_PREFIX"/>
+                </not>
+            </and>
+        </preConditions>
+        <sql>ALTER TABLE CLIENT_ATTRIBUTES ADD VALUE_PREFIX AS CAST(VALUE AS NVARCHAR(255)) PERSISTED</sql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-48735-create-mssql-client-att-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <not>
+                    <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE_PREFIX"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
