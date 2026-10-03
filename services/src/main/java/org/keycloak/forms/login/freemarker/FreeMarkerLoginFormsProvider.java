@@ -99,6 +99,7 @@ import org.keycloak.theme.ThemeResources;
 import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
+import org.keycloak.theme.beans.MessageAttributeProperties;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
@@ -153,6 +154,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected final Map<String, Object> attributes = new HashMap<>();
     private Function<Map<String, Object>, Map<String, Object>> attributeMapper;
+    private MessageAttributeProperties messageAttributeProperties;
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
@@ -430,9 +432,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         Properties messagesBundle;
         try {
             messagesBundle = theme.getEnhancedMessages(realm, locale);
-            Map<Object, Object> msgParams = new HashMap<>(attributes);
-            msgParams.putAll(messagesBundle);
-            attributes.put("msg", new MessageFormatterMethod(locale, msgParams));
+            messageAttributeProperties = new MessageAttributeProperties(messagesBundle, attributes);
+            attributes.put("msg", new MessageFormatterMethod(locale, messageAttributeProperties));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
@@ -640,6 +641,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
 
             attributes.put("pageId", templateName.substring(0, templateName.length() - 4));
+
+            // Rebind "msg"'s attribute lookups to this final, post-attributeMapper map: if attributeMapper
+            // returned a replacement map rather than mutating this.attributes in place, a ${...} placeholder
+            // inside a translated message string must still see the same map FreeMarker itself renders
+            // against, or the two could silently resolve the same key to different values.
+            if (messageAttributeProperties != null) {
+                messageAttributeProperties.rebind(attributes);
+            }
 
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
