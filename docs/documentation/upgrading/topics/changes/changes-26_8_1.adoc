@@ -17,3 +17,12 @@ Although no issues are expected, the previous behavior can be restored with the 
 bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round-trip true \
   --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
 ----
+
+=== Identity provider mappers no longer create users with a blank username
+// https://github.com/keycloak/keycloak/issues/53164
+
+When the username template of an identity provider mapper could not be fully resolved, the mapper set a blank username and the federated account was created with it. Such an account cannot be found by username, and could not be edited or deleted, because invalidating the user in the cache required a username.
+
+A username template that does not resolve to a non-blank username now fails the login with an error, and `addUser` rejects a blank username. Accounts that were already created with a blank username can be edited and deleted again.
+
+Review the username template of any identity provider mapper that does not resolve for every user, before upgrading.

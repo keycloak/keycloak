@@ -121,6 +121,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         }
@@ -158,7 +162,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
+        return addUser(realm, KeycloakModelUtils.generateId(), username, true, true);
     }
 
     @Override

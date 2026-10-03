@@ -53,7 +53,7 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
 
     private UserFullInvalidationEvent(String id, String username, String email, String realmId, boolean identityFederationEnabled, Map<String, String> federatedIdentities) {
         super(id);
-        this.username = Objects.requireNonNull(username);
+        this.username = username;
         this.email = email;
         this.realmId = Objects.requireNonNull(realmId);
         this.federatedIdentities = federatedIdentities;

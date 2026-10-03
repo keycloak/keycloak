@@ -108,6 +108,21 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
         created.forEach(u -> consumerRealm.cleanup().add(r -> r.users().get(u.getId()).remove()));
     }
 
+    @Test // #53164
+    public void testIdpBrokerLoginRejectsUnresolvableUsernameTemplate() {
+        addUsernameTemplateMapper("unresolvable-username-mapper", "${ALIAS}.${CLAIM.non-existent-claim}");
+
+        createProviderUser();
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+
+        loginPage.fillLogin(PROVIDER_USERNAME, "password");
+        loginPage.submit();
+
+        assertTrue(consumerRealm.admin().users().search("", true).isEmpty(),
+                "A username template that cannot be resolved must not create a user with an empty username");
+    }
+
     private void addUsernameTemplateMapper(String mapperName, String usernameTemplate) {
         // adds to consumer IDP, replaces brokered username with mapperName
         IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();

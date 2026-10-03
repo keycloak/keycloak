@@ -79,7 +79,8 @@ public interface UserProvider extends Provider,
      * @param addDefaultRequiredActions if {@code true}, all default required actions are added to the created user
      * @return model of created user
      *
-     * @throws NullPointerException when username or realm is {@code null}
+     * @throws NullPointerException when realm is {@code null}
+     * @throws ModelException when username is {@code null} or empty
      * @throws ModelDuplicateException when a user with given id or username already exists
      */
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
