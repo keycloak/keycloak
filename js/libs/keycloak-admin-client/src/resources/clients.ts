@@ -76,7 +76,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ClientRepresentation | undefined
+    ClientRepresentation | null
   >({
     method: "GET",
     path: "/{id}",
@@ -303,7 +303,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findProtocolMapperById = this.makeRequest<
     { id: string; mapperId: string },
-    ProtocolMapperRepresentation
+    ProtocolMapperRepresentation | null
   >({
     method: "GET",
     path: "/{id}/protocol-mappers/models/{mapperId}",

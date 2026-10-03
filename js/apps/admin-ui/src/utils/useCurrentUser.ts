@@ -10,7 +10,8 @@ export function useCurrentUser() {
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
 
   useFetch(
-    () => adminClient.users.findOne({ id: whoAmI.userId }),
+    async () =>
+      (await adminClient.users.findOne({ id: whoAmI.userId })) ?? undefined,
     setCurrentUser,
     [whoAmI.userId],
   );

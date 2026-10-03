@@ -89,6 +89,15 @@ Whitespace-only aliases no longer default to the organization name; omitted, nul
 Unicode characters and double quotes remain supported, and existing stored aliases are unchanged.
 Before importing an existing realm, check for rejected alias values and update any application references if aliases must change.
 
+=== JavaScript Admin Client lookups declare `null` for a missing resource
+// https://github.com/keycloak/keycloak/issues/43371
+
+The JavaScript Admin Client methods that look up a single resource and tolerate a 404, such as `users.findOne()`, `clients.findOne()`, `groups.findOne()` and `roles.findOneById()`, now declare `null` instead of `undefined` as their result when the resource does not exist.
+The methods already returned `null` at runtime, so only the TypeScript types change.
+
+If your TypeScript code assigns these results to a variable typed as `T | undefined`, it no longer compiles.
+Change the type to `T | null`, or convert the result with `?? undefined`, and check for `null` where the code checked for `undefined`.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

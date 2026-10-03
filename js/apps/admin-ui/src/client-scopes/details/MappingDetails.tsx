@@ -59,15 +59,17 @@ export default function MappingDetails() {
       let data: ProtocolMapperRepresentation | undefined;
       if (isUpdating) {
         if (isOnClientScope) {
-          data = await adminClient.clientScopes.findProtocolMapper({
-            id,
-            mapperId,
-          });
+          data =
+            (await adminClient.clientScopes.findProtocolMapper({
+              id,
+              mapperId,
+            })) ?? undefined;
         } else {
-          data = await adminClient.clients.findProtocolMapperById({
-            id,
-            mapperId,
-          });
+          data =
+            (await adminClient.clients.findProtocolMapperById({
+              id,
+              mapperId,
+            })) ?? undefined;
         }
         if (!data) {
           throw new Error(t("notFound"));
