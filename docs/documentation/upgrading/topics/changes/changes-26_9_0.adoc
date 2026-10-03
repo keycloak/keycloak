@@ -1,0 +1,28 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Admin client `organizations.findOne` no longer rejects when the organization does not exist
+// https://github.com/keycloak/keycloak/pull/51717
+
+The `organizations.findOne` method in the `@keycloak/keycloak-admin-client` package now resolves to `undefined` when the organization does not exist, instead of rejecting with a 404 error.
+Its declared return type changes from `OrganizationRepresentation` to `OrganizationRepresentation | undefined`.
+
+This aligns the method with the equivalent lookups on other resources, such as `groups.findOne`, `roles.findOneById`, and `clients.findOne`, which already resolve to `undefined` for a missing entity.
+
+After upgrading, code that relies on a rejected promise to detect a missing organization no longer takes that path.
+TypeScript users see a compilation error wherever the result is used without a check.
+Plain JavaScript users receive `undefined` instead of an error, and may only observe the change at a later point in their code.
+
+Replace any handling that catches a 404 from this method with a check for `undefined`:
+
+[source,typescript]
+----
+const organization = await adminClient.organizations.findOne({ id });
+
+if (!organization) {
+  // handle the missing organization
+}
+----
