@@ -58,6 +58,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.pages.VerifyEmailSuccessPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -108,6 +109,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Page
     protected VerifyEmailPage verifyEmailPage;
+
+    @Page
+    protected VerifyEmailSuccessPage verifyEmailSuccessPage;
 
     @Page
     protected VerifyProfilePage verifyProfilePage;
@@ -303,11 +307,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         infoPageSecondBrowser.assertCurrent();
         Assertions.assertEquals("Your account has been updated.", infoPageSecondBrowser.getInfo());
 
-        // Refresh in the original browser. Authentication session is expired and user needs to login from the beginning
+        // Refresh in the original browser. The registration's authentication session is kept now, so this tab is
+        // told the email was verified instead of failing with an expired authentication session.
         infoPage.setDriver(driver);
         driver.navigate().refresh();
+        verifyEmailSuccessPage.assertCurrent();
+        Assertions.assertEquals("Your email address has been verified.", verifyEmailSuccessPage.getInstruction());
+
+        // The user can still start a fresh login from there.
+        oauth.openLoginForm();
         loginPage.assertCurrent();
-        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         loginPage.login("verifyemail-br2", "password");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
