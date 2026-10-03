@@ -337,6 +337,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+        newIdentityProvider.getConfig().put("tokenUrl", "https://example.com/token");
 
         create(newIdentityProvider);
 
@@ -352,8 +353,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         representation.setEnabled(false);
         representation.setStoreToken(true);
-        representation.getConfig().put("clientId", "changedClientId");
-
+        // Changing non-sensitive fields keeps the masked secret reusable
         identityProviderResource.update(representation);
         AdminEventRepresentation event = adminEvents.poll();
         AdminEventAssertion.assertEvent(event, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation, ResourceType.IDENTITY_PROVIDER);
@@ -368,9 +368,18 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         assertFalse(representation.isEnabled());
         assertTrue(representation.isStoreToken());
-        assertEquals("changedClientId", representation.getConfig().get("clientId"));
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
+
+        // Changing clientId requires providing a fresh secret (or secret is cleared)
+        representation.getConfig().put("clientId", "changedClientId");
+        representation.getConfig().put("clientSecret", "updated secret value");
+        identityProviderResource.update(representation);
+        adminEvents.poll();
+
+        representation = identityProviderResource.toRepresentation();
+        assertEquals("changedClientId", representation.getConfig().get("clientId"));
+        assertEquals("updated secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
 
         representation.getConfig().put("clientSecret", "${vault.key}");
         identityProviderResource.update(representation);
@@ -381,6 +390,141 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         assertThat(identityProviderResource.toRepresentation().getConfig(), hasEntry("clientSecret", "${vault.key}"));
         assertEquals("${vault.key}", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
+    }
+
+    private static final String CLIENT_SECRET_REENTRY_REQUIRED =
+            "Client secret must be re-entered when the token URL, client ID, authentication method, or related destination settings are changed";
+
+    @Test
+    public void maskedClientSecretNotReusedWhenTokenUrlChanges() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-idp", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "real-partner-secret");
+        newIdentityProvider.getConfig().put("tokenUrl", "https://idp.example.com/token");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST);
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-idp");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        // Attack: change tokenUrl to attacker endpoint, leave masked secret — rejected
+        representation.getConfig().put("tokenUrl", "https://attacker.example/token");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when token URL changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class));
+        assertEquals("https://idp.example.com/token",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("tokenUrl"), String.class));
+
+        // Change clientId with masked secret — rejected
+        representation = resource.toRepresentation();
+        representation.getConfig().put("clientId", "attacker-client-id");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when clientId changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class));
+        assertEquals("clientId",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientId"), String.class));
+
+        // Change clientAuthMethod with masked secret — rejected
+        representation = resource.toRepresentation();
+        representation.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when clientAuthMethod changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class));
+        assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST,
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientAuthMethod"), String.class));
+
+        // Change tokenIntrospectionUrl with masked secret — rejected
+        representation = resource.toRepresentation();
+        representation.getConfig().put("tokenIntrospectionUrl", "https://idp.example.com/introspect");
+        representation.getConfig().put("clientSecret", "real-partner-secret");
+        resource.update(representation);
+        adminEvents.poll();
+
+        representation = resource.toRepresentation();
+        representation.getConfig().put("tokenIntrospectionUrl", "https://attacker.example/introspect");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when tokenIntrospectionUrl changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class));
+        assertEquals("https://idp.example.com/introspect",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("tokenIntrospectionUrl"), String.class));
+
+        // Unchanged sensitive fields: masked secret is reused
+        representation = resource.toRepresentation();
+        representation.setDisplayName("Still the same credentials");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-idp").getConfig().get("clientSecret"), String.class));
+    }
+
+    @Test
+    public void maskedClientSecretNotReusedWhenDerivedTokenDestinationChanges() {
+        // GitHub derives tokenUrl from baseUrl at provider construction time; stored config often
+        // has no tokenUrl, so destination checks must include baseUrl itself.
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-github", "github");
+        newIdentityProvider.getConfig().put("clientId", "github-client");
+        newIdentityProvider.getConfig().put("clientSecret", "real-github-secret");
+        newIdentityProvider.getConfig().put("baseUrl", "https://github.com");
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-github");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        representation.getConfig().put("baseUrl", "https://attacker.example");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when baseUrl changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-github-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("clientSecret"), String.class));
+        assertEquals("https://github.com",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("baseUrl"), String.class));
+
+        // Unchanged baseUrl: masked secret is reused
+        representation = resource.toRepresentation();
+        representation.setDisplayName("Same GitHub destination");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-github-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("clientSecret"), String.class));
     }
 
     @Test

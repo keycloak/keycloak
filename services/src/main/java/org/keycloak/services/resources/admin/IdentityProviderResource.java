@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -57,6 +58,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -217,7 +219,14 @@ public class IdentityProviderResource {
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
-            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+            if (canReuseMaskedClientSecret(updated)) {
+                updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
+                        ? identityProviderModel.getConfig().get("clientSecret") : null);
+            } else {
+                // Sensitive destination/auth fields changed — require re-entry (same pattern as LDAP)
+                throw new IllegalArgumentException(
+                        "Client secret must be re-entered when the token URL, client ID, authentication method, or related destination settings are changed");
+            }
         }
 
         if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
@@ -231,6 +240,41 @@ public class IdentityProviderResource {
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
+    }
+
+    /**
+     * Config keys that determine where/how a client secret is sent. Includes fields that some
+     * social providers use to derive the token endpoint at runtime (for example GitHub/OpenShift
+     * {@code baseUrl}, Microsoft {@code tenantId}, PayPal {@code sandbox}) so a masked secret
+     * cannot be rebound when only those fields change.
+     */
+    private static final String[] CLIENT_SECRET_DESTINATION_KEYS = {
+            OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL,
+            OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL,
+            "clientId",
+            "baseUrl",
+            "tenantId",
+            "sandbox"
+    };
+
+    /**
+     * Reuse a masked {@code clientSecret} only when fields that determine where/how the secret
+     * is sent are unchanged. Otherwise a delegated IdP manager could rebind the stored secret
+     * to an attacker-controlled token endpoint.
+     */
+    private boolean canReuseMaskedClientSecret(IdentityProviderModel updated) {
+        Map<String, String> existing = identityProviderModel.getConfig() != null
+                ? identityProviderModel.getConfig() : Map.of();
+        Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
+
+        for (String key : CLIENT_SECRET_DESTINATION_KEYS) {
+            if (!Objects.equals(existing.get(key), next.get(key))) {
+                return false;
+            }
+        }
+        return Objects.equals(
+                existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
+                next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
     }
 
 
