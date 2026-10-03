@@ -160,11 +160,11 @@ export default function ClientsSection() {
     return adminClient.clients.find({ ...params });
   };
 
-  const useTab = (tab: ClientsTab) => useRoutableTab(toClients({ realm, tab }));
+  const tab = (tab: ClientsTab) => toClients({ realm, tab });
 
-  const listTab = useTab("list");
-  const initialAccessTokenTab = useTab("initial-access-token");
-  const clientRegistrationTab = useTab("client-registration");
+  const listTab = useRoutableTab(tab("list"));
+  const initialAccessTokenTab = useRoutableTab(tab("initial-access-token"));
+  const clientRegistrationTab = useRoutableTab(tab("client-registration"));
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
