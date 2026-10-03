@@ -2,6 +2,7 @@ package org.keycloak.testframework.server;
 
 import java.util.List;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
@@ -104,6 +105,8 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
 
+        applyFeaturesFromConfig(command);
+
         String supplierConfig = Config.getSupplierConfig(KeycloakServer.class);
         if (supplierConfig != null) {
             KeycloakServerConfig serverConfigOverride = SupplierHelpers.getInstance(supplierConfig);
@@ -112,6 +115,21 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         command = serverConfig.configure(command);
         return command;
+    }
+
+    private static void applyFeaturesFromConfig(KeycloakServerConfigBuilder command) {
+        Config.getConfig().getOptionalValue("kc.features", String.class)
+                .ifPresent(f -> command.features(f.split(",")));
+
+        Config.getConfig().getOptionalValue("kc.features.disabled", String.class)
+                .ifPresent(f -> command.featuresDisabled(f.split(",")));
+
+        for (Profile.Feature feature : Profile.Feature.values()) {
+            // KC_FEATURE_PERSISTENT_USER_SESSIONS maps to kc.feature.persistent.user.sessions in SmallRye
+            String key = "kc.feature." + feature.getUnversionedKey().replace('-', '.');
+            Config.getConfig().getOptionalValue(key, String.class)
+                    .ifPresent(value -> command.option("feature-" + feature.getUnversionedKey(), value));
+        }
     }
 
     @Override
