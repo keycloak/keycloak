@@ -6,7 +6,7 @@
         <div id="kc-logout-confirm" class="content-area">
             <p class="instruction">${msg("logoutConfirmHeader")}</p>
 
-            <form class="form-actions" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+            <form class="form-actions" action="${url.logoutConfirmAction}" data-kc-disable-submit="confirmLogout" method="POST">
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
                 <div class="${properties.kcFormGroupClass!}">
                     <div id="kc-form-options">
