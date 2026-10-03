@@ -132,10 +132,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     "Code expiration is outside the configured credential offer lifespan", Response.Status.BAD_REQUEST);
         }
 
-        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
-
         validateOriginatingSession(offerState, offerStorage);
 
+        // Validate tx_code BEFORE marking the pre-authorized code as used.
+        // This prevents an attacker who only has the QR code (but not the PIN)
+        // from permanently invalidating the credential offer by submitting a wrong tx_code.
         String expTxCode = offerState.getTxCode();
         if (expTxCode != null) {
             if (Strings.isEmpty(txCode)) {
@@ -144,12 +145,15 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                         "Missing TxCode", Response.Status.BAD_REQUEST);
             }
             // Prevent timing attacks - execution time does not depend on where the first difference occurs
-            if (!MessageDigest.isEqual(expTxCode.getBytes(), txCode.getBytes())) {
+            if (!MessageDigest.isEqual(expTxCode.getBytes(StandardCharsets.UTF_8), txCode.getBytes(StandardCharsets.UTF_8))) {
                 event.error(Errors.INVALID_TX_CODE);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                         "Invalid TxCode", Response.Status.BAD_REQUEST);
             }
         }
+
+        // Mark the pre-authorized code as used only after all validations pass
+        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
 
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
