@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
 
 <#if section = "header">
@@ -46,29 +47,20 @@
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
     </div>
 
-    <form action="${url.loginAction}" class="${properties.kcFormGroupClass!}" id="kc-recovery-codes-settings-form" method="post">
+    <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-recovery-codes-settings-form" method="post">
         <input type="hidden" name="generatedRecoveryAuthnCodes" value="${recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesAsString}" />
         <input type="hidden" name="generatedAt" value="${recoveryAuthnCodesConfigBean.generatedAt?c}" />
         <input type="hidden" id="userLabel" name="userLabel" value="${msg("recovery-codes-label-default")}" />
         <@passwordCommons.logoutOtherSessions/>
 
-        <#if isAppInitiatedAction??>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-            <button type="submit"
-                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" value="true" />${msg("recovery-codes-action-cancel")}
-            </button>
-        <#else>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-        </#if>
+        <@buttons.actionGroup horizontal=isAppInitiatedAction?? id="kc-form-buttons">
+            <#if isAppInitiatedAction??>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" fullWidth=false class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
+                <@buttons.button id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" label="recovery-codes-action-cancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" />
+            <#else>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
+            </#if>
+        </@buttons.actionGroup>
     </form>
 
     <script>

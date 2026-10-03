@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
     <#if section = "header">
         ${msg("oauth2DeviceVerificationTitle")}
@@ -22,7 +23,7 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                        <@buttons.button label="doSubmit" fullWidth=false class=["kcButtonLargeClass"] value=msg("doSubmit") />
                     </div>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=true; section>
     <#if section = "header">
         ${kcSanitize(msg("webauthn-error-title"))?no_esc}
@@ -27,10 +28,8 @@
 
         <#if isAppInitiatedAction??>
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form" method="post">
-                <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true">${msg("doCancel")}
-                </button>
+                <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"
+                    class=["kcButtonLargeClass"] value="true" />
             </form>
         </#if>
 

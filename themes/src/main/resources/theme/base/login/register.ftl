@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
@@ -17,8 +18,7 @@
                     <#if passwordRequired?? && (attribute.name == 'username' || (attribute.name == 'email' && realm.registrationEmailAsUsername))>
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcLabelWrapperClass!}">
-                                <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
-                                <span class="required">*</span>
+                                <label for="password" class="${properties.kcLabelClass!}">${msg("password")} <span class="required">*</span></label>
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">
@@ -45,8 +45,7 @@
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcLabelWrapperClass!}">
                                 <label for="password-confirm"
-                                       class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
-                                <span class="required">*</span>
+                                       class="${properties.kcLabelClass!}">${msg("passwordConfirm")} <span class="required">*</span></label>
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">
@@ -97,14 +96,12 @@
                         }
                     </script>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha" 
-                            data-sitekey="${recaptchaSiteKey}" data-callback='onSubmitRecaptcha' data-action='${recaptchaAction}' type="submit">
-                            ${msg("doRegister")}
-                        </button>
+                        <@buttons.button label="doRegister" class=["kcButtonLargeClass"] className="g-recaptcha"
+                            attributes={"data-sitekey": recaptchaSiteKey, "data-callback": "onSubmitRecaptcha", "data-action": recaptchaAction} />
                     </div>
                 <#else>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
+                        <@buttons.button label="doRegister" class=["kcButtonLargeClass"] value=msg("doRegister") />
                     </div>
                 </#if>
             </div>

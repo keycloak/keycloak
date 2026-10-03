@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayInfo=true; section>
     <#if section = "header">
         ${msg("emailVerifyTitle")}
@@ -15,11 +16,11 @@
                 <div class="${properties.kcFormGroupClass!}">
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                         <#if verifyEmail??>
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("emailVerifyResend")}" />
+                            <@buttons.button label="emailVerifyResend" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value=msg("emailVerifyResend") />
                         <#else>
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("emailVerifySend")}" />
+                            <@buttons.button label="emailVerifySend" fullWidth=false class=["kcButtonLargeClass"] value=msg("emailVerifySend") />
                         </#if>
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" formnovalidate>${msg("doCancel")}</button>
+                        <@buttons.button name="cancel-aia" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" formnovalidate="formnovalidate" />
                     </div>
                 </div>
             </form>

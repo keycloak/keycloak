@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout bodyClass="oauth"; section>
     <#if section = "header">
         <#if client.attributes.logoUri??>
@@ -56,8 +57,8 @@
 
                     <div id="kc-form-buttons">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-login" type="submit" value="${msg("doYes")}"/>
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-cancel" type="submit" value="${msg("doNo")}"/>
+                            <@buttons.button name="accept" id="kc-login" label="doYes" fullWidth=false class=["kcButtonLargeClass"] value=msg("doYes") />
+                            <@buttons.button name="cancel" id="kc-cancel" label="doNo" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value=msg("doNo") />
                         </div>
                     </div>
                 </div>

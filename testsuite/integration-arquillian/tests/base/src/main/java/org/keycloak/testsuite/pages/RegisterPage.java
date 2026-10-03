@@ -68,7 +68,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
     @FindBy(name = "termsAccepted")
     private WebElement termsAcceptedInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
