@@ -721,6 +721,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
+        if (username == null) {
+            return null;
+        }
+
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
         query.setParameter("username", username.toLowerCase());
         query.setParameter("realmId", realm.getId());

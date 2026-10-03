@@ -19,6 +19,7 @@ package org.keycloak.models.jpa;
 import org.junit.Test;
 import org.keycloak.models.ModelException;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public class JpaUserProviderTest {
@@ -38,5 +39,10 @@ public class JpaUserProviderTest {
     @Test
     public void rejectsWhitespaceUsername() {
         assertThrows(ModelException.class, () -> provider.addUser(null, null, "   ", true, true));
+    }
+
+    @Test
+    public void lookupByMissingUsernameFindsNobody() {
+        assertNull(provider.getUserByUsername(null, null));
     }
 }
