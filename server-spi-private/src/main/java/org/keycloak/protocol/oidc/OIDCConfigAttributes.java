@@ -78,6 +78,19 @@ public final class OIDCConfigAttributes {
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
 
+    /**
+     * Client-level override of the realm setting "Revoke Refresh Token" (refresh token rotation).
+     * Values: "true" or "false". Unset (or empty) means the realm setting is inherited.
+     */
+    public static final String REVOKE_REFRESH_TOKEN = "revoke.refresh.token";
+
+    /**
+     * Client-level override of the realm setting "Refresh Token Max Reuse". Only effective when refresh token
+     * revocation is enabled for the client (either via {@link #REVOKE_REFRESH_TOKEN} or inherited from the realm).
+     * Unset (or empty) means the realm setting is inherited.
+     */
+    public static final String REFRESH_TOKEN_MAX_REUSE = "refresh.token.max.reuse";
+
     public static final String USE_LOWER_CASE_IN_TOKEN_RESPONSE = "token.response.type.bearer.lower-case";
 
     public static final String USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE = "access.token.header.type.rfc9068";
