@@ -147,7 +147,8 @@ public class SsfTransmitterPushDeliveryTests {
                     pushes.add(new CapturedPush(
                             new String(is.readAllBytes(), StandardCharsets.UTF_8),
                             exchange.getRequestHeaders().getFirst("Authorization"),
-                            exchange.getRequestHeaders().getFirst("Content-Type")));
+                            exchange.getRequestHeaders().getFirst("Content-Type"),
+                            exchange.getRequestHeaders().getFirst("Accept")));
                 }
                 HttpServerUtil.sendResponse(exchange, 202, Map.of());
             }
@@ -188,6 +189,9 @@ public class SsfTransmitterPushDeliveryTests {
                 "push authorization header should be forwarded verbatim");
         Assertions.assertEquals(Ssf.APPLICATION_SECEVENT_JWT_TYPE, captured.contentType,
                 "content-type should be application/secevent+jwt");
+        // RFC 8935 §2.1: the push request MUST accept application/json
+        Assertions.assertEquals("application/json", captured.accept,
+                "push request must carry Accept: application/json");
 
         JsonNode set = decodeSet(captured);
 
@@ -566,11 +570,13 @@ public class SsfTransmitterPushDeliveryTests {
         final String body;
         final String authorizationHeader;
         final String contentType;
+        final String accept;
 
-        CapturedPush(String body, String authorizationHeader, String contentType) {
+        CapturedPush(String body, String authorizationHeader, String contentType, String accept) {
             this.body = body;
             this.authorizationHeader = authorizationHeader;
             this.contentType = contentType;
+            this.accept = accept;
         }
     }
 
