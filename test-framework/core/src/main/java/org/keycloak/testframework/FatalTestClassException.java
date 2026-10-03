@@ -11,4 +11,8 @@ public class FatalTestClassException extends RuntimeException {
         super(message);
     }
 
+    public FatalTestClassException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
