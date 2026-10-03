@@ -20,21 +20,9 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext<IdentityProviderRepresentation>();
 
-  const validateSignature = useWatch({
-    control,
-    name: "config.validateSignature",
-  });
   const isPkceEnabled = useWatch({
     control,
     name: "config.pkceEnabled",
-  });
-  const jwtAuthorizationGrantEnabled = useWatch({
-    control,
-    name: "config.jwtAuthorizationGrantEnabled",
-  });
-  const supportsClientAssertions = useWatch({
-    control,
-    name: "config.supportsClientAssertions",
   });
 
   return (
@@ -94,11 +82,13 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
             isDisabled={readOnly}
             stringify
           />
-          {(validateSignature === "true" ||
-            jwtAuthorizationGrantEnabled === "true" ||
-            supportsClientAssertions == "true") && (
-            <JwksSettings readOnly={readOnly} />
-          )}
+          {/*
+            JWKS/public-key settings are always shown for OIDC providers: even
+            when signature validation of ID/access tokens is disabled, the IDP's
+            public key is still required to validate inbound backchannel logout
+            tokens, whose signatures are always verified.
+          */}
+          <JwksSettings readOnly={readOnly} />
         </>
       )}
       <DefaultSwitchControl
