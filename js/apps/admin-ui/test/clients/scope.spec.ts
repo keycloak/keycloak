@@ -321,6 +321,8 @@ test.describe
   const clientScopeName = "evaluate-roles-scope";
   const realmRoleName = "evaluate-realm-role";
   const clientRoleName = "evaluate-client-role";
+  const otherClientName = "evaluate-other-client";
+  const otherClientRoleName = "evaluate-other-client-role";
   const realmName = `clients-realm-${uuid()}`;
 
   test.beforeAll(async () => {
@@ -340,6 +342,16 @@ test.describe
       name: clientRoleName,
       realm: realmName,
     });
+    const { id: otherClientUuid } = await adminClient.createClient({
+      realm: realmName,
+      protocol: "openid-connect",
+      clientId: otherClientName,
+      publicClient: false,
+    });
+    await adminClient.createClientRole(otherClientUuid, {
+      name: otherClientRoleName,
+      realm: realmName,
+    });
     await adminClient.createClientScope({
       name: clientScopeName,
       protocol: "openid-connect",
@@ -354,6 +366,12 @@ test.describe
       clientScopeName,
       clientName,
       [clientRoleName],
+      realmName,
+    );
+    await adminClient.addClientScopeMappingsToClientScope(
+      clientScopeName,
+      otherClientName,
+      [otherClientRoleName],
       realmName,
     );
     await adminClient.addDefaultClientScopeInClient(
@@ -379,5 +397,6 @@ test.describe
 
     await assertEffectiveRoleScopeMapping(page, realmRoleName);
     await assertEffectiveRoleScopeMapping(page, clientRoleName);
+    await assertEffectiveRoleScopeMapping(page, otherClientRoleName);
   });
 });
