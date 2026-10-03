@@ -48,6 +48,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.Templates;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -254,8 +255,12 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
         context.getEvent().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail);
         try {
-            session.getProvider(EmailTemplateProvider.class).setAuthenticationSession(authenticationSession).setRealm(realm)
-                    .setUser(user).sendEmailUpdateConfirmation(link, TimeUnit.SECONDS.toMinutes(validityInSecs), newEmail);
+            session.getProvider(EmailTemplateProvider.class)
+                    .setAttribute(Constants.CLIENT_ID, authenticationSession.getClient().getClientId())
+                    .setAuthenticationSession(authenticationSession)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendEmailUpdateConfirmation(link, TimeUnit.SECONDS.toMinutes(validityInSecs), newEmail);
         } catch (EmailException e) {
             logger.error("Failed to send email for email update", e);
             context.getEvent().error(Errors.EMAIL_SEND_FAILED);
