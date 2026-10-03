@@ -341,10 +341,10 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
             String username = context.getModelUsername();
-            if (username == null) {
+            if (Validation.isBlank(username)) {
                 if (this.realm.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
                     username = context.getEmail();
-                } else if (context.getUsername() == null) {
+                } else if (Validation.isBlank(context.getUsername())) {
                     username = context.getIdpConfig().getAlias() + "." + context.getId();
                 } else {
                     username = context.getUsername();

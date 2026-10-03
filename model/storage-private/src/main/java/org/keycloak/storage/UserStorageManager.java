@@ -497,6 +497,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
         if (username.startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX)) {
             // Don't use federation for service account user
             return localStorage().addUser(realm, username);
@@ -798,6 +802,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
         return localStorage().addUser(realm, id, username.toLowerCase(), addDefaultRoles, addDefaultRequiredActions);
     }
 
