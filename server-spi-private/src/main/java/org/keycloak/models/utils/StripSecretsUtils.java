@@ -39,6 +39,7 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.workflow.WorkflowStepProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -208,6 +209,23 @@ public class StripSecretsUtils {
                 .ifPresent(components -> components
                         .forEach((providerType, componentList)-> componentList
                                 .forEach(component -> stripComponentExport(session, providerType, component, fnGetConfigProperties))));
+
+        Optional.ofNullable(rep.getWorkflows()).ifPresent(workflows -> workflows.forEach(workflow ->
+                Optional.ofNullable(workflow.getSteps()).ifPresent(steps -> steps.forEach(step -> {
+                    if (step.getConfig() == null) {
+                        return;
+                    }
+                    Map<String, ProviderConfigProperty> properties = fnGetConfigProperties.getComponentProperties(
+                            session, WorkflowStepProvider.class.getName(), step.getUses());
+                    properties.values().stream().filter(ProviderConfigProperty::isSecret).forEach(property -> {
+                        if (step.getConfig().containsKey(property.getName())) {
+                            List<String> values = step.getConfig().get(property.getName());
+                            step.getConfig().put(property.getName(), values == null || values.isEmpty()
+                                    ? Collections.singletonList(ComponentRepresentation.SECRET_VALUE)
+                                    : values.stream().map(StripSecretsUtils::maskNonVaultValue).collect(Collectors.toList()));
+                        }
+                    });
+                }))));
 
         Optional.ofNullable(rep.getUsers())
                 .ifPresent(users -> users.forEach(StripSecretsUtils::stripUser));

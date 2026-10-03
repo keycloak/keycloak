@@ -9,6 +9,23 @@ Workflows can be managed through the Admin Console or the Admin REST API.
 Only realm administrators with the appropriate permissions can manage workflows as they are considered sensitive operations.
 For more details, see <<_understanding_different_types_realm_admins_,Understanding different types of Realm Admins>>.
 
+== Exporting and importing workflow definitions
+
+Realm exports include workflow definitions in the `workflows` array. Realm imports restore these definitions through the
+workflow provider, using the same validation as workflow creation. For an Admin Console or Admin REST API realm export,
+workflow definitions are included only for realm administrators who can access the Workflows API. Secret properties
+declared by workflow step providers are masked in administrative exports; command-line exports retain them.
+
+Exported definitions include workflow settings and step configuration, but not in-progress workflow executions.
+Step identifiers are regenerated on import. Workflows are restored after the other realm resources, so restoring users
+does not activate the imported workflows. The workflows feature must be enabled to import workflow definitions.
+When the feature is disabled, command-line exports preserve stored workflow definitions in the legacy component format;
+administrative exports omit them.
+
+Complete workflow component definitions from older realm exports are also accepted. Configuration already omitted by an
+older administrative export cannot be recovered. Do not combine legacy workflow components and the `workflows` array in
+the same import. Importing workflows into an existing realm through the partial-import endpoint is not supported.
+
 == Managing workflows through the Admin Console
 
 To manage workflows through the Admin Console, you can follow these steps:
@@ -56,8 +73,6 @@ are going to be allowed to migrate realm resources scheduled for a specific step
 For now, the only option is to either wait for all active instances to complete or to delete the workflow and create a new one.
 Note that deleting a workflow will also delete all its active instances, therefore, realm resources associated with those instances
 will not be processed further, and they would need to be re-associated with a new workflow instance if needed.
-
-
 
 
 

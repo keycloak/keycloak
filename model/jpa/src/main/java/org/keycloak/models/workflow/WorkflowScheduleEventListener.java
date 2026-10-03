@@ -73,7 +73,7 @@ public final class WorkflowScheduleEventListener implements ClusterListener, Pro
 
         int intervalSecs = workflowEvent.getIntervalSecs();
         int lastScheduleRun = workflowEvent.getLastScheduleRun();
-        int initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(lastScheduleRun, intervalSecs);
+        long initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(lastScheduleRun, intervalSecs);
         String realmId = session.getContext().getRealm().getId();
         ScheduledWorkflowRunner runner = new ScheduledWorkflowRunner(workflowId, realmId, intervalSecs);
         timer.scheduleTask(runner, initialDelaySecs * 1000L, intervalSecs * 1000L);
