@@ -15,34 +15,35 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc;
+package org.keycloak.tests.oidc;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-
 import jakarta.ws.rs.core.Response;
-
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
 /**
@@ -50,77 +51,17 @@ import org.junit.jupiter.api.Assertions;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class AudienceTest extends AbstractOIDCScopeTest {
 
-    private static String userId;
+    @InjectRealm(config = AudienceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
 
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        // Create service client with some client role
-        ClientRepresentation client1 = new ClientRepresentation();
-        client1.setClientId("service-client");
-        client1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        client1.setBearerOnly(true);
-        client1.setBaseUrl("http://foo/service-client");
-        testRealm.getClients().add(client1);
-
-        RoleRepresentation role1 = new RoleRepresentation();
-        role1.setName("role1");
-        testRealm.getRoles().getClient().put("service-client", Arrays.asList(role1));
-
-        // Disable FullScopeAllowed for the 'test-app' client
-        ClientRepresentation testApp = testRealm.getClients().stream().filter((ClientRepresentation client) -> {
-            return "test-app".equals(client.getClientId());
-        }).findFirst().get();
-
-        testApp.setFullScopeAllowed(false);
-
-        // Create sample user
-        UserRepresentation user = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
-                .username("john")
-                .enabled(true)
-                .email("john@email.cz")
-                .firstName("John")
-                .lastName("Doe")
-                .password("password")
-                .clientRoles("account", "manage-account")
-                .clientRoles("account", "view-profile")
-                .clientRoles("service-client", "role1")
-                .build();
-        testRealm.getUsers().add(user);
-    }
-
-    @Override
-    public void importTestRealms() {
-        super.importTestRealms();
-        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
-    }
-
-    @Before
-    public void beforeTest() {
-        // Check if already exists
-        ClientScopeResource clientScopeRes = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "audience-scope");
-        if (clientScopeRes != null) {
-            return;
-        }
-
-        // Create client scope 'audience-scope' and add as optional scope to the 'test-app' client
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("audience-scope");
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response resp = managedRealm.admin().clientScopes().create(clientScope);
-        String clientScopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
-
-        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        client.addOptionalClientScope(clientScopeId);
-    }
-
+    @InjectClient(config = AudienceClientConfig.class)
+    ManagedClient client;
 
     @Test
-    public void testAudienceProtocolMapperWithClientAudience() throws Exception {
+    public void testAudienceProtocolMapperWithClientAudience() {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper", "service-client",
                 null, true, false, true);
@@ -129,15 +70,17 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         String mapperId = ApiUtil.getCreatedId(resp);
         resp.close();
 
+        String userId = getUserId();
         // Login and check audiences in the token (just accessToken contains it)
+        oauth.client(client.getClientId(), "password");
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .userId(userId).getEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", client.getClientId());
 
-        assertAudiences(tokens.accessToken, "test-app", "service-client");
-        assertAudiences(tokens.idToken, "test-app");
+        assertAudiences(tokens.accessToken, client.getClientId(), "service-client");
+        assertAudiences(tokens.idToken, client.getClientId());
 
         // Revert
         clientScope.getProtocolMappers().delete(mapperId);
@@ -145,7 +88,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
 
 
     @Test
-    public void testAudienceProtocolMapperWithCustomAudience() throws Exception {
+    public void testAudienceProtocolMapperWithCustomAudience() {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper 1", null,
                 "http://host/service/ctx1", true, false, true);
@@ -160,19 +103,25 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         String mapper2Id = ApiUtil.getCreatedId(resp);
         resp.close();
 
+        String userId = getUserId();
         // Login and check audiences in the token
+        oauth.client(client.getClientId(), "password");
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
-                .userId(userId).getEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
 
-        assertAudiences(tokens.accessToken, "test-app", "http://host/service/ctx1", "http://host/service/ctx2");
-        assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", client.getClientId());
+
+        assertAudiences(tokens.accessToken, client.getClientId(), "http://host/service/ctx1", "http://host/service/ctx2");
+        assertAudiences(tokens.idToken, client.getClientId(), "http://host/service/ctx2");
 
         // Revert
         clientScope.getProtocolMappers().delete(mapper1Id);
         clientScope.getProtocolMappers().delete(mapper2Id);
+    }
+
+    private String getUserId() {
+        return AdminApiUtil.findUserByUsername(managedRealm.admin(), "john").getId();
     }
 
 
@@ -181,5 +130,56 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         Collection<String> expectedAudiences = Arrays.asList(expectedAudience);
         Assertions.assertTrue(expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences),
                 "Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences);
+    }
+
+    private static class AudienceRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.name("test")
+                    .clients(
+                            ClientBuilder.create("service-client")
+                                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                    .bearerOnly(true)
+                                    .baseUrl("http://foo/service-client")
+                    )
+                    .clientRoles("service-client", "role1")
+                    .clientScopes(
+                            ClientScopeBuilder.create()
+                                    .name("profile")
+                                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL),
+                            ClientScopeBuilder.create()
+                                    .name("email")
+                                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL),
+                            ClientScopeBuilder.create()
+                                    .name("audience-scope")
+                                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    )
+                    .users(
+                            UserBuilder.create("john")
+                                    .email("john@email.cz")
+                                    .firstName("John")
+                                    .lastName("Doe")
+                                    .password("password")
+                                    .clientRoles("account", "manage-account", "view-profile")
+                                    .clientRoles("service-client", "role1")
+                    );
+        }
+    }
+
+    private static class AudienceClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client
+                    .clientId("audience-client")
+                    .secret("password")
+                    .redirectUris("*")
+                    .fullScopeEnabled(false)
+                    .defaultClientScopes("profile", "email")
+                    .optionalClientScopes("audience-scope")
+                    .protocolMappers(ProtocolMapperUtil.createAudienceMapper("audience-audience-client", null, "audience-client", true, false, true)
+                    );
+        }
     }
 }
