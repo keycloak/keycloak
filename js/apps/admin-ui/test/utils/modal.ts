@@ -1,4 +1,5 @@
-import { expect, Page } from "@playwright/test";
+import { expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function assertModalTitle(page: Page, title: string) {
   await expect(page.getByText(title, { exact: true })).toBeVisible();

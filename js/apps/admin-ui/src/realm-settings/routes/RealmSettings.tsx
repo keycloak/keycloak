@@ -1,32 +1,20 @@
 import { lazy } from "react";
-import type { Path } from "react-router-dom";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
+import {
+  RealmSettingsRoutePath,
+  RealmSettingsRouteWithTabPath,
+  type RealmSettingsParams,
+  type RealmSettingsTab,
+  toRealmSettings,
+} from "./RealmSettings.routes";
 
-export type RealmSettingsTab =
-  | "general"
-  | "login"
-  | "email"
-  | "themes"
-  | "keys"
-  | "events"
-  | "localization"
-  | "security-defenses"
-  | "sessions"
-  | "tokens"
-  | "client-policies"
-  | "user-profile"
-  | "user-registration";
-
-export type RealmSettingsParams = {
-  realm: string;
-  tab?: RealmSettingsTab;
-};
+export type { RealmSettingsParams, RealmSettingsTab };
+export { toRealmSettings };
 
 const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 
 export const RealmSettingsRoute: AppRouteObject = {
-  path: "/:realm/realm-settings",
+  path: RealmSettingsRoutePath,
   element: <RealmSettingsSection />,
   handle: {
     access: "view-realm",
@@ -36,15 +24,5 @@ export const RealmSettingsRoute: AppRouteObject = {
 
 export const RealmSettingsRouteWithTab: AppRouteObject = {
   ...RealmSettingsRoute,
-  path: "/:realm/realm-settings/:tab",
-};
-
-export const toRealmSettings = (params: RealmSettingsParams): Partial<Path> => {
-  const path = params.tab
-    ? RealmSettingsRouteWithTab.path
-    : RealmSettingsRoute.path;
-
-  return {
-    pathname: generateEncodedPath(path, params),
-  };
+  path: RealmSettingsRouteWithTabPath,
 };

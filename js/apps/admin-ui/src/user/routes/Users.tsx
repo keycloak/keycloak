@@ -1,16 +1,20 @@
 import { lazy } from "react";
-import { generateEncodedPath } from "../../utils/generateEncodedPath";
-import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
+import {
+  type UsersParams,
+  type UserTab,
+  UsersRoutePath,
+  UsersRouteWithTabPath,
+  toUsers,
+} from "./Users.routes";
 
-export type UserTab = "list" | "permissions";
-
-export type UsersParams = { realm: string; tab?: UserTab };
+export type { UserTab, UsersParams };
+export { toUsers };
 
 const UsersSection = lazy(() => import("../UsersSection"));
 
 export const UsersRoute: AppRouteObject = {
-  path: "/:realm/users",
+  path: UsersRoutePath,
   element: <UsersSection />,
   handle: {
     access: "query-users",
@@ -20,13 +24,5 @@ export const UsersRoute: AppRouteObject = {
 
 export const UsersRouteWithTab: AppRouteObject = {
   ...UsersRoute,
-  path: "/:realm/users/:tab",
-};
-
-export const toUsers = (params: UsersParams): Partial<Path> => {
-  const path = params.tab ? UsersRouteWithTab.path : UsersRoute.path;
-
-  return {
-    pathname: generateEncodedPath(path, params),
-  };
+  path: UsersRouteWithTabPath,
 };
