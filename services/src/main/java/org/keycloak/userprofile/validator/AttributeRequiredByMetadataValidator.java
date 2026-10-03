@@ -54,7 +54,12 @@ public class AttributeRequiredByMetadataValidator implements SimpleValidator {
             return context;
         }
 
-        if (metadata.isReadOnly(attContext)) {
+        // Skipping the check for a read-only attribute forgives a value the user has no way to fix through this
+        // context - but only when that forgiveness is actually allowed here (see
+        // AttributeMetadata#isReadOnlyBypassAllowed). A decorator can disable it for an attribute whose value it
+        // establishes itself (e.g. from an external user storage), so a missing required value is never silently
+        // let through just because the field happens to be read-only.
+        if (metadata.isReadOnly(attContext) && metadata.isReadOnlyBypassAllowed(attContext)) {
             return context;
         }
 
