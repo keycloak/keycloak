@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProvider;
@@ -55,7 +56,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                 }).forEach(this::buildSchema);
     }
 
-    private void buildSchema(ModelSchema<?, ?> modelSchema) {
+    private <M extends Model, R> void buildSchema(ModelSchema<M, R> modelSchema) {
         Schema rep = new Schema();
         rep.setId(modelSchema.getId());
         rep.setName(modelSchema.getName());
@@ -64,10 +65,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
         // Collect top-level attributes, nesting sub-attributes under their parent
         Map<String, Attribute> topLevelAttributes = new HashMap<>();
 
-        for (org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute : modelSchema.getAttributes().values()) {
+        for (org.keycloak.scim.resource.schema.attribute.Attribute<M, R> attribute : modelSchema.getAttributes().values()) {
             String name = attribute.getName();
 
-            if (name.startsWith("meta.")) {
+            if (name.startsWith("meta.") || !modelSchema.isDiscoverable(attribute)) {
                 continue;
             }
 
@@ -107,7 +108,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
-                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setMutability(getMutability(modelSchema, attribute));
                     subAttr.setCaseExact(attribute.isCaseExact());
                     subAttr.setUniqueness(attribute.getUniqueness());
 
@@ -136,7 +137,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
-                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setMutability(getMutability(modelSchema, attribute));
                     subAttr.setRequired(attribute.isRequired());
                     subAttr.setCaseExact(attribute.isCaseExact());
                     subAttr.setUniqueness(attribute.getUniqueness());
@@ -150,14 +151,14 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                 } else {
                     String cacheKey = parentName + ":" + relativeName;
                     topLevelAttributes.computeIfAbsent(cacheKey, k -> {
-                        Attribute attr = createTopLevelAttribute(attribute, relativeName);
+                        Attribute attr = createTopLevelAttribute(modelSchema, attribute, relativeName);
                         addToExtensionSchema(parentName, attr);
                         return attr;
                     });
                 }
             } else {
                 // Top-level attribute — only add if not already created as a parent
-                topLevelAttributes.computeIfAbsent(name, k -> createTopLevelAttribute(attribute, k));
+                topLevelAttributes.computeIfAbsent(name, k -> createTopLevelAttribute(modelSchema, attribute, k));
             }
         }
 
@@ -180,19 +181,26 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
         }).getAttributes().add(attr);
     }
 
-    private Attribute createTopLevelAttribute(org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute, String name) {
+    private <M extends Model, R> Attribute createTopLevelAttribute(ModelSchema<M, R> modelSchema, org.keycloak.scim.resource.schema.attribute.Attribute<M, R> attribute, String name) {
         Attribute attr = new Attribute();
 
         attr.setName(name);
         attr.setType(attribute.getType());
         attr.setMultiValued(attribute.isMultivalued());
         attr.setReturned(attribute.getReturned());
-        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+        attr.setMutability(getMutability(modelSchema, attribute));
         attr.setRequired(attribute.isRequired());
         attr.setCaseExact(attribute.isCaseExact());
         attr.setUniqueness(attribute.getUniqueness());
 
         return attr;
+    }
+
+    private <M extends Model, R> String getMutability(ModelSchema<M, R> modelSchema, org.keycloak.scim.resource.schema.attribute.Attribute<M, R> attribute) {
+        if (attribute.isImmutable()) {
+            return "immutable";
+        }
+        return modelSchema.isReadOnly(attribute) ? "readOnly" : "readWrite";
     }
 
 
