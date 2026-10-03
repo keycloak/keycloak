@@ -212,8 +212,7 @@ export class KeycloakAdminClient {
   }
 
   public getGlobalRequestArgOptions():
-    | Pick<RequestArgs, "catchNotFound">
-    | undefined {
+    Pick<RequestArgs, "catchNotFound"> | undefined {
     return this.#globalRequestArgOptions;
   }
 

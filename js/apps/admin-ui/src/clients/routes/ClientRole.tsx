@@ -4,10 +4,7 @@ import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientRoleTab =
-  | "details"
-  | "attributes"
-  | "users-in-role"
-  | "associated-roles";
+  "details" | "attributes" | "users-in-role" | "associated-roles";
 
 export type ClientRoleParams = {
   realm: string;

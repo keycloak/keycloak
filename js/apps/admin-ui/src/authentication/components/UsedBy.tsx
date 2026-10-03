@@ -147,7 +147,7 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
 
   const clientRefs = usedBy?.clientRefs;
   const clientsOrFallback: UsedByClientRef[] = useMemo(() => {
-    if (!usedBy || usedBy.type !== "SPECIFIC_CLIENTS") {
+    if (usedBy?.type !== "SPECIFIC_CLIENTS") {
       return [];
     }
     if (clientRefs && clientRefs.length > 0) {

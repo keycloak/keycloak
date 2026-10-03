@@ -449,7 +449,7 @@ export const CapabilityConfig = ({
               id="keyForCodeExchange"
               label={t("keyForCodeExchange")}
               labelIcon={t("keyForCodeExchangeHelp")}
-              controller={{ control }}
+              controller={{}}
               name={pkceCodeChallengeMethodField}
               options={[
                 { key: "S256", value: "S256" },

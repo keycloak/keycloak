@@ -13,7 +13,7 @@ export enum SelectVariant {
 export const propertyToString = (prop: string | number | undefined) =>
   typeof prop === "number" ? prop + "px" : prop;
 
-export type KeycloakSelectProps<> = Omit<
+export type KeycloakSelectProps = Omit<
   SelectProps,
   "name" | "toggle" | "selected" | "onClick" | "onSelect" | "variant"
 > & {

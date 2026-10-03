@@ -205,7 +205,7 @@ export default function FlowDetails() {
 
   const addFlow = async (
     flow: string,
-    { name, description = "", type, provider }: Flow,
+    { name, description, type, provider }: Flow,
   ) => {
     try {
       await adminClient.authenticationManagement.addFlowToFlow({

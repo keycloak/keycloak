@@ -43,11 +43,7 @@ const inOutClasses = new Map<string, string>([
 ]);
 
 type NodeType =
-  | "conditional"
-  | "startSubFlow"
-  | "endSubFlow"
-  | "input"
-  | "output";
+  "conditional" | "startSubFlow" | "endSubFlow" | "input" | "output";
 
 type IntermediateFlowResult = {
   startId: string;

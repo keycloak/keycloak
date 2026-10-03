@@ -34,8 +34,10 @@ import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
 import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
 import { COMPONENTS } from "../resource-types/ResourceType";
 
-interface EvaluateFormInputs
-  extends Omit<ResourceEvaluation, "context" | "resources"> {
+interface EvaluateFormInputs extends Omit<
+  ResourceEvaluation,
+  "context" | "resources"
+> {
   authScopes: string[];
   user: string[];
   clients: string[];

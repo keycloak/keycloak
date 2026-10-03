@@ -33,11 +33,7 @@ import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
 
 export type ColumnName =
-  | "username"
-  | "start"
-  | "lastAccess"
-  | "clients"
-  | "type";
+  "username" | "start" | "lastAccess" | "clients" | "type";
 
 export type SessionsTableProps = {
   loader: LoaderFunction<UserSessionRepresentation>;

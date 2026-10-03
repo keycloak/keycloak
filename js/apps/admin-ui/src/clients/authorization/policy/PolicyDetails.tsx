@@ -86,7 +86,7 @@ export default function PolicyDetails() {
             id: permissionClientId ?? id,
             type: policyType!,
             policyId,
-          }) as PolicyRepresentation | undefined,
+          }) as Promise<PolicyRepresentation | undefined>,
           adminClient.clients.getAssociatedPolicies({
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
             id: permissionClientId ?? id,
