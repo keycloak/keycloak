@@ -17,7 +17,6 @@
 
 package org.keycloak.tests.client;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,7 +99,12 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation client = createRep();
 
         OIDCClientRepresentation response = reg.oidc().create(client);
+        return response;
+    }
 
+    private OIDCClientRepresentation createWithCleanup(OIDCClientRepresentation client) throws ClientRegistrationException {
+        OIDCClientRepresentation response = reg.oidc().create(client);
+        managedRealm.cleanup().add(r -> r.clients().delete(response.getClientId()));
         return response;
     }
 
@@ -1047,5 +1051,35 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         clientRep.setPostLogoutRedirectUris(Collections.singletonList("-"));
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         assertTrue(response.getPostLogoutRedirectUris().isEmpty());
+    }
+
+    @Test
+    public void testApplicationTypeDefault() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+        OIDCClientRepresentation response = createWithCleanup(clientRep);
+        assertEquals("web", response.getApplicationType());
+    }
+
+    @Test
+    public void testApplicationTypeWeb() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setApplicationType("web");
+        OIDCClientRepresentation response = createWithCleanup(clientRep);
+        assertEquals("web", response.getApplicationType());
+    }
+
+    @Test
+    public void testApplicationTypeNative() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setApplicationType("native");
+        OIDCClientRepresentation response = createWithCleanup(clientRep);
+        assertEquals("native", response.getApplicationType());
+    }
+
+    @Test
+    public void testApplicationTypeInvalid() {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setApplicationType("invalid");
+        assertCreateFail(clientRep, 400, "invalid_client_metadata");
     }
 }
