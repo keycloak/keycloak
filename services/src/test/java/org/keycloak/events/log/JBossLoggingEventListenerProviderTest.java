@@ -242,15 +242,17 @@ public class JBossLoggingEventListenerProviderTest {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setId("id");
         adminEvent.setOperationType(OperationType.UPDATE);
+        adminEvent.setRealmId("realm-id");
+        adminEvent.setRealmName("realm-name");
+        adminEvent.setResourceType(ResourceType.USER);
+        adminEvent.setResourcePath("resource-path");
         AuthDetails authDetails = new AuthDetails();
-        authDetails.setRealmId("realm-id");
-        authDetails.setRealmName("realm-name");
+        authDetails.setRealmId("auth-realm-id");
+        authDetails.setRealmName("auth-realm-name");
         authDetails.setClientId("client-id");
         authDetails.setUserId("user-id");
         authDetails.setIpAddress("localhost");
         adminEvent.setAuthDetails(authDetails);
-        adminEvent.setResourceType(ResourceType.USER);
-        adminEvent.setResourcePath("resource-path");
         adminEvent.setError(error);
         return adminEvent;
     }
@@ -261,13 +263,15 @@ public class JBossLoggingEventListenerProviderTest {
 
     private static void assertAdminEvent(AdminEvent adminEvent, String message, String quote) {
         assertAdminEventKey(message, "operationType", adminEvent.getOperationType().name(), quote);
-        assertAdminEventKey(message, "realmId", adminEvent.getAuthDetails().getRealmId(), quote);
-        assertAdminEventKey(message, "realmName", adminEvent.getAuthDetails().getRealmName(), quote);
-        assertAdminEventKey(message, "clientId", adminEvent.getAuthDetails().getClientId(), quote);
-        assertAdminEventKey(message, "userId", adminEvent.getAuthDetails().getUserId(), quote);
-        assertAdminEventKey(message, "ipAddress", adminEvent.getAuthDetails().getIpAddress(), quote);
+        assertAdminEventKey(message, "realmId", adminEvent.getRealmId(), quote);
+        assertAdminEventKey(message, "realmName", adminEvent.getRealmName(), quote);
         assertAdminEventKey(message, "resourceType", adminEvent.getResourceTypeAsString(), quote);
         assertAdminEventKey(message, "resourcePath", adminEvent.getResourcePath(), quote);
+        assertAdminEventKey(message, "authRealmId", adminEvent.getAuthDetails().getRealmId(), quote);
+        assertAdminEventKey(message, "authRealmName", adminEvent.getAuthDetails().getRealmName(), quote);
+        assertAdminEventKey(message, "authClientId", adminEvent.getAuthDetails().getClientId(), quote);
+        assertAdminEventKey(message, "authUserId", adminEvent.getAuthDetails().getUserId(), quote);
+        assertAdminEventKey(message, "authIpAddress", adminEvent.getAuthDetails().getIpAddress(), quote);
         if (adminEvent.getError() != null) {
             assertAdminEventKey(message, "error", adminEvent.getError(), quote);
         } else {
