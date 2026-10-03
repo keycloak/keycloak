@@ -78,8 +78,8 @@ import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+import static org.keycloak.organization.utils.Organizations.isValidDomain;
 import static org.keycloak.organization.utils.Organizations.resolveByDomain;
-import static org.keycloak.organization.utils.Organizations.validateDomain;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
@@ -305,7 +305,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         String emailDomain = domain.toLowerCase();
 
-        validateDomain(emailDomain);
+        if (!isValidDomain(emailDomain)) {
+            return null;
+        }
 
         RealmModel realm = getRealm();
         TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByDomainName", OrganizationEntity.class);
