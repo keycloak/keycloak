@@ -172,6 +172,12 @@ public class RecoveryAuthnCodesAuthenticatorTest {
                 .userId(event1.getUserId())
                 .details(Details.USERNAME, testUser.getUsername())
                 .details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).getEvent();
+        String storedCredentialId = testUser.admin().credentials().stream()
+                .filter(credential -> RecoveryAuthnCodesCredentialModel.TYPE.equals(credential.getType()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+        assertEquals(storedCredentialId, event2.getDetails().get(Details.CREDENTIAL_ID));
         event2 = EventAssertion.expectLoginSuccess(events.poll()).sessionId(event2.getDetails().get(Details.CODE_ID)).userId(event2.getUserId())
                 .details(Details.USERNAME, testUser.getUsername()).getEvent();
 
