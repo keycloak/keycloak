@@ -199,11 +199,46 @@ NOTE: If the TLS connection is terminated at the reverse proxy (edge termination
 
 === Trusted Proxies
 
-To ensure that proxy headers are used only from proxies you trust, set the `proxy-trusted-addresses` option to a comma-separated list of IP addresses (IPv4 or IPv6) or Classless Inter-Domain Routing (CIDR) notations.
+By default, {project_name} accepts proxy headers from any source. To restrict this, set the `proxy-trusted-addresses` option to a comma-separated list of addresses that identify your trusted reverse proxies. When configured, proxy headers from any other address are ignored.
 
-For example:
+The following address formats are supported:
+
+[cols="1,2,1",options="header"]
+|===
+| Format | Description | Example
+
+| IPv4 address
+| A single IPv4 address.
+| `192.168.0.32`
+
+| IPv6 address
+| A single IPv6 address enclosed in square brackets.
+| `[::1]`
+
+| CIDR notation
+| An IP range in Classless Inter-Domain Routing notation. Use this to trust an entire subnet.
+| `127.0.0.0/8` or `::1/128`
+
+| Address with port
+| Any of the above with an optional port suffix. Use this when your proxy connects from a specific port.
+| `192.168.0.32:8084` or `[::1]:8084`
+
+| Hostname
+| A DNS hostname such as `localhost` or `proxy.example.com`.
+| `localhost`
+|===
+
+IMPORTANT: IPv6 addresses must be enclosed in square brackets, for example `[::1]` or `[0:0:0:0:0:0:0:1]`. If a bare IPv6 address without brackets is provided (for example `::1`), {project_name} automatically converts it to the bracketed form and logs a warning. To avoid this warning, always use brackets or CIDR notation for IPv6 addresses.
+
+NOTE: Using hostnames is not recommended. {project_name} performs a DNS lookup for every hostname on every incoming request, which adds latency and overhead. Use IP addresses or CIDR notation instead.
+
+For example, to trust a specific proxy IP and an entire subnet:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
+
+To trust both IPv4 and IPv6 loopback addresses using CIDR notation:
+
+<@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=127.0.0.1/32,::1/128"/>
 
 [[header-filtering-recommendations]]
 === Header filtering recommendations
