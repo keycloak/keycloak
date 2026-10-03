@@ -510,6 +510,14 @@ If you plan to enable this executor, audit the `registeredNodes` map for any aff
 
 Re-registering a replacement hostname without first deleting the old entry leaves the old key in the map, which {project_name} continues using for management callbacks regardless of the active policy.
 
+=== Optimistic locking conflicts now return HTTP 409 instead of HTTP 500
+
+When concurrent requests reset the same user's password, one request can fail with an optimistic locking conflict in the JPA store.
+Previously, that request returned HTTP `500 Internal Server Error`. It now returns HTTP `409 Conflict` with the error code `conflict`, which means the client can retry the request.
+
+This change covers `PUT /admin/realms/\{realm}/users/\{id}/reset-password`. Other JPA optimistic-locking conflicts that are not caught by a resource and reach the global REST error handler receive the same `409` response. See the https://github.com/keycloak/keycloak/issues/50924[GitHub issue].
+If your client treated these errors as `500`, change it to handle `409` and retry.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 The following sections provide details on deprecated features.
