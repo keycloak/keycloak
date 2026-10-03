@@ -69,7 +69,7 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    OrganizationRepresentation | undefined
+    OrganizationRepresentation | null
   >({
     method: "GET",
     path: "/{id}",

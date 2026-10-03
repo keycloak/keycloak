@@ -76,7 +76,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ClientRepresentation | undefined
+    ClientRepresentation | null
   >({
     method: "GET",
     path: "/{id}",
@@ -303,7 +303,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findProtocolMapperById = this.makeRequest<
     { id: string; mapperId: string },
-    ProtocolMapperRepresentation
+    ProtocolMapperRepresentation | null
   >({
     method: "GET",
     path: "/{id}/protocol-mappers/models/{mapperId}",
@@ -313,7 +313,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findProtocolMappersByProtocol = this.makeRequest<
     { id: string; protocol: string },
-    ProtocolMapperRepresentation[]
+    ProtocolMapperRepresentation[] | null
   >({
     method: "GET",
     path: "/{id}/protocol-mappers/protocol/{protocol}",
@@ -682,7 +682,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
-    void
+    PolicyRepresentation | null
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{type}/{policyId}",
@@ -692,7 +692,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOnePolicy = this.makeRequest<
     { id: string; policyId: string },
-    void
+    PolicyRepresentation | null
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{policyId}",

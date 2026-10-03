@@ -51,6 +51,20 @@ test.describe.serial("Workflow tab in Users section", () => {
     });
   });
 
+  test("should show no workflows when the lookup answers 404", async ({
+    page,
+  }) => {
+    // As it does when the user is deleted meanwhile; the admin client returns null.
+    await page.route("**/workflows/scheduled/**", (route) =>
+      route.fulfill({ status: 404, json: { error: "User not found" } }),
+    );
+    await page.reload();
+
+    await expect(
+      page.getByText("There are no workflows scheduled for this user."),
+    ).toBeVisible();
+  });
+
   test("should show pending workflow details", async ({ page }) => {
     const goldStatusName = "Set all new users to Gold status";
     const silverStatusName = "Set all new users to Silver status";
