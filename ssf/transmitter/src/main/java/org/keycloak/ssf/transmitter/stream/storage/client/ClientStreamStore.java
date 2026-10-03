@@ -42,7 +42,6 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_PROFILE_KEY = "ssf.profile";
     public static final String SSF_AUTO_VERIFY_STREAM_KEY = "ssf.autoVerifyStream";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
-    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.stream.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
     public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
 
@@ -200,6 +199,38 @@ public class ClientStreamStore implements SsfStreamStore {
      * the marker was introduced keep their original ownership semantic.
      */
     public static final String SSF_STREAM_MANAGED_BY_KEY = "ssf.stream.managedBy";
+    /**
+     * Epoch-seconds timestamp of the most recent <em>successfully served</em>
+     * RFC 8936 poll for this stream, stamped once the poll batch has
+     * been assembled — i.e. after all transmitter-side work (ack, NACK,
+     * outbox read), not at request arrival — so a future
+     * min-poll-interval check measures the gap from the end of the
+     * transmitter's processing and doesn't charge slow processing to
+     * the receiver. Write-coalesced to
+     * {@code SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS} — see
+     * {@link org.keycloak.ssf.transmitter.support.SsfActivityTracker#stampPollCompleted}
+     * — so a busy poller doesn't trigger a client-cache invalidation per
+     * request. Server-owned runtime state: never accepted from the admin
+     * or receiver stream APIs. Self-healing lifecycle: cleared on stream
+     * delete, on stream create and on every delivery-family change (see
+     * {@code StreamService}), and only surfaced by the admin API while
+     * the stream is on POLL delivery — so a stream switched
+     * POLL → PUSH → POLL reports "never polled", and a stamp written by a
+     * poll that raced a delete or method switch is neither shown nor
+     * inherited. Surfaced on the admin Stream tab so operators can spot
+     * receivers that stopped polling.
+     */
+    public static final String SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY = "ssf.stream.lastPollCompletedAt";
+    /**
+     * Epoch-seconds timestamp of the most recent explicitly requested
+     * stream verification (receiver {@code POST /streams/verify} or the
+     * admin Verify button) — the basis of the min-verification-interval
+     * rate limit and the "Last verified" field on the admin Stream tab.
+     * Per-stream runtime state like {@link #SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY}:
+     * cleared on stream delete so a re-created stream on the same
+     * receiver doesn't inherit its predecessor's verification stamp.
+     */
+    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.stream.lastVerifiedAt";
 
     private static final String EVENT_SET_DELIMITER = ",";
 
@@ -232,7 +263,9 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_DEFAULT_SUBJECTS_KEY,
             SSF_STREAM_CREATED_AT_KEY,
             SSF_STREAM_UPDATED_AT_KEY,
-            SSF_STREAM_MANAGED_BY_KEY);
+            SSF_STREAM_MANAGED_BY_KEY,
+            SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY,
+            SSF_LAST_VERIFIED_AT_KEY);
 
     protected final KeycloakSession session;
 
