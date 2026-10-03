@@ -22,6 +22,14 @@ const getValue = (value: string | string[] | undefined) => {
   return value;
 };
 
+// The LDAP and Kerberos screens load with `form.reset(component)` and keep the raw
+// ComponentRepresentation, so a config entry is an array. The custom provider screen loads with
+// `convertToFormValues`, which unwraps a single-element array, so the same entry is a plain
+// string. A field has to be addressed by the shape that is actually in the form: react-hook-form
+// resolves `config.maxLifespan[0]` against the string "50" as "5".
+export const cacheFieldName = (key: string, value: unknown) =>
+  Array.isArray(value) || value === undefined ? `${key}[0]` : key;
+
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
   const { t } = useTranslation();
 
@@ -31,6 +39,23 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
   });
 
   const cachePolicy = getValue(cachePolicyType);
+
+  const evictionDayName = cacheFieldName(
+    "config.evictionDay",
+    useWatch({ control: form.control, name: "config.evictionDay" }),
+  );
+  const evictionHourName = cacheFieldName(
+    "config.evictionHour",
+    useWatch({ control: form.control, name: "config.evictionHour" }),
+  );
+  const evictionMinuteName = cacheFieldName(
+    "config.evictionMinute",
+    useWatch({ control: form.control, name: "config.evictionMinute" }),
+  );
+  const maxLifespanName = cacheFieldName(
+    "config.maxLifespan",
+    useWatch({ control: form.control, name: "config.maxLifespan" }),
+  );
 
   const hourOptions: SelectControlOption[] = [];
   let hourDisplay = "";
@@ -76,7 +101,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
       {cachePolicy === "EVICT_WEEKLY" ? (
         <SelectControl
           id="kc-eviction-day"
-          name="config.evictionDay[0]"
+          name={evictionDayName}
           label={t("evictionDay")}
           labelIcon={t("evictionDayHelp")}
           controller={{
@@ -98,7 +123,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         <>
           <SelectControl
             id="kc-eviction-hour"
-            name="config.evictionHour[0]"
+            name={evictionHourName}
             label={t("evictionHour")}
             labelIcon={t("evictionHourHelp")}
             controller={{
@@ -109,7 +134,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           />
           <SelectControl
             id="kc-eviction-minute"
-            name="config.evictionMinute[0]"
+            name={evictionMinuteName}
             label={t("evictionMinute")}
             labelIcon={t("evictionMinuteHelp")}
             controller={{
@@ -123,7 +148,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
       {cachePolicy === "MAX_LIFESPAN" ? (
         <NumberControl
           data-testid="kerberos-cache-lifespan"
-          name="config.maxLifespan[0]"
+          name={maxLifespanName}
           label={t("maxLifespan")}
           labelIcon={t("maxLifespanHelp")}
           unit={t("ms")}
