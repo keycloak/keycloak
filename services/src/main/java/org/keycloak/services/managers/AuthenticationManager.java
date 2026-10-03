@@ -1002,6 +1002,19 @@ public class AuthenticationManager {
         // The user has successfully logged in and we can clear his/her previous login failure attempts.
         logSuccess(session, authSession);
 
+        // Notify the protocol that authentication is complete. For OIDC with PAR, this consumes the
+        // single-use request_uri (RFC 9126 §4) so it cannot be replayed. Placed here because this is
+        // the single convergence point for all code-issuing paths: passive SSO (prompt=none),
+        // interactive login, required actions, consent, and identity broker flows.
+        try {
+            protocol.authenticationComplete(authSession);
+        } catch (AuthenticationFlowException e) {
+            logger.warnf("Protocol completion failed for client %s in realm %s: %s",
+                    authSession.getClient().getClientId(), realm.getName(), e.getMessage());
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
     }
 
