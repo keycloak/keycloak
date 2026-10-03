@@ -35,7 +35,7 @@ export async function login(
   await navigateTo(page, to, realm);
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign In" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
 }
 
 export async function navigateTo(

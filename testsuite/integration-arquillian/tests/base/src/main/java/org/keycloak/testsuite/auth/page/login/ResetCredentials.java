@@ -40,7 +40,7 @@ public class ResetCredentials extends LoginActions {
     @FindBy(id = "username")
     private WebElement usernameOrEmailInput;
 
-    @FindBy(xpath = "//a[contains(., 'Back to Login')]")
+    @FindBy(xpath = "//a[contains(., 'Back to login')]")
     private WebElement backToLoginLink;
 
     @FindBy(id = "kc-info")

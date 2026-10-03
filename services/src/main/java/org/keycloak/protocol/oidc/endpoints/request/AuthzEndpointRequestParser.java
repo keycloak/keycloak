@@ -48,7 +48,7 @@ import org.jboss.logging.Logger;
  * error response, e.g.,
  * <ul>
  * <li>for a Pushed Authorization Request (PAR) this results in a JSON response.</li>
- * <li>For openid/auth in an error page with an "Back to Application" button using the client's base URL. (if valid) as redirect target.</li>
+ * <li>For openid/auth in an error page with a "Back to application" button using the client's base URL. (if valid) as redirect target.</li>
  * </ul>
  *
  * <p>

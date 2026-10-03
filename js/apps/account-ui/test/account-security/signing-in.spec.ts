@@ -31,7 +31,7 @@ test.describe("Signing in", () => {
     ).toContainText("Authenticator application is not set up.");
     await page.getByTestId("otp/create").click();
     await expect(page.locator("#kc-page-title")).toContainText(
-      "Mobile Authenticator Setup",
+      "Mobile authenticator setup",
     );
   });
 
