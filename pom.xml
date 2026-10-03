@@ -85,6 +85,9 @@
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
         <infinispan.version>16.0.15</infinispan.version>
+        <!-- Overrides the JGroups version shipped with Infinispan to pick up https://github.com/belaban/JGroups/commit/6000d1130fe6edfa8354027a1f2962e91727d3ff
+             (ERROR "failed sending graceful close" when JGroups transport uses TLS). Remove once Infinispan ships JGroups 5.5.6.Final or later. -->
+        <jgroups.version>5.5.7.Final</jgroups.version>
         <protostream.version>6.0.7</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
@@ -345,6 +348,11 @@
                 <version>${infinispan.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
