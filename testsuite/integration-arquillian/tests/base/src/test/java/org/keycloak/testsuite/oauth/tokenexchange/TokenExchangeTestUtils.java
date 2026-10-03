@@ -74,6 +74,7 @@ public class TokenExchangeTestUtils {
         differentScopeClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         differentScopeClient.setFullScopeAllowed(false);
         differentScopeClient.removeClientScope(realm.getClientScopesStream().filter(scope->"email".equals(scope.getName())).findAny().get());
+        differentScopeClient.addClientScope(realm.getClientScopesStream().filter(scope->"phone".equals(scope.getName())).findAny().get(), false);
 
         ClientModel clientExchanger = realm.addClient("client-exchanger");
         clientExchanger.setClientId("client-exchanger");
