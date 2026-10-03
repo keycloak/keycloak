@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +36,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 
 import org.junit.Test;
 
@@ -43,6 +46,25 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class StripSecretsUtilsTest {
+
+    @Test
+    public void stripWorkflowStepSecrets() {
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.put("token", List.of("plain-text", "${vault.token}"));
+        config.putSingle("message", "Reminder");
+        WorkflowStepRepresentation step = new WorkflowStepRepresentation("step", "custom", config);
+        RealmRepresentation realm = new RealmRepresentation();
+        realm.setWorkflows(List.of(WorkflowRepresentation.withName("reminder").withSteps(step).build()));
+        ProviderConfigProperty secret = new ProviderConfigProperty();
+        secret.setName("token");
+        secret.setSecret(true);
+
+        StripSecretsUtils.stripRealm(null, realm, (session, type, id) -> Map.of("token", secret));
+
+        assertEquals(List.of(ComponentRepresentation.SECRET_VALUE, "${vault.token}"), step.getConfig().get("token"));
+        assertEquals("Reminder", step.getConfig().getFirst("message"));
+        assertEquals(List.of("plain-text", "${vault.token}"), config.get("token"));
+    }
 
     @Test
     public void checkStrippedRotatedSecret() {

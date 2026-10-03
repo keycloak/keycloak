@@ -15,6 +15,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelValidationException;
@@ -479,10 +480,38 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
         workflow = new Workflow(session, realm.addComponentModel(model));
 
-        scheduleWorkflow(workflow);
+        scheduleCreatedWorkflow(workflow);
         notifyScheduleChange(workflow, false);
 
         return workflow;
+    }
+
+    private void scheduleCreatedWorkflow(Workflow workflow) {
+        String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
+        if (!workflow.isEnabled() || scheduled == null) {
+            return;
+        }
+        long seconds = DurationConverter.parseDuration(scheduled).toSeconds();
+        if (seconds <= 0 || seconds > Integer.MAX_VALUE) {
+            throw new ModelValidationException("Workflow schedule interval must be between 1 and " + Integer.MAX_VALUE + " seconds");
+        }
+        int intervalSecs = (int) seconds;
+        initLastScheduleRun(workflow);
+        int lastScheduleRun = ScheduledWorkflowRunner.getLastScheduleRun(workflow);
+        TimerProvider timer = session.getProvider(TimerProvider.class);
+        ScheduledWorkflowRunner runner = new ScheduledWorkflowRunner(workflow.getId(), realm.getId(), intervalSecs);
+        // Later validation or another imported workflow can still roll back this transaction.
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                long initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(lastScheduleRun, intervalSecs);
+                timer.scheduleTask(runner, initialDelaySecs * 1000L, intervalSecs * 1000L);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+            }
+        });
     }
 
     private void scheduleWorkflow(Workflow workflow) {
@@ -491,7 +520,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         if (workflow.isEnabled() && scheduled != null) {
             initLastScheduleRun(workflow);
             int intervalSecs = (int) DurationConverter.parseDuration(scheduled).toSeconds();
-            int initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(workflow, intervalSecs);
+            long initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(workflow, intervalSecs);
             TimerProvider timer = session.getProvider(TimerProvider.class);
             ScheduledWorkflowRunner runner = new ScheduledWorkflowRunner(workflow.getId(), realm.getId(), intervalSecs);
             timer.scheduleTask(runner, initialDelaySecs * 1000L, intervalSecs * 1000L);
