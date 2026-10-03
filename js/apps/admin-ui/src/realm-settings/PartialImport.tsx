@@ -5,6 +5,7 @@ import type {
   PartialImportResult,
 } from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { omit } from "lodash-es";
 import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
@@ -250,8 +251,12 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       jsonToImport.clients = targetRealm.clients;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
       jsonToImport.roles = targetRealm.roles;
-      if (!resourcesToImport["realmRoles"]) delete jsonToImport.roles?.realm;
-      if (!resourcesToImport["clientRoles"]) delete jsonToImport.roles?.client;
+      if (!resourcesToImport["realmRoles"] && jsonToImport.roles) {
+        jsonToImport.roles = omit(jsonToImport.roles, "realm");
+      }
+      if (!resourcesToImport["clientRoles"] && jsonToImport.roles) {
+        jsonToImport.roles = omit(jsonToImport.roles, "client");
+      }
     }
     return jsonToImport;
   };
