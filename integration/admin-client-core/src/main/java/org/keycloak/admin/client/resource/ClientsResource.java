@@ -68,6 +68,16 @@ public interface ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> query(@QueryParam("q") String searchQuery);
 
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    Long count();
+
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    Long count(@QueryParam("search") String search, @QueryParam("q") String searchQuery);
+
     @Path("{id}")
     @DELETE
     Response delete(@PathParam("id") String id);
