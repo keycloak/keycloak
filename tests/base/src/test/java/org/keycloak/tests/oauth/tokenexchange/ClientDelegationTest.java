@@ -291,7 +291,8 @@ public class ClientDelegationTest {
         String actorToken = getActorToken();
         ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, AGENT_CLIENT_ID, getServiceAccountUserId());
         assertTokenExchangeError(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, res.getAccessToken(), actorToken,
-                AGENT_CLIENT_ID, "Invalid may_act claim in the subject_token", clientActor);
+                AGENT_CLIENT_ID, "The subject_token carries no may_act claim, so the user did not consent to this delegation",
+                clientActor);
 
         logout(res.getRefreshToken());
     }

@@ -87,6 +87,7 @@ For more details about the feature, see the link:{adminguide_link}#_parameterize
 // https://github.com/keycloak/keycloak/issues/52085
 // https://github.com/keycloak/keycloak/issues/52691
 // https://github.com/keycloak/keycloak/issues/52159
+// https://github.com/keycloak/keycloak/issues/53040
 
 Applications such as AI agents and automation tools need limited, consent-based access to act on behalf of a user without requiring administrator privileges or exposing sensitive credentials.
 
@@ -96,6 +97,9 @@ Unlike admin-user delegation, client delegation does not grant Admin API access 
 The `delegation:user` and `delegation:client` client scopes are now auto-created as Optional scopes in all realms, and delegation authorization is controlled exclusively through Fine-Grained Admin Permissions V2 using the `delegate` and `delegate-members` scopes.
 Delegation audit events now include the client identity, and standard token exchange rejects subject tokens carrying delegation claims to prevent bypass.
 A new client policy executor allows administrators to restrict the `may_act` claim in access tokens, giving per-client control over which clients can participate in delegation.
+
+Client delegation can also be chained, so a client holding a delegated token can delegate onward to a further client, with each actor recorded in the `act` claim.
+Chaining is disabled by default and is enabled per client with the new `client-delegation` client policy executor.
 
 Token exchange delegation support status is now preview.
 

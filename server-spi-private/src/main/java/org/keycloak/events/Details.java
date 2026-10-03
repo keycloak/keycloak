@@ -51,6 +51,8 @@ public interface Details {
     String ACTOR_TYPE_USER = "user";
     String ACTOR_TYPE_CLIENT = "client";
     String ACTOR_SESSION_ID = "actor_session_id";
+    String DELEGATION_CHAIN_DEPTH = "delegation_chain_depth";
+    String DELEGATION_CHAIN = "delegation_chain";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
     String PREVIOUS_FIRST_NAME = PREF_PREVIOUS + "first_name";
