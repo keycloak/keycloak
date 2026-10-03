@@ -59,7 +59,7 @@ export default function CreateFlow() {
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
-            role="manage-authorization"
+            role="manage-realm"
             onSubmit={handleSubmit(onSubmit)}
           >
             <NameDescription />
