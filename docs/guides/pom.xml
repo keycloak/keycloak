@@ -239,6 +239,18 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>authorization-services-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/authorization-services</sourceDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/authorization-services</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>ui-customization-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>
