@@ -481,6 +481,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         }
     }
 
+    @Override
+    public boolean canViewScopeMapping(RoleModel role) {
+        return canView(role) || canMapClientScope(role);
+    }
+
 
     @Override
     public boolean canManage(RoleModel role) {
