@@ -389,11 +389,12 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.client("test-dash");
 
         checkRedirectUri("http://with-dash.example.local", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local", false);
+        checkRedirectUri("http://wiTh-dAsh.example.local", true);
         checkRedirectUri("http://with-dash.example.local/foo", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local/foo", false);
+        checkRedirectUri("http://wiTh-dAsh.example.local/foo", true);
         checkRedirectUri("http://with-dash.example.local/foo", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local/foo", false);
+        checkRedirectUri("http://wiTh-dAsh.example.local/foo", true);
+        // Path remains case-sensitive
         checkRedirectUri("http://wiTh-dAsh.example.local/Foo", false);
         checkRedirectUri("http://wiTh-dAsh.example.local/foO", false);
     }
@@ -403,8 +404,8 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.client("test-dash");
 
         checkRedirectUri("http://with-dash.example.local", true);
-        checkRedirectUri("HTTP://with-dash.example.local", false);
-        checkRedirectUri("Http://wiTh-dAsh.example.local", false);
+        checkRedirectUri("HTTP://with-dash.example.local", true);
+        checkRedirectUri("Http://wiTh-dAsh.example.local", true);
     }
 
     @Test

@@ -20,6 +20,9 @@ http://node12:8080*
 http://node21:8080*
 http://node22:8080*
 http://web.example.com*
+https://example.com*
+HTTPS://example.com*
+https://Example.COM*
 https://keycloak.example.com*
 https://openshift.example.com:8443/console
 https://accounts.google.com/o/oauth2/revoke
