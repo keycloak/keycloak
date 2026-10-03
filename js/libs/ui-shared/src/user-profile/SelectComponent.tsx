@@ -78,10 +78,14 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             onToggle={(b) => setOpen(b)}
             onClear={() => setValue("", field)}
             onSelect={(value) => {
-              const option = value.toString();
-              setValue(option, field);
-              if (!Array.isArray(field.value)) {
-                setOpen(false);
+              let option = value.toString()
+              // When a chip is removed in typeaheadMulti, the value passed is the label,
+              // not the raw option value. Reverse-map the label back to the original value.
+              if (isMultiValue && Array.isArray(field.value) && !field.value.includes(option)) {
+                const originalValue = field.value.find((v: string) => fetchLabel(v) === option)
+                if (originalValue) {
+                  option = originalValue
+                }
               }
             }}
             selections={
