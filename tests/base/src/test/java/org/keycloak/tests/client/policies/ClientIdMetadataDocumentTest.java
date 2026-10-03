@@ -975,6 +975,7 @@ public class ClientIdMetadataDocumentTest {
         //  -> also jwks_uri is hosted by also the loop-back addressed test-provider server.
         // It checks if an address resolved from a property whose value is URI is private address.
         // RFC 7591: logo_uri, client_uri, tos_uri, policy_uri, jwks_uri.
+        // OIDC Registration 1.0: sector_identifier_uri.
 
         // logo_uri : private address
         cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI));
@@ -1005,6 +1006,15 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://[::1]:8443/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
         cimd.getRepresentation().setJwksUri("https://10.255.255.1:443/mcp");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // sector_identifier_uri : private address
+        cimd.getRepresentation().setLogoUri("https://localhost:8443/logo");
+        cimd.getRepresentation().setClientUri("https://www.example.org");
+        cimd.getRepresentation().setTosUri("https://[::1]:8443/mcp");
+        cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
+        cimd.getRepresentation().setJwksUri("https://localhost:8443/jwks");
+        cimd.getRepresentation().setSectorIdentifierUri("https://192.168.0.1:443/sector");
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
     }
 

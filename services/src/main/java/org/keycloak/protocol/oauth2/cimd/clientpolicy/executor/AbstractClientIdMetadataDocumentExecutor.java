@@ -688,6 +688,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // CIMD (mandatory): client_id
         // RFC 7591 (mandatory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
+        // OIDC Registration 1.0 (optional): sector_identifier_uri
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -701,6 +702,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getSectorIdentifierUri(), "sector_identifier_uri", trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
