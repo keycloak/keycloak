@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -126,6 +127,23 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     }
 
     @Test
+    public void testExternalInternalTokenExchangeUsingIssuerWithDisabledProvider() throws Exception {
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderRepresentation broker = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+
+        // A disabled provider whose alias sorts ahead of the broker is checked first when looking up the issuer
+        IdentityProviderRepresentation disabled = new IdentityProviderRepresentation();
+        disabled.setAlias("a-disabled-idp");
+        disabled.setProviderId(broker.getProviderId());
+        disabled.setEnabled(false);
+        disabled.setConfig(new HashMap<>(broker.getConfig()));
+        disabled.getConfig().put(OIDCIdentityProviderConfigRep.ISSUER, "https://disabled.example.com");
+        consumerRealm.identityProviders().create(disabled).close();
+
+        assertExternalToInternalExchange(broker.getConfig().get(OIDCIdentityProviderConfigRep.ISSUER), true, false);
+    }
+
+    @Test
     public void testExternalInternalTokenExchangeWithJwtAccessTokenAndUserInfoEndpoint() throws Exception {
         assertExternalToInternalExchange(bc.getIDPAlias(), false, true);
     }
@@ -178,7 +196,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
             AccessTokenResponse externalToInternalTokenResponse;
             String subjectToken = idToken ? tokenResponse.getIdToken() : tokenResponse.getAccessToken();
             String subjectTokenType = idToken ? OAuth2Constants.ID_TOKEN_TYPE : OAuth2Constants.ACCESS_TOKEN_TYPE;
-            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType)) {
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType, subjectIssuer)) {
                 assertThat(response.getStatus(), equalTo(200));
                 externalToInternalTokenResponse = response.readEntity(AccessTokenResponse.class);
                 UserRepresentation user = consumerRealm.users().search(bc.getUserLogin()).get(0);
@@ -444,6 +462,10 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     }
 
     private Response sendExternalInternalTokenExchangeRequest(WebTarget exchangeUrl, String subjectToken, String subjectTokenType) {
+        return sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType, bc.getIDPAlias());
+    }
+
+    private Response sendExternalInternalTokenExchangeRequest(WebTarget exchangeUrl, String subjectToken, String subjectTokenType, String subjectIssuer) {
         return exchangeUrl.request()
                 .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(
                         "test-app", "secret"))
@@ -452,7 +474,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
                                 .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                 .param(OAuth2Constants.SUBJECT_TOKEN, subjectToken)
                                 .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, subjectTokenType)
-                                .param(OAuth2Constants.SUBJECT_ISSUER, bc.getIDPAlias())
+                                .param(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer)
                                 .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
 
                 ));
