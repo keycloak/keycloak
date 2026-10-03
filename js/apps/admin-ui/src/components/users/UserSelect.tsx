@@ -95,7 +95,7 @@ export const UserSelect = ({
         values.map((id) => adminClient.users.findOne({ id })),
       );
 
-      return foundUsers.filter((user) => user !== undefined);
+      return foundUsers.filter((user) => user !== null);
     },
     (users) => {
       setSelectedUsers(users);
