@@ -77,5 +77,13 @@ public class ManualMigrationCustomProviderDistTest {
                 output.split(java.util.regex.Pattern.quote(createTable), -1).length - 1, is(1));
         assertThat("custom changelog table must be created before it is inserted into",
                 output.indexOf(createTable), lessThan(output.indexOf(insertInto)));
+
+        // The lock table is shared by all changelogs and is emitted only together with the master changelog,
+        // which is already applied here. An export of just the custom provider changelog must therefore not emit
+        // it, or the script would fail on this database. The pre-existence guard itself is covered by
+        // ManualMigrationEmptyDatabaseDistTest#testEmptyDatabaseExportSkipsPreCreatedBookkeepingTables.
+        String createLockTable = "CREATE TABLE PUBLIC.DATABASECHANGELOGLOCK (";
+        assertThat("lock table must only be emitted with the master changelog",
+                output.split(java.util.regex.Pattern.quote(createLockTable), -1).length - 1, is(0));
     }
 }
