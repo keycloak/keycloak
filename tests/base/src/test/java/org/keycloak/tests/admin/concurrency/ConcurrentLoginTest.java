@@ -380,7 +380,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         Pattern pattern = Pattern.compile("action=\"([^\"]*)\"");
         Matcher matcher = pattern.matcher(html);
         matcher.find();
-        String action = matcher.group(1);
+        // '&' separators are HTML-escaped as '&amp;' in the rendered form action; decode them so the POST
+        // carries the real query parameters instead of relying on ';' also being a query delimiter.
+        String action = matcher.group(1).replace("&amp;", "&");
         return action;
     }
 
