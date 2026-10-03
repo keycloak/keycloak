@@ -628,9 +628,9 @@ public class LoginActionsService {
                     );
 
             String kid = verifier.getHeader().getKeyId();
-            String algorithm = verifier.getHeader().getAlgorithm().name();
+            String algorithm = verifier.getHeader().getRawAlgorithm();
 
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+            SignatureProvider signatureProvider = algorithm == null ? null : session.getProvider(SignatureProvider.class, algorithm);
             if (signatureProvider == null) {
                 throw new ExplainedTokenVerificationException(aToken, Errors.INVALID_SIGNATURE, Messages.INVALID_REQUEST);
             }

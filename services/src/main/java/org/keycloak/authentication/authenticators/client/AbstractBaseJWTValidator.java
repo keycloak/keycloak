@@ -147,11 +147,11 @@ public abstract class AbstractBaseJWTValidator {
     public boolean validateSignatureAlgorithm(String expectedSignatureAlg) {
         JWSInput jws = clientAssertionState.getJws();
 
-        if (jws.getHeader().getAlgorithm() == null) {
+        String algorithmName = jws.getHeader().getRawAlgorithm();
+
+        if (algorithmName == null) {
             return failure("Invalid signature algorithm");
         }
-
-        String algorithmName = jws.getHeader().getAlgorithm().name();
 
         if ("none".equalsIgnoreCase(algorithmName)) {
             return failure("Invalid signature algorithm");

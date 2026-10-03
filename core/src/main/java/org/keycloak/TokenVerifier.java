@@ -31,6 +31,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -440,7 +441,8 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException(e);
             }
         } else {
-            AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
+            Algorithm algorithm = getHeader().getAlgorithm();
+            AlgorithmType algorithmType = algorithm == null ? null : algorithm.getType();
             if (null == algorithmType) {
                 throw new VerificationException("Unknown or unsupported token algorithm");
             }
