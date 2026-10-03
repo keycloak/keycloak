@@ -91,6 +91,7 @@ Administrators can configure WebAuthn related operations as *WebAuthn Policy* pe
 
 The configurable items and their description are as follows:
 
+[cols="30,70", options="header"]
 |===
 |Configuration|Description
 
@@ -108,6 +109,13 @@ The configurable items and their description are as follows:
 
 |Authenticator Attachment
 |The acceptable attachment pattern of a WebAuthn authenticator for the WebAuthn Client. This pattern is an optional configuration item applying to the registration of the WebAuthn authenticator. For more details, see https://www.w3.org/TR/webauthn/#enumdef-authenticatorattachment[WebAuthn Specification].
+
+|Hints
+a|The ordered list of hints telling the WebAuthn Client which types of WebAuthn authenticators the user is expected to use, in decreasing order of preference. The WebAuthn Client can use the hints to decide which authenticator options to offer to the user and in which order, for example by showing the security key prompt directly. The accepted values are `security-key` (a removable hardware security key), `client-device` (a platform authenticator built into the device the user is using) and `hybrid` (another device, such as a mobile phone, connected by using a QR code or Bluetooth).
+
+This is an optional configuration item applying to the registration of a WebAuthn authenticator and the authentication of a user by a WebAuthn authenticator. If the option is left empty, which is the default, no hints are sent and the WebAuthn Client uses its default behavior. Some browsers do not support hints and will ignore them. Browsers that support this feature also ignore a hint that cannot be satisfied, falling back to its default behavior. For example, during the registration of a WebAuthn authenticator, Chromium based browsers offer the cross-device option for the `hybrid` hint only when *Discoverable Credential* is set to `required` or `preferred` in the same policy. If the hints contradict the *Authenticator Attachment* option, the hints take precedence in browsers that support them. To get a similar registration behavior in browsers that do not support hints, set *Authenticator Attachment* consistently with the hints (`cross-platform` for `security-key` and `hybrid`, `platform` for `client-device`). In short, {project_name} just sends the configured values in the `hints` field as defined in the specification, all subsequent behavior does not depend on {project_name}.
+
+For more details, see https://www.w3.org/TR/webauthn/#enum-hints[WebAuthn Specification].
 
 |Discoverable Credential
 |The extent to which the WebAuthn authenticator should generate the Public Key Credential as a https://www.w3.org/TR/webauthn-3/[Client-side discoverable Credential]. The accepted values are `required`, `preferred` and `discouraged`. This option applies to the registration of the WebAuthn authenticator and replaces, and takes precedence over, the deprecated `Require Discoverable Credential` option. If left blank ("not specified"), the deprecated `Require Discoverable Credential` option is used instead. For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn Specification].

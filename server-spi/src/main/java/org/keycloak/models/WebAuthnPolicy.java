@@ -43,6 +43,7 @@ public class WebAuthnPolicy implements Serializable {
     protected boolean avoidSameAuthenticatorRegister = false;
     protected List<String> acceptableAaguids;
     protected List<String> extraOrigins;
+    protected List<String> hints;
     protected Boolean passkeysEnabled; // only used for passwordless
     protected String mediation; // only used for passwordless
 
@@ -161,6 +162,14 @@ public class WebAuthnPolicy implements Serializable {
 
     public void setExtraOrigins(List<String> extraOrigins) {
         this.extraOrigins = extraOrigins;
+    }
+
+    public List<String> getHints() {
+        return hints;
+    }
+
+    public void setHints(List<String> hints) {
+        this.hints = hints;
     }
 
     public Boolean isPasskeysEnabled() {
