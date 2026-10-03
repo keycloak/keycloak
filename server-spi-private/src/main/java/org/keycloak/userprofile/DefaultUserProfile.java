@@ -60,6 +60,10 @@ import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
  */
 public final class DefaultUserProfile implements UserProfile {
 
+    // the attributes mapped to the phone_number and phone_number_verified claims by the built-in "phone" client scope
+    private static final String PHONE_NUMBER = "phoneNumber";
+    private static final String PHONE_NUMBER_VERIFIED = "phoneNumberVerified";
+
     private final UserProfileMetadata metadata;
     private final Function<Attributes, UserModel> userSupplier;
     private final Attributes attributes;
@@ -128,6 +132,8 @@ public final class DefaultUserProfile implements UserProfile {
         try {
             Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
 
+            boolean phoneNumberVerifiedReset = false;
+
             for (Map.Entry<String, List<String>> attribute : writable.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 String name = attribute.getKey();
                 List<String> currentValue = user.getAttributeStream(name)
@@ -135,6 +141,10 @@ public final class DefaultUserProfile implements UserProfile {
                 List<String> updatedValue = attribute.getValue();
 
                 if (CollectionUtil.collectionEquals(currentValue, updatedValue)) {
+                    continue;
+                }
+
+                if (PHONE_NUMBER_VERIFIED.equals(name) && phoneNumberVerifiedReset) {
                     continue;
                 }
 
@@ -152,6 +162,11 @@ public final class DefaultUserProfile implements UserProfile {
                     user.setEmailVerified(false);
                 }
 
+                if (PHONE_NUMBER.equals(name) && metadata.getContext().isResetPhoneNumberVerified()) {
+                    resetPhoneNumberVerified(user, changeListener);
+                    phoneNumberVerifiedReset = true;
+                }
+
                 for (AttributeChangeListener listener : changeListener) {
                     listener.onChange(name, user, currentValue);
                 }
@@ -164,6 +179,14 @@ public final class DefaultUserProfile implements UserProfile {
                 Set<String> attrsToRemove = new HashSet<>(user.getAttributes().keySet());
 
                 attrsToRemove.removeAll(attributes.nameSet());
+
+                boolean phoneNumberRemoved = attrsToRemove.contains(PHONE_NUMBER) && !attributes.isReadOnly(PHONE_NUMBER)
+                        && metadata.getContext().isResetPhoneNumberVerified();
+
+                if (phoneNumberVerifiedReset || phoneNumberRemoved) {
+                    // reset rather than removed
+                    attrsToRemove.remove(PHONE_NUMBER_VERIFIED);
+                }
 
                 for (String name : attrsToRemove) {
                     if (attributes.isReadOnly(name)) {
@@ -182,6 +205,10 @@ public final class DefaultUserProfile implements UserProfile {
                         }
                     } else {
                         user.removeAttribute(name);
+                    }
+
+                    if (PHONE_NUMBER.equals(name) && metadata.getContext().isResetPhoneNumberVerified()) {
+                        resetPhoneNumberVerified(user, changeListener);
                     }
 
                     for (AttributeChangeListener listener : changeListener) {
@@ -214,6 +241,20 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         return false;
+    }
+
+    private void resetPhoneNumberVerified(UserModel user, AttributeChangeListener... changeListener) {
+        List<String> currentValue = user.getAttributeStream(PHONE_NUMBER_VERIFIED).filter(Objects::nonNull).collect(Collectors.toList());
+
+        if (currentValue.stream().noneMatch(Boolean::parseBoolean)) {
+            return;
+        }
+
+        user.setAttribute(PHONE_NUMBER_VERIFIED, List.of(Boolean.FALSE.toString()));
+
+        for (AttributeChangeListener listener : changeListener) {
+            listener.onChange(PHONE_NUMBER_VERIFIED, user, currentValue);
+        }
     }
 
     private boolean isCustomAttribute(String name) {
