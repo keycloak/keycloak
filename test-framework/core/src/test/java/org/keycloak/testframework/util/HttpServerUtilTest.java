@@ -79,6 +79,8 @@ public class HttpServerUtilTest {
 
         assertThat(response.statusCode(), is(204));
         assertThat(response.body(), is(""));
+        assertThat("no-body response must not use chunked encoding",
+                response.headers().firstValue("Transfer-encoding").isPresent(), is(false));
     }
 
     private HttpResponse<String> get(String path) throws Exception {
