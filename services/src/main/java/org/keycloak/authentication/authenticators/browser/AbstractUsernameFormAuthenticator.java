@@ -218,6 +218,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData, boolean clearUser) {
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null || password.isEmpty()) {
+            AuthenticatorUtils.dummyHash(context); 
             return badPasswordHandler(context, user, clearUser,true);
         }
 
