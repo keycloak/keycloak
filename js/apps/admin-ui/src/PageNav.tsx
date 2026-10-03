@@ -14,6 +14,8 @@ import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import type { Environment } from "./environment-types";
 import { toPage } from "./page/routes";
+import { SCRIPT_PROVIDER } from "./ui-script/constants";
+import { toUiScript } from "./ui-script/routes";
 import { normalizeNavRoutePath } from "./page-nav-utils";
 import { routes } from "./routes";
 import { resolveDisplayName } from "./util";
@@ -72,6 +74,7 @@ export const PageNav = () => {
   const isFeatureEnabled = useIsFeatureEnabled();
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
+  const scripts = componentTypes?.[SCRIPT_PROVIDER];
   const navigate = useNavigate();
   const { realm, realmRepresentation } = useRealm();
 
@@ -160,6 +163,15 @@ export const PageNav = () => {
                     title={p.id}
                     path={toPage({ providerId: p.id }).pathname!}
                     id="/page-section"
+                  />
+                ))}
+              {isFeatureEnabled(Feature.DeclarativeUI) &&
+                scripts?.map((p) => (
+                  <LeftNav
+                    key={p.id}
+                    title={p.id}
+                    path={toUiScript({ providerId: p.id }).pathname!}
+                    id="/ui-script"
                   />
                 ))}
             </NavGroup>
