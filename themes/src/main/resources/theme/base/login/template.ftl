@@ -40,7 +40,7 @@
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
-    <script type="importmap">
+    <script type="importmap" nonce="${nonce.value}">
         {
             "imports": {
                 "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
@@ -53,7 +53,7 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
@@ -62,7 +62,7 @@
         );
         </#outputformat>
     </script>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
         document.addEventListener("click", (event) => {
             const link = event.target.closest("a[data-once-link]");
 
@@ -86,7 +86,7 @@
         });
     </script>
     <#if authenticationSession??>
-        <script type="module">
+        <script type="module" nonce="${nonce.value}">
             <#outputformat "JavaScript">
             import { checkAuthSession } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 

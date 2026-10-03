@@ -35,7 +35,7 @@
             </#if>
 
             <#if recaptchaRequired?? && !(recaptchaVisible!false)>
-                <script>
+                <script nonce="${nonce.value}">
                     function onSubmitRecaptcha(token) {
                         document.getElementById("kc-register-form").requestSubmit();
                     }

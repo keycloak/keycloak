@@ -17,21 +17,29 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.HashMap;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.FreemarkerUtils;
 import org.keycloak.utils.MediaType;
 
-import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframe;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ThirdPartyCookiesIframeEndpoint {
+
+    private static final Logger logger = Logger.getLogger(ThirdPartyCookiesIframeEndpoint.class);
 
     private final KeycloakSession session;
 
@@ -43,13 +51,24 @@ public class ThirdPartyCookiesIframeEndpoint {
     @Path("step1.html")
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response step1(@QueryParam("version") String version) {
-        return returnIframeFromResources("3p-cookies-step1.html", version, session);
+        return returnIframe(version, session, () -> loadTemplate("3p-cookies-step1.ftl"));
     }
 
     @GET
     @Path("step2.html")
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response step2(@QueryParam("version") String version) {
-        return returnIframeFromResources("3p-cookies-step2.html", version, session);
+        return returnIframe(version, session, () -> loadTemplate("3p-cookies-step2.ftl"));
+    }
+
+    private String loadTemplate(String template) {
+        final var map = new HashMap<String, Object>();
+        map.put("nonce", new NonceBean());
+        try {
+            return FreemarkerUtils.loadTemplateFromClasspath(map, template, getClass());
+        } catch (Exception e) {
+            logger.errorf(e, "Failure when loading %s", template);
+            return null;
+        }
     }
 }

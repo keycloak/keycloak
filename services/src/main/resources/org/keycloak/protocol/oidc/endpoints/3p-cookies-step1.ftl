@@ -4,7 +4,7 @@
     <meta charset="utf-8">
   </head>
   <body>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
       checkStorageAccess();
       
       async function checkStorageAccess() {

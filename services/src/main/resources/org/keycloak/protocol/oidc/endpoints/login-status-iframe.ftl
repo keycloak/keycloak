@@ -7,7 +7,7 @@
     <#if !isSecureContext>
       <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
     </#if>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
       window.addEventListener("message", onMessage);
 
       async function onMessage(event) {

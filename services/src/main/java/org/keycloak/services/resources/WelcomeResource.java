@@ -53,6 +53,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -221,6 +222,7 @@ public class WelcomeResource {
 
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
+            map.put("nonce", new NonceBean());
             map.put("properties", themeProperties);
             map.put("themeResources", ThemeResourcesParser.parse(themeProperties));
             map.put("adminUrl", adminUrl);

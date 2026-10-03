@@ -12,7 +12,7 @@
             <#if code.success>
                 <p>${msg("copyCodeInstruction")}</p>
                 <@field.clipboard name="code" label="" ariaLabel=msg("codeSuccess") value=code.code />
-                <script type="module">
+                <script type="module" nonce="${nonce.value}">
                     <#outputformat "JavaScript">
                     (() => {
                         const copyButton = document.getElementById('kc-code-copy-button');

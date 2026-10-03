@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
 class UncaughtErrorPageTest {
@@ -165,6 +166,12 @@ class UncaughtErrorPageTest {
     }
 
     @Test
+    void errorPageNotCacheable() throws IOException {
+        assertErrorPageNotCacheable(errorTestingUri("uncaught-error"));
+        assertErrorPageNotCacheable(keycloakUrls.getBaseBuilder().path("/nosuch").build());
+    }
+
+    @Test
     void errorPageException() {
         oauth.realm("master");
         oauth.client("nosuch");
@@ -172,6 +179,27 @@ class UncaughtErrorPageTest {
 
         errorPage.assertCurrent();
         assertThat("error page message", errorPage.getError(), is("Client not found."));
+    }
+
+    @Test
+    void errorPageInlineScriptsContainNonces() {
+        oauth.realm("master");
+        oauth.client("nosuch");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+
+        var inlineScriptsWithoutNonce = errorPage.getInlineScriptsWithoutNonce();
+
+        assertTrue(
+                inlineScriptsWithoutNonce.isEmpty(),
+                String.format("Page contains %d scripts without nonce: %s",
+                        inlineScriptsWithoutNonce.size(),
+                        inlineScriptsWithoutNonce.stream()
+                                .map(s -> s.getAttribute("outerHTML"))
+                                .toList()
+                )
+        );
     }
 
     @Test
@@ -231,6 +259,19 @@ class UncaughtErrorPageTest {
         Header contentType = response.getFirstHeader("Content-Type");
         assertThat("Content-Type header", contentType, is(notNullValue()));
         assertThat("Content-Type value", contentType.getValue(), is(MediaType.APPLICATION_JSON));
+    }
+
+    private void assertErrorPageNotCacheable(URI uri) throws IOException {
+        HttpGet get = new HttpGet(uri);
+        get.setHeader("Accept", MediaType.TEXT_HTML_UTF_8);
+
+        HttpResponse response = httpClient.execute(get);
+        EntityUtils.consume(response.getEntity());
+
+        Header cacheControl = response.getFirstHeader("Cache-Control");
+        assertThat("Cache-Control header for " + uri, cacheControl, is(notNullValue()));
+        assertThat("Error page for " + uri + " must not be cacheable",
+                cacheControl.getValue(), containsString("no-store"));
     }
 
     private OAuth2ErrorRepresentation readError(HttpResponse response) throws IOException {
