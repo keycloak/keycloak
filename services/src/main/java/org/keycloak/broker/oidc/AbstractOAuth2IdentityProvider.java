@@ -329,6 +329,28 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
     }
 
+    private Long parseTokenExpiration(String expirationNote) {
+        if (expirationNote == null || expirationNote.isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(expirationNote);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private OAuthResponse doRefreshToken(OAuthResponse previousResponse, Long previousExpiration) throws IOException {
+        OAuthResponse newResponse = refreshToken(previousResponse, session);
+        if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+            newResponse.setAccessTokenExpiration(Time.currentTime() + newResponse.getExpiresIn());
+        } else {
+            newResponse.setAccessTokenExpiration(0L);
+            logger.debugf("Refreshed token from %s has no expiration info", getConfig().getAlias());
+        }
+        return newResponse;
+    }
+
     private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
@@ -501,6 +523,42 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
+        Long storedExpiration = null;
+        try {
+            if (model.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(model.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                storedExpiration = exp;
+                if (needsRefresh(exp)) {
+                    if (previousResponse.getRefreshToken() != null) {
+                        OAuthResponse newResponse = doRefreshToken(previousResponse, exp);
+                        storedExpiration = newResponse.getAccessTokenExpiration();
+                        model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                        session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        if (tokenUserSession != null && getConfig().isStoreTokenInSession()) {
+                            if (getFederatedAccessToken(tokenUserSession) != null && getFederatedAccessToken(tokenUserSession).equals(previousResponse.getToken())) {
+                                setFederatedAccessToken(tokenUserSession, newResponse.getToken());
+                                setFederatedTokenExpiration(tokenUserSession, Long.toString(newResponse.getAccessTokenExpiration() != null ? newResponse.getAccessTokenExpiration() : 0));
+                                if (newResponse.getRefreshToken() != null) {
+                                    setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
+                                }
+                            }
+                        }
+                    } else {
+                        logger.debugf("Token for %s expired with no refresh_token", getConfig().getAlias());
+                        if (event != null) {
+                            event.detail(Details.REASON, "requested_issuer token expired");
+                            event.error(Errors.INVALID_TOKEN);
+                        }
+                        return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.errorf(e, "Failed to parse or refresh token from %s", getConfig().getAlias());
+            throw new IdentityBrokerException("Failed to refresh external token: " + e.getMessage(), e);
+        }
+
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
@@ -512,8 +570,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
+        final int currentTime = Time.currentTime();
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(accessToken);
+        if (storedExpiration != null && storedExpiration > currentTime) {
+            tokenResponse.setExpiresIn(storedExpiration - currentTime);
+        }
         return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
 
@@ -528,9 +590,69 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
-        AccessTokenResponse tokenResponse = new AccessTokenResponse();
-        tokenResponse.setToken(accessToken);
-        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        String expirationNote = getFederatedTokenExpiration(tokenUserSession);
+        final int currentTime = Time.currentTime();
+
+        if (expirationNote != null) {
+            Long expiration = parseTokenExpiration(expirationNote);
+            if (expiration == null) {
+                logger.warnf("Failed to parse FEDERATED_TOKEN_EXPIRATION: %s, will attempt refresh", expirationNote);
+                expiration = (long) currentTime;
+            }
+
+            if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setToken(accessToken);
+                tokenResponse.setExpiresIn(expiration > 0 ? expiration - currentTime : 0);
+                return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
+            }
+
+            String refreshToken = getFederatedRefreshToken(tokenUserSession);
+            if (refreshToken != null) {
+                try {
+                    OAuthResponse previousResponse = new OAuthResponse();
+                    previousResponse.setToken(accessToken);
+                    previousResponse.setRefreshToken(refreshToken);
+                    previousResponse.setAccessTokenExpiration(expiration);
+                    OAuthResponse newResponse = doRefreshToken(previousResponse, expiration);
+                    long newExpiration = newResponse.getAccessTokenExpiration() != null ? newResponse.getAccessTokenExpiration() : 0;
+                    setFederatedAccessToken(tokenUserSession, newResponse.getToken());
+                    setFederatedTokenExpiration(tokenUserSession, Long.toString(newExpiration));
+                    if (newResponse.getRefreshToken() != null) {
+                        setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
+                    }
+
+                    RealmModel realm = session.getContext().getRealm();
+                    if (Booleans.isTrue(getConfig().isStoreToken())) {
+                        FederatedIdentityModel model = session.users().getFederatedIdentity(realm, tokenSubject, getConfig().getAlias());
+                        if (model != null) {
+                            model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                            session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        }
+                    }
+
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                    tokenResponse.setToken(newResponse.getToken());
+                    if (newExpiration > currentTime) {
+                        tokenResponse.setExpiresIn(newExpiration - currentTime);
+                    }
+                    return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
+                } catch (IOException e) {
+                    logger.errorf(e, "Failed to refresh token from %s", getConfig().getAlias());
+                    throw new IdentityBrokerException("Failed to refresh external token: " + e.getMessage(), e);
+                }
+            }
+
+            logger.debugf("Token for %s expired with no refresh_token in session", getConfig().getAlias());
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer token expired");
+                event.error(Errors.INVALID_TOKEN);
+            }
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+
+        logger.debugf("No expiration metadata for %s session token (legacy session before migration), falling back to DB token", getConfig().getAlias());
+        return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
     }
 
     public BrokeredIdentityContext getFederatedIdentity(String response) {
@@ -542,18 +664,26 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
 
-        if (Booleans.isTrue(getConfig().isStoreToken()) && response.startsWith("{")) {
+        if (response.startsWith("{")) {
             try {
                 OAuthResponse tokenResponse = JsonSerialization.readValue(response, OAuthResponse.class);
                 if (tokenResponse.getExpiresIn() != null && tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
                     tokenResponse.setAccessTokenExpiration(accessTokenExpiration);
                     response = JsonSerialization.writeValueAsString(tokenResponse);
+                    context.getContextData().put(FEDERATED_TOKEN_EXPIRATION, tokenResponse.getAccessTokenExpiration());
                 }
-                context.setToken(response);
+                if (tokenResponse.getRefreshToken() != null) {
+                    context.getContextData().put(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
+                }
+                if (Booleans.isTrue(getConfig().isStoreToken())) {
+                    context.setToken(response);
+                }
             } catch (IOException e) {
                 logger.debugf("Can't store expiration date in JSON token", e);
             }
+        } else if (Booleans.isTrue(getConfig().isStoreToken())) {
+            context.setToken(response);
         }
 
         context.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
@@ -665,9 +795,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
-        if (token != null) {
-            setFederatedAccessToken(authSession, token);
+        if (getConfig().isStoreTokenInSession()) {
+            String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
+            if (token != null) {
+                setFederatedAccessToken(authSession, token);
+            }
+            Long expiration = (Long) context.getContextData().get(FEDERATED_TOKEN_EXPIRATION);
+            if (expiration != null) {
+                setFederatedTokenExpiration(authSession, Long.toString(expiration));
+            }
+            String refreshToken = (String) context.getContextData().get(FEDERATED_REFRESH_TOKEN);
+            if (refreshToken != null) {
+                setFederatedRefreshToken(authSession, refreshToken);
+            }
         }
     }
 
