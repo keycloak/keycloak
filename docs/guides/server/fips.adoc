@@ -16,7 +16,7 @@ FIPS library is not officially validated with OpenJDK 25. Hence for FIPS 140-2 c
 To run in FIPS 140-2, {project_name} should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/security_hardening/index#assembly_installing-the-system-in-fips-mode_security-hardening[RHEL documentation]
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
-https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[FIPS enabled security providers].
+https://docs.redhat.com/en/documentation/red_hat_build_of_openjdk/17/html/configuring_red_hat_build_of_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration#security_providers[FIPS enabled security providers].
 
 To check that the system is in FIPS mode, you can check it with the following command from the command line:
 
