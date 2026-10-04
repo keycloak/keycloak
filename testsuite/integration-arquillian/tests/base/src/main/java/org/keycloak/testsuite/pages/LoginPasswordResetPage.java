@@ -42,7 +42,7 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement emailErrorMessage;
 
-    @FindBy(partialLinkText = "Back to Login")
+    @FindBy(partialLinkText = "Back to login")
     private WebElement backToLogin;
 
     @FindBy(id = "kc-info-wrapper")

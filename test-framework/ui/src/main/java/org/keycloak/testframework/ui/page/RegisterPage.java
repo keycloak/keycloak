@@ -62,7 +62,7 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(linkText = "« Back to Login")
+    @FindBy(linkText = "« Back to login")
     private WebElement backToLoginLink;
 
     public RegisterPage(ManagedWebDriver driver) {
