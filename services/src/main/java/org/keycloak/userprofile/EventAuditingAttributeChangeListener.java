@@ -47,6 +47,15 @@ public class EventAuditingAttributeChangeListener implements AttributeChangeList
         this.event = event;
     }
 
+    /**
+     * For changes not made through a {@link UserProfile}.
+     *
+     * @param event to add detail info into
+     */
+    public EventAuditingAttributeChangeListener(EventBuilder event) {
+        this(null, event);
+    }
+
     @Override
     public void onChange(String attributeName, UserModel userModel, List<String> oldValue) {
         if (attributeName.equals(UserModel.FIRST_NAME)) {

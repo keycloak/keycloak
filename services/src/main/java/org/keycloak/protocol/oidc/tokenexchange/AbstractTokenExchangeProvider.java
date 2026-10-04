@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.BrokeredUserChangeTracker;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -404,6 +405,8 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                     .detail(Details.EMAIL, user.getEmail())
                     .detail(Details.IDENTITY_PROVIDER, providerId)
                     .success();
+
+            setContextAttributes(user, context);
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);
@@ -416,22 +419,29 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
             }
 
-            context.getIdp().updateBrokeredUser(session, realm, user, context);
+            // the user is updated through the tracker to send events for the changes
+            BrokeredUserChangeTracker trackedUser = BrokeredUserChangeTracker.track(user);
+            context.getIdp().updateBrokeredUser(session, realm, trackedUser, context);
 
             for (IdentityProviderMapperModel mapper : mappers) {
                 IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
+                IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, trackedUser, mapper, context, target);
             }
+
+            setContextAttributes(trackedUser, context);
+            trackedUser.sendEvents(event, context);
         }
 
-        // make sure user attributes are updated based on attributes set to the context
+        return user;
+    }
+
+    // make sure user attributes are updated based on attributes set to the context
+    private static void setContextAttributes(UserModel user, BrokeredIdentityContext context) {
         for (Map.Entry<String, List<String>> attr : context.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
             if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
         }
-
-        return user;
     }
 
     private void setFederatedAccessTokenNote(UserSessionModel userSession, String idpAlias, String token) {

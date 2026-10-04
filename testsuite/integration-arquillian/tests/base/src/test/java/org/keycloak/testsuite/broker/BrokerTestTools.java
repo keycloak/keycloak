@@ -4,13 +4,17 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.PageUtils;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -103,6 +107,20 @@ public class BrokerTestTools {
 
     public static String encodeUrl(String url) {
         return URLEncoder.encode(url, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Polls all events and returns the {@code UPDATE_PROFILE} and {@code UPDATE_EMAIL} events of the given user.
+     */
+    public static List<EventRepresentation> pollProfileUpdateEvents(AssertEvents events, String userId) {
+        List<EventRepresentation> updateEvents = new ArrayList<>();
+        for (EventRepresentation event = events.poll(); event != null; event = events.poll()) {
+            if ((EventType.UPDATE_PROFILE.name().equals(event.getType()) || EventType.UPDATE_EMAIL.name().equals(event.getType()))
+                    && userId.equals(event.getUserId())) {
+                updateEvents.add(event);
+            }
+        }
+        return updateEvents;
     }
 
     /**

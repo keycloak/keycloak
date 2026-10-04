@@ -23,11 +23,14 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.broker.provider.BrokeredUserChangeTracker;
+import org.keycloak.broker.provider.HardcodedAttributeMapper;
 import org.keycloak.broker.provider.IdpLinkAction;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
@@ -36,10 +39,13 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -69,6 +75,8 @@ import static org.hamcrest.Matchers.is;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBrokerTest {
+
+    private static final String DEPARTMENT = "department";
 
     private static final BrokerConfiguration BROKER_CONFIG_INSTANCE = new KcOidcBrokerConfiguration() {
 
@@ -168,6 +176,47 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         });
     }
 
+
+    @Test
+    public void testAccountLinkingSuccessReportsChangedAttributes() throws Exception {
+        IdentityProviderMapperRepresentation departmentMapper = new IdentityProviderMapperRepresentation();
+        departmentMapper.setName(DEPARTMENT);
+        departmentMapper.setIdentityProviderAlias(bc.getIDPAlias());
+        departmentMapper.setIdentityProviderMapper(HardcodedAttributeMapper.PROVIDER_ID);
+        departmentMapper.setConfig(Map.of(
+                HardcodedAttributeMapper.ATTRIBUTE, DEPARTMENT,
+                HardcodedAttributeMapper.ATTRIBUTE_VALUE, "sales",
+                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.name()));
+        identityProviderResource.addMapper(departmentMapper).close();
+
+        loginToConsumer();
+
+        // Redirect to link account on behalf of "broker-app" and login to the IDP
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertUserLinkedToIDP(true);
+
+        // the mapper sets the department when the account is linked
+        String consumerUserId = adminClient.realm(bc.consumerRealmName()).users().search("user1", true).get(0).getId();
+        List<EventRepresentation> updateEvents = BrokerTestTools.pollProfileUpdateEvents(events, consumerUserId);
+        Assertions.assertEquals(1, updateEvents.size());
+        EventAssertion.assertSuccess(updateEvents.get(0))
+                .type(EventType.UPDATE_PROFILE)
+                .details(Details.CONTEXT, BrokeredUserChangeTracker.IDP_SYNC_CONTEXT)
+                .details(Details.USERNAME, "user1")
+                .details(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .details(Details.PREF_UPDATED + DEPARTMENT, "sales")
+                .withoutDetails(Details.PREF_PREVIOUS + DEPARTMENT);
+    }
 
     @Test
     public void testAccountLinkingSuccessTriggeredWhenUserNotAuthenticated() throws Exception {
