@@ -122,7 +122,13 @@ public class SecureClientAuthenticatorExecutor implements ClientPolicyExecutorPr
 
         String clientAuthenticatorType = rep.getClientAuthenticatorType();
         if (isValidClientAuthenticator(clientAuthenticatorType)) return;
-        throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: token_endpoint_auth_method");
+        List<String> acceptableClientAuthn = configuration.getAllowedClientAuthenticators();
+
+        throw new ClientPolicyException(
+                OAuthErrorException.INVALID_CLIENT_METADATA,
+                "Invalid client metadata: token_endpoint_auth_method. Allowed client authentication methods: "
+                        + (acceptableClientAuthn == null ? "none" : String.join(", ", acceptableClientAuthn))
+        );
     }
 
     // Validate client authenticator also during client request
