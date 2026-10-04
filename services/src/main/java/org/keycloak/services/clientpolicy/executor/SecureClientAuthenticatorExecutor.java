@@ -127,7 +127,9 @@ public class SecureClientAuthenticatorExecutor implements ClientPolicyExecutorPr
         throw new ClientPolicyException(
                 OAuthErrorException.INVALID_CLIENT_METADATA,
                 "Invalid client metadata: token_endpoint_auth_method. Allowed client authentication methods: "
-                        + (acceptableClientAuthn == null ? "none" : String.join(", ", acceptableClientAuthn))
+                        + (acceptableClientAuthn == null || acceptableClientAuthn.isEmpty()
+                        ? "none"
+                        : String.join(", ", acceptableClientAuthn))
         );
     }
 
