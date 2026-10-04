@@ -303,7 +303,11 @@ podman|docker run --name keycloak_unoptimized -p 127.0.0.1:8080:8080 \
         start-dev --import-realm
 ----
 
+<@profile.ifCommunity>
+
 Feel free to join the open https://github.com/keycloak/keycloak/discussions/8549[GitHub Discussion] around enhancements of the admin bootstrapping process.
+
+</@profile.ifCommunity>
 
 == Specifying different memory settings
 
