@@ -33,10 +33,16 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
                 return null;
             }
 
-            // retry once: a concurrent clearCache() might remove the file between the exists() check below and
-            // opening the stream, or while it is being (re-)created
+            // retry once: a concurrent clearCache() might remove or disrupt the file between the exists() check
+            // below and opening the stream, or while it is being (re-)created
             for (int attempt = 0; attempt < 2; attempt++) {
-                File file = encodedFile.exists() ? encodedFile : createEncodedFile(producer, encodedFile);
+                File file;
+                try {
+                    file = encodedFile.exists() ? encodedFile : createEncodedFile(producer, encodedFile);
+                } catch (IOException e) {
+                    logger.debugf("Failed to create encoded resource %s concurrently, retrying", encodedFile);
+                    continue;
+                }
                 if (file == null) {
                     return null;
                 }
@@ -75,13 +81,8 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
             IOUtils.copy(is, gos);
         }
 
-        try {
-            Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
-            return target;
-        } catch (IOException io) {
-            logger.warnf(io, "Fail to move temporary file to %s", target.toString());
-            return null;
-        }
+        Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
+        return target;
     }
 
 }
