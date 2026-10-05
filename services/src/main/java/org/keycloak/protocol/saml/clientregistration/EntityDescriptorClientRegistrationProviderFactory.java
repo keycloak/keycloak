@@ -26,6 +26,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationProviderFactor
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+@Deprecated(forRemoval = true, since = "26.8")
 public class EntityDescriptorClientRegistrationProviderFactory implements ClientRegistrationProviderFactory {
 
     public static final String ID = "saml2-entity-descriptor";

@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
@@ -189,8 +190,11 @@ export async function addMapper(
   mapperName: string,
 ) {
   await page.getByTestId("no-mappers-empty-action").click();
-  await page.locator("#identityProviderMapper").click();
-  await page.getByTestId(`${mapperType}-idp-mapper`).click();
+  await selectItem(
+    page,
+    "#identityProviderMapper",
+    page.getByTestId(`${mapperType}-idp-mapper`),
+  );
   await page.getByTestId("name").fill(mapperName);
 }
 
@@ -198,6 +202,9 @@ export async function clickSaveMapper(page: Page) {
   const saveMapperButton = page.getByTestId("new-mapper-save-button");
   await expect(saveMapperButton).toBeEnabled();
   await saveMapperButton.click();
+  // The add-mapper page is itself /mappers/create, so wait until the save has
+  // navigated away from it before deciding where we are.
+  await expect(page).not.toHaveURL(/\/mappers\/create$/);
   await expect(page).toHaveURL(/.*mappers(\/[^/]+)?$/);
 
   // Some mapper forms stay on /mappers/:id after save. Navigate back to the list

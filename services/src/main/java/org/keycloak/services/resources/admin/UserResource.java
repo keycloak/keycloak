@@ -118,6 +118,7 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.StringUtil;
 
@@ -230,6 +231,10 @@ public class UserResource {
             }
             profile.update(rep.getAttributes() != null);
             updateUserFromRep(profile, user, rep, session, true);
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -757,11 +762,17 @@ public class UserResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void disableCredentialType(List<String> credentialTypes) {
-        auth.users().requireManage(user);
-        if (credentialTypes == null) return;
+        if (credentialTypes == null || credentialTypes.isEmpty()) {
+            auth.users().requireManage(user);
+            return;
+        }
         for (String type : credentialTypes) {
+            if (type == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(type)) {
+                auth.users().requireResetPassword(user);
+            } else {
+                auth.users().requireManage(user);
+            }
             user.credentialManager().disableCredentialType(type);
-
         }
     }
 
@@ -894,6 +905,11 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
+        }
+
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
                 .detail(Details.CREDENTIAL_ID, credentialId)
@@ -971,6 +987,10 @@ public class UserResource {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
+        }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
         }
         user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
@@ -1243,6 +1263,7 @@ public class UserResource {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);

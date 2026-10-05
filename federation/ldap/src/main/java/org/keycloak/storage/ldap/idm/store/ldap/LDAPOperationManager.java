@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -45,6 +47,7 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.util.Time;
@@ -533,6 +536,8 @@ public class LDAPOperationManager {
 
         LdapContext authCtx = null;
         StartTlsResponse tlsResponse = null;
+        AtomicReference<SSLSocket> tlsSocket = new AtomicReference<>();
+        AtomicReference<Socket> tlsTransport = new AtomicReference<>();
 
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
@@ -562,7 +567,7 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory, tlsSocket, tlsTransport);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -614,22 +619,23 @@ public class LDAPOperationManager {
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
             recordLdapRequest("authenticate", success, startTimeNanos, errorName);
-            if (tlsResponse != null) {
+            try {
+                if (tlsResponse != null) {
+                    LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
+                }
+            } finally {
                 try {
-                    tlsResponse.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    if (authCtx != null) {
+                        try {
+                            authCtx.close();
+                        } catch (NamingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } finally {
+                    tracing.endSpan();
                 }
             }
-
-            if (authCtx != null) {
-                try {
-                    authCtx.close();
-                } catch (NamingException e) {
-                    e.printStackTrace();
-                }
-            }
-            tracing.endSpan();
         }
     }
 

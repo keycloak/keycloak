@@ -36,7 +36,7 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "userLabel")
     private WebElement totpLabelInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "saveTOTPBtn")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")
@@ -48,9 +48,6 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
-    private WebElement loginAlertErrorMessage;
-
     @FindBy(id = "input-error-otp-code")
     private WebElement totpInputCodeError;
 
@@ -61,8 +58,56 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
         super(driver);
     }
 
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-config-totp";
+    }
+
+    public void configure(String totp) {
+        totpInput.sendKeys(totp);
+        submit();
+    }
+
+    public void configure(String totp, String userLabel) {
+        totpInput.sendKeys(totp);
+        totpLabelInput.sendKeys(userLabel);
+        submit();
+    }
+
+    public void submit() {
+        submitButton.click();
+    }
+
+    public void cancel() {
+        cancelAIAButton.click();
+    }
+
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
+    }
+
+    public void clickManual() {
+        manualLink.click();
+    }
+
+    public void clickBarcode() {
+        barcodeLink.click();
+    }
+
+    public String getInputCodeError() {
+        try {
+            return totpInputCodeError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputLabelError() {
+        try {
+            return totpInputLabelError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isCancelDisplayed() {
@@ -71,10 +116,5 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
         } catch (NoSuchElementException e) {
             return false;
         }
-    }
-
-    @Override
-    public String getExpectedPageId() {
-        return "login-login-config-totp";
     }
 }

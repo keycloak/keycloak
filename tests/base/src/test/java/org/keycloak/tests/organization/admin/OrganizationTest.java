@@ -775,40 +775,77 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testImportLegacyAliases() {
+        RealmRepresentation importedRealm = new RealmRepresentation();
+        importedRealm.setRealm("legacy-organization-aliases-" + KeycloakModelUtils.generateId());
+        importedRealm.setOrganizationsEnabled(true);
+        OrganizationRepresentation unicode = createRepresentation("unicode");
+        unicode.setAlias("café");
+        OrganizationRepresentation quoted = createRepresentation("quoted");
+        quoted.setAlias("acme\"alias");
+        importedRealm.setOrganizations(List.of(unicode, quoted));
+
+        adminClient.realms().create(importedRealm);
+        try {
+            List<OrganizationRepresentation> organizations = adminClient.realm(importedRealm.getRealm())
+                    .organizations().list(null, null);
+            assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(),
+                    containsInAnyOrder(unicode.getAlias(), quoted.getAlias()));
+        } finally {
+            adminClient.realm(importedRealm.getRealm()).remove();
+        }
+    }
+
+    @Test
     public void testSpecialCharsAlias() {
         OrganizationRepresentation org = createRepresentation("acme");
         OrganizationDomainRepresentation orgDomain = new OrganizationDomainRepresentation();
         orgDomain.setName("acme.com");
         org.addDomain(orgDomain);
 
-        org.setAlias("acme&@#!");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        // Reject scope delimiters, control characters, backslashes, and the reserved wildcard alias.
+        for (String alias : List.of(" ", "\n", "acme alias", "acme\nalias", "acme\\alias", "acme\u007falias", "acme\u0085alias", "*")) {
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus(), alias);
+            }
         }
 
-        // blank alias will be replaced with org name, which is valid
-        org.setAlias("");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            String id = ApiUtil.getCreatedId(response);
-            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
+        // '&', '@', '#', '!', '/' and ':' are valid OAuth 2.0 scope characters (RFC 6749, Section 3.3)
+        // and are therefore allowed in the alias
+        // Unicode and double quotes were accepted before scope-token validation was introduced.
+        for (String alias : List.of("acme", "acme-2", "acme_alias", "acme&@#!/:", "~acme.alias~", "café", "acme\"alias", "acme*corp")) {
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus(), alias);
+                String id = ApiUtil.getCreatedId(response);
+                try {
+                    assertEquals(alias, realm.admin().organizations().get(id).toRepresentation().getAlias());
+                } finally {
+                    realm.admin().organizations().get(id).delete().close();
+                }
+            }
         }
 
-        org.setAlias(" ");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
+        // Both an omitted alias and an empty alias default to the organization name.
+        for (String alias : new String[] {null, ""}) {
+            org.setName("acme-2");
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+                String id = ApiUtil.getCreatedId(response);
+                try {
+                    assertEquals(org.getName(), realm.admin().organizations().get(id).toRepresentation().getAlias());
+                } finally {
+                    realm.admin().organizations().get(id).delete().close();
+                }
+            }
 
-        org.setAlias("\n");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
-
-        // when alias is empty, name is used as alias
-        org.setName("acme@");
-        org.setAlias("");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            // The name used as the fallback alias must still pass validation.
+            org.setName("acme\\backslash");
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            }
         }
     }
 

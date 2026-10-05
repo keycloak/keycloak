@@ -11,6 +11,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.scope.UsernameScopeType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -155,16 +156,39 @@ public class RejectMayActClaimExecutor implements ClientPolicyExecutorProvider<R
 
         // check the consent is granted for the scope requested
         if (!Boolean.TRUE.equals(configuration.isAvoidConsentCheck())) {
-            String scope = client != null
-                    ? OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + client.getClientId()
-                    : OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + admin.getUsername();
-            if (!TokenManager.isValidScope(session, scope, context.getClient())
+            String scope = findConsentedDelegationScope(context, realm, admin, client);
+            if (scope == null
+                    || !TokenManager.isValidScope(session, scope, context.getClient())
                     || !TokenManager.verifyConsentStillAvailable(session, user, context.getClient(), context.getClientSession(), scope)) {
-                logger.debugf("Consent '%s' is not granted for the may_act sub claim", scope);
+                logger.debugf("No consented delegation scope grants the may_act sub claim '%s'", subject);
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid may_act sub in the token");
             }
         }
 
         // it should be OK now, let the may_act pass
+    }
+
+    // the consent note keeps the parameter exactly as requested, so find the granted scope instead of rebuilding it
+    private String findConsentedDelegationScope(AbstractTokenResponseContext context, RealmModel realm, UserModel admin, ClientModel client) {
+        String scopeParam = context.getScopeParameter();
+        if (scopeParam == null) {
+            return null;
+        }
+        String prefix = (client != null
+                ? OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE
+                : OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE) + ClientScopeModel.VALUE_SEPARATOR;
+        return TokenManager.parseScopeParameter(scopeParam)
+                .filter(scope -> scope.startsWith(prefix))
+                .filter(scope -> matchesDelegate(realm, scope.substring(prefix.length()), admin, client))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean matchesDelegate(RealmModel realm, String parameter, UserModel admin, ClientModel client) {
+        if (client != null) {
+            return client.getClientId().equals(parameter);
+        }
+        UserModel target = UsernameScopeType.findUser(session, realm, parameter);
+        return target != null && admin.getId().equals(target.getId());
     }
 }

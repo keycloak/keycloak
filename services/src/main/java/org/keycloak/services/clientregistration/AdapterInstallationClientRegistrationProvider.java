@@ -34,6 +34,12 @@ import org.keycloak.services.managers.RealmManager;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+/**
+ * @deprecated This provider is deprecated for removal since Keycloak 26.8.
+ * Retrieve adapter configuration via the Admin REST API instead.
+ */
+@Deprecated(forRemoval = true, since = "26.8")
 public class AdapterInstallationClientRegistrationProvider implements ClientRegistrationProvider {
 
     private KeycloakSession session;
