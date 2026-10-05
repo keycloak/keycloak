@@ -25,7 +25,7 @@ public class IdpConfirmOverrideLinkPage extends LanguageComboboxAwarePage {
     @FindBy(id = "confirmOverride")
     private WebElement confirmOverrideButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement message;
 
     @Override

@@ -1,15 +1,15 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 
 <@layout.registrationLayout; section>
     <#if section = "title">
         title
     <#elseif section = "header">
-        <span class="${properties.kcWebAuthnKeyIcon!}"></span>
         ${msg("webauthn-registration-title")}
     <#elseif section = "form">
-
-        <form id="register" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+    <div class="${properties.kcFormClass!}">
+        <form id="register" action="${url.loginAction}" method="post" >
             <div class="${properties.kcFormGroupClass!}">
                 <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
                 <input type="hidden" id="attestationObject" name="attestationObject"/>
@@ -46,23 +46,19 @@
                     errmsg : ${msg("webauthn-unsupported-browser-text")?c}
                 };
                 registerByWebAuthn(input);
-            }, { once: true });
+            },  { once: true });
             </#outputformat>
         </script>
 
-        <input type="submit"
-               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-               id="registerWebAuthn" value="${msg("doRegisterSecurityKey")}"/>
-
-        <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
-            <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
-                  method="post">
-                <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true">${msg("doCancel")}
-                </button>
-            </form>
-        </#if>
-
+            <@buttons.actionGroup horizontal=true>
+                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey"/>
+                <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
+                    <form class="${properties.kcFormClass!}" action="${url.loginAction}"
+                          id="kc-webauthn-settings-form" method="post">
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"/>
+                    </form>
+                </#if>
+            </@buttons.actionGroup>
+    </div>
     </#if>
 </@layout.registrationLayout>

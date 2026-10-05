@@ -1,7 +1,8 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <#import "user-profile-commons.ftl" as userProfileCommons>
-<@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
+<#import "buttons.ftl" as buttons>
+<@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=false; section>
     <#if section = "header">
         ${msg("updateEmailTitle")}
     <#elseif section = "form">
@@ -16,14 +17,12 @@
 
                 <@passwordCommons.logoutOtherSessions/>
 
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                <@buttons.actionGroup horizontal=true>
+                    <@buttons.button id="kc-submit" label="doSubmit"/>
                     <#if isAppInitiatedAction??>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
-                    <#else>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+                        <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
                     </#if>
-                </div>
+                </@buttons.actionGroup>
             </div>
         </form>
     </#if>
