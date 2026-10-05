@@ -323,7 +323,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
         AuthorizationEndpointResponse secondAuthResponse = wallet.authorizationRequest()
                 .scope(ctx.getScope())
-                .send(ctx.getHolder(), TEST_PASSWORD);
+                .send();
         assertNull(secondAuthResponse.getErrorDescription(), "Authorization error: " + secondAuthResponse.getErrorDescription());
         assertNotNull(secondAuthResponse.getCode(), "No auth code");
 
