@@ -66,6 +66,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationModel;
@@ -85,12 +86,14 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -611,7 +614,9 @@ public class DefaultExportImportManager implements ExportImportManager {
             appMap.put(app.getClientId(), app);
 
             ValidationUtil.validateClient(session, app, false, r -> {
-                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
+                // A ModelValidationException is reported as a 400 naming the client, a RuntimeException would surface
+                // as an opaque 500
+                throw new ModelValidationException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
             });
         }
         return appMap;
@@ -629,6 +634,12 @@ public class DefaultExportImportManager implements ExportImportManager {
                 loginProtocolFactory.addClientScopeDefaults(resourceRep);
             }
             ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
+            try {
+                ProtocolMapperValidationUtil.validateProtocolMappers(session, realm, app);
+            } catch (ProtocolMapperConfigException ex) {
+                // ModelValidationException is reported as a 400 naming the scope; a RuntimeException would be an opaque 500
+                throw new ModelValidationException("Invalid client scope " + app.getName() + ": " + ex.getMessage());
+            }
             appMap.put(app.getName(), app);
         }
         return appMap;
