@@ -86,6 +86,51 @@ Disadvantages::
 ** Two {kubernetes} control-planes must be provisioned
 * Not supported with three or more availability zones
 
+=== Choose your topology
+
+Use the following comparison to decide between a single-cluster and a multi-cluster (v2) setup.
+
+WARNING: Multi-cluster (v1) is deprecated and will be removed in a future major release stream of {project_name}.
+
+[cols="1,1,1",options="header"]
+|===
+|
+|Single cluster
+|Multi-cluster (v2) / Stateless
+
+|*{project_name} topology*
+|One {project_name} cluster
+|2+ independent {project_name} clusters
+
+|*Typical use*
+|One platform/network, optionally stretched across availability zones or data centers.
+|Independent sites/clusters requiring site-level isolation
+
+|*User session state*
+|Database
+|Database
+
+|*Authentication sessions and tokens*
+|In-Memory
+|Database
+
+|*Networking*
+|Transparent between {project_name} members
+|No transparent network required between sites
+
+|*Database*
+|Synchronously replicated DB
+|Synchronously replicated DB
+
+|*External LB*
+|Depends on deployment; usually included in an {kubernetes} platform.
+|Required
+|===
+
+IMPORTANT: A site is a failure domain such as an availability zone or data center.
+
+IMPORTANT: A {project_name} cluster is a set of instances that communicate with each other locally in the same site. An {kubernetes} cluster is the underlying platform cluster. These terms are not interchangeable.
+
 === Next Steps
 
 To learn more about the different high-availability architectures and their supported configurations, please consult the individual {sections}.
