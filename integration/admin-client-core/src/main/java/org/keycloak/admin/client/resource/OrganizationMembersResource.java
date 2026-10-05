@@ -60,8 +60,8 @@ public interface OrganizationMembersResource {
     /**
      * Return members in the organization.
      *
-     * @param first index of the first element (pagination offset).
-     * @param max the maximum number of results.
+     * @param firstResult index of the first element (pagination offset).
+     * @param maxResults the maximum number of results.
      * @return a list containing organization members. Returns brief user representations by default.
      *         Use {@link #list(Integer, Integer, boolean)} to control the representation type.
      */
@@ -75,8 +75,8 @@ public interface OrganizationMembersResource {
     /**
      * Return members in the organization.
      *
-     * @param first index of the first element (pagination offset).
-     * @param max the maximum number of results.
+     * @param firstResult index of the first element (pagination offset).
+     * @param maxResults the maximum number of results.
      * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default. This parameter is available since Keycloak server 26.7.0
      * @return a list containing organization members.
      * @since Keycloak server 26.7
@@ -186,6 +186,10 @@ public interface OrganizationMembersResource {
     @Path("{id}")
     OrganizationMemberResource member(@PathParam("id") String id);
 
+    /**
+     * @deprecated Use {@link #inviteUser(String, String, String, String)} with an explicit {@code client_id} instead.
+     */
+    @Deprecated
     @POST
     @Path("invite-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -201,10 +205,20 @@ public interface OrganizationMembersResource {
                         @FormParam("lastName") String lastName,
                         @QueryParam("client_id") String clientId);
 
+    /**
+     * @deprecated Use {@link #inviteExistingUser(String, String)} with an explicit {@code client_id} instead.
+     */
+    @Deprecated
     @POST
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);
+
+    @POST
+    @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    Response inviteExistingUser(@FormParam("id") String id,
+                                @QueryParam("client_id") String clientId);
 
     /**
      * @since Keycloak server 26
