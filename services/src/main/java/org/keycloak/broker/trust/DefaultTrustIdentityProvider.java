@@ -80,7 +80,8 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
         return Stream.of(new X509TrustMaterial(
                 new LinkedHashSet<>(Arrays.asList(certificates)),
                 config.getRequiredExtendedKeyUsages(),
-                config.isRejectTrustAnchorInX5c()));
+                request.getPurpose() == TrustMaterialRequest.Purpose.KEY_ATTESTATION
+                        && config.isRejectTrustAnchorInX5c()));
     }
 
     @Override

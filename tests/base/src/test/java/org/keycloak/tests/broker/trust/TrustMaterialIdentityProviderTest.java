@@ -16,11 +16,15 @@
  */
 package org.keycloak.tests.broker.trust;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
@@ -30,6 +34,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
+import org.keycloak.broker.provider.X509TrustMaterial;
 import org.keycloak.broker.trust.DefaultTrustIdentityProvider;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
@@ -57,6 +62,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,7 +74,9 @@ public class TrustMaterialIdentityProviderTest {
     private static final String DEFAULT_PUBLIC_KEY_WITHOUT_REQUEST_ALIAS = "trust-material-default-public-key-without-request";
     private static final String DEFAULT_PUBLIC_KEY_WITH_REQUEST_ALIAS = "trust-material-default-public-key-with-request";
     private static final String DEFAULT_DISABLED_ALIAS = "trust-material-default-disabled";
+    private static final String DEFAULT_X509_ALIAS = "trust-material-default-x509";
     private static final String OIDC_ALIAS = "trust-material-oidc";
+    private static final String CERTIFICATE_END = "-----END CERTIFICATE-----";
     private static final String KEY_ID = "trust-material-key";
     private static final String CONFIGURED_KEY_ID = "trust-material-configured-key";
     private static final String REQUEST_KEY_ID = "trust-material-request-key";
@@ -205,6 +213,31 @@ public class TrustMaterialIdentityProviderTest {
     }
 
     @Test
+    public void defaultTrustIdentityProviderScopesTrustAnchorRejectionToKeyAttestation() throws IOException {
+        String trustedCertificate = readTrustedCertificate();
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            configureTrustIdentityProvider(realm, DEFAULT_X509_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID, true,
+                    Map.of(
+                            DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                            DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, trustedCertificate,
+                            DefaultTrustIdentityProviderConfig.REJECT_TRUST_ANCHOR_IN_X5C, "true"));
+            TrustMaterialIdentityProvider<?> provider = getTrustMaterialProvider(realm, session, DEFAULT_X509_ALIAS);
+
+            X509TrustMaterial keyAttestationTrust = provider.resolveX509Trust(TrustMaterialRequest.builder()
+                    .purpose(TrustMaterialRequest.Purpose.KEY_ATTESTATION)
+                    .build()).findFirst().orElseThrow();
+            X509TrustMaterial sdJwtIssuerTrust = provider.resolveX509Trust(TrustMaterialRequest.builder()
+                    .purpose(TrustMaterialRequest.Purpose.SD_JWT_ISSUER)
+                    .build()).findFirst().orElseThrow();
+
+            assertTrue(keyAttestationTrust.rejectTrustAnchorInPresentedChain());
+            assertFalse(sdJwtIssuerTrust.rejectTrustAnchorInPresentedChain());
+        });
+    }
+
+    @Test
     public void trustMaterialResolverUsesEnabledProviderFromAliasList() {
         runOnServer.run(session -> {
             Optional<JWK> jwk = new TrustMaterialResolver().resolveKey(session,
@@ -321,6 +354,15 @@ public class TrustMaterialIdentityProviderTest {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         return generator.generateKeyPair();
+    }
+
+    private static String readTrustedCertificate() throws IOException {
+        try (InputStream input = Objects.requireNonNull(TrustMaterialIdentityProviderTest.class
+                .getResourceAsStream("/keycloak-truststore.pem"))) {
+            String certificateBundle = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            return certificateBundle.substring(0, certificateBundle.indexOf(CERTIFICATE_END)
+                    + CERTIFICATE_END.length());
+        }
     }
 
     public static class TrustMaterialServerConfig implements KeycloakServerConfig {
