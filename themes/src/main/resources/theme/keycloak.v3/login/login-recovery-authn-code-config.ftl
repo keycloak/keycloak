@@ -33,13 +33,13 @@
 
     <!-- actions -->
     <div class="${properties.kcRecoveryCodesActions!}">
-        <button id="printRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="printRecoveryCodes()">
+        <button id="printRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="printRecoveryCodes()">
             <i class="fas fa-print"></i> ${msg("recovery-codes-print")}
         </button>
-        <button id="downloadRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="downloadRecoveryCodes()">
+        <button id="downloadRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="downloadRecoveryCodes()">
             <i class="fas fa-download"></i> ${msg("recovery-codes-download")}
         </button>
-        <button id="copyRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="copyRecoveryCodes()">
+        <button id="copyRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="copyRecoveryCodes()">
             <i class="fas fa-copy"></i> ${msg("recovery-codes-copy")}
         </button>
     </div>
