@@ -671,11 +671,19 @@ public class SamlService extends AuthorizationEndpointBase {
                     AuthenticatedClientSessionModel clientSession = SamlSessionUtils.getClientSession(session, realm, sessionIndex);
                     if (clientSession == null)
                         continue;
-                    UserSessionModel userSession = clientSession.getUserSession();
-                    if (clientSession.getClient().getClientId().equals(client.getClientId())) {
-                        // remove requesting client from logout
-                        clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+
+                    if (!clientSession.getClient().getClientId().equals(client.getClientId())) {
+                        logger.warnf("SLO LogoutRequest from client '%s' references a SessionIndex " +
+                                        "belonging to client '%s' — request rejected.",
+                                client.getClientId(),
+                                clientSession.getClient().getClientId());
+                        event.detail(Details.REASON, "session_index_not_owned_by_issuer");
+                        event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                        return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
                     }
+
+                    UserSessionModel userSession = clientSession.getUserSession();
+                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
 
                     for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
                         logoutRequest = it.next().beforeProcessingLogoutRequest(logoutRequest, userSession, clientSession);
