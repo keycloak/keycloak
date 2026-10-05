@@ -25,6 +25,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -437,6 +438,20 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             loginPage.fillPassword("invalid-password");
             loginPage.submit();
             Assertions.assertEquals("Invalid username or password.", loginPage.getPasswordInputError().orElse(null));
+
+            events.clear();
+
+            // Remove the server-side passkey while the virtual authenticator still holds it.
+            CredentialRepresentation passkey = userResource().credentials().stream()
+                    .filter(credential -> WebAuthnCredentialModel.TYPE_PASSWORDLESS.equals(credential.getType()))
+                    .findFirst()
+                    .orElseThrow();
+            userResource().removeCredential(passkey.getId());
+
+            webAuthnLoginPage.clickAuthenticate();
+            loginPage.assertCurrent();
+            Assertions.assertEquals("Unknown user authenticated by the Passkey.", loginPage.getErrorMessage().orElse(null));
+            Assertions.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.xpath("//form[@id='webauth']")));
 
             events.clear();
 
