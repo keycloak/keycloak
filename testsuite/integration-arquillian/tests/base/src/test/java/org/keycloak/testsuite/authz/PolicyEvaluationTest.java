@@ -160,6 +160,71 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     }
 
     @Test
+    public void testCheckDateAndTimeWithBlankRepeatFields() {testingClient.server().run(PolicyEvaluationTest::testCheckDateAndTimeWithBlankRepeatFields);}
+
+    public static void testCheckDateAndTimeWithBlankRepeatFields(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+        Map<String, Collection<String>> attributes = new HashMap<>();
+        attributes.put("kc.time.date_time", Arrays.asList("2026-10-05 10:30:00"));
+
+        // blank repeat fields, as stored by the admin console, are ignored and only nbf/noa are evaluated
+        TimePolicyRepresentation policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankRepeatFields");
+        policyRepresentation.setNotBefore("2026-10-01 00:00:00");
+        policyRepresentation.setNotOnOrAfter("2026-10-31 23:59:59");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        // a blank end is treated as unset, so the start must match exactly
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankEndMatch");
+        policyRepresentation.setMonth("10");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankEndNoMatch");
+        policyRepresentation.setMonth("11");
+        policyRepresentation.setMonthEnd(" ");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.DENY);
+
+        // ranges keep working when the other repeat fields are blank
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithRangeMatch");
+        policyRepresentation.setHour("9");
+        policyRepresentation.setHourEnd("11");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithRangeNoMatch");
+        policyRepresentation.setHour("11");
+        policyRepresentation.setHourEnd("12");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.DENY);
+    }
+
+    private static TimePolicyRepresentation createTimePolicyWithBlankRepeatFields(String name) {
+        TimePolicyRepresentation policyRepresentation = new TimePolicyRepresentation();
+        policyRepresentation.setName(name);
+        policyRepresentation.setDayMonth("");
+        policyRepresentation.setDayMonthEnd("");
+        policyRepresentation.setMonth("");
+        policyRepresentation.setMonthEnd("");
+        policyRepresentation.setYear("");
+        policyRepresentation.setYearEnd("");
+        policyRepresentation.setHour("");
+        policyRepresentation.setHourEnd("");
+        policyRepresentation.setMinute("");
+        policyRepresentation.setMinuteEnd("");
+        return policyRepresentation;
+    }
+
+    private static void assertTimePolicyEffect(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer,
+                                               TimePolicyRepresentation policyRepresentation, Map<String, Collection<String>> attributes, Effect expected) {
+        Policy policy = authorization.getStoreFactory().getPolicyStore().create(resourceServer, policyRepresentation);
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
+        provider.evaluate(evaluation);
+        assertEquals(expected, evaluation.getEffect());
+    }
+
+    @Test
     public void testCheckUserInGroup() {
         testingClient.server().run(PolicyEvaluationTest::testCheckUserInGroup);
     }
