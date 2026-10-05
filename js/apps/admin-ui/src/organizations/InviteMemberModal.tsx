@@ -10,6 +10,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { ClientSelect } from "../components/client/ClientSelect";
 
 type InviteMemberModalProps = {
   orgId: string;
@@ -29,11 +30,12 @@ export const InviteMemberModal = ({
 
   const submitForm = async (data: Record<string, string>) => {
     try {
+      const { clientId, ...formFields } = data;
       const formData = new FormData();
-      for (const key in data) {
-        formData.append(key, data[key]);
+      for (const key in formFields) {
+        formData.append(key, formFields[key]);
       }
-      await adminClient.organizations.invite({ orgId }, formData);
+      await adminClient.organizations.invite({ orgId, clientId }, formData);
       addAlert(t("inviteSent"));
       onClose();
     } catch (error) {
@@ -79,6 +81,11 @@ export const InviteMemberModal = ({
           />
           <TextControl name="firstName" label={t("firstName")} />
           <TextControl name="lastName" label={t("lastName")} />
+          <ClientSelect
+            name="clientId"
+            label="client"
+            helpText="invitationClientHelp"
+          />
         </Form>
       </FormProvider>
     </Modal>
