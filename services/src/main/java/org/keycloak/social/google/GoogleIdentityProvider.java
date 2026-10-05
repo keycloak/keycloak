@@ -124,8 +124,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     }
 
     @Override
-    public JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience, boolean enforceSignatures) {
-        JsonWebToken token = super.validateToken(encodedToken, ignoreAudience, enforceSignatures);
+    protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
+        JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
         Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
         validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
         return token;

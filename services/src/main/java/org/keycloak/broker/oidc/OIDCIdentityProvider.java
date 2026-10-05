@@ -752,23 +752,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * IdentityBrokerException is thrown on any error.
      *
      * @param encodedToken The token in the encoded string format.
-     * @param shouldBeSigned true if the token must be a signed JWS (id token, logout token),
+     * @param shouldBeSigned true if the token should be signed (id token),
      * false if the token can be only encrypted and not signed (user info).
      * @return The content in string format.
      */
     protected String parseTokenInput(String encodedToken, boolean shouldBeSigned) {
-        return parseTokenInput(encodedToken, shouldBeSigned, false);
-    }
-
-    /**
-     * @param encodedToken The token in the encoded string format.
-     * @param shouldBeSigned true if the token must be a signed JWS,
-     * false if the token can be only encrypted and not signed (user info).
-     * @param enforceSignatureValidation true to validate the signature regardless of the
-     * IDP's {@code validateSignature} setting (e.g. for backchannel logout tokens).
-     * @return The content in string format.
-     */
-    protected String parseTokenInput(String encodedToken, boolean shouldBeSigned, boolean enforceSignatureValidation) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No token from server.");
         }
@@ -778,21 +766,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             JOSE joseToken = JOSEParser.parse(encodedToken);
             if (joseToken instanceof JWE) {
                 // encrypted JWE token
-                JWE jwe = (JWE) joseToken;
-
-                KeyWrapper key;
-                if (jwe.getHeader().getKeyId() == null) {
-                    key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
-                } else {
-                    key = session.keys().getKey(session.getContext().getRealm(), jwe.getHeader().getKeyId(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
-                }
-                if (key == null || key.getPrivateKey() == null) {
-                    throw new IdentityBrokerException("Private key not found in the realm to decrypt token algorithm " + jwe.getHeader().getRawAlgorithm());
-                }
-
-                jwe.getKeyStorage().setDecryptionKey(key.getPrivateKey());
-                jwe.verifyAndDecodeJwe();
-                String content = new String(jwe.getContent(), StandardCharsets.UTF_8);
+                String content = decryptToken((JWE) joseToken);
 
                 try {
                     // try to decode the token just in case it is a JWS
@@ -818,10 +792,56 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             // verify signature of the JWS
-            if (enforceSignatureValidation ? !verifySignature(jws) : !verify(jws)) {
+            if (!verify(jws)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
             return new String(jws.getContent(), StandardCharsets.UTF_8);
+        } catch (JWEException e) {
+            throw new IdentityBrokerException("Invalid token", e);
+        }
+    }
+
+    /**
+     * Decrypts the given JWE using the realm encryption keys and returns its content.
+     */
+    protected String decryptToken(JWE jwe) throws JWEException {
+        KeyWrapper key;
+        if (jwe.getHeader().getKeyId() == null) {
+            key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
+        } else {
+            key = session.keys().getKey(session.getContext().getRealm(), jwe.getHeader().getKeyId(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
+        }
+        if (key == null || key.getPrivateKey() == null) {
+            throw new IdentityBrokerException("Private key not found in the realm to decrypt token algorithm " + jwe.getHeader().getRawAlgorithm());
+        }
+
+        jwe.getKeyStorage().setDecryptionKey(key.getPrivateKey());
+        jwe.verifyAndDecodeJwe();
+        return new String(jwe.getContent(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Parses a token that must be a JWS, optionally wrapped in a JWE, and returns the JWS without verifying its signature.
+     */
+    protected JWSInput parseSignedToken(String encodedToken) {
+        if (encodedToken == null) {
+            throw new IdentityBrokerException("No token from server.");
+        }
+
+        try {
+            JOSE joseToken = JOSEParser.parse(encodedToken);
+            if (joseToken instanceof JWE) {
+                String content = decryptToken((JWE) joseToken);
+                try {
+                    joseToken = JOSEParser.parse(content);
+                } catch (Exception e) {
+                    throw new IdentityBrokerException("Token is not a signed JWS", e);
+                }
+            }
+            if (!(joseToken instanceof JWSInput)) {
+                throw new IdentityBrokerException("Invalid token type");
+            }
+            return (JWSInput) joseToken;
         } catch (JWEException e) {
             throw new IdentityBrokerException("Invalid token", e);
         }
@@ -833,14 +853,25 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return validateToken(encodedToken, ignoreAudience);
     }
 
-    protected JsonWebToken validateToken(String encodedToken, boolean ignoreAudience) {
-        return validateToken(encodedToken, ignoreAudience, false);
+    public JsonWebToken validateLogoutToken(String encodedToken) {
+        JsonWebToken token = validateToken(encodedToken);
+
+        if (!verifySignature(parseSignedToken(encodedToken))) {
+            if (!getConfig().isValidateSignature()) {
+                logger.warnf("Logout token signature validation failed for identity provider '%s'. Signatures of logout tokens are always "
+                        + "validated regardless of the 'validateSignature' setting, so the identity provider must have a JWKS URL or a public key configured.",
+                        getConfig().getAlias());
+            }
+            throw new IdentityBrokerException("Logout token signature validation failed");
+        }
+
+        return token;
     }
 
-    public JsonWebToken validateToken(String encodedToken, boolean ignoreAudience, boolean enforceSignatureValidation) {
+    protected JsonWebToken validateToken(String encodedToken, boolean ignoreAudience) {
         JsonWebToken token;
         try {
-            token = JsonSerialization.readValue(parseTokenInput(encodedToken, true, enforceSignatureValidation), JsonWebToken.class);
+            token = JsonSerialization.readValue(parseTokenInput(encodedToken, true), JsonWebToken.class);
         } catch (IOException e) {
             throw new IdentityBrokerException("Invalid token", e);
         }
