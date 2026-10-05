@@ -96,7 +96,7 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping {
             throw new PropertyException(proxyAddressError(address));
         }
 
-        if ("localhost".equals(address)) {
+        if ("localhost".equals(host)) {
             return;
         }
 
