@@ -787,12 +787,12 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         request.addPermission("Shared Resource", "ScopeA", "ScopeB");
         List<Permission> permissions = authorize("kolo", "password", request);
 
-        assertEquals(2, permissions.size(), "Expected one independent permission per owner: " + permissions);
+        assertEquals("Expected one independent permission per owner: " + permissions, 2, permissions.size());
         for (Permission p : permissions) {
             if (martaResource.getId().equals(p.getResourceId())) {
-                assertEquals(Set.of("ScopeA"), p.getScopes(), "kolo should only have ScopeA on marta's resource");
+                assertEquals("kolo should only have ScopeA on marta's resource", Set.of("ScopeA"), p.getScopes());
             } else if (aliceResource.getId().equals(p.getResourceId())) {
-                assertEquals(Set.of("ScopeB"), p.getScopes(), "kolo should only have ScopeB on alice's resource");
+                assertEquals("kolo should only have ScopeB on alice's resource", Set.of("ScopeB"), p.getScopes());
             } else {
                 fail("Unexpected resource in permissions: " + p.getResourceId());
             }
@@ -815,7 +815,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         Metadata metadata = new Metadata();
         metadata.setLimit(1);
         request.setMetadata(metadata);
-        assertEquals(1, authorize("kolo", "password", request).size(), "response_permissions_limit=1 must be honored");
+        assertEquals("response_permissions_limit=1 must be honored", 1, authorize("kolo", "password", request).size());
     }
 
     private void grantScope(PermissionResource permissionResource, ResourceRepresentation resource, String scopeName) {
