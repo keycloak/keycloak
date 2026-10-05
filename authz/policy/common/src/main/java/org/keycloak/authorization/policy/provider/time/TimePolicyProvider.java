@@ -102,19 +102,23 @@ public class TimePolicyProvider implements PolicyProvider {
         }
 
         String start = policy.getConfig().get(configName);
-        if (start != null) {
+        if (!isBlank(start)) {
             String end = policy.getConfig().get(configName + "End");
-            if (end != null) {
-                if (dateField < Integer.parseInt(start)  || dateField > Integer.parseInt(end)) {
+            if (!isBlank(end)) {
+                if (dateField < Integer.parseInt(start.trim())  || dateField > Integer.parseInt(end.trim())) {
                     return true;
                 }
             } else {
-                if (dateField != Integer.parseInt(start)) {
+                if (dateField != Integer.parseInt(start.trim())) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     static String format(String notBefore) {
