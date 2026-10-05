@@ -204,7 +204,7 @@ public class ParTest extends AbstractClientPoliciesTest {
      * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
      * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
      *
-     * Regression test for CVE-2026-96446: without the fix in AuthenticationProcessor.finishAuthentication(),
+     * Regression test for CVE-2026-96446: without the fix in OIDCLoginProtocol.authenticated(),
      * the PAR entry survives the silent auth flow and can be replayed to mint additional authorization codes.
      */
     @Test
