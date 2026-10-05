@@ -146,11 +146,4 @@ public interface LoginProtocol extends Provider {
     default boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
         return false;
     }
-
-    /**
-     * Protocol specific handling of authentication completeness
-     */
-    default void authenticationComplete(AuthenticationSessionModel authSession) {
-        // do nothing
-    }
 }
