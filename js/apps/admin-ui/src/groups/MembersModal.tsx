@@ -14,8 +14,10 @@ type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+  onBack?: () => void;
   orgId?: string;
   titleKey?: string;
+  description?: string;
   confirmLabelKey?: string;
   filterEmptyEmail?: boolean;
 };
@@ -38,8 +40,10 @@ export const MemberModal = ({
   membersQuery,
   onAdd,
   onClose,
+  onBack,
   orgId,
   titleKey = "addMember",
+  description,
   confirmLabelKey = "add",
   filterEmptyEmail = false,
 }: MemberModalProps) => {
@@ -84,9 +88,22 @@ export const MemberModal = ({
     <Modal
       variant={ModalVariant.large}
       title={t(titleKey)}
+      description={description}
       isOpen
       onClose={onClose}
       actions={[
+        ...(onBack
+          ? [
+              <Button
+                data-testid="back"
+                key="back"
+                variant="secondary"
+                onClick={onBack}
+              >
+                {t("back")}
+              </Button>,
+            ]
+          : []),
         <Button
           data-testid="add"
           key="confirm"
