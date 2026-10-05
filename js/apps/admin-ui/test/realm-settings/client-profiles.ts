@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 import {
   assertEmptyTable,
   assertRowExists,
@@ -59,8 +60,7 @@ export async function clickAddExecutor(page: Page) {
 }
 
 export async function selectExecutorType(page: Page, type: string) {
-  await page.locator("#kc-executor").click();
-  await page.getByTestId(type).click();
+  await selectItem(page, "#kc-executor", page.getByTestId(type));
 }
 
 export async function assertIntentClient(page: Page, value: string) {

@@ -73,6 +73,7 @@ export const TypeaheadSelect = ({
         break;
       }
       case "Escape": {
+        event.stopPropagation();
         onToggle?.(false);
         break;
       }
