@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -142,12 +144,31 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteExistingUserWithCustomClient() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedCustomClient", "invitedCustomClient@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteExistingUser(user.getId(), "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
     public void testInviteExistingUserCustomRedirectUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
+            ClientAttributeUpdater accountUpdater = addAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteExistingUser(user.getId());
         ) {
@@ -164,6 +185,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
+                ClientAttributeUpdater accountUpdater = addAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
                 OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
                 Response response = organization.members().inviteExistingUser(user.getId());
         ) {
@@ -179,6 +201,30 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             infoPage.clickBackToApplicationLink();
             // redirect to the redirectUrl of the organization
             assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
+    @Test
+    public void testAlreadyMemberMaliciousRedirectUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+                ClientAttributeUpdater accountUpdater = addAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
+                OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
+                Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+
+            oau.setRedirectUrl("https://evil.example.com").update();
+            String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+            driver.navigate().to(link);
+            assertThat(driver.getPageSource(), containsString("You are already a member of the neworg organization."));
+            infoPage.clickBackToApplicationLink();
+            assertThat(driver.getPageSource(), containsString("Account Management"));
         }
     }
 
@@ -200,6 +246,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
+            ClientAttributeUpdater accountUpdater = addAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson");
         ) {
@@ -423,6 +470,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         try (
+            ClientAttributeUpdater accountUpdater = setAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteUser(email, firstName, lastName);
         ) {
@@ -591,6 +639,41 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         assertThat(driver.getPageSource(), Matchers.containsString("Email does not match the invitation"));
         assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
+    }
+
+    @Test
+    public void testInviteExistingUserMaliciousRedirectUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl("https://evil.example.com").update();
+            Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            acceptInvitation(organization, user, "Account Management");
+        }
+    }
+
+    @Test
+    public void testInviteNewUserRegistrationMaliciousRedirectUrl() throws IOException, MessagingException {
+        String email = "invitedmalicious@email";
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        try (
+            OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl("https://evil.example.com").update();
+            Response response = organization.members().inviteUser(email, "Homer", "Simpson");
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            registerUser(organization, email);
+            List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
+            assertThat(users, not(empty()));
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assertions.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
+            assertThat(driver.getPageSource(), containsString("Account Management"));
+        }
     }
 
     private UserRepresentation createUser(String invitedWithMatchingEmail, String mail) {
@@ -782,6 +865,21 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(driver.getTitle(), containsString(pageTitle));
         // now a member
         Assertions.assertNotNull(organization.members().member(user.getId()).toRepresentation());
+    }
+
+    private ClientAttributeUpdater addAccountClientRedirectUri(String redirectUri) {
+        List<ClientRepresentation> clients = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        List<String> redirectUris = new ArrayList<>(clients.get(0).getRedirectUris());
+        redirectUris.add(redirectUri);
+        return ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setRedirectUris(redirectUris)
+                .update();
+    }
+
+    private ClientAttributeUpdater setAccountClientRedirectUri(String redirectUri) {
+        return ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setRedirectUris(List.of(redirectUri))
+                .update();
     }
 
     @Test
