@@ -304,8 +304,11 @@ public abstract class JWKTest {
         } catch (NullPointerException e) {
             fail("Missing EC coordinate must not surface as NullPointerException: " + e);
         } catch (RuntimeException e) {
-            assertNotNull("Expected an explanatory message", e.getMessage());
-            assertTrue("Unexpected message: " + e.getMessage(), e.getMessage().contains("Fail to retrieve"));
+            String message = e.getMessage();
+            assertNotNull("Expected an explanatory message", message);
+            assertTrue("Unexpected message: " + message, message.contains("Fail to retrieve"));
+            assertTrue("Message should mention the missing EC 'x' coordinate: " + message,
+                    message.toLowerCase().contains("x"));
         }
     }
 
