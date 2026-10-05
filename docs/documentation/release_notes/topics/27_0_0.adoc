@@ -1,0 +1,9 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Configuring and Running
+
+== Reloadable system truststore
+// https://github.com/keycloak/keycloak/issues/51680
+
+The system truststore can now be reloaded at runtime, so rotated CA certificates are picked up without restarting {project_name}. Set the new `--truststore-paths-reload-period` option to a duration and {project_name} periodically re-reads the certificates referenced by `--truststore-paths` and the automatically discovered CA certificates, and rebuilds the system truststore. Reloading is opt-in and disabled unless the option is set. For details, see <@links.server id="keycloak-truststore"/>.
