@@ -176,7 +176,7 @@ public class KcSamlBrokerCredentialNoteMapperTest extends AbstractKcSamlBrokerTe
      */
     private HttpClientContext brokeredSsoSession(String consumerBaseUrl) {
         // Point the browser at the {project_name} host first, cookies are only readable for the current document
-        webDriver.open(consumerBaseUrl);
+        webDriver.open(consumerBaseUrl + "/");
 
         String host = URI.create(consumerBaseUrl).getHost();
         BasicCookieStore cookieStore = new BasicCookieStore();

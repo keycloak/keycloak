@@ -16,10 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -315,6 +314,11 @@ public class ProtocolMappersResource {
     }
 
     private void validateModel(ProtocolMapperModel model) {
+        if (model.getConfig() == null) {
+            // A representation may omit the configuration. Validators read it without expecting that, so give them
+            // an empty map rather than letting a NullPointerException be reported as a 500.
+            model.setConfig(new HashMap<>());
+        }
         try {
             ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
             if (mapper != null) {
@@ -324,8 +328,8 @@ public class ProtocolMappersResource {
             }
         } catch (ProtocolMapperConfigException ex) {
             logger.error(ex.getMessage());
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(ex.getMessage(), MessageFormat.format(messages.getProperty(ex.getMessageKey(), ex.getMessage()), ex.getParameters()),
+            throw new ErrorResponseException(ex.getMessage(),
+                    AdminRoot.getLocalizedMessage(session, realm, auth.adminAuth().getToken().getLocale(), ex),
                     Response.Status.BAD_REQUEST);
         }
     }

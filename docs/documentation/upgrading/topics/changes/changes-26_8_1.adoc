@@ -65,6 +65,21 @@ If you provision realms from an exported JSON file, remove the mapper from the f
 After upgrading, if any of your applications read an identity provider token from a token claim or a SAML attribute, change them to call the broker token endpoint; its authorization requirements depend on the enabled Identity Brokering API version.
 For more details, see the link:{adminguide_link}#retrieving-external-idp-tokens[Retrieving external IDP tokens] section of the {adminguide_name}.
 
+=== Protocol mappers are validated when a client or a client scope is written as a whole
+
+Previously, a protocol mapper was validated only when it was written through the mapper endpoints of the Admin REST API.
+A mapper sent as part of a client or a client scope, such as during client registration, partial import, or realm import, was stored without being validated, so a mapper rejected by one path was accepted by another.
+
+Starting with this release, every protocol mapper of a client is validated whenever the client is created or updated as a whole, using the same rules as the mapper endpoints. Client scope creation and realm import also validate their protocol mappers.
+A mapper with an invalid configuration is now rejected with a `400 Bad Request`, where it was previously stored and silently ignored, or failed later at runtime.
+
+The validation covers all the mappers of the client, not only the one being changed.
+A client that carries a mapper stored before the upgrade whose configuration is no longer valid cannot be updated at all, even for an unrelated field, until that mapper is corrected or removed.
+Updating an existing client scope does not revalidate its stored mappers.
+
+Existing deployments continue to start, because mappers that are read from the database at startup are not validated.
+If you provision realms from an exported JSON file, import the file once after upgrading to find out whether it contains a mapper that is now rejected.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

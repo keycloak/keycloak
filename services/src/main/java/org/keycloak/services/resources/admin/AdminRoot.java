@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -43,6 +44,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.cors.Cors;
@@ -321,6 +323,22 @@ public class AdminRoot {
             logger.error("Failed to load messages from theme", e);
             return new Properties();
         }
+    }
+
+    /**
+     * Returns the message of a protocol mapper validation error, localized when the mapper provided a message key.
+     * The key is optional, and {@link Properties#getProperty(String)} does not accept a null key, so it can only be
+     * looked up when the mapper set one.
+     */
+    public static String getLocalizedMessage(KeycloakSession session, RealmModel realm, String lang, ProtocolMapperConfigException ex) {
+        String message = ex.getMessage();
+        if (ex.getMessageKey() != null) {
+            message = getMessages(session, realm, lang).getProperty(ex.getMessageKey(), message);
+        }
+        if (ex.getMessageKey() == null && ex.getParameters() == null) {
+            return message;
+        }
+        return MessageFormat.format(message, ex.getParameters());
     }
 
     public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String... bundles) {
