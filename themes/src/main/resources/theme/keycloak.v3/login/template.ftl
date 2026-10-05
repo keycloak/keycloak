@@ -251,7 +251,7 @@
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>
               <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
-                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                  class="${properties.kcButtonClass} ${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
                     ${msg("doTryAnotherWay")}
               </a>
           </form>
@@ -261,7 +261,7 @@
           <form id="kc-switch-organization-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="switchOrganization" value="true"/>
               <a id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()"
-                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                  class="${properties.kcButtonClass} ${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
                     ${msg("doSwitchOrganization")}
               </a>
           </form>
