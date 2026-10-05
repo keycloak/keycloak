@@ -16,7 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.text.MessageFormat;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -36,11 +38,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -130,6 +135,15 @@ public class ClientScopesResource {
                                                                                                   rep.getProtocol());
             Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             ClientScopeModel clientScope = RepresentationToModel.createClientScope(realm, rep);
+
+            try {
+                ProtocolMapperValidationUtil.validateProtocolMappers(session, realm, clientScope);
+            } catch (ProtocolMapperConfigException ex) {
+                Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+                throw new ErrorResponseException(ex.getMessage(),
+                        MessageFormat.format(messages.getProperty(ex.getMessageKey(), ex.getMessage()), ex.getParameters()),
+                        Response.Status.BAD_REQUEST);
+            }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientScope.getId()).representation(rep).success();
 
