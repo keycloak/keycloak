@@ -16,9 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.text.MessageFormat;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -139,9 +137,8 @@ public class ClientScopesResource {
             try {
                 ProtocolMapperValidationUtil.validateProtocolMappers(session, realm, clientScope);
             } catch (ProtocolMapperConfigException ex) {
-                Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
                 throw new ErrorResponseException(ex.getMessage(),
-                        MessageFormat.format(messages.getProperty(ex.getMessageKey(), ex.getMessage()), ex.getParameters()),
+                        AdminRoot.getLocalizedMessage(session, realm, auth.adminAuth().getToken().getLocale(), ex),
                         Response.Status.BAD_REQUEST);
             }
 

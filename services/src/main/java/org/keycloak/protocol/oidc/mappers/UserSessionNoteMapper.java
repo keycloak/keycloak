@@ -114,7 +114,8 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
      * credential note (filtered during issuance to handle legacy or imported mappers).
      */
     private static String resolveNoteName(ProtocolMapperModel mappingModel, ClientSessionContext clientSessionCtx) {
-        String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
+        String noteName = mappingModel.getConfig() == null ? null
+                : mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
             logger.warnf("Protocol mapper '%s' on client '%s' maps the broker credential session note '%s'. The claim is omitted, remove the mapper.",
                     mappingModel.getName(), clientIdOf(clientSessionCtx), noteName);
@@ -131,7 +132,8 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
 
     @Override
     public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
-        String noteName = mapperModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
+        String noteName = mapperModel.getConfig() == null ? null
+                : mapperModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
             throw new ProtocolMapperConfigException(
                     "Session note '" + noteName + "' is a Keycloak-internal broker credential and cannot be mapped",

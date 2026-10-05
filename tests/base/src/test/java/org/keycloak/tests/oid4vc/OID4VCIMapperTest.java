@@ -9,6 +9,9 @@ import java.util.UUID;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.VCFormat;
+import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
@@ -138,7 +141,11 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testTargetRoleMapperEmptyConfig() {
-        assertMapperIsIgnored("oid4vc-target-role-mapper", "role-empty-mapper");
+        // The target role mapper rejects a missing clientId, so creating a scope that carries it no longer
+        // succeeds. Such a mapper can only exist as data stored before that validation, which metadata must
+        // still tolerate.
+        assertStoredMapperIsIgnored("role-empty-mapper", "oid4vc-target-role-mapper", Collections.emptyMap(),
+                "Mapper 'role-empty-mapper' of type 'oid4vc-target-role-mapper' with empty config must not produce claims in metadata");
     }
 
     // ---- Protected-claim tests (mappers must not map to reserved, issuer-controlled claims) ----
@@ -207,12 +214,14 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testReservedClaimMapperNotAdvertisedInMetadata() {
-        // A reserved-claim mapper that slips in through the scope-create/import path (which skips validateConfig)
-        // must not be advertised in issuer metadata, matching the issuance-time guard that silently drops it.
-        assertMapperIsIgnored(
-                "bypass-reserved-claim-scope-" + UUID.randomUUID(),
-                ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute"),
-                "A reserved-claim mapper that bypassed validateConfig must not be advertised in issuer metadata");
+        // A reserved-claim mapper stored before the scope-create/import paths ran validateConfig must not be
+        // advertised in issuer metadata, matching the issuance-time guard that silently drops it.
+        assertStoredMapperIsIgnored(
+                "bypass-reserved-claim-mapper",
+                "oid4vc-user-attribute-mapper",
+                Map.of(OID4VCMapper.CLAIM_NAME, CLAIM_NAME_EXP,
+                        OID4VCMapper.USER_ATTRIBUTE_KEY, "some-user-attribute"),
+                "A reserved-claim mapper stored before validateConfig ran must not be advertised in issuer metadata");
     }
 
     // ---- Helpers ----
@@ -248,19 +257,55 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
      * then asserts that the mapper produces no claims in the issuer metadata.
      */
     private void assertMapperIsIgnored(String mapperType, String mapperName) {
-        assertMapperIsIgnored(
-                mapperName + "-scope-" + UUID.randomUUID(),
-                ProtocolMapperUtils.getProtocolMapper(mapperName, mapperType, Collections.emptyMap()),
+        String scopeName = mapperName + "-scope-" + UUID.randomUUID();
+        String scopeId = createCredentialScope(scopeName,
+                List.of(ProtocolMapperUtils.getProtocolMapper(mapperName, mapperType, Collections.emptyMap())));
+
+        assertScopeAdvertisesNoClaims(scopeId, scopeName,
                 "Mapper '" + mapperName + "' of type '" + mapperType + "' with empty config must not produce claims in metadata");
     }
 
     /**
-     * Creates a credential scope with the given mapper, attaches it to the OID4VCI client, then asserts that the
+     * Creates a credential scope and installs the given mapper directly on the stored scope, then asserts that the
      * mapper produces no claims in the issuer metadata.
+     * <p>
+     * Creating a scope validates every mapper it carries, so a mapper that {@code validateConfig} rejects can only
+     * reach the store as data written before that validation existed. Writing it on the model reproduces that state.
      */
-    private void assertMapperIsIgnored(String scopeName, ProtocolMapperRepresentation mapper, String failureMessage) {
-        String scopeId = createCredentialScope(scopeName, List.of(mapper));
+    private void assertStoredMapperIsIgnored(String mapperName, String mapperType, Map<String, String> config,
+                                             String failureMessage) {
+        String scopeName = mapperName + "-scope-" + UUID.randomUUID();
+        String scopeId = createCredentialScope(scopeName, List.of());
+        addStoredProtocolMapper(scopeId, mapperName, mapperType, config);
 
+        assertScopeAdvertisesNoClaims(scopeId, scopeName, failureMessage);
+    }
+
+    /**
+     * Writes a protocol mapper straight onto the stored client scope, bypassing the admin API and its validation.
+     */
+    private void addStoredProtocolMapper(String scopeId, String mapperName, String mapperType, Map<String, String> config) {
+        String realmName = testRealm.getName();
+        HashMap<String, String> mapperConfig = new HashMap<>(config);
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            ProtocolMapperModel model = new ProtocolMapperModel();
+            model.setName(mapperName);
+            model.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            model.setProtocolMapper(mapperType);
+            model.setConfig(mapperConfig);
+
+            realm.getClientScopeById(scopeId).addProtocolMapper(model);
+        });
+    }
+
+    /**
+     * Attaches the scope to the OID4VCI client and asserts that it advertises no claims in the issuer metadata.
+     */
+    private void assertScopeAdvertisesNoClaims(String scopeId, String scopeName, String failureMessage) {
         testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
 
         CredentialIssuer credentialIssuer = oauth.oid4vc().doIssuerMetadataRequest().getMetadata();
