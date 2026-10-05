@@ -482,7 +482,20 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-
+        // Mapper validation may resolve other clients or realm components. Validate only after those
+        // dependencies exist, but before importing users, which can commit batches independently.
+        for (ClientModel client : createdClients.values()) {
+            ValidationUtil.validateClient(session, client, false, r -> {
+                throw new ModelValidationException("Invalid client " + client.getClientId() + ": " + r.getAllErrorsAsString());
+            });
+        }
+        for (ClientScopeModel clientScope : clientScopes.values()) {
+            try {
+                ProtocolMapperValidationUtil.validateProtocolMappers(session, newRealm, clientScope);
+            } catch (ProtocolMapperConfigException ex) {
+                throw new ModelValidationException("Invalid client scope " + clientScope.getName() + ": " + ex.getMessage());
+            }
+        }
 
         // create users and their role mappings and social mappings
 
@@ -612,12 +625,6 @@ public class DefaultExportImportManager implements ExportImportManager {
                 addSamlEncryptionAttributes(app);
             }
             appMap.put(app.getClientId(), app);
-
-            ValidationUtil.validateClient(session, app, false, r -> {
-                // A ModelValidationException is reported as a 400 naming the client, a RuntimeException would surface
-                // as an opaque 500
-                throw new ModelValidationException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
-            });
         }
         return appMap;
     }
@@ -634,12 +641,6 @@ public class DefaultExportImportManager implements ExportImportManager {
                 loginProtocolFactory.addClientScopeDefaults(resourceRep);
             }
             ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
-            try {
-                ProtocolMapperValidationUtil.validateProtocolMappers(session, realm, app);
-            } catch (ProtocolMapperConfigException ex) {
-                // ModelValidationException is reported as a 400 naming the scope; a RuntimeException would be an opaque 500
-                throw new ModelValidationException("Invalid client scope " + app.getName() + ": " + ex.getMessage());
-            }
             appMap.put(app.getName(), app);
         }
         return appMap;
