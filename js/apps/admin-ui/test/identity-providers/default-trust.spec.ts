@@ -60,6 +60,9 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(
       page.getByTestId("config.requiredExtendedKeyUsages"),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("config.rejectTrustAnchorInX5c"),
+    ).not.toBeChecked();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {

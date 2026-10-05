@@ -23,6 +23,7 @@ export default function DefaultTrustSettings() {
 
     setValue("config.trustedCertificates", "", options);
     setValue("config.requiredExtendedKeyUsages", "", options);
+    setValue("config.rejectTrustAnchorInX5c", "false", options);
   };
 
   return (
@@ -60,6 +61,13 @@ export default function DefaultTrustSettings() {
             name="config.requiredExtendedKeyUsages"
             label={t("requiredExtendedKeyUsages")}
             labelIcon={t("requiredExtendedKeyUsagesHelp")}
+          />
+          <DefaultSwitchControl
+            name="config.rejectTrustAnchorInX5c"
+            label={t("rejectTrustAnchorInX5c")}
+            labelIcon={t("rejectTrustAnchorInX5cHelp")}
+            defaultValue="false"
+            stringify
           />
         </>
       ) : (
