@@ -775,10 +775,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, context.getUsername());
 
             String username = context.getModelUsername();
-            if (username == null) {
+            if (Validation.isBlank(username)) {
                 if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
                     username = context.getEmail();
-                } else if (context.getUsername() == null) {
+                } else if (Validation.isBlank(context.getUsername())) {
                     username = context.getIdpConfig().getAlias() + "." + context.getId();
                 } else {
                     username = context.getUsername();

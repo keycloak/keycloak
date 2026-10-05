@@ -47,7 +47,7 @@ public class UserCacheManager extends CacheManager {
     public void userUpdatedInvalidations(String userId, String username, String email, String realmId, Set<String> invalidations) {
         invalidations.add(userId);
         if (email != null) invalidations.add(UserCacheSession.getUserByEmailCacheKey(realmId, email));
-        invalidations.add(UserCacheSession.getUserByUsernameCacheKey(realmId, username));
+        if (username != null) invalidations.add(UserCacheSession.getUserByUsernameCacheKey(realmId, username));
     }
 
     // Fully invalidate user including consents and federatedIdentity links.
