@@ -9,6 +9,9 @@
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
+            <#if username?has_content>
+                <input type="text" id="kc-update-password-username" autocomplete="username" value="${username}" hidden readonly>
+            </#if>
             <@field.password name="password-new" label=msg("passwordNew") fieldName="password" autocomplete="new-password" autofocus=true />
             <@field.password name="password-confirm" label=msg("passwordConfirm") autocomplete="new-password" />
 
