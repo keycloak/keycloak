@@ -203,7 +203,7 @@ By default, {project_name} accepts proxy headers from any source. To restrict th
 
 The following address formats are supported:
 
-[cols="1,2,1",options="header"]
+[%autowidth]
 |===
 | Format | Description | Example
 
@@ -219,13 +219,14 @@ The following address formats are supported:
 | An IP range in Classless Inter-Domain Routing notation. Use this to trust an entire subnet.
 | `127.0.0.0/8` or `::1/128`
 
-| Address with port
-| An IP address or hostname with an optional port suffix. Use this when your proxy connects from a specific port.
-| `192.168.0.32:8084` or `[::1]:8084`
-
 | Hostname
 | A DNS hostname such as `localhost` or `proxy.example.com`.
 | `localhost`
+
+| Address or hostname with port
+| An IP address or hostname with an optional port suffix. Use this when your proxy connects from a specific port.
+| `192.168.0.32:8084` or `[::1]:8084` or `proxy.example.com:8084`
+
 |===
 
 IMPORTANT: IPv6 addresses must be enclosed in square brackets, for example `[::1]` or `[0:0:0:0:0:0:0:1]`. If a bare IPv6 address without brackets is provided (for example `::1`), {project_name} automatically converts it to the bracketed form and logs a warning. To avoid this warning, always use brackets or CIDR notation for IPv6 addresses.

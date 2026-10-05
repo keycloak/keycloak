@@ -100,7 +100,7 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping {
             return;
         }
 
-        log.warnf("proxy-trusted-addresses value '%s' is a hostname. Quarkus performs a DNS lookup "
+        log.warnf("proxy-trusted-addresses value '%s' is a hostname. Keycloak performs a DNS lookup "
                 + "for hostnames on every request, which is not recommended. "
                 + "Consider using an IP address or CIDR notation instead.", address);
     }
