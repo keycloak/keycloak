@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -44,6 +45,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.SelectOrganizationPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -67,8 +74,20 @@ import static org.hamcrest.Matchers.startsWith;
 @KeycloakIntegrationTest
 public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizationTest {
 
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectPage
+    LoginUsernamePage loginUsernamePage;
+
+    @InjectPage
+    SelectOrganizationPage selectOrganizationPage;
 
     @BeforeEach
     public void addGroupMapper() {
@@ -546,6 +565,91 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         // But realm_access and resource_access should NOT be present in the org claim
         assertThat(acmeData.containsKey("realm_access"), is(false));
         assertThat(acmeData.containsKey("resource_access"), is(false));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMultipleTabsGroupsCorrectAfterRefresh() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
+
+        MemberRepresentation member = addMember(orgAResource, "member@" + orgA.getDomains().iterator().next().getName());
+        orgBResource.members().addMember(member.getId()).close();
+
+        GroupRepresentation engineering = new GroupRepresentation();
+        engineering.setName("engineering");
+        String engineeringId;
+        try (Response response = orgAResource.groups().addTopLevelGroup(engineering)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+        orgAResource.groups().group(engineeringId).addMember(member.getId());
+
+        GroupRepresentation sales = new GroupRepresentation();
+        sales.setName("sales");
+        String salesId;
+        try (Response response = orgBResource.groups().addTopLevelGroup(sales)) {
+            salesId = ApiUtil.getCreatedId(response);
+        }
+        orgBResource.groups().group(salesId).addMember(member.getId());
+
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
+
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.scope("organization");
+
+        var tabUtil = driver.tabs();
+
+        // Tab 1: select orgA
+        oauth.realm(realm.getName());
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        loginUsernamePage.submit();
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        AccessTokenResponse response = assertSuccessfulCodeGrant();
+        String tab1RefreshToken = response.getRefreshToken();
+
+        // Tab 2: select orgB (reuses same user session, overwrites kc.org note)
+        tabUtil.newTab(oauth.loginForm().build());
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(orgB.getAlias());
+        response = assertSuccessfulCodeGrant();
+        String tab2RefreshToken = response.getRefreshToken();
+
+        // Refresh tab 1 — must have orgA's groups only
+        tabUtil.switchToTab(0);
+        response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        Map<String, Object> orgClaims = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(orgClaims, hasKey("orga"));
+        assertThat(orgClaims, not(hasKey("orgb")));
+        Map<String, Object> orgAData = (Map<String, Object>) orgClaims.get("orga");
+        List<String> groups = (List<String>) orgAData.get("groups");
+        assertThat(groups, hasSize(1));
+        assertThat(groups, hasItem("/engineering"));
+
+        // Refresh tab 2 — must have orgB's groups only
+        tabUtil.switchToTab(1);
+        response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        orgClaims = (Map<String, Object>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(orgClaims, hasKey("orgb"));
+        assertThat(orgClaims, not(hasKey("orga")));
+        Map<String, Object> orgBData = (Map<String, Object>) orgClaims.get("orgb");
+        groups = (List<String>) orgBData.get("groups");
+        assertThat(groups, hasSize(1));
+        assertThat(groups, hasItem("/sales"));
+    }
+
+    private AccessTokenResponse assertSuccessfulCodeGrant() {
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertThat(Status.OK, is(Status.fromStatusCode(response.getStatusCode())));
+        return response;
     }
 
     private void enableGroupRoleMappings() {
