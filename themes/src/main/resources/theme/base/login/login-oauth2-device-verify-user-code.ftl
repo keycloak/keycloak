@@ -1,31 +1,17 @@
 <#import "template.ftl" as layout>
+<#import "field.ftl" as field>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
+<!-- template: login-oauth2-device-verify-user-code.ftl -->
     <#if section = "header">
         ${msg("oauth2DeviceVerificationTitle")}
     <#elseif section = "form">
         <form id="kc-user-verify-device-user-code-form" class="${properties.kcFormClass!}" action="${url.oauth2DeviceVerificationAction}" method="post">
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="device-user-code" class="${properties.kcLabelClass!}">${msg("verifyOAuth2DeviceUserCode")}</label>
-                </div>
+            <@field.input name="device_user_code" label=msg("verifyOAuth2DeviceUserCode") autofocus=true />
 
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input id="device-user-code" name="device_user_code" autocomplete="off" type="text" class="${properties.kcInputClass!}" autofocus dir="ltr" />
-                </div>
-            </div>
-
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                    </div>
-                </div>
-
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
-                    </div>
-                </div>
-            </div>
+            <@buttons.actionGroup>
+                <@buttons.button id="kc-login" label="doSubmit" />
+            </@buttons.actionGroup>
         </form>
     </#if>
 </@layout.registrationLayout>
