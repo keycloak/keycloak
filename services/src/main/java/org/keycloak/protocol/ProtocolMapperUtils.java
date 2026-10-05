@@ -21,11 +21,16 @@ import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -92,6 +97,12 @@ public class ProtocolMapperUtils {
     public static final int PRIORITY_SCRIPT_MAPPER = 50;
 
     private static final HashMap<String, Method> ACCESSORS = new HashMap<>();
+
+    public static final Set<String> BROKER_CREDENTIAL_NOTES = Set.of(
+            UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN,
+            AbstractOAuth2IdentityProvider.FEDERATED_REFRESH_TOKEN,
+            AbstractOAuth2IdentityProvider.FEDERATED_TOKEN_EXPIRATION,
+            OIDCIdentityProvider.FEDERATED_ID_TOKEN);
 
     // This caches known methods to avoid generating unnecessary failed lookups and exception at runtime which are expensive
     static {
@@ -184,5 +195,12 @@ public class ProtocolMapperUtils {
 
     public static boolean isEnabled(KeycloakSession session, ProtocolMapperModel mapper) {
         return session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapper.getProtocolMapper()) != null;
+    }
+
+    public static boolean isBrokerCredentialNote(String noteName) {
+        if (noteName == null) return false;
+        String upper = noteName.toUpperCase(Locale.ROOT);
+        return BROKER_CREDENTIAL_NOTES.stream()
+                .anyMatch(n -> upper.equals(n) || upper.startsWith(n + ":"));
     }
 }

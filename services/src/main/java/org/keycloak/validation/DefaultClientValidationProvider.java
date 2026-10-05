@@ -31,9 +31,13 @@ import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -228,6 +232,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateClientId(context);
         validateProtocol(context);
         validateUrls(context);
+        validateProtocolMappers(context);
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
         validateJwks(context);
@@ -350,6 +355,50 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
+    /**
+     * Validates the session note mappers of the client through {@link ProtocolMapper#validateConfig}, so the rule a
+     * session note mapper enforces on the per-mapper admin endpoint is enforced on every path that validates a whole
+     * client as well, such as client registration, partial import and realm import.
+     * <p>
+     * Only the session note mappers are validated, see
+     * {@link ProtocolMapperValidationUtil#isSessionNoteMapper(ProtocolMapperModel)} for why validating every mapper
+     * of a client is not safe here. Each mapper is validated on its own, because the contract of
+     * {@link ValidationContext} is to collect all errors of a client whereas
+     * {@link ProtocolMapper#validateConfig} reports only the first one it finds.
+     */
+    private void validateProtocolMappers(ValidationContext<ClientModel> context) {
+        KeycloakSession session = context.getSession();
+        ClientModel client = context.getObjectToValidate();
+        RealmModel realm = client.getRealm();
+
+        client.getProtocolMappersStream()
+                .filter(ProtocolMapperValidationUtil::isSessionNoteMapper)
+                .forEach(mapperModel -> {
+                    ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory()
+                            .getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                    if (mapper == null) {
+                        // A mapper of a provider that is not installed cannot be validated. Keeping the client valid
+                        // matches the token issuance, which skips such mappers, see ProtocolMapperUtils.isEnabled
+                        return;
+                    }
+                    try {
+                        mapper.validateConfig(session, realm, client, mapperModel);
+                    } catch (ProtocolMapperConfigException e) {
+                        context.addError("protocolMappers",
+                                "Protocol mapper '" + mapperModel.getName() + "': " + e.getMessage(),
+                                e.getMessageKey(), e.getParameters());
+                    }
+                });
+    }
+
+    private void validatePairwiseInClientModel(ValidationContext<ClientModel> context) {
+        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(toRepresentation(context.getObjectToValidate(), context.getSession()));
+
+        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
+            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
+            validatePairwise(context, sectorIdentifierUri);
+        }
+    }
 
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
         if (url == null || url.isEmpty()) {
@@ -436,15 +485,6 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
         catch (URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
-        }
-    }
-
-    private void validatePairwiseInClientModel(ValidationContext<ClientModel> context) {
-        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(toRepresentation(context.getObjectToValidate(), context.getSession()));
-
-        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
-            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
-            validatePairwise(context, sectorIdentifierUri);
         }
     }
 

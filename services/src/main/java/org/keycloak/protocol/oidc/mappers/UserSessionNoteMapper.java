@@ -24,14 +24,19 @@ import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionNoteDescriptor;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+
+import org.jboss.logging.Logger;
 
 /**
  * Mappings UserSessionModel.note to an ID Token claim.
@@ -39,6 +44,8 @@ import org.keycloak.representations.IDToken;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, OIDCAccessTokenResponseMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
+
+    private static final Logger logger = Logger.getLogger(UserSessionNoteMapper.class);
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -81,9 +88,12 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         return "Map a custom user session note to a token claim.";
     }
 
-    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+    @Override
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession,
+                            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+        String noteName = resolveNoteName(mappingModel, clientSessionCtx);
+        if (noteName == null) return;
 
-        String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         String noteValue = userSession.getNote(noteName);
         if (noteValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, noteValue);
@@ -92,11 +102,41 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
     @Override
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
                             KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+        String noteName = resolveNoteName(mappingModel, clientSessionCtx);
+        if (noteName == null) return;
 
-        String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         String noteValue = userSession.getNote(noteName);
         if (noteValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, noteValue);
+    }
+
+    /** @return the configured session note, or {@code null} if unconfigured or referencing a blocked broker
+     * credential note (filtered during issuance to handle legacy or imported mappers).
+     */
+    private static String resolveNoteName(ProtocolMapperModel mappingModel, ClientSessionContext clientSessionCtx) {
+        String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
+        if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
+            logger.warnf("Protocol mapper '%s' on client '%s' maps the broker credential session note '%s'. The claim is omitted, remove the mapper.",
+                    mappingModel.getName(), clientIdOf(clientSessionCtx), noteName);
+            return null;
+        }
+        return noteName;
+    }
+
+    private static String clientIdOf(ClientSessionContext clientSessionCtx) {
+        return clientSessionCtx != null && clientSessionCtx.getClientSession() != null
+                ? clientSessionCtx.getClientSession().getClient().getClientId()
+                : "unknown";
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        String noteName = mapperModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
+        if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
+            throw new ProtocolMapperConfigException(
+                    "Session note '" + noteName + "' is a Keycloak-internal broker credential and cannot be mapped",
+                    "protocolMapperBrokerCredentialNote");
+        }
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
