@@ -220,7 +220,7 @@ The following address formats are supported:
 | `127.0.0.0/8` or `::1/128`
 
 | Address with port
-| Any of the above with an optional port suffix. Use this when your proxy connects from a specific port.
+| An IP address or hostname with an optional port suffix. Use this when your proxy connects from a specific port.
 | `192.168.0.32:8084` or `[::1]:8084`
 
 | Hostname
