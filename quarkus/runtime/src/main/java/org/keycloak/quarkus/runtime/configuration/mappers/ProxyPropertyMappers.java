@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -14,6 +13,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.common.net.Inet;
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
