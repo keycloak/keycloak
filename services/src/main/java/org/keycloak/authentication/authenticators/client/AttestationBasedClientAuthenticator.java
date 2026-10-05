@@ -541,9 +541,17 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
                 cNonceHandler.consumeCNonce(challenge);
             }
         } catch (Exception ex) {
+            String freshChallenge;
+            try {
+                freshChallenge = ClientAttestationChallengeEndpoint.buildChallenge(session);
+            } catch (Exception challengeException) {
+                ex.addSuppressed(challengeException);
+                throw new TokenVerificationException(attestationPoPJwt,
+                        "Client Attestation PoP JWT challenge is invalid and a new challenge could not be issued", ex);
+            }
             throw new ClientAttestationChallengeException(
                     "Client Attestation PoP JWT challenge is invalid: " + ex.getMessage(),
-                    ClientAttestationChallengeEndpoint.buildChallenge(session),
+                    freshChallenge,
                     ex);
         }
     }

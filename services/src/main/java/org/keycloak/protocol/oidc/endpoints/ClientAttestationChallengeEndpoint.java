@@ -87,7 +87,13 @@ public class ClientAttestationChallengeEndpoint {
         checkSsl(cors);
         checkRealm(cors);
 
-        String challenge = buildChallenge(session);
+        String challenge;
+        try {
+            challenge = buildChallenge(session);
+        } catch (Exception ex) {
+            throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.SERVER_ERROR,
+                    "Unable to issue a client attestation challenge", Response.Status.INTERNAL_SERVER_ERROR);
+        }
         ClientAttestationChallengeResponse challengeResponse = new ClientAttestationChallengeResponse();
         challengeResponse.setAttestationChallenge(challenge);
 
