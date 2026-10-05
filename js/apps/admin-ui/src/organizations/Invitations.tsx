@@ -2,20 +2,28 @@ import type { OrganizationInvitationRepresentation } from "@keycloak/keycloak-ad
 import { OrganizationInvitationStatus } from "@keycloak/keycloak-admin-client";
 import {
   Button,
+  ButtonVariant,
   Chip,
   Dropdown,
   DropdownItem,
   DropdownList,
+  Form,
   MenuToggle,
+  Modal,
+  ModalVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
+import { ClientSelect } from "../components/client/ClientSelect";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import {
+  useAlerts,
+  ListEmptyState,
+  KeycloakDataTable,
+} from "@keycloak/keycloak-ui-shared";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
@@ -53,6 +61,53 @@ const DateCell = ({ date }: { date?: number }) => {
   }
 };
 
+type SelectClientModalProps = {
+  onSelect: (clientId: string) => void;
+  onClose: () => void;
+};
+
+const SelectClientModal = ({ onSelect, onClose }: SelectClientModalProps) => {
+  const { t } = useTranslation();
+  const form = useForm<{ clientId: string }>();
+  const { handleSubmit } = form;
+  const clientId = form.watch("clientId");
+
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      title={t("selectInvitationClient")}
+      isOpen
+      onClose={onClose}
+      actions={[
+        <Button
+          data-testid="next"
+          key="confirm"
+          variant="primary"
+          onClick={handleSubmit((data) => onSelect(data.clientId))}
+        >
+          {clientId ? t("next") : t("SKIP")}
+        </Button>,
+        <Button key="cancel" variant={ButtonVariant.link} onClick={onClose}>
+          {t("cancel")}
+        </Button>,
+      ]}
+    >
+      <FormProvider {...form}>
+        <Form
+          id="select-client-form"
+          onSubmit={handleSubmit((data) => onSelect(data.clientId))}
+        >
+          <ClientSelect
+            name="clientId"
+            label="client"
+            helpText="invitationClientHelp"
+          />
+        </Form>
+      </FormProvider>
+    </Modal>
+  );
+};
+
 export const Invitations = () => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
@@ -62,6 +117,8 @@ export const Invitations = () => {
   const refresh = () => setKey(key + 1);
   const [openInviteMembers, toggleInviteMembers] = useToggle();
   const [openInviteRealmUser, toggleInviteRealmUser] = useToggle();
+  const [openSelectClient, toggleSelectClient] = useToggle();
+  const [inviteClientId, setInviteClientId] = useState<string>("");
   const [isInviteMenuOpen, setIsInviteMenuOpen] = useState(false);
   const [selectedInvitations, setSelectedInvitations] = useState<
     OrganizationInvitationRepresentation[]
@@ -178,9 +235,24 @@ export const Invitations = () => {
           }}
         />
       )}
+      {openSelectClient && (
+        <SelectClientModal
+          onSelect={(clientId) => {
+            setInviteClientId(clientId);
+            toggleSelectClient();
+            toggleInviteRealmUser();
+          }}
+          onClose={toggleSelectClient}
+        />
+      )}
       {openInviteRealmUser && (
         <MemberModal
           titleKey="inviteRealmUser"
+          description={
+            inviteClientId
+              ? t("inviteRealmUserWithClient", { client: inviteClientId })
+              : undefined
+          }
           confirmLabelKey="send"
           filterEmptyEmail
           membersQuery={() => adminClient.organizations.listMembers({ orgId })}
@@ -191,7 +263,7 @@ export const Invitations = () => {
                   const form = new FormData();
                   form.append("id", user.id!);
                   return adminClient.organizations.inviteExistingUser(
-                    { orgId },
+                    { orgId, clientId: inviteClientId },
                     form,
                   );
                 }),
@@ -204,6 +276,10 @@ export const Invitations = () => {
             } catch (error) {
               addError("organizationInvitationsSentError", error);
             }
+          }}
+          onBack={() => {
+            toggleInviteRealmUser();
+            toggleSelectClient();
           }}
           onClose={() => {
             toggleInviteRealmUser();
@@ -260,7 +336,7 @@ export const Invitations = () => {
                     key="invite-realm-user"
                     onClick={() => {
                       setIsInviteMenuOpen(false);
-                      toggleInviteRealmUser();
+                      toggleSelectClient();
                     }}
                   >
                     {t("inviteRealmUser")}
@@ -357,7 +433,7 @@ export const Invitations = () => {
               },
               {
                 text: t("inviteRealmUser"),
-                onClick: toggleInviteRealmUser,
+                onClick: toggleSelectClient,
               },
             ]}
           />

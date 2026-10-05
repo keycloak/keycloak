@@ -155,7 +155,7 @@ public class OrganizationInvitationResource {
         return sendInvitation(user, invitationTarget);
     }
 
-    public Response inviteExistingUser(String id) {
+    public Response inviteExistingUser(String id, String clientId) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -178,7 +178,7 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user, resolveInvitationTarget(null));
+        return sendInvitation(user, resolveInvitationTarget(clientId));
     }
 
     private Response sendInvitation(UserModel user, InvitationTarget invitationTarget) {
@@ -260,6 +260,14 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
         }
 
+        if (client.getProtocol() != null && !OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            throw ErrorResponse.error("Client must use the openid-connect protocol", Status.BAD_REQUEST);
+        }
+
+        if (client.isBearerOnly()) {
+            throw ErrorResponse.error("Bearer-only clients cannot be used for invitations", Status.BAD_REQUEST);
+        }
+
         return new InvitationTarget(client.getClientId(), resolveRedirectUri(client));
     }
 
@@ -267,7 +275,12 @@ public class OrganizationInvitationResource {
         boolean isAccountClient = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID.equals(client.getClientId());
 
         if (isAccountClient && !StringUtil.isBlank(organization.getRedirectUrl())) {
-            return organization.getRedirectUrl();
+            String verified = RedirectUtils.verifyRedirectUri(session, organization.getRedirectUrl(), client);
+            if (verified != null) {
+                return verified;
+            }
+            ServicesLogger.LOGGER.warnf("Organization '%s' redirect URL '%s' is not allowed by client '%s' redirect URIs",
+                    organization.getName(), organization.getRedirectUrl(), client.getClientId());
         }
 
         String baseUrl = client.getBaseUrl();
