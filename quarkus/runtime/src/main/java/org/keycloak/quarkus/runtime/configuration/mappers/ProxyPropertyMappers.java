@@ -100,9 +100,10 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping {
             return;
         }
 
-        log.warnf("proxy-trusted-addresses value '%s' is a hostname. Keycloak performs a DNS lookup "
-                + "for hostnames on every request, which is not recommended. "
-                + "Consider using an IP address or CIDR notation instead.", address);
+        log.warnf("proxy-trusted-addresses value '%s' is a hostname. "
+                + "Hostnames are resolved to IP addresses at startup and may not track changes to DNS records. "
+                + "If the hostname cannot be resolved at startup, a DNS lookup is performed on every request, which slows down request processing. "
+                + "For reliable setups, always use an IP address or CIDR notation instead.", address);
     }
 
     private static String extractHost(String address) {
