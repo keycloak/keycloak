@@ -192,8 +192,9 @@ const FormField = ({
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
 
   const Component =
-    attribute.multivalued ||
-    (isMultiValue(value) && attribute.annotations?.inputType === undefined)
+    inputType !== "hidden" &&
+    (attribute.multivalued ||
+      (isMultiValue(value) && attribute.annotations?.inputType === undefined))
       ? FIELDS["multi-input"]
       : FIELDS[inputType];
 
@@ -223,16 +224,16 @@ const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
 ): InputType {
-  // Always treat the root attributes as a text field.
-  if (isRootAttribute(attribute.name)) {
-    return "text";
-  }
-
   const inputType = attribute.annotations?.inputType;
 
-  // if we have an valid input type use that to render
+  // if we have a valid input type use that to render
   if (isValidInputType(inputType)) {
     return inputType;
+  }
+
+  // Root attributes default to text unless explicitly overridden above.
+  if (isRootAttribute(attribute.name)) {
+    return "text";
   }
 
   // In all other cases use the default
