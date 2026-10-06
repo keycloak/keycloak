@@ -33,6 +33,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -262,6 +264,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
+
+        if (flow.isTopLevel()) {
+            registerForcedLevelOfAuthenticationCheck();
+        }
         String selector = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
         if (selector != null) {
             String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
@@ -319,13 +325,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     if (response != null) {
                         return response;
                     }
-                    if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
-                        return onFlowExecutionsSuccessful();
-                    }
                 } catch (AuthenticationFlowException afe) {
                     //consuming the error is not good here from an administrative point of view, but the user, since he has alternatives, should be able to go to another alternative and continue
                     afeList.add(afe);
                     setExecutionStatus(alternative, AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                }
+                // outside the try block, so that errors from top flow callbacks are not consumed as errors of the alternative
+                if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
+                    return onFlowExecutionsSuccessful();
                 }
             }
         } else {
@@ -620,11 +627,25 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
+    /**
+     * The forced level of authentication must be verified when the top flow finishes, even if no step-up condition is evaluated
+     * (for example when the user has no credential for the requested level and the conditional subflows are disabled).
+     */
+    private void registerForcedLevelOfAuthenticationCheck() {
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        if (new AcrStore(processor.getSession(), authSession).isLevelOfAuthenticationForced()
+                && !AuthenticatorUtil.getExecutionsByType(processor.getRealm(), flow.getId(), ConditionalLoaAuthenticatorFactory.PROVIDER_ID).isEmpty()) {
+            AuthenticatorUtil.setAuthCallbacksFactoryIds(authSession, ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
+        }
+    }
+
     // This is triggered when current flow is successful due the fact that it's executions passed.
     // It is opportunity to do some last "generic" checks before considering whole authentication as successful
     private Response onFlowExecutionsSuccessful() {
         if (flow.isTopLevel()) {
             logger.debugf("Authentication successful of the top flow '%s'", flow.getAlias());
+            new AcrStore(processor.getSession(),
+                    processor.getAuthenticationSession()).setAuthFlowLevelAuthenticatedToCurrentRequest(flow.getId());
             executeTopFlowSuccessCallbacks();
         }
 
