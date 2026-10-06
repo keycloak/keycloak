@@ -470,7 +470,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public boolean isClusterHealthSupported() {
-        return clusterHealth.isSupported();
+        return clusterHealth != null && clusterHealth.isSupported();
     }
 
     @Override

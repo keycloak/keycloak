@@ -16,10 +16,10 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
+import java.util.concurrent.Semaphore;
+
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 
-import io.agroal.api.AgroalDataSource;
-import io.agroal.api.AgroalDataSourceMetrics;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,14 +37,10 @@ import static io.restassured.RestAssured.given;
 public class KeycloakNegativeHealthCheckTest {
 
     @InjectMock
-    AgroalDataSource agroalDataSource;
-    @InjectMock
     DataSourceHealthCheck dataSourceHealthCheck;
 
     @Test
     public void testReadinessDown() {
-        AgroalDataSourceMetrics metrics = Mockito.mock(AgroalDataSourceMetrics.class);
-        Mockito.when(agroalDataSource.getMetrics()).thenReturn(metrics);
         Mockito.when(dataSourceHealthCheck.call()).thenReturn(HealthCheckResponse.down("down"));
 
         RestAssured.port = 9001;
@@ -60,5 +56,32 @@ public class KeycloakNegativeHealthCheckTest {
                 .then()
                 .statusCode(200)
                 .body(Matchers.not(Matchers.containsString(KeycloakReadyHealthCheck.FAILING_SINCE)));
+    }
+
+    @Test
+    public void testReadinessTimeout() throws InterruptedException {
+        Semaphore wait = new Semaphore(0);
+        Mockito.when(dataSourceHealthCheck.call()).thenAnswer(invocation -> {
+            wait.acquire();
+            return HealthCheckResponse.up("up");
+        }).thenReturn(HealthCheckResponse.up("up"));
+
+        RestAssured.port = 9001;
+        try {
+            given()
+                    .when().get("/health/ready")
+                    .then()
+                    .statusCode(503)
+                    .body(Matchers.allOf(Matchers.containsString("DOWN"), Matchers.containsString("Health check did not complete")));
+
+            // should be able to complete a second request with the first one held
+            given()
+                .when().get("/health/ready")
+                .then()
+                .statusCode(200)
+                .body(Matchers.not(Matchers.containsString(KeycloakReadyHealthCheck.FAILING_SINCE)));
+        } finally {
+            wait.release();
+        }
     }
 }
