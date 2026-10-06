@@ -23,17 +23,23 @@ import org.junit.Test;
 public class NotEmailPasswordPolicyProviderTest {
 
     @Test
+    public void testUsernameValidateIsNoOp() {
+        // String-based SPI receives username, not email
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate("email", "email"));
+    }
+
+    @Test
     public void test() {
-        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate("email", "password"));
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "password"));
     }
 
     @Test
     public void testEquals() {
-        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validate("email", "email"));
+        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "email"));
     }
 
     @Test
     public void testEqualsIgnoreCase() {
-        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validate("email", "EMAIL"));
+        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "EMAIL"));
     }
 }
