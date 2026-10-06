@@ -76,6 +76,7 @@ public class TrustMaterialIdentityProviderTest {
     private static final String DEFAULT_DISABLED_ALIAS = "trust-material-default-disabled";
     private static final String DEFAULT_X509_ALIAS = "trust-material-default-x509";
     private static final String OIDC_ALIAS = "trust-material-oidc";
+    private static final String CERTIFICATE_BEGIN = "-----BEGIN CERTIFICATE-----";
     private static final String CERTIFICATE_END = "-----END CERTIFICATE-----";
     private static final String KEY_ID = "trust-material-key";
     private static final String CONFIGURED_KEY_ID = "trust-material-configured-key";
@@ -360,7 +361,7 @@ public class TrustMaterialIdentityProviderTest {
         try (InputStream input = Objects.requireNonNull(TrustMaterialIdentityProviderTest.class
                 .getResourceAsStream("/keycloak-truststore.pem"))) {
             String certificateBundle = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-            return certificateBundle.substring(0, certificateBundle.indexOf(CERTIFICATE_END)
+            return certificateBundle.substring(certificateBundle.indexOf(CERTIFICATE_BEGIN), certificateBundle.indexOf(CERTIFICATE_END)
                     + CERTIFICATE_END.length());
         }
     }
