@@ -887,14 +887,15 @@ public class CertificateValidator {
         if (!(_crlCheckingEnabled || _ocspEnabled)) {
             return this;
         }
+        boolean trustValidated = !_trustValidationEnabled || certPathBuilderResult != null;
         if (_crlCheckingEnabled) {
             if (!_crldpEnabled) {
                 checkRevocationStatusUsingCRL(_certChain, _crlLoader, session);
-            } else {
+            } else if (trustValidated) {
                 checkRevocationStatusUsingCRLDistributionPoints(_certChain, session, _crlAbortIfNonUpdated);
             }
         }
-        if (_ocspEnabled) {
+        if (_ocspEnabled && trustValidated) {
             checkRevocationUsingOCSP(_certChain);
         }
         return this;
