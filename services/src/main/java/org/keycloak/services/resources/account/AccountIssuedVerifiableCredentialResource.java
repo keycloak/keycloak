@@ -85,6 +85,21 @@ public class AccountIssuedVerifiableCredentialResource {
     }
 
     /**
+     * Revoke all issued credentials for the authenticated user
+     *
+     * @return 204 No Content on success
+     */
+    @DELETE
+    @NoCache
+    public Response revokeAllIssuedCredentials() {
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        checkOid4VCIEnabled();
+
+        session.users().removeIssuedVerifiableCredentials(realm, user.getId());
+        return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.noContent());
+    }
+
+    /**
      * Revoke a specific issued credential for the authenticated user
      *
      * @param credentialId the issued credential ID to revoke

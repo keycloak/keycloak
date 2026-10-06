@@ -241,6 +241,23 @@ public class UserVerifiableCredentialResource {
     }
 
     @DELETE
+    @Path("issued-credentials")
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Revoke all issued verifiable credentials for the user")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public void revokeAllIssuedCredentials() {
+        auth.users().requireManage(user);
+        checkOid4VCIEnabled();
+
+        session.users().removeIssuedVerifiableCredentials(realm, user.getId());
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+    }
+
+    @DELETE
     @Path("issued-credentials/{id}")
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
