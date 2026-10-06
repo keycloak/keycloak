@@ -93,6 +93,8 @@ const OID4VCI_FIELDS = {
   ISSUER_DID: "attributes.vc🍺issuer_did",
   EXPIRY_IN_SECONDS: "attributes.vc🍺expiry_in_seconds",
   REFRESH_INTERVAL_IN_SECONDS: "attributes.vc🍺refresh_interval_in_seconds",
+  REFRESH_IDLE_TIMEOUT_IN_SECONDS:
+    "attributes.vc🍺refresh_idle_timeout_in_seconds",
   BINDING_METHODS: "attributes.vc🍺cryptographic_binding_methods_supported",
   BINDING_SUPPORTED_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
   KEY_ATTESTATIONS_REQUIRED: "attributes.vc.key_attestations_required",
@@ -120,9 +122,11 @@ const TEST_VALUES = {
   // Raw seconds entered into the input (unit stays at "seconds" when filling directly)
   EXPIRY_SECONDS: "86400", // 1 day in seconds
   REFRESH_INTERVAL_SECONDS: "43200", // 12 hours in seconds
+  REFRESH_IDLE_TIMEOUT_SECONDS: "86400", // 1 day in seconds
   // Expected display values after reload: TimeSelector picks the largest fitting unit
   EXPIRY_SECONDS_DISPLAY: "1", // 86400 s → displayed as 1 day
   REFRESH_INTERVAL_SECONDS_DISPLAY: "12", // 43200 s → displayed as 12 hours
+  REFRESH_IDLE_TIMEOUT_SECONDS_DISPLAY: "1", // 86400 s → displayed as 1 day
   SIGNING_ALG: "ES256",
   HASH_ALGORITHM: "sha-384",
   TOKEN_JWS_TYPE: "dc+sd-jwt",
@@ -211,6 +215,14 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByTestId(OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS),
     ).toBeVisible();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS),
+    ).toBeVisible();
+    await expectTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      "30",
+    );
     await expect(page.locator(OID4VCI_FIELDS.FORMAT)).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
     await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toBeVisible();
@@ -250,6 +262,11 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page,
       OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS,
       TEST_VALUES.REFRESH_INTERVAL_SECONDS,
+    );
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      TEST_VALUES.REFRESH_IDLE_TIMEOUT_SECONDS,
     );
 
     await page
@@ -296,6 +313,11 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS,
       TEST_VALUES.REFRESH_INTERVAL_SECONDS_DISPLAY,
     );
+    await expectTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      TEST_VALUES.REFRESH_IDLE_TIMEOUT_SECONDS_DISPLAY,
+    );
     await expect(page.locator("#kc-vc-format")).toContainText(
       "JWT VC (jwt_vc_json)",
     );
@@ -313,6 +335,77 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     ).toHaveValue(TEST_VALUES.SUPPORTED_CREDENTIAL_TYPES);
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toHaveValue(
       TEST_VALUES.TOKEN_JWS_TYPE,
+    );
+  });
+
+  test("should validate refresh idle timeout against lifetime and refresh interval", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    const testClientScopeName = `oid4vci-idle-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "JWT VC (jwt_vc_json)",
+    );
+    await page.getByTestId("name").fill(testClientScopeName);
+
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.EXPIRY_IN_SECONDS,
+      TEST_VALUES.EXPIRY_SECONDS,
+    );
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS,
+      TEST_VALUES.REFRESH_INTERVAL_SECONDS,
+    );
+
+    // The idle timeout keeps its 30 day default, which exceeds the 1 day lifetime
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText("cannot exceed credential lifetime"),
+    ).toBeVisible();
+
+    // Below the 12 hour refresh interval
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      "600",
+    );
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText(
+        "must not be smaller than the credential refresh interval",
+      ),
+    ).toBeVisible();
+
+    // Valid: equal to the lifetime and above the refresh interval
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      TEST_VALUES.REFRESH_IDLE_TIMEOUT_SECONDS,
+    );
+    await expect(
+      page.getByText("cannot exceed credential lifetime"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(
+        "must not be smaller than the credential refresh interval",
+      ),
+    ).toHaveCount(0);
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+    await expectTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS,
+      TEST_VALUES.REFRESH_IDLE_TIMEOUT_SECONDS_DISPLAY,
     );
   });
 
@@ -357,6 +450,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toBeHidden();
     await expect(
       page.getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS),
+    ).toBeHidden();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.REFRESH_IDLE_TIMEOUT_IN_SECONDS),
     ).toBeHidden();
     await expect(page.locator(OID4VCI_FIELDS.FORMAT)).toBeHidden();
     await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toBeHidden();

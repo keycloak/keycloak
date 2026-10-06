@@ -287,7 +287,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
 
         validateIncludedInTokenScope(clientScope);
-        validateOID4VCIRefreshInterval(clientScope);
+        validateCredentialExpirationSettings(clientScope);
         validateCredentialConfigurationId(session, clientScope);
         validateBindingConfiguration(session, clientScope);
     }
@@ -411,22 +411,25 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     }
 
     /**
-     * Validates that the refresh interval does not exceed the credential lifetime.
+     * Validates the expiration settings of a credential scope as a coherent chain:
+     * refresh interval <= refresh idle timeout <= credential lifetime.
      *
      * @param clientScope the client scope representation to validate
-     * @throws ErrorResponseException if refresh interval > credential lifetime
+     * @throws ErrorResponseException if any of the three settings is invalid or they contradict each other
      */
-    private void validateOID4VCIRefreshInterval(ClientScopeRepresentation clientScope) throws ErrorResponseException {
+    private void validateCredentialExpirationSettings(ClientScopeRepresentation clientScope) throws ErrorResponseException {
         if (clientScope.getAttributes() == null) {
             return;
         }
 
         String expiryStr = clientScope.getAttributes().get(CredentialScopeModel.VC_EXPIRY_IN_SECONDS);
         String refreshIntervalStr = clientScope.getAttributes().get(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS);
+        String idleTimeoutStr = clientScope.getAttributes().get(CredentialScopeModel.VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS);
 
-        // If either is not set, use defaults
+        // Unset values fall back to the defaults derived in CredentialScopeModel
         final int expiry;
         final int refreshInterval;
+        final Integer idleTimeout;
         try {
             expiry = expiryStr != null ? Integer.parseInt(expiryStr) : CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
             // Smart default: if refresh interval is not set, use the smaller of 7 days or the credential lifetime
@@ -436,11 +439,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             } else {
                 refreshInterval = Math.min(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT, expiry);
             }
+            idleTimeout = idleTimeoutStr != null ? Integer.parseInt(idleTimeoutStr) : null;
         } catch (NumberFormatException ex) {
-            throw ErrorResponse.error("Credential lifetime and refresh interval must be valid integer values in seconds.", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Credential lifetime, refresh interval and refresh idle timeout must be valid integer values in seconds.", Response.Status.BAD_REQUEST);
         }
-        if (expiry <= 0 || refreshInterval <= 0) {
-            throw ErrorResponse.error("Credential lifetime and refresh interval must be greater than 0 seconds.", Response.Status.BAD_REQUEST);
+        if (expiry <= 0 || refreshInterval <= 0 || (idleTimeout != null && idleTimeout <= 0)) {
+            throw ErrorResponse.error("Credential lifetime, refresh interval and refresh idle timeout must be greater than 0 seconds.", Response.Status.BAD_REQUEST);
         }
 
         if (refreshInterval > expiry) {
@@ -448,6 +452,22 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                     String.format("Credential refresh interval (%d seconds) cannot exceed credential lifetime (%d seconds). " +
                                     "The refresh token expires with the credential lifetime, so a longer refresh interval would be unusable.",
                             refreshInterval, expiry),
+                    Response.Status.BAD_REQUEST);
+        }
+
+        if (idleTimeout != null && idleTimeout > expiry) {
+            throw ErrorResponse.error(
+                    String.format("Credential refresh idle timeout (%d seconds) cannot exceed credential lifetime (%d seconds). " +
+                                    "The refresh token never outlives the issued credential, so a longer idle timeout would be unusable.",
+                            idleTimeout, expiry),
+                    Response.Status.BAD_REQUEST);
+        }
+
+        if (idleTimeout != null && idleTimeout < refreshInterval) {
+            throw ErrorResponse.error(
+                    String.format("Credential refresh idle timeout (%d seconds) must not be smaller than the credential refresh interval (%d seconds). " +
+                                    "The wallet refreshes on the configured interval, so its refresh token must stay valid at least that long.",
+                            idleTimeout, refreshInterval),
                     Response.Status.BAD_REQUEST);
         }
     }

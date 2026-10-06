@@ -1,5 +1,6 @@
 package org.keycloak.tests.oid4vc;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -122,6 +124,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
     @BeforeEach
     void beforeEach() {
+        resetCredentialExpirationSettings();
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
         user.admin().verifiableCredentials().getIssuedCredentials()
@@ -601,6 +604,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      * Test that the VC expiration (exp claim) uses the refresh interval,
      * while the issued credential and refresh token use the credential lifetime.
      * To verify the core feature: separating VC expiration from refresh token expiration.
+     * The refresh idle timeout is set to the credential lifetime so that it does not bound the refresh token here.
      */
     @Test
     public void testVCExpirationUsesRefreshInterval() throws Exception {
@@ -608,14 +612,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         int credentialLifetime = 31536000; // 365 days
         int refreshInterval = 604800; // 7 days
 
-        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
-
-        testRealm.updateClientScope(scopeId, clientScope -> {
-            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
-            credScopeRep.setExpiryInSeconds(credentialLifetime);
-            credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
-            return ClientScopeBuilder.update(credScopeRep);
-        });
+        configureCredentialExpiration(credentialLifetime, refreshInterval, credentialLifetime);
 
         AccessTokenResponse tokenResponse = authzCodeFlow();
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
@@ -657,19 +654,120 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertNotNull(refreshToken);
 
         // Decode the refresh token JWT
-        String[] parts = refreshToken.split("\\.");
-        assertEquals(3, parts.length, "Expected refresh token to be a JWT with 3 parts");
-        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-        JsonNode refreshTokenPayload = JsonSerialization.readValue(payload, JsonNode.class);
-
-        long refreshTokenIat = refreshTokenPayload.get("iat").asLong();
-        long refreshTokenExp = refreshTokenPayload.get("exp").asLong();
-        long refreshTokenLifetimeSeconds = refreshTokenExp - refreshTokenIat;
+        RefreshTokenTimes tokenTimes = decodeRefreshTokenTimes(refreshToken);
+        long refreshTokenLifetimeSeconds = tokenTimes.exp() - tokenTimes.iat();
 
         // Refresh token lifetime should match credential lifetime (365 days), NOT refresh interval (7 days)
         assertTrue(Math.abs(refreshTokenLifetimeSeconds - credentialLifetime) <= tolerance,
                 String.format("Refresh token lifetime should be ~%d seconds (credential lifetime), but was %d seconds",
                         credentialLifetime, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Test that by default the refresh token expires after the refresh idle timeout (30 days),
+     * long before the credential lifetime (365 days) has passed, and that the refresh then fails.
+     */
+    @Test
+    public void testRefreshTokenExpiresAfterIdleTimeout() throws IOException {
+        configureCredentialExpiration(31536000, 604800, null);
+        long idleTimeout = CredentialScopeModel.VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT;
+        long tolerance = 60; // 1 minute tolerance for time normalization
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        RefreshTokenTimes tokenTimes = decodeRefreshTokenTimes(tokenResponse.getRefreshToken());
+        long refreshTokenLifetimeSeconds = tokenTimes.exp() - tokenTimes.iat();
+        assertTrue(Math.abs(refreshTokenLifetimeSeconds - idleTimeout) <= tolerance,
+                String.format("Refresh token lifetime should be ~%d seconds (idle timeout), but was %d seconds",
+                        idleTimeout, refreshTokenLifetimeSeconds));
+
+        // Move past the idle timeout: the refresh token expired although the credential lifetime has not passed
+        timeOffSet.set(Duration.ofSeconds(idleTimeout + 10));
+
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertFalse(refreshResponse.isSuccess(), "Refresh token exchange should fail after the idle timeout");
+        assertNull(refreshResponse.getAccessToken());
+        assertEquals(INVALID_GRANT, refreshResponse.getError());
+        assertEquals("Token is not active", refreshResponse.getErrorDescription());
+    }
+
+    /**
+     * Test that an explicitly configured refresh idle timeout bounds the refresh token
+     * before the credential lifetime is reached.
+     */
+    @Test
+    public void testExplicitIdleTimeoutBoundsRefreshToken() throws IOException {
+        long idleTimeout = 864000; // 10 days
+        configureCredentialExpiration(31536000, 604800, (int) idleTimeout);
+        long tolerance = 60; // 1 minute tolerance for time normalization
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        RefreshTokenTimes tokenTimes = decodeRefreshTokenTimes(tokenResponse.getRefreshToken());
+        long refreshTokenLifetimeSeconds = tokenTimes.exp() - tokenTimes.iat();
+        assertTrue(Math.abs(refreshTokenLifetimeSeconds - idleTimeout) <= tolerance,
+                String.format("Refresh token lifetime should be ~%d seconds (configured idle timeout), but was %d seconds",
+                        idleTimeout, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Test that the idle timeout default never falls below the refresh interval: with a refresh interval
+     * above the 30 day default, the refresh token must stay valid for the configured interval.
+     */
+    @Test
+    public void testIdleTimeoutDefaultIsAtLeastRefreshInterval() throws IOException {
+        long refreshInterval = 5184000; // 60 days
+        configureCredentialExpiration(31536000, (int) refreshInterval, null);
+        long tolerance = 60; // 1 minute tolerance for time normalization
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        RefreshTokenTimes tokenTimes = decodeRefreshTokenTimes(tokenResponse.getRefreshToken());
+        long refreshTokenLifetimeSeconds = tokenTimes.exp() - tokenTimes.iat();
+        assertTrue(Math.abs(refreshTokenLifetimeSeconds - refreshInterval) <= tolerance,
+                String.format("Refresh token lifetime should be ~%d seconds (refresh interval), but was %d seconds",
+                        refreshInterval, refreshTokenLifetimeSeconds));
+    }
+
+    /**
+     * Test that every refresh restarts the idle window, so a wallet that keeps refreshing within the
+     * idle timeout can refresh even after the original refresh token would have expired.
+     */
+    @Test
+    public void testIdleTimeoutRestartsOnEveryRefresh() throws IOException {
+        configureCredentialExpiration(31536000, 604800, null);
+        long idleTimeout = CredentialScopeModel.VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT;
+        long tolerance = 60; // 1 minute tolerance for time normalization
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        // Refresh just before the first idle window ends
+        timeOffSet.set(Duration.ofSeconds(idleTimeout - 60));
+
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(), "Refresh should succeed within the idle timeout");
+
+        RefreshTokenTimes refreshedTimes = decodeRefreshTokenTimes(refreshResponse.getRefreshToken());
+        long refreshedLifetimeSeconds = refreshedTimes.exp() - refreshedTimes.iat();
+        assertTrue(Math.abs(refreshedLifetimeSeconds - idleTimeout) <= tolerance,
+                String.format("Refreshed token lifetime should restart the idle window (~%d seconds), but was %d seconds",
+                        idleTimeout, refreshedLifetimeSeconds));
+
+        // Refresh again 10 days after the original refresh token's idle window would have expired
+        timeOffSet.set(Duration.ofSeconds(idleTimeout + 10L * 24 * 3600));
+
+        refreshResponse = wallet.refreshRequest(ctx).send();
+        assertTrue(refreshResponse.isSuccess(),
+                "Refresh should succeed as long as the wallet keeps refreshing within the idle timeout");
     }
 
     /**
@@ -776,12 +874,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         // Set custom refresh interval (1 hour)
         int customRefreshInterval = 3600;
 
-        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
-        testRealm.updateClientScope(scopeId, clientScope -> {
-            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
-            credScopeRep.setRefreshIntervalInSeconds(customRefreshInterval);
-            return ClientScopeBuilder.update(credScopeRep);
-        });
+        configureCredentialExpiration(31536000, customRefreshInterval, null);
 
         // Obtain VC
         AccessTokenResponse tokenResponse = authzCodeFlow();
@@ -816,14 +909,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         // Configure with short refresh interval for testing
         int credentialLifetime = 86400; // 1 day (for easier testing)
         int refreshInterval = 3600; // 1 hour
-        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
-
-        testRealm.updateClientScope(scopeId, clientScope -> {
-            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
-            credScopeRep.setExpiryInSeconds(credentialLifetime);
-            credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
-            return ClientScopeBuilder.update(credScopeRep);
-        });
+        configureCredentialExpiration(credentialLifetime, refreshInterval, null);
 
         // Obtain VC
         AccessTokenResponse tokenResponse = authzCodeFlow();
@@ -1033,6 +1119,45 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Credential scope not found:" + credentialScopeName))
                 .getId();
+    }
+
+    private void configureCredentialExpiration(int credentialLifetime, int refreshInterval, Integer idleTimeout) {
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+        testRealm.updateClientScope(scopeId, clientScope -> {
+            CredentialScopeRepresentation credScopeRep = new CredentialScopeRepresentation(clientScope.build());
+            credScopeRep.setExpiryInSeconds(credentialLifetime);
+            credScopeRep.setRefreshIntervalInSeconds(refreshInterval);
+            credScopeRep.setRefreshIdleTimeoutInSeconds(idleTimeout);
+            return ClientScopeBuilder.update(credScopeRep);
+        });
+    }
+
+    /**
+     * The admin client-scope update merges attributes instead of replacing them, so expiration settings
+     * written by a previous test survive the framework cleanup. Clear them on the model directly so each
+     * test starts from the smart defaults.
+     */
+    private void resetCredentialExpirationSettings() {
+        String scopeId = getCredentialScopeId(minimalJwtTypeCredentialScopeName);
+        String realmName = testRealm.getName();
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            ClientScopeModel scope = realm.getClientScopeById(scopeId);
+            scope.setAttribute(CredentialScopeModel.VC_EXPIRY_IN_SECONDS, null);
+            scope.setAttribute(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS, null);
+            scope.setAttribute(CredentialScopeModel.VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS, null);
+        });
+    }
+
+    private record RefreshTokenTimes(long iat, long exp) {
+    }
+
+    private RefreshTokenTimes decodeRefreshTokenTimes(String refreshToken) throws IOException {
+        String[] parts = refreshToken.split("\\.");
+        assertEquals(3, parts.length, "Expected refresh token to be a JWT with 3 parts");
+        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+        JsonNode refreshTokenPayload = JsonSerialization.readValue(payload, JsonNode.class);
+        return new RefreshTokenTimes(refreshTokenPayload.get("iat").asLong(), refreshTokenPayload.get("exp").asLong());
     }
 
     private IssuedVerifiableCredentialRepresentation issueCredential() {
