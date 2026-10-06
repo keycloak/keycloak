@@ -24,7 +24,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.url",
         "org.keycloak.tests.vault",
         "org.keycloak.tests.welcomepage",
-        "org.keycloak.tests.workflow"
+        "org.keycloak.tests.workflow",
+        "org.keycloak.tests.x509",
 })
 public class Base3TestSuite {
 }
