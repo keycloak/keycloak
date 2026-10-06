@@ -432,9 +432,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * Executes a query against a user storage provider with graceful degradation.
      * If the provider throws an exception, logs the error and returns an empty stream
      * to allow other providers to continue functioning.
+     *
+     * Graceful degradation only applies to genuine external {@link UserStorageProvider}
+     * components (e.g. LDAP). Local and federated storage share the realm's database, so a
+     * failure there is not a "provider is unreachable" situation but a general outage, and
+     * must propagate rather than silently look like "no results".
      */
-    private static Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery,
+    static Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery,
                                                           Integer firstResult, Integer maxResults) {
+        if (!(provider instanceof UserStorageProvider)) {
+            return pagedQuery.query(provider, firstResult, maxResults);
+        }
         try {
             return pagedQuery.query(provider, firstResult, maxResults);
         } catch (Exception e) {
@@ -451,9 +459,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * Executes a count query against a user storage provider with graceful degradation.
      * If the provider throws an exception, logs the error and returns 0
      * to allow other providers to continue functioning.
+     *
+     * See {@link #queryWithGracefulDegradation} for why local/federated storage is excluded.
      */
-    private int countQueryWithGracefulDegradation(Object provider, CountQuery countQuery, 
+    int countQueryWithGracefulDegradation(Object provider, CountQuery countQuery,
                                                  Integer firstResult, Integer maxResults) {
+        if (!(provider instanceof UserStorageProvider)) {
+            return countQuery.query(provider, firstResult, maxResults);
+        }
         try {
             return countQuery.query(provider, firstResult, maxResults);
         } catch (Exception e) {
