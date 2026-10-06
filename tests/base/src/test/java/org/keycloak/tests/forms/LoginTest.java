@@ -407,7 +407,8 @@ public class LoginTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGOUT)
                 .userId(accessToken.getSubject())
-                .sessionId(accessToken.getSessionId());
+                .sessionId(accessToken.getSessionId())
+                .details(Details.REASON, "user session is invalid or user is blocked");
 
         // act: try to log in as different user
         loginPage.fillLogin("keycloak-user@localhost", getPassword("keycloak-user@localhost"));
