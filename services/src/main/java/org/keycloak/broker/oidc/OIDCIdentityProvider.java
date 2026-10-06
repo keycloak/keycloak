@@ -597,7 +597,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                         familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
                         preferredUsername = getUsernameFromUserInfo(userInfo);
                         String userInfoEmail = getJsonProperty(userInfo, "email");
-                        Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
+                        String userInfoEmailVerifiedClaim = getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED);
+                        Boolean userInfoEmailVerified = userInfoEmailVerifiedClaim == null ? null : Boolean.valueOf(userInfoEmailVerifiedClaim);
 
                         if (userInfoEmail != null) {
                             email = userInfoEmail;
