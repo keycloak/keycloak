@@ -136,14 +136,26 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isValidHostname(String host) {
-        return host.matches("[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?");
+        if (host.endsWith(".")) {
+            host = host.substring(0, host.length() - 1);
+        }
+        if (host.isEmpty() || host.length() > 253) {
+            return false;
+        }
+        for (String label : host.split("\\.", -1)) {
+            if (label.isEmpty() || label.length() > 63
+                    || !label.matches("[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String proxyAddressError(String address) {
         return address + " is not a valid proxy address. Supported formats: "
                 + "IP address (e.g. 127.0.0.1), IPv6 in square brackets (e.g. [::1]), "
-                + "hostname (e.g. localhost), CIDR notation (e.g. 10.0.0.0/8), "
-                + "or any of these with a :port suffix (e.g. 127.0.0.1:8084).";
+                + "CIDR notation (e.g. 10.0.0.0/8), hostname (e.g. localhost), "
+                + "or an IP address or hostname with a :port suffix (e.g. 127.0.0.1:8084).";
     }
 
     private static String normalizeAddresses(String value) {
