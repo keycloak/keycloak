@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
@@ -189,8 +190,11 @@ export async function addMapper(
   mapperName: string,
 ) {
   await page.getByTestId("no-mappers-empty-action").click();
-  await page.locator("#identityProviderMapper").click();
-  await page.getByTestId(`${mapperType}-idp-mapper`).click();
+  await selectItem(
+    page,
+    "#identityProviderMapper",
+    page.getByTestId(`${mapperType}-idp-mapper`),
+  );
   await page.getByTestId("name").fill(mapperName);
 }
 
