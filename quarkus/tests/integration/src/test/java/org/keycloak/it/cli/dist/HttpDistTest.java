@@ -308,6 +308,18 @@ public class HttpDistTest {
     }
 
     @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void semicolonIsNotAQueryParamDelimiter(KeycloakRunner runner) {
+        runner.run("start-dev");
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master/test-resources/query-params?a=1;b=2")
+                .then().statusCode(200)
+                .body("decoded.a[0]", Matchers.is("1;b=2"))
+                .body("decoded.b", Matchers.nullValue())
+                .body("raw.a[0]", Matchers.is("1;b=2"));
+    }
+
+    @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
         result.assertError("Invalid duration");

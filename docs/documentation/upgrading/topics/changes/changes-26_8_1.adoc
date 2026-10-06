@@ -17,3 +17,10 @@ Although no issues are expected, the previous behavior can be restored with the 
 bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round-trip true \
   --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
 ----
+
+=== Semicolons are no longer treated as query parameter delimiters
+
+Previously {project_name} treated the semicolon (`;`) as a query parameter delimiter in addition to the ampersand (`&`), so a request such as `/path?a=1;b=2` was parsed as two parameters.
+Because different layers of the server applied this rule inconsistently, the parameters used to process a request could differ from those used to verify its signature.
+{project_name} now treats the semicolon as a literal character, so the same request yields a single parameter.
+If any of your clients rely on the semicolon as a query parameter delimiter, update them to use the ampersand instead.
