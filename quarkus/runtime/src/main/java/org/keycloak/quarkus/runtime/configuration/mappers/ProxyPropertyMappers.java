@@ -101,9 +101,11 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping {
         }
 
         log.warnf("proxy-trusted-addresses value '%s' is a hostname. "
-                + "Hostnames are resolved to IP addresses at startup and may not track changes to DNS records. "
-                + "If the hostname cannot be resolved at startup, a DNS lookup is performed on every request, which slows down request processing. "
-                + "For reliable setups, always use an IP address or CIDR notation instead.", address);
+                + "Using hostnames is deprecated and will be removed in a future version. "
+                + "The behavior of hostnames is unreliable: they are resolved to IP addresses at startup "
+                + "and will not track changes to DNS records. If the hostname cannot be resolved at startup, "
+                + "a DNS lookup is performed on every request, which slows down request processing. "
+                + "Use an IP address or CIDR notation instead.", address);
     }
 
     private static String extractHost(String address) {

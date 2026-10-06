@@ -231,7 +231,7 @@ The following address formats are supported:
 
 IMPORTANT: IPv6 addresses must be enclosed in square brackets, for example `[::1]` or `[0:0:0:0:0:0:0:1]`. If a bare IPv6 address without brackets is provided (for example `::1`), {project_name} automatically converts it to the bracketed form and logs a warning. To avoid this warning, always use brackets or CIDR notation for IPv6 addresses.
 
-NOTE: Using hostnames is not recommended. Hostnames are resolved to IP addresses at startup and will not track changes to DNS records. If the hostname cannot be resolved at startup, a DNS lookup is performed on every request, which slows down request processing. Always use IP addresses or CIDR notation instead.
+WARNING: Using hostnames is deprecated and will be removed in a future version. The behavior of hostnames is unreliable: they are resolved to IP addresses at startup and will not track changes to DNS records. If the hostname cannot be resolved at startup, a DNS lookup is performed on every request, which slows down request processing. Use IP addresses or CIDR notation instead.
 
 For example, to trust a specific proxy IP and an entire subnet:
 
