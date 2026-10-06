@@ -160,5 +160,5 @@
 :securing_apps_token_exchange_name: Token exchange Documentation
 
 :ui_customization_guide_name: UI Customization Guide
-:ui_customization_guide_link: {project_doc_base_url}/ui-customization/
+:ui_customization_guide_link: https://www.keycloak.org/ui-customization/
 :ui_customization_deploying_themes: https://www.keycloak.org/ui-customization/themes#_deploying_themes
