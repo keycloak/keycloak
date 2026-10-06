@@ -71,7 +71,7 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
       {isModalOpen && (
         <AddRoleMappingModal
           id="role"
-          type="roles"
+          type="realms"
           title={t("selectRole")}
           actionLabel={t("select")}
           isRadio={isRadio}

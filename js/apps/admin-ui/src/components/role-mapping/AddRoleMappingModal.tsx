@@ -21,13 +21,17 @@ import { useAccess } from "../../context/access/Access";
 import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort from "../../utils/useLocaleSort";
 import useToggle from "../../utils/useToggle";
-import { ResourcesKey, Row } from "./RoleMapping";
-import { getAvailableRoles } from "./queries";
-import { getAvailableClientRoles } from "./resource";
+import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import { Row } from "./RoleMapping";
+import {
+  getAvailableClientRoles,
+  getAvailableRealmRoles,
+  RoleMappingType,
+} from "./queries";
 
 type AddRoleMappingModalProps = {
   id: string;
-  type: ResourcesKey;
+  type: RoleMappingType;
   filterType: FilterType;
   name?: string;
   isRadio?: boolean;
@@ -35,7 +39,7 @@ type AddRoleMappingModalProps = {
   onClose: () => void;
   title?: string;
   actionLabel?: string;
-  groupsResource?: any;
+  groupsResource?: Groups;
 };
 
 export type FilterType = "roles" | "clients";
@@ -56,21 +60,35 @@ type AddRoleButtonProps = Omit<
   label?: string;
   variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
   isDisabled?: boolean;
+  type?: RoleMappingType;
   onFilerTypeChange: (type: FilterType) => void;
+};
+
+const useCanViewRealmRoles = (type?: RoleMappingType) => {
+  const { hasAccess } = useAccess();
+  switch (type) {
+    case "users":
+    case "groups":
+      return hasAccess("view-realm") || hasAccess("query-users");
+    case "clients":
+    case "clientScopes":
+      return hasAccess("view-realm") || hasAccess("query-clients");
+    default:
+      return hasAccess("view-realm");
+  }
 };
 
 export const AddRoleButton = ({
   label,
   variant,
   isDisabled,
+  type,
   onFilerTypeChange,
   ...rest
 }: AddRoleButtonProps) => {
   const { t } = useTranslation();
   const [open, toggle] = useToggle();
-
-  const { hasAccess } = useAccess();
-  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
+  const canViewRealmRoles = useCanViewRealmRoles(type);
 
   return (
     <Dropdown
@@ -133,57 +151,30 @@ export const AddRoleMappingModal = ({
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
   const localeSort = useLocaleSort();
-  const compareRow = ({ role: { name } }: Row) => name?.toUpperCase();
 
   const loader = async (
     first?: number,
     max?: number,
     search?: string,
   ): Promise<Row[]> => {
-    const params: Record<string, string | number> = {
-      first: first!,
-      max: max!,
-    };
+    const params = { id, first, max, ...(search ? { search } : {}) };
+    const roles =
+      filterType === "roles"
+        ? await getAvailableRealmRoles(
+            adminClient,
+            type,
+            params,
+            groupsResource,
+          )
+        : await getAvailableClientRoles(
+            adminClient,
+            type,
+            params,
+            groupsResource,
+          );
 
-    if (search) {
-      params.search = search;
-    }
-
-    const roles = await getAvailableRoles(
-      adminClient,
-      type,
-      { ...params, id },
-      groupsResource,
-    );
-    const sorted = localeSort(roles, compareRow);
-    return sorted.map((row) => {
-      return {
-        role: row.role,
-        id: row.role.id,
-      };
-    });
-  };
-
-  const clientRolesLoader = async (
-    first?: number,
-    max?: number,
-    search?: string,
-  ): Promise<Row[]> => {
-    const roles = await getAvailableClientRoles(adminClient, {
-      id,
-      type,
-      first: first || 0,
-      max: max || 10,
-      search,
-    });
-
-    return localeSort(
-      roles.map((e) => ({
-        client: { clientId: e.client, id: e.clientId },
-        role: { id: e.id, name: e.role, description: e.description },
-        id: e.id,
-      })),
-      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`,
+    return localeSort(roles, ({ client, role }) =>
+      `${client?.clientId ?? ""}${role.name}`.toUpperCase(),
     );
   };
 
@@ -248,10 +239,10 @@ export const AddRoleMappingModal = ({
         searchPlaceholderKey={
           filterType === "roles" ? "searchByRoleName" : "search"
         }
-        isPaginated={!(filterType === "roles" && type !== "roles")}
+        isPaginated={!(filterType === "roles" && type !== "realms")}
         canSelectAll
         isRadio={isRadio}
-        loader={filterType === "roles" ? loader : clientRolesLoader}
+        loader={loader}
         ariaLabelKey="associatedRolesText"
         columns={columns}
         emptyState={

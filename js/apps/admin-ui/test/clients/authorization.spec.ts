@@ -7,6 +7,7 @@ import {
   assertNotificationMessage,
 } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
+import { confirmModalAssign, pickRole, pickRoleType } from "../utils/roles.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
@@ -276,6 +277,75 @@ test.describe
     await goToScopesSubTab(page);
     await goToPoliciesSubTab(page);
     await goToPermissionsSubTab(page);
+  });
+});
+
+test.describe
+  .serial("Role policy for an admin managing only client authorization", () => {
+  const realmName = `authz-role-policy-${crypto.randomUUID()}`;
+  const clientId = `authz-role-policy-client-${crypto.randomUUID()}`;
+  const roleName = "policy-client-role";
+  const username = `authz-only-admin-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    const client = await adminClient.createClient({
+      realm: realmName,
+      clientId,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+    await adminClient.createClientRole(client.id, {
+      realm: realmName,
+      name: roleName,
+    });
+
+    // an admin that can manage the authorization settings of clients but cannot manage users
+    const admin = await adminClient.createUser({
+      username,
+      enabled: true,
+      credentials: [{ type: "password", value: "password" }],
+    });
+    await adminClient.addClientRoleToUser(admin.id!, `${realmName}-realm`, [
+      "manage-authorization",
+      "query-clients",
+      "query-groups",
+      "query-realms",
+      "query-users",
+      "view-clients",
+      "view-users",
+    ]);
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteUser(username);
+    await adminClient.deleteRealm(realmName);
+  });
+
+  test("Should list client roles when creating a role policy", async ({
+    page,
+  }) => {
+    await login(page, { username, password: "password" });
+
+    await goToRealm(page, realmName);
+    await page.reload();
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToPoliciesSubTab(page);
+
+    await createPolicy(page, "Role", { name: "Role policy" });
+    await pickRoleType(page, "client");
+    await pickRole(page, roleName, true);
+    await confirmModalAssign(page);
+
+    await expect(
+      page.getByRole("row", { name: new RegExp(roleName) }),
+    ).toBeVisible();
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
   });
 });
 

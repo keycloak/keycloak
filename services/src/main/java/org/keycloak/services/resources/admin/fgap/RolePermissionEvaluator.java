@@ -156,4 +156,5 @@ public interface RolePermissionEvaluator {
      * @return Stream of IDs of roles with {@code scope} permission.
      */
     Set<String> getRoleIdsByScope(String scope);
+
 }

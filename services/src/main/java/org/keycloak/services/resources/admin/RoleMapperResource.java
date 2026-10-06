@@ -16,13 +16,10 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,6 +39,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -51,12 +49,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RoleUtils;
-import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -86,7 +83,7 @@ import org.jboss.resteasy.reactive.NoCache;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
-public class RoleMapperResource {
+public class RoleMapperResource implements RoleMappingAwareResource {
 
     protected static final Logger logger = Logger.getLogger(RoleMapperResource.class);
 
@@ -124,6 +121,16 @@ public class RoleMapperResource {
 
     }
 
+    @Override
+    public KeycloakSession getSession() {
+        return session;
+    }
+
+    @Override
+    public AdminPermissionEvaluator getAuth() {
+        return auth;
+    }
+
     /**
      * Get role mappings
      *
@@ -141,34 +148,96 @@ public class RoleMapperResource {
     public MappingsRepresentation getRoleMappings() {
         viewPermission.require();
 
-        List<RoleRepresentation> realmRolesRepresentation = new ArrayList<>();
-        Map<String, ClientMappingsRepresentation> appMappings = new HashMap<>();
+        return ModelToRepresentation.toMappingsRepresentation(roleMapper.getRoleMappingsStream().filter(auth.roles()::canView));
+    }
 
-        final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
+    @Path("composite")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation(summary = "Get effective role mappings",
+        description = "This will recurse all composite roles, and for users also the groups they belong to, to get the result.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getCompositeRoleMappings() {
+        viewPermission.require();
 
-        roleMapper.getRoleMappingsStream().filter(roleMapping -> auth.roles().canView(roleMapping)).forEach(roleMapping -> {
-            RoleContainerModel container = roleMapping.getContainer();
-            if (container instanceof RealmModel) {
-                realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
-            } else if (container instanceof ClientModel) {
-                ClientModel clientModel = (ClientModel) container;
-                mappings.set(appMappings.get(clientModel.getClientId()));
-                if (mappings.get() == null) {
-                    mappings.set(new ClientMappingsRepresentation());
-                    mappings.get().setId(clientModel.getId());
-                    mappings.get().setClient(clientModel.getClientId());
-                    mappings.get().setMappings(new ArrayList<>());
-                    appMappings.put(clientModel.getClientId(), mappings.get());
-                }
-                mappings.get().getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
+        return ModelToRepresentation.toMappingsRepresentation(getEffectiveRoleMappings().stream().filter(auth.roles()::canView));
+    }
+
+    @Path("inherited")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation(summary = "Get inherited role mappings",
+        description = "Returns the roles obtained through composite roles and, for users, through the groups they belong to. "
+                + "A role that is both mapped directly and inherited is included.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getInheritedRoleMappings() {
+        viewPermission.require();
+
+        Stream<RoleModel> groupRoles = getParentGroups().flatMap(GroupModel::getRoleMappingsStream);
+
+        return ModelToRepresentation.toMappingsRepresentation(
+                getInheritedRoles(roleMapper.getRoleMappingsStream(), groupRoles).filter(auth.roles()::canView));
+    }
+
+    // the groups the roles are inherited from: for a user all its groups and their parents, for a group its parents
+    private Stream<GroupModel> getParentGroups() {
+        Stream<GroupModel> groups;
+
+        if (roleMapper instanceof GroupModel group) {
+            groups = Stream.ofNullable(group.getParent());
+        } else {
+            groups = ((UserModel) roleMapper).getGroupsStream();
+        }
+
+        return groups.flatMap(g -> Stream.iterate(g, Objects::nonNull, GroupModel::getParent));
+    }
+
+    @Path("available")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
+    @Operation(summary = "Get the roles that can still be mapped by the caller",
+        description = "Returns the roles that are not yet mapped and that the caller is allowed to map. "
+                + "Realm roles are returned in full, client roles can be paginated with first/max and filtered with search.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getAvailableRoleMappings(
+            @Parameter(description = "filter by role name or client id") @QueryParam("search") String search,
+            @Parameter(description = "first client role to return") @QueryParam("first") Integer first,
+            @Parameter(description = "maximum number of client roles to return") @QueryParam("max") Integer max) {
+        viewPermission.require();
+
+        Set<String> mapped = roleMapper.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet());
+
+        return getAvailableMappings(AdminPermissionsSchema.MAP_ROLE, search, mapped, first, max);
+    }
+
+    private Set<RoleModel> getEffectiveRoleMappings() {
+        if (roleMapper instanceof GroupModel group) {
+            // GroupModel.hasRole() (the semantics this endpoint previously relied on)
+            // walks the parent-group chain, but RoleUtils.getDeepRoleMappings() only
+            // expands a group's own direct mappings. Walk the chain explicitly here
+            // to preserve parent-group role inheritance for the group endpoint.
+            Set<RoleModel> directMappings = new HashSet<>();
+            for (GroupModel current = group; current != null; current = current.getParent()) {
+                directMappings.addAll(current.getRoleMappingsStream().collect(Collectors.toSet()));
             }
-        });
-
-        MappingsRepresentation all = new MappingsRepresentation();
-        if (!realmRolesRepresentation.isEmpty()) all.setRealmMappings(realmRolesRepresentation);
-        if (!appMappings.isEmpty()) all.setClientMappings(appMappings);
-
-        return all;
+            return RoleUtils.expandCompositeRoles(directMappings);
+        }
+        return RoleUtils.getDeepRoleMappings(roleMapper);
     }
 
     /**
@@ -217,21 +286,7 @@ public class RoleMapperResource {
         viewPermission.require();
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        Set<RoleModel> deepMappings;
-        if (roleMapper instanceof GroupModel group) {
-            // GroupModel.hasRole() (the semantics this endpoint previously relied on)
-            // walks the parent-group chain, but RoleUtils.getDeepRoleMappings() only
-            // expands a group's own direct mappings. Walk the chain explicitly here
-            // to preserve parent-group role inheritance for the group endpoint.
-            Set<RoleModel> directMappings = new HashSet<>();
-            for (GroupModel current = group; current != null; current = current.getParent()) {
-                directMappings.addAll(current.getRoleMappingsStream().collect(Collectors.toSet()));
-            }
-            deepMappings = RoleUtils.expandCompositeRoles(directMappings);
-        } else {
-            deepMappings = RoleUtils.getDeepRoleMappings(roleMapper);
-        }
-        return deepMappings.stream()
+        return getEffectiveRoleMappings().stream()
                 .filter(r -> RoleUtils.isRealmRole(r, realm))
                 .filter(r -> auth.roles().canView(r))
                 .map(toBriefRepresentation);

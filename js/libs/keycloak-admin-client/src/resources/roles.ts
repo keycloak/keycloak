@@ -1,4 +1,5 @@
 import Resource from "./resource.js";
+import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
 import type RoleRepresentation from "../defs/roleRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type { KeycloakAdminClient } from "../client.js";
@@ -102,6 +103,33 @@ export class Roles extends Resource<{ realm?: string }> {
   >({
     method: "GET",
     path: "/roles-by-id/{id}/composites",
+    urlParamKeys: ["id"],
+  });
+
+  public getCompositeRolesComposite = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/roles-by-id/{id}/composites/composite",
+    urlParamKeys: ["id"],
+  });
+
+  public getCompositeRolesInherited = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/roles-by-id/{id}/composites/inherited",
+    urlParamKeys: ["id"],
+  });
+
+  public getCompositeRolesAvailable = this.makeRequest<
+    { id: string; search?: string; first?: number; max?: number },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/roles-by-id/{id}/composites/available",
     urlParamKeys: ["id"],
   });
 
