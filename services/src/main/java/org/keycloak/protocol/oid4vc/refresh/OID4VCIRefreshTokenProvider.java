@@ -408,7 +408,11 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
 
         IssuedVerifiableCredentialModel issuedVerifiableCredentialModel = checkIssuedVerifiableCredential(session, user, oid4vcAuthzDetail.getIssuedCredentialId(), credentialScopeModel, clientSessionCtx.getClientSession().getClient());
-        return (issuedVerifiableCredentialModel.getExpiresAt() / 1000); // Expiry saved on credential is in milliseconds
+        // Expiry saved on credential is in milliseconds. The token additionally expires when unused for the idle
+        // timeout; every refresh rotates it with a fresh iat, restarting the idle window.
+        long credentialExpiresAt = issuedVerifiableCredentialModel.getExpiresAt() / 1000;
+        long idleTimeoutExpiresAt = Time.currentTimeSeconds() + credentialScopeModel.getRefreshIdleTimeoutInSeconds();
+        return Math.min(credentialExpiresAt, idleTimeoutExpiresAt);
     }
 
     private OID4VCAuthorizationDetail getOid4vcAuthzDetail(List<AuthorizationDetailsJSONRepresentation> authzDetails) {

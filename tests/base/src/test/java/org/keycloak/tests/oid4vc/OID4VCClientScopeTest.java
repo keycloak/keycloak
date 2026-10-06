@@ -657,7 +657,67 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
             retrieved.setRefreshIntervalInSeconds(604800); // 7 days - now invalid!
 
             // Then: update should fail with BadRequestException
-            assertThrows(jakarta.ws.rs.BadRequestException.class, () -> clientScopes.get(scopeId).update(retrieved));
+            assertThrows(BadRequestException.class, () -> clientScopes.get(scopeId).update(retrieved));
+        } finally {
+            clientScopes.get(scopeId).remove();
+        }
+    }
+
+    /**
+     * Test that creating a client scope with refresh idle timeout greater than the credential lifetime is rejected
+     */
+    @Test
+    public void testRefreshIdleTimeoutCannotExceedLifetime() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-invalid-idle-timeout");
+        scope.setExpiryInSeconds(86400); // 1 day
+        scope.setRefreshIntervalInSeconds(3600); // 1 hour - valid
+        scope.setRefreshIdleTimeoutInSeconds(172800); // 2 days - INVALID!
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("refresh idle timeout") && error.contains("exceed"),
+                "Error message should explain the validation failure");
+    }
+
+    /**
+     * Test that creating a client scope with refresh idle timeout below the refresh interval is rejected,
+     * because the wallet refreshes on the configured interval and would lose its refresh token before doing so
+     */
+    @Test
+    public void testRefreshIdleTimeoutSmallerThanRefreshIntervalRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-invalid-idle-vs-refresh");
+        scope.setExpiryInSeconds(31536000); // 365 days
+        scope.setRefreshIntervalInSeconds(604800); // 7 days
+        scope.setRefreshIdleTimeoutInSeconds(86400); // 1 day - INVALID!
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains("refresh idle timeout") && error.contains("refresh interval"),
+                "Error message should explain the validation failure");
+    }
+
+    /**
+     * Test that updating a client scope so that the refresh interval exceeds the refresh idle timeout is rejected
+     */
+    @Test
+    public void testUpdateToInvalidRefreshIdleTimeoutRejected() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-update-invalid-idle");
+        scope.setExpiryInSeconds(31536000); // 365 days
+        scope.setRefreshIntervalInSeconds(604800); // 7 days
+        scope.setRefreshIdleTimeoutInSeconds(2592000); // 30 days - valid
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        Response response = clientScopes.create(scope);
+        String scopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            // When: raising the refresh interval above the idle timeout
+            CredentialScopeRepresentation retrieved = new CredentialScopeRepresentation(
+                    clientScopes.get(scopeId).toRepresentation()
+            );
+            retrieved.setRefreshIntervalInSeconds(5184000); // 60 days - now above the 30 day idle timeout!
+
+            // Then: update should fail with BadRequestException
+            assertThrows(BadRequestException.class, () -> clientScopes.get(scopeId).update(retrieved));
         } finally {
             clientScopes.get(scopeId).remove();
         }
