@@ -98,6 +98,7 @@ export const TypeaheadSelect = ({
         break;
       }
       case "Escape": {
+        event.stopPropagation();
         onToggle(false);
         stopFiltering();
         break;
