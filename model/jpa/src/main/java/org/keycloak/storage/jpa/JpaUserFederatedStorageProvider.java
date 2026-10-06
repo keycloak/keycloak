@@ -995,10 +995,7 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
-        em.createNamedQuery("deleteFederatedIssuedVcsByUser")
-                .setParameter("userId", user.getId())
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
+        removeIssuedVerifiableCredentials(realm, user.getId());
         em.createNamedQuery("deleteFederatedVerifiableCredentialsByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
@@ -1249,6 +1246,14 @@ public class JpaUserFederatedStorageProvider implements
         em.remove(entity);
         em.flush();
         return true;
+    }
+
+    @Override
+    public void removeIssuedVerifiableCredentials(RealmModel realm, String userId) {
+        em.createNamedQuery("deleteFederatedIssuedVcsByUser")
+                .setParameter("userId", userId)
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
     }
 
     @Override
