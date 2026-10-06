@@ -17,6 +17,19 @@ If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses b
 * Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
 * Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
 
+=== X.509 authenticators process key usage and extended key usage validations correctly
+
+The X.509 user authenticators (**X509/Validate Username Form** for browser authentication and **X509/Validate Username** for direct access grants) include two optional configuration settings for key usage and extended key usage. These settings allow administrators to validate the presence of specific purposes within the corresponding certificate extensions. Previously, validation only occurred if the extension was marked as critical in the certificate. Starting with this version, validation is performed regardless of the critical status.
+
+Although the previous behavior was considered a bug, a new provider option is available for each authenticator to revert to the legacy validation if necessary.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authenticator--auth-x509-client-username-form--legacy-critical-behavior true \
+  --spi-authenticator--direct-grant-auth-x509-username--legacy-critical-behavior true
+----
+
+See link:{adminguide_link}#_x509[X.509 client certificate user authentication] for more information.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes

@@ -44,6 +44,10 @@ public abstract class AbstractX509ClientCertificateDirectGrantAuthenticator exte
         return Response.status(status).entity(e).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
+    public AbstractX509ClientCertificateDirectGrantAuthenticator(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void action(AuthenticationFlowContext context) {
 

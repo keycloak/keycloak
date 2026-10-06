@@ -12,6 +12,7 @@ import org.keycloak.tests.oauth.AuthorizationCodeTest;
 import org.keycloak.tests.policy.PasswordPolicyTest;
 import org.keycloak.tests.saml.SamlClientTest;
 import org.keycloak.tests.transactions.TransactionsTest;
+import org.keycloak.tests.x509.X509BrowserLoginTest;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -29,7 +30,8 @@ import org.junit.platform.suite.api.Suite;
         MutualTLSClientTest.class,
         LoginTest.class,
         AuthorizationCodeTest.class,
-        SamlClientTest.class
+        SamlClientTest.class,
+        X509BrowserLoginTest.class,
 })
 public class JDKTestSuite {
 }
