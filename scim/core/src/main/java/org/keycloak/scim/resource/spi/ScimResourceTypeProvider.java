@@ -138,7 +138,7 @@ public interface ScimResourceTypeProvider<R> extends Provider {
      * Deletes a resource of this type by its identifier. This method is invoked when a client requests the deletion of a specific resource,
      *
      * @param id the identifier of the resource to delete
-     * @return true if the resource was successfully deleted, false if the resource was not found or could not be deleted
+     * @return true if the resource was successfully deleted, false if the resource could not be deleted
      */
     boolean delete(String id);
 

@@ -30,6 +30,7 @@ import jakarta.persistence.MapKey;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
@@ -44,8 +45,8 @@ import org.hibernate.annotations.DynamicUpdate;
                         " WHERE sess.realmId = :realmId"),
         @NamedQuery(
                 name = "findExpiredRootAuthSessionIdsByRealm",
-                query = "SELECT sess.id FROM RootAuthenticationSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.timestamp < :timestamp"
+                query = "SELECT sess.id, sess.timestamp FROM RootAuthenticationSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.sessionBucket = :sessionBucket AND sess.timestampCoarse < :timestampCoarse"
         ),
         @NamedQuery(
             name = "deleteRootAuthSessionsByUser",
@@ -63,14 +64,23 @@ import org.hibernate.annotations.DynamicUpdate;
         ),
         @NamedQuery(
                 name = "insertRootAuthSessionIfAbsent",
-                query = "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, version) values (:id, :realmId, :timestamp, 0)" +
+                query = "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, createdOn, sessionBucket, timestampCoarse, version)" +
+                        " values (:id, :realmId, :timestamp, :createdOn, :sessionBucket, :timestampCoarse, 0)" +
                         " on conflict (id) do nothing"
+        ),
+        @NamedQuery(
+                name = "setRootAuthSessionTimestampCoarseToExact",
+                query = "UPDATE RootAuthenticationSessionEntity sess" +
+                        " SET sess.timestampCoarse = sess.timestamp" +
+                        " WHERE sess.id IN :ids"
         )
 })
 @Entity
 @Table(name = "ROOT_AUTH_SESSION")
 @DynamicUpdate
 public class RootAuthenticationSessionEntity implements AsynchronousCommitAllowed {
+
+    static final int SESSION_BUCKET_COUNT = 64;
 
     @Id
     @Column(name = "ID", length = 36)
@@ -82,6 +92,15 @@ public class RootAuthenticationSessionEntity implements AsynchronousCommitAllowe
     @Column(name = "TIMESTAMP")
     private long timestamp;
 
+    @Column(name = "CREATED_ON")
+    private long createdOn;
+
+    @Column(name = "SESSION_BUCKET")
+    private Integer sessionBucket;
+
+    @Column(name = "TIMESTAMP_COARSE")
+    private long timestampCoarse;
+
     @Version
     @Column(name = "VERSION")
     private int version;
@@ -89,6 +108,13 @@ public class RootAuthenticationSessionEntity implements AsynchronousCommitAllowe
     @OneToMany(mappedBy = "rootAuthenticationSession", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @MapKey(name = "tabId")
     private Map<String, AuthenticationSessionEntity> authenticationSessions = new HashMap<>();
+
+    @PrePersist
+    void computeSessionBucket() {
+        if (sessionBucket == null && id != null) {
+            sessionBucket = Math.floorMod(id.hashCode(), SESSION_BUCKET_COUNT);
+        }
+    }
 
     public String getId() {
         return id;
@@ -112,6 +138,30 @@ public class RootAuthenticationSessionEntity implements AsynchronousCommitAllowe
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public long getCreatedOn() {
+        return createdOn;
+    }
+
+    public void setCreatedOn(long createdOn) {
+        this.createdOn = createdOn;
+    }
+
+    public Integer getSessionBucket() {
+        return sessionBucket;
+    }
+
+    public void setSessionBucket(Integer sessionBucket) {
+        this.sessionBucket = sessionBucket;
+    }
+
+    public long getTimestampCoarse() {
+        return timestampCoarse;
+    }
+
+    public void setTimestampCoarse(long timestampCoarse) {
+        this.timestampCoarse = timestampCoarse;
     }
 
     public int getVersion() {

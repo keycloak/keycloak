@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -81,6 +82,8 @@ import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
@@ -219,6 +222,85 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.scope("openid organization:org-a organization:nonexistent");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+    }
+
+    @SuppressWarnings("unchecked")
+    @ParameterizedTest
+    @ValueSource(strings = {"ABC:Google", "café", "acme\"alias"})
+    public void testOrganizationScopeValueWithSpecialCharacters(String alias) throws Exception {
+        OrganizationRepresentation orgA = createRepresentation("orga", "orga.org");
+        orgA.setAlias(alias);
+        try (Response createResponse = realm.admin().organizations().create(orgA)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), createResponse.getStatus());
+            orgA.setId(ApiUtil.getCreatedId(createResponse));
+        }
+        realm.cleanup().add(r -> r.organizations().get(orgA.getId()).delete().close());
+        addMember(realm.admin().organizations().get(orgA.getId()));
+
+        oauth.client("direct-grant", "password");
+        String orgScope = "organization:" + orgA.getAlias();
+        oauth.scope("openid " + orgScope);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        assertThat(response.getScope(), containsString(orgScope));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder(orgA.getAlias()));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testOverlappingOrganizationScopeNames() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("org-a");
+        OrganizationRepresentation orgB = createOrganization("west");
+        OrganizationRepresentation shadowed = createRepresentation("shadowed", "shadowed.org");
+        shadowed.setAlias("team:west");
+        try (Response response = realm.admin().organizations().create(shadowed)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            shadowed.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(r -> r.organizations().get(shadowed.getId()).delete().close());
+
+        addMember(realm.admin().organizations().get(orgA.getId()));
+        UserRepresentation member = getUserRepresentation(memberEmail);
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        realm.admin().organizations().get(shadowed.getId()).members().addMember(member.getId()).close();
+
+        ClientScopeRepresentation orgScope = realm.admin().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny().orElseThrow();
+        ProtocolMapperRepresentation orgMapper = realm.admin().clientScopes().get(orgScope.getId())
+                .getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny().orElseThrow();
+        orgMapper.setId(null);
+        orgScope.setProtocolMappers(List.of(orgMapper));
+        orgScope.setId(null);
+        orgScope.setName("organization:team");
+        String scopeId;
+        try (Response response = realm.admin().clientScopes().create(orgScope)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+        ClientRepresentation client = realm.admin().clients().findByClientId("direct-grant").get(0);
+        realm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
+
+        oauth.client("direct-grant", "password");
+        // Both aliases exist and the user belongs to both, so incorrect parsing must not
+        // silently replace "west" with "team:west" in the token.
+        for (String scope : List.of(
+                "openid organization:org-a organization:team:west",
+                "openid organization:team:west organization:org-a")) {
+            oauth.scope(scope);
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+            assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+            AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            assertThat((List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION),
+                    containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+        }
     }
 
     @Test
@@ -1257,15 +1339,12 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     @Test
     public void testAuthenticatingUsingBroker() {
         String idpAlias = organizationName + "-identity-provider";
-        OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(idpAlias, providerRealm), organizationName + ".org");
-        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.UNMANAGED);
 
         oauth.scope(OAuth2Constants.ORGANIZATION);
-        assertBrokerRegistration(organization, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
+        UserRepresentation user = assertBrokerRegistration(organization, aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getEmail(),
                 oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
 
-        UserRepresentation user = getUserRepresentation(aliceFromProviderRealm.getEmail());
         List<FederatedIdentityRepresentation> federatedIdentities = realm.admin().users().get(user.getId()).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());
         assertEquals(idpAlias, federatedIdentities.get(0).getIdentityProvider());

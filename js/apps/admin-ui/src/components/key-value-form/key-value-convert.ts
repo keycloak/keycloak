@@ -4,10 +4,10 @@ export type KeyValueType = { key: string; value: string };
 
 export function keyValueToArray(attributeArray: KeyValueType[] = []) {
   const validAttributes = attributeArray.filter(({ key }) => key !== "");
-  const result: Record<string, string[]> = {};
+  const result: Record<string, string[]> = Object.create(null);
 
   for (const { key, value } of validAttributes) {
-    if (key in result) {
+    if (Object.hasOwn(result, key)) {
       result[key].push(value);
     } else {
       result[key] = [value];

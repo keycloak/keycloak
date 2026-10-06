@@ -405,3 +405,81 @@ test("should save Deflate Compression setting", async ({ page }) => {
     "false",
   );
 });
+
+test("should save issuer info setting", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await expect(issuerInfoField).toBeVisible();
+
+  const issuerInfoJson =
+    '[{"format":"registration_cert","data":"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig"}]';
+  await issuerInfoField.fill(issuerInfoJson);
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.issuer_info"]).toBe(issuerInfoJson);
+});
+
+test("should reject invalid issuer info JSON", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await issuerInfoField.fill("not-valid-json");
+
+  await page.getByTestId("tokens-tab-save").click();
+
+  await expect(
+    page
+      .getByText("Must be a valid JSON array of issuer_info elements.")
+      .first(),
+  ).toBeVisible();
+  await expect(page.getByText("Realm successfully updated")).toHaveCount(0);
+});
+
+test("should reject issuer info with malformed elements", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await issuerInfoField.fill('[{"format":null,"data":null}]');
+
+  await page.getByTestId("tokens-tab-save").click();
+
+  await expect(
+    page
+      .getByText("Must be a valid JSON array of issuer_info elements.")
+      .first(),
+  ).toBeVisible();
+  await expect(page.getByText("Realm successfully updated")).toHaveCount(0);
+});

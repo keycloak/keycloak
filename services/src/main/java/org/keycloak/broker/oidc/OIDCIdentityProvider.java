@@ -322,22 +322,22 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     private AccessTokenResponse doTokenRefresh(EventBuilder event, String refreshToken) throws IOException {
         VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret());
-        SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse();
-
-        if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
-            logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
-            if (event != null) {
-                event.detail(Details.REASON, "requested_issuer token expired");
-                event.error(Errors.INVALID_TOKEN);
+        try (SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse()) {
+            if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
+                if (event != null) {
+                    event.detail(Details.REASON, "requested_issuer token expired");
+                    event.error(Errors.INVALID_TOKEN);
+                }
+                return null;
             }
-            return null;
-        }
 
-        AccessTokenResponse accessTokenResponse = response.asJson(AccessTokenResponse.class);
-        if (accessTokenResponse.getError() != null) {
-            return null;
+            AccessTokenResponse accessTokenResponse = response.asJson(AccessTokenResponse.class);
+            if (accessTokenResponse.getError() != null) {
+                return null;
+            }
+            return accessTokenResponse;
         }
-        return accessTokenResponse;
     }
 
     private void updateStoredTokenModel(RealmModel realm, UserModel user, FederatedIdentityModel model,
@@ -570,41 +570,42 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
-                    String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
-                    MediaType contentMediaType;
-                    try {
-                        contentMediaType = MediaType.valueOf(contentType);
-                    } catch (IllegalArgumentException ex) {
-                        contentMediaType = null;
-                    }
-                    if (contentMediaType == null || contentMediaType.isWildcardSubtype() || contentMediaType.isWildcardType()) {
-                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
-                    }
-                    JsonNode userInfo;
+                    try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken))) {
+                        String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+                        MediaType contentMediaType;
+                        try {
+                            contentMediaType = MediaType.valueOf(contentType);
+                        } catch (IllegalArgumentException ex) {
+                            contentMediaType = null;
+                        }
+                        if (contentMediaType == null || contentMediaType.isWildcardSubtype() || contentMediaType.isWildcardType()) {
+                            throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                        }
+                        JsonNode userInfo;
 
-                    if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
-                        userInfo = response.asJson();
-                    } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
-                        userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false), JsonNode.class);
-                    } else {
-                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                        if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
+                            userInfo = response.asJson();
+                        } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
+                            userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false), JsonNode.class);
+                        } else {
+                            throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                        }
+
+                        id = getJsonProperty(userInfo, "sub");
+                        name = getJsonProperty(userInfo, "name");
+                        givenName = getJsonProperty(userInfo, IDToken.GIVEN_NAME);
+                        familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
+                        preferredUsername = getUsernameFromUserInfo(userInfo);
+                        String userInfoEmail = getJsonProperty(userInfo, "email");
+                        Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
+
+                        if (userInfoEmail != null) {
+                            email = userInfoEmail;
+                            emailVerified = userInfoEmailVerified;
+                        }
+
+                        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
                     }
-
-                    id = getJsonProperty(userInfo, "sub");
-                    name = getJsonProperty(userInfo, "name");
-                    givenName = getJsonProperty(userInfo, IDToken.GIVEN_NAME);
-                    familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
-                    preferredUsername = getUsernameFromUserInfo(userInfo);
-                    String userInfoEmail = getJsonProperty(userInfo, "email");
-                    Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
-
-                    if (userInfoEmail != null) {
-                        email = userInfoEmail;
-                        emailVerified = userInfoEmailVerified;
-                    }
-
-                    AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
                 }
             }
         }
@@ -673,18 +674,27 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
         SimpleHttpResponse response = request.asResponse();
-        if (response.getStatus() != 200) {
-            String msg = "failed to invoke url [" + url + "]";
-            try {
-                String tmp = response.asString();
-                if (tmp != null) msg = tmp;
-
-            } catch (IOException e) {
-
+        try {
+            if (response.getStatus() != 200) {
+                String msg = "failed to invoke url [" + url + "]";
+                try {
+                    String tmp = response.asString();
+                    if (tmp != null) msg = tmp;
+                } catch (IOException e) {
+                }
+                throw new IdentityBrokerException("Failed to invoke url [" + url + "]: " + msg);
             }
-            throw new IdentityBrokerException("Failed to invoke url [" + url + "]: " + msg);
+            return response;
+        } catch (Exception e) {
+            // On exception, the caller never receives the response and can't close it, so we must close it here.
+            // Catching Exception (not IOException) is intentional — compiles via Java 7+ improved rethrow (JLS §11.2.2).
+            try {
+                response.close();
+            } catch (Exception closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
         }
-        return  response;
     }
 
     private String verifyAccessToken(AccessTokenResponse tokenResponse) {
@@ -756,21 +766,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             JOSE joseToken = JOSEParser.parse(encodedToken);
             if (joseToken instanceof JWE) {
                 // encrypted JWE token
-                JWE jwe = (JWE) joseToken;
-
-                KeyWrapper key;
-                if (jwe.getHeader().getKeyId() == null) {
-                    key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
-                } else {
-                    key = session.keys().getKey(session.getContext().getRealm(), jwe.getHeader().getKeyId(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
-                }
-                if (key == null || key.getPrivateKey() == null) {
-                    throw new IdentityBrokerException("Private key not found in the realm to decrypt token algorithm " + jwe.getHeader().getRawAlgorithm());
-                }
-
-                jwe.getKeyStorage().setDecryptionKey(key.getPrivateKey());
-                jwe.verifyAndDecodeJwe();
-                String content = new String(jwe.getContent(), StandardCharsets.UTF_8);
+                String content = decryptToken((JWE) joseToken);
 
                 try {
                     // try to decode the token just in case it is a JWS
@@ -805,10 +801,71 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    /**
+     * Decrypts the given JWE using the realm encryption keys and returns its content.
+     */
+    protected String decryptToken(JWE jwe) throws JWEException {
+        KeyWrapper key;
+        if (jwe.getHeader().getKeyId() == null) {
+            key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
+        } else {
+            key = session.keys().getKey(session.getContext().getRealm(), jwe.getHeader().getKeyId(), KeyUse.ENC, jwe.getHeader().getRawAlgorithm());
+        }
+        if (key == null || key.getPrivateKey() == null) {
+            throw new IdentityBrokerException("Private key not found in the realm to decrypt token algorithm " + jwe.getHeader().getRawAlgorithm());
+        }
+
+        jwe.getKeyStorage().setDecryptionKey(key.getPrivateKey());
+        jwe.verifyAndDecodeJwe();
+        return new String(jwe.getContent(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Parses a token that must be a JWS, optionally wrapped in a JWE, and returns the JWS without verifying its signature.
+     */
+    protected JWSInput parseSignedToken(String encodedToken) {
+        if (encodedToken == null) {
+            throw new IdentityBrokerException("No token from server.");
+        }
+
+        try {
+            JOSE joseToken = JOSEParser.parse(encodedToken);
+            if (joseToken instanceof JWE) {
+                String content = decryptToken((JWE) joseToken);
+                try {
+                    joseToken = JOSEParser.parse(content);
+                } catch (Exception e) {
+                    throw new IdentityBrokerException("Token is not a signed JWS", e);
+                }
+            }
+            if (!(joseToken instanceof JWSInput)) {
+                throw new IdentityBrokerException("Invalid token type");
+            }
+            return (JWSInput) joseToken;
+        } catch (JWEException e) {
+            throw new IdentityBrokerException("Invalid token", e);
+        }
+    }
+
     public JsonWebToken validateToken(String encodedToken) {
         boolean ignoreAudience = false;
 
         return validateToken(encodedToken, ignoreAudience);
+    }
+
+    public JsonWebToken validateLogoutToken(String encodedToken) {
+        JsonWebToken token = validateToken(encodedToken);
+
+        if (!verifySignature(parseSignedToken(encodedToken))) {
+            if (!getConfig().isValidateSignature()) {
+                logger.warnf("Logout token signature validation failed for identity provider '%s'. Signatures of logout tokens are always "
+                        + "validated regardless of the 'validateSignature' setting, so the identity provider must have a JWKS URL or a public key configured.",
+                        getConfig().getAlias());
+            }
+            throw new IdentityBrokerException("Logout token signature validation failed");
+        }
+
+        return token;
     }
 
     protected JsonWebToken validateToken(String encodedToken, boolean ignoreAudience) {

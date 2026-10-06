@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -74,6 +75,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         Map<String, List<String>> expectedManagedMembers = new HashMap<>();
         Map<String, List<String>> expectedUnmanagedMembers = new HashMap<>();
         Map<String, String> expectedGroupIds = new HashMap<>();
+        Map<String, Boolean> expectedAutoMembership = new HashMap<>();
 
         // Create realm role for org group role mapping
         RoleRepresentation realmRole = new RoleRepresentation("org-export-realm-role", "Realm role for export test", false);
@@ -158,23 +160,35 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             organization.groups().group(deptId).addMember(orgMembers.get(0).getId());
             organization.groups().group(teamId).addMember(orgMembers.get(1).getId());
             organization.groups().group(devId).addMember(orgMembers.get(2).getId());
+
+            // Update IdP link policy after members are enrolled, so auto-membership change is captured in export
+            if (i == 1) {
+                OrganizationIdentityProviderLinkRepresentation linkUpdate = new OrganizationIdentityProviderLinkRepresentation();
+                linkUpdate.setAutoMembership(false);
+                try (Response response = organization.identityProviders().get(broker.getAlias()).update(linkUpdate)) {
+                    assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+                }
+                expectedAutoMembership.put(orgRep.getName(), false);
+            } else {
+                expectedAutoMembership.put(orgRep.getName(), true);
+            }
         }
 
         RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedSingleFileRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, expectedAutoMembership, importedSingleFileRealm);
 
         managedRealm.admin().logoutAll();
         providerRealm.logoutAll();
 
         RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedDirRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, expectedAutoMembership, importedDirRealm);
     }
 
     private void validateImported(List<OrganizationRepresentation> expectedOrganizations,
             Map<String, List<String>> expectedManagedMembers, Map<String, List<String>> expectedUnmanagedMembers,
-            Map<String, String> expectedGroupIds,
+            Map<String, String> expectedGroupIds, Map<String, Boolean> expectedAutoMembership,
             RealmRepresentation importedRealm) {
         assertTrue(importedRealm.isOrganizationsEnabled());
 
@@ -215,6 +229,16 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             
             // Validate organization groups and hierarchy
             validateOrganizationGroups(organization, expectedGroupIds);
+
+            // Validate IdP link policy survived export/import
+            List<IdentityProviderRepresentation> idps = organization.identityProviders().getIdentityProviders();
+            assertThat(idps, hasSize(1));
+            IdentityProviderRepresentation idpRep = idps.get(0);
+            assertThat(idpRep.getOrganizationLinks(), notNullValue());
+            assertThat(idpRep.getOrganizationLinks(), hasSize(1));
+            OrganizationIdentityProviderLinkRepresentation linkRep = idpRep.getOrganizationLinks().get(0);
+            assertEquals(expectedAutoMembership.get(orgRep.getName()), linkRep.getAutoMembership(),
+                    "autoMembership mismatch for org: " + orgRep.getName());
         }
 
         // make sure a managed user can authenticate through the broker associated with an org

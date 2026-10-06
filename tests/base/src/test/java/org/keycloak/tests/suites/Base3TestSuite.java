@@ -5,10 +5,12 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectPackages({
+        "org.keycloak.tests.httpclient",
         "org.keycloak.tests.model",
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
+        "org.keycloak.tests.oidc",
         "org.keycloak.tests.policy",
         "org.keycloak.tests.providers",
         "org.keycloak.tests.saml",

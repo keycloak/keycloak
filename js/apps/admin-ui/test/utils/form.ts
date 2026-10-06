@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import { clickSelectRow } from "./table.ts";
 
 function isPageClosedError(error: unknown): boolean {
@@ -43,11 +43,83 @@ export async function assertFieldError(
   await expect(page.getByTestId(field + "-helper")).toHaveText(text);
 }
 
+/**
+ * Click a dropdown trigger and pick an option from a dropdown that closes after
+ * selection, then wait for the close to complete.
+ *
+ * Waiting prevents race conditions where the dropdown-close re-render clobbers
+ * a subsequent {@link Page.fill} on a controlled input.
+ *
+ * Use this for all {@link KeycloakSelect} dropdowns — including
+ * `typeaheadMulti` variants — because `TypeaheadSelect`'s `onClick={toggle}`
+ * on the PF5 `Select` wrapper closes the dropdown on every click.
+ *
+ * Use {@link selectMultiItem} only for dropdowns that genuinely stay open after
+ * selection: `SelectControl` (which calls `event.stopPropagation()` in
+ * `onSelect`) and `UserSelect` (which has its own open-state management).
+ */
 export async function selectItem(
   page: Page,
   field: Locator | string,
-  value: string,
+  value: string | Locator,
 ) {
+  await openDropdown(page, field);
+  const option = toOptionLocator(page, value);
+  await option.click();
+  await expect(
+    option,
+    "selectItem: dropdown stayed open after selection — " +
+      "use selectMultiItem() for multi-select (typeaheadMulti) dropdowns",
+  ).toBeHidden();
+}
+
+/**
+ * Click a dropdown trigger and pick one or more options from a multi-select
+ * dropdown that stays open after each selection, then click the toggle to close.
+ *
+ * Only needed for components whose `onSelect` does **not** close the dropdown:
+ * - `SelectControl` / `TypeaheadSelectControl` with `typeaheadMulti`
+ * - `UserSelect` with `typeaheadMulti`
+ *
+ * For `KeycloakSelect` (including `typeaheadMulti`), use {@link selectItem} —
+ * it always closes after selection.
+ *
+ * ```ts
+ * await selectMultiItem(page, "#supportedLocales", "Danish", "German");
+ * ```
+ */
+export async function selectMultiItem(
+  page: Page,
+  field: Locator | string,
+  ...values: (string | Locator)[]
+) {
+  const element = typeof field === "string" ? page.locator(field) : field;
+  await openDropdown(page, element);
+  for (const value of values) {
+    await toOptionLocator(page, value).click();
+  }
+  const expandable = findExpandable(element);
+  await expect(
+    expandable,
+    "selectMultiItem: dropdown closed after selection — " +
+      "use selectItem() for single-select dropdowns",
+  ).toHaveAttribute("aria-expanded", "true");
+  // Click the toggle to close instead of pressing Escape, which could bubble
+  // up and close a parent modal dialog if focus is not on the typeahead input.
+  await element.click();
+  await expect(expandable).not.toHaveAttribute("aria-expanded", "true");
+}
+
+// The field element may be a combobox input (has aria-expanded itself) or a
+// container div wrapping a PF5 MenuToggle (aria-expanded is on a child button).
+// Use .first() so the union never resolves to two elements (e.g. a MenuToggle
+// wrapper that itself has aria-expanded AND contains a child with it).
+function findExpandable(element: Locator): Locator {
+  const self = element.and(element.page().locator("[aria-expanded]"));
+  return self.or(element.locator("[aria-expanded]").first()).first();
+}
+
+async function openDropdown(page: Page, field: Locator | string) {
   const element = typeof field === "string" ? page.locator(field) : field;
   await expect(element).toBeVisible();
   await expect(element).toBeEnabled();
@@ -59,7 +131,12 @@ export async function selectItem(
     }
     await element.click({ force: true, timeout: 3_000 });
   }
-  await page.getByRole("option", { name: value, exact: true }).click();
+}
+
+function toOptionLocator(page: Page, value: string | Locator) {
+  return typeof value === "string"
+    ? page.getByRole("option", { name: value, exact: true })
+    : value;
 }
 
 export async function assertSelectValue(field: Locator, value: string) {
@@ -119,10 +196,6 @@ export async function assertSaveButtonIsDisabled(page: Page) {
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("cancel").click();
-}
-
-async function clickOption(page: Page, option: string) {
-  await page.getByRole("option", { name: option }).click();
 }
 
 type SwitchClickResult = {
@@ -320,6 +393,5 @@ export async function changeTimeUnit(
   unit: "Seconds" | "Minutes" | "Hours" | "Days",
   inputType: string,
 ) {
-  await page.locator(inputType).click();
-  await clickOption(page, unit);
+  await selectItem(page, inputType, unit);
 }

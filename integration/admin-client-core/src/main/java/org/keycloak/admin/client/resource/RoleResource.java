@@ -176,6 +176,13 @@ public interface RoleResource {
     Set<GroupRepresentation> getRoleGroupMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults);
 
+    @GET
+    @Path("groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<GroupRepresentation> getRoleGroupMembers(@QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                               @QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults);
+
     /**
      * Get role members.
      * <p>Returns users that have the given role.</p>

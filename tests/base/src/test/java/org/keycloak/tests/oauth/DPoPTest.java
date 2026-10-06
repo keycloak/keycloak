@@ -68,6 +68,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -140,6 +142,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -923,28 +926,59 @@ public class DPoPTest {
                         .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
                         .addProfile("MyProfile")
                         .toRepresentation()));
-        int clockSkew = 10; // acceptable clock skew is +-10sec
+        try {
+            int clockSkew = 10; // acceptable clock skew is +-10sec
 
-        //public client without proof
-        sendAuthorizationRequestWithDPoPJkt(null);
-        failureTokenProceduresWithDPoP(null, "DPoP proof is missing");
-        deleteAllCookiesForRealm();
+            // the public client can still be updated while keeping DPoP for access tokens disabled - it only gets refresh token binding.
+            // Re-submitting the already-set attribute value (rather than an unrelated field) exercises the update without leaving
+            // the shared fixture client in a permanently altered state for subsequent tests
+            ClientRepresentation client = realm.admin().clients().findByClientId(TEST_PUBLIC_CLIENT_ID).get(0);
+            updateClientByAdmin(client.getId(), c -> c.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.FALSE.toString()));
+            client = realm.admin().clients().findByClientId(TEST_PUBLIC_CLIENT_ID).get(0);
+            assertEquals(Boolean.FALSE.toString(), client.getAttributes().get(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS));
 
-        //public client with proof
-        sendAuthorizationRequestWithDPoPJkt(null);
-        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), Time.currentTimeSeconds() + clockSkew, Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
-        successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, false, true);
+            // the confidential client without DPoP for access tokens must still be rejected - refresh-token-only binding is public-client only
+            String confidentialClientUuid = realm.admin().clients().findByClientId(TEST_CONFIDENTIAL_CLIENT_ID).get(0).getId();
+            ClientPolicyException exception = assertThrows(ClientPolicyException.class,
+                    () -> updateClientByAdmin(confidentialClientUuid, (ClientRepresentation c) -> c.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.FALSE.toString())));
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, exception.getMessage());
 
-        //confidential client without proof
-        oauth.client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET);
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        successTokenProceduresWithDPoP(null, jktEc, false, false);
+            //public client without proof
+            sendAuthorizationRequestWithDPoPJkt(null);
+            failureTokenProceduresWithDPoP(null, "DPoP proof is missing");
+            deleteAllCookiesForRealm();
 
-        //confidential client with proof
-        oauth.client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET);
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), Time.currentTimeSeconds() + clockSkew, Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
-        successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, true, false);
+            //public client with proof
+            sendAuthorizationRequestWithDPoPJkt(null);
+            String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), Time.currentTimeSeconds() + clockSkew, Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
+            successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, false, true);
+
+            //confidential client without proof
+            oauth.client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET);
+            oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            successTokenProceduresWithDPoP(null, jktEc, false, false);
+
+            //confidential client with proof
+            oauth.client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET);
+            oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), Time.currentTimeSeconds() + clockSkew, Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
+            successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, true, false);
+        } finally {
+            // explicitly clear the policy/profile via the REST resource directly (not realm.updateClientPolicy/
+            // updateClientProfile, which would register another teardown task referencing the policy/profile we're
+            // about to remove) so the enforcing policy is gone by the time the automatically-registered teardown
+            // reverts the clients' DPOP_BOUND_ACCESS_TOKENS attribute above - teardown tasks run in registration
+            // order, so without this the confidential client's attribute revert would be rejected by the very
+            // policy under test. Run this in a finally block so it also cleans up if an earlier assertion in this
+            // test fails.
+            ClientPoliciesRepresentation emptyPolicies = new ClientPoliciesRepresentation();
+            emptyPolicies.setPolicies(List.of());
+            realm.admin().clientPoliciesPoliciesResource().updatePolicies(emptyPolicies);
+
+            ClientProfilesRepresentation emptyProfiles = new ClientProfilesRepresentation();
+            emptyProfiles.setProfiles(List.of());
+            realm.admin().clientPoliciesProfilesResource().updateProfiles(emptyProfiles);
+        }
     }
 
     @Test

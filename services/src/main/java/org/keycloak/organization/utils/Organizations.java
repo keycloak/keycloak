@@ -20,9 +20,11 @@ package org.keycloak.organization.utils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -31,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
@@ -41,6 +44,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -52,6 +56,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -76,6 +81,61 @@ public class Organizations {
 
     public static boolean isOrganizationGroup(GroupModel group) {
         return Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
+    }
+
+    /**
+     * Validates the organization recorded on an identity provider group mapper.
+     * <p />
+     * A mapper targeting organization groups applies to exactly one organization, which it must name through
+     * {@link ConfigConstants#ORGANIZATION_ID}. To map groups of several organizations of a shared identity provider,
+     * add one mapper per organization.
+     *
+     * @param session the Keycloak session
+     * @param idp the identity provider owning the mapper
+     * @param mapper the mapper to validate
+     */
+    public static void validateGroupMapperOrganization(KeycloakSession session, IdentityProviderModel idp, IdentityProviderMapperModel mapper) {
+        Map<String, String> config = mapper.getConfig();
+
+        if (config == null || !isEnabled(session)) {
+            return;
+        }
+
+        if (!Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            // the mapper no longer targets organization groups, do not leave a stale organization behind
+            config.remove(ConfigConstants.ORGANIZATION_ID);
+            return;
+        }
+
+        String organizationId = config.get(ConfigConstants.ORGANIZATION_ID);
+
+        if (isBlank(organizationId)) {
+            throw ErrorResponse.error("Mapper '" + mapper.getName() + "' must set '" + ConfigConstants.ORGANIZATION_ID
+                    + "' to the organization whose groups it maps to.", Response.Status.BAD_REQUEST);
+        }
+
+        if (!idp.isLinkedToOrganization(organizationId)) {
+            throw ErrorResponse.error("Identity provider '" + idp.getAlias() + "' is not linked to organization '"
+                    + organizationId + "' referenced by mapper '" + mapper.getName() + "'.", Response.Status.BAD_REQUEST);
+        }
+
+        if (getProvider(session).getById(organizationId) == null) {
+            throw ErrorResponse.error("Organization '" + organizationId + "' referenced by mapper '" + mapper.getName()
+                    + "' does not exist.", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    public static void checkGroupMapperOrgPermission(KeycloakSession session, IdentityProviderMapperModel mapper, AdminPermissionEvaluator auth) {
+        Map<String, String> config = mapper.getConfig();
+        if (config == null || !Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            return;
+        }
+
+        OrganizationProvider orgProvider = getProvider(session);
+        checkEnabled(orgProvider, auth);
+
+        OrganizationModel org = orgProvider.getById(config.get(ConfigConstants.ORGANIZATION_ID));
+        auth.orgs().requireManage(org);
     }
 
     public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
@@ -140,6 +200,21 @@ public class Organizations {
         if (representation.getConfig() != null) {
             representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
+    }
+
+    public static void filterOrganizationLinks(IdentityProviderRepresentation rep, KeycloakSession session, AdminPermissionEvaluator auth) {
+        List<OrganizationIdentityProviderLinkRepresentation> links = rep.getOrganizationLinks();
+        if (links == null || links.isEmpty()) {
+            return;
+        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        List<OrganizationIdentityProviderLinkRepresentation> filtered = links.stream()
+                .filter(link -> {
+                    OrganizationModel org = orgProvider.getById(link.getOrganizationId());
+                    return org != null && auth.orgs().canView(org);
+                })
+                .collect(Collectors.toList());
+        rep.setOrganizationLinks(filtered.isEmpty() ? null : filtered);
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
@@ -412,7 +487,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(provider::getByDomainName)
+                    .map(d -> getByDomainNameOrNull(provider, d))
                     .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
@@ -424,6 +499,15 @@ public class Organizations {
         }
 
         return resolveByDomain(organizations, emailDomain);
+    }
+
+    private static OrganizationModel getByDomainNameOrNull(OrganizationProvider provider, String domain) {
+        try {
+            return provider.getByDomainName(domain);
+        } catch (ModelValidationException e) {
+            // malformed domain (e.g. a typo in the login username, or an unvalidated stored email) - treat as no match
+            return null;
+        }
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {

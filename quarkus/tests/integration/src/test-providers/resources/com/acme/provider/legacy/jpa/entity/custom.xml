@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm" version="3.0">
+    <entity class="com.acme.provider.legacy.jpa.entity.UnlistedEntity">
+        <table name="CUSTOM_XML_ENTITY"/>
+        <attributes>
+            <id name="id">
+                <column name="ID" length="36"/>
+            </id>
+        </attributes>
+    </entity>
+</entity-mappings>

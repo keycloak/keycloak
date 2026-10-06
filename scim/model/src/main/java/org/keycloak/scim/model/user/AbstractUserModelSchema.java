@@ -86,11 +86,10 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
             return model.getCreatedTimestamp();
         }
         Attributes attributes = getUserAttributes(model);
-
         if (shouldReturnMultivaluedValues(attributes.getMetadata(name), getAttributeMapperByModelAttribute(name))) {
-            return attributes.get(name);
+            return model.getAttributes().get(name);
         }
-        return attributes.getFirst(name);
+        return model.getFirstAttribute(name);
     }
 
     /**

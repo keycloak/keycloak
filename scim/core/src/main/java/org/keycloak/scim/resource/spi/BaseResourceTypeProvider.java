@@ -83,7 +83,7 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
     public boolean delete(String id) {
         M model = getModel(id);
         
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (model == null || !hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
         

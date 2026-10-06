@@ -18,9 +18,11 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import org.keycloak.models.LDAPConstants;
@@ -272,6 +274,34 @@ public class LDAPUtil {
             return decodeGuid(bytes);
         }
         return base64Value;
+    }
+
+    /**
+     * Compares two LDAP connection URL strings, which may contain multiple space-separated URIs.
+     * Uses URI-based comparison to handle equivalent but textually different representations.
+     *
+     * @param url1 first LDAP connection URL string
+     * @param url2 second LDAP connection URL string
+     * @return true if the connection URLs match, false otherwise
+     */
+    public static boolean checkLdapConnectionUrlsMatch(String url1, String url2) {
+        if (Objects.equals(url1, url2)) {
+            return true;
+        }
+        if (url1 == null || url2 == null) {
+            return false;
+        }
+        String[] urls1 = url1.trim().split(" ");
+        String[] urls2 = url2.trim().split(" ");
+        if (urls1.length != urls2.length) {
+            return false;
+        }
+        for (int i = 0; i < urls1.length; i++) {
+            if (!Objects.equals(URI.create(urls1[i]), URI.create(urls2[i]))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String convertToDashedString(byte[] objectGUID) {

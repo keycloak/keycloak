@@ -71,7 +71,7 @@ public class Profile {
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.PREVIEW, 2, Feature.ADMIN_API),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
@@ -87,11 +87,11 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
+        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.PREVIEW, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
@@ -180,7 +180,10 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
+        HTTP_CLIENT("Apache-based outbound HTTP client", Type.DEFAULT, 1),
+        HTTP_CLIENT_V2("Vert.x-based outbound HTTP client", Type.EXPERIMENTAL, 2),
+
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
@@ -200,7 +203,7 @@ public class Profile {
         @Deprecated
         TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.PREVIEW),
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.DEFAULT),
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 

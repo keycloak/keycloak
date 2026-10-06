@@ -13,6 +13,8 @@ import {
   getJwtAuthorizationGrantIdpOptions,
   selectKeyForCodeExchangeInput,
   toggleLogoutConfirmation,
+  setResourceUrl,
+  assertResourceUrl,
 } from "./details.ts";
 
 test.describe.serial("Clients details test", () => {
@@ -76,6 +78,16 @@ test.describe.serial("Clients details test", () => {
     await save(page);
     await assertNotificationMessage(page, "Client successfully updated");
     await assertKeyForCodeExchangeInput(page, "S256");
+  });
+
+  test("Should be able to set the resource URL", async ({ page }) => {
+    const resourceUrl = "https://resource.example.com";
+    await clickTableRowItem(page, clientId);
+    await setResourceUrl(page, resourceUrl);
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    await page.reload();
+    await assertResourceUrl(page, resourceUrl);
   });
 });
 

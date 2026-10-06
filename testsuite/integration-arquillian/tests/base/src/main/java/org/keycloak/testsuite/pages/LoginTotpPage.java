@@ -19,7 +19,6 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.junit.jupiter.api.Assertions;
@@ -36,14 +35,8 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "otp")
     private WebElement otpInput;
 
-    @FindBy(id = "password-token")
-    private WebElement passwordToken;
-
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
-
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
-    private WebElement loginErrorMessage;
 
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
@@ -56,14 +49,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         if (totp != null) otpInput.sendKeys(totp);
 
         UIUtils.clickLink(submitButton);
-    }
-
-    public String getAlertError() {
-        try {
-            return UIUtils.getTextFromElement(loginErrorMessage);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
     }
 
     public String getInputError(){
@@ -127,16 +112,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
-    }
-
-
-    // Workaround, but works with HtmlUnit (WaitUtils.waitForElement doesn't). Find better solution for the future...
-    private void waitForElement(By by) {
-        Retry.executeWithBackoff((currentCount) -> {
-
-            driver.findElement(by);
-
-        }, 10, 10);
     }
 
 }

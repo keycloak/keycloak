@@ -43,8 +43,90 @@ Revalidating certificates can be problematic in certain installations (for examp
 The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain.
 Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
 
+=== Disabled clients are no longer added to the token audience
+
+A disabled or removed client is never added to the `aud` claim of a token, and its client roles are not present in the `resource_access` claim.
+Tokens are still issued, only without that client, so logins and refreshes keep succeeding.
+This change addresses CVE-2026-93999.
+
+For more details, see link:{adminguide_link}#_audience_disabled_clients[Disabled clients and the audience] in the {adminguide_name}.
+
+=== Resource URI matching in Authorization Services normalizes matrix parameters, dot segments, percent-encoding, and query/fragment components
+
+When matching an incoming request URI against a resource URI configured in Authorization Services (the policy enforcer and the UMA permission endpoint), the URI is now normalized before comparison:
+
+* Matrix parameters (for example `+;jsessionid=...+`), including percent-encoded (`+%3B+`), are stripped.
+* Dot segments (for example `+/foo/../admin+`, `+/./admin+`), including percent-encoded (`+%2E%2E+`, `+%2e.+`), are resolved.
+* Percent-encoded slashes (`+%2F+`) are decoded, and any duplicate slashes this produces are collapsed.
+* A trailing slash is stripped.
+* The query string and fragment are dropped before matching, so a resource configured for `+/api/admin+` also matches, for example, `+/api/admin?foo=bar+` and `+/api/admin#section+`.
+
+This prevents a mutated form of a protected resource's URI from evading its configured policy and falling through to a more permissive resource, such as a catch-all `+/*+` resource.
+
+Resources configured with a full absolute URI (a scheme and authority, for example `+https://my.domain/api/admin+`) are unaffected beyond their path component — the scheme and authority are preserved, and only the path is normalized.
+
+If your Authorization Services configuration relies on distinguishing resources by matrix parameters, dot segments, trailing slashes, or query string/fragment content in the resource URI, review your resource and policy configuration, since these are now treated as equivalent to their normalized form.
+
+=== Identity provider mappers no longer grant administrative roles by default (CVE-2026-12388)
+// https://github.com/keycloak/keycloak/issues/50444
+
+Identity provider mappers can grant realm roles to brokered users or add them to groups.
+Previously, an administrator who only held the `manage-identity-providers` permission could configure such a mapper to grant an administrative role or to add users to a group that carries administrative roles, escalating their own privileges beyond what that permission is meant to allow.
+
+Identity providers now have an `allowAdminRoleMapping` setting that controls whether their mappers may assign administrative roles, either directly or through group membership.
+The setting defaults to `false`, including for identity providers that already exist when you upgrade.
+While it is disabled, any mapper that would grant an administrative role or add a user to a group that carries administrative roles is blocked, both when the mapper is created or updated and when a user logs in through the broker.
+Only an administrator with the `manage-realm` permission can enable the setting.
+
+After upgrading, if you rely on identity provider mappers to assign administrative roles or to add brokered users to groups that carry administrative roles, an administrator with the `manage-realm` permission must enable *Allow granting admin roles via mappers* on each affected identity provider.
+Note that this change does not remove existing role or group assignments that may have been previously granted by identity provider mappers. If such removal is needed it needs to be done explicitly.
+
+=== Organization alias validation
+
+Organization alias validation now also applies during realm import and creation through the organization provider.
+Aliases containing ASCII spaces, control characters, or backslashes, or consisting solely of `*`, are rejected.
+Whitespace-only aliases no longer default to the organization name; omitted, null, and empty aliases still do.
+Unicode characters and double quotes remain supported, and existing stored aliases are unchanged.
+Before importing an existing realm, check for rejected alias values and update any application references if aliases must change.
+
+=== Redirect URI and web origin hostnames compared case-insensitively
+
+Valid redirect URIs and web origins now compare the URI scheme and hostname case-insensitively. This follows link:https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2[RFC 3986], which defines hostnames as case-insensitive, and replaces the exact string matching for scheme and hostname introduced in {project_name} 23.0.2.
+
+For redirect URIs, path, query, fragment, and user-info remain case-sensitive. For example, a client configured with `https://Example.COM/callback` now accepts `https://example.com/callback` and `HTTPS://example.com/callback`, but still rejects `https://example.com/Callback`.
+
+Web origins used for CORS and login-status iframe checks compare only scheme, host, and port (case-insensitively for scheme and host). Origins do not include path, query, fragment, or user-info.
+
+Realms that previously listed multiple redirect URIs that differed only by hostname or scheme case can keep a single entry.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
+
+=== Secrets referenced by OIDC Client CRs now require a label
+// https://github.com/keycloak/keycloak/issues/52320
+
+Kubernetes Secrets referenced via `spec.client.auth.secretRef` in a `KeycloakOIDCClient` CR must now carry the label `operator.keycloak.org/kind: KeycloakOIDCClient`.
+Without this label the operator treats the Secret as missing and reports a `HasErrors` status condition on the CR, even if the Secret exists.
+
+This change prevents arbitrary Secrets in the namespace from being read by the operator.
+
+If you already have Secrets used by OIDC Client CRs, add the required label before upgrading:
+
+[source,bash]
+----
+kubectl label secret <secret-name> operator.keycloak.org/kind=KeycloakOIDCClient
+----
+
+=== Refresh token expiration now reflects the session idle timeout
+// https://github.com/keycloak/keycloak/issues/48063
+
+When *Offline Session Max Limited* is disabled (the default), offline refresh tokens previously had no `exp` claim and the token response returned `refresh_expires_in: 0`.
+The server still enforced the *Offline Session Idle* timeout and rejected refresh attempts after that window with `invalid_grant`.
+For all refresh tokens, the `exp` claim and `refresh_expires_in` were previously based only on the client session idle and max lifespan timeouts, without considering the user session idle timeout.
+
+Offline refresh tokens now always include an `exp` claim.
+For all refresh tokens (online and offline), the expiration is now capped by the user session idle timeout, so `refresh_expires_in` reflects the minimum of the session idle timeout and any client-specific session idle timeout.
+This allows clients to proactively refresh before the idle window closes instead of encountering unexpected `invalid_grant` errors.
 
 === `NO_PROXY` entries with leading dots or spaces after commas now parsed correctly
 // https://github.com/keycloak/keycloak/issues/52706
@@ -111,19 +193,28 @@ The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{r
 Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role.
 After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Administrators that can map a role can also view it
+// https://github.com/keycloak/keycloak/issues/52753
+
+An administrator that is allowed to map a role to a user is now also allowed to view that role. This applies to the `manage-users` realm admin role, to the `map-role` and `map-roles` permissions of fine-grained admin permissions V1, and to the `map-role` operation of the *Roles* resource type in fine-grained admin permissions V2.
+
+Previously, viewing a realm role additionally required the `view-realm` role, or a *view* permission on the client for a client role. As a result, the role mappings of a user or group returned by `GET /admin/realms/\{realm}/users/\{id}/role-mappings` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings` omitted the roles an
+administrator could map but not view, the client-level endpoints `GET /admin/realms/\{realm}/users/\{id}/role-mappings/clients/\{client}` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings/clients/\{client}` returned `403 Forbidden` without a *view* permission on the client, and the `realmRoles` and `clientRoles` of a group returned by `GET /admin/realms/\{realm}/groups/\{id}` were filtered by the same rule.
+
+Now all these endpoints return the roles the administrator is allowed to view or map, and filter out the remaining roles instead of returning `403 Forbidden`.
+
+After upgrading, these administrators can also read the role through `GET /admin/realms/\{realm}/roles-by-id/\{id}`, including its attributes and composites. Reading the management permission references of a role with fine-grained admin permissions V1 still requires permission to view the realm or the client the role belongs to.
+Roles that an administrator can neither view nor map remain hidden. The only difference for these administrators is that the client-level role mapping endpoints now return an empty list instead of `403 Forbidden` when they have no *view* permission on the client.
+
 === Client Secret Rotation is now enabled by default
 // https://github.com/keycloak/keycloak/issues/51888
 
 The `client-secret-rotation` feature has been promoted from preview to supported and is now enabled by default.
 If you previously enabled this feature explicitly with `--features=client-secret-rotation` or `--features=preview`, that configuration is no longer required.
 
-=== HTTP optimized serializers enabled by default
-// https://github.com/keycloak/keycloak/issues/50166
+=== SCIM API is now enabled by default
 
-The `http-optimized-serializers` feature is now enabled by default.
-If you enabled it explicitly in a previous release, the `--features=http-optimized-serializers` option is no longer required.
-
-If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
+The `scim-api` feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with `--features=scim-api` or `--features=preview`, that configuration is no longer required.
 
 === `show-config` now masks all SPI option values
 // https://github.com/keycloak/keycloak/issues/51013
@@ -139,6 +230,17 @@ For details, see the https://github.com/keycloak/keycloak/issues/50992[GitHub is
 Custom login themes that override `social-providers.ftl` or apply CSS targeting the identity provider icons may render incorrectly after upgrading.
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
+
+=== Extension migration when using the Vert.x HTTP client
+
+When the experimental Vert.x HTTP client is enabled (`--features=http-client:v2`), `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
+
+Extension providers should migrate to one of:
+
+* `SimpleHttp.create(session)` for general HTTP calls (GET, POST, PUT, DELETE with headers, parameters, and JSON/form bodies).
+* The provider-neutral helper methods on `HttpClientProvider`: `getString(uri)`, `getInputStream(uri)`, `postText(uri, text)`.
+
+These APIs work identically with both the Apache and Vert.x clients. For details, see the link:{server_guide_base_link}/outgoinghttp[Configuring outgoing HTTP requests] guide.
 
 === Token introspection `act` claim now uses user ID for `sub`
 // https://github.com/keycloak/keycloak/issues/51489
@@ -219,21 +321,17 @@ On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX
 
 On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
 
-=== Caching of persistent user sessions disabled by default
+=== Disabling caching of persistent user sessions
 // https://github.com/keycloak/keycloak/issues/52121
 
-Caching of persistent user sessions in the embedded Infinispan cache is now disabled by default.
-Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable default.
+Caching of persistent user sessions in the embedded Infinispan can be disabled.
+Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable option.
 Disabling the cache reduces memory usage and network traffic between nodes, enabling smoother rolling updates.
 
-Users may observe increased database connection usage and higher CPU usage on the database.
+Users may observe increased database connection usage and higher CPU usage on the database if they are using token introspection or token exchange extensively.
 For users already using persistent sessions, the database's own caching layer should prevent any additional IOPS.
 
-To re-enable caching, set `+--spi-user-sessions--infinispan--use-caches=true+`.
-This option is provided as a temporary workaround.
-It is now deprecated and will be removed in a future release.
-
-See also the <<disabling-persistent-user-sessions-volatile-sessions-is-deprecated>> section below for related changes.
+To disable caching, set `+--spi-user-sessions--infinispan--use-caches=false+`.
 
 === Certificate Common Name truncated to 64 characters
 // https://github.com/keycloak/keycloak/issues/51778
@@ -364,10 +462,79 @@ Without `stateless`, cross-deployment cache invalidation does not work and servi
 This upgrade brings internal improvements across the Quarkus platform.
 While no user-facing configuration changes are required, custom extensions or providers that depend on Quarkus-internal APIs should be retested.
 
+=== Organization identity providers now support many-to-many linking
+
+The relationship between identity providers and organizations has changed from many-to-one to many-to-many. Previously, an organization could have multiple identity providers, but each identity provider could only be linked to a single organization. A single identity provider can now be linked to multiple organizations, with independent per-association configuration for auto-membership and membership type.
+
+During migration, the following changes are applied automatically:
+
+* Existing identity provider-to-organization links are migrated to the new `ORG_IDENTITY_PROVIDER` join table with `AUTO_MEMBERSHIP=true` and `MEMBERSHIP_TYPE=MANAGED`, preserving the previous default behavior. New links created after the upgrade default to `MEMBERSHIP_TYPE=UNMANAGED`.
+
+* The `ORGANIZATION_ID` column is removed from the `IDENTITY_PROVIDER` table.
+
+* The `ORG_DOMAIN` table is extended with new columns for domain routing: `REALM_ID`, `IDP_ID` (identity provider routing), and `AUTO_REDIRECT`. Each domain is now a first-class entity with its own routing configuration.
+
+* Three identity provider configuration entries are migrated to the new `ORG_DOMAIN` columns and then removed:
+** `kc.org.domain` -- migrated to `ORG_DOMAIN.IDP_ID` (identity provider routing). If the value was `ANY`, all domains of the organization receive the identity provider routing, except those listed in the exclusion list below.
+** `kc.org.broker.redirect.mode.email-matches` -- migrated to `ORG_DOMAIN.AUTO_REDIRECT`
+** `kc.org.excluded.domains` -- excluded domains are migrated with `IDP_ID=NULL` (no routing)
++
+The concept of domain exclusions no longer exists as a separate setting. Instead, each domain now has its own identity provider routing configuration. A domain that previously appeared in the exclusion list is migrated with no identity provider assigned (`IDP_ID=NULL`), which means users with that email domain see the standard login form instead of being redirected. To achieve the same effect going forward, edit the domain in the organization's *Domains* tab and leave the *Identity provider* field empty. Conversely, to start routing a previously excluded domain, select the desired identity provider from the dropdown.
+
+* Several display settings previously configured on the organization's identity provider link dialog have moved to the identity provider's own Settings page at the realm level, under the *Organization settings* section:
+** *Hide on login page when organization is not resolved*
+** *Show on login page for unlinked members*
+
+* Identity provider mappers that target organization groups now store the target organization ID explicitly in the mapper configuration (`orgId` field). Previously, the organization was inferred implicitly, which only worked when the identity provider was linked to a single organization. During migration, existing mappers that target organization groups are automatically backfilled with the appropriate organization ID. After upgrading, if your identity provider is now linked to multiple organizations, create separate mappers for each organization's groups.
+
+After upgrading, verify the domain routing and per-association configuration in the admin console:
+
+. Navigate to each organization's *Domains* tab to confirm identity provider routing and auto-redirect settings.
+. Navigate to each organization's *Identity providers* tab to confirm auto-membership and membership type.
+. If you use the Admin REST API to manage identity provider-organization links, update your integrations. The `organizationId` field on `IdentityProviderRepresentation` has been replaced by a list of organization links accessible through the organization identity provider endpoints.
+
+For details on the new configuration model, see link:{adminguide_link}#++_managing_identity_provider_++[Managing identity providers] and link:{adminguide_link}#managing-organization-domains_server_administration_guide[Managing organization domains] in the {adminguide_name}.
+
+=== Default JPA persistence unit renamed to `<default>`
+
+{project_name}'s default JPA persistence unit is now configured through Quarkus Hibernate ORM properties instead of an internal `persistence.xml`. As a result, the default persistence unit, previously named `keycloak-default`, is now Quarkus' default (unnamed) persistence unit, reported as `<default>`.
+
+If a custom provider archive defines multiple persistence units within a single `persistence.xml` and an entity-less unit should load `META-INF/orm.xml`, explicitly declare the standard `<mapping-file>META-INF/orm.xml</mapping-file>` element in that `<persistence-unit>` to ensure its entities are properly bound and to prevent cross-unit mapping collisions.
+
+=== New executor to secure client cluster node registration
+
+A new client policy executor, `secure-client-node-hostname`, is available to address server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (`/clients-managements/register-node`).
+Without this executor, a confidential client could register an attacker-chosen hostname that {project_name} would later use as the destination for management callbacks such as logout propagation and push-revocation.
+
+*This protection is opt-in and is not active after upgrading unless explicitly configured.*
+
+If your deployment uses the legacy adapter node registration feature (Wildfly/JBoss adapter or any application that calls `register-node` directly), add the `secure-client-node-hostname` executor to a client policy and configure at least one allowed hostname pattern. Node registrations that do not match any pattern are rejected.
+
+Hostnames must be supplied as a DNS name or IP address without a port number. Port suffixes (for example, `app.example.com:8443`) are always rejected regardless of the configured patterns.
+
+If you plan to enable this executor, audit the `registeredNodes` map for any affected clients before activating the policy. Any entry that contains a port suffix will no longer be accepted at registration time. Follow these steps in order:
+
+. *Delete* each existing `registeredNodes` entry that would not satisfy the intended allowlist, using the admin API endpoint `DELETE /admin/realms/{realm}/clients/{id}/nodes/{node}` or via the admin console.
+. *Enable* the policy with the `secure-client-node-hostname` executor added.
+. *Register* each replacement hostname through `POST /admin/realms/{realm}/clients/{id}/nodes` so that the new entry is validated against the active policy.
+
+Re-registering a replacement hostname without first deleting the old entry leaves the old key in the map, which {project_name} continues using for management callbacks regardless of the active policy.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
-
 The following sections provide details on deprecated features.
+
+=== Client registration providers `default`, `install`, and `saml2-entity-descriptor`
+
+The following client registration endpoints are now deprecated and will be removed in a future major release:
+
+* `/realms/<realm>/clients-registrations/default` — {project_name} Client Representation provider
+* `/realms/<realm>/clients-registrations/install/<clientId>` — Adapter Installation Configuration provider
+* `/realms/<realm>/clients-registrations/saml2-entity-descriptor` — SAML Entity Descriptor provider
+
+These endpoints are not backed by any specification. For `default`, use either the Admin REST API or the standards-compliant OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`). For `install`, retrieve adapter configuration with `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`. For `saml2-entity-descriptor`, first convert the descriptor with `POST /admin/realms/<realm>/client-description-converter`, then create the returned client representation with `POST /admin/realms/<realm>/clients`.
+
+A `WARN`-level log message is now emitted whenever these endpoints are invoked.
 
 === Multi-cluster v1 (`multi-site` feature) is deprecated
 // https://github.com/keycloak/keycloak/issues/52772
@@ -483,7 +650,6 @@ The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and 
 The setting is still enabled by default to avoid breaking existing setups.
 To avoid the deprecation warning at startup, set those SPI options to `false`.
 
-[#disabling-persistent-user-sessions-volatile-sessions-is-deprecated]
 === Disabling persistent user sessions (volatile sessions) is deprecated
 // https://github.com/keycloak/keycloak/issues/52121
 
@@ -498,8 +664,29 @@ The previous default of storing login failure data only in the in-memory Infinis
 Login failures are now stored in the database by default (`login-failures:v2`).
 If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
 
+=== `Use refresh tokens for client credentials grant` switch on clients is deprecated
+
+The *Use refresh tokens for client credentials grant* switch on clients is deprecated and will be removed in a future release.
+This switch was introduced solely for backwards compatibility and it is discouraged to use service accounts together with refresh tokens.
+
+Instead of using a refresh token to obtain a new access token, clients should always send a new client credentials grant request with their client credentials.
+This approach avoids the overhead of managing refresh tokens for machine-to-machine flows and aligns with the recommended practices for OAuth 2.0 service accounts.
+
 === Kerberos credential delegation is deprecated
 // https://github.com/keycloak/keycloak/issues/44062
 
 Kerberos credential delegation (the `gss delegation credential` protocol mapper) is now deprecated for security reasons and will be removed in a future release.
 
+=== Keycloak Realm Operator reached end of life
+// https://github.com/keycloak/keycloak/issues/52480
+
+The https://github.com/keycloak/keycloak-realm-operator[Keycloak Realm Operator] has reached its end of life and its repository will be archived.
+
+The Realm Operator was introduced as a temporary workaround to compensate mainly for
+the missing Client custom resources in the {project_name} Operator.
+Its `KeycloakRealm` and `KeycloakClient` custom resources are superseded by the following {project_name} Operator custom resources:
+
+* `KeycloakRealmImport` to create realm imports.
+  For more details, see the https://www.keycloak.org/operator/realm-import[Realm Import] guide.
+* `KeycloakOIDCClient` and `KeycloakSAMLClient`, available as a preview feature, to manage OIDC and SAML clients declaratively.
+  For more details, see the https://www.keycloak.org/operator/managing-clients[Managing Keycloak Clients] guide.

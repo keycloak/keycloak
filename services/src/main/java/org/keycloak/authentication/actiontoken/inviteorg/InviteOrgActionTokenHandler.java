@@ -143,6 +143,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         }
 
         if (organization.isMember(user)) {
+            session.getContext().setOrganization(organization);
             return alreadyMemberResponse(organization, user, tokenContext, token);
         }
 
@@ -152,6 +153,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         if (invitation == null || invitation.isExpired()) {
             return invalidTokenResponse(tokenContext, token);
         }
+
+        session.getContext().setOrganization(organization);
 
         UriInfo uriInfo = tokenContext.getUriInfo();
         RealmModel realm = tokenContext.getRealm();

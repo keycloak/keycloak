@@ -53,6 +53,7 @@ export const IdpOrganizationsTab = ({
           const org = await adminClient.organizations.findOne({
             id: link.organizationId!,
           });
+          if (!org) return null;
           return {
             ...org,
             ...link,

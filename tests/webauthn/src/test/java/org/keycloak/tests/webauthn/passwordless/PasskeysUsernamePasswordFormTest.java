@@ -67,11 +67,13 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy for discoverable credentials
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(null)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(null)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE)
-                    .webAuthnPolicyPasswordlessMediation(mediation));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(null)
+                            .userVerificationRequirement(null)
+                            .passkeysEnabled(true)
+                            .mediation(mediation)
+            ));
 
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -107,10 +109,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy not specified, key will not be discoverable
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
+                            .userVerificationRequirement(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED)
+                            .passkeysEnabled(true)
+            ));
 
             registerDefaultUser();
 
@@ -163,10 +167,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy for discoverable credentials
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .userVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .passkeysEnabled(true)
+            ));
 
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -203,8 +209,10 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
             // set authenticatorAttachment to platform with modal mediation;
             // no platform authenticator is available so the modal must not be shown
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessAuthenticatorAttachment("platform")
-                    .webAuthnPolicyPasswordlessMediation("optional"));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.authenticatorAttachment("platform")
+                            .mediation("optional")
+            ));
 
             oAuthClient.openLoginForm();
 
@@ -237,10 +245,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy for discoverable credentials
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .userVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .passkeysEnabled(Boolean.TRUE)
+            ));
 
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -303,7 +313,9 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
     public void reauthenticationOfUserWithoutPasskey() {
         // set passwordless policy for discoverable credentials
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.FALSE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.passkeysEnabled(false)
+            ));
 
             // Login with password
             oAuthClient.openLoginForm();
@@ -356,10 +368,12 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy for discoverable credentials
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .userVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .passkeysEnabled(true)
+            ));
 
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -451,11 +465,13 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
 
         // set passwordless policy for discoverable credentials and enable remember me
         {
-            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
-                    .webAuthnPolicyPasswordlessResidentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE)
-                    .setRememberMe(Boolean.TRUE));
+            managedRealm.updateWithCleanup(r -> r.webAuthn(true, builder ->
+                    builder.rpEntityName("localhost")
+                            .residentKey(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .userVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                            .passkeysEnabled(Boolean.TRUE)
+            ));
+            managedRealm.updateWithCleanup(r -> r.setRememberMe(Boolean.TRUE));
 
             registerDefaultUser();
 

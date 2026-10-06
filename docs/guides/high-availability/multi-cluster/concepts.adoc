@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Concepts for multi-cluster deployments"
+title="Concepts for multi-cluster (v1) deployments"
 summary="Understand multi-cluster deployment with synchronous replication."
 tileVisible="false" >
 
@@ -39,7 +39,7 @@ Monitoring is necessary to detect degraded setups.
 
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RT^2^
+| Failure | Expected behavior | RPO^1^ | RT^2^
 
 | Database node
 | If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.

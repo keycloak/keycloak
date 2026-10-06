@@ -19,12 +19,14 @@ package org.keycloak.tests.organization.admin;
 
 import java.util.List;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -241,5 +244,54 @@ public class OrganizationIdentityProviderLinkTest extends AbstractOrganizationTe
         try (Response response = orgResource.identityProviders().get("unlinked-identity-provider").update(linkRep)) {
             assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testSearchByIdentityProvider() {
+        OrganizationRepresentation orgA = createOrganization("idp-search-a");
+        OrganizationRepresentation orgB = createOrganization("idp-search-b");
+        OrganizationRepresentation orgC = createOrganization("idp-search-c");
+
+        IdentityProviderRepresentation sharedIdp = createOrgBroker("idp-search-shared");
+        String sharedAlias = sharedIdp.getAlias();
+        realm.admin().identityProviders().create(sharedIdp).close();
+        realm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(sharedAlias).remove();
+            } catch (NotFoundException ignored) {}
+        });
+
+        OrganizationsResource organizations = realm.admin().organizations();
+
+        for (OrganizationRepresentation org : List.of(orgA, orgB, orgC)) {
+            organizations.get(org.getId()).identityProviders().addIdentityProvider(sharedAlias).close();
+        }
+
+        assertEquals(List.of("idp-search-a", "idp-search-b", "idp-search-c"),
+                names(organizations.searchByIdentityProvider(sharedAlias, null, null, null, null, null)));
+        assertEquals(3, organizations.countByIdentityProvider(sharedAlias, null, null));
+
+        // an organization's own broker resolves to that organization only
+        assertEquals(List.of("idp-search-c"),
+                names(organizations.searchByIdentityProvider("idp-search-c-identity-provider", null, null, null, null, null)));
+
+        assertEquals(List.of("idp-search-a", "idp-search-b"),
+                names(organizations.searchByIdentityProvider(sharedAlias, null, null, 0, 2, null)));
+        assertEquals(List.of("idp-search-c"),
+                names(organizations.searchByIdentityProvider(sharedAlias, null, null, 2, 2, null)));
+
+        // the search term narrows the linked organizations down
+        assertEquals(List.of("idp-search-b"),
+                names(organizations.searchByIdentityProvider(sharedAlias, "idp-search-b", null, null, null, null)));
+        assertEquals(1, organizations.countByIdentityProvider(sharedAlias, "idp-search-b", null));
+
+        assertThrows(BadRequestException.class,
+                () -> organizations.searchByIdentityProvider("does-not-exist", null, null, null, null, null));
+        assertThrows(BadRequestException.class,
+                () -> organizations.countByIdentityProvider("does-not-exist", null, null));
+    }
+
+    private static List<String> names(List<OrganizationRepresentation> organizations) {
+        return organizations.stream().map(OrganizationRepresentation::getName).toList();
     }
 }

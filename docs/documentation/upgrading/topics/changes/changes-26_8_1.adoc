@@ -1,0 +1,39 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Mandatory signature validation for OIDC identity provider backchannel logout tokens
+
+{project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
+
+The OIDC Back-Channel Logout 1.0 specification mandates that logout tokens MUST be signed and that `alg=none` is explicitly prohibited. {project_name} now enforces this requirement.
+
+Other token types (ID tokens, access tokens) continue to respect the `Validate Signatures` setting as before.
+
+If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses backchannel logout, you must configure the identity provider's public key so that {project_name} can validate logout token signatures. Either:
+
+* Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
+* Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
+
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Kerberos username/password authenticator performs local service-ticket round trip
+
+Previously, the Kerberos provider authenticated the user only against the KDC server by performing an AS-REQ/AS-REP exchange. Consequently, authentication could succeed against an unintended or rogue KDC if it was inadvertently selected. This applied only to direct Kerberos username and password authentication, never to browser-based SPNEGO/negotiate authentication.
+
+Starting with this release, after authenticating the user, {project_name} performs an additional service-ticket round trip for its configured service principal. A service ticket is requested using TGS-REQ/TGS-REP and validated with the configured local keytab.
+
+Although no issues are expected, the previous behavior can be restored with the following provider options for the LDAP and Kerberos standalone providers:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round-trip true \
+  --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
+----

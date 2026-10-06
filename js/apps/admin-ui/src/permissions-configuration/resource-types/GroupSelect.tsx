@@ -136,6 +136,7 @@ export const GroupSelect = ({
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeGroup", { name: group.path })}
                     onClick={() => {
                       setValue(name!, [
                         ...convertGroups(
