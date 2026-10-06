@@ -9,6 +9,7 @@ import { ReactNode, useMemo, type JSX } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 
 import { ScrollForm } from "../main";
+import { HiddenComponent } from "./HiddenComponent";
 import { LocaleSelector } from "./LocaleSelector";
 import { MultiInputComponent } from "./MultiInputComponent";
 import { OptionComponent } from "./OptionsComponent";
@@ -27,6 +28,7 @@ export type Options = {
 
 export type InputType =
   | "text"
+  | "hidden"
   | "textarea"
   | "select"
   | "select-radiobuttons"
@@ -57,6 +59,7 @@ export const FIELDS: {
   [type in InputType]: (props: UserProfileFieldProps) => JSX.Element;
 } = {
   text: TextComponent,
+  hidden: HiddenComponent,
   textarea: TextAreaComponent,
   select: SelectComponent,
   "select-radiobuttons": OptionComponent,
