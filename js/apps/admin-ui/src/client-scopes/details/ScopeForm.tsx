@@ -309,16 +309,20 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   };
 
   const resolveCredentialLifetime = () => {
+    // Prefer the form value so validation matches what will be submitted; fall
+    // back to the saved attribute while the form is still empty (first render).
+    const lifetimeFromForm = readFormSeconds("attributes.vc.expiry_in_seconds");
+    if (lifetimeFromForm !== undefined) {
+      return lifetimeFromForm;
+    }
     const expiryAttr = clientScope?.attributes?.["vc.expiry_in_seconds"];
     const lifetimeFromAttr =
       typeof expiryAttr === "string" && expiryAttr !== ""
         ? parseInt(expiryAttr, 10)
         : undefined;
-    const lifetimeFromForm = readFormSeconds("attributes.vc.expiry_in_seconds");
 
     return (
       (Number.isFinite(lifetimeFromAttr) ? lifetimeFromAttr : undefined) ??
-      lifetimeFromForm ??
       VC_EXPIRY_DEFAULT_SECONDS
     );
   };

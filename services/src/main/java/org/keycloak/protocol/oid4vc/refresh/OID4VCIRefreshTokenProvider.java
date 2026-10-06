@@ -67,6 +67,7 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
     private static final String NOTE_LATEST_GENERATED_TOKEN_ID = "latestGeneratedTokenId";
     private static final String NOTE_USE_COUNT = "useCount";
     private static final String NOTE_LAST_REFRESH = "lastRefresh";
+    private static final String NOTE_MAX_FAMILY_EXPIRATION = "maxFamilyExpiration";
     private static final int ROTATION_RECORD_CLOCK_SKEW_SECONDS = 10;
     private String pendingRotationKey;
     private Map<String, String> pendingRotationRecord;
@@ -222,17 +223,22 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
 
         // Complete the record with newly generated child token's metadata
-        RefreshToken lifespanSource = ctx.oldRefreshToken();
         if (newRefreshToken != null) {
             // Record new Refresh token as the most recent valid child in the family
             record.put(NOTE_LATEST_GENERATED_TOKEN_ID, newRefreshToken.getId());
             record.put(NOTE_LAST_REFRESH, String.valueOf(newRefreshToken.getIat()));
-            lifespanSource = newRefreshToken;
         }
+        // Retain the record until the latest expiration of any token issued in the family, not just the newest
+        // child: lowering the refresh idle timeout between rotations can mint a child that expires before its
+        // still-valid parent, and dropping the record with the child would allow that parent to be replayed.
+        long maxFamilyExpiration = Math.max(
+                Math.max(getExpirationOrZero(ctx.oldRefreshToken()), getExpirationOrZero(newRefreshToken)),
+                getLongNote(record, NOTE_MAX_FAMILY_EXPIRATION));
+        record.put(NOTE_MAX_FAMILY_EXPIRATION, String.valueOf(maxFamilyExpiration));
         // Completes the read-modify-write started in validateTokenReuseForRefresh. It is atomic because
         // getRefreshTokenLockId() keys the refresh lock on the same family key as the record, and that lock is only
         // released once this transaction has committed.
-        storeRotationRecord(session.singleUseObjects(), key, lifespanSource, record);
+        storeRotationRecord(session.singleUseObjects(), key, maxFamilyExpiration, record);
     }
 
     @Override
@@ -350,13 +356,21 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         pendingRotationRecord = updated;
     }
 
-    private void storeRotationRecord(SingleUseObjectProvider singleUseStore, String key, RefreshToken refreshToken, Map<String, String> record) {
-        Long expiration = refreshToken.getExp();
-        long lifeSpan = (expiration == null ? 0 : expiration - Time.currentTimeSeconds()) + ROTATION_RECORD_CLOCK_SKEW_SECONDS;
+    private void storeRotationRecord(SingleUseObjectProvider singleUseStore, String key, long maxFamilyExpiration, Map<String, String> record) {
+        long lifeSpan = (maxFamilyExpiration - Time.currentTimeSeconds()) + ROTATION_RECORD_CLOCK_SKEW_SECONDS;
         if (lifeSpan <= 0) {
             return; // already expired, it can never be successfully replayed anyway
         }
         singleUseStore.put(key, lifeSpan, record);
+    }
+
+    private static long getExpirationOrZero(RefreshToken token) {
+        return token != null && token.getExp() != null ? token.getExp() : 0;
+    }
+
+    private long getLongNote(Map<String, String> record, String name) {
+        String value = getNote(record, name);
+        return value != null ? Long.parseLong(value) : 0;
     }
 
     private int getIntNote(Map<String, String> record, String name) {
@@ -409,9 +423,10 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
         IssuedVerifiableCredentialModel issuedVerifiableCredentialModel = checkIssuedVerifiableCredential(session, user, oid4vcAuthzDetail.getIssuedCredentialId(), credentialScopeModel, clientSessionCtx.getClientSession().getClient());
         // Expiry saved on credential is in milliseconds. The token additionally expires when unused for the idle
-        // timeout; every refresh rotates it with a fresh iat, restarting the idle window.
+        // timeout; every refresh rotates it with a fresh iat, restarting the idle window. The cast avoids int
+        // overflow for idle timeouts beyond ~11 years.
         long credentialExpiresAt = issuedVerifiableCredentialModel.getExpiresAt() / 1000;
-        long idleTimeoutExpiresAt = Time.currentTimeSeconds() + credentialScopeModel.getRefreshIdleTimeoutInSeconds();
+        long idleTimeoutExpiresAt = (long) Time.currentTimeSeconds() + credentialScopeModel.getRefreshIdleTimeoutInSeconds();
         return Math.min(credentialExpiresAt, idleTimeoutExpiresAt);
     }
 
