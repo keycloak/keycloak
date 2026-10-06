@@ -17,6 +17,7 @@
 
 package org.keycloak.truststore;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -267,7 +268,7 @@ public class TruststoreBuilder {
     }
 
     static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
-        try (FileInputStream pemInputStream = new FileInputStream(file)) {
+        try (BufferedInputStream pemInputStream = new BufferedInputStream(new FileInputStream(file))) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
             boolean loadedAny = false;
             while (pemInputStream.available() > 0) {
