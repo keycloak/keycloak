@@ -243,18 +243,15 @@ public class IdentityProviderResource {
     }
 
     /**
-     * Config keys that determine where/how a client secret is sent. Includes fields that some
-     * social providers use to derive the token endpoint at runtime (for example GitHub/OpenShift
-     * {@code baseUrl}, Microsoft {@code tenantId}, PayPal {@code sandbox}) so a masked secret
-     * cannot be rebound when only those fields change.
+     * Config keys that determine where/how a client secret is sent. Includes {@code baseUrl},
+     * which some social providers (for example GitHub/OpenShift) use to derive the token
+     * endpoint at runtime, so a masked secret cannot be rebound when only that field changes.
      */
     private static final String[] CLIENT_SECRET_DESTINATION_KEYS = {
             OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL,
             OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL,
             "clientId",
-            "baseUrl",
-            "tenantId",
-            "sandbox"
+            "baseUrl"
     };
 
     /**
@@ -268,13 +265,25 @@ public class IdentityProviderResource {
         Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
 
         for (String key : CLIENT_SECRET_DESTINATION_KEYS) {
-            if (!Objects.equals(existing.get(key), next.get(key))) {
+            if (!sameConfigValue(existing.get(key), next.get(key))) {
                 return false;
             }
         }
-        return Objects.equals(
+        return sameConfigValue(
                 existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
                 next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
+    }
+
+    /**
+     * Treats {@code null} and empty string as equivalent so UI/API clients that omit optional
+     * fields as {@code ""} do not look like a destination change when the stored value is absent.
+     */
+    private static boolean sameConfigValue(String left, String right) {
+        return Objects.equals(normalizeConfigValue(left), normalizeConfigValue(right));
+    }
+
+    private static String normalizeConfigValue(String value) {
+        return value == null || value.isEmpty() ? null : value;
     }
 
 

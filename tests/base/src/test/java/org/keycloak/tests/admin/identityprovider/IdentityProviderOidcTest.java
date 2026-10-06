@@ -525,6 +525,23 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         assertEquals("real-github-secret", runOnServer.fetch(
                 s -> s.identityProviders().getByAlias("masked-secret-github").getConfig().get("clientSecret"), String.class));
+
+        // Optional fields absent in storage (null) but sent as "" by the UI must not look like a change
+        IdentityProviderRepresentation noBaseUrl = createRep("masked-secret-github-no-base", "github");
+        noBaseUrl.getConfig().put("clientId", "github-client");
+        noBaseUrl.getConfig().put("clientSecret", "real-github-secret");
+        create(noBaseUrl);
+
+        IdentityProviderResource noBaseUrlResource = managedRealm.admin().identityProviders().get("masked-secret-github-no-base");
+        IdentityProviderRepresentation noBaseUrlRep = noBaseUrlResource.toRepresentation();
+        noBaseUrlRep.setDisplayName("Optional baseUrl unchanged");
+        noBaseUrlRep.getConfig().put("baseUrl", "");
+        noBaseUrlRep.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        noBaseUrlResource.update(noBaseUrlRep);
+        adminEvents.poll();
+
+        assertEquals("real-github-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-github-no-base").getConfig().get("clientSecret"), String.class));
     }
 
     @Test
