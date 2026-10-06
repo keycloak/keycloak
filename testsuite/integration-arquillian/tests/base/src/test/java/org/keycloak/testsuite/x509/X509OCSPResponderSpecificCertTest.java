@@ -71,6 +71,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
     public void loginFailedInvalidResponderOnOCSPResponderRevocationCheck() throws Exception {
         X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel()
                 .setOCSPEnabled(true)
+                .setRevalidateCertificateEnabled(true)
                 .setMappingSourceType(SUBJECTDN_EMAIL)
                 .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
@@ -90,6 +91,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
     public void loginFailedOnOCSPResponderRevocationCheck() throws Exception {
         X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel()
                 .setOCSPEnabled(true)
+                .setRevalidateCertificateEnabled(true)
                 .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                 .setOCSPResponderCertificate(
                         "MIIDSDCCAjACCQDutBlh01xKxDANBgkqhkiG9w0BAQsFADBmMQswCQYDVQQGEwJV\n"

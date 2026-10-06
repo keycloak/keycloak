@@ -86,6 +86,7 @@ public class X509MaxConsumedResponseSizeTest extends AbstractX509AuthenticationT
                         .setOCSPEnabled(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
+                        .setRevalidateCertificateEnabled(true)
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);

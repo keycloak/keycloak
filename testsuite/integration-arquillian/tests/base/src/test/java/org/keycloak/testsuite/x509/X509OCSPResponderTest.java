@@ -79,6 +79,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setOCSPEnabled(true)
+                        .setRevalidateCertificateEnabled(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
@@ -99,6 +100,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setOCSPEnabled(true)
+                        .setRevalidateCertificateEnabled(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setUserIdentityMapperType(USERNAME_EMAIL);
@@ -131,6 +133,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setOCSPEnabled(true)
+                        .setRevalidateCertificateEnabled(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setUserIdentityMapperType(USERNAME_EMAIL);
@@ -160,6 +163,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setOCSPEnabled(true)
+                        .setRevalidateCertificateEnabled(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setOCSPResponderCertificate(
