@@ -21,18 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.admin.ui.rest.model.RoleDeleteRequest;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
@@ -44,15 +42,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
@@ -60,7 +55,6 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CO
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -73,9 +67,6 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
-
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
 
     private final String rolesType = AdminPermissionsSchema.ROLES.getType();
 
@@ -429,7 +420,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testUiExtRoleMappingDeleteRespectsPerRolePermission() {
+    public void testRoleMappingDeleteRespectsPerRolePermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserRepresentation targetUser = createUser("targetUser");
 
@@ -453,26 +444,21 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(MAP_ROLES), policy);
         createPermission(adminPermissionsClient, allowedRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
 
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
-                    .path("admin").path("realms").path(realm.getName())
-                    .path("ui-ext").path("role-mapping-delete").path("users").path(targetUser.getId())
-                    .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+        RoleMappingResource roleMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles();
 
-            // deleting restrictedRole should be forbidden
-            Response response = target.request(MediaType.APPLICATION_JSON)
-                    .post(Entity.json(List.of(new RoleDeleteRequest(restrictedRole.getId(), restrictedRole.getName(), null))));
-            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
-
-            // deleting allowedRole should succeed
-            response = target.request(MediaType.APPLICATION_JSON)
-                    .post(Entity.json(List.of(new RoleDeleteRequest(allowedRole.getId(), allowedRole.getName(), null))));
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        // deleting restrictedRole should be forbidden
+        try {
+            roleMappings.realmLevel().remove(List.of(restrictedRole));
+            fail("Expected ForbiddenException");
+        } catch (ForbiddenException expected) {
         }
+
+        // deleting allowedRole should succeed
+        roleMappings.realmLevel().remove(List.of(allowedRole));
     }
 
     @Test
-    public void testUiExtGroupRoleMappingDeleteRespectsPerRolePermission() {
+    public void testGroupRoleMappingDeleteRespectsPerRolePermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         GroupRepresentation group = createGroup("testGroup");
 
@@ -491,31 +477,26 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         // assign both roles to the group (as realm admin)
         realm.admin().groups().group(group.getId()).roles().realmLevel().add(List.of(allowedRole, restrictedRole));
 
-        // grant myadmin group-level MANAGE_MEMBERSHIP and role-level MAP_ROLE only for allowedRole
+        // grant myadmin group-level MANAGE and role-level MAP_ROLE only for allowedRole
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
-        createGroupPermission(group, Set.of(MANAGE_MEMBERSHIP), policy);
+        createGroupPermission(group, Set.of(MANAGE), policy);
         createPermission(adminPermissionsClient, allowedRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
 
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
-                    .path("admin").path("realms").path(realm.getName())
-                    .path("ui-ext").path("role-mapping-delete").path("groups").path(group.getId())
-                    .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+        RoleMappingResource roleMappings = realmAdminClient.realm(realm.getName()).groups().group(group.getId()).roles();
 
-            // deleting restrictedRole should be forbidden
-            Response response = target.request(MediaType.APPLICATION_JSON)
-                    .post(Entity.json(List.of(new RoleDeleteRequest(restrictedRole.getId(), restrictedRole.getName(), null))));
-            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
-
-            // deleting allowedRole should succeed
-            response = target.request(MediaType.APPLICATION_JSON)
-                    .post(Entity.json(List.of(new RoleDeleteRequest(allowedRole.getId(), allowedRole.getName(), null))));
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        // deleting restrictedRole should be forbidden
+        try {
+            roleMappings.realmLevel().remove(List.of(restrictedRole));
+            fail("Expected ForbiddenException");
+        } catch (ForbiddenException expected) {
         }
+
+        // deleting allowedRole should succeed
+        roleMappings.realmLevel().remove(List.of(allowedRole));
     }
 
     @Test
-    public void testUiExtEndpointsFilterHiddenCompositeRoles() {
+    public void testEffectiveRoleEndpointsFilterHiddenCompositeRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserRepresentation targetUser = createUser("targetUser");
 
@@ -554,39 +535,237 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, visibleClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
         createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            String baseUiExtPath = keycloakUrls.getBaseUrl().toString();
-            BearerAuthFilter bearerAuth = new BearerAuthFilter(realmAdminClient.tokenManager());
+        RealmResource realmResource = realmAdminClient.realm(realm.getName());
 
-            // RoleCompositeResource: GET /ui-ext/role-mappings/roles/{id}
-            String body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
-                    "role-mappings/roles/" + visibleParent.getId(), bearerAuth);
-            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
-            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
-            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+        // GET /roles-by-id/{id}/composites/composite
+        MappingsRepresentation composites = realmResource.rolesById().getCompositeRoleComposites(visibleParent.getId());
+        Set<String> roleNames = Stream.concat(
+                        composites.getRealmMappings() == null ? Stream.empty() : composites.getRealmMappings().stream(),
+                        composites.getClientMappings() == null ? Stream.empty() : composites.getClientMappings().values().stream().flatMap(m -> m.getMappings().stream()))
+                .map(RoleRepresentation::getName).collect(Collectors.toSet());
+        assertThat("Visible child role should be present", roleNames, hasItem("VISIBLE_CHILD"));
+        assertThat("Secret child role should be filtered out", roleNames, not(hasItem("SECRET_CHILD")));
 
-            // EffectiveRoleMappingResource: GET /ui-ext/effective-roles/users/{id}
-            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
-                    "effective-roles/users/" + targetUser.getId(), bearerAuth);
-            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
-            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
-            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+        // GET /users/{id}/role-mappings/composite
+        MappingsRepresentation effective = realmResource.users().get(targetUser.getId()).roles().getAllComposite();
+        Map<String, ClientMappingsRepresentation> clientMappings = effective.getClientMappings();
+        assertThat("visible-client mapping must be present", clientMappings, not(equalTo(null)));
+        roleNames = clientMappings.values().stream()
+                .flatMap(m -> m.getMappings().stream())
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+        assertThat("Visible parent role should be present", roleNames, hasItem("VISIBLE_PARENT"));
+        assertThat("Visible child role should be present", roleNames, hasItem("VISIBLE_CHILD"));
+        assertThat("Directly mapped secret role should be filtered out", roleNames, not(hasItem("SECRET_CHILD")));
+        assertThat("Secret client should not be disclosed", clientMappings.containsKey("secret-client"), equalTo(false));
+    }
 
-            // AllEffectiveRoleMappingResource: GET /ui-ext/effective-roles-all/roles/{id}
-            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
-                    "effective-roles-all/roles/" + visibleParent.getId(), bearerAuth);
-            assertThat("Visible parent role should be present", body, containsString("VISIBLE_PARENT"));
-            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
-            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
-            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+    @Test
+    public void testAvailableClientRolesRespectMapRolePermissions() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserRepresentation targetUser = createUser("targetUser");
 
-            // AllEffectiveRoleMappingResource: GET /ui-ext/effective-roles-all/users/{id}
-            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
-                    "effective-roles-all/users/" + targetUser.getId(), bearerAuth);
-            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
-            assertThat("Directly mapped secret role should be filtered out", body, not(containsString("SECRET_CHILD")));
-            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+        ClientRepresentation allowedClient = new ClientRepresentation();
+        allowedClient.setClientId("allowed-client");
+        try (Response response = realm.admin().clients().create(allowedClient)) {
+            allowedClient.setId(ApiUtil.getCreatedId(response));
         }
+
+        ClientRepresentation otherClient = new ClientRepresentation();
+        otherClient.setClientId("other-client");
+        try (Response response = realm.admin().clients().create(otherClient)) {
+            otherClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        for (String name : List.of("ALLOWED_ONE", "ALLOWED_TWO")) {
+            RoleRepresentation role = new RoleRepresentation();
+            role.setName(name);
+            realm.admin().clients().get(allowedClient.getId()).roles().create(role);
+        }
+        RoleRepresentation otherRole = new RoleRepresentation();
+        otherRole.setName("OTHER_ROLE");
+        realm.admin().clients().get(otherClient.getId()).roles().create(otherRole);
+        otherRole = realm.admin().clients().get(otherClient.getId()).roles().get("OTHER_ROLE").toRepresentation();
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW, MAP_ROLES), policy);
+
+        RoleMappingResource roleMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles();
+
+        // no permission to map any role yet
+        MappingsRepresentation available = roleMappings.getAllAvailable(null, null, null);
+        assertThat(available.getClientMappings(), equalTo(null));
+
+        // map-roles on a client makes all its roles available, roles of other clients stay hidden
+        createPermission(adminPermissionsClient, allowedClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(MAP_ROLES), policy);
+        available = roleMappings.getAllAvailable(null, null, null);
+        assertThat(available.getClientMappings().keySet(), equalTo(Set.of("allowed-client")));
+        assertThat(available.getClientMappings().get("allowed-client").getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
+                equalTo(Set.of("ALLOWED_ONE", "ALLOWED_TWO")));
+
+        // map-role on a single role of another client adds just that role
+        createPermission(adminPermissionsClient, otherRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
+        available = roleMappings.getAllAvailable(null, null, null);
+        assertThat(available.getClientMappings().keySet(), equalTo(Set.of("allowed-client", "other-client")));
+        assertThat(available.getClientMappings().get("other-client").getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
+                equalTo(Set.of("OTHER_ROLE")));
+
+        // search and paging apply on top of the permission filtering
+        available = roleMappings.getAllAvailable("ALLOWED", null, null);
+        assertThat(available.getClientMappings().keySet(), equalTo(Set.of("allowed-client")));
+        available = roleMappings.getAllAvailable(null, 0, 1);
+        assertThat(available.getClientMappings().values().stream().mapToInt(m -> m.getMappings().size()).sum(), equalTo(1));
+
+        // mapped roles are no longer available
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(otherClient.getId()).add(List.of(otherRole));
+        available = roleMappings.getAllAvailable(null, null, null);
+        assertThat(available.getClientMappings().keySet(), equalTo(Set.of("allowed-client")));
+    }
+
+    @Test
+    public void testAvailableClientRolesHonorRoleSpecificOverrides() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserRepresentation targetUser = createUser("targetUser");
+        UserRepresentation otherAdmin = createUser("otherAdmin");
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("some-client");
+        try (Response response = realm.admin().clients().create(client)) {
+            client.setId(ApiUtil.getCreatedId(response));
+        }
+
+        for (String name : List.of("GRANTED_ROLE", "OVERRIDDEN_ROLE")) {
+            RoleRepresentation role = new RoleRepresentation();
+            role.setName(name);
+            realm.admin().clients().get(client.getId()).roles().create(role);
+        }
+        RoleRepresentation overriddenRole = realm.admin().clients().get(client.getId()).roles().get("OVERRIDDEN_ROLE").toRepresentation();
+
+        UserPolicyRepresentation myAdminPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation otherAdminPolicy = createUserPolicy(realm, adminPermissionsClient, "Only Other Admin User Policy", otherAdmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW, MAP_ROLES), myAdminPolicy);
+
+        // myadmin can map all roles, except the one whose resource-specific permission is granted to someone else
+        createAllPermission(adminPermissionsClient, rolesType, myAdminPolicy, Set.of(MAP_ROLE));
+        createPermission(adminPermissionsClient, overriddenRole.getId(), rolesType, Set.of(MAP_ROLE), otherAdminPolicy);
+
+        RoleMappingResource roleMappings = realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).roles();
+        MappingsRepresentation available = roleMappings.getAllAvailable(null, null, null);
+        assertThat(available.getClientMappings().get("some-client").getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
+                equalTo(Set.of("GRANTED_ROLE")));
+
+        // the listing is consistent with the actual mapping check
+        try {
+            roleMappings.clientLevel(client.getId()).add(List.of(overriddenRole));
+            fail("Expected ForbiddenException");
+        } catch (ForbiddenException expected) {
+        }
+    }
+
+    @Test
+    public void testListingClientRolesRespectsViewPermissions() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        ClientRepresentation viewableClient = new ClientRepresentation();
+        viewableClient.setClientId("viewable-client");
+        try (Response response = realm.admin().clients().create(viewableClient)) {
+            viewableClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation otherClient = new ClientRepresentation();
+        otherClient.setClientId("other-client");
+        try (Response response = realm.admin().clients().create(otherClient)) {
+            otherClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        for (String name : List.of("VIEWABLE_ONE", "VIEWABLE_TWO")) {
+            RoleRepresentation role = new RoleRepresentation();
+            role.setName(name);
+            realm.admin().clients().get(viewableClient.getId()).roles().create(role);
+        }
+        for (String name : List.of("OTHER_ONE", "OTHER_TWO")) {
+            RoleRepresentation role = new RoleRepresentation();
+            role.setName(name);
+            realm.admin().clients().get(otherClient.getId()).roles().create(role);
+        }
+        RoleRepresentation otherRole = realm.admin().clients().get(otherClient.getId()).roles().get("OTHER_ONE").toRepresentation();
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        ClientsResource clients = realmAdminClient.realm(realm.getName()).clients();
+
+        // query-clients allows calling the endpoint but no role is visible yet
+        assertThat(clients.findRoles(null, null, null), empty());
+
+        // view on a client makes all its roles visible
+        createPermission(adminPermissionsClient, viewableClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        List<ClientMappingsRepresentation> roles = clients.findRoles(null, null, null);
+        assertThat(roles.stream().map(ClientMappingsRepresentation::getClient).collect(Collectors.toSet()), equalTo(Set.of("viewable-client")));
+        assertThat(roles.get(0).getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("VIEWABLE_ONE", "VIEWABLE_TWO")));
+
+        // a role that can be mapped is visible too, the rest of its client stays hidden
+        createPermission(adminPermissionsClient, otherRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
+        roles = clients.findRoles(null, null, null);
+        assertThat(roles.stream().map(ClientMappingsRepresentation::getClient).collect(Collectors.toSet()), equalTo(Set.of("viewable-client", "other-client")));
+        assertThat(roles.stream().filter(c -> "other-client".equals(c.getClient())).findFirst().orElseThrow().getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
+                equalTo(Set.of("OTHER_ONE")));
+
+        // search and paging apply on top of the permission filtering
+        roles = clients.findRoles("OTHER", null, null);
+        assertThat(roles.stream().map(ClientMappingsRepresentation::getClient).collect(Collectors.toSet()), equalTo(Set.of("other-client")));
+        roles = clients.findRoles(null, 0, 1);
+        assertThat(roles.stream().mapToInt(c -> c.getMappings().size()).sum(), equalTo(1));
+    }
+
+    @Test
+    public void testListingScopeMappingsRespectsViewPermissions() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), policy, Set.of(VIEW));
+
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        RoleRepresentation clientRole = new RoleRepresentation();
+        clientRole.setName("scopeClientRole");
+        realm.admin().clients().get(myclient.getId()).roles().create(clientRole);
+        clientRole = realm.admin().clients().get(myclient.getId()).roles().get("scopeClientRole").toRepresentation();
+
+        RoleRepresentation visibleRole = new RoleRepresentation();
+        visibleRole.setName("visibleScopeRole");
+        realm.admin().roles().create(visibleRole);
+        visibleRole = realm.admin().roles().get("visibleScopeRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("visibleScopeRole").remove());
+
+        RoleRepresentation hiddenRole = new RoleRepresentation();
+        hiddenRole.setName("hiddenScopeRole");
+        realm.admin().roles().create(hiddenRole);
+        hiddenRole = realm.admin().roles().get("hiddenScopeRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("hiddenScopeRole").remove());
+
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("scope-mappings-listing");
+        clientScope.setProtocol("openid-connect");
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            clientScope.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.clientScopes().get(clientScope.getId()).remove());
+        }
+
+        ClientScopeResource superAdminScope = realm.admin().clientScopes().get(clientScope.getId());
+        superAdminScope.getScopeMappings().realmLevel().add(List.of(visibleRole, hiddenRole));
+        superAdminScope.getScopeMappings().clientLevel(myclient.getId()).add(List.of(clientRole));
+
+        // only client roles are visible, realm roles need view-realm or map-role
+        createPermission(adminPermissionsClient, visibleRole.getId(), rolesType, Set.of(MAP_ROLE), policy);
+
+        ClientScopeResource clientScopeResource = realmAdminClient.realm(realm.getName()).clientScopes().get(clientScope.getId());
+
+        MappingsRepresentation all = clientScopeResource.getScopeMappings().getAll();
+        assertThat(all.getRealmMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("visibleScopeRole")));
+        assertThat(all.getClientMappings().get("myclient").getMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("scopeClientRole")));
+
+        assertThat(clientScopeResource.getScopeMappings().realmLevel().listAll().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("visibleScopeRole")));
+        assertThat(clientScopeResource.getScopeMappings().clientLevel(myclient.getId()).listAll().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("scopeClientRole")));
+
+        // the super admin keeps seeing everything
+        assertThat(superAdminScope.getScopeMappings().realmLevel().listAll().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), equalTo(Set.of("visibleScopeRole", "hiddenScopeRole")));
     }
 
     @Test
@@ -763,15 +942,5 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         return mappings.getRealmMappings() == null
                 ? Set.of()
                 : mappings.getRealmMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
-    }
-
-    private String getUiExtEndpoint(Client httpClient, String baseUrl, String realmName, String subPath, BearerAuthFilter bearerAuth) {
-        WebTarget target = httpClient.target(baseUrl)
-                .path("admin").path("realms").path(realmName)
-                .path("ui-ext").path(subPath)
-                .register(bearerAuth);
-        Response response = target.request(MediaType.APPLICATION_JSON).get();
-        assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
-        return response.readEntity(String.class);
     }
 }

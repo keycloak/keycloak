@@ -576,7 +576,7 @@ export const ReceiverTab = ({
                             {rolePickerOpen && (
                               <AddRoleMappingModal
                                 id="ssfRequiredRolePicker"
-                                type="roles"
+                                type="realms"
                                 filterType={roleFilterType}
                                 name="ssfRequiredRole"
                                 onAssign={(rows) => {
@@ -915,7 +915,7 @@ export const ReceiverTab = ({
                               {emitRolePickerOpen && (
                                 <AddRoleMappingModal
                                   id="ssfEmitEventsRolePicker"
-                                  type="roles"
+                                  type="realms"
                                   filterType={emitRoleFilterType}
                                   name="ssfEmitEventsRole"
                                   onAssign={(rows) => {
