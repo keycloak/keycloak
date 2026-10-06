@@ -85,6 +85,10 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     public CredentialModel createCredential(RealmModel realm, UserModel user, String password) {
+        return createCredentialAndGet(realm, user, password).storedCredential();
+    }
+
+    private CredentialUpdate createCredentialAndGet(RealmModel realm, UserModel user, String password) {
         PasswordPolicy policy = realm.getPasswordPolicy();
 
         PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
@@ -92,12 +96,13 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         PasswordHashProvider hash = getHashProvider(policy);
         if (hash == null) {
-            return null;
+            return CredentialUpdate.NOT_HANDLED;
         }
         try {
             PasswordCredentialModel credentialModel = hash.encodedCredential(password, policy.getHashIterations());
             credentialModel.setCreatedDate(Time.currentTimeMillis());
-            return createCredential(realm, user, credentialModel);
+            CredentialModel storedCredential = createCredential(realm, user, credentialModel);
+            return new CredentialUpdate(true, storedCredential);
         } catch (Throwable t) {
             throw new ModelException(t.getMessage(), t);
         }
@@ -191,9 +196,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
     @Override
     public CredentialUpdate updateCredentialAndGet(RealmModel realm, UserModel user, CredentialInput input) {
-        CredentialModel credential = createCredential(realm, user, input.getChallengeResponse());
-
-        return new CredentialUpdate(credential != null, credential);
+        return createCredentialAndGet(realm, user, input.getChallengeResponse());
     }
 
     @Override
