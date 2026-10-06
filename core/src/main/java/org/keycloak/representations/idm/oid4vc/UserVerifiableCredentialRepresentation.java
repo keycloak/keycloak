@@ -67,6 +67,6 @@ public class UserVerifiableCredentialRepresentation {
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialScopeName, credentialConfigurationId ,revision, createdDate, userAttributes);
+        return Objects.hash(credentialScopeName, credentialConfigurationId, revision, createdDate, userAttributes);
     }
 }

@@ -28,6 +28,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -173,12 +174,12 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     }
 
     protected void loginToAccount() {
-        if (!loginPage.isCurrent()) {
-            signingInPage.navigateTo();
-            waitForPageToLoad();
-        }
         loginPage.assertCurrent();
-        loginPage.form().login(testUser);
+        String password = testUser.getCredentials()
+                .stream()
+                .filter(f -> f.getType().equals(CredentialRepresentation.PASSWORD))
+                .findFirst().get().getValue();
+        loginPage.login(testUser.getUsername(), password);
         waitForPageToLoad();
     }
 

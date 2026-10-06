@@ -19,6 +19,7 @@ package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -30,7 +31,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.keycloak.VCFormat;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -62,11 +66,14 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.Endpoints;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.util.JsonSerialization;
@@ -80,6 +87,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.HIGH;
+import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.MODERATE;
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
@@ -93,6 +102,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvide
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ISSUER_INFO_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
 
@@ -106,7 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerWellKnownProviderTest.VCTestServerWithKeystore.class)
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @InjectRunOnServer
@@ -239,6 +249,45 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertTrue(run.apply(null), "IssuerMetadata on default endpoint URI");
         assertTrue(run.apply(endpoints.getOid4vcIssuerMetadata()), "IssuerMetadata on: " + endpoints.getOid4vcIssuerMetadata());
         assertTrue(run.apply(getSpecCompliantRealmMetadataPath()), "IssuerMetadata on: " + getSpecCompliantRealmMetadataPath());
+    }
+
+    @Test
+    public void testSignedMetadataWithJavaKeystoreChainExcludesSelfSignedRoot() {
+        assertDoesNotThrow(this::ensureMdocCompliantSigningConfiguration,
+                "A Java keystore containing the leaf and self-signed root should pass certificate-chain validation");
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, Algorithm.ES256,
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600"
+        ));
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        List<String> x5c = jwsInput.getHeader().getX5c();
+        assertNotNull(x5c);
+        assertEquals(1, x5c.size(), "The self-signed root must be omitted from the x5c header");
+
+        X509Certificate leaf = PemUtils.decodeCertificate(x5c.get(0));
+        assertEquals("CN=Mdoc Test Signer", leaf.getSubjectX500Principal().getName());
+
+        byte[] encodedSignatureInput = jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+        byte[] signature = jwsInput.getSignature();
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            KeyWrapper keyWrapper = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
+            assertNotNull(keyWrapper, "Active ES256 signing key should exist");
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.ES256);
+            assertNotNull(signatureProvider, "ES256 signature provider should exist");
+            SignatureVerifierContext verifier = signatureProvider.verifier(keyWrapper);
+            assertTrue(verifier.verify(encodedSignatureInput, signature), "JWS signature should be valid");
+        });
     }
 
     @Test
@@ -385,7 +434,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     /**
      * This test uses the configured scopes {@link #jwtTypeCredentialScope} and
-     * {@link #sdJwtTypeCredentialScope} to verify that the metadata endpoint is presenting the expected data
+     * {@link #sdJwtTypeCredentialScope}, including {@link #keyAttestationCredentialScope}, to verify that the metadata
+     * endpoint is presenting the expected data.
      */
     @Test
     public void testMetaDataEndpointIsCorrectlySetup() throws Exception {
@@ -424,7 +474,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertNotNull(batch, "batch_credential_issuance should be present");
         assertEquals(Integer.valueOf(10), batch.getBatchSize());
 
-        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope, minimalJwtTypeCredentialScope)) {
+        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope,
+                keyAttestationCredentialScope, minimalJwtTypeCredentialScope)) {
             compareMetadataToClientScope(credentialIssuer, credScope);
         }
     }
@@ -568,6 +619,214 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testIssuerInfoInUnsignedMetadata() throws IOException {
+        String issuerInfoJson = "[{\"format\":\"registration_cert\",\"data\":\"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig\"}]";
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, issuerInfoJson));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNotNull(issuer.getIssuerInfo(), "issuer_info should be present");
+            assertEquals(1, issuer.getIssuerInfo().size(), "issuer_info should have one element");
+            assertEquals("registration_cert", issuer.getIssuerInfo().get(0).getFormat());
+            assertEquals("eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig", issuer.getIssuerInfo().get(0).getData().asText());
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoInSignedMetadata() throws IOException {
+        String issuerInfoJson = "[{\"format\":\"registration_cert\",\"data\":\"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig\"}]";
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, "RS256",
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                ISSUER_INFO_ATTR, issuerInfoJson
+        ));
+
+        try {
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            JWSInput jwsInput = (JWSInput) response.getContent();
+            assertNotNull(jwsInput, "Response should be signed metadata JWS");
+
+            Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+            assertNotNull(claims.get("issuer_info"), "issuer_info should be a top-level claim in signed metadata");
+
+            List<Map<String, Object>> issuerInfoList = (List<Map<String, Object>>) claims.get("issuer_info");
+            assertEquals(1, issuerInfoList.size());
+            assertEquals("registration_cert", issuerInfoList.get(0).get("format"));
+            assertEquals("eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig", issuerInfoList.get(0).get("data"));
+        } finally {
+            setRealmAttributes(Map.of(
+                    SIGNED_METADATA_ALG_ATTR, "RS256",
+                    SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                    ISSUER_INFO_ATTR, ""
+            ));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoInvalidJsonFallsBackToOmitted() throws IOException {
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, "not-valid-json"));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNull(issuer.getIssuerInfo(), "issuer_info should be omitted when configuration is invalid");
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoMalformedElementFallsBackToOmitted() throws IOException {
+        setRealmAttributes(Map.of(ISSUER_INFO_ATTR, "[{}]"));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNull(issuer.getIssuerInfo(),
+                    "issuer_info should be omitted when an element misses format or data");
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_INFO_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerInfoOmittedWhenNotConfigured() throws IOException {
+        CredentialIssuer issuer = oauth.oid4vc()
+                .doIssuerMetadataRequest()
+                .getMetadata();
+
+        assertNull(issuer.getIssuerInfo(), "issuer_info should be omitted when not configured");
+    }
+
+    /**
+     * Configured key attestation resistance levels must reach the metadata.
+     *
+     * <p>The {@code key-attestation-credential} scope is set up with {@link org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels#MODERATE}
+     * for both members, so the metadata has to advertise it. Asserting the literal value matters here:
+     * deriving the expectation from {@code CredentialScopeModel} would pass even when the configured
+     * values never made it into the client scope attribute in the first place.
+     */
+    @Test
+    public void testKeyAttestationsRequiredAdvertisesConfiguredResistanceLevels() {
+
+        KeyAttestationsRequired keyAttestationsRequired = getKeyAttestationsRequired(
+                keyAttestationCredentialScope.getCredentialConfigurationId(), ProofType.JWT);
+
+        assertNotNull(keyAttestationsRequired, "key_attestations_required should be advertised");
+        MatcherAssert.assertThat("Configured key_storage level should reach the metadata",
+                keyAttestationsRequired.getKeyStorage(), Matchers.contains(MODERATE));
+        MatcherAssert.assertThat("Configured user_authentication level should reach the metadata",
+                keyAttestationsRequired.getUserAuthentication(), Matchers.contains(MODERATE));
+    }
+
+    /**
+     * Key attestation required, but neither resistance level configured.
+     *
+     * <p>Per OID4VCI 12.2.4 {@code key_storage} and {@code user_authentication} are non-empty arrays
+     * when present, and {@code key_attestations_required} may be empty when neither is constrained.
+     * The attribute is stored blank rather than absent in this case, which previously produced
+     * {@code {"key_storage":[""],"user_authentication":[""]}}.
+     */
+    @Test
+    public void testKeyAttestationsRequiredOmitsUnconfiguredResistanceLevels() throws IOException {
+
+        ClientScopeResource scopeResource = testRealm.admin().clientScopes()
+                .get(keyAttestationCredentialScope.getId());
+        ClientScopeRepresentation original = scopeResource.toRepresentation();
+
+        try {
+            // neither constrained -> "key_attestations_required": {}
+            KeyAttestationsRequired neither = updateResistanceLevels(scopeResource, "", "");
+            assertNotNull(neither,
+                    "key_attestations_required should still be advertised when attestation is required");
+            assertNull(neither.getKeyStorage(),
+                    "key_storage must be omitted rather than advertised as an array of blanks");
+            assertNull(neither.getUserAuthentication(),
+                    "user_authentication must be omitted rather than advertised as an array of blanks");
+            assertEquals("{}", JsonSerialization.valueAsString(neither),
+                    "key_attestations_required should serialize to an empty object");
+
+            // only key_storage constrained
+            KeyAttestationsRequired keyStorageOnly = updateResistanceLevels(scopeResource, HIGH, "");
+            MatcherAssert.assertThat(keyStorageOnly.getKeyStorage(), Matchers.contains(HIGH));
+            assertNull(keyStorageOnly.getUserAuthentication(),
+                    "user_authentication must be omitted when it is not constrained");
+
+            // only user_authentication constrained
+            KeyAttestationsRequired userAuthOnly = updateResistanceLevels(scopeResource, "", HIGH);
+            assertNull(userAuthOnly.getKeyStorage(),
+                    "key_storage must be omitted when it is not constrained");
+            MatcherAssert.assertThat(userAuthOnly.getUserAuthentication(), Matchers.contains(HIGH));
+
+            // separator-only and padded values collapse the same way
+            KeyAttestationsRequired separatorOnly = updateResistanceLevels(scopeResource, ",", " , ");
+            assertEquals("{}", JsonSerialization.valueAsString(separatorOnly),
+                    "Separator-only values must not produce blank entries");
+
+            KeyAttestationsRequired padded = updateResistanceLevels(scopeResource, " " + HIGH + " ", "");
+            MatcherAssert.assertThat("Surrounding whitespace should be trimmed",
+                    padded.getKeyStorage(), Matchers.contains(HIGH));
+        } finally {
+            scopeResource.update(original);
+        }
+    }
+
+    /**
+     * Rewrites both resistance-level attributes on a credential scope and returns the
+     * {@code key_attestations_required} the metadata endpoint advertises afterwards.
+     */
+    private KeyAttestationsRequired updateResistanceLevels(ClientScopeResource scopeResource,
+                                                           String keyStorage,
+                                                           String userAuthentication) {
+        ClientScopeRepresentation update = scopeResource.toRepresentation();
+        update.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, keyStorage);
+        update.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, userAuthentication);
+        scopeResource.update(update);
+
+        return getKeyAttestationsRequired(
+                keyAttestationCredentialScope.getCredentialConfigurationId(), ProofType.JWT);
+    }
+
+    /**
+     * Reads {@code key_attestations_required} for one credential configuration straight off the
+     * metadata endpoint.
+     */
+    private KeyAttestationsRequired getKeyAttestationsRequired(String credentialConfigurationId, String proofType) {
+
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .doIssuerMetadataRequest()
+                .getMetadata();
+
+        SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
+                .get(credentialConfigurationId);
+        assertNotNull(supportedConfig, "Configuration '" + credentialConfigurationId + "' must be present");
+
+        ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
+        assertNotNull(proofTypesSupported, "proof_types_supported must be present");
+
+        SupportedProofTypeData proofTypeData = proofTypesSupported.getSupportedProofTypes().get(proofType);
+        assertNotNull(proofTypeData, proofType + " proof type must be present");
+
+        return proofTypeData.getKeyAttestationsRequired();
+    }
+
+    @Test
     public void testOldOidcDiscoveryCompliantWellKnownUrlWithDeprecationHeaders() {
 
         // Old OIDC Discovery compliant URL
@@ -682,7 +941,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                     "jwt_vc_json credentials should not have @context in credential_definition");
         }
 
-        List<String> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
+        List<?> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
         if (!bindingRequired) {
             assertNull(proofTypesSupported, "proof_types_supported should be omitted when binding is optional");
@@ -761,7 +1020,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), credScope.getProtocolMappers());
     }
 
-    private static List<String> getAllAsymmetricAlgorithms() {
+    public static List<String> getAllAsymmetricAlgorithms() {
         return List.of(
                 Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
                 Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
@@ -841,6 +1100,16 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         });
     }
 
+    public static void assertHasClaimPath(SupportedCredentialConfiguration supportedConfig, List<String> expectedPath) {
+        assertNotNull(supportedConfig.getCredentialMetadata());
+        assertNotNull(supportedConfig.getCredentialMetadata().getClaims());
+        List<List<String>> actualPaths = supportedConfig.getCredentialMetadata().getClaims().stream()
+                .map(Claim::getPath)
+                .toList();
+        assertTrue(actualPaths.stream().anyMatch(expectedPath::equals),
+                "Missing claim path " + expectedPath + " in " + actualPaths);
+    }
+
     private void testBatchSizeValidation(String batchSize, boolean shouldBePresent, Integer expectedValue) {
         runOnServer.run(session -> {
             // Create a new isolated realm for testing
@@ -861,6 +1130,14 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 session.realms().removeRealm(testRealm.getId());
             }
         });
+    }
+
+    public static class VCTestServerWithKeystore implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
+        }
     }
 
     private String getSpecCompliantRealmMetadataPath() {

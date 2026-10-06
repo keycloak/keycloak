@@ -116,7 +116,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testEvaluationsBatchAllGranted() throws IOException {
-        EvaluationsResult result = authzenClient("admin-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
@@ -136,7 +136,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testEvaluationsBatchMixedDecisions() throws IOException {
-        EvaluationsResult result = authzenClient("regular-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, REGULAR_USER)
                     .action("read")
@@ -156,7 +156,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testEvaluationsItemOverridesDefaults() throws IOException {
-        EvaluationsResult result = authzenClient("admin-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
@@ -189,6 +189,24 @@ public class AuthZenEvaluationsTest {
     }
 
     @Test
+    public void testPasswordGrantTokenReturnsUnauthorized() throws IOException {
+        AccessTokenResponse tokenResponse = oauth
+              .client(client.getClientId(), client.getSecret())
+              .doPasswordGrantRequest("admin-user", "password");
+
+        EvaluationsResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
+              .evaluations(AuthZenClient.evaluationsRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .addEvaluation(AuthZenClient.evaluationItem()
+                          .resource("endpoint", "/admin")
+                          .build())
+                    .build());
+
+        assertEquals(401, result.statusCode());
+    }
+
+    @Test
     public void testEvaluationsEmptyArrayFallsBackToSingleEvaluation() throws IOException {
         String json = """
               {"subject":{"type":"user","id":"%s"},\
@@ -196,7 +214,7 @@ public class AuthZenEvaluationsTest {
               "action":{"name":"read"},\
               "evaluations":[]}""".formatted(ADMIN_USER);
 
-        JsonNode body = postEvaluations("admin-user", "password", json);
+        JsonNode body = postEvaluations(json);
         assertTrue(body.get("decision").asBoolean());
         assertNull(body.get("evaluations"));
     }
@@ -208,16 +226,16 @@ public class AuthZenEvaluationsTest {
               "resource":{"type":"endpoint","id":"/admin"},\
               "action":{"name":"read"}}""".formatted(ADMIN_USER);
 
-        JsonNode body = postEvaluations(ADMIN_USER, "password", json);
+        JsonNode body = postEvaluations(json);
         assertTrue(body.get("decision").asBoolean());
         assertNull(body.get("evaluations"));
     }
 
-    private JsonNode postEvaluations(String username, String password, String json) throws IOException {
+    private JsonNode postEvaluations(String json) throws IOException {
         String url = accessEvaluationsEndpoint(keycloakUrls.getBase() + "/realms/" + realm.getName());
         AccessTokenResponse tokenResponse = oauth
               .client(client.getClientId(), client.getSecret())
-              .doPasswordGrantRequest(username, password);
+              .doClientCredentialsGrantAccessTokenRequest();
 
         try (SimpleHttpResponse response = simpleHttp.doPost(url)
               .auth(tokenResponse.getAccessToken())
@@ -231,7 +249,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testExecuteAllSemantic() throws IOException {
-        EvaluationsResult result = authzenClient("regular-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, REGULAR_USER)
                     .action("read")
@@ -252,7 +270,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testDenyOnFirstDenyStopsOnDenial() throws IOException {
-        EvaluationsResult result = authzenClient("regular-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, REGULAR_USER)
                     .action("read")
@@ -272,7 +290,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testDenyOnFirstDenyReturnsAllWhenAllPermitted() throws IOException {
-        EvaluationsResult result = authzenClient("admin-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
@@ -293,7 +311,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testPermitOnFirstPermitStopsOnPermit() throws IOException {
-        EvaluationsResult result = authzenClient("regular-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, REGULAR_USER)
                     .action("read")
@@ -314,7 +332,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testPermitOnFirstPermitStopsImmediatelyOnFirstPermit() throws IOException {
-        EvaluationsResult result = authzenClient("admin-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
@@ -336,7 +354,7 @@ public class AuthZenEvaluationsTest {
     public void testXRequestIdEchoedInResponse() throws IOException {
         String requestId = "test-request-id-12345";
 
-        EvaluationsResult result = authzenClient("admin-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
@@ -377,7 +395,7 @@ public class AuthZenEvaluationsTest {
         String url = accessEvaluationsEndpoint(keycloakUrls.getBase() + "/realms/" + realm.getName());
         AccessTokenResponse tokenResponse = oauth
               .client(client.getClientId(), client.getSecret())
-              .doPasswordGrantRequest("admin-user", "password");
+              .doClientCredentialsGrantAccessTokenRequest();
 
         try (SimpleHttpResponse response = simpleHttp.doPost(url)
               .auth(tokenResponse.getAccessToken())
@@ -392,7 +410,7 @@ public class AuthZenEvaluationsTest {
 
     @Test
     public void testDefaultSemanticIsExecuteAll() throws IOException {
-        EvaluationsResult result = authzenClient("regular-user", "password")
+        EvaluationsResult result = authzenClient()
               .evaluations(AuthZenClient.evaluationsRequest()
                     .subject(USER, REGULAR_USER)
                     .action("read")
@@ -408,10 +426,10 @@ public class AuthZenEvaluationsTest {
         assertEquals(2, result.evaluations().size());
     }
 
-    private AuthZenClient.Authenticated authzenClient(String username, String password) {
+    private AuthZenClient.Authenticated authzenClient() {
         AccessTokenResponse tokenResponse = oauth
               .client(client.getClientId(), client.getSecret())
-              .doPasswordGrantRequest(username, password);
+              .doClientCredentialsGrantAccessTokenRequest();
         return authZenClient.withAccessToken(tokenResponse.getAccessToken());
     }
 

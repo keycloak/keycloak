@@ -138,6 +138,16 @@ function DataTable<T>({
     [selectedRows, rows],
   );
 
+  const selectableRows = useMemo(
+    () =>
+      rows.filter(
+        (row) =>
+          "data" in row &&
+          (!("disableSelection" in row) || !row.disableSelection),
+      ),
+    [rows],
+  );
+
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
@@ -145,11 +155,17 @@ function DataTable<T>({
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
-          rowsSelectedOnPage.length < rows.length &&
+          rowsSelectedOnPage.length < selectableRows.length &&
           rowsSelectedOnPage.length > 0;
       }
     }
-  }, [selectedRows, canSelectAll, rows]);
+  }, [
+    selectedRows,
+    canSelectAll,
+    rows,
+    selectableRows.length,
+    rowsSelectedOnPage.length,
+  ]);
 
   const updateSelectedRows = (selected: T[]) => {
     setSelectedRows(selected);
@@ -167,7 +183,7 @@ function DataTable<T>({
         );
         updateSelectedRows(
           isSelected
-            ? [...selectedRows, ...rows.map((row) => row.data)]
+            ? [...selectedRows, ...selectableRows.map((row) => row.data)]
             : selectedRows.filter(
                 (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
               ),
@@ -204,7 +220,10 @@ function DataTable<T>({
                       onSelect: (_, isSelected) => {
                         updateState(-1, isSelected);
                       },
-                      isSelected: rowsSelectedOnPage.length === rows.length,
+                      isSelected:
+                        rowsSelectedOnPage.length === selectableRows.length &&
+                        rowsSelectedOnPage.length > 0,
+                      isDisabled: selectableRows.length === 0,
                     }
                   : undefined
               }
@@ -409,12 +428,23 @@ export function KeycloakDataTable<T>({
   const [max, setMax] = useState(defaultPageSize);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
-  const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
   const prevKey = useRef<number>();
   const refresh = () => setKey(key + 1);
   const id = useId();
+
+  // A different search term yields a different result set, so the current page
+  // offset no longer applies and has to be reset along with it. Without this the
+  // offset is carried over and applied to the new results, which makes the table
+  // come up empty even when there are matches on the first page.
+  const onSearchChange = (value: string) => {
+    if (value === search) {
+      return;
+    }
+    setFirst(0);
+    setSearch(value);
+  };
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -499,19 +529,13 @@ export function KeycloakDataTable<T>({
   useFetch(
     async () => {
       setLoading(true);
-      const newSearch = prevSearch.current === "" && search !== "";
-
-      if (newSearch) {
-        setFirst(0);
-      }
-      prevSearch.current = search;
       const loaderFn =
         typeof loader === "function"
           ? loader
           : "loader" in loader
             ? loader.loader
             : async () => loader;
-      return await loaderFn(newSearch ? 0 : first, max + 1, search);
+      return await loaderFn(first, max + 1, search);
     },
     (data) => {
       prevKey.current = key;
@@ -551,7 +575,7 @@ export function KeycloakDataTable<T>({
         );
         if (result) {
           if (!isPaginated) {
-            setSearch("");
+            onSearchChange("");
           }
           refresh();
         }
@@ -589,7 +613,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnEnter={setSearch}
+          inputGroupOnEnter={onSearchChange}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={
@@ -636,7 +660,7 @@ export function KeycloakDataTable<T>({
                   ? [
                       {
                         text: t("clearAllFilters"),
-                        onClick: () => setSearch(""),
+                        onClick: () => onSearchChange(""),
                         type: ButtonVariant.link,
                       },
                     ]

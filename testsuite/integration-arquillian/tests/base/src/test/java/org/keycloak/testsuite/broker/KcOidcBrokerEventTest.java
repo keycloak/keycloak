@@ -101,7 +101,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         if (consumerUserId != null) {
             Assertions.assertEquals(eventRep3.getUserId(), consumerUserId);
         }
-        
+
         events.clear();
     }
 
@@ -138,7 +138,8 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
 
         // navigate to the account url of the consumer realm
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         // Do a wrong login with a user that does not exist
         loginPage.login("wrong-user", "wrong-password");
@@ -160,7 +161,8 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         UserRepresentation providerUser = providerRealm.users().search(bc.getUserLogin()).iterator().next();
         events.clear();
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         super.loginUser();
 
@@ -217,7 +219,8 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
 
         // now do the second login
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/master/app"));

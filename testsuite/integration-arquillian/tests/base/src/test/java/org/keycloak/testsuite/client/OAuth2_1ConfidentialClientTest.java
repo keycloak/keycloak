@@ -296,7 +296,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
     }
 
 

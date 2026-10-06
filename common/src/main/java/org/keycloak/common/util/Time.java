@@ -27,15 +27,26 @@ public class Time {
     private static volatile int offset;
 
     /**
-     * Returns current time in seconds adjusted by adding {@link #offset) seconds.
+     * Returns current time in seconds adjusted by adding {@link #offset} seconds.
      * @return see description
+     * @deprecated Use {@link #currentTimeSeconds()} to avoid integer overflow beyond year 2038.
      */
+    @Deprecated
     public static int currentTime() {
         return ((int) (System.currentTimeMillis() / 1000)) + offset;
     }
 
     /**
-     * Returns current time in milliseconds adjusted by adding {@link #offset) seconds.
+     * Returns current time in seconds adjusted by adding {@link #offset} seconds.
+     * Unlike {@link #currentTime()}, this method returns a {@code long} to avoid integer overflow beyond year 2038.
+     * @return see description
+     */
+    public static long currentTimeSeconds() {
+        return (System.currentTimeMillis() / 1000) + offset;
+    }
+
+    /**
+     * Returns current time in milliseconds adjusted by adding {@link #offset} seconds.
      * @return see description
      */
     public static long currentTimeMillis() {

@@ -211,6 +211,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         CacheConfigurator.configureNumOwners(config, holder);
         CacheConfigurator.validateWorkCacheConfiguration(holder);
         CacheConfigurator.ensureMinimumOwners(holder);
+        CacheConfigurator.ensureTimeoutOrdering(holder);
         if (JGroupsConfigurator.isClustered(holder)) {
             KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         }
@@ -240,7 +241,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     private static void createTopologyProperties(ProviderConfigurationBuilder builder) {
         builder.property()
                 .name(CLUSTER_NAME)
-                .helpText("Defines the name of the cluster. Only nodes with the same cluster name can discover each other and form a cluster. As invalidation of caches between clusters will not work, this will usually lead to stale data and incorrect behavior. Use only together with the experimental `cacheless` feature. (experimental)")
+                .helpText("Defines the name of the cluster. Only nodes with the same cluster name can discover each other and form a cluster. As invalidation of caches between clusters will not work, this will usually lead to stale data and incorrect behavior. Use only together with the `stateless` feature.")
                 .label("name")
                 .defaultValue("ISPN")
                 .type(ProviderConfigProperty.STRING_TYPE)

@@ -43,8 +43,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -83,9 +81,6 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -105,7 +100,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
@@ -124,7 +119,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
@@ -143,13 +138,13 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
     }
@@ -160,7 +155,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         // Refresh TOTP page
         driver.navigate().refresh();
@@ -169,7 +164,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll());
     }
@@ -179,7 +174,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
-        Assertions.assertTrue(loginPage.isCurrent());
+        loginPage.assertCurrent();
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
@@ -197,7 +192,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         // Assert attempted-username available
         loginPage.assertAttemptedUsernameAvailability(true);
@@ -276,12 +271,12 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login(newUser.getUsername(), getPassword("test-otp-user@localhost"));
 
-        Assertions.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(Base32.decode(rawSecret)));
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

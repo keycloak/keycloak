@@ -25,7 +25,7 @@ Elytron OIDC or SpringBoot. You can check the quickstarts also for the example o
 
 = Upgrade to PatternFly 5
 
-In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
+In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://v5-archive.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
 
 = Argon2 password hashing
 

@@ -46,11 +46,15 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import org.jboss.logging.Logger;
+
 /**
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
 public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHandler<IdpVerifyAccountLinkActionToken> {
+
+    private static final Logger logger = Logger.getLogger(IdpVerifyAccountLinkActionTokenHandler.class);
 
     public IdpVerifyAccountLinkActionTokenHandler() {
         super(
@@ -85,7 +89,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
         if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
-            return sendEmailAlreadyVerified(session, event, user);
+            return sendLinkConfirmedAlready(session, event, user, token);
         }
 
         AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
@@ -96,7 +100,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             AuthenticationSessionModel origAuthSession = asm.getAuthenticationSessionByIdAndClient(realm,
                     compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
             if (origAuthSession == null || origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
-                return sendEmailAlreadyVerified(session, event, user);
+                return sendLinkConfirmedAlready(session, event, user, token);
             }
 
             token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
@@ -115,8 +119,6 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     .createInfoPage();
         }
 
-        // verify user email as we know it is valid as this entry point would never have gotten here.
-        user.setEmailVerified(true);
         event.success();
 
         if (token.getOriginalCompoundAuthenticationSessionId() != null) {
@@ -134,6 +136,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
@@ -145,14 +148,24 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
     }
 
     private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
+        String externalId = token.getExternalId();
+        if (externalId == null || externalId.isBlank()) {
+            logger.warnf("Not storing email verification proof for user '%s' and identity provider '%s' because the external id is missing.",
+                    user.getId(), token.getIdentityProviderAlias());
+            return;
+        }
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
         String userId = user.getId();
         String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, externalId), singleObjectLifespan, Map.of());
     }
 
     public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
         if (user == null) {
+            return false;
+        }
+
+        if (externalId == null || externalId.isBlank()) {
             return false;
         }
 
@@ -171,11 +184,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
-    private Response sendEmailAlreadyVerified(KeycloakSession session, EventBuilder event, UserModel user) {
-        event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
+    private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {
+        event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
-                .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
+                .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                 .createInfoPage();
     }
 }

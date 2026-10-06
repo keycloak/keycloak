@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -14,6 +16,7 @@ import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -186,5 +189,25 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
 
         ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0);
         Assertions.assertDoesNotThrow(() -> managedRealm.admin().clients().get(client.getId()).getServiceAccountUser());
+    }
+
+    @Test
+    public void testIllegalSchemeBaseUrlPartialImport() {
+        setFail();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("evil-partial-import-test");
+        client.setEnabled(true);
+        client.setPublicClient(true);
+        client.setRedirectUris(List.of("http://localhost/*"));
+        client.setBaseUrl("javascript:confirm(document.domain)/*");
+        piRep.setClients(List.of(client));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            ErrorRepresentation errorRep = response.readEntity(ErrorRepresentation.class);
+            assertEquals(400, response.getStatus());
+            assertEquals("Failed to import client evil-partial-import-test: Base URL uses an illegal scheme", errorRep.getErrorMessage());
+        }
+
+        assertTrue(managedRealm.admin().clients().findByClientId("evil-partial-import-test").isEmpty());
     }
 }

@@ -18,8 +18,8 @@ Issues are important for administrative purposes such as generating a changelog 
 
 Here's a quick checklist for a good PR, more details below:
 
-1. A discussion around the change (https://github.com/keycloak/keycloak/discussions/categories/ideas)
-1. A GitHub Issue with a good description associated with the PR
+1. [A discussion around the change](https://github.com/keycloak/keycloak/discussions/categories/ideas)
+1. A GitHub issue with a good description associated with the PR
 1. One feature/change per PR
 1. One commit per PR
 1. PR rebased on main (`git rebase`, not `git pull`) 
@@ -32,7 +32,8 @@ Once you have submitted your PR please monitor it for comments/feedback. We rese
 you do not respond within 2 weeks (bear in mind you can always open a new PR if it is closed due to inactivity).
 
 Also, please remember that we do receive a fairly large amount of PRs and also have code to write ourselves, so we may
-not be able to respond to your PR immediately. The best place to ping us is on the thread you started on the dev mailing list.
+not be able to respond to your PR immediately. The best place to ping us is on the thread you started on the dev mailing
+list or on the GitHub discussion you started.
 
 ### Finding something to work on
 
@@ -57,6 +58,13 @@ Take your time to write a proper issue including a good summary and description.
 Remember this may be the first thing a reviewer of your PR will look at to get an idea of what you are proposing 
 and it will also be used by the community in the future to find about what new features and enhancements are included in 
 new releases.
+
+For the best guided experience, use the [issue templates](https://github.com/keycloak/keycloak/issues/new/choose) when creating an issue.
+Pick the right type:
+
+- **Bug Report** -- something is broken or not working as documented
+- **Enhancement Request** -- an improvement to an existing feature
+- **Feature Request** -- a new capability that does not exist today
 
 ### Implementing
 

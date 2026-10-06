@@ -1,16 +1,16 @@
 # Active maintainers
 
-* [Alexander Schwartz](https://github.com/ahus1)
-* [Marek Posolda](https://github.com/mposolda)
-* [Pedro Igor](https://github.com/pedroigor)
-* [Ricardo Martin](https://github.com/rmartinc)
-* [Sebastian Schuster](https://github.com/sschu)
-* [Stan Silvert](https://github.com/ssilvert)
-* [Steven Hawkins](https://github.com/shawkins)
-* [Stian Thorgersen](https://github.com/stianst) (project lead)
-* [Takashi Norimatsu](https://github.com/tnorimat)
-* [Thomas Darimont](https://github.com/thomasdarimont)
-* [Václav Muzikář](https://github.com/vmuzikar)
+* [Alexander Schwartz](https://github.com/ahus1) (IBM)
+* [Marek Posolda](https://github.com/mposolda) (IBM)
+* [Pedro Igor](https://github.com/pedroigor) (IBM)
+* [Ricardo Martin](https://github.com/rmartinc) (IBM)
+* [Sebastian Schuster](https://github.com/sschu) (Robert Bosch GmbH)
+* [Stan Silvert](https://github.com/ssilvert) (IBM)
+* [Steven Hawkins](https://github.com/shawkins) (IBM)
+* [Stian Thorgersen](https://github.com/stianst) (IBM) (project lead)
+* [Takashi Norimatsu](https://github.com/tnorimat) (Hitachi, Ltd.)
+* [Thomas Darimont](https://github.com/thomasdarimont) (Identity Tailor GmbH)
+* [Václav Muzikář](https://github.com/vmuzikar) (IBM)
 
 # Emeritus maintainers
 

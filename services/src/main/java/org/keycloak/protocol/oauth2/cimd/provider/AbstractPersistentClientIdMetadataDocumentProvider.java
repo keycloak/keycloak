@@ -20,6 +20,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientRegisterContext;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientRegisteredContext;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientUpdateContext;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientUpdatedContext;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
@@ -151,7 +155,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
 
             EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection());
             event.event(EventType.CLIENT_REGISTER);
-
+            session.clientPolicy().triggerOnEvent(new CimdClientRegisterContext(clientRep));
             ClientModel clientModel = ClientManager.createClient(session, realm, clientRep);
 
             if (clientRep.getDefaultRoles() != null) {
@@ -169,6 +173,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             }
 
             session.getContext().setClient(clientModel);
+            session.clientPolicy().triggerOnEvent(new CimdClientRegisteredContext(clientModel));
 
             clientRep = ModelToRepresentation.toRepresentation(clientModel, session);
 
@@ -231,6 +236,8 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
                 throw invalidClientMetadata("Client Identifier modified");
             }
 
+            session.clientPolicy().triggerOnEvent(new CimdClientUpdateContext(clientRep, clientModel));
+
             ClientResource.updateClientServiceAccount(session, clientModel, clientRep.isServiceAccountsEnabled());
             RepresentationToModel.updateClient(clientRep, clientModel, session);
             RepresentationToModel.updateClientProtocolMappers(clientRep, clientModel);
@@ -246,6 +253,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             event.client(clientRep.getClientId()).success();
 
             session.getContext().setClient(clientModel);
+            session.clientPolicy().triggerOnEvent(new CimdClientUpdatedContext(clientModel));
 
             clientModel = realm.getClientByClientId(clientRep.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());

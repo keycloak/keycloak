@@ -19,7 +19,6 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.junit.jupiter.api.Assertions;
@@ -36,14 +35,8 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "otp")
     private WebElement otpInput;
 
-    @FindBy(id = "password-token")
-    private WebElement passwordToken;
-
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
-
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
-    private WebElement loginErrorMessage;
 
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
@@ -58,14 +51,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         UIUtils.clickLink(submitButton);
     }
 
-    public String getAlertError() {
-        try {
-            return UIUtils.getTextFromElement(loginErrorMessage);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
-    }
-
     public String getInputError(){
         try {
             return UIUtils.getTextFromElement(totpInputCodeError);
@@ -78,13 +63,9 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("otp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-otp";
     }
 
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
@@ -131,16 +112,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
-    }
-
-
-    // Workaround, but works with HtmlUnit (WaitUtils.waitForElement doesn't). Find better solution for the future...
-    private void waitForElement(By by) {
-        Retry.executeWithBackoff((currentCount) -> {
-
-            driver.findElement(by);
-
-        }, 10, 10);
     }
 
 }

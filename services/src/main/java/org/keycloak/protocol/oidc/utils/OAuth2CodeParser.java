@@ -39,7 +39,7 @@ public class OAuth2CodeParser {
     private static final Logger logger = Logger.getLogger(OAuth2CodeParser.class);
 
     private static final Pattern DOT = Pattern.compile("\\.");
-    private static final String CACHE_KEY_PREFIX = "code:";
+    public static final String CACHE_KEY_PREFIX = "code:";
 
     /**
      * Will persist the code to the cache and return the object with the codeData and code correctly set
@@ -109,6 +109,14 @@ public class OAuth2CodeParser {
 
         if (!userSessionId.equals(persistedUserSessionId)) {
             logger.warnf("Code '%s' is bound to a different session", codeUUID);
+            return result.illegalCode();
+        }
+
+        String persistedClientUUID = result.codeData.getClientUUID();
+        // We allow "persistedClientUUID" to be null just because zero-downtime upgrade between micro versions (as older KC versions might not have clientUUID stored).
+        // This might be removed in the future version
+        if (persistedClientUUID != null && !clientUUID.equals(persistedClientUUID)) {
+            logger.warnf("Code is bound to a different client '%s'", clientUUID);
             return result.illegalCode();
         }
 

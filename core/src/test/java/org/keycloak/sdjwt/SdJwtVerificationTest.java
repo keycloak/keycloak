@@ -25,8 +25,10 @@ import java.util.function.Function;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.rule.CryptoInitRule;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -78,6 +80,47 @@ public abstract class SdJwtVerificationTest {
                 optionalTimeClaimVerificationOpts().build()
             );
         }
+    }
+
+    @Test
+    public void sdJwtVerificationShouldFail_WhenHeaderAlgorithmDiffersFromVerifierAlgorithm() {
+        SdJwt sdJwt = SdJwt.builder()
+                .withIssuerSignedJwt(exampleFlatSdJwtV1().build())
+                .withIssuerSigningContext(TestSettings.signerWithReportedAlgorithm(
+                        testSettings.issuerSigContext, Algorithm.ES384))
+                .build();
+
+        assertEquals(Algorithm.ES384, sdJwt.getIssuerSignedJWT().getJwsHeader().getRawAlgorithm());
+        assertEquals(Algorithm.ES256, testSettings.issuerVerifierContext.getAlgorithm());
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        optionalTimeClaimVerificationOpts().build())
+        );
+
+        assertEquals("Invalid Issuer-Signed JWT: Signature could not be verified", exception.getMessage());
+    }
+
+    @Test
+    public void sdJwtVerificationShouldFail_WhenHeaderAlgorithmIsMissing() {
+        SdJwt signedSdJwt = SdJwt.builder()
+                .withIssuerSignedJwt(exampleFlatSdJwtV1().build())
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
+        String jwsWithoutAlgorithm = TestUtils.removeAlgorithmFromJwsHeader(
+                signedSdJwt.getIssuerSignedJWT().getJws());
+        SdJwt sdJwt = new SdJwt(new IssuerSignedJWT(jwsWithoutAlgorithm), null);
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwt.verify(
+                        defaultIssuerVerifyingKeys(),
+                        optionalTimeClaimVerificationOpts().build())
+        );
+
+        assertEquals("Invalid Issuer-Signed JWT: Signature could not be verified", exception.getMessage());
     }
 
     @Test
@@ -493,6 +536,43 @@ public abstract class SdJwtVerificationTest {
         );
 
         assertTrue(exception.getMessage().startsWith("A digest was encountered more than once:"));
+    }
+
+    @Test
+    public void sdJwtVerificationShouldFail_IfDisclosureClaimNameAlreadyPresent() throws Exception {
+        // Build a real Disclosure for "given_name" along with its digest in the _sd array.
+        ObjectNode disclosedClaims = mapper.createObjectNode();
+        disclosedClaims.put("given_name", "Jane");
+
+        IssuerSignedJWT helper = exampleFlatSdJwtV2(disclosedClaims,
+                DisclosureSpec.builder()
+                              .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
+                              .build()).build();
+
+        String disclosure = helper.getDisclosureClaims().get(0).getDisclosureStrings().get(0);
+
+        // Keep the _sd digest but also surface "given_name" in plaintext, so the Disclosure
+        // collides with a claim already present at the same level.
+        ObjectNode tamperedPayload = helper.getPayload().deepCopy();
+        tamperedPayload.put("given_name", "John");
+
+        IssuerSignedJWT tampered = new IssuerSignedJWT(new JWSHeader(), tamperedPayload);
+        tampered.sign(testSettings.issuerSigContext);
+
+        SdJwtVerificationContext ctx =
+                new SdJwtVerificationContext(tampered, Collections.singletonList(disclosure));
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> ctx.verifyIssuance(
+                    defaultIssuerVerifyingKeys(),
+                    optionalTimeClaimVerificationOpts().build(),
+                    null
+                )
+        );
+
+        assertEquals("Disclosure claim name already present in the payload: given_name",
+                     exception.getMessage());
     }
 
     @Test

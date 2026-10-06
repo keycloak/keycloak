@@ -15,7 +15,7 @@
             "email": "kyale@foo.bar",
             "credentials": [
                 {
-                    "type": "Password",
+                    "type": "password",
                     "value": "password"
                 }
             ],

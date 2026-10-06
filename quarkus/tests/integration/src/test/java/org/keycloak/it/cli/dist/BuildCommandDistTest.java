@@ -144,4 +144,21 @@ class BuildCommandDistTest {
     void multiSiteDoesNotRequireRuntimeOptions(CLIResult cliResult) {
         cliResult.assertBuild();
     }
+    
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void deprecatedByDefaultWarning(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=dev-file");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
+        cliResult.assertNoMessage("Deprecated features enabled:");
+        
+        cliResult = runner.run("build", "--db=dev-file", "--features=identity-brokering-api:v2");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
+        
+        cliResult = runner.run("build", "--db=dev-file", "--features=identity-brokering-api");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
+    }
 }

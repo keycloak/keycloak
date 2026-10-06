@@ -16,13 +16,17 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 
 /**
@@ -41,6 +45,8 @@ public class VCIssuanceContext {
     private AuthenticationManager.AuthResult authResult;
 
     private List<JWK> attestedKeys;
+
+    private Map<String, JsonWebToken> verifiedCNonces = new LinkedHashMap<>();
 
 
     public CredentialBody getCredentialBody() {
@@ -81,6 +87,15 @@ public class VCIssuanceContext {
 
     public VCIssuanceContext setAttestedKeys(List<JWK> attestedKeys) {
         this.attestedKeys = attestedKeys;
+        return this;
+    }
+
+    public Map<String, JsonWebToken> getVerifiedCNonces() {
+        return Collections.unmodifiableMap(verifiedCNonces);
+    }
+
+    public VCIssuanceContext addVerifiedCNonce(String cNonce, JsonWebToken cNonceToken) {
+        verifiedCNonces.put(cNonce, cNonceToken);
         return this;
     }
 }

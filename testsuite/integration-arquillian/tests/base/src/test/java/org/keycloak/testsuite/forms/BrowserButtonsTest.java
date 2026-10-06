@@ -28,7 +28,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
@@ -47,6 +46,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.chrome.ChromeDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -79,9 +80,6 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
     @Rule
     public MailServer mail = new MailServer();
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -154,16 +152,19 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
+        driver.navigate().back();
+        if (driver instanceof ChromeDriver) {
+            driver.navigate().refresh();
+        }
+        loginExpiredPage.assertCurrent();
 
         // Click browser forward. Assert on "updateProfile" page again
         driver.navigate().forward();
         updatePasswordPage.assertCurrent();
 
-
         // Successfully update password and assert user logged
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private void updateProfile() {
@@ -216,7 +217,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Successfully update password and assert user logged
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -247,7 +248,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Confirm consent. Assert authenticated
         grantPage.accept();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 

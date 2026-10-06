@@ -10,6 +10,21 @@ export type { default as OrganizationInvitationRepresentation } from "./defs/org
 export { OrganizationInvitationStatus } from "./defs/organizationInvitationRepresentation.js";
 
 export { Groups } from "./resources/groups.js";
+export { Ssf } from "./resources/ssf.js";
+export type {
+  SsfAdminSubjectRequest,
+  SsfAdminSubjectResponse,
+  SsfClientStreamRepresentation,
+  SsfConfigRepresentation,
+  SsfDeleteEventsResponse,
+  SsfEmitEventRequest,
+  SsfEmitEventResponse,
+  SsfEventRepresentation,
+  SsfEventStatsRepresentation,
+  SsfStreamConfigInputRepresentation,
+  SsfStreamDeliveryConfig,
+  SsfStreamStatusRepresentation,
+} from "./defs/ssfRepresentation.js";
 // V2 API types (Kiota-generated)
 export type {
   OIDCClientRepresentation,

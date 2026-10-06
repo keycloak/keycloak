@@ -22,8 +22,28 @@ public enum EmitEventStatus {
     /** Subject couldn't be resolved to a Keycloak user or organization. */
     SUBJECT_NOT_FOUND("subject_not_found"),
 
+    /**
+     * Complex subject carries both a user and a tenant subject member, but the
+     * resolved user is not a member of the resolved organization. Such
+     * a subject is internally inconsistent — accepting it would let an
+     * emitter attach any subscribed tenant to any user and ride the
+     * tenant's subscription past the per-user subject filter
+     * (keycloak/keycloak#50812), and would present the receiver a
+     * user↔tenant association Keycloak knows to be false.
+     */
+    SUBJECT_MISMATCH("subject_mismatch"),
+
     /** Receiver has no SSF stream registered yet. */
     STREAM_NOT_FOUND("stream_not_found"),
+
+    /**
+     * Receiver is a configured SSF receiver but its Keycloak client is
+     * currently disabled. The stream configuration is intact; re-enabling
+     * the client resumes delivery. Mirrors the dispatch-path gate so the
+     * synthetic emitter cannot deliver to a receiver the operator has
+     * switched off (keycloak/keycloak#50050).
+     */
+    RECEIVER_DISABLED("receiver_disabled"),
 
     /** The stream exists but has no delivery configuration. */
     NO_DELIVERY_CONFIG("no_delivery_config"),

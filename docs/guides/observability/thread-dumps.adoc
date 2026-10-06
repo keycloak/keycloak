@@ -1,0 +1,101 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Troubleshooting performance issues using JVM thread dumps"
+summary="Capture JVM thread dumps of a {project_name} server to diagnose performance issues"
+>
+
+== What is a thread dump?
+
+A JVM thread dump is a snapshot of all active threads in the JVM at a specific point in time.
+
+Thread dumps are useful for diagnosing issues such as thread contention, deadlocks, CPU spikes, or stuck I/O operations.
+
+== How to capture a JVM thread dump
+
+There are several ways to capture a thread dump. This guide uses `jcmd` as it provides the most straightforward command-line experience.
+
+The `jcmd` tool sends diagnostic commands to a running JVM. There are two commands relevant to capturing thread dumps: `Thread.print` and `Thread.dump_to_file`.
+
+The `Thread.print` command lacks detailed information about virtual threads.
+The `Thread.dump_to_file` command lacks information about locks and object monitors on JDK versions prior to JDK 25.
+It also omits some JVM-internal and OS-level information that `Thread.print` includes.
+
+To form a comprehensive picture of the JVM state, create thread dumps using both the `Thread.print` and the `Thread.dump_to_file` commands, and provide them to an engineer for analysis.
+
+=== Using the `Thread.print` command
+
+The following command prints a thread dump to the standard output.
+
+[source]
+----
+jcmd <PID> Thread.print -l #<1>
+----
+<1> The `-l` option enables printing of additional information about locks.
+
+=== Using the `Thread.dump_to_file` command
+
+The following command writes a thread dump to a file in plain-text format.
+
+[source]
+----
+jcmd <PID> Thread.dump_to_file thread_dump.txt
+----
+
+The following command writes a thread dump to a file in JSON format.
+
+[source]
+----
+jcmd <PID> Thread.dump_to_file -format=json thread_dump.json
+----
+
+Compared with the plain-text format, the JSON output contains additional information about the thread container hierarchy.
+
+NOTE: If the filename argument is not an absolute path, the thread dump will be created in the current working directory of the target process.
+
+Running the `jcmd` command without arguments lists the Java processes running on the system and their PIDs.
+
+[source]
+----
+jcmd
+----
+
+Example output:
+[source]
+----
+242551 io.quarkus.bootstrap.runner.QuarkusEntryPoint start ... #<1>
+268778 jdk.jcmd/sun.tools.jcmd.JCmd
+----
+<1> Assuming {project_name} is the only Quarkus-based application running on the system, its PID in this example would be `242551`.
+
+The following script demonstrates simple PID auto-detection:
+[source]
+----
+#!/bin/bash -e
+PID=$(jcmd | grep -m1 QuarkusEntryPoint | awk '{print $1}')
+if [ -z "$PID" ]; then
+  echo "Process not found."
+  exit 1
+fi
+jcmd "$PID" Thread.print -l > thread_dump_print.txt
+jcmd "$PID" Thread.dump_to_file "$PWD/thread_dump_to_file.txt"
+----
+
+== Collecting multiple samples
+
+Because a single thread dump captures only one moment in time, it is recommended to capture multiple thread dumps over a short period -- for example, three to four samples spaced one to two seconds apart.
+This allows you to see which threads are blocked and which are making progress.
+
+For example, assuming the `PID` variable is set, the following script captures four thread dumps two seconds apart:
+[source,bash]
+----
+<#noparse>
+for i in {1..4}; do
+  jcmd "$PID" Thread.print -l > "thread_dump_print_${i}.txt"
+  jcmd "$PID" Thread.dump_to_file "$PWD/thread_dump_to_file_${i}.txt"
+  sleep 2
+done
+</#noparse>
+----
+
+</@tmpl.guide>

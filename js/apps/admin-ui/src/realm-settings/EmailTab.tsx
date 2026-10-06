@@ -46,6 +46,7 @@ export const RealmSettingsEmailTab = ({
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
+  const canLinkToCurrentUserSettings = !!currentUser.realm && !!currentUser.id;
 
   const form = useForm<FormFields>({ defaultValues: realm });
   const { control, handleSubmit, watch, reset: resetForm, getValues } = form;
@@ -369,20 +370,22 @@ export const RealmSettingsEmailTab = ({
                     userName: currentUser.username,
                   })}
                   actionLinks={
-                    <AlertActionLink
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toUser({
-                            realm: currentUser.realm!,
-                            id: currentUser.id!,
-                            tab: "settings",
-                          })}
-                        />
-                      )}
-                    >
-                      {t("testConnectionHint.withoutEmailAction")}
-                    </AlertActionLink>
+                    canLinkToCurrentUserSettings ? (
+                      <AlertActionLink
+                        component={(props) => (
+                          <Link
+                            {...props}
+                            to={toUser({
+                              realm: currentUser.realm!,
+                              id: currentUser.id!,
+                              tab: "settings",
+                            })}
+                          />
+                        )}
+                      >
+                        {t("testConnectionHint.withoutEmailAction")}
+                      </AlertActionLink>
+                    ) : undefined
                   }
                 />
               )}

@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
@@ -79,6 +81,29 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @return Stream of desired roles. Never returns {@code null}.
      */
     Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max);
+
+    /**
+     * Returns the direct composite child roles of all the given parent roles, de-duplicated.
+     * <p>
+     * This is the bulk counterpart of {@link RoleModel#getCompositesStream()}: it lets callers expand
+     * a composite-role tree one breadth-first level at a time with a single lookup per level instead
+     * of one per role. The default implementation resolves each parent individually; storage-backed
+     * providers should override it with a batched lookup.
+     *
+     * @param realm Realm. Cannot be {@code null}.
+     * @param parentRoleIds Ids of the roles whose direct composite children should be returned.
+     * @return Stream of the child roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        return parentRoleIds.stream()
+                .map(id -> getRoleById(realm, id))
+                .filter(Objects::nonNull)
+                .flatMap(RoleModel::getCompositesStream)
+                .distinct();
+    }
 
     /**
      * Removes given realm role from the given realm.

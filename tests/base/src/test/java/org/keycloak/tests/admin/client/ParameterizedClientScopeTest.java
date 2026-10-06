@@ -5,7 +5,6 @@ import java.util.HashMap;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -13,6 +12,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.utils.matchers.Matchers;
 
 import org.junit.jupiter.api.Assertions;
@@ -80,12 +80,9 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
             put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
 
-        try {
-            clientScopes().get(scopeDefId).update(scopeRep);
-            Assertions.fail("This update should fail");
-        } catch (ClientErrorException ex) {
-            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        }
+        ClientErrorException ex = Assertions.assertThrows(ClientErrorException.class, () -> clientScopes().get(scopeDefId).update(scopeRep),
+                "This update should fail");
+        assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
     }
 
     @Test
@@ -97,26 +94,19 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
 
         String optionalClientScopeId = createClientScopeWithCleanup(parameterizedScopeRep("optional-dynamic-client-scope", "string"));
 
-        try {
-            ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
-            clientResource.addDefaultClientScope(optionalClientScopeId);
-            Assertions.fail("A Parameterized Scope shouldn't be assigned as a default scope to a client");
-        } catch (ClientErrorException ex) {
-            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        }
-
+        ClientErrorException ex = Assertions.assertThrows(ClientErrorException.class, () ->
+                        managedRealm.admin().clients().get(clientUuid).addDefaultClientScope(optionalClientScopeId),
+                "A Parameterized Scope shouldn't be assigned as a default scope to a client");
+        assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
     }
 
     @Test
     public void parameterizedClientScopeCannotBeAssignedAsRealmDefaultClientScope() {
         String parameterizedScopeId = createClientScopeWithCleanup(parameterizedScopeRep("dynamic-scope-for-realm-default", "string"));
 
-        try {
-            managedRealm.admin().addDefaultDefaultClientScope(parameterizedScopeId);
-            Assertions.fail("A Parameterized Scope should not be assigned as a realm default scope");
-        } catch (ClientErrorException ex) {
-            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        }
+        ClientErrorException ex = Assertions.assertThrows(ClientErrorException.class, () -> managedRealm.admin().addDefaultDefaultClientScope(parameterizedScopeId),
+                "A Parameterized Scope should not be assigned as a realm default scope");
+        assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
     }
 
     @Test
@@ -144,12 +134,10 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
             put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
         }});
 
-        try {
-            clientScopes().get(scopeId).update(scopeRep);
-            Assertions.fail("A Realm Default Scope should not be made parameterized");
-        } catch (ClientErrorException ex) {
-            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        }
+        ClientErrorException ex = Assertions.assertThrows(ClientErrorException.class, () ->
+                        clientScopes().get(scopeId).update(scopeRep),
+                "A Realm Default Scope should not be made parameterized");
+        assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
     }
 
     @Test
@@ -206,19 +194,14 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
     }
 
     private ClientScopeRepresentation parameterizedScopeRep(String name, String type, String regexp) {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName(name);
-        scopeRep.setProtocol("openid-connect");
-        HashMap<String, String> attrs = new HashMap<>();
-        attrs.put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+        ParameterizedScopeBuilder builder = ParameterizedScopeBuilder.create(name);
         if (type != null) {
-            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, type);
+            builder.parameterizedScopeType(type);
         }
         if (regexp != null) {
-            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp);
+            builder.regexp(regexp);
         }
-        scopeRep.setAttributes(attrs);
-        return scopeRep;
+        return builder.build();
     }
 
     public static class ParameterizedClientScopeServerConfig implements KeycloakServerConfig {

@@ -11,12 +11,16 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 
 
@@ -89,18 +93,23 @@ public class GroupUtils {
             while (currGroup.getParentId() != null && !currGroup.getParentId().equals(stopAtParentId)) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
-                // Permission check for parent
-                if (!filter.shouldInclude(parentModel)) {
-                    groupIdToGroups.remove(currGroup.getId());
-                    break;
+                boolean canViewParent = filter.shouldInclude(parentModel);
+
+                if (!canViewParent) {
+                    if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        groupIdToGroups.remove(currGroup.getId());
+                        break;
+                    }
                 }
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(
                     currGroup.getParentId(),
-                    id -> mapper.apply(parentModel)
+                    id -> canViewParent ?
+                            mapper.apply(parentModel) :
+                            ModelToRepresentation.groupToBriefRepresentation(parentModel)
                 );
 
-                if (subGroupsCount) {
+                if (subGroupsCount && canViewParent) {
                     populateSubGroupCount(parentModel, parent);
                 }
 
@@ -124,6 +133,10 @@ public class GroupUtils {
             }
         });
 
+        if (subGroupsCount) {
+            groupIdToGroups.values().forEach(GroupUtils::deriveSubGroupCountFromChildren);
+        }
+
         return groupIdToGroups.values().stream()
             .sorted(Comparator.comparing(GroupRepresentation::getName));
     }
@@ -144,14 +157,7 @@ public class GroupUtils {
             groups,
             // Mapper with permission-aware representation
             group -> toRepresentation(groupEvaluator, group, full),
-            // Filter with permission checks
-            group -> {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return true; // FGAP v2 handles permissions differently
-                }
-                //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
-                return groupEvaluator.canView() || groupEvaluator.canView(group);
-            },
+            groupEvaluator::canView,
             subGroupsCount
         );
     }
@@ -180,6 +186,15 @@ public class GroupUtils {
         );
     }
 
+    private static void deriveSubGroupCountFromChildren(GroupRepresentation group) {
+        if (group.getSubGroups() != null) {
+            group.getSubGroups().forEach(GroupUtils::deriveSubGroupCountFromChildren);
+            if (group.getSubGroupCount() == null && !group.getSubGroups().isEmpty()) {
+                group.setSubGroupCount((long) group.getSubGroups().size());
+            }
+        }
+    }
+
     /**
      * This method's purpose is to look up the subgroup count of a Group and populate it on the representation. This has been kept separate from
      * {@link #toRepresentation} in order to keep database lookups separate from a function that aims to only convert objects
@@ -192,6 +207,68 @@ public class GroupUtils {
     public static GroupRepresentation populateSubGroupCount(GroupModel group, GroupRepresentation representation) {
         representation.setSubGroupCount(group.getSubGroupsCount());
         return representation;
+    }
+
+    /**
+     * Removes role and client entries from a {@link GroupRepresentation} that the caller
+     * is not authorized to view. Recurses into subgroups.
+     */
+    public static void filterRolesInRepresentation(GroupRepresentation rep, RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth) {
+        if (rep.getClientRoles() != null) {
+            rep.getClientRoles().entrySet().removeIf(entry -> {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                // No client-level gate: canView(role) falls back to canMapRole(role),
+                // which makes roles visible even without viewing the client. (PR #52754)
+                if (client == null) {
+                    return true;
+                }
+                List<String> roles = entry.getValue();
+                roles.removeIf(roleName -> {
+                    RoleModel role = session.roles().getClientRole(client, roleName);
+                    return role == null || !auth.roles().canView(role);
+                });
+                return roles.isEmpty();
+            });
+        }
+
+        if (rep.getRealmRoles() != null) {
+            rep.getRealmRoles().removeIf(roleName -> {
+                RoleModel role = realm.getRole(roleName);
+                return role == null || !auth.roles().canView(role);
+            });
+        }
+
+        if (rep.getSubGroups() != null) {
+            rep.getSubGroups().forEach(sub -> filterRolesInRepresentation(sub, realm, session, auth));
+        }
+    }
+
+    /**
+     * Checks that the caller is allowed to map every admin role the group (and its parents) grant.
+     * Walks into composite roles to find nested admin roles.
+     * Throws {@link jakarta.ws.rs.ForbiddenException} if the group carries admin roles the caller cannot map.
+     */
+    public static void checkAdminGroupRoles(GroupModel group, AdminPermissionEvaluator auth) {
+        if (!AdminRoles.groupHasAdminRoles(group)) {
+            return;
+        }
+        GroupModel current = group;
+        while (current != null) {
+            current.getRoleMappingsStream().forEach(role -> requireMapRoleRecursive(role, auth, new HashSet<>()));
+            current = current.getParent();
+        }
+    }
+
+    private static void requireMapRoleRecursive(RoleModel role, AdminPermissionEvaluator auth, Set<String> visited) {
+        if (!visited.add(role.getId())) {
+            return;
+        }
+        if (AdminRoles.isAdminRole(role)) {
+            auth.roles().requireMapRole(role);
+        }
+        if (role.isComposite()) {
+            role.getCompositesStream().forEach(child -> requireMapRoleRecursive(child, auth, visited));
+        }
     }
 
     //From org.keycloak.admin.ui.rest.GroupsResource

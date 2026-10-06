@@ -51,6 +51,7 @@ import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -167,6 +168,7 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));
         map.put("properties", theme.getProperties());
+        map.put("themeResources", ThemeResourcesParser.parse(theme.getProperties()));
         map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                 && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {

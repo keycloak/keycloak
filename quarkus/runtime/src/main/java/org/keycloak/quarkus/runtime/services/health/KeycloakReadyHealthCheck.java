@@ -25,12 +25,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.agroal.api.AgroalDataSource;
-import io.agroal.api.AgroalDataSourceMetrics;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
-import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
+import io.smallrye.context.api.ManagedExecutorConfig;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
@@ -38,10 +37,9 @@ import org.eclipse.microprofile.health.Readiness;
 /**
  * Keycloak Healthcheck Readiness Probe.
  * <p>
- * Performs a hybrid between the passive and the active mode. If there are no healthy connections in the pool,
- * it invokes the standard <code>DataSourceHealthCheck</code> that creates a new connection and checks if it's valid.
+ * Converts the standard <code>DataSourceHealthCheck</code> that waits for a connection and checks if it's valid, to an async check with a
+ * dedicated pool to control load shedding.
  * <p>
- * While the check for healthy connections is non-blocking, the standard check is blocking, so it needs to be wrapped.
  *
  * @see <a href="https://github.com/keycloak/keycloak-community/pull/55">Healthcheck API Design</a>
  */
@@ -58,38 +56,31 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
 
     @Inject
-    AgroalDataSource agroalDataSource;
-
-    @Inject
-    QuarkusAsyncHealthCheckFactory healthCheckFactory;
-
-    @Inject
     DataSourceHealthCheck dataSourceHealthCheck;
+
+    @Inject
+    @ManagedExecutorConfig(maxAsync = 1, maxQueued = 20)
+    ManagedExecutor executor;
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
     public Uni<HealthCheckResponse> call() {
+        Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
+        return uni.runSubscriptionOn(executor);
+    }
+
+    private HealthCheckResponse syncCheck() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
-        AgroalDataSourceMetrics metrics = agroalDataSource.getMetrics();
-        long activeCount = metrics.activeCount();
-        long invalidCount = metrics.invalidCount();
-        if (activeCount < 1 || invalidCount > 0) {
-            return healthCheckFactory.callSync(() -> {
-                HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
-                if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
-                    builder.down();
-                    Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
-                    builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
-                } else {
-                    failingSince.set(null);
-                }
-                return builder.build();
-            });
+        HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
+        if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
+            builder.down();
+            Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
+            builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
         } else {
             failingSince.set(null);
-            return healthCheckFactory.callAsync(() -> Uni.createFrom().item(builder.build()));
         }
+        return builder.build();
     }
 
     static Instant createInstanceIfNeeded(Instant instant) {

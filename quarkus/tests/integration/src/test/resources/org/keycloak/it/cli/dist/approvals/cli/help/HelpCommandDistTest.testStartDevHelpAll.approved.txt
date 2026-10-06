@@ -38,6 +38,16 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the
                        clientSessions cache. Available only when embedded Infinispan clusters
                        configured.
+--cache-embedded-cluster-name <name>
+                     Name of the embedded Infinispan cluster. All nodes that belong to the same
+                       Keycloak deployment must share the same value; nodes that belong to
+                       different deployments sharing the same database must each use a different
+                       value. Defaults to 'ISPN' if not set. WARNING: Using distinct cluster names
+                       without enabling the stateless feature disables cross-cluster cache
+                       invalidation, which leads to stale caches and incorrect behavior. Use only
+                       together with '--features=stateless'. Available only when Infinispan
+                       clustered embedded is enabled. Required when feature 'stateless' is set and
+                       embedded Infinispan is enabled.
 --cache-embedded-crl-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the crl cache.
 --cache-embedded-keys-max-count <max-count>
@@ -83,6 +93,10 @@ Cache:
                        only if it is different to cache-embedded-network-bind-port, for example
                        when this instance is behind a firewall Available only when Infinispan
                        clustered embedded is enabled.
+--cache-embedded-node-name <name>
+                     Name of this node in the embedded cluster. Used in log messages and management
+                       tools to identify this instance. If not set, a name is generated
+                       automatically. Available only when Infinispan clustered embedded is enabled.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan
@@ -231,6 +245,9 @@ Database - additional datasources:
 --db-enabled-<datasource> <true|false>
                      If the named datasource <datasource> should be enabled at runtime. Default:
                        true.
+--db-health-exclude-<datasource> <true|false>
+                     If you have enabled health endpoints, but want the given datasource excluded
+                       from the health check. Default: false.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. Possible values are:
                        dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
@@ -394,6 +411,9 @@ HTTP(S):
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
                      The file path to a private key in PEM format.
+--https-certificate-key-file-password <password>
+                     The password to decrypt an encrypted private key in PEM format (encrypted
+                       PKCS#8).
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
                        referenced by https-* options. May be an ISO 8601 duration value, an integer
@@ -524,6 +544,12 @@ Management:
                        given, the value is inherited from HTTP options. Relevant only when
                        something is exposed on the management interface - see the guide for
                        details. Available only when http-management-scheme is inherited.
+--https-management-certificate-key-file-password <password>
+                     The password to decrypt an encrypted private key in PEM format for the
+                       management server. If not given, the value is inherited from HTTP options.
+                       Relevant only when something is exposed on the management interface - see
+                       the guide for details. Available only when http-management-scheme is
+                       inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
                        referenced by https-management-* options for the management server. May be

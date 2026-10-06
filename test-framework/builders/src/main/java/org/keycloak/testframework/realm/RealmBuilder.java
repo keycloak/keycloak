@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -158,6 +160,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder identityProviderMappers(IdentityProviderMapperBuilder... identityProviderMappers) {
+        rep.setIdentityProviderMappers(combine(rep.getIdentityProviderMappers(), identityProviderMappers));
+        return this;
+    }
+
+    public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        return this;
+    }
+
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
@@ -223,6 +235,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder browserSecurityHeader(String name, String value) {
+        rep.setBrowserSecurityHeaders(createIfNull(rep.getBrowserSecurityHeaders(), HashMap::new));
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
     public RealmBuilder setEventsListeners(List<String> eventListeners) {
         rep.setEventsListeners(eventListeners);
         return this;
@@ -231,6 +249,10 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
     public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
         return this;
+    }
+
+    public RealmBuilder adminEventsExpiration(long adminEventsExpiration) {
+        return attribute(RealmAttributes.ADMIN_EVENTS_EXPIRATION, String.valueOf(adminEventsExpiration));
     }
 
     public RealmBuilder internationalizationEnabled(boolean enabled) {
@@ -382,6 +404,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder otpCodeReusable(Boolean reusable) {
+        rep.setOtpPolicyCodeReusable(reusable);
+        return this;
+    }
+
     public RealmBuilder passwordPolicy(String passwordPolicy) {
         rep.setPasswordPolicy(passwordPolicy);
         return this;
@@ -394,6 +421,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder failureFactor(int count) {
         rep.setFailureFactor(count);
+        return this;
+    }
+
+    public RealmBuilder maxSecondaryAuthFailures(int count) {
+        rep.setMaxSecondaryAuthFailures(count);
         return this;
     }
 
@@ -464,23 +496,41 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder webAuthn(boolean passwordless, Consumer<WebAuthnRealmData.Builder> webAuthnRealmData) {
+        WebAuthnRealmData.Builder builder = new WebAuthnRealmData.Builder(rep, passwordless);
+        webAuthnRealmData.accept(builder);
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicySignatureAlgorithms(List<String> algorithms) {
         rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyAttestationConveyancePreference(String preference) {
         rep.setWebAuthnPolicyAttestationConveyancePreference(preference);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyAuthenticatorAttachment(String attachment) {
         rep.setWebAuthnPolicyAuthenticatorAttachment(attachment);
         return this;
     }
 
     /**
-     * @deprecated Use {@link #webAuthnPolicyResidentKey(String)} instead.
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
      */
     @Deprecated
     public RealmBuilder webAuthnPolicyRequireResidentKey(String requireResidentKey) {
@@ -488,53 +538,89 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyResidentKey(String residentKey) {
         rep.setWebAuthnPolicyResidentKey(residentKey);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyUserVerificationRequirement(String requirement) {
         rep.setWebAuthnPolicyUserVerificationRequirement(requirement);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyRpEntityName(String entityName) {
         rep.setWebAuthnPolicyRpEntityName(entityName);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyRpId(String rpId) {
         rep.setWebAuthnPolicyRpId(rpId);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyCreateTimeout(Integer timeout) {
         rep.setWebAuthnPolicyCreateTimeout(timeout);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyAvoidSameAuthenticatorRegister(Boolean register) {
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(register);
         return this;
     }
 
-    public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
-        rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
+public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
+        rep.setWebAuthnPolicyPasswordlessSignatureAlgorithms(algorithms);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessAttestationConveyancePreference(String preference) {
         rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference(preference);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessAuthenticatorAttachment(String attachment) {
         rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment(attachment);
         return this;
     }
 
     /**
-     * @deprecated Use {@link #webAuthnPolicyPasswordlessResidentKey(String)} instead.
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
      */
     @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String requireResidentKey) {
@@ -542,43 +628,93 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessResidentKey(String residentKey) {
         rep.setWebAuthnPolicyPasswordlessResidentKey(residentKey);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessUserVerificationRequirement(String requirement) {
         rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(requirement);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessRpEntityName(String entityName) {
         rep.setWebAuthnPolicyPasswordlessRpEntityName(entityName);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessCreateTimeout(Integer timeout) {
         rep.setWebAuthnPolicyPasswordlessCreateTimeout(timeout);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(Boolean register) {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(register);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessPasskeysEnabled(Boolean enabled) {
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(enabled);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyPasswordlessMediation(String mediation) {
         rep.setWebAuthnPolicyPasswordlessMediation(mediation);
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
     public RealmBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyPasswordlessAcceptableAaguids(List<String> aaguids) {
+        rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link #webAuthn(boolean, Consumer)} instead.
+     */
+    @Deprecated
+    public RealmBuilder webAuthnPolicyPasswordlessRpId(String rpId) {
+        rep.setWebAuthnPolicyPasswordlessRpId(rpId);
         return this;
     }
 
@@ -608,6 +744,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder defaultClientScopes(String... clientScopes) {
+        rep.setDefaultDefaultClientScopes(combine(rep.getDefaultDefaultClientScopes(), clientScopes));
+        return this;
+    }
+
     public RealmBuilder addClientScopeRealmRoleMapping(String clientScopeName, String... roleNames) {
         ScopeMappingRepresentation mapping = rep.clientScopeScopeMapping(clientScopeName);
         for (String roleName : roleNames) {
@@ -633,6 +774,26 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder accountTheme(String accountTheme) {
         rep.setAccountTheme(accountTheme);
+        return this;
+    }
+
+    public RealmBuilder loginTheme(String loginTheme) {
+        rep.setLoginTheme(loginTheme);
+        return this;
+    }
+
+    public RealmBuilder permanentLockout(boolean permanentLockout) {
+        rep.setPermanentLockout(permanentLockout);
+        return this;
+    }
+
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
+        return this;
+    }
+
+    public RealmBuilder maxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
         return this;
     }
 

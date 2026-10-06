@@ -18,7 +18,9 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.List;
 
+import org.keycloak.events.Errors;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.provider.Provider;
 
 /**
@@ -83,6 +85,28 @@ public interface CredentialOfferProvider extends Provider {
             String targetUserId,
             Integer expireAt
     );
+
+    /**
+     * Creates a credential offer with a {@code long} expiration timestamp.
+     * <p>
+     * The overload preserves compatibility with providers implementing the original {@link Integer}-based SPI. Providers
+     * that need to support expiration timestamps beyond the integer range can override this method directly.
+     */
+    default CredentialOfferState createCredentialOffer(
+            UserModel user,
+            String grantType,
+            List<String> credentialConfigurationIds,
+            String targetClientId,
+            String targetUserId,
+            long expireAt
+    ) {
+        if (expireAt < Integer.MIN_VALUE || expireAt > Integer.MAX_VALUE) {
+            throw new CredentialOfferException(Errors.INVALID_REQUEST,
+                    "Credential offer expiration is outside the integer range supported by this provider: " + expireAt);
+        }
+        return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
+                Integer.valueOf((int) expireAt));
+    }
 
     @Override
     default void close() {

@@ -47,7 +47,7 @@ export const DetailOrganizationHeader = ({
       try {
         await adminClient.organizations.delById({ id });
         addAlert(t("organizationDeletedSuccess"));
-        navigate(toOrganizations({ realm }));
+        void navigate(toOrganizations({ realm }));
       } catch (error) {
         addError("organizationDeleteError", error);
       }

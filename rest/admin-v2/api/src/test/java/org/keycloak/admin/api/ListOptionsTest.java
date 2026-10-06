@@ -23,4 +23,13 @@ public class ListOptionsTest {
         assertEquals(Set.of("a", "b"), options.getFields());
     }
 
+    @Test
+    void testAddSortFields() {
+        ListOptions options = new ListOptions();
+        options.addSortField("field");
+        assertEquals("field", options.getSort());
+        options.addSortField("field2", false);
+        assertEquals("field,field2|DESC", options.getSort());
+    }
+
 }

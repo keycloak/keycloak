@@ -67,11 +67,14 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     public void setShouldAttachRoute(boolean shouldAttachRoute) {
         this.shouldAttachRoute = shouldAttachRoute;
         log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
+        if (shouldAttachRoute) {
+            log.warn("The option `shouldAttachRoute` is deprecated and will be removed in a future release. Disable it by setting `spi-sticky-session-encoder--infinispan--should-attach-route` to `false`");
+        }
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             clustered = false;
             return;
         }

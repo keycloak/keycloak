@@ -44,9 +44,9 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
             // The em.refresh() will discard any non-persisted changes.
             // To ensure that no other instance has modified it, we need to ensure that there is only one instance
             // of UserLoginFailureAdapter per entity. The JpaUserLoginFailureProvider ensures this within the current session aka transaction.
-            // When using this pattern, one needs to ensure that the caller is not issuing updates on the entity based on previously read (and possibly stale) values.
-            // Looking at the current implementation of DefaultBruteForceProtector, this is not the case as once a success or failure is identified,
-            // it then only updates the state.
+            // Callers must not make decisions based on values read before this lock is acquired —
+            // DefaultBruteForceProtector.failure() triggers this lock before reading lastFailure
+            // so that the delta-time check uses post-lock data.
             em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
             locked = true;
         }
@@ -97,6 +97,10 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
 
     @Override
     public void clearFailures() {
+        if (entity.getFailedLoginNotBefore() == 0 && entity.getNumFailures() == 0 && entity.getNumTemporaryLockouts() == 0 && entity.getLastFailure() == 0 && entity.getLastIPFailure() == null) {
+            // Fast exit to avoid locking the database entry on successful logins
+            return;
+        }
         ensureLocked();
         entity.setFailedLoginNotBefore(0);
         entity.setNumFailures(0);
@@ -141,6 +145,11 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     @Override
     public void clearPrimaryAndSecondaryAuthFailures() {
         clearFailures();
+        if (entity.getNumSecondaryAuthFailures() == 0) {
+            // Fast exit to avoid locking the database entry on successful logins
+            return;
+        }
+        ensureLocked();
         entity.setNumSecondaryAuthFailures(0);
     }
 

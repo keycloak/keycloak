@@ -20,7 +20,9 @@ package org.keycloak.sessions;
 import java.util.Map;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -56,6 +58,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * Removes provided root authentication session.
      * @param realm {@code RealmModel} Associated realm to the given root authentication session.
      * @param authenticationSession {@code RootAuthenticationSessionModel} Can't be {@code null}.
+     * @throws NullPointerException if {@code realm} or {@code authenticationSession} is {@code null}.
+     * @throws ModelException if the authentication session does not belong to the given realm.
      */
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
@@ -78,6 +82,17 @@ public interface AuthenticationSessionProvider extends Provider {
      */
     @Deprecated(since = "19.0", forRemoval = true)
     default void removeExpired(RealmModel realm) {}
+
+    /**
+     * Removes all root authentication sessions of the given realm that hold an in-progress authentication session
+     * for the given authenticated user, except for the provided root authentication session id.
+     *
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param user {@code UserModel} Can't be {@code null}.
+     * @param rootAuthenticationSessionIdToKeep optional id of a root authentication session to keep.
+     */
+    default void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+    }
 
     /**
      * Removes all associated root authentication sessions to the given realm which was removed.

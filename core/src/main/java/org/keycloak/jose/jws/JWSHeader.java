@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -166,7 +166,7 @@ public class JWSHeader implements JOSEHeader {
 
     public String toString() {
         try {
-            return JsonSerialization.writeValueAsString(this);
+            return KeycloakJsonMapperFactory.mapper().writeValueAsString(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

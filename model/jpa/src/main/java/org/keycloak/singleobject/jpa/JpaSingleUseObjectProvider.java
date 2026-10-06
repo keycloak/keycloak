@@ -18,12 +18,14 @@
 package org.keycloak.singleobject.jpa;
 
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 
@@ -43,21 +45,23 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
 
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        Objects.requireNonNull(key);
         if (lifespanSeconds <= 0) {
             throw new IllegalArgumentException("lifespanSeconds must be positive");
         }
         getEntityManager().createNamedQuery("insertOrOverwriteSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
-                .setParameter("expire", Time.currentTime() + lifespanSeconds)
+                .setParameter("expire", Time.currentTimeSeconds() + lifespanSeconds)
                 .executeUpdate();
     }
 
     @Override
     public Map<String, String> get(String key) {
+        Objects.requireNonNull(key);
         var notes = getEntityManager().createNamedQuery("findSingleUseObjectNotes", String.class)
                 .setParameter("id", key)
-                .setParameter("currentTime", Time.currentTime())
+                .setParameter("currentTime", Time.currentTimeSeconds())
                 .getSingleResultOrNull();
         if (notes == null) {
             return null;
@@ -67,6 +71,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
 
     @Override
     public Map<String, String> remove(String key) {
+        Objects.requireNonNull(key);
         var em = getEntityManager();
         var entity = em.find(SingleUseObjectEntity.class, key, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
@@ -81,28 +86,49 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        Objects.requireNonNull(key);
         var rows = getEntityManager().createNamedQuery("updateIfNotExpiredSingleUseObject")
                 .setParameter("id", key)
                 .setParameter("notes", SingleUseObjectSerialization.notesToString(key, notes))
-                .setParameter("currentTime", Time.currentTime())
+                .setParameter("currentTime", Time.currentTimeSeconds())
                 .executeUpdate();
         return rows == 1;
     }
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
-        var currentTime = Time.currentTime();
-        var rows = getEntityManager().createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
-                .setParameter("id", key)
-                .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
-                .setParameter("expire", currentTime + lifespanInSeconds)
-                .setParameter("currentTime", currentTime)
-                .executeUpdate();
+        Objects.requireNonNull(key);
+        if (lifespanInSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanInSeconds must be positive");
+        }
+        var currentTime = Time.currentTimeSeconds();
+        var em = getEntityManager();
+        int rows;
+        if (JpaUtils.isUpsertRowCountUnreliable(em)) {
+            String table = JpaUtils.getTableNameForNativeQuery("SINGLE_USE_OBJECT", em);
+            em.createNativeQuery("DELETE FROM " + table + " WHERE ID = ?1 AND EXPIRE <= ?2")
+                    .setParameter(1, key)
+                    .setParameter(2, currentTime)
+                    .executeUpdate();
+            rows = em.createNativeQuery("INSERT IGNORE INTO " + table + " (ID, NOTES, EXPIRE) VALUES (?1, ?2, ?3)")
+                    .setParameter(1, key)
+                    .setParameter(2, SingleUseObjectSerialization.notesToString(key, Map.of()))
+                    .setParameter(3, currentTime + lifespanInSeconds)
+                    .executeUpdate();
+        } else {
+            rows = em.createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
+                    .setParameter("id", key)
+                    .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
+                    .setParameter("expire", currentTime + lifespanInSeconds)
+                    .setParameter("currentTime", currentTime)
+                    .executeUpdate();
+        }
         return rows == 1;
     }
 
     @Override
     public boolean contains(String key) {
+        Objects.requireNonNull(key);
         var expireTime = getEntityManager().createNamedQuery("findSingleUseObjectExpireTime", Long.class)
                 .setParameter("id", key)
                 .getSingleResultOrNull();
@@ -119,6 +145,6 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
     }
 
     private static boolean isExpired(long expire) {
-        return expire <= Time.currentTime();
+        return expire <= Time.currentTimeSeconds();
     }
 }

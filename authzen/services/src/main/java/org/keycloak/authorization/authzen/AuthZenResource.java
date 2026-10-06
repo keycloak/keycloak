@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.BadRequestException;
@@ -45,7 +46,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Tokens;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -53,6 +54,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.util.JsonSerialization;
 
 public class AuthZenResource {
@@ -75,10 +78,7 @@ public class AuthZenResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response evaluate(AuthZen.EvaluationRequest request) {
-        AccessToken token = Tokens.getAccessToken(session);
-        if (token == null) {
-            throw new NotAuthorizedException("Bearer");
-        }
+        AccessToken token = authenticateClient();
         return Response.ok(evaluateSingle(request, token)).build();
     }
 
@@ -87,10 +87,7 @@ public class AuthZenResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response evaluations(AuthZen.EvaluationsRequest request) {
-        AccessToken token = Tokens.getAccessToken(session);
-        if (token == null) {
-            throw new NotAuthorizedException("Bearer");
-        }
+        AccessToken token = authenticateClient();
 
         if (request.evaluations() == null || request.evaluations().isEmpty()) {
             // AuthZen 1.0 Section 7.1
@@ -131,6 +128,19 @@ public class AuthZenResource {
         AuthZen.Action action = item.action() != null ? item.action() : defaults.action();
         Map<String, Object> context = item.context() != null ? item.context() : defaults.context();
         return new AuthZen.EvaluationRequest(subject, resource, action, context);
+    }
+
+    private AccessToken authenticateClient() {
+        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+        if (authResult == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        // The evaluation of policies must only be called from a confidential client with its service account user.
+        // Only with that, we ensure that reveal an authorization result to the appropriate caller.
+        if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink()) || !Objects.equals(authResult.session().getAuthMethod(), ServiceAccountConstants.CLIENT_AUTH)) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        return authResult.token();
     }
 
     private AuthZen.EvaluationResponse evaluateSingle(AuthZen.EvaluationRequest request, AccessToken token) {

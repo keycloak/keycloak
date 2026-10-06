@@ -187,6 +187,79 @@ class SsfPushUrlValidatorTest {
                 SsfPushUrlValidator.matchesAllowList(allow, "https://backup.example.com/feeds/x"));
     }
 
+    @Test
+    void match_authorityWildcardStaysConfinedToHost() {
+        // "https://example.com*" — the '*' sits on the authority with no path
+        // separator. It must behave like "https://example.com/*": match the
+        // host and anything under it, but never a different host that merely
+        // begins with the same characters. Mirrors RedirectUtils.
+        Set<String> allow = set("https://example.com*");
+
+        assertEquals("https://example.com",
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com"));
+        assertEquals("https://example.com",
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com/feeds/x"));
+
+        assertEquals(null,
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com.attacker.example/feeds/x"),
+                "an authority-attached wildcard must not match an extended host");
+    }
+
+    @Test
+    void validate_rejectsAuthorityWildcardHostExtension() {
+        // End-to-end: a wildcard that sits on the authority must not let the
+        // push target slip onto a different, attacker-controlled host outside
+        // the host the operator reviewed.
+        SsfPushUrlValidationException ex = assertThrows(SsfPushUrlValidationException.class,
+                () -> strict.validate(
+                        "https://example.com.attacker.example/feeds/x",
+                        set("https://example.com*")));
+
+        assertEquals(Reason.NOT_IN_ALLOWLIST, ex.getReason());
+    }
+
+    @Test
+    void match_authorityWildcardRejectsPrefixSiblingHost() {
+        // The classic prefix-match bug, distinct from the dotted-subdomain
+        // case above: a host that merely *continues* the allow-listed host
+        // with no separator (example.com -> example.community) must not match.
+        // Guards against a future fix that only special-cases the '.' boundary.
+        Set<String> allow = set("https://example.com*");
+
+        assertEquals(null,
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.community/feeds/x"),
+                "a host that extends the allow-listed host without a boundary must not match");
+    }
+
+    @Test
+    void match_authorityWildcardWithPort_staysConfinedToHostAndPort() {
+        // Same authority-attached guard, exercised through the ':port' branch
+        // (no path separator after the authority, but a port is present).
+        Set<String> allow = set("https://example.com:8443*");
+
+        // host:port itself and anything under it still match...
+        assertEquals("https://example.com:8443",
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com:8443/feeds/x"));
+        // ...but a longer port that merely shares the "8443" prefix must not
+        // (this is the realistic sibling for a port-attached wildcard; a host
+        // extension like "...:8443.evil" isn't a valid URL and never reaches here).
+        assertEquals(null,
+                SsfPushUrlValidator.matchesAllowList(allow, "https://example.com:84430/feeds/x"),
+                "a port that merely shares the allow-listed port's prefix must not match");
+    }
+
+    @Test
+    void filterUsableEntries_keepsAuthorityAttachedWildcard() {
+        // Approach contract: the authority-attached wildcard is *kept* (and
+        // confined at match time), not dropped — so the entry survives
+        // filtering. This pins the chosen design against a regression that
+        // would silently remove it instead.
+        Set<String> usable = strict.filterUsableEntries(set("https://example.com*"));
+
+        assertEquals(set("https://example.com*"), usable,
+                "an authority-attached wildcard is honoured (confined at match time), not filtered out");
+    }
+
     // -- validate(): rejection codes ----------------------------------------
 
     @Test

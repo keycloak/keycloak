@@ -23,6 +23,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
@@ -63,6 +64,9 @@ public class CredentialIssuer {
 
     @JsonProperty("credential_request_encryption")
     private CredentialRequestEncryptionMetadata credentialRequestEncryption;
+
+    @JsonProperty("issuer_info")
+    private List<IssuerInfo> issuerInfo;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -156,6 +160,46 @@ public class CredentialIssuer {
     public CredentialIssuer setCredentialRequestEncryption(CredentialRequestEncryptionMetadata credentialRequestEncryption) {
         this.credentialRequestEncryption = credentialRequestEncryption;
         return this;
+    }
+
+    public List<IssuerInfo> getIssuerInfo() {
+        return issuerInfo;
+    }
+
+    public CredentialIssuer setIssuerInfo(List<IssuerInfo> issuerInfo) {
+        this.issuerInfo = issuerInfo;
+        return this;
+    }
+
+    /**
+     * Represents an element of the issuer_info metadata parameter as defined in ETSI TS 119 472-3, Section 4.2.3.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class IssuerInfo {
+        @JsonProperty("format")
+        private String format;
+
+        @JsonProperty("data")
+        private JsonNode data;
+
+        public String getFormat() {
+            return format;
+        }
+
+        public IssuerInfo setFormat(String format) {
+            this.format = format;
+            return this;
+        }
+
+        public JsonNode getData() {
+            return data;
+        }
+
+        public IssuerInfo setData(JsonNode data) {
+            this.data = data;
+            return this;
+        }
     }
 
     /**

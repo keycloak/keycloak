@@ -34,8 +34,9 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
         return usernameInput.getAttribute("value");
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-profile";
     }
     
     public boolean isUsernamePresent() {

@@ -38,7 +38,7 @@ const EmptyButton = ({
       variant="secondary"
       onClick={() =>
         !disabled &&
-        navigate(toNewPermission({ realm, id: clientId, permissionType }))
+        void navigate(toNewPermission({ realm, id: clientId, permissionType }))
       }
     >
       {t(`create${toUpperCase(permissionType)}BasedPermission`)}

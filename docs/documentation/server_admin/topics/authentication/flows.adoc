@@ -429,10 +429,6 @@ in the authentication flow), then {project_name} will throw an error.
 [[_step-up-authentication-saml]]
 ==== Step-up authentication for SAML
 
-:tech_feature_name: Step-up Authentication for SAML
-:tech_feature_id: step-up-authentication-saml
-include::../../topics/templates/techpreview.adoc[]
-
 For the SAML protocol, the step-up authentication uses the `<AuthnContextClassRef>` element (Authentication Context Class Reference or ACR) to map the Level of Authentication (LoA). This element is a URI reference that identifies an authentication context declaration. The LoA is requested by the client in the SAML request via the `<RequestedAuthnContext>` element.
 
 [source,xml,subs=+attributes]
@@ -500,11 +496,11 @@ In summary, when the step-up authentication is configured for SAML, {project_nam
 
 In order to maintain backwards compatibility, {project_name} does not return an error and continues adding the previous ACR `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified` to the response in the following situations:
 
-* The new feature `step-up-authentication-saml` is not enabled in {project_name}.
+* The feature `step-up-authentication-saml` is not enabled in {project_name}.
 * The SAML client does not define any mapping between context URI and LoA. Use the client mapping instead of the general realm mapping when you just need to apply the step-up for some specific SAML clients.
 * The `AuthnContextClassRef mapper` is not executed. This mapper is provided by a new default client scope `AuthnContextClassRef` which is now added to SAML clients by default. It is in charge of adding the resulting `<AuthnContextClassRef>` to the response.
 +
-NOTE: For new realms created with the `step-up-authentication-saml` feature enabled, the mapper and the client scope `AuthnContextClassRef` are automatically created and assigned to SAML clients. But, for exiting realms, if you want to use this preview feature, the client scope and the mapper should be created and assigned to the client manually. When the feature is promoted to supported, the migration will also create the client scope for existing realms if the feature is not disabled at startup.
+NOTE: The mapper and the client scope `AuthnContextClassRef` are automatically created and assigned to SAML clients when the `step-up-authentication-saml` feature is enabled (for new and migrated realms). If the feature was disabled at creation or migration time and want to be used afterwards, the client scope with the mapper should be created and assigned to the client manually.
 +
 * The LoA calculated at request time is not achieved by the authentication flow. For example, if the authentication flow used for authentication is not a step-up flow, or there is a misconfiguration between the URI/LoA mapping and the final level reached in the step-up authentication flow.
 

@@ -71,7 +71,7 @@ export const Members = () => {
   useFetch(() => groups.findOne({ id: group()!.id! }), setCurrentGroup, []);
 
   const isManager =
-    hasAccess("manage-users") || currentGroup?.access!.manageMembership;
+    hasAccess("manage-users") || currentGroup?.access?.manageMembership;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

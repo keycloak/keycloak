@@ -18,8 +18,10 @@ package org.keycloak.models;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -61,6 +63,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
     public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
+    public static final String ALLOW_ADMIN_ROLE_MAPPING = "allowAdminRoleMapping";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -95,7 +98,7 @@ public class IdentityProviderModel implements Serializable {
 
     private String postBrokerLoginFlowId;
 
-    private String organizationId;
+    private Set<String> organizationIds = new LinkedHashSet<>();
 
     private String displayName;
 
@@ -127,7 +130,7 @@ public class IdentityProviderModel implements Serializable {
             this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
             this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
             this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
-            this.organizationId = model.getOrganizationId();
+            this.organizationIds = new LinkedHashSet<>(model.getOrganizationIds());
             this.displayIconClasses = model.getDisplayIconClasses();
             this.hideOnLogin = model.isHideOnLogin();
         }
@@ -254,12 +257,33 @@ public class IdentityProviderModel implements Serializable {
         return displayIconClasses;
     }
 
-    public String getOrganizationId() {
-        return this.organizationId;
+    public Set<String> getOrganizationIds() {
+        return this.organizationIds;
     }
 
+    public void setOrganizationIds(Set<String> organizationIds) {
+        this.organizationIds = organizationIds != null ? organizationIds : new LinkedHashSet<>();
+    }
+
+    public boolean hasOrganization() {
+        return !organizationIds.isEmpty();
+    }
+
+    public boolean isLinkedToOrganization(String orgId) {
+        return organizationIds.contains(orgId);
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
+    public String getOrganizationId() {
+        return organizationIds.isEmpty() ? null : organizationIds.iterator().next();
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
     public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
+        this.organizationIds = new LinkedHashSet<>();
+        if (organizationId != null) {
+            this.organizationIds.add(organizationId);
+        }
     }
 
     /**
@@ -415,6 +439,14 @@ public class IdentityProviderModel implements Serializable {
         if (!(obj instanceof IdentityProviderModel)) return false;
         return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
                Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
+    }
+
+    public boolean isAllowAdminRoleMapping() {
+        return getBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING);
+    }
+
+    public void setAllowAdminRoleMapping(boolean allow) {
+        setBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING, allow);
     }
 
     private boolean getBooleanConfig(String key) {

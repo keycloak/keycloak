@@ -70,6 +70,9 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -133,6 +136,7 @@ public class UserInfoEndpoint {
     public Response issueUserInfoGet() {
         setNoCacheHeaders();
         setupCors();
+        ContentTypeValidationUtil.requireValidOrNoContentType(request.getHttpHeaders());
         AppAuthManager.AuthHeader accessToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();
@@ -189,6 +193,9 @@ public class UserInfoEndpoint {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenForUserInfo.getToken(), AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
+            TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier , session, realm, session.getContext().getUri());
+            new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+            
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
             JWSHeader header = verifier.getHeader();
@@ -276,10 +283,9 @@ public class UserInfoEndpoint {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
-                String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
-                event.detail(Details.REASON, errorMessage);
+                event.detail(Details.REASON, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
                 event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken(errorMessage);
+                throw error.invalidToken(MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
             }
         }
 

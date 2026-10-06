@@ -1,26 +1,8 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +20,7 @@ import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
@@ -80,25 +63,22 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         // Always add a jti (the credential id)
         claims.put(CLAIM_NAME_JTI, vcId != null ? vcId : UUID.randomUUID().toString());
 
-        Optional.ofNullable(issuanceDate).ifPresent(it ->
-                claims.put(CLAIM_NAME_IAT, it.getEpochSecond())
-        );
-
         // Put all claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
         claims.entrySet()
                 .stream()
                 .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
-                    if (entry instanceof List<?> listValue) {
-                        // FIXME: Unreachable branch. The intent was probably to check `entry.getValue()`,
-                        //  but changing just that will expose the array field name and break many tests.
-                        //  Needs further discussion on the wanted behavior.
-
-                        IntStream.range(0, listValue.size())
+                    // Determine array-ness from the serialized JSON value so that non-List
+                    // Java values (e.g. HashSet from OID4VCTargetRoleMapper, Java arrays)
+                    // are also disclosed per-element.
+                    JsonNode valueNode = JsonSerialization.mapper.valueToTree(entry.getValue());
+                    if (valueNode != null && valueNode.isArray()) {
+                        // Disclose elements one by one, the claim name itself stays visible
+                        int size = valueNode.size();
+                        IntStream.range(0, size)
                                 .forEach(i -> disclosureSpecBuilder
-                                        .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt())
-                                );
+                                        .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt()));
                     } else {
                         disclosureSpecBuilder.withUndisclosedClaim(entry.getKey(), SdJwtUtils.randomSalt());
                     }
@@ -108,11 +88,18 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
         claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
         claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
 
+        // iat is issuer-controlled: it must always reflect the issuer-computed issuance time
+        // and must not be overridable by a mapped attribute value (see keycloak/keycloak#52667).
+        if (issuanceDate != null) {
+            claims.put(CLAIM_NAME_IAT, issuanceDate.getEpochSecond());
+        }
+
         // Set exp claim from verifiable credential expiration date
         // expiry is optional, but should be set if available to comply with HAIP
         // see: https://openid.github.io/OpenID4VC-HAIP/openid4vc-high-assurance-interoperability-profile-wg-draft.html#section-6.1
-        // Only set if not already set by a protocol mapper
-        if (!claims.containsKey(CLAIM_NAME_EXP) && expirationDate != null) {
+        // exp is issuer-controlled: it must always reflect the issuer-configured credential lifetime
+        // and must not be overridable by a mapped attribute value (see keycloak/keycloak#52667).
+        if (expirationDate != null) {
             claims.put(CLAIM_NAME_EXP, expirationDate.getEpochSecond());
         }
 

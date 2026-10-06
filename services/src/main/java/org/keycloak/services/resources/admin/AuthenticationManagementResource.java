@@ -66,6 +66,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -74,6 +75,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
@@ -255,6 +257,10 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Failed to create flow with empty alias name");
         }
 
+        if (flow.isBuiltIn()) {
+            throw new BadRequestException("It is not allowed to create a built-in flow");
+        }
+
         if (realm.getFlowByAlias(flow.getAlias()) != null) {
             throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
@@ -331,6 +337,14 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
         }
 
+        // validate immutable flags before any mutations
+        if (flow.isBuiltIn() != checkFlow.isBuiltIn()) {
+            throw new BadRequestException("The authentication flow builtIn attribute cannot be changed");
+        }
+        if (flow.isTopLevel() != checkFlow.isTopLevel()) {
+            throw new BadRequestException("The authentication flow topLevel attribute cannot be changed");
+        }
+
         //if a different flow with the same name does already exist, throw an exception
         if (realm.getFlowByAlias(flow.getAlias()) != null && !checkFlow.getAlias().equals(flow.getAlias())) {
             throw ErrorResponse.exists("Flow alias name already exists");
@@ -341,14 +355,14 @@ public class AuthenticationManagementResource {
             checkFlow.setAlias(flow.getAlias());
         } else if (checkFlow.getAlias() == null && flow.getAlias() != null) {
             checkFlow.setAlias(flow.getAlias());
-	}
+ }
 
         //check if the description changed
         if (checkFlow.getDescription() != null && !checkFlow.getDescription().equals(flow.getDescription())) {
             checkFlow.setDescription(flow.getDescription());
         } else if (checkFlow.getDescription() == null && flow.getDescription() != null) {
             checkFlow.setDescription(flow.getDescription());
-	}
+ }
 
         //update the flow
         flow.setId(existingFlow.getId());
@@ -1125,7 +1139,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find authenticator config");
 
         }
-        return ModelToRepresentation.toRepresentation(config);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(config));
     }
 
     /**
@@ -1622,7 +1636,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find authenticator config");
 
         }
-        return ModelToRepresentation.toRepresentation(config);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(config));
     }
 
     /**
@@ -1681,7 +1695,16 @@ public class AuthenticationManagementResource {
         }
 
         exists.setAlias(rep.getAlias());
-        exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
+        Map<String, String> newConfig = RepresentationToModel.removeEmptyString(rep.getConfig());
+        if (newConfig != null && exists.getConfig() != null) {
+            newConfig.entrySet().removeIf(e ->
+                    ComponentRepresentation.SECRET_VALUE.equals(e.getValue()) && !exists.getConfig().containsKey(e.getKey()));
+            newConfig.replaceAll((key, value) ->
+                    ComponentRepresentation.SECRET_VALUE.equals(value)
+                            ? exists.getConfig().get(key)
+                            : value);
+        }
+        exists.setConfig(newConfig);
         realm.updateAuthenticatorConfig(exists);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(rep).success();
     }

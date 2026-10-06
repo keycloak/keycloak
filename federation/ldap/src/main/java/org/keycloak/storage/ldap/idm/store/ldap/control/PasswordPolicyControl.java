@@ -68,7 +68,7 @@ public class PasswordPolicyControl implements Control {
 
         try {
             ber.startSequence(); // PasswordPolicyResponseValue ::= SEQUENCE
-            if (ber.isNextTag(BERDecoder.TAG_CLASS_CONTEXT_SPECIFIC, BERDecoder.TAG_FORM_PRIMITIVE, 0)) { // warning [0] CHOICE
+            if (ber.isNextTag(BERDecoder.TAG_CLASS_CONTEXT_SPECIFIC, BERDecoder.TAG_FORM_CONSTRUCTED, 0)) { // warning [0] CHOICE
                 ber.skipElement();
             }
             if (ber.isNextTag(BERDecoder.TAG_CLASS_CONTEXT_SPECIFIC, BERDecoder.TAG_FORM_PRIMITIVE, 1)) { // error   [1] ENUMERATED
@@ -76,8 +76,8 @@ public class PasswordPolicyControl implements Control {
                 this.changeAfterReset = error == ERROR_CHANGE_AFTER_RESET;
             }
 
-        } catch (BERDecoder.DecodeException ignored) {
-            logger.errorf("Failed to parse PasswordPolicyResponseValue: %s", ignored.getMessage());
+        } catch (BERDecoder.DecodeException | NumberFormatException e) {
+            logger.errorf("Failed to parse PasswordPolicyResponseValue: %s", e.getMessage());
         }
     }
 

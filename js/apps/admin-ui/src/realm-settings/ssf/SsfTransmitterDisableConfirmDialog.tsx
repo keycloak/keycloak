@@ -1,4 +1,3 @@
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import {
   ButtonVariant,
@@ -12,8 +11,6 @@ import { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { addTrailingSlash } from "../../util";
-import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 
 type UseSsfTransmitterDisableConfirmDialogProps = {
   onConfirm: () => void;
@@ -37,14 +34,8 @@ type UseSsfTransmitterDisableConfirmDialogProps = {
  */
 export const deleteRealmSsfQueuedEvents = async (
   adminClient: KeycloakAdminClient,
-  realmName: string,
 ): Promise<void> => {
-  const url = `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realmName}/ssf/events/queued`;
-  const headers = {
-    ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-    "Content-Type": "application/json",
-  };
-  await fetchWithError(url, { method: "DELETE", headers });
+  await adminClient.ssf.deleteQueuedEvents();
 };
 
 /**

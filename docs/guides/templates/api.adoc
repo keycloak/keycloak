@@ -153,6 +153,22 @@ ${javaInterface?keep_after_last(".")} ${javaVar} = adminApi.${category}V2();
 </#list>
 </#macro>
 
+<#macro queryableFields group>
+<#assign fields = ctx.adminApiV2.getQueryableFields(group)>
+<#if fields?has_content>
+[cols="1,1,3",options="header"]
+|===
+|Field |Type |Description
+<#list fields as field>
+
+|`${field.name}`
+|${(field.type)!}
+|${(field.description)!}
+</#list>
+|===
+</#if>
+</#macro>
+
 <#macro schemas>
 <#assign schemaNames = ctx.adminApiV2.schemaNames>
 <#if schemaNames?has_content>

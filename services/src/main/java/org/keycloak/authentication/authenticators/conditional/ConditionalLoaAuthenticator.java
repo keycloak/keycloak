@@ -36,7 +36,7 @@ import org.jboss.logging.Logger;
 public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, AuthenticationFlowCallback {
     public static final String LEVEL = "loa-condition-level";
     public static final String MAX_AGE = "loa-max-age";
-    public static final int DEFAULT_MAX_AGE = 36000; // 10 days
+    public static final int DEFAULT_MAX_AGE = 36000; // 10 hours
 
     // Only for backwards compatibility with Keycloak 17
     @Deprecated

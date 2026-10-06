@@ -126,6 +126,7 @@
         "resourceUrl": "${resourceUrl}",
         "logo": "${properties.logo!""}",
         "logoUrl": "${properties.logoUrl!""}",
+        "darkMode": ${darkMode?c},
         "baseUrl": "${baseUrl}",
         "locale": "${locale}",
         "referrerName": "${referrerName!""}",

@@ -20,6 +20,7 @@ import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
+import org.keycloak.authentication.authenticators.x509.CertificateValidator;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -90,13 +91,9 @@ public class TlsClientAuthCASubjectDNExecutor implements ClientPolicyExecutorPro
             if (oidcClient.getTlsClientAuthCASubjectDn() == null) {
                 oidcClient.setTlsClientAuthCASubjectDn(dn);
             } else if (Boolean.TRUE.equals(configuration.isEnforced())) {
-                try {
-                    X500Principal forcedDn = X509ClientAuthenticator.constructX500Principal(dn);
-                    X500Principal passedDn = X509ClientAuthenticator.constructX500Principal(oidcClient.getTlsClientAuthCASubjectDn());
-                    if (!forcedDn.equals(passedDn)) {
-                        throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Certificate Authority subject DN must be " + dn);
-                    }
-                } catch (IllegalArgumentException e) {
+                X500Principal forcedDn = CertificateValidator.constructX500Principal(dn);
+                X500Principal passedDn = CertificateValidator.constructX500Principal(oidcClient.getTlsClientAuthCASubjectDn());
+                if (passedDn == null || forcedDn == null || !forcedDn.equals(passedDn)) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Certificate Authority subject DN must be " + dn);
                 }
             }

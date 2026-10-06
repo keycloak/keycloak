@@ -16,9 +16,13 @@
  */
 package org.keycloak.representations.idm;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * @author Pedro Igor
@@ -58,7 +62,7 @@ public class IdentityProviderRepresentation {
     protected Boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
-    protected String organizationId;
+    protected List<OrganizationIdentityProviderLinkRepresentation> organizationLinks;
     protected Map<String, String> config = new HashMap<>();
     protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
@@ -206,12 +210,29 @@ public class IdentityProviderRepresentation {
         this.displayName = displayName;
     }
 
-    public String getOrganizationId() {
-        return this.organizationId;
+    public List<OrganizationIdentityProviderLinkRepresentation> getOrganizationLinks() {
+        return organizationLinks;
     }
 
+    public void setOrganizationLinks(List<OrganizationIdentityProviderLinkRepresentation> organizationLinks) {
+        this.organizationLinks = organizationLinks;
+    }
+
+    @Deprecated
+    @JsonIgnore
+    public String getOrganizationId() {
+        if (organizationLinks == null || organizationLinks.isEmpty()) return null;
+        return organizationLinks.get(0).getOrganizationId();
+    }
+
+    @Deprecated
+    @JsonSetter("organizationId")
     public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
+        if (organizationId != null) {
+            this.organizationLinks = Collections.singletonList(new OrganizationIdentityProviderLinkRepresentation(organizationId));
+        } else {
+            this.organizationLinks = null;
+        }
     }
 
     public List<String> getTypes() {

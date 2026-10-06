@@ -132,8 +132,8 @@ public class RestartStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    is("No scheduled step found if restarting at position 1"));
+            ErrorRepresentation error1 = response.readEntity(ErrorRepresentation.class);
+            assertThat(error1.getErrorMessage(), is("No scheduled step found if restarting at position 1."));
         }
         try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID)
@@ -149,8 +149,8 @@ public class RestartStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    is("No scheduled step found if restarting at position 2"));
+            ErrorRepresentation error2 = response.readEntity(ErrorRepresentation.class);
+            assertThat(error2.getErrorMessage(), is("No scheduled step found if restarting at position 2."));
         }
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID)

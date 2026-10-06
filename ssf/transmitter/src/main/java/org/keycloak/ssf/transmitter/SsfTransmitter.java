@@ -4,7 +4,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.SsfException;
-import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 public final class SsfTransmitter {
 
@@ -21,20 +21,6 @@ public final class SsfTransmitter {
      */
     public static SsfTransmitterProvider of(KeycloakSession session) {
         return session.getProvider(SsfTransmitterProvider.class);
-    }
-
-    /**
-     * Returns {@code true} when the client carries the
-     * {@code ssf.enabled=true} attribute that marks it as an SSF Receiver.
-     * Returns {@code false} for {@code null} clients, regular OIDC apps,
-     * service accounts, or any client whose attribute is unset / explicitly
-     * {@code false}.
-     */
-    public static boolean isReceiverClient(ClientModel client) {
-        if (client == null) {
-            return false;
-        }
-        return Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY));
     }
 
     /**
@@ -56,9 +42,12 @@ public final class SsfTransmitter {
             throw new SsfException("No client with clientId '" + clientClientId + "' in realm '"
                     + realm.getName() + "'");
         }
-        if (!isReceiverClient(client)) {
-            throw new SsfException("Client '" + clientClientId
-                    + "' is not an SSF Receiver — set the ssf.enabled=true client attribute first");
+        // Confirm the client is a receiver before checking its on/off state
+        if (!SsfUtil.isReceiverClient(client)) {
+            throw new SsfException("Client '" + clientClientId + "' is not an SSF Receiver");
+        }
+        if (!client.isEnabled()) {
+            throw new SsfException("Client '" + clientClientId + "' is disabled");
         }
         return client;
     }

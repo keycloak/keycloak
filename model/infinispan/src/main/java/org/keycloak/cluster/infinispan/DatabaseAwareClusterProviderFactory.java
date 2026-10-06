@@ -17,19 +17,29 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
@@ -41,49 +51,86 @@ import org.jboss.logging.Logger;
  *
  * @author Alexander Schwartz
  */
-public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProviderFactory {
+public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProviderFactory implements ProviderEventListener {
 
     protected static final Logger logger = Logger.getLogger(DatabaseAwareClusterProviderFactory.class);
 
-    private static final long DEFAULT_POLL_INTERVAL_MS = 2000;
+    private static final String DEFAULT_POLL_INTERVAL_MS = "100ms";
 
-    private volatile NodeInfo nodeInfo;
-    private volatile Marshaller protoStreamMarshaller;
+    private Timer timer;
 
-    private long pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+    private Duration pollInterval;
+    private Duration awaitTimeout;
+    private KeycloakSessionFactory factory;
+
+    public DatabaseAwareClusterProviderFactory() {
+    }
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
-        return new DatabaseAwareClusterProvider(super.create(session), session.getKeycloakSessionFactory(),
-                nodeInfo, protoStreamMarshaller);
+        ClusterProvider delegate = super.create(session);
+        InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
+        return new DatabaseAwareClusterProvider(delegate, session,
+                ispnConnections.getNodeInfo(), ispnConnections.getMarshaller(), awaitTimeout);
     }
 
     @Override
     public void init(Config.Scope config) {
-        pollIntervalMs = config.getLong("pollInterval", DEFAULT_POLL_INTERVAL_MS);
-        if (pollIntervalMs <= 0) {
+        pollInterval = DurationConverter.parseDuration(config.get("pollInterval", DEFAULT_POLL_INTERVAL_MS));
+        if (pollInterval.compareTo(Duration.ZERO) <= 0) {
             throw new IllegalArgumentException("pollInterval must be a positive number");
         }
-        if (pollIntervalMs > 60000) {
-            logger.warnf("Polling interval is %d milliseconds. This is longer than 60 seconds, which seems to be too high for a production setting. Please verify.", pollIntervalMs);
+        if (pollInterval.compareTo(Duration.ofSeconds(1)) > 0) {
+            logger.warnf("Polling interval is %s. This is longer than 1 second, which seems to be too high for a production setting. Please verify.", pollInterval.toString());
         }
+        awaitTimeout = pollInterval.multipliedBy(5);
+        // We run our own timer so that we're not delayed by other tasks
+        timer = new Timer(true);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                    .name("pollInterval")
+                    .type("string")
+                    .helpText("Interval between polling the database for new cluster events (supports duration suffixes like ms, s, m, h). In a multi-cluster setup, a publishing node will pause for up to 5 times this duration for the event to be consumed to ensure the information is received by all nodes before returning to the caller.")
+                    .defaultValue(DEFAULT_POLL_INTERVAL_MS)
+                    .add()
+                .build();
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.factory = factory;
+        super.postInit(factory);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
-            nodeInfo = ispnConnections.getNodeInfo();
+            NodeInfo nodeInfo = ispnConnections.getNodeInfo();
+            Marshaller protoStreamMarshaller = ispnConnections.getMarshaller();
 
-            this.protoStreamMarshaller = ispnConnections.getMarshaller();
             var pollerTask = new DatabaseClusterEventPollerTask(nodeInfo.clusterName(), protoStreamMarshaller);
             var runner = new ScheduledTaskRunner(factory, pollerTask);
-            TimerProvider timer = session.getProvider(TimerProvider.class);
-            timer.schedule(runner, pollIntervalMs, pollIntervalMs, "cluster-event-poller");
-            logger.infof("Scheduled cluster event poller with interval %d ms for cluster '%s'", pollIntervalMs, nodeInfo.clusterName());
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runner.run();
+                }
+            }, pollInterval.toMillis(), pollInterval.toMillis());
+            logger.infof("Scheduled cluster event poller with interval %s for cluster '%s'",
+                    pollInterval, nodeInfo.clusterName());
         });
+
+        factory.register(this);
     }
 
+    @Override
+    public void close() {
+        super.close();
+        if (timer != null) {
+            timer.cancel();
+        }
+    }
 
     @Override
     public String getId() {
@@ -101,7 +148,19 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     @Override
     public boolean isSupported(Config.Scope config) {
         return InfinispanUtils.isEmbeddedInfinispan() &&
-                Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
+                Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof ClusterHealthRestored) {
+            localExecutor.execute(() -> {
+                logger.info("Broadcasting cache clear to all cluster nodes after health recovery");
+                KeycloakModelUtils.runJobInTransaction(factory, session -> {
+                    ClusterProvider cp = session.getProvider(ClusterProvider.class);
+                    cp.notify(CLEAR_ALL_LOCAL_CACHES_EVENT, ClearCacheEvent.getInstance(), false);
+                });
+            });
+        }
+    }
 }

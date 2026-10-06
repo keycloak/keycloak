@@ -193,8 +193,13 @@ public class AcrStore {
      * Set level to the current authentication session if an auth flow loa is present and is higher then the current loa
      */
     public void setAuthFlowLevelAuthenticatedToCurrentRequest() {
-        if (authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION) != null) {
-            int authFlowLoa = Integer.parseInt(authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION));
+        // Prefer the client note; fall back to the auth note for logins started on an older server.
+        String authFlowLoaNote = authSession.getClientNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION);
+        if (authFlowLoaNote == null) {
+            authFlowLoaNote = authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION);
+        }
+        if (authFlowLoaNote != null) {
+            int authFlowLoa = Integer.parseInt(authFlowLoaNote);
             if (getLevelOfAuthenticationFromCurrentAuthentication() < authFlowLoa) {
                 setLevelAuthenticatedToCurrentRequest(authFlowLoa);
             }

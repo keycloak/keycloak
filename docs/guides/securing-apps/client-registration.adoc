@@ -88,6 +88,12 @@ that should be allowed.
 
 == {project_name} Representations
 
+[WARNING]
+====
+The `default` client registration provider is deprecated since {project_name} 26.8 and will be removed in a future major release.
+Register and manage clients via the Admin REST API or the OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`) instead.
+====
+
 The `default` client registration provider can be used to create, retrieve, update and delete a client.
 It uses {project_name} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
 console, including for example configuring protocol mappers.
@@ -110,6 +116,12 @@ To delete the Client Representation perform an HTTP DELETE request to:
 `/realms/<realm>/clients-registrations/default/<client id>`
 
 == {project_name} adapter configuration
+
+[WARNING]
+====
+The `install` client registration provider is deprecated since {project_name} 26.8 and will be removed in a future major release.
+Retrieve adapter configuration via the Admin REST API (`GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`) instead.
+====
 
 The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
 In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.
@@ -135,9 +147,15 @@ This endpoint can also be found in the OpenID Connect Discovery endpoint for the
 
 == SAML Entity Descriptors
 
+[WARNING]
+====
+The SAML Entity Descriptor endpoint is deprecated since {project_name} 26.8 and will be removed in a future major release.
+Use the Admin REST API to convert the entity descriptor (`POST /admin/realms/<realm>/client-description-converter`) and then create the returned client representation (`POST /admin/realms/<realm>/clients`).
+====
+
 The SAML Entity Descriptor endpoint only supports using SAML v2 Entity Descriptors to create clients.
 It doesn't support retrieving, updating or deleting clients.
-For those operations the {project_name} representation endpoints should be used.
+For those operations, use the Admin REST API (`/admin/realms/<realm>/clients/<client-uuid>`).
 When creating a client a {project_name} Client Representation is returned with details about the created client, including a registration access token.
 
 To create a client perform an HTTP POST request with the SAML Entity Descriptor to `/realms/<realm>/clients-registrations/saml2-entity-descriptor`.
@@ -163,7 +181,11 @@ To use include the dependency `org.keycloak:keycloak-client-registration-api:>VE
 
 For full instructions on using the Client Registration refer to the JavaDocs.
 Below is an example of creating a client. You need to replace `eyJhbGciOiJSUz...` with a proper initial access token or bearer token.
-
+[WARNING]
+====
+The `ClientRegistration` methods `reg.create()`, `reg.get()`, `reg.update()`, and `reg.delete()` target `default`; `reg.getAdapterConfig()` targets `install`; and `reg.saml().create()` targets `saml2-entity-descriptor`. These providers are deprecated since {project_name} 26.8 and will be removed in a future major release.
+New integrations should use the replacement Admin REST API endpoints described above, or the OpenID Connect dynamic client registration endpoint for OIDC client registration.
+====
 [source,java,subs="attributes+"]
 ----
 String token = "eyJhbGciOiJSUz...";
@@ -184,6 +206,8 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 
 [[_client_registration_policies]]
 == Client Registration Policies
+
+WARNING: Client Registration Policies apply to requests made through the Client Registration Service. They are not executed for arbitrary Admin REST API requests.
 
 NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#_client_policies[{adminguide_name}].
 Client Policies are more flexible and support more use case.

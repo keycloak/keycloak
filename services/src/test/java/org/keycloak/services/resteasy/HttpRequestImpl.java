@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -45,22 +46,16 @@ public class HttpRequestImpl implements HttpRequest {
     private org.jboss.resteasy.spi.HttpRequest delegate;
 
     public HttpRequestImpl(org.jboss.resteasy.spi.HttpRequest delegate) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate);
     }
 
     @Override
     public String getHttpMethod() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getHttpMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
-        if (delegate == null) {
-            return null;
-        }
         MediaType mediaType = getHttpHeaders().getMediaType();
         if (mediaType == null || !mediaType.isCompatible(MediaType.valueOf("application/x-www-form-urlencoded"))) {
             return new MultivaluedHashMap<>();
@@ -103,25 +98,16 @@ public class HttpRequestImpl implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getHttpHeaders();
     }
 
     @Override
     public X509Certificate[] getClientCertificateChain() {
-        if (delegate == null) {
-            return null;
-        }
         return (X509Certificate[]) delegate.getAttribute("jakarta.servlet.request.X509Certificate");
     }
 
     @Override
     public UriInfo getUri() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getUri();
     }
 

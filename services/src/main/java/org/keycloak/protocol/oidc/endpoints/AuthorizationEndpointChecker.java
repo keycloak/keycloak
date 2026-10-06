@@ -18,8 +18,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,14 +34,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.IssuerState;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -69,8 +61,6 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
-import static org.keycloak.OAuth2Constants.ISSUER_STATE;
-import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.getRequestUriType;
 
 /**
@@ -169,12 +159,29 @@ public class AuthorizationEndpointChecker {
 
         event.detail(Details.REDIRECT_URI, redirectUri);
 
-        // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client, isOIDCRequest);
+        if(isAllowOidcParamsInRedirectUris()) {
+            // Backward compat: skip forbidden params check
+            this.redirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(),
+                    redirectUri, client.getRedirectUris(), isOIDCRequest, Collections.emptySet());
+        } else {
+            // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
+            this.redirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(),
+                    redirectUri, client.getRedirectUris(), isOIDCRequest);
+        }
+
         if (this.redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
+    }
+
+    private boolean isAllowOidcParamsInRedirectUris() {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
     }
 
     public void checkResponseType() throws AuthorizationCheckException {
@@ -321,8 +328,6 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
-
-        return;
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4
@@ -380,47 +385,6 @@ public class AuthorizationEndpointChecker {
         Set<AuthorizationEndpointCheckProvider> additionalChecks = session.getAllProviders(AuthorizationEndpointCheckProvider.class);
         for (AuthorizationEndpointCheckProvider check : additionalChecks) {
             check.check(this);
-        }
-    }
-
-    public void checkCredentialScope() throws AuthorizationCheckException {
-
-        // Get the list of requested credential scopes that are associated with this client
-        //
-        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
-
-        // Proceed when there are requested credential scopes
-        //
-        if (!credScopes.isEmpty()) {
-
-            PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
-
-            // Get the potential offer state derived from issuer_state
-            //
-            String issuerStateParam = request.getAdditionalReqParams().get(ISSUER_STATE);
-            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            CredentialOfferState offerState = Optional.ofNullable(issuerStateParam)
-                    .map(IssuerState::fromEncodedString)
-                    .map(IssuerState::getCredentialsOfferId)
-                    .map(offerStorage::getOfferStateById)
-                    .orElse(null);
-
-            List<String> offeredConfigurationIds = Optional.ofNullable(offerState)
-                    .map(CredentialOfferState::getCredentialsOffer)
-                    .map(CredentialsOffer::getCredentialConfigurationIds)
-                    .orElse(List.of());
-
-            // Check whether each requested credential_configuration_id has actually been offered
-            //
-            for (CredentialScopeModel credScope : credScopes) {
-                String credConfigId = credScope.getCredentialConfigurationId();
-
-                boolean requiredByScope = offerRequiredPolicy.validate(new CredentialScopeRepresentation(credScope));
-                if (requiredByScope && !offeredConfigurationIds.contains(credConfigId)) {
-                    String errorDetail = "Authorization request rejected by policy " + offerRequiredPolicy.getName() + " for scope: " + credScope.getName();
-                    throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorDetail);
-                }
-            }
         }
     }
 
@@ -498,10 +462,6 @@ public class AuthorizationEndpointChecker {
                 event.error(Errors.INVALID_REQUEST);
                 throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
             }
-        } else {
-            // https://tools.ietf.org/html/rfc7636#section-4.3
-            // default code_challenge_method is plane
-            codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
         }
 
         if (!isValidPkceCodeChallenge(codeChallenge)) {

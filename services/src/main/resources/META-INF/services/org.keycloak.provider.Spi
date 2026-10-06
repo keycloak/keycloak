@@ -28,6 +28,7 @@ org.keycloak.encoding.ResourceEncodingSpi
 org.keycloak.protocol.oidc.encode.TokenContextEncoderSpi
 org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelSpi
 org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolverSpi
+org.keycloak.protocol.oidc.refresh.RefreshTokenSpi
 org.keycloak.services.resources.admin.ext.AdminRealmResourceSpi
 org.keycloak.theme.freemarker.FreeMarkerSPI
 org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderSpi

@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,7 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewAllClientsUsingUserPolicy() {
         List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findAll();
         assertTrue(search.isEmpty());
@@ -77,6 +79,7 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewSpecificClientsUsingUserPolicy() {
         List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findAll();
         assertTrue(search.isEmpty());
@@ -90,6 +93,7 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewClientsByAttributeUsingUserPolicy() {
         List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findAll();
         assertTrue(search.isEmpty());
@@ -103,6 +107,7 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, CLIENTS_RESOURCE_TYPE, policy, Set.of(VIEW));

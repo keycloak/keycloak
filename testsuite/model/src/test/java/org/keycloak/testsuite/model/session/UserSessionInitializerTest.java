@@ -17,16 +17,8 @@
 
 package org.keycloak.testsuite.model.session;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.MultiSiteUtils;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -38,21 +30,14 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Every.everyItem;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assume.assumeFalse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -160,52 +145,6 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
             realm.addClient("test-app");
         });
 
-    }
-
-    @Test
-    public void testUserSessionPropagationBetweenSites() throws InterruptedException {
-        assumeFalse("Run only if Infinispan caches are used for storing/caching sessions", MultiSiteUtils.isMultiSiteEnabled() && MultiSiteUtils.isPersistentSessionsEnabled());
-        assumeFalse("The Sessions caches are disabled", Profile.isFeatureEnabled(Profile.Feature.CACHELESS));
-        AtomicInteger index = new AtomicInteger();
-        AtomicReference<String> userSessionId = new AtomicReference<>();
-        AtomicReference<List<Boolean>> containsSession = new AtomicReference<>(new LinkedList<>());
-
-        Object lock = new Object();
-
-        Optional<HotRodServerRule> hotRodServer = getParameters(HotRodServerRule.class).findFirst();
-
-        inIndependentFactories(4, 60, () -> {
-            synchronized (lock) {
-                if (index.incrementAndGet() == 1) {
-                    // create a user session in the first node
-                    UserSessionModel userSessionModel = withRealm(realmId, (session, realm) -> {
-                        final UserModel user = session.users().getUserByUsername(realm, "user1");
-                        return session.sessions().createUserSession(null, realm, user, "un1", "ip1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
-                    });
-                    userSessionId.set(userSessionModel.getId());
-                } else {
-                    // try to get the user session at other nodes and also at different sites
-                    inComittedTransaction(session -> {
-                        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                        if (InfinispanUtils.isEmbeddedInfinispan()) {
-                            Cache<String, Object> localSessions = provider.getCache(USER_SESSION_CACHE_NAME);
-                            containsSession.get().add(localSessions.containsKey(userSessionId.get()));
-                        }
-
-                        if (hotRodServer.isPresent()) {
-                            RemoteCache<String, Object> remoteSessions = provider.getRemoteCache(USER_SESSION_CACHE_NAME);
-                            containsSession.get().add(remoteSessions.containsKey(userSessionId.get()));
-                        }
-                    });
-                }
-            }
-        });
-
-        assertThat(containsSession.get(), everyItem(is(true)));
-
-        // 3 nodes (first node just creates the session), with Hot Rod server we have local + remote cache, without just local cache
-        int size = hotRodServer.isPresent() && InfinispanUtils.isEmbeddedInfinispan() ? 6 : 3;
-        assertThat(containsSession.get().size(), is(size));
     }
 
     // Create sessions in persister + infinispan, but then delete them from infinispan cache by reinitializing keycloak session factory

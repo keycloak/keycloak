@@ -5,18 +5,32 @@ import java.util.Map;
 
 public class UserVerifiableCredentialModel {
 
-    private final String credentialScopeName;
+    private String id;
+    private String clientScopeId;
     private String revision;
     private Long createdDate;
     private Long updatedDate;
     private Map<String, List<String>> userAttributes;
 
-    public UserVerifiableCredentialModel(String credentialScopeName) {
-        this.credentialScopeName = credentialScopeName;
+    public UserVerifiableCredentialModel(String id, String clientScopeId) {
+        this.id = id;
+        this.clientScopeId = clientScopeId;
     }
 
-    public String getCredentialScopeName() {
-        return credentialScopeName;
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getClientScopeId() {
+        return clientScopeId;
+    }
+
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
     public String getRevision() {

@@ -446,6 +446,11 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public ClientScopeModel getParameterizedClientScope(String scope) {
+        return getDelegate().getParameterizedClientScope(scope);
+    }
+
+    @Override
     public int getNotBefore() {
         return getDelegate().getNotBefore();
     }
@@ -633,6 +638,16 @@ public class ClientModelLazyDelegate implements ClientModel {
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
         return getDelegate().getProtocolMapperByName(protocol, name);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return getDelegate().getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return getDelegate().getLastModifiedTimestamp();
     }
 
 }

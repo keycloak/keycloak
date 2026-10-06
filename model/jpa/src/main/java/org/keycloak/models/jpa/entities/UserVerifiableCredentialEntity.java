@@ -16,12 +16,12 @@ import jakarta.persistence.Version;
 
 @Entity
 @Table(name="USER_VER_CREDENTIAL", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"USER_ID", "CREDENTIAL_SCOPE_ID"})
+        @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_SCOPE_ID"})
 })
 @NamedQueries({
         @NamedQuery(name="verifiableCredentialsByUser", query="select vc from UserVerifiableCredentialEntity vc where vc.user.id = :userId"),
         @NamedQuery(name="deleteVerifiableCredentialsByRealm", query="delete from UserVerifiableCredentialEntity vc where vc.user IN (select user from UserEntity user where user.realmId = :realmId)"),
-        @NamedQuery(name="deleteVerifiableCredentialsByClientScope", query="delete from UserVerifiableCredentialEntity vc where vc.credentialScopeName = :scopeName"),
+        @NamedQuery(name="deleteVerifiableCredentialsByClientScope", query="delete from UserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
         @NamedQuery(name="deleteVerifiableCredentialsByUser", query="delete from UserVerifiableCredentialEntity vc where vc.user = :user"),
 })
 public class UserVerifiableCredentialEntity {
@@ -35,8 +35,8 @@ public class UserVerifiableCredentialEntity {
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
-    @Column(name="CREDENTIAL_SCOPE_NAME")
-    protected String credentialScopeName;
+    @Column(name="CLIENT_SCOPE_ID")
+    protected String clientScopeId;
 
     @Column(name="REVISION")
     protected String revision;
@@ -70,12 +70,12 @@ public class UserVerifiableCredentialEntity {
         this.user = user;
     }
 
-    public String getCredentialScopeName() {
-        return credentialScopeName;
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
-    public void setCredentialScopeName(String credentialScopeName) {
-        this.credentialScopeName = credentialScopeName;
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
     public String getRevision() {

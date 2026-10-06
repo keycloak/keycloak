@@ -95,6 +95,8 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResources;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
@@ -440,10 +442,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         try {
             Properties properties = theme.getProperties();
             attributes.put("properties", properties);
+            attributes.put("themeResources", ThemeResourcesParser.parse(properties));
             attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
             logger.warn("Failed to load properties", e);
+            attributes.put("themeResources", ThemeResources.empty());
         }
 
         return messagesBundle;
@@ -515,7 +519,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
-            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE))) {
+            if (authenticationSession != null && this.actionUri != null && Boolean.parseBoolean(authenticationSession.getAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE))) {
                 attributes.put("switchOrganizationEnabled", true);
             }
             if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {

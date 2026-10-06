@@ -44,9 +44,12 @@ groupIdB
 userId
 userId1
 userId2
+param
+...
 11
 1
 2
 3
 4
 5
+method=&quot;GET&quot;,outcome=&quot;SUCCESS&quot;,status=&quot;200&quot;,uri=&quot;/realms/{realm

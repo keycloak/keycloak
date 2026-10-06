@@ -22,6 +22,7 @@ public class AdminApiV2 {
 
     private final Map<String, Object> categories;
     private final Map<String, Object> schemas;
+    private final Map<String, Object> queryableFields;
     private final Map<String, Object> cliExamples;
     private final Map<String, Object> jsExamples;
 
@@ -29,6 +30,7 @@ public class AdminApiV2 {
         Map<String, Object> doc = readFile(docFile);
         this.categories = optionalMap(doc, "categories");
         this.schemas = optionalMap(doc, "schemas");
+        this.queryableFields = optionalMap(doc, "queryableFields");
         this.cliExamples = readFile(cliExamplesFile);
         this.jsExamples = readFile(jsExamplesFile);
     }
@@ -70,6 +72,13 @@ public class AdminApiV2 {
         }
         String simpleName = iface.substring(iface.lastIndexOf('.') + 1);
         return Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
+    }
+
+    public List<Map<String, Object>> getQueryableFields(String group) {
+        if (!queryableFields.containsKey(group)) {
+            return List.of();
+        }
+        return asList(queryableFields.get(group));
     }
 
     public String getCliExample(String operationId) {

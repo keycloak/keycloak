@@ -29,12 +29,15 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -59,9 +62,10 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.OID4VCIConstants;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -85,9 +89,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken.Access;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -253,11 +257,19 @@ public final class KeycloakModelUtils {
     }
 
     public static String generateSecret(ClientModel client) {
-        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        int secretLength = getRequiredClientSecretLength();
         String secret = SecretGenerator.getInstance().randomString(secretLength);
         client.setSecret(secret);
         client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
+    }
+
+    /**
+     * Returns the required length for a client secret in alphanumeric characters.
+     * Always generated at HS512-level entropy to cover all HMAC signature use cases.
+     */
+    public static int getRequiredClientSecretLength() {
+        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -335,6 +347,57 @@ public final class KeycloakModelUtils {
         }
 
         return session.users().getUserByUsername(realm, username);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction when the current
+     * transaction rolls back. The task is a no-op if the current transaction commits normally.
+     *
+     * <p>Use this for cleanup operations that must persist even when an error response
+     * causes the main transaction to roll back (e.g., session invalidation on token reuse).
+     * The task receives a {@link SessionLookup} backed by a fresh session
+     * with realm/client context cloned from the current one.</p>
+     *
+     * @see #enlistAfterCompletion(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterRollback(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, false);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction after the current
+     * transaction completes, regardless of whether it commits or rolls back.
+     *
+     * <p>Use this for operations that must persist in both success and error paths
+     * (e.g., creating UMA permission tickets).</p>
+     *
+     * @see #enlistAfterRollback(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, true);
+    }
+
+    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit) {
+        KeycloakSessionFactory factory = currentSession.getKeycloakSessionFactory();
+        KeycloakContext context = currentSession.getContext();
+
+        currentSession.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                if (runOnCommit) {
+                    execute();
+                }
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                execute();
+            }
+
+            private void execute() {
+                runJobInTransaction(factory, context, sub -> task.accept(new SessionLookup(sub)));
+            }
+        });
     }
 
     /**
@@ -966,19 +1029,35 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Validates and retrieves the organization for an Identity Provider mapper.
+     * Validates and retrieves the organization targeted by an Identity Provider mapper.
+     * <p />
+     * The target organization is the one recorded in the mapper configuration under
+     * {@link ConfigConstants#ORGANIZATION_ID}. An identity provider can be linked to several organizations, so the
+     * mapper itself states which one it applies to; to map groups of several organizations, add one mapper per
+     * organization.
+     * <p />
      * This performs all necessary checks to ensure the IdP-organization relationship is valid:
+     * - The mapper records a target organization
+     * - The identity provider is still linked to that organization
      * - Organizations feature is enabled
      * - Organization exists and is enabled
-     * - Bidirectional link exists (organization still has this IdP)
      *
      * @param session the Keycloak session
+     * @param mapperModel the mapper model configuration recording the target organization
      * @param idpModel the identity provider model
      * @return the validated organization if all checks pass, null otherwise
      */
-    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
-        String idpOrgId = idpModel.getOrganizationId();
+    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderMapperModel mapperModel, IdentityProviderModel idpModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        String idpOrgId = config == null ? null : config.get(ConfigConstants.ORGANIZATION_ID);
+
         if (idpOrgId == null) {
+            logger.warnf("Mapper '%s' does not reference the organization it applies to.", mapperModel.getName());
+            return null;
+        }
+
+        if (!idpModel.isLinkedToOrganization(idpOrgId)) {
+            logger.warnf("IdP '%s' is not linked to organization '%s' referenced by mapper '%s'.", idpModel.getAlias(), idpOrgId, mapperModel.getName());
             return null;
         }
 
@@ -986,12 +1065,12 @@ public final class KeycloakModelUtils {
         if (orgProvider != null && orgProvider.isEnabled()) {
             OrganizationModel organization = orgProvider.getById(idpOrgId);
 
-            if (organization != null && organization.isEnabled() && organization.getIdentityProviders().anyMatch(idp -> idp.getAlias().equals(idpModel.getAlias()))) {
+            if (organization != null && organization.isEnabled()) {
                 return organization;
             }
         }
 
-        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpModel.getAlias(), idpOrgId);
+        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpOrgId, idpModel.getAlias());
 
         return null;
     }
@@ -1000,18 +1079,22 @@ public final class KeycloakModelUtils {
      * Retrieves and validates a group for use in an Identity Provider mapper.
      * The lookup strategy is determined by the {@code groupType} config value:
      * <ul>
-     *   <li>{@code "ORGANIZATION"} — searches within the organization groups linked to the IdP</li>
+     *   <li>{@code "ORGANIZATION"} — searches within the groups of the organization recorded on the mapper, see
+     *       {@link #getOrganizationForIdpMapper(KeycloakSession, IdentityProviderMapperModel, IdentityProviderModel)}</li>
      *   <li>{@code "REALM"} or missing — searches realm groups</li>
      * </ul>
+     * Organization groups are resolved only for users who are members of the target organization.
      *
      * @param session the Keycloak session
      * @param realm the realm
+     * @param user the user whose group membership is being mapped
      * @param mapperModel the mapper model configuration containing the group path and group type
      * @param context the brokered identity context containing the IdP configuration
      * @return the group if found and valid, null otherwise (mapper should be skipped)
      */
     public static GroupModel getGroupForIdpMapper(KeycloakSession session,
                                                    RealmModel realm,
+                                                   UserModel user,
                                                    IdentityProviderMapperModel mapperModel,
                                                    BrokeredIdentityContext context) {
         String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
@@ -1029,10 +1112,11 @@ public final class KeycloakModelUtils {
         }
 
         if (groupType == GroupModel.Type.ORGANIZATION) {
-            OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
-            if (organization != null) {
-                group = findGroupByPath(session, realm, organization, groupPath);
+            OrganizationModel organization = getOrganizationForIdpMapper(session, mapperModel, context.getIdpConfig());
+            if (organization == null || user == null || !organization.isMember(user)) {
+                return null;
             }
+            group = findGroupByPath(session, realm, organization, groupPath);
         } else {
             // GroupModel.Type.REALM or null → search realm groups
             group = findGroupByPath(session, realm, groupPath);
@@ -1116,6 +1200,38 @@ public final class KeycloakModelUtils {
         }
 
         return clientId + CLIENT_ROLE_SEPARATOR + roleName;
+    }
+
+    public static RoleModel getRoleByName(RealmModel realm, String clientId, String name) {
+        if (clientId == null) {
+            return realm.getRole(name);
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                return null;
+            }
+
+            return client.getRole(name);
+        }
+    }
+
+    public static void removeTransientAdminRoles(RealmModel realm, String clientId, UserModel user, Access access) {
+        if (access == null || access.getRoles() == null) {
+            return;
+        }
+
+        Set<String> roles = access.getRoles();
+        Iterator<String> roleIterator = roles.iterator();
+
+        while (roleIterator.hasNext()) {
+            String role = roleIterator.next();
+            RoleModel adminRole = getRoleByName(realm, clientId, role);
+
+            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+                roleIterator.remove();
+            }
+        }
     }
 
     /**
@@ -1231,7 +1347,7 @@ public final class KeycloakModelUtils {
 
         if (clientScope == null) {
             // as fallback we try to resolve parameterized scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {
@@ -1305,22 +1421,12 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @param clientAuthenticatorType
-     * @return secret size based on authentication type
+     * @param clientAuthenticatorType ignored, kept for backwards compatibility
+     * @param signingAlg ignored, kept for backwards compatibility
+     * @return secret size in alphanumeric characters with HS512-level entropy
      */
     public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
-        if (clientAuthenticatorType != null)
-            switch (clientAuthenticatorType) {
-                case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
-                    else if (Algorithm.HS512.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
-                    else
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
-                }
-            }
-        return SecretGenerator.SECRET_LENGTH_256_BITS;
+        return getRequiredClientSecretLength();
     }
 
     /**

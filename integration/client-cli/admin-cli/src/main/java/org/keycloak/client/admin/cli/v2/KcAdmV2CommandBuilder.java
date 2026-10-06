@@ -1,5 +1,6 @@
 package org.keycloak.client.admin.cli.v2;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.CommandDescriptor;
@@ -8,10 +9,12 @@ import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.ResourceDescrip
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.VariantDescriptor;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help;
 import picocli.CommandLine.Model.ArgGroupSpec;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.PositionalParamSpec;
+import picocli.CommandLine.Model.UsageMessageSpec;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
@@ -26,11 +29,15 @@ final class KcAdmV2CommandBuilder {
     static final String OPT_FILE = "-f";
     static final String OPT_COMPRESSED = "--compressed";
     private static final String CMD_EDIT = "edit";
+    private static final String CONNECTION_OPTIONS_SECTION = "connectionOptions";
+    private static final String CONNECTION_OPTIONS_HEADING = "%nConnection options (must precede the subcommand):%n";
 
     private final KcAdmV2Cmd root;
+    private final List<OptionSpec> connectionOptions;
 
-    KcAdmV2CommandBuilder(KcAdmV2Cmd root) {
+    KcAdmV2CommandBuilder(KcAdmV2Cmd root, CommandSpec rootSpec) {
         this.root = root;
+        this.connectionOptions = rootSpec.options().stream().filter(o -> !o.hidden()).toList();
     }
 
     void addCommands(CommandLine cli, KcAdmV2CommandDescriptor descriptor) {
@@ -40,6 +47,7 @@ final class KcAdmV2CommandBuilder {
             groupSpec.name(resource.getName());
             groupSpec.usageMessage().header(capitalize(resource.getName()) + " operations");
             addHelpOption(groupSpec);
+            addConnectionOptionsSection(groupSpec);
 
             CommandLine groupCli = new CommandLine(groupSpec);
             groupCommand.setSpec(groupSpec);
@@ -160,6 +168,8 @@ final class KcAdmV2CommandBuilder {
             spec.addArgGroup(queryGroup.build());
         }
 
+        addConnectionOptionsSection(spec);
+
         return new CommandLine(spec);
     }
 
@@ -219,6 +229,7 @@ final class KcAdmV2CommandBuilder {
         addDumpTraceOption(spec);
         addOutputGroup(spec);
         addIdPositional(spec, resourceName, true);
+        addConnectionOptionsSection(spec);
 
         return new CommandLine(spec);
     }
@@ -251,6 +262,29 @@ final class KcAdmV2CommandBuilder {
                 .usageHelp(true)
                 .hidden(true)
                 .build());
+    }
+
+    private void addConnectionOptionsSection(CommandSpec spec) {
+        UsageMessageSpec usage = spec.usageMessage();
+        List<String> keys = new ArrayList<>(usage.sectionKeys());
+
+        // connection options must be listed before sub-commands on the variant parent
+        int commandListIndex = keys.indexOf(UsageMessageSpec.SECTION_KEY_COMMAND_LIST_HEADING);
+        if (commandListIndex >= 0) {
+            keys.add(commandListIndex, CONNECTION_OPTIONS_SECTION);
+        } else {
+            keys.add(CONNECTION_OPTIONS_SECTION);
+        }
+        usage.sectionKeys(keys);
+
+        // connection options are added as a custom options section so that they do not appear in the leaf autocomplete
+        usage.sectionMap().put(CONNECTION_OPTIONS_SECTION, help -> {
+            Help.Layout layout = help.createDefaultLayout(connectionOptions, List.of(), help.colorScheme());
+            for (OptionSpec opt : connectionOptions) {
+                layout.addOption(opt, help.parameterLabelRenderer());
+            }
+            return help.createHeading(CONNECTION_OPTIONS_HEADING) + layout;
+        });
     }
 
     private static void addDumpTraceOption(CommandSpec spec) {

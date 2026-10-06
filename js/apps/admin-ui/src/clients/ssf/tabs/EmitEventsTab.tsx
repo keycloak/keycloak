@@ -1,4 +1,3 @@
-import { NetworkError, fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   HelpItem,
@@ -30,10 +29,9 @@ import { useAdminClient } from "../../../admin-client";
 import CodeEditor from "../../../components/form/CodeEditor";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import { toSsfClientTab } from "../../routes/ClientSsfTab";
 import type { SsfClientStream } from "./StreamTab";
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 
 type SsfEmitResult = {
   status: string;
@@ -190,23 +188,15 @@ export const EmitEventsTab = ({
       // resulting SET matches the shape native events for this
       // receiver would have. Org subjects produce a complex tenant-
       // only subject for org-scoped routing.
-      const response = await fetchWithError(
-        `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/events/emit`,
+      const result = (await adminClient.ssf.emitEvent(
+        { clientId: client.clientId! },
         {
-          method: "POST",
-          headers: {
-            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            eventType: values.emitEventType,
-            subjectType: values.emitSubjectType,
-            subjectValue: values.emitSubjectValue.trim(),
-            event: parsedPayload,
-          }),
+          eventType: values.emitEventType,
+          subjectType: values.emitSubjectType,
+          subjectValue: values.emitSubjectValue.trim(),
+          event: parsedPayload as Record<string, unknown>,
         },
-      );
-      const result = (await response.json()) as SsfEmitResult;
+      )) as SsfEmitResult;
       setEmitResult(result);
     } catch (error) {
       setEmitError(translateEmitError(error, values));
@@ -233,6 +223,18 @@ export const EmitEventsTab = ({
       (error instanceof Error ? error.message : String(error));
     switch (body?.error) {
       case "subject_not_found":
+        // A complex sub_id whose user or tenant subject member (SSF
+        // §3.3) failed to resolve ships a machine-readable
+        // params.subjectMember discriminator — render the
+        // member-specific message instead of the generic (type, value)
+        // one, which only fits the single-member shorthand this form
+        // sends today.
+        if (body.params?.subjectMember === "user") {
+          return t("ssfEmitErrorUserSubjectMemberNotFound");
+        }
+        if (body.params?.subjectMember === "tenant") {
+          return t("ssfEmitErrorTenantSubjectMemberNotFound");
+        }
         // Prefer server-supplied params so the message reflects the
         // values that actually failed validation, not whatever the user
         // may have typed into the form while the request was in flight.
@@ -240,6 +242,15 @@ export const EmitEventsTab = ({
           type: body.params?.subjectType ?? values.emitSubjectType,
           value: body.params?.subjectValue ?? values.emitSubjectValue.trim(),
         });
+      case "subject_mismatch":
+        // Complex user+tenant subject whose user is not a member of
+        // the tenant organization. Not reachable from this form yet
+        // (it only sends the single-member shorthand), but wired up so
+        // complex-subject support added later inherits a translated
+        // message. Deliberately generic: the server omits the resolved
+        // user/tenant identifiers so the role-scoped emit endpoint
+        // cannot be used to disclose realm metadata.
+        return t("ssfEmitErrorSubjectMismatch");
       case "invalid_request":
         return t("ssfEmitErrorInvalidRequest", { detail });
       case "no_delivery_config":

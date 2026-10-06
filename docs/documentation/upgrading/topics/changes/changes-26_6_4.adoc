@@ -1,43 +1,33 @@
-// ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== The `view-system` admin role no longer exists
+=== Files for the Java Keystore provider should be placed inside a fixed realm directory
 
-Since version 26.5.4, when introduced, the `view-system` admin role was marked as deprecated. In this release, the role
-has been removed for security reasons.
+The Java Keystore provider allows the realm administrator to load keys from an encrypted Java keystore file instead of the {project_name}'s database. Since this release, the path of the file is restricted to be inside a folder whose name should be the realm name and, in turn, this realm folder should be inside a fixed main directory for keystores (by default the `data` directory, `${kc.home.dir}/data`). For example, for a realm called `test`, all keystore files should be located under `${kc.home.dir}/data/test`. This way, {project_name} avoids leaking information from the File System and the keys are isolated between realms.
 
-Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
+The main keystores directory, where the different realm folders are located, can be customized using a provider startup option:
 
-If you are still relying on the `view-system` role, you should consider accessing the full server information using a user
-(or service account) from the `master` realm and granted with `manage-realm` admin roles.
+```
+kc.[sh|bat] start --spi-keys--java-keystore--keystores-path /path/to/keystores
+```
 
-Before upgrading, you should check if any of your users, service accounts, or groups are still relying on the
-`view-system` role and review their access controls to ensure they have the necessary permissions to access the server
-information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
-highly-trusted accounts.
+When a keystore is created or updated, the `keystore` configuration option is checked to be a file under the commented realm folder. If the keystore is outside its boundaries, the operation fails. This new behavior means that existing keystores continue working but cannot be updated or modified until the file is copied to an allowed path. Imports from a previous configuration, with store files outside the realm folder, will fail in the same way.
 
-// ------------------------ Notable changes ------------------------ //
+If you are using a Java Keystore file to provide keys for a realm, please copy the keystore inside the appropriate realm folder and update the `java-keystore` provider configuration accordingly.
+
+For more information, see link:{adminguide_link}#realm_keys[Configuring realm keys] chapter in the {adminguide_name}.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
-=== <TODO>
+=== Registration Access Tokens cannot be used when client is disabled
 
-// ------------------------ Deprecated features ------------------------ //
-== Deprecated features
+Registration Access Tokens (RAT) can no longer be used to retrieve, update, or delete a client when the client is disabled.
 
-The following sections provide details on deprecated features.
+If you attempt to use a RAT to manage a disabled client, the request will be rejected with an HTTP 401 Unauthorized response. To manage a disabled client, you must use admin credentials instead of the client's RAT.
 
-=== <TODO>
-
-// ------------------------ Removed features ------------------------ //
-== Removed features
-
-The following features have been removed from this release.
-
-=== <TODO>
-
+Note that a RAT can still be used to disable a client, but once the client is disabled, the RAT can no longer be used to enable it again or perform other operations.

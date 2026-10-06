@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -98,10 +99,13 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     private static String base64EncodeRequestToken(RequestToken requestToken) throws IOException {
-      try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-              ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
-          oos.writeObject(requestToken);
-          oos.close();
+      try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+          // Nested try-with-resources: inner block must close before baos.toString(),
+          // because Base64.wrap() only writes padding bytes ('=') on close().
+          try (OutputStream base64Stream = Base64.getEncoder().wrap(baos);
+               ObjectOutputStream oos = new ObjectOutputStream(base64Stream)) {
+              oos.writeObject(requestToken);
+          }
           return baos.toString(StandardCharsets.US_ASCII);
       }
     }
@@ -169,7 +173,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
         if (accessToken == null) {
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
@@ -296,8 +300,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        authSession.setUserSessionNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
-
+        String token = (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        setFederatedAccessToken(authSession, token);
     }
 
 }

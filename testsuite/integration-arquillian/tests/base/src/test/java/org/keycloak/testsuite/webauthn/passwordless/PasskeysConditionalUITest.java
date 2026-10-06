@@ -41,6 +41,7 @@ import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
@@ -92,7 +93,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
             // the user should be automatically logged in using the discoverable credential
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -126,7 +127,6 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
             // the key is not discoverable, therefore the login should not be done automatically
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
-            loginPage.assertCurrent();
             MatcherAssert.assertThat(PageUtils.getPageTitle(driver), Matchers.is("Passkey login"));
         }
     }

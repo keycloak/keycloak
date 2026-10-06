@@ -141,7 +141,7 @@
         * @param {string} message
         * @see https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#basic_example
         */
-      async function sha256Digest(message) {
+      async function sha384Digest(message) {
         const encoder = new TextEncoder();
         const data = encoder.encode(message);
 
@@ -149,12 +149,12 @@
           throw new Error("Web Crypto API is not available.");
         }
 
-        return await crypto.subtle.digest("SHA-256", data);
+        return await crypto.subtle.digest("SHA-384", data);
       }
 
       async function hashString(str) {
         // hash codeVerifier, then encode as url-safe base64 without padding
-        const hashBytes = new Uint8Array(await sha256Digest(str));
+        const hashBytes = new Uint8Array(await sha384Digest(str));
         const encodedHash = bytesToBase64(hashBytes)
             .replace(/\+/g, '-')
             .replace(/\//g, '_')

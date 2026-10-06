@@ -81,4 +81,10 @@ public class HashUtils {
         return Base64Url.encode(hashedOutput);
     }
 
+    public static String sha384UrlEncodedHash(String input, Charset charset) {
+        byte[] inputBytes = input.getBytes(charset);
+        byte[] hashedOutput = hash(JavaAlgorithm.SHA384, inputBytes);
+        return Base64Url.encode(hashedOutput);
+    }
+
 }

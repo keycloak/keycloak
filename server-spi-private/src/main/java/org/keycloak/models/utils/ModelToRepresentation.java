@@ -49,6 +49,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.deployment.DeployedConfigurationsManager;
@@ -75,6 +76,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.ProtocolMapperModel;
@@ -91,6 +93,8 @@ import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -111,6 +115,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -354,14 +359,14 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(KeycloakSession session, UserModel user, boolean brief) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-        UserRepresentation rep = profile.toRepresentation(!brief);
+        UserRepresentation rep = profile.toRepresentation(!brief, false);
         RealmModel realm = session.getContext().getRealm();
 
-        rep = brief ?
-                ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
-
-        rep.setUserProfileMetadata(null);
+        if (brief) {
+            ModelToRepresentation.toBriefRepresentation(user, rep, false);
+        } else {
+            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+        }
 
         return rep;
     }
@@ -985,8 +990,7 @@ public class ModelToRepresentation {
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
-        Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
-        providerRep.setConfig(config);
+        providerRep.setConfig(new HashMap<>(identityProviderModel.getConfig()));
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
@@ -1008,7 +1012,24 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            Set<String> orgIds = identityProviderModel.getOrganizationIds();
+            if (orgIds != null && !orgIds.isEmpty()) {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                providerRep.setOrganizationLinks(orgIds.stream()
+                        .map(orgId -> {
+                            OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(orgId);
+                            OrganizationModel org = orgProvider.getById(orgId);
+                            if (org != null) {
+                                OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(org, identityProviderModel);
+                                if (link != null) {
+                                    linkRep.setAutoMembership(link.isAutoMembership());
+                                    linkRep.setMembershipType(link.getMembershipType().name());
+                                }
+                            }
+                            return linkRep;
+                        })
+                        .collect(Collectors.toList()));
+            }
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
@@ -1061,13 +1082,32 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model) {
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model, String credentialScopeName) {
         UserVerifiableCredentialRepresentation rep = new UserVerifiableCredentialRepresentation();
-        rep.setCredentialScopeName(model.getCredentialScopeName());
+        rep.setCredentialScopeName(credentialScopeName);
         rep.setRevision(model.getRevision());
         rep.setCreatedDate(model.getCreatedDate());
         rep.setUpdatedDate(model.getUpdatedDate());
         rep.setUserAttributes(model.getUserAttributes());
+        return rep;
+    }
+
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model, RealmModel realm) {
+        ClientScopeModel clientScope = realm.getClientScopeById(model.getClientScopeId());
+        String scopeName = null;
+
+        if (clientScope != null) {
+            scopeName = clientScope.getName();
+        }
+
+        UserVerifiableCredentialRepresentation rep = toRepresentation(model, scopeName);
+
+        // Enrich with credentialConfigurationId if it's an OID4VCI scope
+        if (clientScope != null && OID4VCIConstants.OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
+            CredentialScopeModel credentialScope = new CredentialScopeModel(clientScope);
+            rep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
+        }
+
         return rep;
     }
 
@@ -1504,19 +1544,33 @@ public class ModelToRepresentation {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
+        representation.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        representation.setAutoRedirect(model.isAutoRedirect());
         return representation;
     }
 
-    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model) {
+    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model, String credentialType) {
         IssuedVerifiableCredentialRepresentation rep = new IssuedVerifiableCredentialRepresentation();
         rep.setId(model.getId());
         rep.setUserId(model.getUserId());
-        rep.setCredentialType(model.getCredentialType());
+        rep.setCredentialType(credentialType);
         rep.setRevision(model.getRevision());
         rep.setIssuedAt(model.getIssuedAt());
         rep.setExpiresAt(model.getExpiresAt());
         rep.setClientId(model.getClientId());
         return rep;
+    }
+
+    public static IssuedVerifiableCredentialRepresentation toRepresentation(IssuedVerifiableCredentialModel model, KeycloakSession session, RealmModel realm) {
+        String credentialType = null;
+        UserVerifiableCredentialModel vcModel = session.users().getVerifiableCredentialById(model.getVerifiableCredentialId());
+        if (vcModel != null) {
+            ClientScopeModel clientScope = realm.getClientScopeById(vcModel.getClientScopeId());
+            if (clientScope != null) {
+                credentialType = clientScope.getName();
+            }
+        }
+        return toRepresentation(model, credentialType);
     }
 
 }

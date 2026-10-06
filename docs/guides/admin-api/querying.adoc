@@ -1,0 +1,190 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/api.adoc" as api>
+
+<@tmpl.guide
+title="Admin API v2: Filtering and Projection"
+summary="Filter and project client resources using the Admin API v2 query syntax."
+preview="true">
+
+The Admin API v2 supports filtering clients using the `q` query parameter.
+The filter syntax is a subset of the link:{adminguide_link}#_scim_filtering_resources[SCIM filter syntax] defined in link:https://datatracker.ietf.org/doc/html/rfc7644#section-3.4.2.2[RFC 7644, Section 3.4.2.2]. All string comparisons are case-sensitive.
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=<filter-expression>
+----
+
+String values must be enclosed in double quotes.
+Boolean values are unquoted.
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=clientId eq "my-app"
+GET /admin/api/{realmName}/clients/v2?q=enabled eq true
+----
+
+=== Supported operators
+
+The following comparison operators are supported for client filtering:
+
+[cols="1,2,3",options="header"]
+|===
+|Operator |Meaning |Example
+
+|`eq`
+|Equal
+|`clientId eq "my-app"`
+
+|`ne`
+|Not equal
+|`protocol ne "saml"`
+
+|`co`
+|Contains (substring)
+|`description co "oauth"`
+
+|`sw`
+|Starts with
+|`clientId sw "query-"`
+
+|`ew`
+|Ends with
+|`clientId ew "-app"`
+
+|`pr`
+|Present (field is not null)
+|`description pr`
+|===
+
+Logical operators (`and`, `or`, `not`) and parentheses for grouping are supported.
+For the full syntax reference, including operator precedence and detailed examples, see the link:{adminguide_link}#_scim_filtering_resources[SCIM filtering] {section} in the {adminguide_name}.
+
+[NOTE]
+====
+The `gt`, `ge`, `lt`, and `le` operators supported by the SCIM API are not available for client filtering.
+====
+
+=== Fields without a value
+
+A comparison with a field that has no value is never true, and for every searchable field except `roles` the negated comparison is not true either.
+For example, neither `auth.method ne "client-secret"` nor `not (auth.method eq "client-secret")` returns SAML clients or public clients, because they have no authentication method. Use `not auth.method pr` to find them.
+The `roles` field is multi-valued: `roles ne "admin"` does not return clients without roles, but `not (roles eq "admin")` does, as described in <<Collection field matching>>.
+
+The `eq` and `ne` operators accept the `null` literal, but a comparison such as `description eq null` never matches any client, so it cannot be used to find clients where the field is absent.
+For details, see link:{adminguide_link}#_scim_filtering_null_values[Attributes without a value] in the {adminguide_name}.
+
+=== Queryable fields
+
+Only the fields listed below can be used in filter expressions.
+Other fields of the client representation are not searchable.
+Using an unsearchable or unknown field returns HTTP 400, unlike the SCIM API which silently ignores unrecognized attributes.
+
+==== Common fields (all client types)
+
+<@api.queryableFields group="common"/>
+
+<#if ctx.adminApiV2.getQueryableFields("openid-connect")?has_content>
+==== OIDC-specific fields
+
+These fields are available only for `openid-connect` clients.
+They resolve to `null` for SAML clients, so value-based comparisons like `eq`, `ne`, `co`, or `sw` do not match SAML clients.
+See <<Fields without a value>>.
+
+<@api.queryableFields group="openid-connect"/>
+
+</#if>
+<#if ctx.adminApiV2.getQueryableFields("saml")?has_content>
+==== SAML-specific fields
+
+These fields are available only for `saml` clients.
+They resolve to `null` for OIDC clients, so value-based comparisons like `eq`, `ne`, `co`, or `sw` do not match OIDC clients.
+See <<Fields without a value>>.
+
+<@api.queryableFields group="saml"/>
+
+</#if>
+=== Collection field matching
+
+For multi-valued fields (type `Set<String>` in the tables above), the `eq`, `co`, `sw`, and `ew` operators match if *any* element in the collection satisfies the condition:
+
+* `roles eq "admin"` - matches clients that have a role named `admin`
+* `roles co "adm"` - matches clients that have a role whose name contains `adm`
+
+The `ne` operator matches if *any* element in the collection differs from the value.
+For example, `roles ne "admin"` matches clients that have at least one role other than `admin`, and it does not match clients without roles.
+To find clients that do not have a given role, negate the equality instead: `not (roles eq "admin")`.
+This form also matches clients without roles.
+
+To match clients that have multiple values, combine conditions with `and`:
+
+[source]
+----
+q=roles eq "admin" and roles eq "user"
+----
+
+=== Examples
+
+Find all enabled OIDC clients:
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=protocol eq "openid-connect" and enabled eq true
+----
+
+Find clients with a description:
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=description pr
+----
+
+Find OIDC clients using client-secret authentication:
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=auth.method eq "client-secret"
+----
+
+Find clients by display name prefix, excluding a specific protocol:
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=displayName sw "My" and protocol ne "saml"
+----
+
+=== Projection
+
+Use the `fields` query parameter to include only specific fields in the response.
+If omitted, all fields are returned.
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?fields=clientId,enabled,protocol
+----
+
+Filtering and projection can be combined.
+The filter evaluates against the full representation before projection is applied, so filtered fields do not need to be included in the projection:
+
+[source]
+----
+GET /admin/api/{realmName}/clients/v2?q=enabled eq true&fields=clientId,displayName
+----
+
+=== Error handling
+
+The server returns HTTP 400 with a descriptive error message when:
+
+* The filter expression has a syntax error.
+* The filter references an unknown field.
+* The filter references a field that is not searchable.
+* The filter uses an unsupported operator (e.g. `gt`, `ge`, `lt`, `le`).
+* The filter uses `null` with an operator other than `eq` or `ne`.
+
+[source,json]
+----
+{
+  "error": "Unknown query field: unknownField"
+}
+----
+
+</@tmpl.guide>

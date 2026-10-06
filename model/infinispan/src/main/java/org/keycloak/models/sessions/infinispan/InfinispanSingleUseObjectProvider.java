@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.models.KeycloakSession;
@@ -51,6 +52,10 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        Objects.requireNonNull(key);
+        if (lifespanSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanSeconds must be positive");
+        }
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(notes);
         tx.put(singleUseObjectCache, key, tokenValue, lifespanSeconds, TimeUnit.SECONDS);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
@@ -63,6 +68,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public Map<String, String> get(String key) {
+        Objects.requireNonNull(key);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
             throw new ModelException("Revoked tokens can't be retrieved");
         }
@@ -73,6 +79,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public Map<String, String> remove(String key) {
+        Objects.requireNonNull(key);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
            throw new ModelException("Revoked tokens can't be removed");
         }
@@ -89,6 +96,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        Objects.requireNonNull(key);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
             throw new ModelException("Revoked tokens can't be replaced");
         }
@@ -98,6 +106,10 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
+        Objects.requireNonNull(key);
+        if (lifespanInSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanInSeconds must be positive");
+        }
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
         SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
@@ -108,6 +120,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
 
     @Override
     public boolean contains(String key) {
+        Objects.requireNonNull(key);
         return singleUseObjectCache.containsKey(key);
     }
 

@@ -49,4 +49,25 @@ public interface InfinispanConnectionProviderFactory extends ProviderFactory<Inf
         return false;
     }
 
+    /**
+     * Checks if the current node is the coordinator of the JGroups cluster.
+     *
+     * @return {@code true} if this node is the coordinator.
+     */
+    default boolean isCoordinator() {
+        return false;
+    }
+
+    /**
+     * Checks if the coordinator check is supported.
+     * <p>
+     * Not all configurations use an embedded cache manager with JGroups clustering,
+     * so this method signals whether {@link #isCoordinator()} returns meaningful results.
+     *
+     * @return {@code true} if the coordinator check is supported.
+     */
+    default boolean isCoordinatorSupported() {
+        return false;
+    }
+
 }

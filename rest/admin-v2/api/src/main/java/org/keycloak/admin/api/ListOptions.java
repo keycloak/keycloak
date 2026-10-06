@@ -19,10 +19,23 @@ public class ListOptions {
     @QueryParam("fields")
     protected String fields;
 
+    @Parameter(description = "Sort expression. Comma-separated fields with optional direction per field using | (e.g. displayName|desc,clientId). Default direction is asc.",
+            schema = @Schema(type = SchemaType.STRING, defaultValue = "clientId"))
+    @QueryParam("sort")
+    protected String sort;
+
     @Parameter(description = "Filter expression using SCIM-like syntax, e.g. clientId eq \"my-app\" and enabled eq true")
     @QueryParam("q")
     protected String query;
 
+    @Parameter(description = "Maximum number of results to return. Defaults to 100.")
+    @QueryParam("limit")
+    protected Integer limit;
+
+    @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
+    @QueryParam("offset")
+    protected Integer offset;
+    
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
         return this;
@@ -30,6 +43,16 @@ public class ListOptions {
 
     public ListOptions query(String query) {
         this.setQuery(query);
+        return this;
+    }
+
+    public ListOptions limit(int limit) {
+        this.setLimit(limit);
+        return this;
+    }
+
+    public ListOptions offset(int offset) {
+        this.setOffset(offset);
         return this;
     }
 
@@ -54,5 +77,44 @@ public class ListOptions {
     public void setQuery(String query) {
         this.query = query;
     }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
+    }
     
+    public String getSort() {
+        return sort;
+    }
+    
+    public void setSort(String sort) {
+        this.sort = sort;
+    }
+    
+    public ListOptions addSortField(String field) {
+        return addSortField(field, true);
+    }
+    
+    public ListOptions addSortField(String field, boolean ascending) {
+        if (this.sort == null) {
+            this.sort = "";
+        }
+        if (!this.sort.isEmpty()) {
+            this.sort += ",";
+        }
+        this.sort += field + (ascending ? "" : "|DESC");
+        return this;
+    }
+
 }

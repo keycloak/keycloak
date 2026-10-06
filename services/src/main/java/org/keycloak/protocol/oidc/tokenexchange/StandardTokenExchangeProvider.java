@@ -47,8 +47,11 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.TokenExchangeResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.DPoPUtil;
@@ -65,10 +68,6 @@ import org.keycloak.util.TokenUtil;
  */
 public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider {
 
-    @Override
-    public int getVersion() {
-        return 2;
-    }
 
     @Override
     public boolean supports(TokenExchangeContext context) {
@@ -120,6 +119,16 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response tokenExchange() {
+        AuthenticationManager.AuthResult authResult = processSubjectToken();
+        return exchangeClientToClient(authResult.user(), authResult.session(), authResult.token(), true);
+    }
+
+    protected AuthenticationManager.AuthResult processSubjectToken() {
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType())) {
+            event.detail(Details.REASON, "subject_token_type invalid");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid subject token type", Response.Status.BAD_REQUEST);
+        }
 
         String subjectToken = context.getParams().getSubjectToken();
 
@@ -137,6 +146,31 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserSessionModel tokenSession = authResult.session();
         AccessToken token = authResult.token();
 
+        validateSenderConstrainedToken(token);
+
+        event.user(tokenUser);
+        event.detail(Details.USERNAME, tokenUser.getUsername());
+        if (token.getSessionId() != null) {
+            event.session(tokenSession);
+        }
+        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
+
+        validateSubjectToken(token);
+
+        return authResult;
+    }
+
+
+    protected void validateSubjectToken(AccessToken subjectToken) {
+        if (subjectToken.getOtherClaims().containsKey(IDToken.MAY_ACT) || subjectToken.getOtherClaims().containsKey(IDToken.ACT)) {
+            event.detail(Details.REASON, "subject_token with a 'may_act' or 'act' claim is not allowed for standard token exchange");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Subject token with a delegation claim is not allowed for standard token exchange", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    protected void validateSenderConstrainedToken(AccessToken token) {
         if (isSenderConstrainedToken(token)) {
             // Reject sender-constrained tokens (RFC 7800) as subject_token if client does not match the authorized parties claim
             if (!token.getIssuedFor().equals(client.getClientId())) {
@@ -173,15 +207,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 }
             }
         }
-
-        event.user(tokenUser);
-        event.detail(Details.USERNAME, tokenUser.getUsername());
-        if (token.getSessionId() != null) {
-            event.session(tokenSession);
-        }
-        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
-
-        return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
     @Override
@@ -316,6 +341,16 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 responseBuilder.generateRefreshToken();
             }
 
+            try {
+                session.clientPolicy().triggerOnEvent(new TokenExchangeResponseContext(formParams, clientSessionCtx, responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+
             AccessTokenResponse res;
             if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
                 // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
@@ -336,6 +371,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             if (responseBuilder.getAccessToken().getAudience() != null) {
                 event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
             }
+
             event.success();
 
             return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));

@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -35,6 +37,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -49,6 +53,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
@@ -305,6 +310,40 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         assertKcActionStatus(SUCCESS);
     }
 
+    @Test
+    public void resetPasswordRequiresNoReAuthWithMaxAuthAgeConfigIntegerOverflow() throws Exception {
+        // retrieve the password required action
+        RequiredActionProviderRepresentation passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Required action not found"));
+
+        // max auth age close to Integer.MAX_VALUE must not overflow the authTime+maxAge sum and
+        // incorrectly force re-authentication
+        passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, String.valueOf(Integer.MAX_VALUE));
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        EventAssertion.expectLoginSuccess(events.poll());
+
+        timeOffSet.set(350);
+
+        // Should not prompt for re-authentication
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        assertTrue(changePasswordPage.isCancelDisplayed());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        assertKcActionStatus(SUCCESS);
+    }
+
 
     /**
      * See GH-12943
@@ -458,6 +497,47 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Test
+    public void checkLogoutSessionsBackchannelLogout() throws Exception {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, OAuthClient.APP_ROOT + "/admin/backchannelLogout")
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true")
+                .update()) {
+
+            oauth.openLoginForm();
+            loginPage.login("test-user@localhost", "password");
+            String firstSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
+
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            String secondSessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
+
+            // remove cookies to login again
+            oauth.getDriver().navigate().to(oauth.getEndpoints().getJwks());
+            oauth.getDriver().manage().deleteAllCookies();
+
+            oauth.openLoginForm();
+            oauth.doLogin("test-user@localhost", "password");
+            EventAssertion.expectLoginSuccess(events.poll());
+
+            doAIA(); // Trigger password update with logout checkbox
+            changePasswordPage.assertCurrent();
+            changePasswordPage.checkLogoutSessions();
+            changePasswordPage.changePassword("new-password", "new-password");
+
+            List<LogoutToken> capturedLogoutTokens = List.of(
+                    testingClient.testApp().getBackChannelLogoutToken(),
+                    testingClient.testApp().getBackChannelLogoutToken());
+
+            Set<String> loggedOutSids = capturedLogoutTokens.stream().map(LogoutToken::getSid).collect(Collectors.toSet());
+            MatcherAssert.assertThat(loggedOutSids, Matchers.containsInAnyOrder(firstSessionId, secondSessionId));
+        }
+    }
+
+    @Test
     public void uncheckLogoutSessions() {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
@@ -520,7 +600,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                 oauth.openLoginForm();
                 loginPage.assertCurrent();
                 loginPage.login("test-user@localhost", "password");
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
                 EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, "test-user@localhost");
 
                 // navigate to the authenticate page with the other auth_session_id, tab_id and client_data

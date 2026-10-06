@@ -262,7 +262,7 @@ export default function FlowDetails() {
         await adminClient.authenticationManagement.deleteFlow({
           flowId: flow!.id!,
         });
-        navigate(toAuthentication({ realm }));
+        void navigate(toAuthentication({ realm }));
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
         addError("deleteFlowError", error);
@@ -318,7 +318,7 @@ export default function FlowDetails() {
           flowAlias={flow?.alias!}
           onClose={(usedBy) => {
             toggleBindFlow();
-            navigate(
+            void navigate(
               toFlow({
                 realm,
                 id: id!,

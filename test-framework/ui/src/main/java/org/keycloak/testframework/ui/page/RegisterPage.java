@@ -78,6 +78,17 @@ public class RegisterPage extends AbstractLoginPage {
         register(firstName, lastName, email, username, password, password, null, null, null);
     }
 
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password) {
+        registerWithEmailAsUsername(firstName, lastName, email, password, password);
+    }
+
+    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
+        if (isUsernamePresent()) {
+            Assertions.fail("Form must be without username field");
+        }
+        register(firstName, lastName, email, null, password, passwordConfirm, null, null, null);
+    }
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
@@ -100,9 +111,11 @@ public class RegisterPage extends AbstractLoginPage {
             }
         }
 
-        usernameInput.clear();
-        if (username != null) {
-            usernameInput.sendKeys(username);
+        if (isUsernamePresent()) {
+            usernameInput.clear();
+            if (username != null) {
+                usernameInput.sendKeys(username);
+            }
         }
 
         if (!isPasswordPresent() && password != null) {
@@ -173,6 +186,14 @@ public class RegisterPage extends AbstractLoginPage {
     public boolean isEmailPresent() {
         try {
             return driver.findElement(By.name("email")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.name("username")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }

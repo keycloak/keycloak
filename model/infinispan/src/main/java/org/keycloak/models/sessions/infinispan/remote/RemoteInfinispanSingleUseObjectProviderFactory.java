@@ -105,7 +105,7 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override

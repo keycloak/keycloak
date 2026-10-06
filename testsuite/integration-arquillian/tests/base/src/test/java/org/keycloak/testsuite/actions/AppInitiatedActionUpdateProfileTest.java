@@ -346,7 +346,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assertions.assertEquals("New last", updateProfilePage.getLastName());
         Assertions.assertEquals("keycloak-user@localhost", updateProfilePage.getEmail());
 
-        Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals("This email is already associated with an existing account.", updateProfilePage.getInputErrors().getEmailError());
 
         Assertions.assertNull(events.poll());
     }

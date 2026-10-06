@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
@@ -31,8 +32,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -41,6 +44,7 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -65,6 +69,11 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(AuthorizationCodeGrantType.class);
 
     @Override
+    public void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        session.clientPolicy().triggerOnEvent(new PreTokenRequestContext(session, formParams));
+    }
+
+    @Override
     public Response process(Context context) {
         setContext(context);
 
@@ -78,12 +87,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
         if (parseResult.isIllegalCode()) {
-            AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
-
-            // Attempt to use same code twice should invalidate existing clientSession
-            if (clientSession != null) {
-                clientSession.detachFromUserSession();
-            }
+            // Attempt to use same code twice should invalidate existing clientSession.
+            // Detach must persist even when the error response rolls back the main tx.
+            KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                AuthenticatedClientSessionModel cs = ctx.findClientSession(parseResult.getClientSession());
+                if (cs != null) cs.detachFromUserSession();
+            });
 
             event.error(Errors.INVALID_CODE);
 
@@ -116,6 +125,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
         }
 
+        event.session(userSession);
         event.user(userSession.getUser());
 
         if (!user.isEnabled()) {

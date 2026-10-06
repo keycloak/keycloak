@@ -35,6 +35,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -382,7 +383,14 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     protected IssuedVerifiableCredentialModel createIssuedVerifiableCredential(UserModel userModel, ClientModel clientModel, CredentialScopeModel credentialScope) {
         String credentialScopeName = credentialScope.getName();
         try {
-            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), credentialScopeName, clientModel.getId());
+            // Lookup the UserVerifiableCredential by client scope ID to get its ID
+            UserVerifiableCredentialModel verifiableCredential = session.users()
+                    .getVerifiableCredentialByClientScope(userModel.getId(), credentialScope.getId());
+            if (verifiableCredential == null) {
+                throw new ModelException("User verifiable credential not found for scope: " + credentialScopeName);
+            }
+
+            IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(userModel.getId(), verifiableCredential.getId(), clientModel.getId());
 
             long issuedAt = Time.currentTimeMillis();
             model.setIssuedAt(issuedAt);
@@ -419,6 +427,13 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
                     .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
+
+            // Check same login user as the user for which the credential offer is targeted
+            String offerUserId = offerState.getTargetUserId();
+            UserModel loginUser = clientSessionCtx.getClientSession().getUserSession().getUser();
+            if (offerUserId != null && !offerUserId.equals(loginUser.getId())) {
+                throw getInvalidRequestException("Credential offer target user different from login user '" + loginUser.getUsername() + "'");
+            }
 
             // Check same login client as the client for which the credential offer is target (in case of credential offer target for specific client only)
             String offerClientId = offerState.getTargetClientId();

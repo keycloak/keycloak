@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   selectItem,
   assertSelectValue,
@@ -23,4 +24,29 @@ export async function toggleLogoutConfirmation(page: Page) {
   const logoutConfirmationSwitch =
     "#attributes\\.logout🍺confirmation🍺enabled";
   await switchToggle(page, logoutConfirmationSwitch);
+}
+
+const jwtAuthorizationGrantIdpSelect =
+  "#attributes\\.oauth2🍺jwt🍺authorization🍺grant🍺idp";
+
+export async function enableJwtAuthorizationGrant(page: Page) {
+  await page.getByTestId("jwt-authorization-grant-enabled").check();
+}
+
+export async function getJwtAuthorizationGrantIdpOptions(
+  page: Page,
+): Promise<string[]> {
+  await page.keyboard.press("Escape");
+  await page.locator(jwtAuthorizationGrantIdpSelect).click();
+  const options = page.getByRole("option");
+  await options.first().waitFor({ state: "visible" });
+  return await options.allTextContents();
+}
+
+export async function setResourceUrl(page: Page, value: string) {
+  await page.getByTestId("attributes.resource_url").fill(value);
+}
+
+export async function assertResourceUrl(page: Page, value: string) {
+  await expect(page.getByTestId("attributes.resource_url")).toHaveValue(value);
 }

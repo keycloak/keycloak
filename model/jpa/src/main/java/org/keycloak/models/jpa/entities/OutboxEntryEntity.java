@@ -101,7 +101,7 @@ import org.hibernate.annotations.Nationalized;
                         + "  entryType, payload, metadata, status, attempts, nextAttemptAt, createdAt)"
                         + " VALUES (:id, :entryKind, :realmId, :ownerId, :containerId, :correlationId,"
                         + "         :entryType, :payload, :metadata, :status, :attempts, :nextAttemptAt, :createdAt)"
-                        + " ON CONFLICT DO NOTHING"),
+                        + " ON CONFLICT (entryKind, ownerId, correlationId) DO NOTHING"),
         @NamedQuery(
                 name = "OutboxEntryEntity.countByEntryKindRealmAndStatus",
                 query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"

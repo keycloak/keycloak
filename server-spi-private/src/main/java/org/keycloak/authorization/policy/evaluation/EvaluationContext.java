@@ -29,6 +29,9 @@ import org.keycloak.authorization.identity.Identity;
  */
 public interface EvaluationContext {
 
+    String REALM_NAME_ATTRIBUTE = "kc.realm.name";
+    String CLIENT_ID_ATTRIBUTE = "kc.client.id";
+
     /**
      * Returns the {@link Identity} that represents an entity (person or non-person) to which the permissions must be granted, or not.
      *

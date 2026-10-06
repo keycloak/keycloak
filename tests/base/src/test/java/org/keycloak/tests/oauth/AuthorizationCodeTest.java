@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
@@ -45,6 +46,7 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -55,7 +57,9 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.InstalledAppRedirectPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -65,6 +69,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+
+import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -440,6 +446,57 @@ public class AuthorizationCodeTest {
         assertEquals("Invalid Request", errorPage.getError());
 
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).clientId(null);
+    }
+
+    // Issue 51003
+    @Test
+    public void authorizationCodeCanBeRedeemedAfterClientUuidRetargeting() {
+        String redirectUri = oauth.getRedirectUri();
+
+        ClientRepresentation clientRep = ClientBuilder.create("retarget-client")
+                .secret("secret")
+                .redirectUris(redirectUri)
+                .build();
+        try (Response resp = managedRealm.admin().clients().create(clientRep)) {
+            String retargetClientUuid = ApiUtil.getCreatedId(resp);
+            managedRealm.cleanup().add(r -> r.clients().delete(retargetClientUuid));
+
+            AuthorizationEndpointResponse retargetClientLogin = oauth
+                    .client("retarget-client", "secret")
+                    .redirectUri(redirectUri)
+                    .loginForm()
+                    .doLogin("test-user@localhost", "password");
+            Assertions.assertNotNull(retargetClientLogin.getCode());
+
+            AuthorizationEndpointResponse testAppLogin = oauth
+                    .client("test-app", "test-secret")
+                    .redirectUri(redirectUri)
+                    .loginForm()
+                    .doLoginWithCookie();
+            String testAppCode = testAppLogin.getCode();
+            Assertions.assertNotNull(testAppCode);
+
+            String testAppUuid = managedRealm.admin()
+                    .clients()
+                    .findByClientId("test-app")
+                    .get(0)
+                    .getId();
+
+            String retargetedCode = testAppCode.replace(testAppUuid, retargetClientUuid);
+
+            events.clear();
+
+            // Attempt to use "code" created for different client should fail
+            oauth.client("retarget-client", "secret").redirectUri(redirectUri);
+            AccessTokenResponse tokenResponse = oauth
+                    .accessTokenRequest(retargetedCode)
+                    .redirectUri(redirectUri)
+                    .send();
+
+            Assertions.assertFalse(tokenResponse.isSuccess());
+            assertEquals(INVALID_GRANT, tokenResponse.getError());
+            EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR).error(Errors.INVALID_CODE);
+        }
     }
 
     private static class AuthzCodeRealmConfig implements RealmConfig {

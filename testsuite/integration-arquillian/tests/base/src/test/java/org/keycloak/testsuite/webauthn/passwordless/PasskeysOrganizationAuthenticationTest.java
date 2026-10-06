@@ -41,12 +41,14 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
@@ -58,6 +60,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  */
 @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirtualTest {
+
+    @Page
+    LoginUsernameOnlyPage loginUsernameOnlyPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -109,7 +114,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -125,7 +130,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -203,7 +208,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             // access login page, key is not discoverable so webauthn should be enabled but login should be manual
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
-            loginPage.assertCurrent();
+            loginUsernameOnlyPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
             MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(false));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
@@ -224,7 +229,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(loginPage.getAttemptedUsername(), Matchers.is("UserWebAuthn"));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login(getPassword(USERNAME));
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventRepresentation eventRep = events.poll();
             EventAssertion.expectLoginSuccess(eventRep)
                     .userId(user.getId())
@@ -260,14 +265,14 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
-            loginPage.assertCurrent();
+            loginUsernameOnlyPage.assertCurrent();
             MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
             MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(false));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
 
             // force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -305,7 +310,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
 
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())
@@ -323,7 +328,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(loginPage.isPasswordInputPresent(), Matchers.is(true));
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             webAuthnLoginPage.clickAuthenticate();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventAssertion.expectLoginSuccess(events.poll())
                     .userId(user.getId())

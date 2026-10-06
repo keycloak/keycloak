@@ -9,6 +9,8 @@ All SCIM endpoints require authorization using an OAuth 2.0 Bearer Token.
 Unauthorized requests receive a `401 Unauthorized` response. The bearer token must also have the appropriate permissions
 to perform the requested operation.
 
+Only confidential clients can access the SCIM endpoints. Public clients are not supported for SCIM API calls.
+
 == Setting up a service account client
 
 To access the SCIM APIs programmatically, you typically create a confidential client with a service account in {project_name}.
@@ -25,11 +27,22 @@ This client obtains access tokens using the client credentials grant.
 The service account associated with the client must be granted the appropriate realm management roles to access
 SCIM resources. The required roles depend on the operations the client needs to perform.
 
+WARNING: The *Full Scope Allowed* switch is deprecated and will be removed in a future release. Do not enable it on
+the SCIM client. Instead, explicitly configure the required role scope mappings as described below. See
+<<_role_scope_mappings, Role scope mappings>> for details.
+
 .Procedure
 . Click *Clients* in the menu, then select the client you created.
+. Click the *Client scopes* tab, select the dedicated client scope for the client (for example, `scim-client-dedicated`), then click the *Scope* tab.
+. Set *Full Scope Allowed* to *Off*.
+. Click *Assign role*, then filter by clients and select the `realm-management` client.
+. Assign the required roles based on the operations the client needs to perform. This adds the roles to the client's role scope mappings.
 . Click the *Service account roles* tab.
 . Click *Assign role*, then filter by clients and select the `realm-management` client.
-. Assign the required roles based on the operations the client needs to perform.
+. Assign the same roles assigned in the previous step.
+
+Roles included in the access token are the intersection of the client's role scope mappings and the service account's
+assigned roles. Both steps above are required. For more details, see <<_service_accounts,Using a service account>>.
 
 The SCIM API relies on the same <<_admin_permissions,permission model>> as the {project_name} Admin REST API. If a service account
 already has the admin roles needed to manage users and groups through the Admin API, no additional configuration is
@@ -76,6 +89,31 @@ The following table summarizes the permissions required for each type of SCIM op
 
 The minimum set of roles required for full access to the SCIM API is `manage-users`, which covers all user and group
 management operations as well as access to discovery endpoints.
+
+== Configuring the token audience
+
+The SCIM API validates that access tokens contain the correct audience (`aud`) claim. The expected audience
+is the SCIM API base URL for the realm:
+
+----
+http://<host>:<port>/realms/<realm-name>/scim/v2
+----
+
+Tokens without this audience are rejected with a `401 Unauthorized` response.
+
+To configure the audience, add an *Audience* protocol mapper to the client:
+
+.Procedure
+. Click *Clients* in the menu, then select the client you created.
+. Click the *Client scopes* tab, then click the dedicated scope for the client (for example, `scim-client-dedicated`).
+. Click *Configure a new mapper*, then select *Audience*.
+. Set *Name* to a descriptive value (for example, `scim-audience`).
+. In *Included Custom Audience*, enter the SCIM API base URL for your realm (for example, `\http://localhost:8080/realms/myrealm/scim/v2`).
+. Ensure *Add to access token* is enabled.
+. Click *Save*.
+
+The audience value must match the SCIM API base URL exactly as seen by {project_name}, including the scheme, host, port,
+and path. If {project_name} is running behind a reverse proxy, use the frontend URL configured through the hostname settings.
 
 == Obtaining an access token
 

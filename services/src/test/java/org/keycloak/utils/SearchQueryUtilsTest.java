@@ -20,9 +20,12 @@ package org.keycloak.utils;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.models.ModelValidationException;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -61,6 +64,26 @@ public class SearchQueryUtilsTest {
 
         testParseQuery("k:val1",
                 "k", "val1");
+
+        assertInvalidQuery("key:val\\");
+        assertInvalidQuery("key\\");
+        assertInvalidQuery("key:\"val\\");
+        assertInvalidQuery("\\");
+
+        // double-backslash at value boundary - i+=2 lands exactly at array end
+        testParseQuery("key:val\\\\",
+                "key", "val");
+        testParseQuery("key:\\\\",
+                "key", "");
+
+        // malformed inputs that don't crash but produce no key-value pairs
+        testParseQuery("\"key \\\"1\\\"");
+        testParseQuery("\"key \\\"");
+        testParseQuery("key \"");
+    }
+
+    private void assertInvalidQuery(String query) {
+        assertThrows(ModelValidationException.class, () -> SearchQueryUtils.getFields(query));
     }
 
     private void testParseQuery(String query, String... expectedStr) {

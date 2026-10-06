@@ -18,8 +18,10 @@ package org.keycloak.services.resources.admin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -44,6 +46,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
@@ -52,6 +55,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -142,7 +146,7 @@ public class RoleMapperResource {
 
         final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
 
-        roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
+        roleMapper.getRoleMappingsStream().filter(roleMapping -> auth.roles().canView(roleMapping)).forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
@@ -209,11 +213,24 @@ public class RoleMapperResource {
     })
     public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
-
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return realm.getRolesStream()
-                .filter(roleMapper::hasRole)
+        Set<RoleModel> deepMappings;
+        if (roleMapper instanceof GroupModel group) {
+            // GroupModel.hasRole() (the semantics this endpoint previously relied on)
+            // walks the parent-group chain, but RoleUtils.getDeepRoleMappings() only
+            // expands a group's own direct mappings. Walk the chain explicitly here
+            // to preserve parent-group role inheritance for the group endpoint.
+            Set<RoleModel> directMappings = new HashSet<>();
+            for (GroupModel current = group; current != null; current = current.getParent()) {
+                directMappings.addAll(current.getRoleMappingsStream().collect(Collectors.toSet()));
+            }
+            deepMappings = RoleUtils.expandCompositeRoles(directMappings);
+        } else {
+            deepMappings = RoleUtils.getDeepRoleMappings(roleMapper);
+        }
+        return deepMappings.stream()
+                .filter(r -> RoleUtils.isRealmRole(r, realm))
                 .map(toBriefRepresentation);
     }
 

@@ -75,7 +75,9 @@ export default function DetailProvider() {
         await adminClient.components.update({ id }, updatedComponent);
       } else {
         const { id } = await adminClient.components.create(updatedComponent);
-        navigate(toRegistrationProvider({ id, realm, subTab, providerId }));
+        void navigate(
+          toRegistrationProvider({ id, realm, subTab, providerId }),
+        );
       }
       addAlert(t(`provider${id ? "Updated" : "Create"}Success`));
     } catch (error) {
@@ -97,7 +99,7 @@ export default function DetailProvider() {
           id: id!,
         });
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
-        navigate(toClientRegistration({ realm, subTab }));
+        void navigate(toClientRegistration({ realm, subTab }));
       } catch (error) {
         addError("clientRegisterPolicyDeleteError", error);
       }

@@ -307,20 +307,6 @@ export const Invitations = () => {
             },
           ];
 
-          if (invitation.inviteLink) {
-            actions.splice(1, 0, {
-              title: t("copyInviteLink"),
-              onClick: async () => {
-                try {
-                  await navigator.clipboard.writeText(invitation.inviteLink!);
-                  addAlert(t("inviteLinkCopied"));
-                } catch (error) {
-                  addError("clipboardCopyError", error);
-                }
-              },
-            });
-          }
-
           return actions;
         }}
         columns={[

@@ -2,12 +2,20 @@ package org.keycloak.tests.oauth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -22,6 +30,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -45,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -71,6 +82,9 @@ public class RefreshTokenRevokeTest {
 
     @InjectUser(config = TestRealmUserConfig.class)
     protected ManagedUser user;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void before() {
@@ -166,6 +180,70 @@ public class RefreshTokenRevokeTest {
                 .error("invalid_token");
     }
 
+    @Test
+    public void refreshTokenSameSecondReplayRejected() {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).userId(user.getId());
+        String sessionId = loginEvent.getSessionId();
+        String authCode = oauth.parseLoginResponse().getCode();
+
+        // Obtain initial token pair — RT-0
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(authCode);
+        RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+
+
+        // RT-0 → RT-1 (legitimate rotation)
+        AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+        assertEquals(200, response2.getStatusCode());
+        RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken1.getId())
+                .type(EventType.REFRESH_TOKEN);
+
+        // RT-1 → RT-2 (legitimate rotation, same second — stored ID becomes RT-1)
+        AccessTokenResponse response3 = oauth.doRefreshTokenRequest(response2.getRefreshToken());
+        assertEquals(200, response3.getStatusCode());
+        RefreshToken refreshToken3 = oauth.parseRefreshToken(response3.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken2.getId())
+                .type(EventType.REFRESH_TOKEN);
+
+        // Verify all tokens were issued close to each other
+        long TOLERANCE_INTERVAL = 5; // Helper interval to make sure that refresh tokens are issued close to each other
+        long diff_1 = refreshToken2.getIat() - refreshToken1.getIat();
+        assertTrue(diff_1 >=0 && diff_1 <= TOLERANCE_INTERVAL, "RT-0 and RT-1 must share iat (or very close to each other)");
+        long diff_2 = refreshToken3.getIat() - refreshToken2.getIat();
+        assertTrue(diff_2 >=0 && diff_2 <= TOLERANCE_INTERVAL, "RT-1 and RT-2 must share iat (or very close to each other)");
+
+        // Replay stale RT-0 — different ID from stored RT-1, but same iat second.
+        // The stale check must reject this even when iat == lastRefresh.
+        AccessTokenResponse replayResponse = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+        assertEquals(400, replayResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, replayResponse.getError());
+
+        EventAssertion.assertError(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken1.getId())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .error("invalid_token");
+
+        // RT-2 must also be invalidated (client session detached on replay)
+        AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response3.getRefreshToken());
+        assertEquals(400, response4.getStatusCode());
+
+        EventAssertion.assertError(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken3.getId())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .error("invalid_token");
+    }
 
     @Test
     public void refreshTokenReuseOnDifferentTab() {
@@ -543,6 +621,78 @@ public class RefreshTokenRevokeTest {
 
         );
         testRefreshTokenConcurrentReuse(3);
+    }
+
+    @Test
+    public void revokeRefreshTokenTwiceWithRefreshTokensRevoked() {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        // the revoked token is no longer usable
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode());
+
+        // second revocation acquires the same lock id again, which only succeeds if the first one released it
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        events.clear();
+    }
+
+    @Test
+    public void revokeRefreshTokenWaitsForRefreshSerializationLock() throws Exception {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+
+        // the lock id the refresh path computes for this token family
+        String lockId = runOnServer.fetchString(session -> {
+            try {
+                RefreshToken token = new JWSInput(refreshToken).readJsonContent(RefreshToken.class);
+                return "refreshLock:" + token.getSessionId() + ":" + new TokenManager().getReuseIdKey(token);
+            } catch (JWSInputException e) {
+                throw new RuntimeException("Failed to parse refresh token", e);
+            }
+        });
+
+        // hold that lock, as a concurrent refresh of the same family would
+        runOnServer.run(session -> assertTrue(session.singleUseObjects().putIfAbsent(lockId, 60)));
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        boolean lockReleased = false;
+        try {
+            Future<Integer> revocation = executor.submit(() -> oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+            // revocation cannot proceed while the lock is held, so it is inside the same serialized region
+            assertThrows(TimeoutException.class, () -> revocation.get(2, TimeUnit.SECONDS),
+                    "Revocation completed while the refresh serialization lock was held");
+
+            runOnServer.run(session -> session.singleUseObjects().remove(lockId));
+            lockReleased = true;
+
+            assertEquals(200, revocation.get(30, TimeUnit.SECONDS));
+        } finally {
+            if (!lockReleased) {
+                // an assertion failed before the lock was released, so drop it rather than wait out its lifespan
+                runOnServer.run(session -> session.singleUseObjects().remove(lockId));
+            }
+            executor.shutdownNow();
+        }
+
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode());
+
+        events.clear();
     }
 
     private void testRefreshTokenConcurrentReuse(int expectedSuccessfulRefreshes) {

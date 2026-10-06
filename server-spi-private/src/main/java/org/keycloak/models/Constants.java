@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.utils.SystemClientUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -36,11 +37,12 @@ public final class Constants {
     public static final String ACCOUNT_CONSOLE_CLIENT_ID = "account-console";
     public static final String BROKER_SERVICE_CLIENT_ID = "broker";
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
+    public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
 
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
-    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ACCOUNT_CONSOLE_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
+    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ACCOUNT_CONSOLE_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID, ADMIN_PERMISSIONS_CLIENT_ID, SystemClientUtil.SYSTEM_CLIENT_ID);
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
 
@@ -223,8 +225,6 @@ public final class Constants {
     //attribute name used to mark a client as realm client
     public static final String REALM_CLIENT = "realm_client";
 
-    public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
-
     // Note used to store the authentication flow requested
     public static final String REQUESTED_AUTHENTICATION_FLOW = "requested-authentication-flow";
 
@@ -250,10 +250,19 @@ public final class Constants {
     // Provider ID of the openid-connect protocol
     public static final String OIDC_PROTOCOL = "openid-connect";
 
+    // Default login protocol
+    public static final String DEFAULT_PROTOCOL = OIDC_PROTOCOL;
+
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
+
+    // Internal note for storing the authorization request uri
+    public static final String AUTHORIZATION_REQUEST_URI = "authorization_request_uri";
 
     // This attribute can be used in a realm import definition to signal that default client scopes should be created in addition to the client scopes defined by the realm import definition.
     // When this attribute is omitted or set to false, the default client scopes are not created if at least one other client scope is defined by the realm import definition.
     public static final String CREATE_DEFAULT_CLIENT_SCOPES = "CreateDefaultClientScopes";
+
+    // Suffix for "private key" client attribute. The attribute of this name should not be persisted to the DB and should not be displayed in admin events
+    public static final String PRIVATE_KEY_ATTR_SUFFIX = "private.key";
 }

@@ -62,10 +62,20 @@ public class SsfAuthUtil {
         }
 
         ClientModel client = authResult.client();
+        if (client == null) {
+            log.trace("SSF auth denied: authentication result carries no client");
+            return false;
+        }
 
-        // 1. Client must have SSF enabled
-        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY))) {
-            log.tracef("SSF auth denied: SSF receiver not enabled for client %s", client.getClientId());
+        // 1. Client must be configured as an SSF receiver.
+        if (!SsfUtil.isReceiverClient(client)) {
+            log.tracef("SSF auth denied: client %s is not configured as an SSF receiver", client.getClientId());
+            return false;
+        }
+
+        // ...and the client itself must be enabled.
+        if (!client.isEnabled()) {
+            log.tracef("SSF auth denied: SSF receiver client %s is disabled", client.getClientId());
             return false;
         }
 

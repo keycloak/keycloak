@@ -1,5 +1,10 @@
 import { type Page, expect } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form.ts";
+import {
+  clickSwitch,
+  ensureSwitchOff,
+  selectItem,
+  switchOn,
+} from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
@@ -10,16 +15,21 @@ import {
   setUrl,
 } from "./main.ts";
 
+const EDITED_DISPLAY_NAME = "SAML edited for save";
+
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
-  // Toggle provider state
-  await switchOff(page, "#-switch");
+  const providerEnabledSwitch = page.getByTestId(`${samlProviderName}-switch`);
+  await expect(providerEnabledSwitch).toBeChecked();
+  await clickSwitch(page, providerEnabledSwitch);
+  await expect(page.getByTestId("confirm")).toBeVisible();
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 
   await clickTableRowItem(page, samlProviderName);
-  await switchOn(page, "#-switch");
+  await expect(providerEnabledSwitch).not.toBeChecked();
+  await switchOn(page, providerEnabledSwitch);
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
@@ -45,18 +55,18 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
 
   // Toggle SAML switches
   const switches = [
-    "config.allowCreate",
-    "config.wantAssertionsEncrypted",
-    "config.forceAuthn",
+    page.getByTestId("config.allowCreate"),
+    page.getByTestId("config.wantAssertionsEncrypted"),
+    page.getByTestId("config.forceAuthn"),
   ];
-  for (const switchId of switches) {
-    await switchOn(page, `[data-testid="${switchId}"]`);
+  for (const field of switches) {
+    await switchOn(page, field);
   }
 
-  const switchOffIds = ["config.sendIdTokenOnLogout"];
-  for (const switchId of switchOffIds) {
-    await switchOff(page, `[data-testid="${switchId}"]`);
-  }
+  await ensureSwitchOff(page, page.getByTestId("config.sendIdTokenOnLogout"));
+
+  // Keep this deterministic while ensuring the form is dirty before saving.
+  await page.getByTestId("displayName").fill(EDITED_DISPLAY_NAME);
 
   await clickSaveButton(page);
 }

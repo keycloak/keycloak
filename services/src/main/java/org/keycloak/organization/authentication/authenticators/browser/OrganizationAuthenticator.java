@@ -36,6 +36,7 @@ import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthen
 import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.email.freemarker.beans.ProfileBean;
+import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
@@ -46,7 +47,6 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -59,12 +59,12 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
 import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.getMatchingDomain;
@@ -132,11 +132,47 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         UserModel user = context.getUser();
 
+        if (username != null) {
+            username = username.trim();
+        }
+
         if (user == null && isBlank(username)) {
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            boolean isHiddenUsername = Boolean.parseBoolean(authSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN));
+
+            if (isHiddenUsername) {
+                AuthenticatorUtils.dummyHash(context);
+                context.getEvent().error(Errors.USER_NOT_FOUND);
+
+                if (webauthnAuth.isPasskeysEnabled()) {
+                    webauthnAuth.fillContextForm(context);
+                }
+
+                OrganizationModel organization = Organizations.resolveOrganization(session);
+                Function<LoginFormsProvider, Response> errorForm = form -> {
+                    form.addError(new FormMessage(Validation.FIELD_PASSWORD, Messages.INVALID_USER));
+                    return form.createLoginUsernamePassword();
+                };
+                Response challengeResponse = organization == null
+                        ? createLoginForm(context, errorForm)
+                        : errorForm.apply(createUnknownUserForm(context, organization, context.getRealm()));
+                context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+                return;
+            }
+
             initialChallenge(context, form -> {
                 form.addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME));
                 return form.createLoginUsername();
             });
+            return;
+        }
+
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = context.form()
+                .addError(new FormMessage(UserModel.USERNAME, Messages.INVALID_USERNAME))
+                .createLoginUsername();
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
@@ -184,7 +220,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         if (user == null) {
-            unknownUserChallenge(context, organization, realm, domain != null);
+            unknownUserChallenge(context, organization, realm, username);
             return;
         }
 
@@ -276,6 +312,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
+        // an existing SSO session must be honoured as-is; redirecting to the broker under prompt=none
+        // would produce login_required even though the user is already authenticated (see #53154)
+        if (isSSOAuthentication(context.getAuthenticationSession())) {
+            return false;
+        }
+
         // the user has credentials set; do not redirect to allow the user to pick how to authenticate
         if (user != null && user.credentialManager().getFirstFactorCredentialsStream().findAny().isPresent()) {
             return false;
@@ -305,35 +347,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
-        // first look for an IDP that matches exactly the specified domain (case-insensitive)
-        IdentityProviderModel idp = organization.getIdentityProviders()
-                .filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
-                .filter(broker -> {
-                    String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        String idpAlias = matching.getIdentityProviderAlias();
 
-                    if (brokerDomain == null) {
-                        return false;
-                    }
-
-                    String excludedDomains = broker.getConfig().get(OrganizationModel.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
-
-                    if (excludedDomains != null) {
-                        for (String excludedDomain : excludedDomains.split(",")) {
-                            if (Organizations.isSameDomain(domain, excludedDomain.trim())) {
-                                return false;
-                            }
-                        }
-                    }
-
-                    if (ANY_DOMAIN.equals(brokerDomain)) {
-                        return true;
-                    }
-
-                    return brokerDomain.equals(matching.getName());
-                }).findFirst().orElse(null);
-
-        if (idp != null) {
-            redirect(context, idp.getAlias(), username);
+        if (idpAlias != null && matching.isAutoRedirect()) {
+            redirect(context, idpAlias, username);
             return true;
         }
 
@@ -359,10 +376,28 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         return user;
     }
 
-    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm, boolean domainMatch) {
+    private void unknownUserChallenge(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm, String username) {
         // the user does not exist and is authenticating in the scope of the organization, show the identity-first login page and the
         // public organization brokers for selection
-        LoginFormsProvider form = context.form()
+        LoginFormsProvider form = createUnknownUserForm(context, organization, realm);
+
+        // user is null, setup webauthn data if enabled
+        if (webauthnAuth.isPasskeysEnabled()) {
+            webauthnAuth.fillContextForm(context);
+        }
+
+        if (username != null) {
+            AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            context.challenge(form.createLoginUsernamePassword());
+        } else {
+            context.challenge(form.createLoginUsername());
+        }
+    }
+
+    private LoginFormsProvider createUnknownUserForm(AuthenticationFlowContext context, OrganizationModel organization, RealmModel realm) {
+        return context.form()
                 .setAttributeMapper(attributes -> {
                     if (hasPublicBrokers(organization)) {
                         attributes.computeIfPresent("social",
@@ -384,16 +419,6 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
                     return attributes;
                 });
-
-        if (domainMatch) {
-            form.addError(new FormMessage("Your email domain matches an organization but you don't have an account yet."));
-        }
-
-        // user is null, setup webauthn data if enabled
-        if (webauthnAuth.isPasskeysEnabled()) {
-            webauthnAuth.fillContextForm(context);
-        }
-        context.challenge(form.createLoginUsername());
     }
 
     private void initialChallenge(AuthenticationFlowContext context) {

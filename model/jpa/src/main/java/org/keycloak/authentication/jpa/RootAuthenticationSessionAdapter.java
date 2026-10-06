@@ -30,6 +30,8 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.SessionExpiration;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -45,22 +47,51 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     private final int authSessionsLimit;
     private Map<String, AuthenticateSessionAdapter> adapters;
 
-    public static RootAuthenticationSessionAdapter create(KeycloakSession session, RealmModel realm, String id, int timestamp, int authSessionsLimit) {
+    /**
+     * Creates a new {@link RootAuthenticationSessionAdapter} backed by a fresh
+     * {@link RootAuthenticationSessionEntity}.
+     *
+     * @param session           the current Keycloak session.
+     * @param realm             the realm this authentication session belongs to.
+     * @param id                the unique identifier for the root authentication session.
+     * @param timestamp         the creation timestamp.
+     * @param authSessionsLimit the maximum number of concurrent authentication sessions.
+     * @return a new adapter instance. The underlying entity is not persisted; the caller must persist it.
+     * @throws NullPointerException if {@code session}, {@code id}, or {@code realm} is {@code null}.
+     */
+    public static RootAuthenticationSessionAdapter create(KeycloakSession session, RealmModel realm, String id, long timestamp, int authSessionsLimit) {
         assert session != null;
         assert realm != null;
+        assert id != null;
+
         var entity = new RootAuthenticationSessionEntity();
-        entity.setId(id);
+        entity.setId(Objects.requireNonNull(id));
         entity.setTimestamp(timestamp);
+        entity.setCreatedOn(timestamp);
+        entity.setTimestampCoarse(computeTimestampCoarse(timestamp, realm, timestamp));
         entity.setAuthenticationSessions(new HashMap<>());
         entity.setRealmId(realm.getId());
         return new RootAuthenticationSessionAdapter(entity, realm, session, authSessionsLimit);
     }
 
+    /**
+     * Wraps an existing {@link RootAuthenticationSessionEntity} in an adapter.
+     *
+     * @param session           the current Keycloak session.
+     * @param realm             the realm this authentication session belongs to.
+     * @param entity            the JPA entity to wrap.
+     * @param authSessionsLimit the maximum number of concurrent authentication sessions.
+     * @return a new adapter instance, or {@code null} if the entity's realm does not match {@code realm}.
+     * @throws NullPointerException if {@code session}, {@code realm}, or {@code entity} is {@code null}.
+     */
     public static RootAuthenticationSessionAdapter wrapEntity(KeycloakSession session, RealmModel realm, RootAuthenticationSessionEntity entity, int authSessionsLimit) {
         assert session != null;
         assert realm != null;
         assert entity != null;
-        assert Objects.equals(realm.getId(), entity.getRealmId());
+
+        if (!Objects.equals(realm.getId(), entity.getRealmId())) {
+            return null;
+        }
 
         return new RootAuthenticationSessionAdapter(entity, realm, session, authSessionsLimit);
     }
@@ -90,6 +121,7 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
+        entity.setTimestampCoarse(computeTimestampCoarse(timestamp, realm, entity.getCreatedOn()));
     }
 
     @Override
@@ -113,7 +145,7 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     @Override
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
         var tabId = Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
-        var timestamp = Time.currentTime();
+        var timestamp = Time.currentTimeSeconds();
 
         if (entity.getAuthenticationSessions().size() >= authSessionsLimit) {
             entity.getAuthenticationSessions().values().stream()
@@ -134,7 +166,10 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
 
     @Override
     public void removeAuthenticationSessionByTabId(String tabId) {
-        session.getProvider(JpaConnectionProvider.class).getEntityManager().remove(entity.getAuthenticationSessions().remove(tabId));
+        var removed = entity.getAuthenticationSessions().remove(tabId);
+        if (removed != null) {
+            session.getProvider(JpaConnectionProvider.class).getEntityManager().remove(removed);
+        }
         if (adapters != null) {
             adapters.remove(tabId);
         }
@@ -146,7 +181,9 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     @Override
     public void restartSession(RealmModel realm) {
         entity.getAuthenticationSessions().clear();
-        entity.setTimestamp(Time.currentTime());
+        long now = Time.currentTimeSeconds();
+        entity.setTimestamp(now);
+        entity.setTimestampCoarse(computeTimestampCoarse(now, realm, entity.getCreatedOn()));
         if (adapters != null) {
             adapters.clear();
         }
@@ -161,6 +198,11 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
 
     public RootAuthenticationSessionEntity getEntity() {
         return entity;
+    }
+
+    static long computeTimestampCoarse(long timestamp, RealmModel realm, long createdOn) {
+        int lifespan = SessionExpiration.getAuthSessionLifespan(realm);
+        return SessionExpirationUtils.computeLastSessionRefreshCoarse((int) timestamp, lifespan, (int) createdOn);
     }
 
     private Map<String, AuthenticateSessionAdapter> adapters() {

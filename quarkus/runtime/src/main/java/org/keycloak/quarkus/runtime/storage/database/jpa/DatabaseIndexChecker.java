@@ -33,10 +33,12 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import liquibase.change.core.CreateIndexChange;
 import liquibase.change.core.CreateTableChange;
@@ -57,6 +59,7 @@ import liquibase.precondition.core.IndexExistsPrecondition;
 import liquibase.precondition.core.NotPrecondition;
 import liquibase.precondition.core.OrPrecondition;
 import liquibase.precondition.core.TableExistsPrecondition;
+import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
 
 /**
@@ -78,24 +81,73 @@ public class DatabaseIndexChecker implements Runnable {
     private final Supplier<Connection> connectionSupplier;
     private final KeycloakSessionFactory factory;
     private final String dbSchema;
+    private final boolean autoCreate;
+    private final int migrationTimeoutSeconds;
 
-    public DatabaseIndexChecker(Supplier<Connection> connectionSupplier, KeycloakSessionFactory factory, String dbSchema) {
+    public DatabaseIndexChecker(Supplier<Connection> connectionSupplier, KeycloakSessionFactory factory, String dbSchema, boolean autoCreate, int migrationTimeoutSeconds) {
         this.connectionSupplier = Objects.requireNonNull(connectionSupplier);
         this.factory = Objects.requireNonNull(factory);
         this.dbSchema = dbSchema;
+        this.autoCreate = autoCreate;
+        this.migrationTimeoutSeconds = migrationTimeoutSeconds;
     }
 
     @Override
     public void run() {
-        logger.info("Running database index checker");
-        var missing = getMissingIndexes();
-        for (var info : missing) {
-            logger.warnf("Missing database index %s on table %s. Create the index manually: %s", info.indexName, info.tableName, info.sql);
+        KeycloakModelUtils.setTransactionLimit(factory, migrationTimeoutSeconds);
+        try {
+            runInternal();
+        } finally {
+            KeycloakModelUtils.setTransactionLimit(factory, 0);
+        }
+    }
+
+    private static final String TASK_KEY = "db-index-checker";
+
+    private void runInternal() {
+        logger.debug("Running database index checker");
+
+        if (autoCreate) {
+            try (var session = factory.create()) {
+                var clusterProvider = session.getProvider(ClusterProvider.class);
+                clusterProvider.executeIfNotExecuted(TASK_KEY, migrationTimeoutSeconds, () -> {
+                    var missing = getMissingIndexes();
+                    if (missing.isEmpty()) {
+                        return null;
+                    }
+                    try (var connection = connectionSupplier.get()) {
+                        if (supportsOnlineIndexCreation(connection)) {
+                            createIndexes(connection, missing);
+                            return null;
+                        }
+                    } catch (SQLException e) {
+                        logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
+                    }
+                    for (var info : missing) {
+                        logMissingIndex(info);
+                    }
+                    return null;
+                });
+            }
+        } else {
+            var missing = getMissingIndexes();
+            if (missing.isEmpty()) {
+                return;
+            }
+
+            for (var info : missing) {
+                logMissingIndex(info);
+            }
         }
     }
 
     public List<String> getMissingIndexesName() {
         return getMissingIndexes().stream().map(IndexInfo::indexName).toList();
+    }
+
+    public Map<String, String> getMissingIndexesSql() {
+        return getMissingIndexes().stream()
+                .collect(Collectors.toMap(IndexInfo::indexName, IndexInfo::sql));
     }
 
     private List<IndexInfo> getMissingIndexes() {
@@ -114,11 +166,138 @@ public class DatabaseIndexChecker implements Runnable {
                     .collect(Collectors.toSet());
             var existingIndexes = getExistingIndexesFromDatabase(metaData, tablesToCheck);
 
-            return expectedIndexes.entrySet().stream().filter(e -> !existingIndexes.contains(e.getKey())).map(Map.Entry::getValue).toList();
+            var invalidIndexNames = getInvalidIndexNames(connection, metaData, expectedIndexes.keySet());
+            existingIndexes.removeAll(invalidIndexNames);
+
+            return expectedIndexes.entrySet().stream()
+                    .filter(e -> !existingIndexes.contains(e.getKey()))
+                    .map(e -> new IndexInfo(e.getValue().tableName, e.getValue().indexName, e.getValue().sql, invalidIndexNames.contains(e.getKey())))
+                    .toList();
         } catch (SQLException | LiquibaseException e) {
             logger.warn("Unable to check for missing database indexes", e);
         }
         return List.of();
+    }
+
+    private boolean supportsOnlineIndexCreation(Connection connection) throws SQLException {
+        String productName = connection.getMetaData().getDatabaseProductName().toLowerCase();
+        if (productName.contains("postgres")
+                || productName.contains("mysql") || productName.contains("mariadb")) {
+            return true;
+        }
+        if (productName.contains("oracle")) {
+            try (var stmt = connection.createStatement();
+                 var rs = stmt.executeQuery("SELECT BANNER FROM V$VERSION WHERE BANNER LIKE 'Oracle%' AND ROWNUM <= 1")) {
+                if (rs.next()) {
+                    String banner = rs.getString(1);
+                    return banner != null && banner.toUpperCase().contains("ENTERPRISE");
+                }
+            }
+            return false;
+        }
+        if (productName.contains("microsoft")) {
+            try (var stmt = connection.createStatement();
+                 var rs = stmt.executeQuery("SELECT CAST(SERVERPROPERTY('EngineEdition') AS INT)")) {
+                if (rs.next()) {
+                    int edition = rs.getInt(1);
+                    return edition == 3 || edition == 5 || edition == 8;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void createIndexes(Connection connection, List<IndexInfo> indexes) throws SQLException {
+        String productName = connection.getMetaData().getDatabaseProductName().toLowerCase();
+        boolean isPostgres = productName.contains("postgres");
+        boolean isOracle = productName.contains("oracle");
+        boolean isMssql = productName.contains("microsoft");
+
+        boolean origAutoCommit = connection.getAutoCommit();
+        if (isPostgres && !origAutoCommit) {
+            // CREATE INDEX CONCURRENTLY requires running outside a transaction block.
+            // Connection pool wrappers (e.g. Agroal) may block setAutoCommit on enlisted
+            // connections, so fall back to the underlying connection.
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                connection.unwrap(Connection.class).setAutoCommit(true);
+            }
+        }
+        try {
+            for (var info : indexes) {
+                try {
+                    if (info.invalid && isPostgres) {
+                        // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
+                        // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
+                        String qualifiedIndex = qualifyPostgresIdentifier(info.indexName);
+                        logger.infov("Dropping invalid index {0} before recreating", qualifiedIndex);
+                        try (var stmt = connection.createStatement()) {
+                            stmt.execute("DROP INDEX CONCURRENTLY IF EXISTS " + qualifiedIndex);
+                        }
+                    }
+                    String sql = addOnlineSyntax(info.sql, isPostgres, isOracle, isMssql);
+                    logger.infov("Creating index: {0}", sql);
+                    try (var stmt = connection.createStatement()) {
+                        stmt.execute(sql);
+                    }
+                    logger.infov("Successfully created index {0}", info.indexName);
+                } catch (SQLException e) {
+                    if (isPostgres) {
+                        String qualifiedIndex = qualifyPostgresIdentifier(info.indexName);
+                        logger.warnf("Failed to create index %s automatically: %s. Drop and recreate the index manually: DROP INDEX CONCURRENTLY IF EXISTS %s; %s",
+                                info.indexName, e.getMessage(), qualifiedIndex, addOnlineSyntax(info.sql, true, false, false));
+                    } else {
+                        logger.warnf("Failed to create index %s automatically: %s. Create the index manually: %s",
+                                info.indexName, e.getMessage(), info.sql);
+                    }
+                }
+            }
+        } finally {
+            if (isPostgres && !origAutoCommit) {
+                try {
+                    connection.setAutoCommit(origAutoCommit);
+                } catch (SQLException e) {
+                    connection.unwrap(Connection.class).setAutoCommit(origAutoCommit);
+                }
+            }
+        }
+    }
+
+    static String addOnlineSyntax(String sql, boolean isPostgres, boolean isOracle, boolean isMssql) {
+        if (isPostgres) {
+            return sql.replaceFirst("(?i)(CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+)", "$1CONCURRENTLY ");
+        }
+        if (isOracle) {
+            return sql + " ONLINE";
+        }
+        if (isMssql) {
+            int withPos = sql.toUpperCase().lastIndexOf("WITH (");
+            if (withPos >= 0) {
+                return sql.substring(0, withPos) + "WITH (ONLINE = ON, " + sql.substring(withPos + 6);
+            }
+            return sql + " WITH (ONLINE = ON)";
+        }
+        return sql;
+    }
+
+    private String qualifyPostgresIdentifier(String identifier) {
+        // PostgreSQL folds unquoted identifiers to lowercase
+        String quoted = "\"" + identifier.toLowerCase().replace("\"", "\"\"") + "\"";
+        if (dbSchema != null) {
+            return "\"" + dbSchema.replace("\"", "\"\"") + "\"." + quoted;
+        }
+        return quoted;
+    }
+
+    private void logMissingIndex(IndexInfo info) {
+        if (info.invalid) {
+            logger.warnf("Invalid database index %s on table %s (possibly from a failed concurrent creation). Drop and recreate the index: DROP INDEX CONCURRENTLY IF EXISTS %s; %s",
+                    info.indexName, info.tableName, qualifyPostgresIdentifier(info.indexName), addOnlineSyntax(info.sql, true, false, false));
+        } else {
+            logger.warnf("Missing database index %s on table %s. Create the index manually: %s",
+                    info.indexName, info.tableName, info.sql);
+        }
     }
 
     private Map<String, IndexInfo> getExpectedIndexesFromLiquibase(Connection connection, KeycloakSession session) throws LiquibaseException {
@@ -144,8 +323,18 @@ public class DatabaseIndexChecker implements Runnable {
                         var statement = cic instanceof CustomCreateIndexChange ?
                                 ((CustomCreateIndexChange) cic).generateOriginalStatement(database) :
                                 cic.generateStatements(database);
+                        var sqlVisitors = change.getChangeSet().getSqlVisitors();
                         var sql = Arrays.stream(statement)
-                                .map(sqlStatement -> sqlStatement.getFormattedStatement(database))
+                                .flatMap(s -> Arrays.stream(SqlGeneratorFactory.getInstance().generateSql(s, database)))
+                                .map(generatedSql -> {
+                                    var sqlStr = generatedSql.toSql();
+                                    for (var visitor : sqlVisitors) {
+                                        if (DatabaseList.definitionMatches(visitor.getApplicableDbms(), database, true)) {
+                                            sqlStr = visitor.modifySql(sqlStr, database);
+                                        }
+                                    }
+                                    return sqlStr;
+                                })
                                 .collect(Collectors.joining("; "));
                         var info = new IndexInfo(cic.getTableName(), cic.getIndexName(), sql);
                         expectedIndexes.put(cic.getIndexName().toUpperCase(), info);
@@ -182,6 +371,32 @@ public class DatabaseIndexChecker implements Runnable {
             }
         }
         return existingIndexes;
+    }
+
+    // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
+    // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
+    private Set<String> getInvalidIndexNames(Connection connection, DatabaseMetaData metaData, Set<String> expectedIndexNames) throws SQLException {
+        if (!metaData.getDatabaseProductName().toLowerCase().contains("postgres")) {
+            return Set.of();
+        }
+        var invalidIndexes = new HashSet<String>();
+        String sql = dbSchema != null
+                ? "SELECT UPPER(c.relname) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = ? AND NOT i.indisvalid"
+                : "SELECT UPPER(c.relname) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = current_schema AND NOT i.indisvalid";
+        try (var ps = connection.prepareStatement(sql)) {
+            if (dbSchema != null) {
+                ps.setString(1, dbSchema);
+            }
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    var name = rs.getString(1);
+                    if (expectedIndexNames.contains(name)) {
+                        invalidIndexes.add(name);
+                    }
+                }
+            }
+        }
+        return invalidIndexes;
     }
 
     private static boolean isChangeSetForCurrentDatabase(ChangeSet changeSet, Database database, HashMap<String, IndexInfo> expectedIndexes, HashSet<ChangesetInfo> changes, HashSet<TableInfo> tables) {
@@ -280,7 +495,10 @@ public class DatabaseIndexChecker implements Runnable {
         return name;
     }
 
-    private record IndexInfo(String tableName, String indexName, String sql) {
+    private record IndexInfo(String tableName, String indexName, String sql, boolean invalid) {
+        IndexInfo(String tableName, String indexName, String sql) {
+            this(tableName, indexName, sql, false);
+        }
     }
     private record ChangesetInfo(String id, String author, String filePath) {
     }

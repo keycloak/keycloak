@@ -82,13 +82,39 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
                 osVersion += "." + client.os.patchMinor;
             }
 
-            current.setOsVersion(osVersion);
+            current.setOsVersion(resolveOsVersion(client, osVersion, browserVersion));
             current.setIpAddress(context.getConnection().getRemoteHost());
             current.setMobile(userAgent.toLowerCase().contains("mobile"));
             return current;
         } catch (Exception cause) {
             logger.error("Failed to create device info from user agent header", cause);
             return null;
+        }
+    }
+
+    static String resolveOsVersion(Client client, String osVersion, String browserVersion) {
+        if (!"iOS".equalsIgnoreCase(client.os.family)) {
+            return osVersion;
+        }
+
+        String browserFamily = client.userAgent.family;
+
+        if (browserFamily == null || !browserFamily.toLowerCase().contains("safari")) {
+            return osVersion;
+        }
+
+        if (toInt(client.userAgent.major) > toInt(client.os.major)) {
+            return browserVersion;
+        }
+
+        return osVersion;
+    }
+
+    private static int toInt(String major) {
+        try {
+            return major == null ? -1 : Integer.parseInt(major.trim());
+        } catch (NumberFormatException e) {
+            return -1;
         }
     }
 }

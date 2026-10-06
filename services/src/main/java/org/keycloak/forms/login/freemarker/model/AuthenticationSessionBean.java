@@ -36,7 +36,7 @@ public class AuthenticationSessionBean {
 
     public AuthenticationSessionBean(String authSessionId, String tabId) {
         this.authSessionId = authSessionId;
-        this.authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
+        this.authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA384, authSessionId.getBytes(StandardCharsets.UTF_8)));
         this.tabId = tabId;
     }
 

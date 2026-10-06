@@ -48,7 +48,7 @@ export default function Page() {
           id: id!,
         });
         addAlert(t("itemDeletedSuccess"));
-        navigate(toPage({ realm, providerId: providerId! }));
+        void navigate(toPage({ realm, providerId: providerId! }));
       } catch (error) {
         addError("itemSaveError", error);
       }
