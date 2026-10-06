@@ -21,10 +21,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.subject.ComplexSubjectId;
+import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 
@@ -69,6 +72,8 @@ import static org.mockito.Mockito.mock;
 class SecurityEventTokenMapperTest {
 
     private static final String USER_ID = "user-123";
+
+    private static final String SESSION_ID = "session-456";
 
     private static final String REALM_ID = "realm-1";
 
@@ -360,8 +365,95 @@ class SecurityEventTokenMapperTest {
         assertFalse(mapper.canConvert(adminEvent));
     }
 
+    // ----- admin deletion of a single user session (DELETE sessions/{id}) -----
+
+    @Test
+    void canConvert_adminUserSessionDelete_true() {
+        AdminEvent adminEvent = adminUserSessionDeleteEvent(SESSION_ID, USER_ID);
+
+        assertTrue(mapper.isUserSessionDeleteAdminEvent(adminEvent));
+        assertTrue(mapper.canConvert(adminEvent));
+    }
+
+    @Test
+    void canConvert_adminUserSessionDeleteWithoutUserIdDetail_false() {
+        // The session is already removed when the event fires and the path only
+        // names the session, so without the USER_ID detail there is no subject to
+        // build — the mapper must bail before any stream lookup happens.
+        AdminEvent adminEvent = adminUserSessionDeleteEvent(SESSION_ID, null);
+
+        assertFalse(mapper.isUserSessionDeleteAdminEvent(adminEvent));
+        assertFalse(mapper.canConvert(adminEvent));
+        assertNull(mapper.toSecurityEventToken(adminEvent, streamConfig()));
+    }
+
+    @Test
+    void canConvert_userSessionResourceWithOtherOperation_false() {
+        AdminEvent adminEvent = adminUserSessionDeleteEvent(SESSION_ID, USER_ID);
+        adminEvent.setOperationType(OperationType.ACTION);
+
+        assertFalse(mapper.canConvert(adminEvent));
+    }
+
+    @Test
+    void toSecurityEventToken_adminDeletesUserSession_producesSessionRevokedForThatSession() {
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(
+                adminUserSessionDeleteEvent(SESSION_ID, USER_ID), streamConfig());
+
+        assertNotNull(token);
+        Object payload = token.getEvents().get(CaepSessionRevoked.TYPE);
+        assertTrue(payload instanceof CaepSessionRevoked);
+        assertEquals(InitiatingEntity.ADMIN, ((CaepSessionRevoked) payload).getInitiatingEntity());
+
+        // Unlike "log out all sessions" (session "ALL"), the SET must name the
+        // concrete session that was revoked.
+        assertTrue(token.getSubjectId() instanceof ComplexSubjectId);
+        ComplexSubjectId subId = (ComplexSubjectId) token.getSubjectId();
+        assertTrue(subId.getSession() instanceof OpaqueSubjectId);
+        assertEquals(SESSION_ID, ((OpaqueSubjectId) subId.getSession()).getId());
+    }
+
+    @Test
+    void toSecurityEventToken_adminLogoutAllSessions_reportsAdminInitiatingEntity() {
+        AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setResourceType(ResourceType.USER);
+        adminEvent.setOperationType(OperationType.ACTION);
+        adminEvent.setResourcePath("users/" + USER_ID + "/logout");
+        adminEvent.setDetails(new HashMap<>());
+
+        SsfSecurityEventToken token = mapper.toSecurityEventToken(adminEvent, streamConfig());
+
+        assertNotNull(token);
+        Object payload = token.getEvents().get(CaepSessionRevoked.TYPE);
+        assertTrue(payload instanceof CaepSessionRevoked);
+        assertEquals(InitiatingEntity.ADMIN, ((CaepSessionRevoked) payload).getInitiatingEntity());
+    }
+
     private StreamConfig streamConfig() {
         return new StreamConfig();
+    }
+
+    /**
+     * Builds the {@link AdminEvent} shape {@code RealmAdminResource.deleteSession}
+     * produces for {@code DELETE /admin/realms/{realm}/sessions/{sessionId}}:
+     * {@code sessions/{sessionId}} resource path, {@code ResourceType.USER_SESSION},
+     * {@code OperationType.DELETE}, and the {@link Details#USER_ID} detail the
+     * resource attaches because the path itself does not name the user. Pass
+     * {@code null} for {@code userId} to omit the detail.
+     */
+    private AdminEvent adminUserSessionDeleteEvent(String sessionId, String userId) {
+        AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setResourceType(ResourceType.USER_SESSION);
+        adminEvent.setOperationType(OperationType.DELETE);
+        adminEvent.setResourcePath("sessions/" + sessionId);
+
+        Map<String, String> details = new HashMap<>();
+        if (userId != null) {
+            details.put(Details.USER_ID, userId);
+        }
+        adminEvent.setDetails(details);
+
+        return adminEvent;
     }
 
     /**

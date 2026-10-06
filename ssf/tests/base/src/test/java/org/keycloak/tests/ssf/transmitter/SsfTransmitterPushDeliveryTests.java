@@ -208,6 +208,43 @@ public class SsfTransmitterPushDeliveryTests {
     }
 
     /**
+     * Admin deletion of a single user session via
+     * {@code DELETE /admin/realms/{realm}/sessions/{sessionId}} — the per-session
+     * "Sign out" action in the admin console — must produce a
+     * {@link CaepSessionRevoked} SET naming exactly that session. Unlike
+     * {@code users/{id}/logout}, the admin event here is
+     * {@code ResourceType.USER_SESSION} and its path carries no user id, so
+     * this exercises the {@code Details.USER_ID} detail the admin resource
+     * attaches for exactly this purpose (keycloak/keycloak#53627).
+     */
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnAdminUserSessionDelete() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                "password grant should succeed for the test user");
+        String sessionId = sessionIdOf(tokenResponse.getAccessToken());
+
+        realm.admin().deleteSession(sessionId, false);
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode event = set.path("events").path(CaepSessionRevoked.TYPE);
+        Assertions.assertFalse(event.isMissingNode(), "SET should carry the CAEP session-revoked event");
+        Assertions.assertEquals("admin", event.path("initiating_entity").asText(),
+                "an admin-triggered session deletion should report the admin as initiating entity");
+
+        JsonNode subId = set.path("sub_id");
+        Assertions.assertTrue(subId.path("user").isObject(), "sub_id.user should describe the user whose session was revoked");
+        Assertions.assertEquals(sessionId, subId.path("session").path("id").asText(),
+                "sub_id.session should name the concrete session the admin deleted");
+    }
+
+    /**
      * Regression guard: an admin-UI-flavored stream (where
      * {@code events_requested} carries event <b>aliases</b> rather than
      * full URIs) must still receive matching pushes. Before the
@@ -442,6 +479,17 @@ public class SsfTransmitterPushDeliveryTests {
             }
             builder.success();
         });
+    }
+
+    /**
+     * Reads the {@code sid} claim from an access token — the user session id
+     * that the admin {@code DELETE sessions/{sessionId}} endpoint expects.
+     */
+    protected String sessionIdOf(String accessToken) throws JWSInputException, IOException {
+        JsonNode claims = JsonSerialization.readValue(new JWSInput(accessToken).getContent(), JsonNode.class);
+        String sessionId = claims.path("sid").asText(null);
+        Assertions.assertNotNull(sessionId, "access token should carry a sid claim");
+        return sessionId;
     }
 
     protected CapturedPush awaitPush() throws InterruptedException {

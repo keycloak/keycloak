@@ -58,6 +58,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -756,11 +757,19 @@ public class RealmAdminResource {
             throw new NotFoundException("Sesssion not found");
         }
 
+        // Resolve the user before the logout removes the session: the resource path only carries the
+        // session id, so listeners (e.g. SSF) would otherwise have no way to tell whose session ended.
+        UserModel sessionUser = userSession.getUser();
+        String userId = sessionUser != null ? sessionUser.getId() : null;
+
         AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
 
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("offline", offline);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri())
+                .representation(eventRep)
+                .detail(Details.USER_ID, userId)
+                .success();
     }
 
     /**
