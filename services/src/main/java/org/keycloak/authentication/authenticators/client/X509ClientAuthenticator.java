@@ -179,10 +179,10 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
                     .timestampValidation()
                         .enabled(true)
                     .build(certs);
-            validator.checkRevocationStatus()
+            validator.validateTrust()
+                    .validateCASubjectDN()
                     .validateTimestamps()
-                    .validateTrust()
-                    .validateCASubjectDN();
+                    .checkRevocationStatus();
             return validator.getCertPathBuilderResult().getTrustAnchor().getTrustedCert();
         } catch (GeneralSecurityException e) {
             logger.warnf(e, "Invalid certificate %s", CertificateValidator.getSubjectName(certs[0]));
