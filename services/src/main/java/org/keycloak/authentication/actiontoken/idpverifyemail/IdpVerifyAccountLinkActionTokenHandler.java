@@ -46,11 +46,15 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import org.jboss.logging.Logger;
+
 /**
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
 public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHandler<IdpVerifyAccountLinkActionToken> {
+
+    private static final Logger logger = Logger.getLogger(IdpVerifyAccountLinkActionTokenHandler.class);
 
     public IdpVerifyAccountLinkActionTokenHandler() {
         super(
@@ -145,14 +149,24 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
     }
 
     private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
+        String externalId = token.getExternalId();
+        if (externalId == null || externalId.isBlank()) {
+            logger.warnf("Not storing email verification proof for user '%s' and identity provider '%s' because the external id is missing.",
+                    user.getId(), token.getIdentityProviderAlias());
+            return;
+        }
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
         String userId = user.getId();
         String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, externalId), singleObjectLifespan, Map.of());
     }
 
     public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
         if (user == null) {
+            return false;
+        }
+
+        if (externalId == null || externalId.isBlank()) {
             return false;
         }
 

@@ -935,6 +935,15 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         idpConfirmLinkPage.assertCurrent();
     }
 
+    @Test
+    public void testLinkAccountAndVerifyEmailUsingDifferentBrowserDuplicateEmailWithoutBrokerUserId() {
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.getConfig().put(TestKeycloakOidcIdentityProviderFactory.OMIT_BROKER_USER_ID, Boolean.TRUE.toString());
+        identityProviderResource.update(idpRep);
+
+        testLinkAccountAndVerifyEmailUsingDifferentBrowserDuplicateEmail();
+    }
+
     public void addDepartmentScopeIntoRealm() {
         testRealm().clientScopes().create(ClientScopeBuilder.create().name("department").protocol("openid-connect").build());
     }
