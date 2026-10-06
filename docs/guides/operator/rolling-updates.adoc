@@ -31,7 +31,13 @@ If it shows, the shutdown was graceful.
 INFO  [io.quarkus] (Shutdown thread) Keycloak stopped in ...s
 ----
 
-See the <@links.server id="container" anchor="custom-entrypoint-shell-scripts" /> {section} for details for possible causes when it does not show.
+<@profile.ifCommunity>
+See the <@links.server id="containers" anchor="custom-entrypoint-shell-scripts" /> {section} for details on possible causes when it does not show.
+</@profile.ifCommunity>
+
+<@profile.ifProduct>
+See the <@links.server id="containers" /> {section} for details on possible causes when it does not show.
+</@profile.ifProduct>
 
 === Verify the readiness probe in the load balancer
 
