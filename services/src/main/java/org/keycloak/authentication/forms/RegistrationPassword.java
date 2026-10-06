@@ -39,7 +39,10 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.policy.NotEmailPasswordPolicyProvider;
+import org.keycloak.policy.NotEmailPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -95,7 +98,21 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
             errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD_CONFIRM, Messages.INVALID_PASSWORD_CONFIRM));
         }
         if (formData.getFirst(RegistrationPage.FIELD_PASSWORD) != null) {
-            PolicyError err = context.getSession().getProvider(PasswordPolicyManagerProvider.class).validate(context.getRealm().isRegistrationEmailAsUsername() ? formData.getFirst(RegistrationPage.FIELD_EMAIL) : formData.getFirst(RegistrationPage.FIELD_USERNAME), formData.getFirst(RegistrationPage.FIELD_PASSWORD));
+            String password = formData.getFirst(RegistrationPage.FIELD_PASSWORD);
+            // String-based policy validation receives username (or email when used as username).
+            PolicyError err = context.getSession().getProvider(PasswordPolicyManagerProvider.class)
+                    .validate(context.getRealm().isRegistrationEmailAsUsername()
+                            ? formData.getFirst(RegistrationPage.FIELD_EMAIL)
+                            : formData.getFirst(RegistrationPage.FIELD_USERNAME), password);
+            // notEmail cannot use the username String API; always validate against the email field.
+            if (err == null && context.getRealm().getPasswordPolicy().getPolicies()
+                    .contains(NotEmailPasswordPolicyProviderFactory.ID)) {
+                PasswordPolicyProvider notEmail = context.getSession()
+                        .getProvider(PasswordPolicyProvider.class, NotEmailPasswordPolicyProviderFactory.ID);
+                if (notEmail instanceof NotEmailPasswordPolicyProvider provider) {
+                    err = provider.validateEmail(formData.getFirst(RegistrationPage.FIELD_EMAIL), password);
+                }
+            }
             if (err != null)
                 errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD, err.getMessage(), err.getParameters()));
         }
