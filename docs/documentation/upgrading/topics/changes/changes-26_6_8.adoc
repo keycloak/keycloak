@@ -37,6 +37,14 @@ If a CRL file is stored outside the `conf` directory, move or mount the file int
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Conditional OTP authenticator now requires a trusted proxy for header-based rules
+
+The `Skip OTP for Header` (`SKIP_OTP_FOR_HTTP_HEADER`) option in the Conditional OTP authenticator now verifies both that Keycloak is configured in reverse proxy mode (via `--proxy-headers`) and that the request arrived through a https://www.keycloak.org/server/reverseproxy#_trusted_proxies[trusted proxy]. If proxy headers are not configured, or if the proxy is not trusted, the skip-header rule is ignored and OTP is not skipped.
+
+The `Force OTP for Header` (`FORCE_OTP_FOR_HTTP_HEADER`) option is not affected by this change because forcing OTP is always the safer direction.
+
+Both options should only be used when {project_name} is configured in reverse proxy mode with headers correctly overwritten by the proxy. Without this, any client can inject a matching header value in their request and influence the OTP decision. See https://www.keycloak.org/server/reverseproxy#header-filtering-recommendations[Header filtering recommendations] for more details.
+
 === New executor to secure client cluster node registration
 
 A new client policy executor, `secure-client-node-hostname`, is available to address server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (`/clients-managements/register-node`).
