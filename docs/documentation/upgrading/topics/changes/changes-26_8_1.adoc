@@ -31,6 +31,13 @@ bin/kc.[sh|bat] start --spi-authenticator--auth-x509-client-username-form--legac
 
 See link:{adminguide_link}#_x509[X.509 client certificate user authentication] for more information.
 
+=== X.509 authenticators load CRL files only from the `conf` directory
+
+{project_name} now loads a CRL file for X.509 client certificate authentication only when the file path resolves to a location inside the `conf` directory of the {project_name} installation.
+This applies to the CRL Path option and to CRL distribution points that contain a file path.
+
+If a CRL file is stored outside the `conf` directory, move or mount the file into the `conf` directory and set the CRL Path option to the file path relative to that directory.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

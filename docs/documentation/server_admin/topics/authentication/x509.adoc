@@ -134,13 +134,13 @@ Defines the method to match the certificate identity with an existing user. _Use
 A custom attribute whose value matches against the certificate identity. Use multiple custom attributes when attribute mapping is related to multiple values, For example,  'Certificate Serial Number and IssuerDN'.
 
 *CRL Checking Enabled*::
-Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL file path* attribute.
+Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL Path* attribute.
 
 *Enable CRL Distribution Point to check certificate revocation status*::
 Use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
 
-*CRL file path*::
-The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
+*CRL Path*::
+This option specifies the location of the CRL as an HTTP or LDAP URL or as the path to a CRL file. File paths are relative to the `conf` directory of the {project_name} installation, and {project_name} rejects any path that resolves outside that directory. You can add multiple locations, and the certificate is checked against each of them.
 
 *CRL abort if non updated*::
 A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC 5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
