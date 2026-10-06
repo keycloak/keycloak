@@ -127,9 +127,11 @@ WARNING: Multi-cluster (v1) is deprecated and will be removed in a future major 
 |Required
 |===
 
-IMPORTANT: A site is a failure domain such as an availability zone or data center.
-
-IMPORTANT: A {project_name} cluster is a set of instances that communicate with each other locally in the same site. An {kubernetes} cluster is the underlying platform cluster. These terms are not interchangeable.
+[IMPORTANT]
+====
+* A site is a failure domain such as an availability zone or data center.
+* A {project_name} cluster is a set of instances that communicate with each other locally in the same site. An {kubernetes} cluster is the underlying platform cluster. These terms are not interchangeable.
+====
 
 === Next Steps
 
