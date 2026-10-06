@@ -723,6 +723,44 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * Regression test: a partial update that omits the stored refresh idle timeout must be validated against the
+     * merged settings, so raising the refresh interval above it is rejected just like a full update, while a
+     * partial update with a valid merged state must still succeed.
+     */
+    @Test
+    public void testPartialUpdateValidatedAgainstStoredIdleTimeout() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-partial-update-idle");
+        scope.setExpiryInSeconds(31536000); // 365 days
+        scope.setRefreshIntervalInSeconds(604800); // 7 days
+        scope.setRefreshIdleTimeoutInSeconds(2592000); // 30 days - valid
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        Response response = clientScopes.create(scope);
+        String scopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            // When: a partial update submits ONLY the refresh interval, omitting the stored idle timeout
+            ClientScopeRepresentation partial = new ClientScopeRepresentation();
+            partial.setName("test-partial-update-idle");
+            partial.setAttributes(Map.of(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS, "5184000")); // 60 days
+
+            // Then: the merged state (60 day interval vs stored 30 day idle timeout) must be rejected
+            assertThrows(BadRequestException.class, () -> clientScopes.get(scopeId).update(partial));
+
+            // And: a partial update whose merged state stays valid must still succeed and persist
+            partial.setAttributes(Map.of(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS, "1209600")); // 14 days
+            clientScopes.get(scopeId).update(partial);
+
+            ClientScopeRepresentation updated = clientScopes.get(scopeId).toRepresentation();
+            assertEquals("1209600", updated.getAttributes().get(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS));
+            assertEquals("2592000", updated.getAttributes().get(CredentialScopeModel.VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS));
+        } finally {
+            clientScopes.get(scopeId).remove();
+        }
+    }
+
     private void assertDisplay(String displayStr) throws IOException {
         DisplayObject expectedDisplay = new DisplayObject();
         expectedDisplay.setName("Natural person verifiable credential");

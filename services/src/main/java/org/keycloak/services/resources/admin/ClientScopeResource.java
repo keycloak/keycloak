@@ -17,6 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -130,7 +132,9 @@ public class ClientScopeResource {
         if (rep.getProtocol() == null) {
             rep.setProtocol(clientScope.getProtocol());
         }
-        ClientScopeResource.validateClientScope(session, rep);
+        // Validate the effective scope that will be persisted: RepresentationToModel#updateClientScope merges the
+        // submitted attributes into the stored ones, so a partial update must not bypass cross-attribute checks.
+        ClientScopeResource.validateClientScope(session, mergeEffectiveAttributes(rep, clientScope));
         validateParameterizedScopeUpdate(rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //
@@ -267,6 +271,36 @@ public class ClientScopeResource {
         if (factory != null) {
             factory.validateClientScope(session, clientScope);
         }
+    }
+
+    /**
+     * Builds the representation of the client scope as it will exist after the update is persisted, so that
+     * validation sees the merged state: stored attributes overlaid with the submitted ones, where an explicit
+     * {@code null} clears the attribute. Mirrors {@code RepresentationToModel#updateClientScope}.
+     */
+    private static ClientScopeRepresentation mergeEffectiveAttributes(ClientScopeRepresentation rep, ClientScopeModel clientScope) {
+        ClientScopeRepresentation effective = new ClientScopeRepresentation();
+        // validateCredentialConfigurationId excludes this scope from its uniqueness check by id, so carry it over
+        effective.setId(rep.getId() != null ? rep.getId() : clientScope.getId());
+        effective.setName(rep.getName() != null ? rep.getName() : clientScope.getName());
+        effective.setDescription(rep.getDescription() != null ? rep.getDescription() : clientScope.getDescription());
+        effective.setProtocol(rep.getProtocol());
+
+        Map<String, String> attributes = new HashMap<>();
+        if (clientScope.getAttributes() != null) {
+            attributes.putAll(clientScope.getAttributes());
+        }
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                if (entry.getValue() == null) {
+                    attributes.remove(entry.getKey());
+                } else {
+                    attributes.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        effective.setAttributes(attributes);
+        return effective;
     }
 
     /**
