@@ -332,6 +332,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
         // Receive email
+        mail.waitForIncomingEmail(1);
         MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
 
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);

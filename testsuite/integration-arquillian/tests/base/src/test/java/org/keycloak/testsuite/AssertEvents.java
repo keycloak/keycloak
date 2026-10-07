@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite;
 
+import java.util.Objects;
+
+import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.EventRepresentation;
 
 import org.junit.rules.TestRule;
@@ -55,6 +58,14 @@ public class AssertEvents implements TestRule {
             skipEvents--;
         }
         return context.testingClient.testing().pollEvent();
+    }
+
+    /**
+     * Like {@link #poll()}, but waits up to 10 seconds for the event. Use it for events that are recorded in the
+     * background, such as the ones about sending the reset password email.
+     */
+    public EventRepresentation pollWithWait() {
+        return Retry.call(iteration -> Objects.requireNonNull(poll(), "No event within 10 seconds"), 100, 100);
     }
 
     public void skip(int skipNumOfEvents) {

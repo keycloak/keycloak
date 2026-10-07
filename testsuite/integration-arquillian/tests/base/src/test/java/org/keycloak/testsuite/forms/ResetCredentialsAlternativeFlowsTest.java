@@ -202,6 +202,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
 
             // Assert email was sent
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
         } finally {
             revertFlows();
@@ -239,6 +240,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
 
             // Assert email was sent
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             // Successfully reset password

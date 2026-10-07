@@ -252,6 +252,7 @@ public class RegisterWithEmailVerificationTest {
             resetPasswordPage2.changePassword("john@email.cz");
 
             // Receive the email and click it on browser2
+            mailServer.waitForIncomingEmail(2);
             MimeMessage message = mailServer.getLastReceivedMessage();
             String forgetPasswordEmailLink = MailUtils.getPasswordResetEmailLink(message);
             driver2.open(forgetPasswordEmailLink);

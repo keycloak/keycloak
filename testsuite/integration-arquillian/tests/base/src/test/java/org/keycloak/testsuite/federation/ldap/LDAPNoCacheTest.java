@@ -205,6 +205,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        mail.waitForIncomingEmail(expectedCountOfMessages);
         MimeMessage[] messages = mail.getReceivedMessages();
         Assertions.assertEquals(expectedCountOfMessages, messages.length);
         MimeMessage message = mail.getReceivedMessages()[expectedCountOfMessages - 1];

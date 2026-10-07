@@ -110,9 +110,8 @@ public class MailServer extends ExternalResource {
      * @param timeout maximum time in ms to wait for emailCount of messages to arrive before giving up and returning false
      * @param emailCount waits for these many emails to arrive before returning
      * @return
-     * @throws InterruptedException
      */
-    public boolean waitForIncomingEmail(long timeout, int emailCount) throws InterruptedException {
+    public boolean waitForIncomingEmail(long timeout, int emailCount) {
         return greenMail.waitForIncomingEmail(timeout, emailCount);
     }
 
@@ -120,9 +119,8 @@ public class MailServer extends ExternalResource {
      * Does the same thing as Object.wait(long, int) but with a timeout of 5000ms.
      * @param emailCount waits for these many emails to arrive before returning
      * @return
-     * @throws InterruptedException
      */
-    public boolean waitForIncomingEmail(int emailCount) throws InterruptedException {
+    public boolean waitForIncomingEmail(int emailCount) {
         return greenMail.waitForIncomingEmail(emailCount);
     }
 }

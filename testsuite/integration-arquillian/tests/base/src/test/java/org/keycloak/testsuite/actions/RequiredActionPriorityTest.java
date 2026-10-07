@@ -279,10 +279,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword(USERNAME);
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD);
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD);
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
         final var message = mail.getLastReceivedMessage();
         final var resetUrl = getEmailLink(message);

@@ -515,6 +515,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
         MimeMessage message = mail.getLastReceivedMessage();
         String linkFromMail = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
@@ -574,6 +575,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword("consumer");
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
         MimeMessage message = mail.getLastReceivedMessage();
         String linkFromMail = assertEmailAndGetUrl(message, MailServerConfiguration.FROM, USER_EMAIL,
@@ -629,6 +631,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
         MimeMessage message = mail.getLastReceivedMessage();
         String linkFromMail = assertEmailAndGetUrl(message, MailServerConfiguration.FROM, USER_EMAIL,

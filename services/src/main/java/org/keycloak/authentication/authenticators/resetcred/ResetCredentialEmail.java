@@ -41,6 +41,7 @@ import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -121,14 +122,42 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
           .build()
           .toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
-        try {
-            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).setAuthenticationSession(authenticationSession).sendPasswordReset(link, expirationInMinutes);
+        Event sentEvent = event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .user(user)
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId())
+                .getEvent();
+        Event failedEvent = event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .user(user)
+                .detail(Details.USERNAME, username)
+                .getEvent();
 
-            event.clone().event(EventType.SEND_RESET_PASSWORD)
-                         .user(user)
-                         .detail(Details.USERNAME, username)
-                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId()).success();
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+        EmailTemplateProvider emailTemplateProvider = context.getSession().getProvider(EmailTemplateProvider.class)
+                .setRealm(context.getRealm())
+                .setUser(user)
+                .setAuthenticationSession(authenticationSession);
+        // Send the email in the background, so the response does not wait for the mail server. The events are then
+        // recorded once the email was sent, as before.
+        boolean async = emailTemplateProvider.setAsyncDelivery(new EmailTemplateProvider.AsyncDeliveryCallback() {
+            @Override
+            public void onSent(KeycloakSession session) {
+                toEventBuilder(session, sentEvent).success();
+            }
+
+            @Override
+            public void onFailed(KeycloakSession session, EmailException e) {
+                logEmailFailure(e);
+                toEventBuilder(session, failedEvent).detail(Details.REASON, e.getMessage()).error(Errors.EMAIL_SEND_FAILED);
+            }
+        });
+        try {
+            emailTemplateProvider.sendPasswordReset(link, expirationInMinutes);
+            if (!async) {
+                event.clone().event(EventType.SEND_RESET_PASSWORD)
+                             .user(user)
+                             .detail(Details.USERNAME, username)
+                             .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId()).success();
+            }
         } catch (EmailException e) {
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                     .detail(Details.REASON, e.getMessage())
@@ -136,7 +165,32 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                     .user(user)
                     .error(Errors.EMAIL_SEND_FAILED);
             ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+        } finally {
+            // The provider is shared by the whole session, so emails sent later in this request must not be sent in the background
+            emailTemplateProvider.setAsyncDelivery(null);
+        }
+        context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+    }
+
+    private static EventBuilder toEventBuilder(KeycloakSession session, Event event) {
+        EventBuilder builder = new EventBuilder(session.getContext().getRealm(), session)
+                .event(event.getType())
+                .client(event.getClientId())
+                .user(event.getUserId())
+                .session(event.getSessionId())
+                .ipAddress(event.getIpAddress());
+        if (event.getDetails() != null) {
+            event.getDetails().forEach(builder::detail);
+        }
+        return builder;
+    }
+
+    private static void logEmailFailure(EmailException e) {
+        if (e.getCause() == null) {
+            // An expected condition, for example the email sender is disabled, which does not need a stack trace
+            logger.warnf("Failed to send password reset email: %s", e.getMessage());
+        } else {
+            ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
         }
     }
 
