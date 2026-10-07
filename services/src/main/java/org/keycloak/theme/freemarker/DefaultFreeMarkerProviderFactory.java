@@ -12,7 +12,7 @@ import freemarker.template.Template;
 public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFactory {
 
     private volatile DefaultFreeMarkerProvider provider;
-    private ConcurrentHashMap<String, Template> cache;
+    private volatile ConcurrentHashMap<String, Template> cache;
     private KeycloakSanitizerMethod kcSanitizeMethod;
 
     @Override
@@ -51,7 +51,9 @@ public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFacto
     @Override
     public void clearCache() {
         if (cache != null) {
-            cache.clear();
+            ConcurrentHashMap<String, Template> newCache = new ConcurrentHashMap<>();
+            cache = newCache;
+            provider = new DefaultFreeMarkerProvider(newCache, kcSanitizeMethod);
         }
     }
 

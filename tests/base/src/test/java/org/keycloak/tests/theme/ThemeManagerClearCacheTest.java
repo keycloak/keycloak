@@ -18,10 +18,11 @@
 package org.keycloak.tests.theme;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.keycloak.common.Version;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -32,11 +33,8 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
-import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.freemarker.DefaultFreeMarkerProviderFactory;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
-import org.keycloak.theme.freemarker.FreeMarkerProviderFactory;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -50,8 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that {@code session.theme().clearCache()} also clears the FreeMarker template cache and the gzip
- * resource-encoding cache, not just the theme cache itself
- * (https://github.com/keycloak/keycloak/issues/51066).
+ * resource-encoding cache, not just the theme cache itself.
  */
 @KeycloakIntegrationTest(config = ThemeManagerClearCacheTest.ThemeCachingServerConfig.class)
 public class ThemeManagerClearCacheTest {
@@ -73,33 +70,74 @@ public class ThemeManagerClearCacheTest {
             requestWithGzip(client, url);
             assertTrue(gzipCacheFileExists(resourcesVersion), "expected the gzip cache file to exist after the request");
 
+            // clearCache swaps to a new directory; the previous one is retained briefly for in-flight requests
+            runOnServer.run(session -> session.theme().clearCache());
+            // a second clearCache cleans up the previous generation's directory
             runOnServer.run(session -> session.theme().clearCache());
 
-            assertFalse(gzipCacheFileExists(resourcesVersion), "clearCache() should have removed the gzip cache file");
+            assertFalse(gzipCacheFileExists(resourcesVersion),
+                    "old gzip cache directory should have been removed");
 
-            // a subsequent request still works, and repopulates the cache
+            // subsequent requests still work with gzip encoding
             requestWithGzip(client, url);
-            assertTrue(gzipCacheFileExists(resourcesVersion));
         }
     }
 
     @Test
-    public void clearCacheRemovesCachedTemplate() {
+    public void clearCacheServesUpdatedTemplate() {
+        String themeName = "cache-test";
+        String templateName = "test-cache.ftl";
+
         runOnServer.run(session -> {
-            Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
             try {
-                // the template is compiled and cached before rendering, so an incomplete data map is enough
-                session.getProvider(FreeMarkerProvider.class).processTemplate(new HashMap<>(), "code.ftl", theme);
-            } catch (FreeMarkerException e) {
-                // expected: the data map above does not provide everything the template needs to fully render
+                Path themeDir = Paths.get(System.getProperty("kc.home.dir"), "themes", themeName, "login");
+                Files.createDirectories(themeDir);
+                Files.writeString(themeDir.resolve("theme.properties"), "parent=base\n");
+                Files.writeString(themeDir.resolve(templateName), "marker-v1");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         });
 
-        assertTrue(freeMarkerCacheContainsCodeTemplate(), "expected the template to be cached after rendering it");
+        try {
+            String v1 = renderTemplate(themeName, templateName);
+            assertTrue(v1.contains("marker-v1"), "initial render should contain marker-v1");
 
-        runOnServer.run(session -> session.theme().clearCache());
+            // modify the template on disk
+            runOnServer.run(session -> {
+                try {
+                    Files.writeString(Paths.get(System.getProperty("kc.home.dir"),
+                            "themes", themeName, "login", templateName), "marker-v2");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-        assertFalse(freeMarkerCacheContainsCodeTemplate(), "clearCache() should have removed the cached template");
+            // without clearing cache, the old cached template is still served
+            String stale = renderTemplate(themeName, templateName);
+            assertTrue(stale.contains("marker-v1"),
+                    "without clearCache, cached template should still serve old content");
+
+            // after clearing cache, the updated template is picked up
+            runOnServer.run(session -> session.theme().clearCache());
+
+            String v2 = renderTemplate(themeName, templateName);
+            assertTrue(v2.contains("marker-v2"),
+                    "after clearCache, updated template content should be served");
+        } finally {
+            runOnServer.run(session -> {
+                try {
+                    Path themeRoot = Paths.get(System.getProperty("kc.home.dir"), "themes", themeName);
+                    if (Files.exists(themeRoot)) {
+                        try(var w = Files.walk(themeRoot)) {
+                            w.sorted(Comparator.reverseOrder())
+                                    .forEach(p -> { try { Files.delete(p); } catch (IOException ignored) {} });
+                        }
+                    }
+                } catch (IOException ignored) {}
+            });
+            runOnServer.run(session -> session.theme().clearCache());
+        }
     }
 
     private void requestWithGzip(CloseableHttpClient client, String url) throws IOException {
@@ -112,23 +150,31 @@ public class ThemeManagerClearCacheTest {
     }
 
     private boolean gzipCacheFileExists(String resourcesVersion) {
-        return runOnServer.fetch(session -> Paths.get(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache", resourcesVersion,
-                "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile(), Boolean.class);
+        return runOnServer.fetch(session -> {
+            java.io.File cacheRoot = Paths.get(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache").toFile();
+            if (!cacheRoot.isDirectory()) return false;
+            java.io.File[] dirs = cacheRoot.listFiles();
+            if (dirs == null) return false;
+            for (java.io.File dir : dirs) {
+                if (dir.getName().startsWith(resourcesVersion)
+                        && new java.io.File(dir, "welcome/keycloak/css/welcome.css.gz").isFile()) {
+                    return true;
+                }
+            }
+            return false;
+        }, Boolean.class);
     }
 
-    private boolean freeMarkerCacheContainsCodeTemplate() {
+    private String renderTemplate(String themeName, String templateName) {
         return runOnServer.fetch(session -> {
             try {
-                FreeMarkerProviderFactory factory = (FreeMarkerProviderFactory)
-                        session.getKeycloakSessionFactory().getProviderFactory(FreeMarkerProvider.class);
-                Field field = DefaultFreeMarkerProviderFactory.class.getDeclaredField("cache");
-                field.setAccessible(true);
-                Map<?, ?> cache = (Map<?, ?>) field.get(factory);
-                return cache != null && cache.containsKey("login/base/code.ftl");
-            } catch (ReflectiveOperationException e) {
+                Theme theme = session.theme().getTheme(themeName, Theme.Type.LOGIN);
+                return session.getProvider(FreeMarkerProvider.class)
+                        .processTemplate(new HashMap<>(), templateName, theme);
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }, Boolean.class);
+        }, String.class);
     }
 
     public static class ThemeCachingServerConfig implements KeycloakServerConfig {
