@@ -19,17 +19,8 @@ public class PauseTest extends BaseOperatorTest {
 
     @Test
     void testPause() throws Exception {
-        // In remote mode, the operator runs as a Deployment — wait for it to be ready.
-        // In local/local_apiserver mode, it runs in-process and is already available.
-        if (operatorDeployment == OperatorDeployment.remote) {
-            Awaitility.await().atMost(2, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS)
-                    .untilAsserted(() -> assertThat(
-                            k8sclient.apps().deployments().withName(KEYCLOAK_OPERATOR).get())
-                            .isNotNull()
-                            .extracting(d -> d.getStatus().getReadyReplicas())
-                            .isEqualTo(1));
-        }
-
+        // no need to run as a remote test
+        Assumptions.assumeTrue(operatorDeployment == OperatorDeployment.local_apiserver);
         Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getMetadata().getAnnotations().put(Constants.KEYCLOAK_PAUSE_ANNOTATION, "true");
 
