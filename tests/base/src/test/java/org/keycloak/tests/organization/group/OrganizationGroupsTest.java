@@ -596,7 +596,12 @@ public class OrganizationGroupsTest {
         try (Response response = organization.admin().members().addMember(user.getId())) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
-        organization.cleanup().add(o -> o.members().member(user.getId()).delete().close());
+        organization.cleanup().add(o -> {
+            try (Response response = o.members().member(user.getId()).delete()) {
+                ApiUtil.expectStatus(response, "remove member '%s' from organization '%s'".formatted(user.getUsername(), organization.getName()),
+                        Status.NO_CONTENT);
+            }
+        });
     }
 
     public static class MemberConfig implements UserConfig {
