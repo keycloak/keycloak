@@ -62,3 +62,10 @@ The `Skip OTP for Header` (`SKIP_OTP_FOR_HTTP_HEADER`) option in the Conditional
 The `Force OTP for Header` (`FORCE_OTP_FOR_HTTP_HEADER`) option is not affected by this change because forcing OTP is always the safer direction.
 
 Both options should only be used when {project_name} is configured in reverse proxy mode with headers correctly overwritten by the proxy. Without this, any client can inject a matching header value in their request and influence the OTP decision. See https://www.keycloak.org/server/reverseproxy#header-filtering-recommendations[Header filtering recommendations] for more details.
+
+=== Semicolons are no longer treated as query parameter delimiters
+
+Previously {project_name} treated the semicolon (`;`) as a query parameter delimiter in addition to the ampersand (`&`), so a request such as `/path?a=1;b=2` was parsed as two parameters.
+Because different layers of the server applied this rule inconsistently, the parameters used to process a request could differ from those used to verify its signature.
+{project_name} now treats the semicolon as a literal character, so the same request yields a single parameter.
+If any of your clients rely on the semicolon as a query parameter delimiter, update them to use the ampersand instead.
