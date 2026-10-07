@@ -72,14 +72,25 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const rowsLocator = await getTableRows(page, name);
-  const rows = await rowsLocator.elementHandles();
-  const tableData = await Promise.all(
-    rows.map(async (row) => {
-      const cells = await row.$$("td");
-      return await Promise.all(cells.map((cell) => cell.innerText()));
-    }),
-  );
+  // Retry the complete data capture so the wait and read cannot race each other
+  // during React re-renders that momentarily empty the table.
+  let tableData: string[][] = [];
+  await expect
+    .poll(
+      async () => {
+        const rowsLocator = await getTableRows(page, name);
+        tableData = await rowsLocator.evaluateAll((rows) =>
+          rows.map((row) =>
+            Array.from(row.querySelectorAll("td"), (cell) =>
+              cell.innerText.trim(),
+            ),
+          ),
+        );
+        return tableData.length;
+      },
+      { timeout: TABLE_LOAD_TIMEOUT_MS },
+    )
+    .toBeGreaterThan(0);
   return tableData;
 }
 
