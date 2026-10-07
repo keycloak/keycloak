@@ -968,6 +968,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public int removeIssuedVerifiableCredentialsByClient(String clientId) {
+        return getDelegate().removeIssuedVerifiableCredentialsByClient(clientId);
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         getDelegate().removeExpiredIssuedVerifiableCredentials();
     }

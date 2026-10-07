@@ -391,6 +391,15 @@ public interface UserProvider extends Provider,
     boolean removeIssuedVerifiableCredential(String userId, String credentialId);
 
     /**
+     * Remove all issued verifiable credentials, which were issued by the particular client (OID4VCI wallet),
+     * regardless of the user they belong to.
+     *
+     * @param clientId ID of the client, which acts as OID4VCI wallet
+     * @return number of removed issued verifiable credentials
+     */
+    int removeIssuedVerifiableCredentialsByClient(String clientId);
+
+    /**
      * Remove all expired issued verifiable credentials across all realms.
      * This is called periodically by the scheduled cleanup task.
      */

@@ -5,6 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -18,6 +21,8 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_PATH;
 
@@ -139,5 +144,20 @@ public class OID4VCUtil {
         return session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
                 .filter(issuedCredential -> client.getId().equals(issuedCredential.getClientId()))
                 .toList();
+    }
+
+    /**
+     * Check that the OID4VCI feature is enabled and that verifiable credentials are enabled for the realm
+     *
+     * @param realm realm, for which the check is performed
+     * @throws ErrorResponseException with status 400 when either the feature or the realm setting is not enabled
+     */
+    public static void checkOid4VCIEnabled(RealmModel realm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+            throw ErrorResponse.error("Feature " + Profile.Feature.OID4VC_VCI.getKey() + " not enabled", Response.Status.BAD_REQUEST);
+        }
+        if (!realm.isVerifiableCredentialsEnabled()) {
+            throw ErrorResponse.error("Verifiable credentials not enabled for the realm", Response.Status.BAD_REQUEST);
+        }
     }
 }

@@ -307,6 +307,13 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== New database indexes on the issued verifiable credential tables
+
+The `ISSUED_VER_CREDENTIAL` and `FED_ISSUED_VER_CREDENTIAL` tables now contain additional indexes on their `CLIENT_ID` columns, `IDX_ISSUED_VER_CREDENTIAL_CLIENT_ID` and `IDX_FED_ISSUED_VC_CLIENT_ID`, to improve performance when revoking all issued verifiable credentials of a particular wallet client.
+
+If a table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
