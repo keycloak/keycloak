@@ -4,6 +4,21 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== SAML back-channel SLO via SessionIndex requires client signature
+// https://github.com/keycloak/keycloak/issues/53535
+
+Back-channel SAML single logout that identifies the session with `SessionIndex` (no browser cookie) now requires the initiating client to have *Client signature required* (`saml.client.signature`) enabled.
+Without a verified signature, the `Issuer` field is not authenticated and could be forged to terminate another client's session.
+
+Browser-based (front-channel) logout that carries the user's SSO cookie is unchanged and still works for clients that do not require signatures.
+
+If a SAML client uses back-channel SLO with `SessionIndex` and has *Client signature required* set to *OFF*, either:
+
+* Enable *Client signature required* and configure the client's signing certificate, then sign `LogoutRequest` messages, or
+* Prefer front-channel logout so the browser cookie authenticates the request.
+
+Newly created SAML clients already default to requiring client signatures. Deployments that import realm JSON may still have unsigned clients and are the primary group affected by this change.
+
 === Admin client `organizations.findOne` no longer rejects when the organization does not exist
 // https://github.com/keycloak/keycloak/pull/51717
 

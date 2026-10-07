@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import jakarta.ws.rs.core.Response;
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPMessage;
+import jakarta.xml.ws.soap.SOAPFaultException;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -43,6 +44,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Test;
 
+import static org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
@@ -58,6 +60,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class SOAPBindingTest extends AbstractSamlTest {
 
@@ -165,6 +168,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
 
     @Test
     public void soapBindingLogoutWithoutSignature() {
+        // SessionIndex back-channel logout without client signature must be rejected (#53535)
         getCleanup()
                 .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
                         .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
@@ -172,22 +176,26 @@ public class SOAPBindingTest extends AbstractSamlTest {
                         .update()
                 );
 
-        SAMLDocumentHolder response = new SamlClientBuilder()
-                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
-                .build()
-                .login().user(bburkeUser).build()
-                .processSamlResponse(POST)
-                    .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
-                .build()
-                .clearCookies()
-                .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
-                    .nameId(nameIdRef::get)
-                    .sessionIndex(sessionIndexRef::get)
-                .build()
-                .executeAndTransform(SOAP::extractResponse);
-
-
-        assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
+        try {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(POST)
+                        .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                    .build()
+                    .clearCookies()
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                        .nameId(nameIdRef::get)
+                        .sessionIndex(sessionIndexRef::get)
+                    .build()
+                    .executeAndTransform(SOAP::extractResponse);
+            fail("unsigned SessionIndex LogoutRequest should be rejected");
+        } catch (RuntimeException ex) {
+            assertThat(ex.getCause(), instanceOf(SOAPFaultException.class));
+            assertThat(((SOAPFaultException) ex.getCause()).getFault().getFaultString(),
+                    is(AUTHN_REQUEST_CANNOT_BE_PROCESSED));
+        }
     }
 
     @Test
@@ -218,6 +226,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
 
     @Test
     public void soapBindingLogoutWithoutSignatureMissingDestinationTest() {
+        // Unsigned SessionIndex logout is rejected regardless of Destination (#53535)
         getCleanup()
                 .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
                         .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
@@ -225,26 +234,30 @@ public class SOAPBindingTest extends AbstractSamlTest {
                         .update()
                 );
 
-        SAMLDocumentHolder response = new SamlClientBuilder()
-                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
-                .build()
-                .login().user(bburkeUser).build()
-                .processSamlResponse(POST)
-                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
-                .build()
-                .clearCookies()
-                .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
-                .nameId(nameIdRef::get)
-                .sessionIndex(sessionIndexRef::get)
-                .transformObject(logoutRequestType -> {
-                    logoutRequestType.setDestination(null);
-                    return logoutRequestType;
-                })
-                .build()
-                .executeAndTransform(SOAP::extractResponse);
-
-
-        assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
+        try {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(POST)
+                    .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                    .build()
+                    .clearCookies()
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .transformObject(logoutRequestType -> {
+                        logoutRequestType.setDestination(null);
+                        return logoutRequestType;
+                    })
+                    .build()
+                    .executeAndTransform(SOAP::extractResponse);
+            fail("unsigned SessionIndex LogoutRequest should be rejected");
+        } catch (RuntimeException ex) {
+            assertThat(ex.getCause(), instanceOf(SOAPFaultException.class));
+            assertThat(((SOAPFaultException) ex.getCause()).getFault().getFaultString(),
+                    is(AUTHN_REQUEST_CANNOT_BE_PROCESSED));
+        }
     }
 
     @Test

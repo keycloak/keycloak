@@ -76,6 +76,18 @@ public class SamlSloSessionHijackTest extends AbstractSamlTest {
         assertThat("Victim's SSO session must survive a rogue SP's LogoutRequest", victim.admin().getUserSessions(), hasSize(1));
     }
 
+    @Test
+    public void unsignedClientSpoofingVictimIssuerCannotTerminateSession() throws Exception {
+        String victimSessionIndex = loginVictimAndGetSessionIndex();
+
+        // Attacker forges Issuer = victim clientId. Victim has saml.client.signature=false,
+        // so without this check the ownership comparison would pass against itself.
+        int status = sendUnsignedLogoutRequest(VICTIM_CLIENT_ID, victimSessionIndex);
+
+        assertEquals(400, status, "spoofed-Issuer SessionIndex logout for an unsigned client must be rejected");
+        assertThat("Victim's SSO session must survive unsigned Issuer spoofing", victim.admin().getUserSessions(), hasSize(1));
+    }
+
     /**
      * Logs the victim into {@value #VICTIM_CLIENT_ID} using IdP-initiated SSO, which needs
      * nothing but a GET — no {@code AuthnRequest} and no SP to receive the assertion.
