@@ -115,7 +115,6 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.IdentityBrokeringAPIContext;
@@ -162,6 +161,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
     private EventBuilder event;
 
+    private boolean errorEventSent;
 
     public IdentityBrokerService(KeycloakSession session) {
         this.session = session;
@@ -623,8 +623,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 .detail(Details.IDENTITY_PROVIDER, providerAlias);
 
         if (!Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V1)) {
-            event.detail(Details.REASON, "Identity Brokering API feature not enabled");
-            event.error(Errors.IDENTITY_PROVIDER_ERROR);
             return badRequest("Identity Brokering API feature not enabled");
         }
 
@@ -636,7 +634,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                     .authenticate();
 
             if (authResult == null) {
-                return badRequest("Invalid token.");
+                return badRequest("Invalid token");
             }
 
             AccessToken token = authResult.token();
@@ -649,35 +647,28 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
             if (brokerClient == null) {
-                event.detail(Details.REASON, "Realm has not migrated to support the broker token exchange service");
-                event.error(Errors.IDENTITY_PROVIDER_ERROR);
                 return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
             }
 
             if (!canReadBrokerToken(token)) {
+                errorEventSent = true;
                 event.detail(Details.REASON, "Client not authorized to retrieve tokens for provider");
                 event.error(Errors.UNAUTHORIZED_CLIENT);
-                return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
+                return corsResponse(forbidden("Client not authorized to retrieve tokens from identity provider"), clientModel);
             }
 
             UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
             IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
             if (Booleans.isFalse(identityProviderConfig.isStoreToken())) {
-                event.detail(Details.REASON, "Identity Provider does not support this operation");
-                event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                return corsResponse(badRequest("Identity Provider [" + providerAlias + "] does not support this operation."), clientModel);
+                return corsResponse(badRequest("Identity provider does not support this operation"), clientModel);
             }
 
             FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, user, providerAlias);
             if (identity == null) {
-                this.event.detail(Details.REASON, "User not associated to identity provider");
-                this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                return corsResponse(badRequest("User [" + user.getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
+                return corsResponse(badRequest("User is not associated with identity provider"), clientModel);
             }
             if (identity.getToken() == null) {
-                this.event.detail(Details.REASON, "No token stored for user in this provider");
-                this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                return corsResponse(notFound("No token stored for user [" + authResult.user().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
+                return corsResponse(notFound("No token stored for user with associated identity provider"), clientModel);
             }
 
             String oldToken = identity.getToken();
@@ -686,6 +677,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 this.event.success();
                 return response;
             } catch (WebApplicationException e) {
+                errorEventSent = true;
                 this.event.detail(Details.REASON, e.getMessage());
                 this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
                 return corsResponse(e.getResponse(), clientModel);
@@ -696,6 +688,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             }
 
         } catch (WebApplicationException e) {
+            errorEventSent = true;
             this.event.detail(Details.REASON, e.getMessage());
             this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
             return e.getResponse();
@@ -1584,23 +1577,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {
-        if (!this.event.getEvent().getType().toString().endsWith("_ERROR")) {
-            boolean newTransaction = !this.session.getTransactionManager().isActive();
-
-            try {
-                if (newTransaction) {
-                    this.session.getTransactionManager().begin();
-                }
-
-                this.event.error(message);
-
-                if (newTransaction) {
-                    this.session.getTransactionManager().commit();
-                }
-            } catch (Exception e) {
-                ServicesLogger.LOGGER.couldNotFireEvent(e);
-                rollback();
-            }
+        if (!errorEventSent) {
+            errorEventSent = true;
+            this.event.detail(Details.REASON, message);
+            this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
         }
 
         if (throwable != null) {
@@ -1616,12 +1596,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
     private boolean isDebugEnabled() {
         return logger.isDebugEnabled();
-    }
-
-    private void rollback() {
-        if (this.session.getTransactionManager().isActive()) {
-            this.session.getTransactionManager().rollback();
-        }
     }
 
 }
