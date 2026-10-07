@@ -135,11 +135,11 @@ public class OrganizationTest {
     @Test
     @Order(5)
     public void updateWithRollback() {
-        organization.updateWithCleanup(o -> o.description("updated description").redirectUrl("http://localhost:8080/updated"));
+        organization.updateWithCleanup(o -> o.description("updated description").enabled(false));
 
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertEquals("updated description", rep.getDescription());
-        Assertions.assertEquals("http://localhost:8080/updated", rep.getRedirectUrl());
+        Assertions.assertFalse(rep.isEnabled());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class OrganizationTest {
     public void verifyUpdateWithRollback() {
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertNull(rep.getDescription());
-        Assertions.assertNull(rep.getRedirectUrl());
+        Assertions.assertTrue(rep.isEnabled());
     }
 
     @Test

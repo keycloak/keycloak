@@ -95,7 +95,21 @@ public class ManagedOrganization extends ManagedTestResource {
      * @see #inviteUser(String)
      */
     public void inviteUser(String email, String firstName, String lastName) {
-        invite(() -> organizationResource.members().inviteUser(email, firstName, lastName));
+        inviteUser(email, firstName, lastName, null);
+    }
+
+    /**
+     * Invite a user to the organization by email, which is automatically deleted once the test is completed.
+     *
+     * @param email the email address to invite
+     * @param firstName the first name of the invited user, may be <code>null</code>
+     * @param lastName the last name of the invited user, may be <code>null</code>
+     * @param clientId the client the user is redirected to after accepting the invitation, or <code>null</code> to
+     *                 use the account client
+     * @see #inviteUser(String)
+     */
+    public void inviteUser(String email, String firstName, String lastName, String clientId) {
+        invite(() -> organizationResource.members().inviteUser(email, firstName, lastName, clientId));
     }
 
     /**
@@ -113,11 +127,37 @@ public class ManagedOrganization extends ManagedTestResource {
      * Invite an existing user of the realm to the organization, which is automatically deleted once the test is
      * completed. The user is required to have an email address.
      *
+     * @param user the user to invite
+     * @param clientId the client the user is redirected to after accepting the invitation, or <code>null</code> to
+     *                 use the account client
+     * @see #inviteUser(String)
+     */
+    public void inviteExistingUser(ManagedUser user, String clientId) {
+        inviteExistingUser(user.getId(), clientId);
+    }
+
+    /**
+     * Invite an existing user of the realm to the organization, which is automatically deleted once the test is
+     * completed. The user is required to have an email address.
+     *
      * @param userId the UUID of the user to invite
      * @see #inviteUser(String)
      */
     public void inviteExistingUser(String userId) {
-        invite(() -> organizationResource.members().inviteExistingUser(userId));
+        inviteExistingUser(userId, null);
+    }
+
+    /**
+     * Invite an existing user of the realm to the organization, which is automatically deleted once the test is
+     * completed. The user is required to have an email address.
+     *
+     * @param userId the UUID of the user to invite
+     * @param clientId the client the user is redirected to after accepting the invitation, or <code>null</code> to
+     *                 use the account client
+     * @see #inviteUser(String)
+     */
+    public void inviteExistingUser(String userId, String clientId) {
+        invite(() -> organizationResource.members().inviteExistingUser(userId, clientId));
     }
 
     /**
