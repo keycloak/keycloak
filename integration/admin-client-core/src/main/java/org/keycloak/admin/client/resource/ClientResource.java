@@ -84,6 +84,15 @@ public interface ClientResource {
     @DELETE
     void remove();
 
+    /**
+     * Revoke all issued verifiable credentials, which were issued by this client (wallet), for all users.
+     *
+     * @since Keycloak server 27.0.0
+     */
+    @DELETE
+    @Path("vc/issued-credentials")
+    void revokeIssuedVerifiableCredentials();
+
     @POST
     @Path("client-secret")
     @Produces(MediaType.APPLICATION_JSON)

@@ -52,6 +52,13 @@ Previously, the Redirect URL was used without validation, which could allow an o
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
 
+=== New database indexes on the issued verifiable credential tables
+
+The `ISSUED_VER_CREDENTIAL` and `FED_ISSUED_VER_CREDENTIAL` tables now contain additional indexes on their `CLIENT_ID` columns, `IDX_ISSUED_VER_CREDENTIAL_CLIENT_ID` and `IDX_FED_ISSUED_VC_CLIENT_ID`, to improve performance when revoking all issued verifiable credentials of a particular wallet client.
+
+If a table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

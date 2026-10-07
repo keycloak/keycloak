@@ -1042,6 +1042,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public int removeIssuedVerifiableCredentialsByClient(String clientId) {
+        int removed = localStorage().removeIssuedVerifiableCredentialsByClient(clientId);
+        if (getFederatedStorage() != null) {
+            removed += getFederatedStorage().removeIssuedVerifiableCredentialsByClient(clientId);
+        }
+        return removed;
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         localStorage().removeExpiredIssuedVerifiableCredentials();
         if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
