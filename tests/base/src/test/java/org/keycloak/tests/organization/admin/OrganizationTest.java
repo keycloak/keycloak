@@ -583,7 +583,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation created = realm.admin().organizations().get(orgWithoutDomainsId).toRepresentation();
         assertEquals("no-domain-org", created.getName());
         assertEquals("no-domain-org", created.getAlias());
-        assertThat(created.getDomains() == null || created.getDomains().isEmpty(), is(true));
+        assertNotNull(created.getDomains());
+        assertTrue(created.getDomains().isEmpty());
 
         // verify that the organization can be retrieved
         OrganizationRepresentation orgWithDomains = createRepresentation("org-with-domains", "example.com");
@@ -612,9 +613,9 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertThat("Organization with domains should have at least one domain", 
                     foundOrgWithDomains.get().getDomains().size(), greaterThan(0));
             
-            assertThat("Organization without domains should have no domains", 
-                    foundOrgWithoutDomains.get().getDomains() == null || 
-                    foundOrgWithoutDomains.get().getDomains().isEmpty(), is(true));
+            assertNotNull(foundOrgWithoutDomains.get().getDomains());
+            assertTrue(foundOrgWithoutDomains.get().getDomains().isEmpty(),
+                    "Organization without domains should have no domains");
 
             List<OrganizationRepresentation> search = realm.admin().organizations().search("with-domains", false, -1, -1);
 
@@ -626,6 +627,49 @@ public class OrganizationTest extends AbstractOrganizationTest {
         } finally {
             realm.admin().organizations().get(orgWithDomainsId).delete().close();
             realm.admin().organizations().get(orgWithoutDomainsId).delete().close();
+        }
+    }
+
+    @Test
+    public void testWithoutDomainsRoundTrip() {
+        OrganizationRepresentation org = new OrganizationRepresentation();
+        org.setName("roundtrip-org");
+        org.setAlias("roundtrip-org");
+
+        String orgId;
+        try (Response response = realm.admin().organizations().create(org)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            orgId = ApiUtil.getCreatedId(response);
+        }
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgId);
+
+        try {
+            OrganizationRepresentation saved = orgResource.toRepresentation();
+            assertNotNull(saved.getDomains());
+            assertTrue(saved.getDomains().isEmpty());
+
+            OrganizationRepresentation withDomain = orgResource.toRepresentation();
+            OrganizationDomainRepresentation domain = new OrganizationDomainRepresentation();
+            domain.setName("temporary.example.org");
+            withDomain.addDomain(domain);
+            try (Response response = orgResource.update(withDomain)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+
+            OrganizationRepresentation afterAdd = orgResource.toRepresentation();
+            assertEquals(1, afterAdd.getDomains().size());
+            assertNotNull(afterAdd.getDomain("temporary.example.org"));
+
+            try (Response response = orgResource.update(saved)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+
+            OrganizationRepresentation afterRestore = orgResource.toRepresentation();
+            assertNotNull(afterRestore.getDomains());
+            assertTrue(afterRestore.getDomains().isEmpty());
+        } finally {
+            orgResource.delete().close();
         }
     }
 

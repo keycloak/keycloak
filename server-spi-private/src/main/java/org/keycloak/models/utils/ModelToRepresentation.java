@@ -1535,8 +1535,8 @@ public class ModelToRepresentation {
         rep.setEnabled(model.isEnabled());
         rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());
-        model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
-                .forEach(rep::addDomain);
+        rep.setDomains(model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
+                .collect(Collectors.toSet()));
         return rep;
     }
 
