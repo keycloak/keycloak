@@ -21,7 +21,10 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
@@ -97,7 +100,8 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
                 .sessionId(null)
                 .userId(null)
                 .clientId(null)
-                .error("invalidRequestMessage");
+                .details(Details.REASON, Messages.INVALID_REQUEST)
+                .error(Errors.IDENTITY_PROVIDER_ERROR);
 
         Assertions.assertNull(events.poll());
     }
