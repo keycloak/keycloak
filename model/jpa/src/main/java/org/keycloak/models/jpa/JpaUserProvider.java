@@ -1209,6 +1209,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         return true;
     }
 
+    @Override
+    public int removeIssuedVerifiableCredentialsByClient(String clientId) {
+        return em.createNamedQuery("deleteIssuedVcsByClient")
+                .setParameter("clientId", clientId)
+                .executeUpdate();
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
