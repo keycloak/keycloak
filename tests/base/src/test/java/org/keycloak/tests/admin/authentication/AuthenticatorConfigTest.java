@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -327,18 +328,45 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    @DatabaseTest
     public void testAuthenticatorReferenceNotMasked() {
-        AuthenticatorConfigRepresentation cfg = newConfig("referenceTest", Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp");
-        cfg.getConfig().put(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300");
-        cfg.getConfig().put("secret.key", "myRealSecret");
+        AuthenticatorConfigRepresentation cfg = newConfig("referenceTest", new String[] {
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", "myRealSecret"
+        });
         String cfgId = createConfig(executionId, cfg);
 
         // GET should return the authenticator reference as-is and still mask the secret
         AuthenticatorConfigRepresentation fetched = authMgmtResource.getAuthenticatorConfig(cfgId);
-        Assertions.assertEquals("otp", fetched.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE));
-        Assertions.assertEquals("300", fetched.getConfig().get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
-        Assertions.assertEquals(ComponentRepresentation.SECRET_VALUE, fetched.getConfig().get("secret.key"));
+        assertConfig(fetched, cfgId, cfg.getAlias(),
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", ComponentRepresentation.SECRET_VALUE);
+    }
+
+    @Test
+    public void testAuthenticatorReferenceNotMaskedInPartialExport() {
+        AuthenticatorConfigRepresentation cfg = newConfig("referenceExportTest", new String[] {
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", "myRealSecret",
+                "unknown.key", "unknownValue"
+        });
+        String cfgId = createConfig(executionId, cfg);
+
+        RealmRepresentation exported = realmResource.partialExport(false, false);
+
+        Assertions.assertNotNull(exported.getAuthenticatorConfig());
+        AuthenticatorConfigRepresentation exportedConfig = exported.getAuthenticatorConfig().stream()
+                .filter(config -> cfg.getAlias().equals(config.getAlias()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Authenticator config missing from partial export"));
+
+        assertConfig(exportedConfig, cfgId, cfg.getAlias(),
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", ComponentRepresentation.SECRET_VALUE,
+                "unknown.key", ComponentRepresentation.SECRET_VALUE);
     }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
