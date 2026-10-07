@@ -40,6 +40,8 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Errors;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
@@ -52,6 +54,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.util.JsonSerialization;
@@ -77,12 +80,18 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
 
+    @InjectSimpleHttp
+    SimpleHttp simpleHttp;
+
+    private String initialAccessToken;
+
     @BeforeEach
     @Override
     public void before() throws Exception {
         super.before();
 
         ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        initialAccessToken = token.getToken();
         reg.auth(Auth.token(token));
     }
 
@@ -159,6 +168,52 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assertions.assertNull(response.getUserinfoSignedResponseAlg());
         assertEquals("http://frontchannel", response.getFrontChannelLogoutUri());
         assertTrue(response.getFrontchannelLogoutSessionRequired());
+    }
+
+    @Test
+    public void createClientIgnoresUnknownMetadata() throws Exception {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("client_name", "unknown-metadata-client");
+        metadata.put("x_custom_metadata", true);
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(getOidcUrl()).auth(initialAccessToken)
+                .json(metadata).asResponse()) {
+            assertEquals(201, response.getStatus());
+            OIDCClientRepresentation created = response.asJson(OIDCClientRepresentation.class);
+            assertEquals("unknown-metadata-client", created.getClientName());
+        }
+    }
+
+    @Test
+    public void updateClientIgnoresUnknownMetadata() throws Exception {
+        OIDCClientRepresentation created = create();
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("client_id", created.getClientId());
+        metadata.put("client_name", "updated-with-unknown-metadata");
+        metadata.put("x_custom_metadata", true);
+
+        try (SimpleHttpResponse response = simpleHttp.doPut(getOidcUrl() + "/" + created.getClientId())
+                .auth(created.getRegistrationAccessToken()).json(metadata).asResponse()) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.asJson(OIDCClientRepresentation.class);
+            assertEquals("updated-with-unknown-metadata", updated.getClientName());
+        }
+    }
+
+    @Test
+    public void createClientRejectsKnownMetadataWithInvalidType() throws Exception {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("client_name", "invalid-metadata-client");
+        metadata.put("redirect_uris", "not-an-array");
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(getOidcUrl()).auth(initialAccessToken)
+                .json(metadata).asResponse()) {
+            assertEquals(400, response.getStatus());
+        }
+    }
+
+    private String getOidcUrl() {
+        return managedRealm.getBaseUrl() + "/clients-registrations/openid-connect";
     }
 
     @Test
