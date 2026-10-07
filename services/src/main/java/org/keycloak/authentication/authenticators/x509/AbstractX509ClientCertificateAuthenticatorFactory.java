@@ -185,7 +185,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         cRLRelativePath.setDefaultValue("crl.pem");
         cRLRelativePath.setLabel("CRL Path");
         cRLRelativePath.setHelpText("Applied just if CRL checking is ON and CRL Distribution point is OFF. It contains the URL (typically 'http' or 'ldap') " +
-                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. Paths are assumed to be relative to $jboss.server.config.dir. " +
+                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. File paths are relative to the 'conf' directory of the server, and paths that resolve outside that directory are rejected. " +
                 "Multiple CRLs can be included, however it can affect performance as the certificate will be checked against all listed CRLs."
         );
 
