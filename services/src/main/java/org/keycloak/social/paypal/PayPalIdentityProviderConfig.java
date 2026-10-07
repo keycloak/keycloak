@@ -16,6 +16,8 @@
  */
 package org.keycloak.social.paypal;
 
+import java.util.Arrays;
+
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 
@@ -39,6 +41,14 @@ public class PayPalIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setSandbox(boolean sandbox) {
         getConfig().put("sandbox", String.valueOf(sandbox));
+    }
+
+    @Override
+    protected String[] getClientSecretDestinationConfigKeys() {
+        String[] base = super.getClientSecretDestinationConfigKeys();
+        String[] keys = Arrays.copyOf(base, base.length + 1);
+        keys[base.length] = "sandbox";
+        return keys;
     }
 
 }

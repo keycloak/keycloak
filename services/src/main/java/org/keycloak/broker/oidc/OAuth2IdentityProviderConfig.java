@@ -17,6 +17,8 @@
 package org.keycloak.broker.oidc;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
@@ -241,5 +243,52 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
                 throw new IllegalArgumentException("PKCE Method not supported: " + pkceMethod);
             }
         }
+    }
+
+    /**
+     * Config keys that determine where/how a client secret is sent. Includes {@code baseUrl},
+     * which some social providers (for example GitHub/OpenShift) use to derive the token
+     * endpoint at runtime. Provider-specific configs may override to add keys such as
+     * {@code tenantId} or {@code sandbox}.
+     */
+    protected String[] getClientSecretDestinationConfigKeys() {
+        return new String[] {
+                TOKEN_ENDPOINT_URL,
+                TOKEN_INTROSPECTION_URL,
+                "clientId",
+                "baseUrl"
+        };
+    }
+
+    /**
+     * Reuse a masked {@code clientSecret} only when fields that determine where/how the secret
+     * is sent are unchanged. Otherwise a delegated IdP manager could rebind the stored secret
+     * to an attacker-controlled token endpoint.
+     */
+    @Override
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel updated) {
+        Map<String, String> existing = getConfig() != null ? getConfig() : Map.of();
+        Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
+
+        for (String key : getClientSecretDestinationConfigKeys()) {
+            if (!sameConfigValue(existing.get(key), next.get(key))) {
+                return false;
+            }
+        }
+        return sameConfigValue(
+                existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
+                next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
+    }
+
+    /**
+     * Treats {@code null} and empty string as equivalent so UI/API clients that omit optional
+     * fields as {@code ""} do not look like a destination change when the stored value is absent.
+     */
+    private static boolean sameConfigValue(String left, String right) {
+        return Objects.equals(normalizeConfigValue(left), normalizeConfigValue(right));
+    }
+
+    private static String normalizeConfigValue(String value) {
+        return value == null || value.isEmpty() ? null : value;
     }
 }

@@ -17,6 +17,8 @@
 
 package org.keycloak.social.microsoft;
 
+import java.util.Arrays;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 
@@ -38,5 +40,13 @@ public class MicrosoftIdentityProviderConfig extends OIDCIdentityProviderConfig 
 
     public void setTenantId(final String tenantId) {
         getConfig().put("tenantId", tenantId);
+    }
+
+    @Override
+    protected String[] getClientSecretDestinationConfigKeys() {
+        String[] base = super.getClientSecretDestinationConfigKeys();
+        String[] keys = Arrays.copyOf(base, base.length + 1);
+        keys[base.length] = "tenantId";
+        return keys;
     }
 }

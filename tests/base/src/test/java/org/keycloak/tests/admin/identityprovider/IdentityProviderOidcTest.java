@@ -545,6 +545,80 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    public void maskedClientSecretNotReusedWhenMicrosoftTenantIdChanges() {
+        // Microsoft derives the token URL from tenantId at provider construction time.
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-microsoft", "microsoft");
+        newIdentityProvider.getConfig().put("clientId", "microsoft-client");
+        newIdentityProvider.getConfig().put("clientSecret", "real-microsoft-secret");
+        newIdentityProvider.getConfig().put("tenantId", "common");
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-microsoft");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        representation.getConfig().put("tenantId", "attacker-tenant");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when tenantId changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-microsoft-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-microsoft").getConfig().get("clientSecret"), String.class));
+        assertEquals("common",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-microsoft").getConfig().get("tenantId"), String.class));
+
+        representation = resource.toRepresentation();
+        representation.setDisplayName("Same Microsoft destination");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-microsoft-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-microsoft").getConfig().get("clientSecret"), String.class));
+    }
+
+    @Test
+    public void maskedClientSecretNotReusedWhenPayPalSandboxChanges() {
+        // PayPal switches the token host based on the sandbox flag.
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-paypal", "paypal");
+        newIdentityProvider.getConfig().put("clientId", "paypal-client");
+        newIdentityProvider.getConfig().put("clientSecret", "real-paypal-secret");
+        newIdentityProvider.getConfig().put("sandbox", "false");
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-paypal");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        representation.getConfig().put("sandbox", "true");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject masked secret when sandbox changes");
+        } catch (Exception e) {
+            assertError(e, CLIENT_SECRET_REENTRY_REQUIRED);
+        }
+
+        assertEquals("real-paypal-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-paypal").getConfig().get("clientSecret"), String.class));
+        assertEquals("false",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-paypal").getConfig().get("sandbox"), String.class));
+
+        representation = resource.toRepresentation();
+        representation.setDisplayName("Same PayPal destination");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-paypal-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-paypal").getConfig().get("clientSecret"), String.class));
+    }
+
+    @Test
     public void failUpdateAlias() {
         IdentityProviderRepresentation newIdentityProvider = createRep("fail-update-alias", "oidc");
         newIdentityProvider.getConfig().put("clientId", "clientId");
