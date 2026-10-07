@@ -41,6 +41,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -1169,9 +1170,19 @@ public class AuthenticationProcessor {
                     LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
                     lua.setOwningUserSessionId(userSession.getId());
                 }
-            } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+            } else if (userSession.getUser() == null || !userSession.getUser().isEnabled() || !AuthenticationManager.isSessionValid(realm, userSession)) {
+                if (userSession.getUser() != null && !userSession.getUser().isEnabled()) {
+                    // The user of the existing session was disabled after this login started, e.g. while the login form was open.
+                    // Re-use the session like for a deleted user instead of failing with "different user authenticated", and report the logout
+                    event.event(EventType.LOGOUT)
+                        .user(userSession.getUser())
+                        .session(userSession)
+                        .detail(Details.REASON, "user session is invalid or user is blocked")
+                        .success();
+                }
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
+
             } else {
                 // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
                 // We need to handle case when different user was used
