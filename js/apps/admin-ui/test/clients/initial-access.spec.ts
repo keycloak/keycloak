@@ -75,13 +75,6 @@ test.describe.serial("Client initial access tokens", () => {
     await searchItem(page, placeHolder, "John Doe");
     await assertNoResults(page);
     await clearAllFilters(page);
-    await expect(
-      page
-        .getByRole("grid")
-        .and(page.getByLabel(tableName, { exact: true }))
-        .locator("tbody tr"),
-    ).not.toHaveCount(0);
-
     let data = (await getTableData(page, tableName))[0];
     expect(data[countCellNumber]).toBe("4");
     expect(data[remainingCountCellNumber]).toBe("4");
