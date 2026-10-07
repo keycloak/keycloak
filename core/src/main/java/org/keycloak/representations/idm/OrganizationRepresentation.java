@@ -105,6 +105,10 @@ public class OrganizationRepresentation {
         return domains;
     }
 
+    public void setDomains(Set<OrganizationDomainRepresentation> domains) {
+        this.domains = domains;
+    }
+
     public OrganizationDomainRepresentation getDomain(String name) {
         if (domains == null) {
             return null;
