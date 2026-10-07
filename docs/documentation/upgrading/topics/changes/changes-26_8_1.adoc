@@ -4,6 +4,16 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== SMTP StartTLS is required when enabled (CVE-2026-107121)
+
+Previously, when a realm SMTP configuration had *Enable StartTLS* enabled, {project_name} used opportunistic STARTTLS.
+If the SMTP server did not advertise STARTTLS, or a network attacker stripped the advertisement, {project_name} continued and sent credentials and message content in plaintext.
+
+Starting with this release, when StartTLS is enabled, {project_name} requires a successful STARTTLS upgrade before authentication or message data is sent.
+If the SMTP server does not support STARTTLS, sending email fails instead of falling back to plaintext.
+
+If email delivery fails after upgrading, verify that your SMTP server supports STARTTLS, or disable *Enable StartTLS* if you intentionally use plaintext SMTP without TLS.
+
 === Mandatory signature validation for OIDC identity provider backchannel logout tokens
 
 {project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
