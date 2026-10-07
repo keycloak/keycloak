@@ -1143,7 +1143,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // Check if linking was requested (for example by kc_action) or if we're authenticating
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
         if (isDoingAccountLinking(authSession, true, idpConfig.getAlias())) {
-            return redirectToErrorWhenLinkingFailed(authSession, message);
+            return redirectToErrorWhenLinkingFailed(authSession, Errors.IDENTITY_PROVIDER_LOGIN_FAILURE, message);
         }
 
         Response passiveLoginErrorReturned = checkPassiveLoginError(authSession, message);
@@ -1185,12 +1185,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         UserModel authenticatedUser = authSession.getAuthenticatedUser();
         authSession.setAuthenticatedUser(authenticatedUser);
 
+        this.event.client(authSession.getClient())
+                .user(authenticatedUser)
+                .detail(Details.USERNAME, authenticatedUser.getUsername());
+
         logger.debugf("Will try to link identity provider [%s] to user [%s]", context.getIdpConfig().getAlias(), authenticatedUser.getUsername());
 
         if (federatedUser != null && !authenticatedUser.getId().equals(federatedUser.getId())) {
             logger.debugf("Cannot link user '%s' to identity provider '%s' . Other user '%s' already linked with the identity provider", authenticatedUser.getUsername(), context.getIdpConfig().getAlias(), federatedUser.getUsername());
             String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
-            return redirectToErrorWhenLinkingFailed(authSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, idpDisplayName);
+            return redirectToErrorWhenLinkingFailed(authSession, Errors.FEDERATED_IDENTITY_EXISTS, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, idpDisplayName);
         }
 
         RoleModel manageAccountRole = this.realmModel.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.MANAGE_ACCOUNT);
@@ -1200,11 +1204,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
         if (!authenticatedUser.isEnabled()) {
-            return redirectToErrorWhenLinkingFailed(authSession, Messages.ACCOUNT_DISABLED);
+            return redirectToErrorWhenLinkingFailed(authSession, Errors.USER_DISABLED, Messages.ACCOUNT_DISABLED);
         }
 
         if (!Organizations.resolveHomeBroker(session, authenticatedUser).isEmpty()) {
-            return redirectToErrorWhenLinkingFailed(authSession, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
+            return redirectToErrorWhenLinkingFailed(authSession, Errors.IDENTITY_PROVIDER_ERROR, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
         }
 
         if (federatedUser != null) {
@@ -1225,7 +1229,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 logger.warnf(e,"Cannot link user '%s' to identity provider '%s' as the link already exists for this user and identity provider",
                         authenticatedUser.getUsername(), context.getIdpConfig().getAlias());
                 String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
-                return redirectToErrorWhenLinkingFailed(authSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, idpDisplayName);
+                return redirectToErrorWhenLinkingFailed(authSession, Errors.FEDERATED_IDENTITY_EXISTS, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, idpDisplayName);
             }
         }
 
@@ -1253,7 +1257,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             // In legacy client-initiated account linking, the userSession should exists before linking was started, however it might be expired during the time when user is authenticating to the IDP
             if (userSession == null) {
-                return redirectToErrorWhenLinkingFailed(authSession, Messages.BROKER_LINKING_SESSION_EXPIRED);
+                return redirectToErrorWhenLinkingFailed(authSession, Errors.SESSION_EXPIRED, Messages.BROKER_LINKING_SESSION_EXPIRED);
             }
 
             AuthenticationManager.setClientScopesInSession(session, authSession);
@@ -1292,7 +1296,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
 
-    private Response redirectToErrorWhenLinkingFailed(AuthenticationSessionModel authSession, String error, Object... parameters) {
+    private Response redirectToErrorWhenLinkingFailed(AuthenticationSessionModel authSession, String eventError, String error, Object... parameters) {
+        this.event.detail(Details.REASON, error);
+        this.event.error(eventError);
+
         FormMessage errorMessage = new FormMessage(error, parameters);
         String serializedError;
         try {
@@ -1412,7 +1419,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (authSession != null) {
                 // Check if error happened during login or during linking from some application like account console
                 if (isDoingAccountLinking(authSession, false, null)) {
-                    Response accountManagementFailedLinking = redirectToErrorWhenLinkingFailed(authSession, Messages.STALE_CODE_ACCOUNT);
+                    Response accountManagementFailedLinking = redirectToErrorWhenLinkingFailed(authSession, Errors.EXPIRED_CODE, Messages.STALE_CODE_ACCOUNT);
                     throw new WebApplicationException(accountManagementFailedLinking);
                 } else {
                     Response errorResponse = checks.getResponse();

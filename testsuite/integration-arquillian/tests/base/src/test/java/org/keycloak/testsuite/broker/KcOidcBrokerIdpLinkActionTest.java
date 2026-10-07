@@ -42,7 +42,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -303,7 +302,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             assertProviderEventsSuccess(providerUserId);
-            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, false);
+            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.FEDERATED_IDENTITY_EXISTS, false);
 
             Assertions.assertNull(events.poll());
         });
