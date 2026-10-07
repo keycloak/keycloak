@@ -45,6 +45,7 @@ public interface Details {
     String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String USER_ID = "user_id";
     String ACTOR = "actor";
     String ACTOR_ID = "actor_id";
     String ACTOR_TYPE = "actor_type";
