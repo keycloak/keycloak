@@ -78,6 +78,14 @@ public final class PartialEvaluator {
         return buildPredicates(context);
     }
 
+    public boolean isActive(KeycloakSession session, ResourceType resourceType) {
+        if (isSkipEvaluation(session)) {
+            return false;
+        }
+        UserModel user = session.getContext().getUser();
+        return !shouldSkipPartialEvaluation(session, user, resourceType);
+    }
+
     private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
