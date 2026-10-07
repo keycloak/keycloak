@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -55,6 +56,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.OrganizationIdentityProviderEntity;
@@ -272,6 +274,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     private void throwIfManagedByAnotherOrg(OrganizationModel organization, UserModel user) {
+        // serialize concurrent MANAGED membership checks for the same user
+        em.find(UserEntity.class, user.getId(), LockModeType.PESSIMISTIC_WRITE);
         boolean managedElsewhere = getByMember(user)
                 .filter(org -> !org.equals(organization))
                 .anyMatch(org -> isManagedMember(org, user));
@@ -909,6 +913,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         if (MembershipType.MANAGED == membershipType) {
+            // serialize concurrent MANAGED link checks for the same IdP
+            em.find(IdentityProviderEntity.class, identityProvider.getInternalId(), LockModeType.PESSIMISTIC_WRITE);
             List<OrganizationIdentityProviderEntity> managedLinks = em.createNamedQuery("getLinksByIdpAndMembershipType", OrganizationIdentityProviderEntity.class)
                     .setParameter("idpId", identityProvider.getInternalId())
                     .setParameter("membershipType", MembershipType.MANAGED.name())
