@@ -33,8 +33,26 @@ public class ManagedOrganizationCleanup {
     }
 
     void runCleanupTasks(OrganizationResource organization) {
-        cleanupTasks.forEach(t -> t.cleanup(organization));
-        cleanupTasks.clear();
+        List<RuntimeException> failures = new LinkedList<>();
+        int total = cleanupTasks.size();
+        try {
+            for (OrganizationCleanup task : cleanupTasks) {
+                try {
+                    task.cleanup(organization);
+                } catch (RuntimeException e) {
+                    failures.add(e);
+                }
+            }
+        } finally {
+            cleanupTasks.clear();
+        }
+
+        if (!failures.isEmpty()) {
+            IllegalStateException failure = new IllegalStateException(
+                    "Failed to run %d of %d cleanup tasks for the organization".formatted(failures.size(), total));
+            failures.forEach(failure::addSuppressed);
+            throw failure;
+        }
     }
 
     public interface OrganizationCleanup {
