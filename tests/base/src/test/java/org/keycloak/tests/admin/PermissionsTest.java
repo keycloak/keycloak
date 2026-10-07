@@ -559,6 +559,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(groupMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
                 Matchers.hasItem(roleName));
 
+        // realm-level mappings follow the same rule
+        assertThat(roleNames(manageUsers.users().get(userUuid).roles().realmLevel().listAll()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.users().get(userUuid).roles().realmLevel().listEffective()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.groups().group(groupUuid).roles().realmLevel().listAll()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.groups().group(groupUuid).roles().realmLevel().listEffective()), Matchers.hasItem(roleName));
+
         // client-level mappings without view-clients follow the same rule
         assertThat(roleNames(manageUsers.users().get(userUuid).roles().clientLevel(clientUuid).listAll()), Matchers.hasItem(clientRoleName));
         assertThat(roleNames(manageUsers.users().get(userUuid).roles().clientLevel(clientUuid).listEffective()), Matchers.hasItem(clientRoleName));
@@ -577,6 +583,10 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 Matchers.not(Matchers.hasItem(roleName)));
         assertThat(realmRoleNames(viewUsers.groups().group(groupUuid).roles().getAll()),
                 Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.users().get(userUuid).roles().realmLevel().listAll()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.users().get(userUuid).roles().realmLevel().listEffective()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.groups().group(groupUuid).roles().realmLevel().listAll()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.groups().group(groupUuid).roles().realmLevel().listEffective()), Matchers.not(Matchers.hasItem(roleName)));
         assertThat(viewUsers.users().get(userUuid).roles().clientLevel(clientUuid).listAll(), Matchers.empty());
         assertThat(viewUsers.users().get(userUuid).roles().clientLevel(clientUuid).listEffective(), Matchers.empty());
         assertThat(viewUsers.groups().group(groupUuid).roles().clientLevel(clientUuid).listAll(), Matchers.empty());

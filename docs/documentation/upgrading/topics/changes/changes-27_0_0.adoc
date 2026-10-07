@@ -33,9 +33,34 @@ if (!organization) {
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
-=== Semicolons are no longer treated as query parameter delimiters
+=== Scope mapping listings filter roles by visibility
+// https://github.com/keycloak/keycloak/issues/53480
 
-Previously {project_name} treated the semicolon (`;`) as a query parameter delimiter in addition to the ampersand (`&`), so a request such as `/path?a=1;b=2` was parsed as two parameters.
-Because different layers of the server applied this rule inconsistently, the parameters used to process a request could differ from those used to verify its signature.
-{project_name} now treats the semicolon as a literal character, so the same request yields a single parameter.
-If any of your clients rely on the semicolon as a query parameter delimiter, update them to use the ampersand instead.
+The Admin REST API endpoints for reading the scope mappings of a client or a client scope (`GET /admin/realms/\{realm}/clients/\{id}/scope-mappings` and `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings`, including their `realm`, `realm/composite`, `clients/\{client}` and `clients/\{client}/composite` sub-resources) now filter out roles that the caller is allowed neither to view nor to map to users or to client scopes.
+Previously, any caller with permission to view the client or the client scope could see all the roles in its scope, including realm roles without the `view-realm` role and client roles without a *view* permission on the client they belong to.
+After upgrading, callers may see fewer results from these endpoints if the scope contains roles that they are allowed neither to view nor to map.
+Roles that the caller is allowed only to map to client scopes are returned without their attributes, even when `briefRepresentation=false` is requested.
+For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
+With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
+In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
+
+=== Organization Redirect URL now validated against the account client
+
+The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
+
+Previously, the Redirect URL was used without validation, which could allow an open redirect. After upgrading, if your organization has a custom Redirect URL pointing to your application, you must add that URL to the `account` client's *Valid Redirect URIs*. Otherwise, the redirect will silently fall back to the account console. This does not apply to invitations sent with a custom client, which always use the client's own base URL.
+
+The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Organization Redirect URL
+
+The organization Redirect URL field is now deprecated and will be removed in a future release. When sending invitations, prefer selecting a client to control where users are redirected. Create a client with its base URL set to your desired redirect destination and pass its `client_id` when creating invitations.
+
+=== Organization invitation endpoints without `client_id`
+
+The `invite-user` and `invite-existing-user` admin client overloads that do not accept a `client_id` parameter are now deprecated. Use the overloads that accept an explicit `client_id` instead. When omitted, the endpoints default to the `account` client, but callers should migrate to always specify a client.

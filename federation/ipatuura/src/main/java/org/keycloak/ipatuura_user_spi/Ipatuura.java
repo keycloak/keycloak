@@ -30,6 +30,7 @@ import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
@@ -201,6 +202,12 @@ public class Ipatuura {
         return response;
     }
 
+    static String buildFilter(String attribute, String value) {
+        /* SCIM filter string values are JSON strings (RFC 7644 section 3.4.2.2) */
+        String escaped = new String(JsonStringEncoder.getInstance().quoteAsString(value));
+        return String.format("%s eq \"%s\"", attribute, escaped);
+    }
+
     private SCIMSearchRequest setupSearch(String username, String attribute) {
         List<String> schemas = new ArrayList<String>();
         SCIMSearchRequest search = new SCIMSearchRequest();
@@ -209,7 +216,7 @@ public class Ipatuura {
         schemas.add(SCHEMA_API_MESSAGES_SEARCHREQUEST);
         search.setSchemas(schemas);
 
-        filter = String.format("%s eq \"%s\"", attribute, username);
+        filter = buildFilter(attribute, username);
         search.setFilter(filter);
         logger.debugv("filter: {0}", filter);
         logger.debugv("Schema: {0}", SCHEMA_API_MESSAGES_SEARCHREQUEST);

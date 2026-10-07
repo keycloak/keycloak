@@ -18,24 +18,30 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
@@ -54,9 +60,15 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ServerConfig.class)
@@ -498,6 +510,197 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 // expected
             }
         }
+    }
+
+    @Test
+    public void testClientScopeMappingsFilterHiddenRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        ClientRepresentation visibleClient = new ClientRepresentation();
+        visibleClient.setClientId("visible-client");
+        visibleClient.setFullScopeAllowed(false);
+        try (Response response = realm.admin().clients().create(visibleClient)) {
+            visibleClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation secretClient = new ClientRepresentation();
+        secretClient.setClientId("secret-client");
+        try (Response response = realm.admin().clients().create(secretClient)) {
+            secretClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        RoleRepresentation visibleChild = new RoleRepresentation();
+        visibleChild.setName("VISIBLE_CHILD");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(visibleChild);
+        visibleChild = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_CHILD").toRepresentation();
+
+        RoleRepresentation secretChild = new RoleRepresentation();
+        secretChild.setName("SECRET_CHILD");
+        realm.admin().clients().get(secretClient.getId()).roles().create(secretChild);
+        secretChild = realm.admin().clients().get(secretClient.getId()).roles().get("SECRET_CHILD").toRepresentation();
+
+        RoleRepresentation visibleParent = new RoleRepresentation();
+        visibleParent.setName("VISIBLE_PARENT");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(visibleParent);
+        visibleParent = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_PARENT").toRepresentation();
+        realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_PARENT").addComposites(List.of(visibleChild, secretChild));
+
+        RoleRepresentation secretRealmChild = new RoleRepresentation();
+        secretRealmChild.setName("SECRET_REALM_CHILD");
+        realm.admin().roles().create(secretRealmChild);
+        secretRealmChild = realm.admin().roles().get("SECRET_REALM_CHILD").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("SECRET_REALM_CHILD").remove());
+
+        RoleRepresentation realmParent = new RoleRepresentation();
+        realmParent.setName("REALM_PARENT");
+        realm.admin().roles().create(realmParent);
+        realmParent = realm.admin().roles().get("REALM_PARENT").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("REALM_PARENT").remove());
+        realm.admin().roles().get("REALM_PARENT").addComposites(List.of(secretRealmChild));
+
+        RoleMappingResource scopeMappings = realm.admin().clients().get(visibleClient.getId()).getScopeMappings();
+        scopeMappings.realmLevel().add(List.of(realmParent));
+        scopeMappings.clientLevel(visibleClient.getId()).add(List.of(visibleParent));
+        scopeMappings.clientLevel(secretClient.getId()).add(List.of(secretChild));
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, visibleClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        String secretRealmChildId = secretRealmChild.getId();
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(secretRealmChildId));
+        String secretChildId = secretChild.getId();
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(secretChildId));
+
+        scopeMappings = realmAdminClient.realm(realm.getName()).clients().get(visibleClient.getId()).getScopeMappings();
+        Set<String> roleNames;
+
+        // GET /clients/{clientUuid}/scope-mappings/realm/composite
+        roleNames = toNames(scopeMappings.realmLevel().listEffective());
+        assertThat(roleNames, not(hasItem("REALM_PARENT")));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_CHILD")));
+        roleNames = toNames(scopeMappings.realmLevel().listEffective(false));
+        assertThat(roleNames, not(hasItem("REALM_PARENT")));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_CHILD")));
+
+        // GET /clients/{clientUuid}/scope-mappings/realm
+        assertThat(toNames(scopeMappings.realmLevel().listAll()), empty());
+
+        // GET /clients/{clientUuid}/scope-mappings/clients/{clientUuid}
+        assertThat(toNames(scopeMappings.clientLevel(visibleClient.getId()).listAll()), hasItem("VISIBLE_PARENT"));
+
+        // GET /clients/{clientUuid}/scope-mappings/clients/{clientUuid}/composite
+        roleNames = toNames(scopeMappings.clientLevel(visibleClient.getId()).listEffective());
+        assertThat(roleNames, hasItem("VISIBLE_PARENT"));
+        assertThat(roleNames, hasItem("VISIBLE_CHILD"));
+
+        // GET /clients/{clientUuid}/scope-mappings/clients/{hiddenClientUuid}
+        assertThat(toNames(scopeMappings.clientLevel(secretClient.getId()).listAll()), empty());
+
+        // GET /clients/{clientUuid}/scope-mappings/clients/{hiddenClientUuid}/composite
+        assertThat(toNames(scopeMappings.clientLevel(secretClient.getId()).listEffective()), empty());
+
+        // GET /clients/{clientUuid}/scope-mappings
+        MappingsRepresentation mappings = scopeMappings.getAll();
+        assertThat(toNames(mappings.getRealmMappings()), empty());
+        assertThat(mappings.getClientMappings(), hasKey("visible-client"));
+        assertThat(toNames(mappings.getClientMappings().get("visible-client").getMappings()), hasItem("VISIBLE_PARENT"));
+        assertThat(mappings.getClientMappings(), not(hasKey("secret-client")));
+    }
+
+    @Test
+    public void testClientScopeScopeMappingsFilterHiddenRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        RoleRepresentation secretRealmChild = new RoleRepresentation();
+        secretRealmChild.setName("SECRET_REALM_CHILD");
+        realm.admin().roles().create(secretRealmChild);
+        secretRealmChild = realm.admin().roles().get("SECRET_REALM_CHILD").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("SECRET_REALM_CHILD").remove());
+
+        RoleRepresentation mappableParent = new RoleRepresentation();
+        mappableParent.setName("MAPPABLE_PARENT");
+        mappableParent.setAttributes(Map.of("visibility", List.of("mappable")));
+        realm.admin().roles().create(mappableParent);
+        mappableParent = realm.admin().roles().get("MAPPABLE_PARENT").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("MAPPABLE_PARENT").remove());
+        realm.admin().roles().get("MAPPABLE_PARENT").addComposites(List.of(secretRealmChild));
+
+        RoleRepresentation secretRealmRole = new RoleRepresentation();
+        secretRealmRole.setName("SECRET_REALM_ROLE");
+        realm.admin().roles().create(secretRealmRole);
+        secretRealmRole = realm.admin().roles().get("SECRET_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("SECRET_REALM_ROLE").remove());
+
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        RoleRepresentation clientRole = new RoleRepresentation();
+        clientRole.setName("CLIENT_ROLE");
+        clientRole.setAttributes(Map.of("visibility", List.of("viewable")));
+        realm.admin().clients().get(myclient.getId()).roles().create(clientRole);
+        clientRole = realm.admin().clients().get(myclient.getId()).roles().get("CLIENT_ROLE").toRepresentation();
+
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("test-client-scope");
+        clientScope.setProtocol("openid-connect");
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            clientScope.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.clientScopes().get(clientScope.getId()).remove());
+        }
+
+        RoleMappingResource scopeMappings = realm.admin().clientScopes().get(clientScope.getId()).getScopeMappings();
+        scopeMappings.realmLevel().add(List.of(mappableParent, secretRealmRole));
+        scopeMappings.clientLevel(myclient.getId()).add(List.of(clientRole));
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        // viewing client scopes requires view on all clients, so only the realm roles are hidden from the admin
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), policy, Set.of(AdminPermissionsSchema.VIEW));
+        createPermission(adminPermissionsClient, mappableParent.getId(), AdminPermissionsSchema.ROLES.getType(), Set.of(AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE), policy);
+
+        scopeMappings = realmAdminClient.realm(realm.getName()).clientScopes().get(clientScope.getId()).getScopeMappings();
+        Set<String> roleNames;
+
+        // GET /client-scopes/{scopeId}/scope-mappings/realm
+        roleNames = toNames(scopeMappings.realmLevel().listAll());
+        assertThat(roleNames, hasItem("MAPPABLE_PARENT"));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_ROLE")));
+
+        // GET /client-scopes/{scopeId}/scope-mappings/realm/composite
+        roleNames = toNames(scopeMappings.realmLevel().listEffective());
+        assertThat(roleNames, hasItem("MAPPABLE_PARENT"));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_ROLE")));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_CHILD")));
+
+        // GET /client-scopes/{scopeId}/scope-mappings/realm/composite?briefRepresentation=false
+        List<RoleRepresentation> effectiveRoles = scopeMappings.realmLevel().listEffective(false);
+        assertThat(toNames(effectiveRoles), hasItem("MAPPABLE_PARENT"));
+        assertThat(toNames(effectiveRoles), not(hasItem("SECRET_REALM_ROLE")));
+        // attributes are returned only for roles the admin can view
+        assertThat(byName(effectiveRoles, "MAPPABLE_PARENT").getAttributes(), nullValue());
+
+        // GET /client-scopes/{scopeId}/scope-mappings/clients/{clientUuid}
+        assertThat(toNames(scopeMappings.clientLevel(myclient.getId()).listAll()), hasItem("CLIENT_ROLE"));
+
+        // GET /client-scopes/{scopeId}/scope-mappings/clients/{clientUuid}/composite
+        assertThat(toNames(scopeMappings.clientLevel(myclient.getId()).listEffective()), hasItem("CLIENT_ROLE"));
+
+        // GET /client-scopes/{scopeId}/scope-mappings/clients/{clientUuid}/composite?briefRepresentation=false
+        effectiveRoles = scopeMappings.clientLevel(myclient.getId()).listEffective(false);
+        assertThat(byName(effectiveRoles, "CLIENT_ROLE").getAttributes(), hasEntry("visibility", List.of("viewable")));
+
+        // GET /client-scopes/{scopeId}/scope-mappings
+        MappingsRepresentation mappings = scopeMappings.getAll();
+        roleNames = toNames(mappings.getRealmMappings());
+        assertThat(roleNames, hasItem("MAPPABLE_PARENT"));
+        assertThat(roleNames, not(hasItem("SECRET_REALM_ROLE")));
+        assertThat(mappings.getClientMappings(), hasKey("myclient"));
+    }
+
+    private static Set<String> toNames(List<RoleRepresentation> roles) {
+        return roles == null ? Set.of() : roles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
+    private static RoleRepresentation byName(List<RoleRepresentation> roles, String name) {
+        return roles.stream().filter(role -> name.equals(role.getName())).findFirst().orElseThrow();
     }
 
     private void assertWorkflowAccess(Keycloak serverAdminClient) {
