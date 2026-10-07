@@ -251,6 +251,17 @@ public abstract class OIDCRedirectUriBuilder {
                 }
             }
 
+            // RFC 9207 adds "iss" via addParam() for every response mode, which lands in otherClaims
+            // next to the issuer set above and would duplicate the claim (#54329). Both carry the
+            // same value, so a mismatch is a bug.
+            if (responseJWT.getIssuer() != null) {
+                Object duplicateIssuer = responseJWT.getOtherClaims().remove(OAuth2Constants.ISSUER);
+                if (duplicateIssuer != null && !duplicateIssuer.equals(responseJWT.getIssuer())) {
+                    throw new IllegalStateException("JARM response \"iss\" parameter (" + duplicateIssuer
+                            + ") differs from the response issuer (" + responseJWT.getIssuer() + ")");
+                }
+            }
+
             switch (responseMode) {
                 case QUERY_JWT:
                     return buildQueryResponse();
