@@ -195,14 +195,13 @@ export async function getTableData(page: Page, name: string) {
     .poll(
       async () => {
         const rowsLocator = await getTableRows(page, name);
-        const rowCount = await rowsLocator.count();
-        tableData = [];
-        for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-          const row = rowsLocator.nth(rowIndex);
-          tableData.push(
-            (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
-          );
-        }
+        tableData = await rowsLocator.evaluateAll((rows) =>
+          rows.map((row) =>
+            Array.from(row.querySelectorAll("td"), (cell) =>
+              cell.innerText.trim(),
+            ),
+          ),
+        );
         return tableData.length;
       },
       { timeout: TABLE_LOAD_TIMEOUT_MS },
