@@ -198,7 +198,7 @@ const FormField = ({
       ? FIELDS["multi-input"]
       : FIELDS[inputType];
 
-  if (attribute.name === "locale")
+  if (attribute.name === "locale" && inputType !== "hidden")
     return (
       <LocaleSelector
         form={form}
@@ -226,17 +226,22 @@ function determineInputType(
 ): InputType {
   const inputType = attribute.annotations?.inputType;
 
-  // if we have a valid input type use that to render
-  if (isValidInputType(inputType)) {
-    return inputType;
+  // Allow hidden to override any field, including root attributes and locale.
+  if (inputType === "hidden") {
+    return "hidden";
   }
 
-  // Root attributes default to text unless explicitly overridden above.
+  // Root attributes always render as text — other annotations are ignored.
   if (isRootAttribute(attribute.name)) {
     return "text";
   }
 
-  // In all other cases use the default
+  // For non-root attributes, honour any valid annotation.
+  if (isValidInputType(inputType)) {
+    return inputType;
+  }
+
+  // In all other cases use the default.
   return DEFAULT_INPUT_TYPE;
 }
 
