@@ -188,17 +188,26 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const rowsLocator = await getTableRows(page, name);
-  const rowCount = await rowsLocator.count();
-  const tableData: string[][] = [];
-
-  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-    const row = rowsLocator.nth(rowIndex);
-    tableData.push(
-      (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
-    );
-  }
-
+  // Retry the complete data capture so the wait and read cannot race each other
+  // during React re-renders that momentarily empty the table.
+  let tableData: string[][] = [];
+  await expect
+    .poll(
+      async () => {
+        const rowsLocator = await getTableRows(page, name);
+        const rowCount = await rowsLocator.count();
+        tableData = [];
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+          const row = rowsLocator.nth(rowIndex);
+          tableData.push(
+            (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
+          );
+        }
+        return tableData.length;
+      },
+      { timeout: TABLE_LOAD_TIMEOUT_MS },
+    )
+    .toBeGreaterThan(0);
   return tableData;
 }
 
