@@ -50,4 +50,13 @@ public interface CredentialInputUpdater {
     default Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
         return Stream.empty();
     }
+
+    /**
+     * Updates a credential of the user with the given input, reporting the credential written to the Keycloak
+     * credential store. The default implementation delegates to
+     * {@link #updateCredential(RealmModel, UserModel, CredentialInput)} and reports no credential.
+     */
+    default CredentialUpdate updateCredentialAndGet(RealmModel realm, UserModel user, CredentialInput input) {
+        return new CredentialUpdate(updateCredential(realm, user, input), null);
+    }
 }
