@@ -103,8 +103,7 @@ public class OrganizationTest {
         Assertions.assertEquals("http://localhost:8080/custom", rep.getRedirectUrl());
         Assertions.assertEquals(List.of("value1", "value2"), rep.getAttributes().get("key"));
 
-        List<String> domains = rep.getDomains().stream().map(OrganizationDomainRepresentation::getName).sorted().toList();
-        Assertions.assertEquals(List.of("custom.org", "custom.test"), domains);
+        Assertions.assertEquals(List.of("custom.org", "custom.test"), domainNames(rep));
     }
 
     @Test
@@ -135,11 +134,15 @@ public class OrganizationTest {
     @Test
     @Order(5)
     public void updateWithRollback() {
-        organization.updateWithCleanup(o -> o.description("updated description").enabled(false));
+        organization.updateWithCleanup(o -> o.description("updated description").enabled(false).domains("added.org"));
+        customOrganization.updateWithCleanup(o -> o.removeDomains("custom.test"));
 
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertEquals("updated description", rep.getDescription());
         Assertions.assertFalse(rep.isEnabled());
+        Assertions.assertEquals(List.of("added.org"), domainNames(rep));
+
+        Assertions.assertEquals(List.of("custom.org"), domainNames(customOrganization.admin().toRepresentation()));
     }
 
     @Test
@@ -148,6 +151,10 @@ public class OrganizationTest {
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertNull(rep.getDescription());
         Assertions.assertTrue(rep.isEnabled());
+        // domains added to an organization without domains must be removed again
+        Assertions.assertEquals(List.of(), domainNames(rep));
+
+        Assertions.assertEquals(List.of("custom.org", "custom.test"), domainNames(customOrganization.admin().toRepresentation()));
     }
 
     @Test
@@ -234,6 +241,10 @@ public class OrganizationTest {
         Address[] recipients = messages[0].getAllRecipients();
         Assertions.assertEquals(1, recipients.length);
         Assertions.assertEquals(expectedRecipient, ((InternetAddress) recipients[0]).getAddress());
+    }
+
+    private static List<String> domainNames(OrganizationRepresentation rep) {
+        return rep.getDomains().stream().map(OrganizationDomainRepresentation::getName).sorted().toList();
     }
 
     private static List<String> organizationIds(ManagedRealm managedRealm) {
