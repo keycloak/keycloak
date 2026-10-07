@@ -4,8 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Client policy source groups condition matches the full group path
+=== SMTP StartTLS is required when enabled (CVE-2026-107121)
 
+Previously, when a realm SMTP configuration had *Enable StartTLS* enabled, {project_name} used opportunistic STARTTLS.
+If the SMTP server did not advertise STARTTLS, or a network attacker stripped the advertisement, {project_name} continued and sent credentials and message content in plaintext.
+
+Starting with this release, when StartTLS is enabled, {project_name} requires a successful STARTTLS upgrade before authentication or message data is sent.
+If the SMTP server does not support STARTTLS, sending email fails instead of falling back to plaintext.
+
+If email delivery fails after upgrading, verify that your SMTP server supports STARTTLS, or disable *Enable StartTLS* if you intentionally use plaintext SMTP without TLS.
+
+=== Client policy source groups condition matches the full group path
 The `client-updater-source-groups` client policy condition now matches groups by their full path instead of the simple group name. A configured value without a leading slash is treated as a top level group, so a condition configured with `topGroup` matches `/topGroup` and keeps behaving as before. Top level groups configured by their simple name do not require any change.
 
 Only the conditions configured with the simple name of a subgroup need to be updated to the full path of that group, for example `/topGroup/level2group`.
