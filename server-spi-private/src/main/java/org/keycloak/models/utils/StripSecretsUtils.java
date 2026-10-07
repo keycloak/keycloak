@@ -159,22 +159,26 @@ public class StripSecretsUtils {
     }
 
     private static Set<String> collectNonSecretAuthenticatorPropertyNames(KeycloakSession session) {
+        return collectNonSecretAuthenticatorPropertyNames(Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class)
+                .flatMap(providerClass -> session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass))
+                .filter(ConfigurableAuthenticatorFactory.class::isInstance)
+                .map(ConfigurableAuthenticatorFactory.class::cast)
+                .map(ConfigurableAuthenticatorFactory::getConfigProperties)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream));
+    }
+
+    protected static Set<String> collectNonSecretAuthenticatorPropertyNames(Stream<ProviderConfigProperty> factoryProperties) {
         Set<String> nonSecretNames = new HashSet<>();
         Set<String> secretNames = new HashSet<>();
-        Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class).forEach(providerClass ->
-                session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass)
-                        .filter(ConfigurableAuthenticatorFactory.class::isInstance)
-                        .map(ConfigurableAuthenticatorFactory.class::cast)
-                        .map(ConfigurableAuthenticatorFactory::getConfigProperties)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .forEach(p -> {
-                            if (p.isSecret()) {
-                                secretNames.add(p.getName());
-                            } else {
-                                nonSecretNames.add(p.getName());
-                            }
-                        }));
+        Stream.concat(ConfigurableAuthenticatorFactory.COMMON_CONFIG_PROPERTIES.stream(), factoryProperties)
+                .forEach(p -> {
+                    if (p.isSecret()) {
+                        secretNames.add(p.getName());
+                    } else {
+                        nonSecretNames.add(p.getName());
+                    }
+                });
         nonSecretNames.removeAll(secretNames);
         return nonSecretNames;
     }
