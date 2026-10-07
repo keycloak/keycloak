@@ -333,6 +333,9 @@ public class EmailTest {
         loginPage.assertCurrent();
         assertEquals("Deutsch", loginPage.getSelectedLanguage());
         assertEquals("Sie sollten in Kürze eine E-Mail mit weiteren Instruktionen erhalten.", loginPage.getSuccessMessage());
+
+        // the email is sent in the background, wait for it so it doesn't arrive during the next test
+        Assertions.assertTrue(mailServer.waitForIncomingEmail(1));
     }
 
 }

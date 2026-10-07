@@ -42,6 +42,27 @@ public interface EmailTemplateProvider extends Provider {
 
     EmailTemplateProvider setAttribute(String name, Object value);
 
+    /**
+     * Builds the reset password email without sending it. Send it with {@link #queue}.
+     *
+     * @return the email, or {@code null} if this provider can only send emails right away
+     */
+    default RenderedEmail renderPasswordReset(String link, long expirationInMinutes) throws EmailException {
+        return null;
+    }
+
+    /**
+     * Sends the email to the user set on this provider, in the background once the transaction commits. Nothing is
+     * sent if it rolls back.
+     *
+     * @param expiresAt time in seconds after which the email is not sent anymore, or {@code 0} for no limit
+     * @param listener called if the email is not sent
+     * @return {@code false} if too many emails are waiting, then this one is not sent
+     */
+    default boolean queue(RenderedEmail email, int expiresAt, EmailDeliveryListener listener) {
+        throw new UnsupportedOperationException("Sending emails in the background is not supported by " + getClass().getName());
+    }
+
     void sendEvent(Event event) throws EmailException;
 
     /**

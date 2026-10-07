@@ -31,20 +31,26 @@ import jakarta.enterprise.context.ContextNotActiveException;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.common.util.Time;
+import org.keycloak.email.EmailDeliveryListener;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.email.RenderedEmail;
 import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
@@ -61,6 +67,8 @@ import org.slf4j.LoggerFactory;
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     private static final Logger log = LoggerFactory.getLogger(FreeMarkerEmailTemplateProvider.class);
+    private static final String PASSWORD_RESET_SUBJECT = "passwordResetSubject";
+    private static final String PASSWORD_RESET_TEMPLATE = "password-reset.ftl";
     protected KeycloakSession session;
     /**
      * authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link
@@ -71,10 +79,16 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected RealmModel realm;
     protected UserModel user;
     protected final Map<String, Object> attributes = new HashMap<>();
+    private final EmailDeliveryQueue deliveryQueue;
 
     public FreeMarkerEmailTemplateProvider(KeycloakSession session) {
+        this(session, null);
+    }
+
+    protected FreeMarkerEmailTemplateProvider(KeycloakSession session, EmailDeliveryQueue deliveryQueue) {
         this.session = session;
         this.freeMarker = session.getProvider(FreeMarkerProvider.class);
+        this.deliveryQueue = deliveryQueue;
     }
 
     @Override
@@ -122,7 +136,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 
-        send("passwordResetSubject", "password-reset.ftl", attributes);
+        send(PASSWORD_RESET_SUBJECT, PASSWORD_RESET_TEMPLATE, attributes);
     }
 
     @Override
@@ -322,6 +336,102 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             emailSender.send(config, user, subject, textBody, htmlBody);
         } else {
             emailSender.send(config, address, subject, textBody, htmlBody);
+        }
+    }
+
+    @Override
+    public RenderedEmail renderPasswordReset(String link, long expirationInMinutes) throws EmailException {
+        if (deliveryQueue == null || !supportsQueuedDelivery()) {
+            return null;
+        }
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+
+        EmailTemplate email = processTemplate(PASSWORD_RESET_SUBJECT, Collections.emptyList(), PASSWORD_RESET_TEMPLATE, attributes);
+        return new RenderedEmail(email.getSubject(), email.getTextBody(), email.getHtmlBody());
+    }
+
+    @Override
+    public boolean queue(RenderedEmail email, int expiresAt, EmailDeliveryListener listener) {
+        if (deliveryQueue == null || !supportsQueuedDelivery()) {
+            return EmailTemplateProvider.super.queue(email, expiresAt, listener);
+        }
+        EmailDeliveryQueue.Reservation reservation = deliveryQueue.reserve(realm.getId());
+        if (reservation == null) {
+            return false;
+        }
+        try {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            String realmId = realm.getId();
+            String userId = user.getId();
+            Map<String, String> smtpConfig = new HashMap<>(realm.getSmtpConfig());
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    reservation.send(() -> deliver(sessionFactory, realmId, userId, smtpConfig, email, expiresAt, listener));
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    reservation.cancel();
+                    reportNotSent(sessionFactory, realmId, listener, new EmailException("The email was not sent, as the request failed"));
+                }
+            });
+        } catch (RuntimeException e) {
+            reservation.cancel();
+            throw e;
+        }
+        return true;
+    }
+
+    /**
+     * Subclasses may change how emails are sent, so they send right away, unless they override this to return true
+     * and their factory passes them the queue of {@link FreeMarkerEmailTemplateProviderFactory#getDeliveryQueue()}.
+     */
+    protected boolean supportsQueuedDelivery() {
+        return getClass() == FreeMarkerEmailTemplateProvider.class;
+    }
+
+    private static void deliver(KeycloakSessionFactory sessionFactory, String realmId, String userId,
+            Map<String, String> smtpConfig, RenderedEmail email, int expiresAt, EmailDeliveryListener listener) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            if (realm == null) {
+                log.warn("Email not sent, as its realm no longer exists");
+                return;
+            }
+            session.getContext().setRealm(realm);
+            try {
+                if (expiresAt > 0 && Time.currentTime() >= expiresAt) {
+                    throw new EmailException("The email expired before it could be sent");
+                }
+                UserModel user = session.users().getUserById(realm, userId);
+                if (user == null || !user.isEnabled()) {
+                    throw new EmailException("The user no longer exists or is disabled");
+                }
+                EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
+                if (emailSender == null) {
+                    throw new EmailException("Email sender provider is disabled or not configured");
+                }
+                emailSender.send(smtpConfig, user, email.subject(), email.textBody(), email.htmlBody());
+            } catch (EmailException e) {
+                listener.onFailed(session, e);
+            } catch (RuntimeException e) {
+                listener.onFailed(session, new EmailException("Failed to send the email", e));
+            }
+        });
+    }
+
+    // must not throw, as the request already finished
+    private static void reportNotSent(KeycloakSessionFactory sessionFactory, String realmId, EmailDeliveryListener listener,
+            EmailException e) {
+        try {
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                session.getContext().setRealm(session.realms().getRealm(realmId));
+                listener.onFailed(session, e);
+            });
+        } catch (RuntimeException re) {
+            log.error("Failed to report an email that was not sent", re);
         }
     }
 
