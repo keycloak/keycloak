@@ -604,6 +604,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             Response response = identityProvider.retrieveToken(session, identity, userSession, authResult.user());
             event.success();
             return cors.add(Response.fromResponse(response));
+        } catch (IdentityBrokerException e) {
+            // thrown for refresh failures that don't prove the stored token is invalid (IdP outage, malformed
+            // or non-2xx response other than invalid_grant, ...); surface as a retryable gateway error instead
+            // of invalid_request, consistent with how V1 handles the same transient failures.
+            logger.debugf(e, "Transient failure retrieving token from identity provider");
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.TEMPORARILY_UNAVAILABLE, "Failed to retrieve token from identity provider", Response.Status.BAD_GATEWAY);
         } catch (Exception e) {
             logger.errorf(e, "Failed to retrieve token from identity provider");
             event.detail(Details.REASON, e.getMessage());

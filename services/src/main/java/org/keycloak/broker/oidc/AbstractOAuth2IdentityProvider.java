@@ -327,7 +327,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     private boolean needsRefresh(Long exp) {
-        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
+        return exp != null && exp != 0 && exp <= Time.currentTime() + getConfig().getMinValidityToken();
     }
 
     private Long parseTokenExpiration(String expirationNote) {
@@ -372,27 +372,28 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             try (SimpleHttpResponse refreshTokenResponse = refreshTokenRequest.asResponse()) {
                 int status = refreshTokenResponse.getStatus();
                 String response = refreshTokenResponse.asString();
+                String errorCode = extractOAuthErrorCode(response);
 
-                if (status == 429 || status >= 500) {
-                    // A completed HTTP response, not an I/O failure - but still not proof the refresh token is invalid.
-                    throw new IdentityBrokerException("Refresh token request to " + getConfig().getAlias() + " failed transiently with HTTP status " + status);
+                // invalid_grant definitively indicates that the refresh token is unusable, so convert it
+                // to an expired-token response; other errors are propagated as transient/configuration failures.
+                if (OAuthErrorException.INVALID_GRANT.equals(errorCode)) {
+                    throw new WebApplicationException("Refresh token request to " + getConfig().getAlias() + " was rejected with HTTP status " + status + " and error '" + errorCode + "'",
+                            Response.status(Response.Status.BAD_GATEWAY).entity(errorRepresentation()).type(MediaType.APPLICATION_JSON).build());
                 }
-
-                if (response.contains("error")) {
-                    String errorCode = extractOAuthErrorCode(response);
-                    // Only invalid_grant proves the refresh token itself is unusable (expired/revoked/malformed).
-                    // Any other OAuth error (invalid_client, unauthorized_client, ...) or an unparseable body
-                    // may reflect a transient/config issue, not a dead refresh token, so don't destroy stored state for it.
-                    if (OAuthErrorException.INVALID_GRANT.equals(errorCode)) {
-                        throw new WebApplicationException("Refresh token request to " + getConfig().getAlias() + " was rejected with HTTP status " + status + " and error '" + errorCode + "'",
-                                Response.status(Response.Status.BAD_GATEWAY).entity(errorRepresentation()).type(MediaType.APPLICATION_JSON).build());
-                    }
+                // Any other non-2xx response - with or without a recognizable OAuth error body (invalid_client,
+                // unauthorized_client, a 429/5xx outage, an opaque proxy error page, ...) - may reflect a
+                // transient/config issue rather than a dead refresh token, so don't destroy stored state for it,
+                // and don't treat it as a successful token response either.
+                if (status < 200 || status >= 300) {
                     throw new IdentityBrokerException("Refresh token request to " + getConfig().getAlias() + " failed with HTTP status " + status
                             + (errorCode != null ? " and error '" + errorCode + "'" : ""));
                 }
+                if (StringUtil.isBlank(response)) {
+                    throw new IdentityBrokerException("Refresh token response from " + getConfig().getAlias() + " (HTTP status " + status + ") did not contain an access token");
+                }
                 OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
 
-                if (newResponse.getToken() == null) {
+                if (newResponse == null || newResponse.getToken() == null) {
                     // No explicit error reported, so this doesn't prove the refresh token is invalid - treat as transient.
                     throw new IdentityBrokerException("Refresh token response from " + getConfig().getAlias() + " (HTTP status " + status + ") did not contain an access token");
                 }
@@ -416,8 +417,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     private static String extractOAuthErrorCode(String response) {
+        if (StringUtil.isBlank(response)) {
+            return null;
+        }
         try {
-            return JsonSerialization.readValue(response, OAuth2ErrorRepresentation.class).getError();
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response, OAuth2ErrorRepresentation.class);
+            return error != null ? error.getError() : null;
         } catch (IOException e) {
             return null;
         }
@@ -584,8 +589,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (previousResponse.getRefreshToken() != null) {
                     OAuthResponse newResponse = doTokenRefresh(event, previousResponse);
                     if (newResponse == null) {
-                        model.setToken(null);
-                        session.users().updateFederatedIdentity(realm, tokenSubject, model);
+                        // Don't clear the stored token here: a concurrent request may have already refreshed it
+                        // successfully, and overwriting that with null would discard a valid token due to this
+                        // request's own refresh attempt failing (e.g. against an already-rotated refresh token).
                         return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                     }
                     storedExpiration = newResponse.getAccessTokenExpiration();
@@ -705,8 +711,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
-        logger.debugf("No expiration metadata for %s session token (legacy session before migration), falling back to DB token", getConfig().getAlias());
-        return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
+        logger.debugf("No expiration metadata for %s session token (legacy session before migration)", getConfig().getAlias());
+        if (Booleans.isTrue(getConfig().isStoreToken())) {
+            logger.debugf("Falling back to DB token for %s", getConfig().getAlias());
+            return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
+        }
+
+        // storeToken is disabled, so there is no DB-persisted token to fall back to. Preserve the
+        // pre-migration behavior for this configuration: return the session token as-is, since its
+        // freshness cannot be established without expiration metadata.
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(accessToken);
+        tokenResponse.setExpiresIn(0);
+        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
 
     /**

@@ -16,11 +16,14 @@
  */
 package org.keycloak.tests.broker;
 
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oauth.OAuth2IdentityProviderFactory;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -40,11 +43,14 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that the pure OAuth2 identity provider correctly refreshes an expired stored token
@@ -76,6 +82,9 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
+
+    @InjectHttpServer
+    HttpServer httpServer;
 
     @Override
     public ManagedRealm getRealm() {
@@ -126,6 +135,58 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
         UserInfoResponse userInfoResponse = oauthExternal.userInfoRequest(externalTokens.getAccessToken()).send();
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
         Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
+    }
+
+    @Test
+    public void testRefreshTransientFailurePreservesStoredToken() {
+        ManagedRealm realm = getRealm();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertTrue(externalTokens.isSuccess());
+        checkSuccessfulTokenResponse(externalTokens);
+
+        String storedToken = getTokenFromDatabase(realm.getName());
+        Assertions.assertNotNull(storedToken);
+
+        // force the stored token to need a refresh on the next exchange
+        getTimeOffSet().set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+        IdentityProviderResource idpResource = realm.admin().identityProviders().get(IDP_ALIAS);
+        String originalTokenUrl = idpResource.toRepresentation().getConfig().get(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL);
+
+        String path = "/transient-refresh-failure";
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 503, null, (String) null));
+        try {
+            String failingTokenUrl = "http://127.0.0.1:" + httpServer.getAddress().getPort() + path;
+            realm.updateIdentityProvider(IDP_ALIAS, idp -> idp.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, failingTokenUrl));
+
+            // a transient (non invalid_grant) refresh failure is surfaced as a retryable gateway error
+            AccessTokenResponse failedRefresh = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+            Assertions.assertEquals(502, failedRefresh.getStatusCode());
+
+            // the stored token must be untouched by a transient (non invalid_grant) refresh failure
+            Assertions.assertEquals(storedToken, getTokenFromDatabase(realm.getName()));
+        } finally {
+            httpServer.removeContext(path);
+            IdentityProviderRepresentation rep = idpResource.toRepresentation();
+            rep.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, originalTokenUrl);
+            idpResource.update(rep);
+        }
+
+        // a later retry against the real token endpoint should now succeed and actually refresh the token
+        AccessTokenResponse retriedRefresh = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(200, retriedRefresh.getStatusCode());
+        checkSuccessfulTokenResponse(retriedRefresh);
+        Assertions.assertNotEquals(externalTokens.getAccessToken(), retriedRefresh.getAccessToken());
+        Assertions.assertNotEquals(storedToken, getTokenFromDatabase(realm.getName()));
+
+        getTimeOffSet().set(0);
     }
 
     static class IdentityBrokeringAPIV2ServerConfig implements KeycloakServerConfig {
