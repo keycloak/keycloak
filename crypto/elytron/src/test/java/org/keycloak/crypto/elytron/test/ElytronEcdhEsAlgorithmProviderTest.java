@@ -90,6 +90,35 @@ public class ElytronEcdhEsAlgorithmProviderTest {
         Assert.assertArrayEquals(jweEncode.getContent(), jweDecode.getContent());
     }
 
+    @Test
+    public void toPublicKeyRejectsOffCurvePoint() throws Exception {
+        // Valid P-256 x coordinate; y is off-curve (y + 1 mod p).
+        // Constructing a JWK with this point must be rejected before KeyAgreement.doPhase().
+        BigInteger x = new BigInteger(1, Base64Url.decode("weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ"));
+        BigInteger y = new BigInteger(1, Base64Url.decode("e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck"))
+                .add(BigInteger.ONE);
+
+        org.keycloak.jose.jwk.ECPublicJWK jwk = new org.keycloak.jose.jwk.ECPublicJWK();
+        jwk.setCrv("P-256");
+        jwk.setX(Base64Url.encode(x.toByteArray()));
+        jwk.setY(Base64Url.encode(y.toByteArray()));
+
+        JWEHeader header = JWEHeader.builder()
+                .algorithm(Algorithm.ECDH_ES_A128KW)
+                .encryptionAlgorithm(JWEConstants.A128CBC_HS256)
+                .ephemeralPublicKey(jwk)
+                .build();
+
+        PrivateKey decryptionKey = getPrivateKey("P-256", "VEmDZpDXXK8p8N0Cndsxs924q6nS1RXFASRl6BfUqdw");
+
+        try {
+            new ElytronEcdhEsAlgorithmProvider().decodeCek(new byte[0], decryptionKey, header, null);
+            Assert.fail("Expected IllegalArgumentException for off-curve point");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("not on the named curve"));
+        }
+    }
+
     private PublicKey getPublicKey(String crv, String xStr, String yStr) throws JoseException {
         BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
         BigInteger y = new BigInteger(1, Base64Url.decode(yStr));

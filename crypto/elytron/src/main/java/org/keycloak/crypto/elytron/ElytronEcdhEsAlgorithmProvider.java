@@ -170,11 +170,49 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
         BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
 
+        ECParameterSpec spec = EllipticCurves.getSpec(crv);
+        if (spec == null) {
+            throw new IllegalArgumentException("Unsupported curve: " + crv);
+        }
+
+        validatePointOnCurve(x, y, spec);
+
         EcKeyUtil ecKeyUtil = new EcKeyUtil();
         try {
-            return ecKeyUtil.publicKey(x, y, EllipticCurves.getSpec(crv));
+            return ecKeyUtil.publicKey(x, y, spec);
         } catch (JoseException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Validates that the point (x, y) lies on the given prime-field elliptic curve.
+     * Checks field membership (0 <= x, y < p) and the curve equation y² ≡ x³ + ax + b (mod p).
+     * All curves supported by jose4j (P-256, P-384, P-521, secp256k1) have prime fields
+     * and cofactor one, so this check is sufficient to reject invalid-curve attacks.
+     */
+    private static void validatePointOnCurve(BigInteger x, BigInteger y, ECParameterSpec spec) {
+        BigInteger p = ((java.security.spec.ECFieldFp) spec.getCurve().getField()).getP();
+        BigInteger a = spec.getCurve().getA();
+        BigInteger b = spec.getCurve().getB();
+
+        if (x.signum() < 0 || x.compareTo(p) >= 0) {
+            throw new IllegalArgumentException("EPK x coordinate is not in the field");
+        }
+        if (y.signum() < 0 || y.compareTo(p) >= 0) {
+            throw new IllegalArgumentException("EPK y coordinate is not in the field");
+        }
+
+        // y² mod p
+        BigInteger lhs = y.modPow(BigInteger.TWO, p);
+        // (x³ + ax + b) mod p
+        BigInteger rhs = x.modPow(BigInteger.valueOf(3), p)
+                .add(a.multiply(x))
+                .add(b)
+                .mod(p);
+
+        if (!lhs.equals(rhs)) {
+            throw new IllegalArgumentException("EPK point is not on the named curve");
         }
     }
 
