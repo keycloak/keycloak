@@ -24,6 +24,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.HtmlUtils;
@@ -213,6 +214,8 @@ public abstract class OIDCRedirectUriBuilder {
     // https://openid.net/specs/openid-financial-api-jarm-ID1.html
     private static class JWTRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
+        private static final Logger logger = Logger.getLogger(JWTRedirectUriBuilder.class);
+
         private final OIDCResponseMode responseMode;
         private final AuthorizationResponseToken responseJWT;
         private final KeycloakSession session;
@@ -248,6 +251,20 @@ public abstract class OIDCRedirectUriBuilder {
 
                 if (OAuth2Constants.TOKEN.equals(responseType)) {
                     responseJWT.setOtherClaims(OAuth2Constants.SCOPE, clientSession.getNote(OIDCLoginProtocol.SCOPE_PARAM));
+                }
+            }
+
+            // RFC 9207 adds "iss" generically via addParam() for every response mode. This
+            // builder already carries its own dedicated `issuer` field (set above), so a copy
+            // landing in otherClaims would double the "iss" claim in the serialized JWT
+            // (KEYCLOAK-44563). Both are defined to carry the same value - verify that rather
+            // than blindly discarding whatever addParam received. Only act when the typed
+            // field is actually set; otherwise there's no basis for removing anything.
+            if (responseJWT.getIssuer() != null) {
+                Object duplicateIssuer = responseJWT.getOtherClaims().remove(OAuth2Constants.ISSUER);
+                if (duplicateIssuer != null && !duplicateIssuer.equals(responseJWT.getIssuer())) {
+                    logger.warnf("JARM response otherClaims carried an \"iss\" (%s) that disagreed with the " +
+                            "builder's own issuer (%s); discarding the otherClaims copy", duplicateIssuer, responseJWT.getIssuer());
                 }
             }
 
