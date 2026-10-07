@@ -9,6 +9,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
