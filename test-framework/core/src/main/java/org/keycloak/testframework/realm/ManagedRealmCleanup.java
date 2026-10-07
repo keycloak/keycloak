@@ -29,8 +29,26 @@ public class ManagedRealmCleanup {
     }
 
     void runCleanupTasks(RealmResource realm) {
-        cleanupTasks.forEach(t -> t.cleanup(realm));
-        cleanupTasks.clear();
+        List<RuntimeException> failures = new LinkedList<>();
+        int total = cleanupTasks.size();
+        try {
+            for (RealmCleanup task : cleanupTasks) {
+                try {
+                    task.cleanup(realm);
+                } catch (RuntimeException e) {
+                    failures.add(e);
+                }
+            }
+        } finally {
+            cleanupTasks.clear();
+        }
+
+        if (!failures.isEmpty()) {
+            IllegalStateException failure = new IllegalStateException(
+                    "Failed to run %d of %d cleanup tasks for the realm".formatted(failures.size(), total));
+            failures.forEach(failure::addSuppressed);
+            throw failure;
+        }
     }
 
     public interface RealmCleanup {
