@@ -61,6 +61,10 @@ public class WebAuthnRealmData {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessAcceptableAaguids() : realm.getWebAuthnPolicyAcceptableAaguids();
     }
 
+    public List<String> getHints() {
+        return isPasswordless ? realm.getWebAuthnPolicyPasswordlessHints() : realm.getWebAuthnPolicyHints();
+    }
+
     public Boolean getPasskeysEnabled() {
         if (isPasswordless) {
             return realm.getWebAuthnPolicyPasswordlessPasskeysEnabled();
@@ -141,6 +145,11 @@ public class WebAuthnRealmData {
 
         public Builder acceptableAaguids(List<String> aaguids) {
             setProperty(aaguids, realm::setWebAuthnPolicyAcceptableAaguids, realm::setWebAuthnPolicyPasswordlessAcceptableAaguids);
+            return this;
+        }
+
+        public Builder hints(List<String> hints) {
+            setProperty(hints, realm::setWebAuthnPolicyHints, realm::setWebAuthnPolicyPasswordlessHints);
             return this;
         }
 

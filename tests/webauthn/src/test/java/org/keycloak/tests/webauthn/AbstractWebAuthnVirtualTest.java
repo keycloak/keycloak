@@ -267,16 +267,10 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         }
     }
 
-    private void tryRegisterAuthenticator(String authenticatorLabel) {
+    protected void tryRegisterAuthenticator(String authenticatorLabel) {
         tryRegisterAuthenticator(authenticatorLabel, 10);
     }
 
-    /**
-     * Helper method for registering Passkey
-     * Sometimes, it's not possible to register the key, when the Resident Key is required
-     * It seems it's related to Virtual authenticators provided by Selenium framework
-     * Manual testing with Google Chrome authenticators works as expected
-     */
     private void tryRegisterAuthenticator(String authenticatorLabel, int numberOfAllowedRetries) {
         final boolean hasResidentKey = Optional.ofNullable(getVirtualAuthManager())
                 .map(VirtualAuthenticatorManager::getCurrent)

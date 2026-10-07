@@ -135,6 +135,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
         form.setAttribute(WebAuthnConstants.MEDIATION, policy.getMediation());
         form.setAttribute(WebAuthnConstants.AUTHENTICATOR_ATTACHMENT, policy.getAuthenticatorAttachment());
+        form.setAttribute(WebAuthnConstants.HINTS, policy.getHints() != null ? policy.getHints() : Collections.emptyList());
 
         return form;
     }

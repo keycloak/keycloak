@@ -180,6 +180,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         long createTimeout = policy.getCreateTimeout();
         boolean avoidSameAuthenticatorRegister = policy.isAvoidSameAuthenticatorRegister();
+        List<String> hints = policy.getHints() != null ? policy.getHints() : Collections.emptyList();
 
         String excludeCredentialIds = "";
         if (avoidSameAuthenticatorRegister) {
@@ -209,6 +210,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .setAttribute(WebAuthnConstants.RESIDENT_KEY, residentKey)
                 .setAttribute(WebAuthnConstants.USER_VERIFICATION_REQUIREMENT, userVerificationRequirement)
                 .setAttribute(WebAuthnConstants.CREATE_TIMEOUT, createTimeout)
+                .setAttribute(WebAuthnConstants.HINTS, hints)
                 .setAttribute(WebAuthnConstants.EXCLUDE_CREDENTIAL_IDS, excludeCredentialIds)
                 .setAttribute(WebAuthnConstants.IS_SET_RETRY, isSetRetry)
                 .createForm("webauthn-register.ftl");

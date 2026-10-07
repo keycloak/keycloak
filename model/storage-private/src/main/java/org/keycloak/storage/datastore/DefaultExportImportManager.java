@@ -1403,9 +1403,22 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
 
+        List<String> webAuthnPolicyHints = rep.getWebAuthnPolicyHints();
+        if (webAuthnPolicyHints == null) {
+            webAuthnPolicyHints = defaultConfig.getHints();
+        }
+        webAuthnPolicy.setHints(validateWebAuthnPolicyHints(webAuthnPolicyHints));
+
         return webAuthnPolicy;
     }
 
+    // Hints are saved as one comma separated attribute, so a null, an empty value or a value containing a comma would come back different from what was written. Reject those rather than silently changing what the admin sent.
+    private static List<String> validateWebAuthnPolicyHints(List<String> hints) {
+        if (hints != null && hints.stream().anyMatch(hint -> hint == null || hint.isEmpty() || hint.contains(","))) {
+            throw new ModelException("WebAuthn policy hint must not be null, empty or contain a comma");
+        }
+        return hints;
+    }
 
     private static WebAuthnPolicy getWebAuthnPolicyPasswordless(RealmRepresentation rep) {
         WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
@@ -1474,6 +1487,12 @@ public class DefaultExportImportManager implements ExportImportManager {
             webAuthnPolicyExtraOrigins = defaultConfig.getExtraOrigins();
         }
         webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
+        List<String> webAuthnPolicyHints = rep.getWebAuthnPolicyPasswordlessHints();
+        if (webAuthnPolicyHints == null) {
+            webAuthnPolicyHints = defaultConfig.getHints();
+        }
+        webAuthnPolicy.setHints(validateWebAuthnPolicyHints(webAuthnPolicyHints));
 
         Boolean webAuthnPolicyPasswordlessPasskeysEnabled = rep.getWebAuthnPolicyPasswordlessPasskeysEnabled();
         if (webAuthnPolicyPasswordlessPasskeysEnabled == null) {
