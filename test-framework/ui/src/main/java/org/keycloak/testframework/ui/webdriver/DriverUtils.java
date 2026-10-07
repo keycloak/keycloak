@@ -3,6 +3,7 @@ package org.keycloak.testframework.ui.webdriver;
 import java.io.File;
 
 import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.https.ManagedCertificates;
 
 import org.htmlunit.WebClientOptions;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -38,7 +39,7 @@ class DriverUtils {
         return new FirefoxDriver(driverService, DriverOptions.createFirefoxOptions(headless));
     }
 
-    static HtmlUnitDriver createHtmlUnitDriver() {
+    static HtmlUnitDriver createHtmlUnitDriver(ManagedCertificates managedCerts) {
         HtmlUnitDriver driver = new HtmlUnitDriver(DriverOptions.createHtmlUnitOptions());
         WebClientOptions options = driver.getWebClient().getOptions();
         options.setCssEnabled(false);
@@ -47,6 +48,10 @@ class DriverUtils {
         // HtmlUnit validates all scripts and then fails. It turned off the validation.
         options.setThrowExceptionOnScriptError(false);
         options.setThrowExceptionOnFailingStatusCode(false);
+        if (managedCerts != null && managedCerts.isMTlsEnabled()) {
+            options.setSSLClientCertificateKeyStore(managedCerts.getClientKeyStore(),
+                    managedCerts.getServerTrustStorePassword().toCharArray());
+        }
 
         return driver;
     }
