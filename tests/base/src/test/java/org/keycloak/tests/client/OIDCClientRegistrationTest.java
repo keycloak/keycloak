@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
@@ -50,6 +51,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -209,6 +211,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         try (SimpleHttpResponse response = simpleHttp.doPost(getOidcUrl()).auth(initialAccessToken)
                 .json(metadata).asResponse()) {
             assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
         }
     }
 
