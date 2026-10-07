@@ -25,12 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -997,8 +991,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
         assertSingleGroup(listedParent.getSubGroups(), targetGroup.getId(), briefRepresentation);
 
-        List<GroupRepresentation> flat = realmAdminClient.proxy(FlatGroupsResource.class)
-                .groups(realm.getName(), targetGroup.getName(), true, briefRepresentation, false);
+        List<GroupRepresentation> flat = adminRealm.groups().groups(targetGroup.getName(), true, null, null, briefRepresentation, true, false);
         GroupRepresentation flatGroup = assertSingleGroup(flat, targetGroup.getId(), briefRepresentation);
         assertThat(flatGroup.getSubGroups(), empty());
 
@@ -1008,18 +1001,6 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         List<GroupRepresentation> memberGroups = adminRealm.users().get(member.getId()).groups(null, null, briefRepresentation);
         assertSingleGroup(memberGroups, targetGroup.getId(), briefRepresentation);
-    }
-
-    // The 26.8 admin client does not expose populateHierarchy on its groups method.
-    @Path("/admin/realms/{realm}/groups")
-    public interface FlatGroupsResource {
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        List<GroupRepresentation> groups(@PathParam("realm") String realm,
-                                         @QueryParam("search") String search,
-                                         @QueryParam("exact") boolean exact,
-                                         @QueryParam("briefRepresentation") boolean briefRepresentation,
-                                         @QueryParam("populateHierarchy") boolean populateHierarchy);
     }
 
     private static GroupRepresentation assertSingleGroup(List<GroupRepresentation> groups, String groupId, boolean briefRepresentation) {
