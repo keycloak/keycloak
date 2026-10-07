@@ -253,6 +253,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
                 .orElseThrow();
 
         addedExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+        addedExecution.setPriority(15);
         authMgmtResource.updateExecutions(DETECT_EXISTING_FLOW_ALIAS, addedExecution);
 
         // revert the flow change once the test is done
