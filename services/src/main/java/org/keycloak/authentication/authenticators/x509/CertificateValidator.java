@@ -459,7 +459,7 @@ public class CertificateValidator {
             throw new IllegalArgumentException("ocspChecker");
     }
 
-    private static void validateKeyUsage(X509Certificate[] certs, int expected) throws GeneralSecurityException {
+    private static void validateKeyUsage(X509Certificate[] certs, int expected, boolean legacyCriticalBehavior) throws GeneralSecurityException {
         boolean[] keyUsageBits = certs[0].getKeyUsage();
         if (keyUsageBits == null) {
             if (expected != 0) {
@@ -489,14 +489,14 @@ public class CertificateValidator {
             }
         }
         if (sb.length() > 0) {
-            if (isCritical) {
+            if (!legacyCriticalBehavior || isCritical) {
                 throw new GeneralSecurityException(sb.toString());
             }
         }
     }
 
-    private static void validateExtendedKeyUsage(X509Certificate[] certs, List<String> expectedEKU) throws GeneralSecurityException {
-        if (expectedEKU == null || expectedEKU.size() == 0) {
+    private static void validateExtendedKeyUsage(X509Certificate[] certs, List<String> expectedEKU, boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        if (expectedEKU == null || expectedEKU.isEmpty()) {
             logger.debug("Extended Key Usage validation is not enabled.");
             return;
         }
@@ -518,7 +518,7 @@ public class CertificateValidator {
         for (String eku : expectedEKU) {
             if (!ekuList.contains(eku.toLowerCase())) {
                 String message = String.format("Extended Key Usage \'%s\' is missing.", eku);
-                if (isCritical) {
+                if (!legacyCriticalBehavior || isCritical) {
                     throw new GeneralSecurityException(message);
                 }
                 logger.warn(message);
@@ -558,12 +558,22 @@ public class CertificateValidator {
     }
 
     public CertificateValidator validateKeyUsage() throws GeneralSecurityException {
-        validateKeyUsage(_certChain, _keyUsageBits);
+        return validateKeyUsage(false);
+    }
+
+    @Deprecated(since = "26.8.1", forRemoval = true)
+    public CertificateValidator validateKeyUsage(boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        validateKeyUsage(_certChain, _keyUsageBits, legacyCriticalBehavior);
         return this;
     }
 
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
-        validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return validateExtendedKeyUsage(false);
+    }
+
+    @Deprecated(since = "26.8.1", forRemoval = true)
+    public CertificateValidator validateExtendedKeyUsage(boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        validateExtendedKeyUsage(_certChain, _extendedKeyUsage, legacyCriticalBehavior);
         return this;
     }
 
