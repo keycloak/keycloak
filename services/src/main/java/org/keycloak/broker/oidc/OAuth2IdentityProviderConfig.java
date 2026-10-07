@@ -266,18 +266,18 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
      * to an attacker-controlled token endpoint.
      */
     @Override
-    public boolean canReuseMaskedClientSecret(IdentityProviderModel updated) {
-        Map<String, String> existing = getConfig() != null ? getConfig() : Map.of();
-        Map<String, String> next = updated.getConfig() != null ? updated.getConfig() : Map.of();
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel other) {
+        Map<String, String> thisConfig = getConfig() != null ? getConfig() : Map.of();
+        Map<String, String> otherConfig = other.getConfig() != null ? other.getConfig() : Map.of();
 
         for (String key : getClientSecretDestinationConfigKeys()) {
-            if (!sameConfigValue(existing.get(key), next.get(key))) {
+            if (!sameConfigValue(thisConfig.get(key), otherConfig.get(key))) {
                 return false;
             }
         }
         return sameConfigValue(
-                existing.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
-                next.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
+                thisConfig.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
+                otherConfig.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
     }
 
     /**

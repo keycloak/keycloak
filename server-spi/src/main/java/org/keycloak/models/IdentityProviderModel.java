@@ -298,14 +298,17 @@ public class IdentityProviderModel implements Serializable {
 
     /**
      * Whether a masked {@code clientSecret} from an admin update may be replaced with the
-     * secret already stored on this model. Sub-classes (typically provider-specific configs
-     * from {@code IdentityProviderFactory#createConfig()}) override this to reject reuse when
+     * already-stored secret. Sub-classes (typically provider-specific configs from
+     * {@code IdentityProviderFactory#createConfig()}) override this to reject reuse when
      * fields that determine where/how the secret is sent have changed.
+     * <p>
+     * Callers should invoke this on the typed model from {@code createConfig()} /
+     * {@code RepresentationToModel}, not on a cached plain {@link IdentityProviderModel}.
      *
-     * @param updated the model built from the admin representation
+     * @param other the other model to compare destination/auth fields against (usually the stored IdP)
      * @return {@code true} if the stored secret may be reused; default allows reuse
      */
-    public boolean canReuseMaskedClientSecret(IdentityProviderModel updated) {
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel other) {
         return true;
     }
 

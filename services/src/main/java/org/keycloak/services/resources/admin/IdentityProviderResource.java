@@ -217,7 +217,10 @@ public class IdentityProviderResource {
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
-            if (identityProviderModel.canReuseMaskedClientSecret(updated)) {
+            // Invoke on `updated`: it comes from RepresentationToModel / createConfig() and is the
+            // provider-specific subclass that may reject reuse when destination fields change.
+            // The stored identityProviderModel is often a plain IdentityProviderModel from cache.
+            if (updated.canReuseMaskedClientSecret(identityProviderModel)) {
                 updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
                         ? identityProviderModel.getConfig().get("clientSecret") : null);
             } else {
