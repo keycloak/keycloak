@@ -619,6 +619,39 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    public void maskedClientSecretNotReusedWhenProviderIdMismatched() {
+        // Spoofing providerId (e.g. saml) would otherwise select IdentityProviderModel's default
+        // canReuseMaskedClientSecret() which always allows reuse, while persistence ignores providerId.
+        IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-providerid", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "real-partner-secret");
+        newIdentityProvider.getConfig().put("tokenUrl", "https://idp.example.com/token");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST);
+        create(newIdentityProvider);
+
+        IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-providerid");
+        IdentityProviderRepresentation representation = resource.toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+
+        representation.setProviderId("saml");
+        representation.getConfig().put("tokenUrl", "https://attacker.example/token");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        try {
+            resource.update(representation);
+            fail("Should reject providerId mismatch when updating with masked secret");
+        } catch (Exception e) {
+            assertError(e, "Identity Provider providerId cannot be changed");
+        }
+
+        assertEquals("oidc",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-providerid").getProviderId(), String.class));
+        assertEquals("real-partner-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-providerid").getConfig().get("clientSecret"), String.class));
+        assertEquals("https://idp.example.com/token",
+                runOnServer.fetch(s -> s.identityProviders().getByAlias("masked-secret-providerid").getConfig().get("tokenUrl"), String.class));
+    }
+
+    @Test
     public void failUpdateAlias() {
         IdentityProviderRepresentation newIdentityProvider = createRep("fail-update-alias", "oidc");
         newIdentityProvider.getConfig().put("clientId", "clientId");

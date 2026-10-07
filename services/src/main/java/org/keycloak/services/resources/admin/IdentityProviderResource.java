@@ -211,6 +211,14 @@ public class IdentityProviderResource {
             throw new IllegalArgumentException("Identity Provider alias cannot be changed");
         }
 
+        // providerId selects the config subtype used for masked-secret reuse checks, but persistence
+        // does not update providerId. Reject mismatches so a caller cannot bypass OIDC/OAuth2 guards
+        // by submitting another provider type (for example saml) with a changed token destination.
+        if (providerRep.getProviderId() != null
+                && !Objects.equals(identityProviderModel.getProviderId(), providerRep.getProviderId())) {
+            throw new IllegalArgumentException("Identity Provider providerId cannot be changed");
+        }
+
         // organization-related information should not be processed by non-organization API
         Organizations.stripOrganizationId(providerRep);
 
