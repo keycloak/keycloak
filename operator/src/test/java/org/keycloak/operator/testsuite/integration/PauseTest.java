@@ -11,7 +11,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @QuarkusTest
@@ -29,19 +28,19 @@ public class PauseTest extends BaseOperatorTest {
         k8sclient.resource(kc)
                 .informOnCondition(l -> l.stream().allMatch(
                         k -> "true".equals(k.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSED_ANNOTATION))))
-                .get(1, TimeUnit.MINUTES);
-
+                .get(10, TimeUnit.SECONDS);
+        
         assertNull(k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get());
-
+        
         kc.getMetadata().getAnnotations().remove(Constants.KEYCLOAK_PAUSE_ANNOTATION);
         k8sclient.resource(kc).serverSideApply();
-
+        
         k8sclient.resource(kc)
                 .informOnCondition(l -> l.stream().allMatch(
                         k -> k.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSED_ANNOTATION) == null))
-                .get(1, TimeUnit.MINUTES);
-
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get() != null);
+                .get(10, TimeUnit.SECONDS);
+        
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get() != null);
     }
 
 }
