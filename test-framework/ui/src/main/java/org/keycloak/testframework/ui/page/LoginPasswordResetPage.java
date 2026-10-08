@@ -16,7 +16,7 @@ public class LoginPasswordResetPage extends AbstractLoginPage {
     @FindBy(id = "kc-reset-password-form")
     private WebElement formResetPassword;
 
-    @FindBy(partialLinkText = "Back to Login")
+    @FindBy(partialLinkText = "Back to login")
     private WebElement backToLogin;
 
     public LoginPasswordResetPage(ManagedWebDriver driver) {

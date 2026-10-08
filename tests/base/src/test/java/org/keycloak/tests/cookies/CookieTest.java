@@ -145,8 +145,8 @@ class CookieTest {
             assertThat(pageContent, not(containsString("First name")));
             assertThat(pageContent, not(containsString("Last name")));
 
-            assertThat(pageContent, containsString("Sign In"));
-            assertThat(pageContent, containsString("Forgot Password?"));
+            assertThat(pageContent, containsString("Sign in"));
+            assertThat(pageContent, containsString("Forgot password?"));
         }
     }
 

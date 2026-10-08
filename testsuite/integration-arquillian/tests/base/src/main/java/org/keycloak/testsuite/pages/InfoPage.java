@@ -35,7 +35,7 @@ public class InfoPage extends LanguageComboboxAwarePage {
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
-    @FindBy(linkText = "« Back to Application")
+    @FindBy(linkText = "« Back to application")
     private WebElement backToApplicationLink;
 
     @FindBy(linkText = "» Klicken Sie hier um fortzufahren")

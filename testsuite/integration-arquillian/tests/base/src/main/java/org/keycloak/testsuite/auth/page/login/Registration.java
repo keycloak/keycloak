@@ -47,7 +47,7 @@ public class Registration extends LoginActions {
     @Page
     private PasswordFields passwordFields;
 
-    @FindBy(xpath = "//a[contains(., 'Back to Login')]")
+    @FindBy(xpath = "//a[contains(., 'Back to login')]")
     private WebElement backToLoginLink;
 
     public void register(UserRepresentation user) {

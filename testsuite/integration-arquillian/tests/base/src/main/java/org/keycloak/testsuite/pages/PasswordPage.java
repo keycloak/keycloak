@@ -30,7 +30,7 @@ public class PasswordPage extends LanguageComboboxAwarePage {
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(linkText = "Forgot Password?")
+    @FindBy(linkText = "Forgot password?")
     private WebElement resetPasswordLink;
 
 
