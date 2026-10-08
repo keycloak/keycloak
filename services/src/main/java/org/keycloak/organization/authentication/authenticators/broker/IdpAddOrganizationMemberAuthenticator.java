@@ -19,13 +19,17 @@ package org.keycloak.organization.authentication.authenticators.broker;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +43,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
@@ -61,6 +66,14 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
         InviteOrgActionToken invitation = getPendingInvitation(session, user);
 
         if (invitation != null) {
+            if (!Organizations.useInvitationToken(session, invitation)) {
+                context.getEvent().error(Errors.INVALID_TOKEN);
+                context.failure(AuthenticationFlowError.EXPIRED_CODE, context.form()
+                        .setError(Messages.STALE_INVITE_ORG_LINK)
+                        .createErrorPage(Response.Status.BAD_REQUEST));
+                return;
+            }
+
             // The invitation decides which organization is joined, whichever broker was used to get
             // here, including one belonging to another organization. Unmanaged, as when an existing
             // user accepts an invitation.
