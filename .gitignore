@@ -96,6 +96,9 @@ quarkus/data/*.db
 # JENV
 .java-version
 
+# JQwik database (property-based testing cache)
+.jqwik-database
+
 .env
 .env.test
 
