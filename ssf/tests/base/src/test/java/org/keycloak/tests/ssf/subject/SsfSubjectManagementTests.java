@@ -128,6 +128,10 @@ public class SsfSubjectManagementTests {
         // Drop any org created by an inspection test so the next test
         // starts from a clean slate.
         bestEffortDeleteAllOrganizations();
+        // Drop sessions created via the receiver and restore the default
+        // add policy so receiver-add tests don't leak into each other.
+        bestEffortLogoutTestUser();
+        setReceiverSubjectAddPolicy(null);
     }
 
     // ---- admin add / remove / ignore endpoints ----
@@ -351,7 +355,123 @@ public class SsfSubjectManagementTests {
                 "ignored user's event should NOT reach the receiver");
     }
 
+    // ---- receiver add: ssf.receiverSubjectAddPolicy ----
+
+    @Test
+    public void receiverAdd_defaultPolicy_unrelatedUser_notSubscribed() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+
+        // Silent mode: the denial is indistinguishable from success on the wire.
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("not_notified",
+                "a receiver must not subscribe a user who never authenticated via it");
+    }
+
+    @Test
+    public void receiverAdd_defaultPolicy_userAuthenticatedViaReceiver_subscribed() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("notified",
+                "a user with a session for the receiver may be added under AUTHENTICATED");
+    }
+
+    @Test
+    public void receiverAdd_adminIgnoredUser_staysIgnored() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/ignore",
+                "user-email", TEST_EMAIL)) {}
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("ignored", "a receiver add must not lift an admin ignore");
+    }
+
+    @Test
+    public void receiverAdd_anyPolicy_unrelatedUser_subscribed() throws Exception {
+        setReceiverSubjectAddPolicy("ANY");
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("notified", "ANY lets the receiver add any realm user");
+    }
+
+    @Test
+    public void receiverAdd_nonePolicy_userAuthenticatedViaReceiver_notSubscribed() throws Exception {
+        setReceiverSubjectAddPolicy("NONE");
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("not_notified", "NONE rejects every receiver-driven add");
+    }
+
     // ---- helpers ----
+
+    protected int receiverAdd(String token, String streamId, String email) throws IOException {
+        Map<String, Object> body = Map.of(
+                "stream_id", streamId,
+                "subject", Map.of("format", "email", "email", email));
+        try (SimpleHttpResponse res = http.doPost(realm.getBaseUrl() + "/ssf/transmitter/subjects/add")
+                .json(body)
+                .auth(token)
+                .asResponse()) {
+            return res.getStatus();
+        }
+    }
+
+    protected void assertCheckStatus(String expected, String message) throws IOException {
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/check",
+                "user-email", TEST_EMAIL)) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals(expected, res.asJson().get("status").asText(), message);
+        }
+    }
+
+    /**
+     * Password grant through the receiver client so the test user ends
+     * up with a user session holding a client session for the receiver.
+     */
+    protected void loginTestUserViaReceiver() throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(RECEIVER, RECEIVER_SECRET)
+                .param("grant_type", "password")
+                .param("username", TEST_USER)
+                .param("password", TEST_PASSWORD)
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+        }
+    }
+
+    protected void setReceiverSubjectAddPolicy(String policy) {
+        ClientRepresentation client = findClientByClientId(RECEIVER);
+        if (policy == null) {
+            client.getAttributes().remove(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY);
+        } else {
+            client.getAttributes().put(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY, policy);
+        }
+        realm.admin().clients().get(client.getId()).update(client);
+    }
+
+    protected void bestEffortLogoutTestUser() {
+        try {
+            realm.admin().users().searchByUsername(TEST_USER, true)
+                    .forEach(u -> realm.admin().users().get(u.getId()).logout());
+        } catch (Exception ignored) {
+        }
+    }
 
     protected SimpleHttpResponse adminSubjectRequest(String clientId, String action,
                                                      String type, String value) throws IOException {
@@ -535,7 +655,9 @@ public class SsfSubjectManagementTests {
                     ClientBuilder.create(RECEIVER)
                     .secret(RECEIVER_SECRET)
                     .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
+                    // Lets receiver-add tests give the test user a session
+                    // with this receiver via the password grant.
+                    .directAccessGrantsEnabled(true)
                     .publicClient(false)
                     .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                     .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")

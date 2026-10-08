@@ -47,9 +47,96 @@ public class SubjectManagementService {
             return ownershipResult;
         }
 
-        String clientClientId = resolveClientClientId(callerClientId);
+        ClientModel receiverClient = session.getContext().getRealm().getClientById(callerClientId);
         SubjectResolution resolution = resolveSubject(request.getSubject());
-        return registerSubjectForNotification(clientClientId, resolution);
+        SubjectManagementResult permissionResult = checkReceiverMayAdd(receiverClient, resolution);
+        if (permissionResult != null) {
+            return permissionResult;
+        }
+        return registerSubjectForNotification(receiverClient.getClientId(), resolution);
+    }
+
+    /**
+     * Authorizes a receiver-driven add against the receiver's
+     * {@link ReceiverSubjectAddPolicy} and any explicit admin exclusion.
+     * Without this gate any receiver holding {@code ssf.manage} could
+     * subscribe to security events for every user in the realm.
+     *
+     * <p>An explicit exclusion ({@code ssf.notify.<clientId>=false},
+     * the admin console's "Ignore") always wins: only an admin add can
+     * lift it. A subject that is already notified is allowed through
+     * regardless of policy, since re-adding it grants nothing new.
+     *
+     * @return {@code null} when the add may proceed, otherwise
+     *         {@link SubjectManagementResult#SUBJECT_NOT_PERMITTED}.
+     *         Unresolved subjects are passed through so the caller
+     *         reports them as usual.
+     */
+    protected SubjectManagementResult checkReceiverMayAdd(ClientModel receiverClient, SubjectResolution resolution) {
+        ReceiverSubjectAddPolicy policy = ReceiverSubjectAddPolicy.parseOrDefault(
+                receiverClient.getAttribute(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY),
+                ReceiverSubjectAddPolicy.DEFAULT);
+
+        boolean permitted;
+        if (resolution instanceof SubjectResolution.User u) {
+            permitted = mayAddUser(u.user(), receiverClient, policy);
+        } else if (resolution instanceof SubjectResolution.Organization o) {
+            permitted = mayAddOrganization(o.organization(), receiverClient.getClientId(), policy);
+        } else {
+            return null;
+        }
+
+        if (permitted) {
+            return null;
+        }
+        log.debugf("SSF subject add denied. clientId=%s policy=%s", receiverClient.getClientId(), policy);
+        return SubjectManagementResult.SUBJECT_NOT_PERMITTED;
+    }
+
+    private boolean mayAddUser(UserModel user, ClientModel receiverClient, ReceiverSubjectAddPolicy policy) {
+        String receiverClientId = receiverClient.getClientId();
+        if (SsfNotifyAttributes.isUserExcluded(user, receiverClientId)) {
+            return false;
+        }
+        if (SsfNotifyAttributes.isUserNotified(user, receiverClientId)) {
+            return true;
+        }
+        return switch (policy) {
+            case ANY -> true;
+            case AUTHENTICATED -> hasRelationshipWithReceiver(user, receiverClient);
+            case NONE -> false;
+        };
+    }
+
+    private boolean mayAddOrganization(OrganizationModel org, String receiverClientId, ReceiverSubjectAddPolicy policy) {
+        if (SsfNotifyAttributes.isOrganizationExcluded(org, receiverClientId)) {
+            return false;
+        }
+        if (SsfNotifyAttributes.isOrganizationNotified(org, receiverClientId)) {
+            return true;
+        }
+        // Subscribing an organization covers all of its members, so only
+        // a realm-wide grant permits it.
+        return policy == ReceiverSubjectAddPolicy.ANY;
+    }
+
+    /**
+     * Whether the user has authenticated via the receiver client: an
+     * active or offline user session holding a client session for the
+     * receiver, or a consent granted to it.
+     */
+    protected boolean hasRelationshipWithReceiver(UserModel user, ClientModel receiverClient) {
+        RealmModel realm = session.getContext().getRealm();
+        String clientUuid = receiverClient.getId();
+        if (session.users().getConsentByClient(realm, user.getId(), clientUuid) != null) {
+            return true;
+        }
+        if (session.sessions().getUserSessionsStream(realm, user)
+                .anyMatch(us -> us.getAuthenticatedClientSessionByClient(clientUuid) != null)) {
+            return true;
+        }
+        return session.sessions().getOfflineUserSessionsStream(realm, user)
+                .anyMatch(us -> us.getAuthenticatedClientSessionByClient(clientUuid) != null);
     }
 
     protected SubjectManagementResult registerSubjectForNotification(String callerClientId, SubjectResolution resolution) {

@@ -168,6 +168,10 @@ The *Receiver* sub-tab groups configuration into sections. Frequently used knobs
 |*Auto notify on login*
 |Auto-subscribe the user as a subject the first time they log in via this receiver client.
 
+|*Receiver subject add policy*
+|Which subjects the receiver may add through the subject management endpoint: `AUTHENTICATED` (default),
+`ANY`, or `NONE`. See <<receiver-subject-add-policy>>.
+
 |*Allowed delivery methods*
 |Two checkboxes (*Push delivery*, *Poll delivery*) gating which delivery families this receiver may use.
 Empty means both are allowed.
@@ -344,6 +348,20 @@ POST /realms/{realm}/ssf/transmitter/subjects/remove
 For privacy, both endpoints respond with their normal success status, `200 OK` for add and `204 No Content` for
 remove, even when the supplied subject does not resolve to an existing user, so they do not act as an existence
 oracle for the realm's user store.
+
+[[receiver-subject-add-policy]]
+A receiver cannot subscribe itself to arbitrary users. The *Receiver subject add policy* on the *Receiver* sub-tab
+decides which `add` requests are honoured:
+
+* `AUTHENTICATED` (default): only users who have an active or offline session that includes the receiver client,
+  or who granted consent to it. Organization subjects are rejected, because they cover every member.
+* `ANY`: any user or organization in the realm. Choose this only for receivers you trust to monitor the whole realm.
+* `NONE`: all receiver-driven `add` requests are rejected. Subjects are managed by administrators only.
+
+Regardless of the policy, a receiver cannot add a subject that an administrator has explicitly ignored, and
+re-adding a subject that is already subscribed always succeeds. A rejected `add` returns `200 OK` like any other
+`add`; with verbose error responses enabled it returns `403 Forbidden`. The policy does not apply to `remove`
+or to subjects managed from the admin console.
 
 Administrators can manage subjects from the *Subjects* sub-tab in the admin console. The sub-tab also exposes
 an *ignore* operation that explicitly excludes a subject (distinct from removing them from the subscription

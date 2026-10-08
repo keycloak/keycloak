@@ -493,6 +493,10 @@ public class SsfSubjectRemovalGraceTests {
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                             .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            // readd_clearsTombstone re-adds a user that has no
+                            // session with this receiver; the add policy is not
+                            // under test here.
+                            .attribute(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY, "ANY")
                             .build()
             );
 
