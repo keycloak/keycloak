@@ -38,11 +38,11 @@ import org.keycloak.protocol.saml.SamlProtocol;
 public class KeycloakSamlSubsystemInstallation implements ClientInstallationProvider {
 
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, boolean includeSecrets) {
         SamlClient samlClient = new SamlClient(client);
         StringBuilder buffer = new StringBuilder();
         buffer.append("<secure-deployment name=\"YOUR-WAR.war\">\n");
-        KeycloakSamlClientInstallation.baseXml(session, realm, client, baseUri, samlClient, buffer);
+        KeycloakSamlClientInstallation.baseXml(session, realm, client, baseUri, samlClient, buffer, includeSecrets);
         buffer.append("</secure-deployment>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }

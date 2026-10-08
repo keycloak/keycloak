@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client installation providers must support secret masking (CVE-2026-107604)
+// https://github.com/keycloak/keycloak/issues/53751
+
+The `ClientInstallationProvider.generateInstallation` method now requires an additional `boolean includeSecrets` argument.
+Custom providers must update their implementations to the new signature and mask stored client secrets and private keys when `includeSecrets` is `false`.
+The previous four-argument method is no longer available.
+
+Installation configuration retrieved through the Admin REST API now masks OIDC client secrets and stored SAML client signing and encryption private keys unless the caller has management permission for the client.
+Certificates and other public configuration remain visible.
+The deprecated Client Registration `install` endpoint also masks client secrets for callers with only the `view-clients` role, while preserving access for `manage-clients` callers, registration access token holders, and authenticated clients.
+
 === SMTP StartTLS is required when enabled (CVE-2026-107121)
 
 Previously, when a realm SMTP configuration had *Enable StartTLS* enabled, {project_name} used opportunistic STARTTLS.

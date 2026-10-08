@@ -259,7 +259,8 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri());
+        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri(),
+                auth.clients().canManage(client));
     }
 
     /**
