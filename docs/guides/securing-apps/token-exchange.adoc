@@ -373,6 +373,7 @@ s|Scope | `delegation:user:<username>` | `delegation:client:<client_id>`
 s|Actor | A user, typically an administrator | A client application, through its service account
 s|Use case | Administrator acts on behalf of a user | Application, such as an AI agent, acts on behalf of a user
 s|`may_act` contains | `sub` (actor user ID) | `sub` (service account user ID) and `client_id`
+s|Can be chained | No, the delegated token cannot be exchanged again | Yes, see <<_delegation-chaining,Chaining the delegation>>
 |===
 
 === Enabling delegation
@@ -392,6 +393,7 @@ Delegation also requires granting a delegation permission through link:{admingui
 
 NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegation.
 
+[[_granting-delegation-permission]]
 === Granting delegation permission
 
 Unlike impersonation, delegation does not use admin roles. Instead, you configure FGAP V2 permissions to control which actors can be delegated to and for which users.
@@ -641,6 +643,155 @@ Configure it under *Realm settings* -> *Client policies* by adding the *may-act*
 
 NOTE: The executor runs on the token response of every grant type, but only acts when that response carries a `may_act` claim. That is the login and refresh responses where the claim is minted, not the exchange itself, since the delegated token carries `act` and not `may_act`. Combine it with the *grant-type* condition to narrow it further.
 
+[[_delegation-chaining]]
+=== Chaining the delegation
+
+A single delegation ends at the client the user consented to. An AI agent usually cannot stop there: it calls a tool server, which calls a downstream service, and each of them needs a token for Alice rather than one of its own.
+
+Chaining lets a client exchange a token it received by delegation and pass the delegation onward. Alice stays the subject at every step and each actor is recorded in the `act` claim, so the chain remains auditable end to end. The first hop is the ordinary exchange described above, driven by the `may_act` claim Alice consented to. From the second hop on there is no `may_act` claim left to consult, so the `delegate` permission of the next actor authorizes the request instead. Chaining is therefore client delegation only.
+
+Chaining is off by default and is enabled per client with the *client-delegation* client policy executor.
+
+==== Setting up a chain
+
+Alice signs in to `subject-app`, which delegates to `agent-app`, which passes the work on to `mcp-app`.
+
+. Meet the <<_client-delegation,client delegation prerequisites>> for both `agent-app` and `mcp-app`: a confidential client with a service account and *Standard Token Exchange* enabled.
+. Grant the `delegate` permission over Alice to the service accounts of both, as described in <<_granting-delegation-permission,Granting delegation permission>>. Use one permission listing every actor in its policy rather than one permission each: admin permissions are UNANIMOUS, so a second `delegate` permission whose policy does not also match denies the first.
+. Switch *Full scope allowed* off on `agent-app` and add a client role of `mcp-app` that Alice holds to its *Client scopes* -> *Scope* tab. That scope mapping is what lets `agent-app` target `mcp-app`, and the `roles` client scope assigned by default is what turns it into an audience, see <<_targeting-the-next-hop,Targeting the next hop>>.
+. Under *Realm settings* -> *Client policies* -> *Profiles*, create a profile, add the *client-delegation* executor, and switch *Allow chaining* on.
+. Under *Policies*, create one policy with an *any-client* condition and attach the profile. Nothing further is needed as clients join the chain.
+
+Alice then signs in to `subject-app` with `scope=openid delegation:client:agent-app` and consents, exactly as for a single delegation.
+
+NOTE: *any-client* is safe here because the executor only acts on delegation exchanges, leaving ordinary clients untouched. The policy is matched against the client performing the exchange, so it has to cover every client that continues a chain, not the one that starts it, and a client it misses falls back to the default, where chaining is off. To cover only some clients, swap in a *client-roles* or *client-attributes* condition.
+
+==== A two-hop example
+
+Alice's token carries the `may_act` claim shown in <<_client-delegation,Client delegation>>. `agent-app` takes the first hop, sending that token as the `subject_token`, its own service account token as the `actor_token`, and `mcp-app` as the next hop:
+
+[source,bash]
+----
+curl -X POST .../realms/myrealm/protocol/openid-connect/token \
+  -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+  -d client_id=agent-app \
+  -d client_secret=XXXXX \
+  -d subject_token=$ALICE_TOKEN \
+  -d subject_token_type=urn:ietf:params:oauth:token-type:access_token \
+  -d actor_token=$AGENT_SERVICE_ACCOUNT_TOKEN \
+  -d actor_token_type=urn:ietf:params:oauth:token-type:access_token \
+  -d audience=mcp-app
+----
+
+The delegated token keeps Alice as the subject, names `agent-app` as the actor, and is addressed to `mcp-app`:
+
+[source,json]
+----
+{
+  "sub": "alice-user-id",
+  "aud": "mcp-app",
+  "act": {
+    "sub": "agent-app-service-account-id",
+    "client_id": "agent-app"
+  }
+}
+----
+
+`agent-app` now hands that token to `mcp-app`, which repeats the same request with the token it received as the `subject_token`, its own service account token as the `actor_token`, and whichever client it needs next in `audience`. Reaching `downstream-app` means setting `mcp-app` up the way step 3 set up `agent-app`, with a role of `downstream-app` in its scope:
+
+[source,bash]
+----
+curl -X POST .../realms/myrealm/protocol/openid-connect/token \
+  -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+  -d client_id=mcp-app \
+  -d client_secret=XXXXX \
+  -d subject_token=$DELEGATED_TOKEN \
+  -d subject_token_type=urn:ietf:params:oauth:token-type:access_token \
+  -d actor_token=$MCP_SERVICE_ACCOUNT_TOKEN \
+  -d actor_token_type=urn:ietf:params:oauth:token-type:access_token \
+  -d audience=downstream-app
+----
+
+There is no `may_act` claim this time, so the `delegate` permission of `mcp-app` authorizes the hop. The new actor is described at the outermost level and the previous one is nested below it, as https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1] requires:
+
+[source,json]
+----
+{
+  "sub": "alice-user-id",
+  "aud": "downstream-app",
+  "act": {
+    "sub": "mcp-app-service-account-id",
+    "client_id": "mcp-app",
+    "act": {
+      "sub": "agent-app-service-account-id",
+      "client_id": "agent-app"
+    }
+  }
+}
+----
+
+Read the `act` claim outside in: the outermost actor is the most recent one, and each nested level is the actor that came before it.
+
+[[_targeting-the-next-hop]]
+==== Targeting the next hop
+
+An agent usually does not know in advance which tool server it will call, so the target is chosen per request, with the `audience` parameter naming the client the token is about to be handed to.
+
+The audience is resolved exactly as it is for any other grant, from the client scopes and role scope mappings of the client performing the exchange as described in the link:{adminguide_link}#_audience_resolve[Audience documentation], and `audience` only narrows that set down. Naming a client outside it fails with `invalid_request` and `Requested audience not available`. A chain therefore reaches only clients the caller has a role scope mapping for, an edge the administrator owns and the caller cannot widen at request time, and only clients the subject user holds a role on, so it never reaches further than the user does.
+
+WARNING: *Full scope allowed* is on for new clients, and while it is on the caller's scope mappings are not a bound at all, leaving every client the user holds a role on reachable. Switch it off on each client that takes part in a chain.
+
+NOTE: Two things leave resolution with nothing to return. The caller needs the `roles` client scope, assigned by default, which carries the *audience resolve* mapper that turns a scope mapping into an audience. The target needs roles to resolve from, so for a resource server that defines none, add an *Audience* mapper to a client scope naming it and assign that scope to the clients allowed to target it, which bounds the edge in the same way.
+
+==== What every hop is checked against
+
+The following apply to every delegated exchange, in addition to the usual token and audience checks of the exchange endpoint:
+
+[cols="1,2", options="header"]
+|===
+|Check |Fails when
+|The caller is in the audience |The subject token does not name this client in `aud`, so the previous hop could not reach it. Fails with `access_denied`
+|The subject token carries one delegation claim |The subject token carries both a `may_act` and an `act` claim, which would leave it open how the hop is authorized
+|Chaining is allowed |The hop is not the first one and no matching client policy switched *Allow chaining* on, which is the default
+|The chain is not too deep |The resulting `act` claim would hold more than eight actors, a fixed limit that no policy can raise
+|Every actor so far is a client |Any level of the inbound `act` claim has no `client_id`, which is what admin delegation writes. A token delegated to a user is never a subject token of a further hop
+|The actor is new to the chain |The actor already appears in the inbound `act` claim, which is a delegation loop
+|The actor holds the `delegate` permission |The actor's service account has no FGAP V2 `delegate` permission for the subject user
+|===
+
+A hop with no `may_act` claim to rely on, which is every hop after the first, is checked against these as well, in place of the `may_act` checks listed in <<_performing-the-delegated-exchange,Performing the delegated exchange>>:
+
+[cols="1,2", options="header"]
+|===
+|Check |Fails when
+|The actor is a client |The `actor_token` belongs to a human user rather than a service account, which would be impersonation the user never consented to
+|The actor token belongs to the caller |With no `may_act` to bind the request to a client, the `actor_token` must be the requesting client's own token
+|===
+
+`may_act` authorizes the first hop and `act` records every hop after it, so a delegated token never carries both. A `may_act` claim that the requested scope would have added to a delegated token is dropped when the `act` claim is written, and a subject token holding both is rejected. The `delegate` permission is re-evaluated on every exchange rather than taken from the `may_act` claim that recorded it, so revoking it stops further delegation at once instead of when the tokens already issued expire.
+
+[[_controlling-delegation-with-a-client-policy]]
+==== Controlling which clients may chain
+
+The *client-delegation* executor has a single option, *Allow chaining*, which is off unless switched on. When it is on, a token the client received by delegation can be exchanged again, passing the delegation on to a further client. When several policies match the same request, chaining is allowed only if every one of them allows it, so a permissive policy never overrides a restrictive one and the outcome does not depend on the order the policies are evaluated in.
+
+Nothing else about a chain is configurable: it never holds more than eight actors, an actor can never take part twice, and the first hop always needs a delegation the user consented to. Whether a client may delegate at all remains a question for the `delegate` permission, and whether a token may carry a `may_act` claim at all is the job of the *may-act* executor.
+
+The delegated token is issued with the scopes of the client performing the exchange, so each hop can already narrow what the next one receives. To make narrowing one-way, add the *downscope-assertion-grant-enforcer* executor to the same profile. It takes no configuration and rejects, with `invalid_scope`, any request asking for a scope the subject token does not carry. In a chain this compounds: once a hop drops a scope, no later hop can get it back.
+
+==== Auditing a chain
+
+Every hop produces a `TOKEN_EXCHANGE` event carrying the usual `actor` and `actor_type` details, plus two more:
+
+[cols="1,2", options="header"]
+|===
+|Detail |Value
+|`delegation_chain_depth` |Position of this hop in the chain, starting at `1` for the first exchange
+|`delegation_chain` |The actors that took part, oldest first, comma separated, for example `agent-app,mcp-app`. Absent on a first hop
+|===
+
+A rejected hop produces a `TOKEN_EXCHANGE_ERROR` event with `error=invalid_token` and the failed check in the `reason` detail.
+
 === Troubleshooting
 
 Delegation scopes fail safe. If the actor is not authorized, the scope is dropped during scope resolution and the login still succeeds, only without a `may_act` claim in the token.
@@ -651,7 +802,8 @@ Delegation scopes fail safe. If the actor is not authorized, the scope is droppe
 |Login succeeds, but the token has no `may_act` claim |The actor lacks the `delegate` permission, the username or client ID is misspelled, or the actor client has no service account
 |The authorization request fails with `invalid_scope` |The requesting client does not have *Consent required* enabled
 |The exchange fails with `invalid_request` |The actor does not match `may_act`, or the `may_act` claim is missing or malformed in the subject token
-|The exchange fails with `access_denied` |The requesting client is outside the audience of the subject token or of the actor token
+|The exchange fails with `Requested audience not available` |The client named in `audience` does not resolve for the requesting client, because the subject user has no role on it, that role is not in the requesting client's scope, or the requesting client no longer has the `roles` client scope that carries the *audience resolve* mapper
+|The exchange fails with `access_denied` |The requesting client is outside the audience of the subject token or of the actor token. On a chained hop, the previous client either left this one out of its `audience` parameter or could not reach it at all, because the user has no role on it or the role is not in that client's scope
 |===
 
 A dropped scope is always logged on the server at the `WARN` level, with the reason:
