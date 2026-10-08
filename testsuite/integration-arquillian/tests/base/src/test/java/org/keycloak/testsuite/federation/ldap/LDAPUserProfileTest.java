@@ -26,7 +26,6 @@ import java.util.Set;
 import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -364,10 +363,10 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
             RealmModel appRealm = ctx.getRealm();
 
-            ctx.getLdapModel().getConfig().put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, List.of(LDAPConstants.GIVENNAME));
-            ctx.getLdapModel().getConfig().put(LDAPConstants.RDN_LDAP_ATTRIBUTE, List.of(LDAPConstants.GIVENNAME));
+            ctx.getLdapModel().getConfig().put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, List.of(LDAPConstants.UID));
+            ctx.getLdapModel().getConfig().put(LDAPConstants.RDN_LDAP_ATTRIBUTE, List.of(LDAPConstants.UID));
 
-            ComponentModel ldapComponentMapper = LDAPTestUtils.addUserAttributeMapper(appRealm, ctx.getLdapModel(), "givename-mapper", "username", LDAPConstants.GIVENNAME);
+            ComponentModel ldapComponentMapper = LDAPTestUtils.addUserAttributeMapper(appRealm, ctx.getLdapModel(), "username-mapper", "username", LDAPConstants.UID);
             ldapComponentMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
             appRealm.updateComponent(ldapComponentMapper);
 
@@ -378,10 +377,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
             appRealm.updateComponent(ctx.getLdapModel());
 
-            MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
-            otherAttrs.put(LDAPConstants.GIVENNAME, List.of(upperCaseUsername));
-
-            LDAPObject john3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, upperCaseUsername, "John", "Doe", "john3@email.org", otherAttrs);
+            LDAPObject john3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, upperCaseUsername, "John", "Doe", "john3@email.org", (String) null);
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john3, "Password1");
         });
 

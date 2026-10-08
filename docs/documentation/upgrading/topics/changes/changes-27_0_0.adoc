@@ -65,6 +65,19 @@ Previously, the Redirect URL was used without validation, which could allow an o
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
 
+=== LDAP first name mapped to `givenName` by default
+// https://github.com/keycloak/keycloak/issues/35941
+
+When a new LDAP provider is created, the default `first name` mapper now always maps the first name of the user to the `givenName` LDAP attribute.
+Previously, unless `cn` was used as the *RDN LDAP attribute*, the first name was mapped to `cn`, which holds the full name of a user in most LDAP deployments.
+
+The default mappers related to `cn` change accordingly:
+
+* If the provider is in `WRITABLE` mode and `cn` is neither the *RDN LDAP attribute* nor the *Username LDAP attribute*, a write-only `full name` mapper is created to fill `cn`, which is mandatory for the `person` object class, from the first and last name when registering new users.
+* If `cn` is the *RDN LDAP attribute* but not the *Username LDAP attribute*, and the provider is not in `WRITABLE` mode, the `full name` mapper reading the first and last name from `cn` is no longer created.
+
+This applies only to LDAP providers created after the upgrade. The mappers of existing LDAP providers are not changed.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
