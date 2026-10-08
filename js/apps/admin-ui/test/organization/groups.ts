@@ -19,9 +19,9 @@ export async function createOrgGroup(
   fromEmptyState = false,
 ) {
   if (fromEmptyState) {
-    // testid is derived from the translated message text (which has a typo: "orgainization")
+    // testid is derived from the translated message text
     await page
-      .getByTestId("no-groups-in-this-orgainization-empty-action")
+      .getByTestId("no-groups-in-this-organization-empty-action")
       .click();
   } else {
     await page.getByTestId("openCreateGroupModal").click();
