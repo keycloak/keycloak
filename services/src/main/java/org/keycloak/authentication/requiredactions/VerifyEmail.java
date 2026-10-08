@@ -239,12 +239,12 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 
         try {
-            session
-              .getProvider(EmailTemplateProvider.class)
-              .setAuthenticationSession(authSession)
-              .setRealm(realm)
-              .setUser(user)
-              .sendVerifyEmail(link, expirationInMinutes);
+            session.getProvider(EmailTemplateProvider.class)
+                    .setAttribute(Constants.CLIENT_ID, authSession.getClient().getClientId())
+                    .setAuthenticationSession(authSession)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendVerifyEmail(link, expirationInMinutes);
             event.success();
 
             return context.form().createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
