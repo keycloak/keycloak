@@ -70,7 +70,7 @@
             <div id="kc-form">
                 <div id="kc-form-wrapper">
                     <#if realm.password>
-                        <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" style="display:none">
+                        <form id="kc-form-login" data-kc-disable-submit="login" action="${url.loginAction}" method="post" style="display:none">
                             <#if !usernameHidden??>
                                 <div class="${properties.kcFormGroupClass!}">
                                     <label for="username" class="${properties.kcLabelClass!}">${msg("passkey-autofill-select")}</label>

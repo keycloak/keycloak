@@ -73,7 +73,7 @@
             <div id="kc-form">
                 <div id="kc-form-wrapper">
                     <#if realm.password>
-                        <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" style="display:none">
+                        <form id="kc-form-login" class="${properties.kcFormClass!}" data-kc-disable-submit="login" action="${url.loginAction}" method="post" style="display:none">
                             <#if !usernameHidden??>
                                 <@field.input name="username" label=msg("passkey-autofill-select") value=login.username!'' autofocus=true autocomplete="username webauthn" />
                             </#if>
