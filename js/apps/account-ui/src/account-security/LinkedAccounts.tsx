@@ -86,7 +86,9 @@ export const LinkedAccounts = () => {
           />
           <DataList id="linked-idps" aria-label={t("linkedLoginProviders")}>
             {linkedAccounts.length > 0 ? (
-              linkedAccounts.map(
+              linkedAccounts.sort(
+                  (firstIdp, secondIdp) => Number(firstIdp.guiOrder ?? Number.MAX_SAFE_INTEGER) - Number(secondIdp.guiOrder ?? Number.MAX_SAFE_INTEGER)
+                  ).map(
                 (account, index) =>
                   index !== paramsLinked.max - 1 && (
                     <AccountRow
@@ -140,7 +142,9 @@ export const LinkedAccounts = () => {
           />
           <DataList id="unlinked-idps" aria-label={t("unlinkedLoginProviders")}>
             {unlinkedAccounts.length > 0 ? (
-              unlinkedAccounts.map(
+              unlinkedAccounts.sort(
+                  (firstIdp, secondIdp) => Number(firstIdp.guiOrder ?? Number.MAX_SAFE_INTEGER) - Number(secondIdp.guiOrder ?? Number.MAX_SAFE_INTEGER)
+              ).map(
                 (account, index) =>
                   index !== paramsUnlinked.max - 1 && (
                     <AccountRow
