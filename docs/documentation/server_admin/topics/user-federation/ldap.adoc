@@ -178,6 +178,9 @@ When you register new users in {project_name} and `Sync Registrations` is ON for
 Hardcoded Attribute Mapper::
 This mapper adds a hardcoded attribute value to each {project_name} user linked with LDAP. This mapper can also force values for the `enabled` or `emailVerified` user properties.
 
+Hardcoded LDAP Attribute Mapper::
+This mapper writes a hardcoded value to a specified attribute on the user's LDAP entry. It only fires when a new user is created in {project_name} and the LDAP provider has `Edit Mode = WRITABLE` and `Sync Registrations = ON`; it does not write values when users are imported from LDAP. The target attribute must be defined in the LDAP schema and permitted by at least one `objectClass` on the user entry, otherwise the LDAP write fails with an `undefined attribute type` or `objectClassViolation` error. The value supports the `+${RANDOM}+` token, which is replaced with a 30-character random string. The mapper marks the attribute as read-only for subsequent updates so that changes in {project_name} are not propagated back to LDAP.
+
 Role Mapper::
 This mapper configures role mappings from LDAP into {project_name} role mappings. A single role mapper can map LDAP roles (usually groups from a particular branch of the LDAP tree) into roles corresponding to a specified client's realm roles or client roles. You can configure more Role mappers for the same LDAP provider. For example, you can specify that role mappings from groups under `ou=main,dc=example,dc=org` map to realm role mappings, and role mappings from groups under `ou=finance,dc=example,dc=org` map to client role mappings of client `finance`.
 
