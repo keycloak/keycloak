@@ -103,6 +103,8 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     private static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
     private static final String DEVICE_APP_WITHOUT_SCOPES = "test-device-without-scopes";
     private static final String SHORT_DEVICE_FLOW_URL = "https://keycloak.org/device";
+    private static final String DEVICE_LOGIN_ACR_USER = "device-login-acr";
+    private static final String DEVICE_LOGIN_ACR_TOTP_SECRET = "totpSecret";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -162,10 +164,18 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 .username("device-login")
                 .email("device-login@localhost")
                 .password("password")
-                .totpSecret("totpSecret")
                 .attribute("phoneNumber","211211211")
                 .build();
         realm.users(user);
+
+        UserRepresentation acrUser = UserBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .username(DEVICE_LOGIN_ACR_USER)
+                .email("device-login-acr@localhost")
+                .password("password")
+                .totpSecret(DEVICE_LOGIN_ACR_TOTP_SECRET)
+                .build();
+        realm.users(acrUser);
 
         testRealms.add(realm.build());
     }
@@ -225,6 +235,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     @Test
     public void testMinimumAcrValueEnforced() throws Exception {
         LevelOfAssuranceFlowTest.configureStepUpFlow(REALM_NAME, testingClient);
+        getTestingClient().testing().setTestingInfinispanTimeService();
 
         ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRep = client.toRepresentation();
@@ -247,14 +258,24 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             verificationPage.submit(response.getUserCode());
 
             loginPage.assertCurrent();
-            oauth.fillLoginForm("device-login", "password");
+            oauth.fillLoginForm(DEVICE_LOGIN_ACR_USER, "password");
 
+            // Password alone must not complete device authorization when minimum ACR requires OTP
             loginTotpPage.assertCurrent();
-            loginTotpPage.login(totp.generateTOTP("totpSecret"));
+            AccessTokenResponse pendingResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+            Assertions.assertEquals(400, pendingResponse.getStatusCode());
+            Assertions.assertEquals("authorization_pending", pendingResponse.getError());
+            assertNull(pendingResponse.getAccessToken());
+            assertNull(pendingResponse.getIdToken());
+
+            loginTotpPage.login(totp.generateTOTP(DEVICE_LOGIN_ACR_TOTP_SECRET));
 
             grantPage.assertCurrent();
             grantPage.accept();
             verificationPage.assertApprovedPage();
+
+            // Respect device polling interval after the pending token poll above
+            setTimeOffset(5);
 
             AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
             Assertions.assertEquals(200, tokenResponse.getStatusCode());
@@ -264,6 +285,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
             Assertions.assertEquals("gold", idToken.getAcr());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            resetTimeOffset();
+
             clientRep = client.toRepresentation();
             clientRep.setAttributes(new HashMap<>(originalAttributes));
             client.update(clientRep);
