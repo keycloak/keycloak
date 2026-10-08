@@ -60,6 +60,7 @@ public class PasswordCredentialModel extends CredentialModel {
             passwordCredentialModel.setSecretData(credentialModel.getSecretData());
             passwordCredentialModel.setType(credentialModel.getType());
             passwordCredentialModel.setUserLabel(credentialModel.getUserLabel());
+            passwordCredentialModel.setPriority(credentialModel.getPriority());
 
             return passwordCredentialModel;
         } catch (IOException e) {

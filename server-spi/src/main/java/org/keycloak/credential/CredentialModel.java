@@ -65,6 +65,7 @@ public class CredentialModel implements Serializable {
     private String type;
     private String userLabel;
     private Long createdDate;
+    private Integer priority;
 
     private String secretData;
     private String credentialData;
@@ -77,6 +78,7 @@ public class CredentialModel implements Serializable {
         res.type = type;
         res.userLabel = userLabel;
         res.createdDate = createdDate;
+        res.priority = priority;
         res.secretData = secretData;
         res.credentialData = credentialData;
         res.federationLink = federationLink;
@@ -109,6 +111,23 @@ public class CredentialModel implements Serializable {
     }
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
+    }
+
+    /**
+     * The relative ordering of this credential among <em>all</em> of the user's stored credentials —
+     * lower values are preferred/tried first. This is a single ordering across every credential the user
+     * has, not scoped per {@link CredentialTypeMetadata.Category category} (see e.g.
+     * {@code JpaUserCredentialStore#moveCredentialTo}, which reorders across the user's full credential
+     * list). Only meaningful for a credential actually persisted via a {@code UserCredentialStore}; not
+     * automatically preserved by {@link CredentialProvider#getCredentialFromModel(CredentialModel)} when an
+     * implementation builds a new model instance instead of returning the one passed in — see that method's
+     * Javadoc.
+     */
+    public Integer getPriority() {
+        return priority;
+    }
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     public String getSecretData() {
