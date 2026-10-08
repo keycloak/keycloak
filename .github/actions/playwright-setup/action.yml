@@ -1,0 +1,35 @@
+name: Setup Playwright
+description: Installs Playwright browsers for a workspace, restoring them from the cache when the Playwright version has not changed.
+
+inputs:
+  workspace:
+    description: PNPM workspace filter to run Playwright from
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: playwright-version
+      name: Get Playwright version
+      shell: bash
+      working-directory: js
+      run: echo "version=$(pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright --version | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+    - id: cache-browsers
+      name: Cache Playwright browsers
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+    - name: Install Playwright browsers
+      if: steps.cache-browsers.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: js
+      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install --with-deps
+
+    - name: Install Playwright system dependencies
+      if: steps.cache-browsers.outputs.cache-hit == 'true'
+      shell: bash
+      working-directory: js
+      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install-deps

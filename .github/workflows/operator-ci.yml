@@ -33,6 +33,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       operator: ${{ steps.conditional.outputs.operator }}
     permissions:
@@ -40,6 +41,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -50,6 +53,7 @@ jobs:
     name: Build distribution
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,6 +67,7 @@ jobs:
   test-local-apiserver:
     name: Test local apiserver
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -73,10 +78,6 @@ jobs:
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
 
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
-
       - name: Test operator running locally
         run: |
           ./mvnw install -Poperator -pl :keycloak-operator -am
@@ -84,6 +85,7 @@ jobs:
   test-remote:
     name: Test remote
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     needs: [build]
     strategy:
           matrix:
@@ -100,10 +102,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -146,6 +144,7 @@ jobs:
     name: Helm chart lint and smoke render
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,10 +154,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -214,6 +209,7 @@ jobs:
     name: Helm chart install on Kubernetes
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -223,10 +219,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -286,6 +278,7 @@ jobs:
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -295,10 +288,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -396,6 +385,7 @@ jobs:
   test-kustomize:
     name: Test kustomize installation
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -409,10 +399,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -523,8 +509,11 @@ jobs:
       - test-olm
       - test-kustomize
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}
