@@ -180,6 +180,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
         updateEmail(user, context);
+        updateUsername(realm, user, context);
     }
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
@@ -208,6 +209,29 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             }
 
             user.setEmail(email);
+        }
+    }
+
+    protected void updateUsername(RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        if (authSession == null) {
+            return;
+        }
+
+        boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
+
+        if (!isNewUser && IdentityProviderSyncMode.FORCE.equals(getConfig().getSyncMode())) {
+            if (realm.isRegistrationEmailAsUsername()) {
+                String email = context.getEmail();
+                if (email != null && !email.equals(user.getUsername())) {
+                    user.setUsername(email);
+                }
+            } else if (realm.isEditUsernameAllowed()) {
+                String username = context.getUsername();
+                if (username != null && !username.equals(user.getUsername())) {
+                    user.setUsername(username);
+                }
+            }
         }
     }
 
