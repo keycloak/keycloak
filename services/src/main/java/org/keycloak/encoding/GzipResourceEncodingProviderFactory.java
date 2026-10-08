@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.keycloak.Config;
 import org.keycloak.common.Version;
@@ -26,6 +27,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
 
     private volatile File cacheDir;
     private volatile File previousCacheDir;
+    private final AtomicLong generation = new AtomicLong();
 
     @Override
     public ResourceEncodingProvider create(KeycloakSession session) {
@@ -53,7 +55,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     }
 
     @Override
-    public void clearCache() {
+    public synchronized void clearCache() {
         File prev = previousCacheDir;
         if (prev != null) {
             deleteDirectoryQuietly(prev);
@@ -100,7 +102,8 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     }
 
     private File createCacheDir() {
-        File dir = new File(cacheRoot(), Version.RESOURCES_VERSION + "-" + Time.currentTimeMillis());
+        // counter avoids directory name collisions when clearCache() is called twice within the same millisecond
+        File dir = new File(cacheRoot(), Version.RESOURCES_VERSION + "-" + Time.currentTimeMillis() + "-" + generation.incrementAndGet());
         dir.mkdirs();
         if (!dir.isDirectory()) {
             logger.warn("Failed to create gzip cache directory " + dir.getAbsolutePath());
