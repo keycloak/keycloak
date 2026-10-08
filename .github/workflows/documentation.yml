@@ -7,7 +7,6 @@ on:
       - dependabot/**
       - copilot/**
       - quarkus-next
-      - tmp/**
   pull_request:
   workflow_dispatch:
 
