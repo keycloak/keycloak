@@ -26,11 +26,17 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { useEffect, useState } from "react";
-import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import {
+  Controller,
+  FormProvider,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
+import { ConfirmDialogModal } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
@@ -48,6 +54,7 @@ import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/Co
 import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
 
 const TERMS_AND_CONDITIONS_ATTRIBUTE = "terms_and_conditions";
+const VERIFY_EMAIL = "VERIFY_EMAIL";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -92,7 +99,7 @@ export const UserForm = ({
     user?.attributes?.[TERMS_AND_CONDITIONS_ATTRIBUTE],
   );
 
-  const { handleSubmit, setValue, control, reset, formState } = form;
+  const { handleSubmit, setValue, getValues, control, reset, formState } = form;
   const { errors } = formState;
 
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
@@ -102,9 +109,43 @@ export const UserForm = ({
   const [locked, setLocked] = useState(isLocked);
   const navigate = useNavigate();
 
+  const requiredActions = useWatch({ control, name: "requiredActions" });
+  const previousRequiredActions = useRef<string[]>([]);
+  const verifyEmailConfirmed = useRef(false);
+  const [confirmVerifyEmail, setConfirmVerifyEmail] = useState(false);
+
   useEffect(() => {
+    previousRequiredActions.current = user?.requiredActions || [];
     setValue("requiredActions", user?.requiredActions || []);
   }, [user, setValue]);
+
+  useEffect(() => {
+    const actions = requiredActions || [];
+    const verifyEmailAdded =
+      !!user?.id &&
+      actions.includes(VERIFY_EMAIL) &&
+      !previousRequiredActions.current.includes(VERIFY_EMAIL) &&
+      !user.requiredActions?.includes(VERIFY_EMAIL);
+    previousRequiredActions.current = actions;
+    // Saving an existing user with a newly added Verify Email switches Email verified off, so ask first when the email is verified
+    if (verifyEmailAdded && getValues("emailVerified") && getValues("email")) {
+      verifyEmailConfirmed.current = false;
+      setConfirmVerifyEmail(true);
+    }
+  }, [requiredActions, getValues, user]);
+
+  const closeVerifyEmailDialog = () => {
+    if (!verifyEmailConfirmed.current) {
+      setValue(
+        "requiredActions",
+        (getValues("requiredActions") || []).filter(
+          (action) => action !== VERIFY_EMAIL,
+        ),
+        { shouldDirty: true },
+      );
+    }
+    setConfirmVerifyEmail(false);
+  };
 
   const unLockUser = async () => {
     try {
@@ -193,6 +234,20 @@ export const UserForm = ({
       className="pf-v5-u-mt-lg"
     >
       <FormProvider {...form}>
+        <ConfirmDialogModal
+          titleKey="verifyEmailOfVerifiedUserTitle"
+          continueButtonLabel="verifyEmailOfVerifiedUserConfirm"
+          open={confirmVerifyEmail}
+          toggleDialog={closeVerifyEmailDialog}
+          onConfirm={() => {
+            verifyEmailConfirmed.current = true;
+            setValue("emailVerified", false, { shouldDirty: true });
+          }}
+        >
+          {t("verifyEmailOfVerifiedUserMessage", {
+            email: getValues("email"),
+          })}
+        </ConfirmDialogModal>
         {open && (
           <GroupResourceContext value={adminClient.groups}>
             <GroupPickerDialog

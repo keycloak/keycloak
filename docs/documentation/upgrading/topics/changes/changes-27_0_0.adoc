@@ -231,6 +231,13 @@ Creating or updating a workflow now fails when `schedule.after` is not a duratio
 Previously, such values caused an internal server error, or they were stored and the scheduled runs failed or did not process any resources.
 Existing workflows with such values must be fixed before they can be updated, including when enabling or disabling them in the Admin Console.
 
+=== Adding the Verify Email required action resets Email verified
+
+When the `Verify Email` required action is newly added to an existing user through the Admin REST API or the Admin Console, {project_name} now also sets *Email verified* to off for that user, even if the same request sets it on.
+The user then receives a verification email at the next login.
+Previously, the action was completed at the next login without sending an email when the email address was already verified.
+Nothing changes when the action is disabled in the realm, when *Email verified* is switched on while the action is already pending, or when users are created or imported.
+
 === Organization Redirect URL now validated against the account client
 
 The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
