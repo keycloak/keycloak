@@ -33,6 +33,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -134,11 +135,26 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
 
         if (token.getCompoundOriginalAuthenticationSessionId() != null) {
-            // Email verified in other browser than the one originally started. Removing original authSession. This authenticationSession would be finished after requiredAction
+            // Email verified in other browser than the one originally started.
             AuthenticationSessionCompoundId origAuthSession = AuthenticationSessionCompoundId.encoded(token.getCompoundOriginalAuthenticationSessionId());
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, origAuthSession.getRootSessionId());
             if (rootAuthSession != null) {
-                session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+                ClientModel origClient = realm.getClientById(origAuthSession.getClientUUID());
+
+                boolean isRegistrationSession = false;
+                if (origClient != null) {
+                    AuthenticationSessionModel origAuthSessionModel = rootAuthSession.getAuthenticationSession(origClient, origAuthSession.getTabId());
+                    isRegistrationSession = origAuthSessionModel != null && "true".equals(origAuthSessionModel.getAuthNote(AuthenticationManager.NEW_USER_REGISTERED));
+                }
+
+                // Keep a registration session alive. The tab that started the registration is still showing the
+                // verify-email page, and removing its session here would make that tab fail with an expired code.
+                // Left in place, VerifyEmail.process() sees isEmailVerified()==true with NEW_USER_REGISTERED set
+                // and shows the verify-email-success page instead.
+                if (!isRegistrationSession) {
+                    // Removing original authSession. This authenticationSession would be finished after requiredAction
+                    session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+                }
             }
 
             if (nextAction == null) {

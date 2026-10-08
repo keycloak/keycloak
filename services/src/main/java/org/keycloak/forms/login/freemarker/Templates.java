@@ -46,6 +46,8 @@ public class Templates {
                 return "webauthn-authenticate.ftl";
             case LOGIN_VERIFY_EMAIL:
                 return "login-verify-email.ftl";
+            case LOGIN_VERIFY_EMAIL_SUCCESS:
+                return "login-verify-email-success.ftl";
             case LOGIN_IDP_LINK_CONFIRM:
                 return "login-idp-link-confirm.ftl";
             case LOGIN_IDP_LINK_CONFIRM_OVERRIDE:
