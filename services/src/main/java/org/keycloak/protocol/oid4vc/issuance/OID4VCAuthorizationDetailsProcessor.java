@@ -345,11 +345,13 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         IssuedVerifiableCredentialModel issuedCredential = createIssuedVerifiableCredential(userSession.getUser(), clientSessionCtx.getClientSession().getClient(), credentialScope);
         oid4vcAuthzDetailResponse.setIssuedCredentialId(issuedCredential.getId());
 
-        // The offer has served its purpose once the access token is bound to the issued
-        // credential. It is retained only in the server-side token request context so that
-        // all offer checks happen during token issuance.
+        // An authorization-code offer has served its purpose once the access token is bound
+        // to the issued credential. A pre-authorized-code offer remains available until it
+        // expires because its replay detection occurs during the token exchange.
         CredentialOfferState offerState = getCredentialOfferState(clientSessionCtx);
-        if (offerState != null && isLastOid4vcAuthorizationDetail(clientSessionCtx, oid4vcAuthzDetailResponse)) {
+        if (offerState != null
+                && !PRE_AUTH_GRANT_TYPE.equals(clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class))
+                && isLastOid4vcAuthorizationDetail(clientSessionCtx, oid4vcAuthzDetailResponse)) {
             session.getProvider(CredentialOfferStorage.class).removeOfferState(offerState);
         }
     }
