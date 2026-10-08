@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
@@ -285,18 +288,25 @@ public class CertificateValidator {
                 throw new GeneralSecurityException("Unable to load CRL because no crl path is defined");
             }
 
+            // Exception messages can reach the client, so the CRL location and loader details are only logged.
             CrlStorageProvider crlCache = session.getProvider(CrlStorageProvider.class);
-            final X509CRL crl = crlCache.get(cRLPath, this::loadCRL);
+            final X509CRL crl;
+            try {
+                crl = crlCache.get(cRLPath, this::loadCRL);
+            } catch (GeneralSecurityException | RuntimeException e) {
+                logger.errorf(e, "Unable to load CRL from \"%s\"", cRLPath);
+                throw new GeneralSecurityException("Unable to load CRL");
+            }
 
             if (crl == null) {
-                throw new GeneralSecurityException(String.format("Unable to load CRL from \"%s\"", cRLPath));
+                logger.errorf("Unable to load CRL from \"%s\"", cRLPath);
+                throw new GeneralSecurityException("Unable to load CRL");
             }
 
             if (crl.getNextUpdate() != null && crl.getNextUpdate().compareTo(new Date(Time.currentTimeMillis())) < 0) {
-                final String message = String.format("CRL from '%s' is not refreshed. Next update is %s.", cRLPath, crl.getNextUpdate());
-                logger.warn(message);
+                logger.warnf("CRL from '%s' is not refreshed. Next update is %s.", cRLPath, crl.getNextUpdate());
                 if (abortIfNonUpdated) {
-                    throw new GeneralSecurityException(message);
+                    throw new GeneralSecurityException("CRL is not refreshed");
                 }
             }
 
@@ -383,7 +393,13 @@ public class CertificateValidator {
             try {
                 String configDir = System.getProperty("jboss.server.config.dir");
                 if (configDir != null) {
-                    File f = new File(configDir + File.separator + relativePath);
+                    Path configPath = Paths.get(configDir).toAbsolutePath().normalize();
+                    Path crlPath = Paths.get(configDir + File.separator + relativePath).toAbsolutePath().normalize();
+                    if (!crlPath.startsWith(configPath)) {
+                        logger.warnf("Cannot load CRL from \"%s\" because it resolves outside of the configuration directory \"%s\"", relativePath, configPath);
+                        return null;
+                    }
+                    File f = crlPath.toFile();
                     if (f.isFile()) {
                         logger.debugf("Loading CRL from %s", f.getAbsolutePath());
 
@@ -395,6 +411,9 @@ public class CertificateValidator {
                         }
                     }
                 }
+            }
+            catch (InvalidPathException ex) {
+                logger.warnf("Cannot load CRL from \"%s\": %s", relativePath, ex.getMessage());
             }
             catch(IOException ex) {
                 logger.errorf(ex.getMessage());
