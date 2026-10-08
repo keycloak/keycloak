@@ -309,8 +309,16 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   };
 
   const resolveCredentialLifetime = () => {
-    // Prefer the form value so validation matches what will be submitted; fall
-    // back to the saved attribute while the form is still empty (first render).
+    const rawLifetime = form.getValues(
+      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+        "attributes.vc.expiry_in_seconds",
+      ),
+    );
+    // A cleared field is submitted as null, so the backend falls back to its one-year
+    // default; only an untouched (undefined) field may still read the saved attribute.
+    if (typeof rawLifetime === "string" && rawLifetime.trim() === "") {
+      return VC_EXPIRY_DEFAULT_SECONDS;
+    }
     const lifetimeFromForm = readFormSeconds("attributes.vc.expiry_in_seconds");
     if (lifetimeFromForm !== undefined) {
       return lifetimeFromForm;
