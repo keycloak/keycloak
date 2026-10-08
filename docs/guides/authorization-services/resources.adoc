@@ -1,5 +1,38 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Managing resources and scopes"
+priority=40
+summary="Create and manage protected resources and their associated scopes.">
+
+[[_resource_overview]]
+Resource management is straightforward and generic. After creating a resource server, you can start creating the resources and scopes that you want to protect.
+Resources and scopes can be managed by navigating to the *Resource* and *Authorization Scopes* tabs, respectively.
+
+[[_resource_view]]
+== Viewing resources
+
+On the *Resource* page, you see a list of the resources associated with a resource server.
+
+.Resources
+image::resource/view.png[alt="Resources"]
+
+The resource list provides information about the protected resources, such as:
+
+* Type
+* Owner
+* URIs
+* Associated scopes, if any
+* Associated permissions
+
+From this list, you can also directly create a permission by clicking *Create Permission* for the resource for which you want to create the permission.
+
+[NOTE]
+Before creating permissions for your resources, be sure you have already defined the policies that you want to associate with the permission.
+
 [[_resource_create]]
-= Creating resources
+== Creating resources
 
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to managing permissions.
@@ -7,7 +40,7 @@ be created to represent a set of one or more resources and the way you define th
 To create a new resource, click *Create resource*.
 
 .Add resource
-image:images/resource/create.png[alt="Add resource"]
+image::resource/create.png[alt="Add resource"]
 
 In {project_name}, a resource defines a small set of information that is common to different types of resources, such as:
 
@@ -39,7 +72,7 @@ Wildcards (`+*+`) are only supported as a trailing `+/*+` or as a suffix `+/*.ex
 +
 One or more scopes to associate with the resource.
 
-== Resource attributes
+=== Resource attributes
 
 Resources may have attributes associated with them. These attributes can be used to provide additional information about
 a resource and to provide additional information to policies when evaluating permissions associated with a resource.
@@ -47,17 +80,17 @@ a resource and to provide additional information to policies when evaluating per
 Each attribute is a key and value pair where the value can be a set of one or many strings. Multiple values can be defined for an attribute by separating each value with a comma.
 
 
-== Typed resources
+=== Typed resources
 
 The type field of a resource can be used to group different resources together, so they can be protected using a common set of permissions.
 
-== Resource owners
+=== Resource owners
 
 Resources also have an owner. By default, resources are owned by the resource server.
 
 However, resources can also be associated with users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
 
-== Managing resources remotely
+=== Managing resources remotely
 
 Resource management is also exposed through the <<_service_protection_api, Protection API>> to allow resource servers to remotely manage their resources.
 
@@ -67,3 +100,5 @@ specify the user identifier to configure a resource as belonging to a specific u
 [NOTE]
 {project_name} provides resource servers complete control over their resources. In the future, we should be able to
 allow users to control their own resources as well as approve authorization requests and manage permissions, especially when using the UMA protocol.
+
+</@tmpl.guide>
