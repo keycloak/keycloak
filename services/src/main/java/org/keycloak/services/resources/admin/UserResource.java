@@ -461,7 +461,8 @@ public class UserResource {
     })
     public Stream<UserSessionRepresentation> getSessions() {
         auth.users().requireView(user);
-        return session.sessions().getUserSessionsStream(realm, user).map(ModelToRepresentation::toRepresentation);
+        return session.sessions().getUserSessionsStream(realm, user)
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView));
     }
 
     /**
@@ -486,6 +487,7 @@ public class UserResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
+        auth.clients().requireView(client);
         return new UserSessionManager(session).findOfflineSessionsStream(realm, user)
                 .map(session -> toUserSessionRepresentation(session, clientUuid))
                 .filter(Objects::nonNull);
@@ -592,10 +594,13 @@ public class UserResource {
     public Stream<Map<String, Object>> getConsents() {
         auth.users().requireView(user);
 
-        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user).stream()
+                .filter(auth.clients()::canView)
+                .collect(Collectors.toSet());
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
         List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
+                .filter(ucm -> auth.clients().canView(ucm.getClient()))
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());
@@ -1306,7 +1311,7 @@ public class UserResource {
      * client.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, final String clientUuid) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView);
         // Update lastSessionRefresh with the timestamp from clientSession
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
         if (clientSession == null) {

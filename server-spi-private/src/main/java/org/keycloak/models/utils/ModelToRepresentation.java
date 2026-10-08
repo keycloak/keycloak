@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -841,6 +842,18 @@ public class ModelToRepresentation {
     }
 
     public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
+        return toRepresentation(session, client -> true);
+    }
+
+    /**
+     * Converts the specified {@link UserSessionModel} into a {@link UserSessionRepresentation}, listing only the clients
+     * accepted by {@code clientFilter}.
+     *
+     * @param session the model to be converted.
+     * @param clientFilter decides which of the session's clients are included in the representation.
+     * @return a reference to the constructed representation.
+     */
+    public static UserSessionRepresentation toRepresentation(UserSessionModel session, Predicate<ClientModel> clientFilter) {
         UserSessionRepresentation rep = new UserSessionRepresentation();
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
@@ -851,7 +864,9 @@ public class ModelToRepresentation {
         rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
-            rep.getClients().put(client.getId(), client.getClientId());
+            if (clientFilter.test(client)) {
+                rep.getClients().put(client.getId(), client.getClientId());
+            }
         }
         rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;

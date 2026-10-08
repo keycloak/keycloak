@@ -603,7 +603,7 @@ public class ClientResource {
                         .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
                         .filter(userSession -> auth.users().canView(userSession.getUser())),
                 computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView));
     }
 
     /**
@@ -950,7 +950,7 @@ public class ClientResource {
      * @return a reference to the constructed representation.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView);
 
         // Update lastSessionRefresh with the timestamp from clientSession
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
