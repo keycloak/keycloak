@@ -72,6 +72,9 @@
             <includes>
                 <include>**/**</include>
             </includes>
+            <excludes>
+                <exclude>*-cyclonedx.json</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>src/main/content/conf</directory>
@@ -114,5 +117,24 @@
             <outputDirectory>conf</outputDirectory>
         </file>
     </files>
+
+    <!-- Generate an SBOM for the assembly archive -->
+    <containerDescriptorHandlers>
+        <containerDescriptorHandler>
+            <handlerName>sbom</handlerName>
+            <configuration>
+                <!-- External SBOMs to merge -->
+                <externalSboms>../../js/target/js-sbom.cdx.json,../server/target/lib/quarkus-run-cyclonedx.json</externalSboms>
+                <!-- Where to store the SBOM: embedded - as an archive entry, external - as an external file, all - both -->
+                <outputMode>all</outputMode>
+                <!-- Whether to manifest libraries only, skipping miscellaneous files
+                <librariesOnly>true</librariesOnly-->
+                <!-- Whether to pretty-print the JSON
+                <prettyPrint>true</prettyPrint-->
+                <!-- Whether to attach external SBOM file as a Maven artifact
+                <attach>true</attach-->
+            </configuration>
+        </containerDescriptorHandler>
+    </containerDescriptorHandlers>
 
 </assembly>
