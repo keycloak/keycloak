@@ -187,12 +187,20 @@ const FormField = ({
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
+  const hasDedicatedInputComponent =
+    inputType === "textarea" ||
+    inputType === "select" ||
+    inputType === "multiselect" ||
+    inputType === "select-radiobuttons" ||
+    inputType === "multiselect-checkboxes";
+  const shouldRenderMultiInput =
+    !hasDedicatedInputComponent &&
+    (attribute.multivalued ||
+      (isMultiValue(value) && attribute.annotations?.inputType === undefined));
 
-  const Component =
-    attribute.multivalued ||
-    (isMultiValue(value) && attribute.annotations?.inputType === undefined)
-      ? FIELDS["multi-input"]
-      : FIELDS[inputType];
+  const Component = shouldRenderMultiInput
+    ? FIELDS["multi-input"]
+    : FIELDS[inputType];
 
   if (attribute.name === "locale")
     return (
