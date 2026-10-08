@@ -25,6 +25,27 @@ URL that the Relying Party Client provides to the End-User to read about how the
 
 URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service.
 
+*Per-client signing key selection*
+
+By default, {project_name} signs tokens using the realm's active signing key. You can override this behavior for individual clients by selecting a specific signing key in the *Fine Grain OpenID Connect Configuration* section. This is useful for <<_rotating-keys-gradually,rotating keys gradually>>.
+
+The following signing key fields are available:
+
+* *Access token signing key* — Used for access tokens.
+* *ID token signing key* — Used for ID tokens and logout tokens.
+* *User info signing key* — Used for signed UserInfo responses.
+* *Authorization response signing key* — Used for JARM (JWT Secured Authorization Response Mode) responses.
+
+[NOTE]
+====
+If the selected key is passive, disabled, not found, or does not match the signature algorithm, {project_name} falls back to the realm's active signing key.
+====
+
+[WARNING]
+====
+Make sure the selected signing key matches the signature algorithm configured for that token type. If you set a signing key for one token type, consider whether other token types using the same algorithm should also be configured.
+====
+
 [[_jwe-id-token-encryption]]
 *Signed and Encrypted ID Token Support*
 
