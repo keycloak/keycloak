@@ -5,6 +5,8 @@
 
 		<#if attribute.name=='locale' && realm.internationalizationEnabled && locale.currentLanguageTag?has_content>
 			<input type="hidden" id="${attribute.name}" name="${attribute.name}" value="${locale.currentLanguageTag}"/>
+		<#elseif attribute.annotations.inputType! == 'hidden'>
+			<input type="hidden" id="${attribute.name}" name="${attribute.name}" value="${attribute.value!attribute.defaultValue!''}"/>
 		<#else>
 
 			<#assign group = (attribute.group)!"">

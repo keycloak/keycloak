@@ -221,7 +221,7 @@ const FormField = ({
 
 const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
-function determineInputType(
+export function determineInputType(
   attribute: UserProfileAttributeMetadata,
 ): InputType {
   const inputType = attribute.annotations?.inputType;

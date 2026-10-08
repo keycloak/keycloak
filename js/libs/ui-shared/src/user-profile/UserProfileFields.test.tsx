@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { afterEach, describe, it, expect } from "vitest";
 import { HiddenComponent } from "./HiddenComponent";
-import { FIELDS } from "./UserProfileFields";
+import { FIELDS, determineInputType } from "./UserProfileFields";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -24,6 +24,62 @@ const Harness = ({
   const form = useForm();
   return <FormProvider {...form}>{children(form)}</FormProvider>;
 };
+
+// ─── determineInputType ─────────────────────────────────────────────────────
+
+describe("determineInputType", () => {
+  it("returns 'hidden' for a regular attribute annotated as hidden", () => {
+    expect(
+      determineInputType(attr({ name: "customField", annotations: { inputType: "hidden" } })),
+    ).toBe("hidden");
+  });
+
+  it("returns 'hidden' for a root attribute (username) annotated as hidden, overriding the text fallback", () => {
+    expect(
+      determineInputType(attr({ name: "username", annotations: { inputType: "hidden" } })),
+    ).toBe("hidden");
+  });
+
+  it("returns 'hidden' for a root attribute (email) annotated as hidden", () => {
+    expect(
+      determineInputType(attr({ name: "email", annotations: { inputType: "hidden" } })),
+    ).toBe("hidden");
+  });
+
+  it("returns 'text' for a root attribute (username) with a non-hidden annotation", () => {
+    expect(
+      determineInputType(attr({ name: "username", annotations: { inputType: "textarea" } })),
+    ).toBe("text");
+  });
+
+  it("returns 'text' for a root attribute with no annotation", () => {
+    expect(determineInputType(attr({ name: "firstName" }))).toBe("text");
+  });
+
+  it("returns 'hidden' for a multivalued attribute annotated as hidden", () => {
+    expect(
+      determineInputType(
+        attr({ name: "tags", multivalued: true, annotations: { inputType: "hidden" } }),
+      ),
+    ).toBe("hidden");
+  });
+
+  it("returns 'hidden' for a locale attribute annotated as hidden", () => {
+    expect(
+      determineInputType(attr({ name: "locale", annotations: { inputType: "hidden" } })),
+    ).toBe("hidden");
+  });
+
+  it("returns 'text' for a non-root attribute with no annotation", () => {
+    expect(determineInputType(attr({ name: "customField" }))).toBe("text");
+  });
+
+  it("returns the annotated type for a non-root attribute with a valid annotation", () => {
+    expect(
+      determineInputType(attr({ name: "bio", annotations: { inputType: "textarea" } })),
+    ).toBe("textarea");
+  });
+});
 
 // ─── HiddenComponent ────────────────────────────────────────────────────────
 
