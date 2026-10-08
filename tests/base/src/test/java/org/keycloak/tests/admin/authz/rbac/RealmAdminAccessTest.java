@@ -1,7 +1,9 @@
 package org.keycloak.tests.admin.authz.rbac;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -62,6 +64,114 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             runAs(realmName, client.getClientId(), username, userClient -> {
                 userClient.realm(realmName).clients().findAll();
             });
+        });
+    }
+
+    @Test
+    public void testGroupsInRoleFiltersGroupsCallerCannotView() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+
+        testRealm.roles().create(RoleConfigBuilder.create().name("shared-role").build());
+
+        ClientRepresentation appClient = new ClientRepresentation();
+        appClient.setClientId("app1");
+        appClient.setEnabled(true);
+        String appClientId;
+        try (Response response = testRealm.clients().create(appClient)) {
+            appClientId = ApiUtil.getCreatedId(response);
+        }
+        testRealm.clients().get(appClientId).roles().create(RoleConfigBuilder.create().name("app-role").build());
+
+        GroupRepresentation secretGroup = new GroupRepresentation();
+        secretGroup.setName("secret-group");
+        secretGroup.setAttributes(Map.of("cost-center", List.of("CONFIDENTIAL-4471")));
+        String secretGroupId;
+        try (Response response = testRealm.groups().add(secretGroup)) {
+            secretGroupId = ApiUtil.getCreatedId(response);
+        }
+        GroupRepresentation visibleGroup = new GroupRepresentation();
+        visibleGroup.setName("visible-group");
+        String visibleGroupId;
+        try (Response response = testRealm.groups().add(visibleGroup)) {
+            visibleGroupId = ApiUtil.getCreatedId(response);
+        }
+
+        RoleRepresentation sharedRole = testRealm.roles().get("shared-role").toRepresentation();
+        RoleRepresentation appRole = testRealm.clients().get(appClientId).roles().get("app-role").toRepresentation();
+        testRealm.groups().group(secretGroupId).roles().realmLevel().add(List.of(sharedRole));
+        testRealm.groups().group(secretGroupId).roles().clientLevel(appClientId).add(List.of(appRole));
+        testRealm.groups().group(visibleGroupId).roles().realmLevel().add(List.of(sharedRole));
+
+        // Delegated admin can search groups and view the role containers, but cannot view any group.
+        String username = "limited-admin";
+        createUser(testRealm, username);
+        grantRealmManagementRole(testRealm, username, AdminRoles.QUERY_GROUPS);
+        grantRealmManagementRole(testRealm, username, AdminRoles.VIEW_REALM);
+        grantRealmManagementRole(testRealm, username, AdminRoles.VIEW_CLIENTS);
+
+        // A full-access admin still sees every group holding the role (no regression).
+        Set<String> groupsForFullAdmin = testRealm.roles().get("shared-role").getRoleGroupMembers().stream()
+                .map(GroupRepresentation::getName).collect(Collectors.toSet());
+        assertEquals(Set.of("secret-group", "visible-group"), groupsForFullAdmin);
+
+        runAs(realmName, "admin-cli", username, userClient -> {
+            RealmResource realm = userClient.realm(realmName);
+
+            // Control: the same caller is denied direct access to the groups.
+            assertForbidden("delegated admin must not view a group directly",
+                    () -> realm.groups().group(secretGroupId).toRepresentation());
+
+            // The role-groups endpoints must not disclose groups the caller cannot view,
+            // including with full representations (attributes and role mappings).
+            assertTrue(realm.roles().get("shared-role").getRoleGroupMembers(false, 0, 100).isEmpty(),
+                    "realm role groups endpoint disclosed groups the caller cannot view");
+            String appId = realm.clients().findByClientId("app1").get(0).getId();
+            assertTrue(realm.clients().get(appId).roles().get("app-role").getRoleGroupMembers(false, 0, 100).isEmpty(),
+                    "client role groups endpoint disclosed groups the caller cannot view");
+        });
+
+        // Once the delegated admin is allowed to view groups, the same endpoints must return them:
+        // the filter tightens access without over-restricting an authorized caller.
+        grantRealmManagementRole(testRealm, username, AdminRoles.VIEW_USERS);
+
+        runAs(realmName, "admin-cli", username, userClient -> {
+            RealmResource realm = userClient.realm(realmName);
+
+            realm.groups().group(secretGroupId).toRepresentation();
+
+            GroupRepresentation secret = realm.roles().get("shared-role").getRoleGroupMembers(false, 0, 100).stream()
+                    .filter(g -> "secret-group".equals(g.getName())).findFirst().orElseThrow();
+            assertEquals(Set.of("secret-group", "visible-group"),
+                    realm.roles().get("shared-role").getRoleGroupMembers(false, 0, 100).stream()
+                            .map(GroupRepresentation::getName).collect(Collectors.toSet()));
+            // A caller allowed to view the group and the mapped roles sees them in the full representation.
+            assertEquals(List.of("shared-role"), secret.getRealmRoles());
+            assertEquals(Map.of("app1", List.of("app-role")), secret.getClientRoles());
+
+            String appId = realm.clients().findByClientId("app1").get(0).getId();
+            Set<String> clientRoleGroups = realm.clients().get(appId).roles().get("app-role").getRoleGroupMembers(false, 0, 100).stream()
+                    .map(GroupRepresentation::getName).collect(Collectors.toSet());
+            assertEquals(Set.of("secret-group"), clientRoleGroups);
+        });
+
+        // A caller allowed to view the group but not a role mapped to it must not see that role in
+        // the representation: the group's app-role (client role) is filtered out because this admin
+        // cannot view the client or map the role.
+        String roleLimited = "role-limited-admin";
+        createUser(testRealm, roleLimited);
+        grantRealmManagementRole(testRealm, roleLimited, AdminRoles.VIEW_REALM);
+        grantRealmManagementRole(testRealm, roleLimited, AdminRoles.VIEW_USERS);
+
+        runAs(realmName, "admin-cli", roleLimited, userClient -> {
+            RealmResource realm = userClient.realm(realmName);
+
+            GroupRepresentation secret = realm.roles().get("shared-role").getRoleGroupMembers(false, 0, 100).stream()
+                    .filter(g -> "secret-group".equals(g.getName())).findFirst().orElseThrow();
+
+            assertEquals(List.of("shared-role"), secret.getRealmRoles());
+            assertTrue(secret.getClientRoles() == null || secret.getClientRoles().isEmpty(),
+                    "client role mapping the caller cannot view must be filtered from the group representation");
         });
     }
 
