@@ -4,7 +4,7 @@ In Keycloak 17.0.0 the new Quarkus based distribution of Keycloak, while the Wil
 With this release the WildFly distribution has been removed, and is no longer supported.
 
 If you are still using the WildFly distribution we highly encourage migrating to the Quarkus distribution as soon as
-possible, see the https://www.keycloak.org/migration/migrating-to-quarkus[Migration Guide] for more details.
+possible.
 
 = New Keycloak Operator upgrade
 
