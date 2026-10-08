@@ -24,6 +24,8 @@ if [ $? -ne 0 ]; then
 fi
 echo "Tests: $TESTS"
 export JAVA_HOME="/etc/alternatives/java_sdk_${JAVA_VERSION}"
+# GitHub Actions VMs may not reliably support RDSEED; use pure-Java bc-fips implementations
+export JAVA_OPTS_APPEND="-Dorg.bouncycastle.native.cpu_variant=java"
 set -o pipefail
 
 # Build adapter distributions
