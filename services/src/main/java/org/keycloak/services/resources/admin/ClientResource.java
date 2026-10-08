@@ -78,6 +78,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -97,6 +98,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
@@ -184,7 +186,7 @@ public class ClientResource {
                 OIDCClientSecretConfigWrapper.fromClientModel(client).removeClientSecretRotationInfo();
             }
 
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+            adminEvent.resource(ResourceType.CLIENT).operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client already exists");
@@ -936,7 +938,16 @@ public class ClientResource {
                         throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
                     }
                 }
-                authorization().enable(false);
+                AuthorizationService authorizationService = authorization();
+                authorizationService.enable(false);
+
+                ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+
+                if (authorizationSettings != null) {
+                    // Import mutates settings, so preserve the submitted representation for the client admin event.
+                    authorizationService.getResourceServerService().importSettings(
+                            JsonSerialization.mapper.convertValue(authorizationSettings, ResourceServerRepresentation.class));
+                }
             } else {
                 authorization().disable();
             }
