@@ -25,6 +25,18 @@ This applies to the CRL Path option and to CRL distribution points that contain 
 
 If a CRL file is stored outside the `conf` directory, move or mount the file into the `conf` directory and set the CRL Path option to the file path relative to that directory.
 
+=== Limiting the size of CRL and OCSP responses for X.509 authenticators
+
+Previously, {project_name} applied a general limit to the size of responses received from external HTTP servers. Starting with this release, the same limit also applies when X.509 authenticators load CRLs over HTTP or communicate with OCSP servers. By default, responses are limited to 10 MB to help prevent denial-of-service attacks.
+
+You can use the following provider option to increase or decrease the limit.
+
+.Restricting the consumed responses to 1 MB
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
+----
+
 === Mandatory signature validation for OIDC identity provider backchannel logout tokens
 
 {project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
