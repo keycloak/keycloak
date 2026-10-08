@@ -9,6 +9,8 @@ export async function searchItem(
 ) {
   await page
     .locator("table tbody")
+    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
+    .first()
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
@@ -39,7 +41,10 @@ async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
 
 export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
-  await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
+  await tableBody
+    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
+    .first()
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
 
