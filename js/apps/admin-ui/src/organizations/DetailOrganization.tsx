@@ -82,22 +82,20 @@ export default function DetailOrganization() {
     [id],
   );
 
-  const useTab = (tab: OrganizationTab) =>
-    useRoutableTab(
-      toEditOrganization({
-        realm,
-        id,
-        tab,
-      }),
-    );
+  const tab = (tab: OrganizationTab) =>
+    toEditOrganization({
+      realm,
+      id,
+      tab,
+    });
 
-  const settingsTab = useTab("settings");
-  const attributesTab = useTab("attributes");
-  const membersTab = useTab("members");
-  const groupsTab = useTab("groups");
-  const domainsTab = useTab("domains");
-  const identityProvidersTab = useTab("identityProviders");
-  const eventsTab = useTab("events");
+  const settingsTab = useRoutableTab(tab("settings"));
+  const attributesTab = useRoutableTab(tab("attributes"));
+  const membersTab = useRoutableTab(tab("members"));
+  const groupsTab = useRoutableTab(tab("groups"));
+  const domainsTab = useRoutableTab(tab("domains"));
+  const identityProvidersTab = useRoutableTab(tab("identityProviders"));
+  const eventsTab = useRoutableTab(tab("events"));
 
   const { hasAccess } = useAccess();
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
