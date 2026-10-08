@@ -45,11 +45,13 @@ import org.keycloak.crypto.hash.Argon2Parameters;
 import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.jpa.entities.CredentialEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -70,7 +72,10 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -241,6 +246,124 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(credentialId, credential.getId());
         assertArrayEquals(salt, credential.getPasswordSecretData().getSalt());
+    }
+
+    @Test
+    public void testPasswordNotRehashedWithArgon2PolicyIterations() {
+        Assume.assumeTrue("Argon2 tests skipped in FIPS mode", notFips());
+
+        setPasswordPolicy("hashIterations(2)");
+
+        String username = "testPasswordNotRehashedWithArgon2PolicyIterations";
+        final String password = createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+        assertEquals(Argon2PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+        assertEquals(2, credential.getPasswordCredentialData().getHashIterations());
+        byte[] salt = credential.getPasswordSecretData().getSalt();
+
+        oauth.openLoginForm();
+        loginPage.login(username, password);
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        // A hash created with the policy's iterations is up to date, so the login must not re-hash it
+        credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+        assertArrayEquals(salt, credential.getPasswordSecretData().getSalt());
+    }
+
+    @Test
+    public void testPasswordChangedAfterValidationInSameTransactionNotReverted() {
+        setPasswordPolicy("hashIterations(1)");
+
+        String username = "testPasswordChangedAfterValidationInSameTransaction";
+        final String oldPassword = createUser(username);
+        final String newPassword = generatePassword();
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy("hashIterations(2)");
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+            assertTrue(user.credentialManager().updateCredential(UserCredentialModel.password(newPassword)));
+        });
+
+        // The queued re-hash of the old password must not overwrite the new password after the commit
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
+    }
+
+    @Test
+    public void testPasswordChangedConcurrentlyAfterValidationNotReverted() {
+        setPasswordPolicy("hashIterations(1)");
+
+        String username = "testPasswordChangedConcurrentlyAfterValidation";
+        final String oldPassword = createUser(username);
+        final String newPassword = generatePassword();
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy("hashIterations(2)");
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+
+            // Another request changes the password and commits before this one does
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), otherSession -> {
+                UserModel otherUser = otherSession.users().getUserByUsername(otherSession.getContext().getRealm(), username);
+                assertTrue(otherUser.credentialManager().updateCredential(UserCredentialModel.password(newPassword)));
+            });
+        });
+
+        // The queued re-hash of the old password must not overwrite the new password after the commit
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
+    }
+
+    @Test
+    public void testPasswordChangedWhileRehashingNotReverted() {
+        String algorithm = "hashAlgorithm(" + PasswordChangingHashProviderFactory.ID + ")";
+        setPasswordPolicy(algorithm + " and hashIterations(1)");
+
+        String username = "testPasswordChangedWhileRehashing";
+        final String oldPassword = createUser(username);
+        final String newPassword = generatePassword();
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy(algorithm + " and hashIterations(2)");
+
+        // Another request changes the password and commits while the queued re-hash computes the new hash.
+        // Configured in a separate transaction, so that the validating transaction only reads, like a login.
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE, username);
+            realm.setAttribute(PasswordChangingHashProviderFactory.PASSWORD_ATTRIBUTE, newPassword);
+        });
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+        });
+
+        // The re-hash of the old password must not overwrite the new password
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertNull(realm.getAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE), "Password must have been changed while re-hashing");
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
     }
 
     @Test
