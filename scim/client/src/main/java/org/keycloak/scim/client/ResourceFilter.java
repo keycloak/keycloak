@@ -1,5 +1,7 @@
 package org.keycloak.scim.client;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
+
 /**
  * Fluent builder for SCIM filter expressions. Supports all SCIM filter operators and logical combinations.
  *
@@ -118,7 +120,6 @@ public class ResourceFilter {
     }
 
     private String quote(String value) {
-        // Escape backslashes and quotes
-        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        return "\"" + new String(JsonStringEncoder.getInstance().quoteAsString(value)) + "\"";
     }
 }
