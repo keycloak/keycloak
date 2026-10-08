@@ -19,6 +19,7 @@ package org.keycloak.storage.federated;
 import java.util.stream.Stream;
 
 import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 
 public interface UserVerifiableCredentialFederatedStorage {
@@ -107,6 +108,14 @@ public interface UserVerifiableCredentialFederatedStorage {
      * @return true if removed, false if not found or not owned by the user
      */
     boolean removeIssuedVerifiableCredential(String userId, String issuedCredentialId);
+
+    /**
+     * Remove all issued verifiable credentials for a specific federated user.
+     *
+     * @param realm the realm of the user
+     * @param userId the ID of the federated user owning the credentials
+     */
+    void removeIssuedVerifiableCredentials(RealmModel realm, String userId);
 
     /**
      *  Remove expired issued verifiable credentials for all users.

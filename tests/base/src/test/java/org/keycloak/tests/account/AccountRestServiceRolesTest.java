@@ -135,6 +135,46 @@ public class AccountRestServiceRolesTest {
     }
 
     @Test
+    public void revokeAllIssuedCredentials() throws IOException {
+        String username = "manage-account-user";
+        String userId = realm.admin().users().searchByUsername(username, true).get(0).getId();
+        String otherUserId = realm.admin().users().searchByUsername("other-manage-account-user", true).get(0).getId();
+        createIssuedVerifiableCredentials(userId, 2);
+        createIssuedVerifiableCredentials(otherUserId, 1);
+
+        assertDeleteAllEndpointStatus(username, 204);
+        assertEquals(0, countIssuedCredentials(userId));
+        assertEquals(1, countIssuedCredentials(otherUserId), "Credentials of another user must not be deleted");
+
+        assertDeleteAllEndpointStatus("other-manage-account-user", 204);
+        assertEquals(0, countIssuedCredentials(otherUserId), "Test must not leave issued credentials behind");
+
+        // Revoking an empty collection is idempotent.
+        assertDeleteAllEndpointStatus(username, 204);
+    }
+
+    @Test
+    public void revokeAllIssuedCredentialsWithManageVerifiableCredentialsRole() throws IOException {
+        String username = "manage-verifiable-credentials-user";
+        String userId = realm.admin().users().searchByUsername(username, true).get(0).getId();
+        createIssuedVerifiableCredentials(userId, 2);
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+
+        assertDeleteAllEndpointStatus(username, 204);
+        assertEquals(0, countIssuedCredentials(userId));
+    }
+
+    @Test
+    public void revokeAllIssuedCredentialsRoleEnforced() throws IOException {
+        String username = "no-access-user";
+        String userId = realm.admin().users().searchByUsername(username, true).get(0).getId();
+        createIssuedVerifiableCredentials(userId, 2);
+
+        assertDeleteAllEndpointStatus(username, 403);
+        assertEquals(2, countIssuedCredentials(userId), "Credentials must not be deleted without the required role");
+    }
+
+    @Test
     public void accountConsoleFeaturesForManageAccountUser() throws IOException {
         assertAccountConsoleFeatures("manage-account-user", true, true);
         JsonNode features = getAccountConsoleFeatures("manage-account-user");
@@ -280,14 +320,29 @@ public class AccountRestServiceRolesTest {
     }
 
     private String createIssuedVerifiableCredential(String userId) {
-        return runOnServer.fetch(session -> {
-            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(null, "test-scope");
-            vcModel.setRevision("rev-1");
-            UserVerifiableCredentialModel addedVc = session.users().addVerifiableCredential(userId, vcModel);
+        return createIssuedVerifiableCredentials(userId, 1);
+    }
 
-            IssuedVerifiableCredentialModel issuedVc = new IssuedVerifiableCredentialModel(userId, addedVc.getId(), "wallet-client");
-            issuedVc.setRevision("rev-1");
-            return session.users().addIssuedVerifiableCredential(issuedVc).getId();
+    private String createIssuedVerifiableCredentials(String userId, int count) {
+        return runOnServer.fetch(session -> {
+            UserVerifiableCredentialModel vcModel = session.users()
+                    .getVerifiableCredentialByClientScope(userId, "test-scope");
+            if (vcModel == null) {
+                vcModel = new UserVerifiableCredentialModel(null, "test-scope");
+                vcModel.setRevision("rev-1");
+                vcModel = session.users().addVerifiableCredential(userId, vcModel);
+            }
+
+            String firstCredentialId = null;
+            for (int i = 0; i < count; i++) {
+                IssuedVerifiableCredentialModel issuedVc = new IssuedVerifiableCredentialModel(userId, vcModel.getId(), "wallet-client");
+                issuedVc.setRevision("rev-" + i);
+                String credentialId = session.users().addIssuedVerifiableCredential(issuedVc).getId();
+                if (firstCredentialId == null) {
+                    firstCredentialId = credentialId;
+                }
+            }
+            return firstCredentialId;
         }, String.class);
     }
 
@@ -296,10 +351,18 @@ public class AccountRestServiceRolesTest {
     }
 
     private void assertDeleteEndpointStatus(String username, String credentialId, int expectedStatus) throws IOException {
+        assertDeleteIssuedCredentialsEndpointStatus(username, "/" + credentialId, expectedStatus);
+    }
+
+    private void assertDeleteAllEndpointStatus(String username, int expectedStatus) throws IOException {
+        assertDeleteIssuedCredentialsEndpointStatus(username, "", expectedStatus);
+    }
+
+    private void assertDeleteIssuedCredentialsEndpointStatus(String username, String pathSuffix, int expectedStatus) throws IOException {
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(username, PASSWORD);
         assertTrue(tokenResponse.isSuccess(), "Token request failed for " + username + ": " + tokenResponse.getErrorDescription());
 
-        HttpDelete request = new HttpDelete(realm.getBaseUrl() + "/account/issued-verifiable-credentials/" + credentialId);
+        HttpDelete request = new HttpDelete(realm.getBaseUrl() + "/account/issued-verifiable-credentials" + pathSuffix);
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken());
         request.addHeader(HttpHeaders.ACCEPT, "application/json");
 

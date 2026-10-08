@@ -1059,6 +1059,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public void removeIssuedVerifiableCredentials(RealmModel realm, String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            localStorage().removeIssuedVerifiableCredentials(realm, userId);
+        } else if (getFederatedStorage() != null) {
+            getFederatedStorage().removeIssuedVerifiableCredentials(realm, userId);
+        }
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         localStorage().removeExpiredIssuedVerifiableCredentials();
         if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
