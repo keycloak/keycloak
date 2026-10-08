@@ -192,6 +192,12 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         JSONWebKeySet jwks = issuerMetadata.getJwks();
 
         if (jwks == null && jwksUri != null) {
+            // The JWKS URI yields the keys that verify the issuer-signed JWT, so it must be
+            // retrieved over HTTPS just like the issuer metadata endpoint that published it.
+            if (!jwksUri.startsWith("https://")) {
+                throw new VerificationException("HTTPS URI required to retrieve issuer JWKS");
+            }
+
             // Dereference JWKS URI
             JsonNode jwksNode = fetchData(jwksUri);
 

@@ -183,6 +183,23 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
+    public void shouldRejectNonHttpsJwksUri() throws JsonProcessingException {
+        String issuerUri = "https://issuer.example.com";
+
+        // Metadata delegates key resolution to a cleartext-http JWKS URI
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.put("jwks_uri", "http://issuer.example.com/api/vci/jwks");
+
+        genericTestShouldFail(
+                exampleIssuerSignedJwt(),
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                "HTTPS URI required to retrieve issuer JWKS",
+                null
+        );
+    }
+
+    @Test
     public void shouldFailOnUnexpectedIssuerExposed() throws JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
 
