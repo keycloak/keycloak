@@ -96,7 +96,11 @@ const ClientDetailHeader = ({
   toggleDownloadDialog,
   toggleDeleteDialog,
 }: ClientDetailHeaderProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const { addAlert, addError } = useAlerts();
+  const { realmRepresentation } = useRealm();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "disableConfirmClientTitle",
     messageKey: "disableConfirmClient",
@@ -104,6 +108,23 @@ const ClientDetailHeader = ({
     onConfirm: () => {
       onChange(!value);
       save();
+    },
+  });
+  const [toggleRevokeDialog, RevokeConfirm] = useConfirmDialog({
+    titleKey: "revokeIssuedCredentialsByWalletTitle",
+    messageKey: "revokeIssuedCredentialsByWalletConfirm",
+    onConfirm: async () => {
+      try {
+        await adminClient.clients.revokeIssuedVerifiableCredentials({
+          id: client.id!,
+        });
+        addAlert(
+          t("revokeIssuedCredentialsByWalletSuccess"),
+          AlertVariant.success,
+        );
+      } catch (error) {
+        addError("revokeIssuedCredentialsByWalletError", error);
+      }
     },
   });
 
@@ -135,6 +156,12 @@ const ClientDetailHeader = ({
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
 
+  const canRevokeIssuedCredentials =
+    isManager &&
+    isFeatureEnabled(Feature.OpenId4VCI) &&
+    realmRepresentation.verifiableCredentialsEnabled &&
+    client.attributes?.["oid4vci.enabled"] === "true";
+
   const dropdownItems = [
     <DropdownItem key="download" onClick={toggleDownloadDialog}>
       {t("downloadAdapterConfig")}
@@ -142,6 +169,17 @@ const ClientDetailHeader = ({
     <DropdownItem key="export" onClick={() => exportClient(client)}>
       {t("export")}
     </DropdownItem>,
+    ...(canRevokeIssuedCredentials
+      ? [
+          <DropdownItem
+            data-testid="revoke-issued-credentials"
+            key="revoke-issued-credentials"
+            onClick={toggleRevokeDialog}
+          >
+            {t("revokeIssuedCredentialsByWallet")}
+          </DropdownItem>,
+        ]
+      : []),
     ...(!isRealmClient(client) && isManager
       ? [
           <Divider key="divider" />,
@@ -159,6 +197,7 @@ const ClientDetailHeader = ({
   return (
     <>
       <DisableConfirm />
+      <RevokeConfirm />
       <ViewHeader
         titleKey={client.clientId!}
         subKey="clientsExplain"
