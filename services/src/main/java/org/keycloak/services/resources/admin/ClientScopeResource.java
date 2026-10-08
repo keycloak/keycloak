@@ -132,15 +132,20 @@ public class ClientScopeResource {
         if (rep.getProtocol() == null) {
             rep.setProtocol(clientScope.getProtocol());
         }
-        // Validate the effective scope that will be persisted: RepresentationToModel#updateClientScope merges the
-        // submitted attributes into the stored ones, so a partial update must not bypass cross-attribute checks.
-        ClientScopeResource.validateClientScope(session, mergeEffectiveAttributes(rep, clientScope));
-        validateParameterizedScopeUpdate(rep);
+        if (rep.getName() == null) {
+            // a partial update may omit the name; the protocol defaults and the name validation below need it
+            rep.setName(clientScope.getName());
+        }
+        LoginProtocolFactory loginProtocolFactory = //
+                (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
+                                                                                              rep.getProtocol());
+        // Fill the protocol defaults into the submission first, then validate the exact state the write below
+        // produces: stored attributes overlaid with the defaulted submission (an explicit null clears the attribute).
+        Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
+        ClientScopeRepresentation effective = mergeEffectiveAttributes(rep, clientScope);
+        ClientScopeResource.validateClientScope(session, effective);
+        validateParameterizedScopeUpdate(effective);
         try {
-            LoginProtocolFactory loginProtocolFactory = //
-                    (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
-                                                                                                  rep.getProtocol());
-            Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -274,9 +279,9 @@ public class ClientScopeResource {
     }
 
     /**
-     * Builds the representation of the client scope as it will exist after the update is persisted, so that
-     * validation sees the merged state: stored attributes overlaid with the submitted ones, where an explicit
-     * {@code null} clears the attribute. Mirrors {@code RepresentationToModel#updateClientScope}.
+     * Builds the representation of the client scope as the update will leave it: stored attributes overlaid with
+     * the defaulted submission. An explicit {@code null} is kept as a null value; both validation and
+     * {@code RepresentationToModel#updateClientScope} treat it as clearing the attribute.
      */
     private static ClientScopeRepresentation mergeEffectiveAttributes(ClientScopeRepresentation rep, ClientScopeModel clientScope) {
         ClientScopeRepresentation effective = new ClientScopeRepresentation();
@@ -291,13 +296,7 @@ public class ClientScopeResource {
             attributes.putAll(clientScope.getAttributes());
         }
         if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                if (entry.getValue() == null) {
-                    attributes.remove(entry.getKey());
-                } else {
-                    attributes.put(entry.getKey(), entry.getValue());
-                }
-            }
+            attributes.putAll(rep.getAttributes());
         }
         effective.setAttributes(attributes);
         return effective;
@@ -306,7 +305,7 @@ public class ClientScopeResource {
     /**
      * Makes sure that an update that makes a Client Scope Parameterized is rejected if the Client Scope is assigned
      * as a default scope — either to a client or as a realm-level default.
-     * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
+     * @param rep the effective {@link ClientScopeRepresentation} the update will persist.
      */
     public void validateParameterizedScopeUpdate(ClientScopeRepresentation rep) {
         validateClientScopeName(rep.getName());

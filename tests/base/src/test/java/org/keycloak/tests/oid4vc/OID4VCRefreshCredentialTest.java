@@ -1008,6 +1008,51 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
+     * The rotation record must outlive every token in the family: lowering the refresh idle timeout after a
+     * rotation mints children that expire before the token they came from, and once the record is gone the
+     * consumed original token (still within its own expiration) would become replayable again. The record's
+     * lifetime is wall-clock based, so this test waits in real time instead of moving the test clock.
+     */
+    @Test
+    public void testReplayedTokenRejectedAfterDescendantsExpired() throws Exception {
+        testRealm.updateWithCleanup(r -> r.revokeRefreshToken(true).refreshTokenMaxReuse(0));
+
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(credentialIdentifier)
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        String tokenA = tokenResponse.getRefreshToken();
+        assertNotNull(tokenA, "Token-A (initial refresh token) should not be null");
+
+        // Shorten the idle timeout: every child minted from now on expires long before Token-A does,
+        // which was minted with the default 30 day idle timeout
+        configureCredentialExpiration(31536000, 5, 10);
+
+        AccessTokenResponse refreshResponse1 = oauth.doRefreshTokenRequest(tokenA);
+        assertTrue(refreshResponse1.isSuccess(), "First refresh (Token-A -> Token-B) should succeed");
+        String tokenB = refreshResponse1.getRefreshToken();
+        assertNotNull(tokenB, "Token-B (new refresh token) should not be null");
+
+        AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(tokenB);
+        assertTrue(refreshResponse2.isSuccess(), "Second refresh (Token-B -> Token-C) should succeed");
+        assertNotNull(refreshResponse2.getRefreshToken(), "Token-C (new refresh token) should not be null");
+
+        // Wait until Token-C (10s idle) plus the 10s record clock skew have passed. Without the record being
+        // retained for Token-A's expiration the rotation record is gone by now, while Token-A itself (30 day
+        // idle timeout) is still valid: replaying it must be rejected by the retained record, not accepted
+        Thread.sleep(25_000);
+
+        AccessTokenResponse replayResponse = oauth.doRefreshTokenRequest(tokenA);
+        assertFalse(replayResponse.isSuccess(), "Replaying Token-A after its descendants expired must fail");
+        assertEquals(INVALID_GRANT, replayResponse.getError(), "Expected invalid_grant error for replayed refresh token");
+    }
+
+    /**
      * Verify that two refreshes of the same refresh token family cannot both be accepted when they run concurrently.
      *
      * The rotation state is a single record shared by the whole family, which every exchange reads and writes back.
