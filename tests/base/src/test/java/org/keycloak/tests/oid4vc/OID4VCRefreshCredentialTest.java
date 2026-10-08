@@ -189,8 +189,6 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         // Assert issued-credential ID matches and has not changed
         OID4VCAuthorizationDetail authzDetailResponse2 = ctx.getAuthorizationDetailFromAccessToken();
         assertEquals(issuedCred1.getId(), authzDetailResponse2.getIssuedCredentialId());
-        assertNull(authzDetailResponse2.getCredentialsOfferId(),
-                "credentials_offer_id must not be present in refresh-token-derived access token");
 
         // Verify that authorization_details on the token endpoint response have only known properties
         //
@@ -462,11 +460,10 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     * Verify credential re-issuance succeeds with refresh token after the original
-     * credential offer has been removed.
+     * Verify credential re-issuance succeeds with a refresh token.
      */
     @Test
-    public void testRefreshSucceedsAfterCredentialOfferRemoved() {
+    public void testRefreshSucceedsAfterCredentialIssuance() {
         // Create credential offer via AIA
         oauth.loginForm()
                 .kcAction(OID4VCActionTest.getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
@@ -492,9 +489,6 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
         OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
         assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
-
-        // Verify credentialsOfferId is present in first authorization detail/access token
-        assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
 
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
         CredentialResponse credResponse1 = wallet.credentialRequest(ctx, accessToken1)
@@ -524,8 +518,6 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .type(EventType.REFRESH_TOKEN);
 
         OID4VCAuthorizationDetail authzDetail2 = ctx.getAuthorizationDetailFromAccessToken();
-        assertNull(authzDetail2.getCredentialsOfferId(), "Refreshed access token should NOT contain credentialsOfferId");
-
         assertEquals(issuedCredId, authzDetail2.getIssuedCredentialId(), "Refreshed access token should contain the correct issuedCredentialId");
 
         CredentialResponse credResponse2 = wallet.credentialRequest(ctx, accessToken2)
@@ -540,10 +532,10 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     }
 
     /**
-     * Verify that attempting to request a credential after the credential offer has expired results in an exception being thrown.
+     * Verify that an expired credential offer is rejected during token issuance.
      */
     @Test
-    public void testThrowsExceptionWhenCredentialOfferExpiredBeforeIssuance() {
+    public void testTokenExchangeRejectsExpiredCredentialOffer() {
         // Configure a short credential offer lifespan (3 seconds)
         RealmRepresentation realmRep = testRealm.admin().toRepresentation();
         realmRep.getAttributes().put(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "3");
@@ -567,28 +559,20 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
             String issuerState = credOffer.getIssuerState();
             assertNotNull(issuerState);
 
-            AccessTokenResponse tokenResponse = authzCodeFlow(issuerState);
-            assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
-
-            String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
-            assertNotNull(accessToken1, "access token must be present");
-
-            OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
-            assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
-
-            // Verify credentialsOfferId is present in first authorization detail/access token
-            assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
-
-            String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
-
             timeOffSet.set(8);
 
-            Exception exception = assertThrows(IllegalStateException.class, () -> wallet.credentialRequest(ctx, accessToken1)
-                    .credentialIdentifier(credentialIdentifier)
-                    .send().getCredentialResponse());
+            AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                    .scope(ctx.getScope())
+                    .issuerState(issuerState)
+                    .send(user.getUsername(), TEST_PASSWORD);
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "Authorization code should be present");
 
-            String expectedExceptionMessage = "Credential offer has already expired";
-            assertTrue(exception.getMessage().contains(expectedExceptionMessage), "Expected exception message for expired credential offer");
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+            assertEquals("invalid_authorization_details", tokenResponse.getError());
+            assertEquals("Invalid authorization_details: Credential offer has already expired", tokenResponse.getErrorDescription());
+            assertNull(tokenResponse.getAccessToken(), "No access token should be issued");
         } finally {
             // Restore default credential offer lifespan
             realmRep = testRealm.admin().toRepresentation();
