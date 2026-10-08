@@ -38,6 +38,10 @@ public interface Theme {
 
     String getName();
 
+    default String getRenderedName() {
+        return getName();
+    }
+
     String getParentName();
 
     String getImportName();
