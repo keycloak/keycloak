@@ -179,32 +179,6 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testRedirectAfterClickingSecondTimeOnInvitation() throws IOException, MessagingException {
-        UserRepresentation user = createUser("invited", "invited@myemail.com");
-
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
-
-        try (
-                ClientAttributeUpdater accountUpdater = addAccountClientRedirectUri(OAuthClient.APP_AUTH_ROOT);
-                OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
-                Response response = organization.members().inviteExistingUser(user.getId());
-        ) {
-            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
-
-            acceptInvitation(organization, user, "AUTH_RESPONSE");
-
-            String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
-            driver.navigate().to(link);
-
-            assertThat(driver.getPageSource(), containsString("You are already a member of the neworg organization."));
-
-            infoPage.clickBackToApplicationLink();
-            // redirect to the redirectUrl of the organization
-            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
-        }
-    }
-
-    @Test
     public void testAlreadyMemberMaliciousRedirectUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
@@ -217,7 +191,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
 
-            acceptInvitation(organization, user, "AUTH_RESPONSE");
+            // Add the member without consuming the invitation so the already-member response is exercised.
+            try (Response membership = organization.members().addMember(user.getId())) {
+                assertThat(membership.getStatus(), equalTo(Status.CREATED.getStatusCode()));
+            }
 
             oau.setRedirectUrl("https://evil.example.com").update();
             String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());

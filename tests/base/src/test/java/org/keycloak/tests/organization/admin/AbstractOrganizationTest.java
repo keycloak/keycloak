@@ -17,11 +17,13 @@
 
 package org.keycloak.tests.organization.admin;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -47,6 +49,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
@@ -60,6 +63,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.MailUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -238,6 +242,13 @@ public abstract class AbstractOrganizationTest {
         assertFalse(reps.isEmpty());
         assertEquals(1, reps.size());
         return reps.get(0);
+    }
+
+    protected static String getInvitationLink(MailServer mailServer) throws IOException {
+        assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "invitation email not received");
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        assertNotNull(message);
+        return MailUtils.getLink(MailUtils.getBody(message).getHtml()).trim();
     }
 
     protected GroupRepresentation createGroup(RealmResource realmResource, String name) {
