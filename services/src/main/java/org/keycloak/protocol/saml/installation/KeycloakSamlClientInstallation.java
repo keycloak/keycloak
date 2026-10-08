@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 
 /**
@@ -40,16 +41,16 @@ import org.keycloak.services.resources.RealmsResource;
 public class KeycloakSamlClientInstallation implements ClientInstallationProvider {
 
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, boolean includeSecrets) {
         SamlClient samlClient = new SamlClient(client);
         StringBuilder buffer = new StringBuilder();
         buffer.append("<keycloak-saml-adapter>\n");
-        baseXml(session, realm, client, baseUri, samlClient, buffer);
+        baseXml(session, realm, client, baseUri, samlClient, buffer, includeSecrets);
         buffer.append("</keycloak-saml-adapter>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 
-    public static void baseXml(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuilder buffer) {
+    public static void baseXml(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuilder buffer, boolean includeSecrets) {
         buffer.append("    <SP entityID=\"").append(client.getBaseUrl() == null ? "SPECIFY YOUR entityID!" : client.getBaseUrl()).append("\"\n");
         buffer.append("        sslPolicy=\"").append(realm.getSslRequired().name()).append("\"\n");
         buffer.append("        logoutPage=\"SPECIFY YOUR LOGOUT PAGE!\">\n");
@@ -61,7 +62,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 if (samlClient.getClientSigningPrivateKey() == null) {
                     buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
-                    buffer.append("                    ").append(samlClient.getClientSigningPrivateKey()).append("\n");
+                    buffer.append("                    ").append(includeSecrets ? samlClient.getClientSigningPrivateKey() : ComponentRepresentation.SECRET_VALUE).append("\n");
                 }
                 buffer.append("                </PrivateKeyPem>\n");
                 buffer.append("                <CertificatePem>\n");
@@ -79,7 +80,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 if (samlClient.getClientEncryptingPrivateKey() == null) {
                     buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
-                    buffer.append("                    ").append(samlClient.getClientEncryptingPrivateKey()).append("\n");
+                    buffer.append("                    ").append(includeSecrets ? samlClient.getClientEncryptingPrivateKey() : ComponentRepresentation.SECRET_VALUE).append("\n");
                 }
                 buffer.append("                </PrivateKeyPem>\n");
                 buffer.append("            </Key>\n");
