@@ -224,6 +224,14 @@ class AdminClient {
     await this.#client.users.del({ id: foundUsers[0].id!, realm });
   }
 
+  async logoutUserSessions(
+    userId: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.users.logout({ id: userId, realm });
+  }
+
   async createClientScope(
     scope: ClientScopeRepresentation & { realm?: string },
   ) {
