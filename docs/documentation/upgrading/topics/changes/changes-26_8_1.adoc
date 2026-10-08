@@ -47,6 +47,13 @@ You can use the following provider option to increase or decrease the limit.
 bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
 ----
 
+=== Identity brokering API V1 token retrieval requires the client to be allowed for the identity provider
+// https://github.com/keycloak/keycloak/issues/53059
+
+The V1 identity brokering token endpoint (`+GET /realms/{realm}/broker/{provider_alias}/token+`) previously only required the user to have the `broker.read-token` role, which allowed a user linked to one identity provider to retrieve stored tokens from any other identity provider in the realm.
+
+The endpoint now additionally requires the client for which the bearer token was issued to be allowed to retrieve external tokens from the requested identity provider, which is the same authorization model as used by the V2 endpoint. To continue using the V1 endpoint, enable *Allow retrieve external tokens* in the client's *Capability config* and add the identity provider to *Allowed Identity Providers for External Tokens*.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
