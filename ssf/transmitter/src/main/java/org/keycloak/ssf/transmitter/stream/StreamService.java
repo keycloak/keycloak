@@ -161,6 +161,18 @@ public class StreamService {
         // configuration the receiver actually supplied.
         replaceReceiverFields(input, streamConfig);
 
+        // SSF 1.0 §8.1.1.1: a create request without a delivery property
+        // means poll. The per-receiver allow-list in validate() still
+        // applies, so a push-only receiver gets the 400 the spec permits
+        // when the transmitter does not offer poll to it. The poll
+        // endpoint_url is transmitter-owned and filled in by
+        // finalizePollEndpointUrlIfApplicable once the stream id exists.
+        if (streamConfig.getDelivery() == null) {
+            StreamDeliveryConfig pollDelivery = new StreamDeliveryConfig();
+            pollDelivery.setMethod(Ssf.DELIVERY_METHOD_POLL_URI);
+            streamConfig.setDelivery(pollDelivery);
+        }
+
         // Cheap, side-effect-free input/URL validation up front so a receiver
         // with a misconfigured push URL gets the actionable 400 even if it
         // also has an existing stream that would fail the duplicate guard
