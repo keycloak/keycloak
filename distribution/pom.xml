@@ -43,8 +43,6 @@
     <modules>
         <module>saml-adapters</module>
         <module>galleon-feature-packs</module>
-        <module>licenses-common</module>
-        <module>maven-plugins</module>
     </modules>
 
     <repositories>
