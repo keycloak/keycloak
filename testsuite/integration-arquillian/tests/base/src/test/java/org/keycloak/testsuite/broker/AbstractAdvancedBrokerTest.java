@@ -219,7 +219,49 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         assertEquals(0, failPasswordLoginThenLoginWithBroker());
     }
+    // https://github.com/keycloak/keycloak/issues/49960
+    @Test
+    public void loginWithBrokerThenCookieSsoDoesNotResetBruteForceFailureCount() {
+        assumeFalse("Brute force protection does not apply to transient sessions", isUsingTransientSessions());
 
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        consumerRealm.update(RealmBuilder.create().bruteForceProtected(true).failureFactor(3).build());
+
+        IdentityProviderResource identityProvider = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = identityProvider.toRepresentation();
+        representation.getConfig().put(IdentityProviderModel.RESET_LOGIN_FAILURES, "true");
+        identityProvider.update(representation);
+
+        loginWithExistingUser();
+        Assertions.assertTrue(AccountHelper.updatePassword(consumerRealm, bc.getUserLogin(), "password"));
+
+        logoutFromConsumerRealm();
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        driver.manage().deleteAllCookies();
+
+        String userId = getConsumerUserRepresentation(bc.getUserLogin()).getId();
+
+        // Log in through the identity provider, so the consumer session is created by a brokered login
+        oauth.client("broker-app", "broker-app-secret");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        loginPage.clickSocial(bc.getIDPAlias());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+
+        // Record a failed password login outside the browser (direct grant)
+        Assertions.assertNull(oauth.passwordGrantRequest(bc.getUserLogin(), "invalid").send().getAccessToken());
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+        assertEquals(1, consumerRealm.attackDetection().bruteForceUserStatus(userId).get("numFailures"));
+
+        // Cookie SSO re-authentication on the brokered session must not reset the failure count
+        oauth.openLoginForm();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), "Expected SSO cookie re-authentication to skip the login form");
+        WaitUtils.waitForBruteForceExecutors(testingClient);
+        assertEquals(1, consumerRealm.attackDetection().bruteForceUserStatus(userId).get("numFailures"));
+    }
+    
     /**
      * Fails one password login for the brokered user, then logs in successfully through the identity provider.
      *
