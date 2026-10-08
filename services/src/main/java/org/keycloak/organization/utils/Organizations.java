@@ -33,6 +33,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.http.HttpRequest;
@@ -46,12 +47,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import static java.util.Optional.of;
@@ -174,6 +177,29 @@ public class Organizations {
         if (provider == null || !provider.isEnabled()) {
             throw ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND);
         }
+    }
+
+    /**
+     * Consumes an invitation token before membership is created, including in registration flows that bypass the action token handler.
+     */
+    public static boolean useInvitationToken(KeycloakSession session, InviteOrgActionToken token) {
+        long lifespan = token.getExp() - Time.currentTime();
+
+        if (lifespan < 0 || !session.singleUseObjects().putIfAbsent(token.serializeKey() + SingleUseObjectProvider.REVOKED_KEY,
+                lifespan + AuthenticationManager.CLOCK_SKEW_SECONDS)) {
+            // Discard any persisted revocation and user creation from the losing acceptance.
+            session.getTransactionManager().setRollbackOnly();
+            return false;
+        }
+
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession != null && token.serializeKey().equals(authSession.getAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN))) {
+            // The token is already consumed; required-action completion must not consume it again.
+            authSession.removeAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN);
+        }
+
+        return true;
     }
 
     public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, HttpRequest request) throws VerificationException {
