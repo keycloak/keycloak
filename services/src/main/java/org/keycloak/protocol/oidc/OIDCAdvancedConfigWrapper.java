@@ -253,6 +253,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, val);
     }
 
+    public boolean isResourceIndicatorsEnabled() {
+        String val = getAttribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setResourceIndicatorsEnabled(boolean enable) {
+        String val = String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, val);
+    }
+
     public TokenExchangeRefreshTokenEnabled getStandardTokenExchangeRefreshEnabled() {
         final String value = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED);
         try {
