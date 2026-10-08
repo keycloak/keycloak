@@ -665,9 +665,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 logger.debug("browser Logout");
                 return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
-            } else if (logoutRequest.getSessionIndex() != null) {
+            } else if (!logoutRequest.getSessionIndex().isEmpty()) {
                 // Back-channel SLO via SessionIndex authenticates the requester solely via Issuer.
                 // Without a required (and verified) client signature, Issuer is forgeable — reject.
+                // Note: LogoutRequestType.getSessionIndex() is never null (empty list when absent).
                 if (!samlClient.requiresClientSignature()) {
                     logger.warnf("SLO LogoutRequest with SessionIndex from client '%s' rejected: " +
                                     "client signature is not required, so Issuer cannot be authenticated.",

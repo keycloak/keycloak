@@ -93,6 +93,11 @@ public class SamlSloSessionHijackTest extends AbstractSamlTest {
      * nothing but a GET — no {@code AuthnRequest} and no SP to receive the assertion.
      */
     private String loginVictimAndGetSessionIndex() throws Exception {
+        // Clear leftover SSO cookie/sessions from a prior attack scenario in this class.
+        driver.open(getAuthServerRealmBase(REALM_NAME).toString());
+        driver.cookies().deleteAll();
+        victim.admin().logout();
+
         driver.open(getAuthServerRealmBase(REALM_NAME) + "/protocol/saml/clients/" + VICTIM_SSO_URL_NAME);
         loginPage.assertCurrent();
         loginPage.fillLogin(victim.getUsername(), victim.getPassword());
