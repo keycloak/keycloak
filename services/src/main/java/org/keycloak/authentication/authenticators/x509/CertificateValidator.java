@@ -68,6 +68,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -341,12 +342,14 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+                HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+                CloseableHttpClient httpClient = httpClientProvider.getHttpClient();
                 HttpGet get = new HttpGet(remoteURI);
                 get.setHeader("Pragma", "no-cache");
                 get.setHeader("Cache-Control", "no-cache, no-store");
                 try (CloseableHttpResponse response = httpClient.execute(get)) {
-                    try (InputStream content = response.getEntity().getContent()) {
+                    try (InputStream content = new SafeInputStream(response.getEntity().getContent(),
+                            httpClientProvider.getMaxConsumedResponseSize())) {
                         return loadFromStream(cf, content);
                     } finally {
                         EntityUtils.consumeQuietly(response.getEntity());
