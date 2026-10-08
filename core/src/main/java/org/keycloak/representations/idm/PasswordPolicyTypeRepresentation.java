@@ -27,6 +27,7 @@ public class PasswordPolicyTypeRepresentation {
     private String configType;
     private String defaultValue;
     private boolean multipleSupported;
+    private String helpText;
 
     public String getId() {
         return id;
@@ -66,5 +67,13 @@ public class PasswordPolicyTypeRepresentation {
 
     public void setMultipleSupported(boolean multipleSupported) {
         this.multipleSupported = multipleSupported;
+    }
+
+    public String getHelpText() {
+        return helpText;
+    }
+
+    public void setHelpText(String helpText) {
+        this.helpText = helpText;
     }
 }
