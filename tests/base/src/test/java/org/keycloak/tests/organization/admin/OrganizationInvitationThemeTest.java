@@ -18,7 +18,6 @@ package org.keycloak.tests.organization.admin;
 
 import java.io.IOException;
 
-import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
@@ -34,15 +33,12 @@ import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
-import org.keycloak.tests.utils.MailUtils;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
 public class OrganizationInvitationThemeTest extends AbstractOrganizationTest {
@@ -67,7 +63,7 @@ public class OrganizationInvitationThemeTest extends AbstractOrganizationTest {
         String userId = createUser(INVITEE_EMAIL);
 
         organization.members().inviteExistingUser(userId).close();
-        driver.open(getInvitationLink());
+        driver.open(getInvitationLink(mailServer));
         infoPage.assertCurrent();
 
         // the invitee is not a member yet, but the page still knows the organization they were invited to
@@ -99,11 +95,4 @@ public class OrganizationInvitationThemeTest extends AbstractOrganizationTest {
         return userId;
     }
 
-    private String getInvitationLink() throws IOException {
-        assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "invitation email not received");
-
-        MimeMessage message = mailServer.getLastReceivedMessage();
-        assertNotNull(message);
-        return MailUtils.getLink(MailUtils.getBody(message).getHtml()).trim();
-    }
 }

@@ -358,6 +358,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
             if (token != null) {
                 KeycloakSession session = context.getSession();
+
+                if (!Organizations.useInvitationToken(session, token)) {
+                    throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
+                            Errors.INVALID_TOKEN, Messages.STALE_INVITE_ORG_LINK);
+                }
+
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);

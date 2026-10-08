@@ -144,7 +144,8 @@ public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
-    private final static long CLOCK_SKEW_SECONDS = 60;
+    /** Extra retention for action-token revocations to account for clock differences between nodes. */
+    public static final long CLOCK_SKEW_SECONDS = 60;
 
     /**
      * Auth session note, which indicates if user session will be persistent (Saved to real persistent store) or
