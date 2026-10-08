@@ -49,4 +49,22 @@ public class MicrosoftIdentityProviderConfig extends OIDCIdentityProviderConfig 
         keys[base.length] = "tenantId";
         return keys;
     }
+
+    /**
+     * An absent {@code tenantId} resolves to the multi-tenant {@code common} endpoint at runtime,
+     * so treat the two as equivalent when deciding whether the token destination changed. The
+     * derivation mirrors {@code MicrosoftIdentityProvider}: only {@code null}/empty fall back to
+     * {@code common}; any other value is trimmed.
+     */
+    @Override
+    protected boolean isClientSecretDestinationChanged(String key, String stored, String updated) {
+        if ("tenantId".equals(key)) {
+            return !tenant(stored).equals(tenant(updated));
+        }
+        return super.isClientSecretDestinationChanged(key, stored, updated);
+    }
+
+    private static String tenant(String value) {
+        return value == null || value.isEmpty() ? "common" : value.trim();
+    }
 }

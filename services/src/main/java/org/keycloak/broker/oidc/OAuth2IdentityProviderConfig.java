@@ -271,24 +271,40 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         Map<String, String> otherConfig = other.getConfig() != null ? other.getConfig() : Map.of();
 
         for (String key : getClientSecretDestinationConfigKeys()) {
-            if (!sameConfigValue(thisConfig.get(key), otherConfig.get(key))) {
+            if (isClientSecretDestinationChanged(key, otherConfig.get(key), thisConfig.get(key))) {
                 return false;
             }
         }
-        return sameConfigValue(
-                thisConfig.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST),
-                otherConfig.getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST));
+        return Objects.equals(
+                clientAuthMethod(thisConfig.get("clientAuthMethod")),
+                clientAuthMethod(otherConfig.get("clientAuthMethod")));
     }
 
     /**
-     * Treats {@code null} and empty string as equivalent so UI/API clients that omit optional
-     * fields as {@code ""} do not look like a destination change when the stored value is absent.
+     * An absent or empty {@code clientAuthMethod} behaves as {@code client_secret_post} at runtime
+     * (see {@code AbstractOAuth2IdentityProvider#authenticateTokenRequest}).
      */
-    private static boolean sameConfigValue(String left, String right) {
-        return Objects.equals(normalizeConfigValue(left), normalizeConfigValue(right));
+    private static String clientAuthMethod(String value) {
+        return value == null || value.isEmpty() ? OIDCLoginProtocol.CLIENT_SECRET_POST : value;
     }
 
-    private static String normalizeConfigValue(String value) {
+    /**
+     * Decides whether a destination config value changed in a way that affects where/how the
+     * client secret is sent. By default {@code null} and {@code ""} are treated as equivalent, as
+     * UI/API clients may send {@code ""} for omitted optional fields; any other difference is a
+     * change, matching the raw values used at runtime. Sub-classes may override to apply
+     * key-specific semantics such as boolean or default-value equivalence.
+     *
+     * @param key the config key being compared
+     * @param stored the currently stored value, possibly {@code null}
+     * @param updated the submitted value, possibly {@code null}
+     * @return {@code true} if the values represent different destinations
+     */
+    protected boolean isClientSecretDestinationChanged(String key, String stored, String updated) {
+        return !Objects.equals(normalize(stored), normalize(updated));
+    }
+
+    private static String normalize(String value) {
         return value == null || value.isEmpty() ? null : value;
     }
 }

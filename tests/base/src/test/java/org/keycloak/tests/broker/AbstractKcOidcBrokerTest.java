@@ -76,8 +76,9 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
 
     /**
      * Real client secret used when {@link #configureBrokerEndpoints()} rewrites destination URLs.
-     * Admin GET returns a masked secret, and updating token/auth destinations with that mask clears
-     * the stored secret; subclasses with a non-default secret must override this.
+     * Admin GET returns a masked secret, and updating token/auth destinations with that mask is
+     * rejected (HTTP 400), so the real secret must be re-sent; subclasses with a non-default secret
+     * must override this.
      */
     protected String getBrokerClientSecret() {
         return CLIENT_SECRET;
@@ -97,7 +98,7 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
         config.put(OIDCIdentityProviderConfig.JWKS_URL, providerBaseUrl + "/protocol/openid-connect/certs");
         config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
         config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
-        // Rewriting tokenUrl (and related fields) with a masked secret would drop the stored credential.
+        // Rewriting tokenUrl (and related fields) with a masked secret is rejected by the admin API.
         if (ComponentRepresentation.SECRET_VALUE.equals(config.get("clientSecret"))) {
             config.put("clientSecret", getBrokerClientSecret());
         }

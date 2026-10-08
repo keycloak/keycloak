@@ -371,7 +371,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
 
-        // Changing clientId requires providing a fresh secret (or secret is cleared)
+        // Changing clientId requires providing a fresh secret (a masked secret is rejected)
         representation.getConfig().put("clientId", "changedClientId");
         representation.getConfig().put("clientSecret", "updated secret value");
         identityProviderResource.update(representation);
@@ -587,13 +587,24 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         IdentityProviderRepresentation newIdentityProvider = createRep("masked-secret-paypal", "paypal");
         newIdentityProvider.getConfig().put("clientId", "paypal-client");
         newIdentityProvider.getConfig().put("clientSecret", "real-paypal-secret");
-        newIdentityProvider.getConfig().put("sandbox", "false");
+        // created without the sandbox key, as older providers may be stored
         create(newIdentityProvider);
 
         IdentityProviderResource resource = managedRealm.admin().identityProviders().get("masked-secret-paypal");
         IdentityProviderRepresentation representation = resource.toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+        assertNull(representation.getConfig().get("sandbox"));
 
+        // The admin console submits "false" for an absent boolean; that is not a destination change.
+        representation.getConfig().put("sandbox", "false");
+        representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+        resource.update(representation);
+        adminEvents.poll();
+
+        assertEquals("real-paypal-secret", runOnServer.fetch(
+                s -> s.identityProviders().getByAlias("masked-secret-paypal").getConfig().get("clientSecret"), String.class));
+
+        representation = resource.toRepresentation();
         representation.getConfig().put("sandbox", "true");
         representation.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
         try {
