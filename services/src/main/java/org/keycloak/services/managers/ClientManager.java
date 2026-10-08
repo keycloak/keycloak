@@ -27,8 +27,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.ClientAuthenticator;
-import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
@@ -334,8 +332,8 @@ public class ClientManager {
         }
     }
 
-
-    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ClientModel clientModel, URI baseUri) {
+    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ClientModel clientModel, URI baseUri,
+            boolean includeSecrets) {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realmModel.getName());
@@ -348,7 +346,8 @@ public class ClientManager {
         rep.setResource(clientModel.getClientId());
 
         if (showClientCredentialsAdapterConfig(clientModel)) {
-            Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(clientModel);
+            Map<String, Object> adapterConfig = ClientInstallationUtils.getClientCredentialsAdapterConfig(
+                    realmManager.getSession(), clientModel, includeSecrets);
             rep.setCredentials(adapterConfig);
         }
 
@@ -407,10 +406,7 @@ public class ClientManager {
     }
 
     private Map<String, Object> getClientCredentialsAdapterConfig(ClientModel client) {
-        String clientAuthenticator = client.getClientAuthenticatorType();
-        KeycloakSession session = realmManager.getSession();
-        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
-        return authenticator.getAdapterConfiguration(session, client);
+        return ClientInstallationUtils.getClientCredentialsAdapterConfig(realmManager.getSession(), client, true);
     }
 
     private boolean isInternalClient(String realmName, String clientId) {
