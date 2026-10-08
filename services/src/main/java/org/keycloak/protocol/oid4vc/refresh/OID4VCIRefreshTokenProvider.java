@@ -1,7 +1,6 @@
 package org.keycloak.protocol.oid4vc.refresh;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -177,38 +176,6 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         return new TokenManager.TokenValidation(user, userSession, clientSessionCtx);
     }
 
-    @Override
-    protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
-        // Run before the authorization_details early return below, otherwise the rotation record is never written
-        flushRotationRecord(ctx, responseBuilder.getRefreshToken());
-
-        ClientSessionContext clientSessionCtx = responseBuilder.getClientSessionCtx();
-        List<AuthorizationDetailsJSONRepresentation> authzDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-
-        if (authzDetails == null) {
-            return;
-        }
-
-        List<AuthorizationDetailsJSONRepresentation> clearedDetails = new ArrayList<>(authzDetails.size());
-        for (AuthorizationDetailsJSONRepresentation d : authzDetails) {
-            if (OPENID_CREDENTIAL.equals(d.getType())) {
-                OID4VCAuthorizationDetail typed = d.asSubtype(OID4VCAuthorizationDetail.class);
-                typed.setCredentialsOfferId(null);
-                clearedDetails.add(typed);
-            } else {
-                clearedDetails.add(d);
-            }
-        }
-
-        responseBuilder.getAccessToken().setAuthorizationDetails(clearedDetails);
-        if (responseBuilder.getRefreshToken() != null) {
-            responseBuilder.getRefreshToken().setAuthorizationDetails(clearedDetails);
-        }
-
-        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, clearedDetails);
-    }
-
-
     private void flushRotationRecord(RefreshTokenContext ctx, RefreshToken newRefreshToken) {
         //Retrieve the staged token from in-memory fields and immediately clear them
         String key = pendingRotationKey;
@@ -233,6 +200,11 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         // getRefreshTokenLockId() keys the refresh lock on the same family key as the record, and that lock is only
         // released once this transaction has committed.
         storeRotationRecord(session.singleUseObjects(), key, lifespanSource, record);
+    }
+
+    @Override
+    protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        flushRotationRecord(ctx, responseBuilder.getRefreshToken());
     }
 
     @Override

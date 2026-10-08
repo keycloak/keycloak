@@ -116,7 +116,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, () -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
                 CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
@@ -129,7 +129,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 }
 
                 OID4VCAuthorizationDetailsProcessor authDetailsProcessor = new OID4VCAuthorizationDetailsProcessor(session);
-                authDetails.add(authDetailsProcessor.generateResponseAuthorizationDetails(credScope, credOffersId));
+                authDetails.add(authDetailsProcessor.generateResponseAuthorizationDetails(credScope));
             }
             return authDetails;
         });
