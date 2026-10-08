@@ -6,7 +6,6 @@ on:
       - main
       - dependabot/**
       - copilot/**
-      - tmp/**
   pull_request:
   workflow_dispatch:
 
