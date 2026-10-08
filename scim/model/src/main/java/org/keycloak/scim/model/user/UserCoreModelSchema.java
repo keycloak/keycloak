@@ -56,6 +56,22 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
+    public boolean isDiscoverable(Attribute<UserModel, User> attribute) {
+        // name.formatted is always derived from the other name sub-attributes, even when not mapped
+        return isFormattedName(attribute) || super.isDiscoverable(attribute);
+    }
+
+    @Override
+    public boolean isReadOnly(Attribute<UserModel, User> attribute) {
+        // when not mapped, name.formatted is derived and values sent by clients are discarded
+        return isFormattedName(attribute) && attribute.getModelAttributeName() == null;
+    }
+
+    private static boolean isFormattedName(Attribute<UserModel, User> attribute) {
+        return "name.formatted".equals(attribute.getName());
+    }
+
+    @Override
     protected Map<String, Attribute<UserModel, User>> getAttributeMappers() {
         List<Attribute<UserModel, User>> attributes = new ArrayList<>();
 

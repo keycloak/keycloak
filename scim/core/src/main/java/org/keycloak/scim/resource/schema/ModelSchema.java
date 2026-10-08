@@ -142,6 +142,29 @@ public interface ModelSchema<M extends Model, R> {
     }
 
     /**
+     * Returns {@code true} if the given {@code attribute} should be advertised through the schema discovery endpoint.
+     * By default, only attributes mapped to a model attribute are advertised, as values of unmapped attributes
+     * are never stored.
+     *
+     * @param attribute the attribute
+     * @return {@code true} if the attribute should be advertised. Otherwise, {@code false}
+     */
+    default boolean isDiscoverable(Attribute<M, R> attribute) {
+        return attribute.getModelAttributeName() != null;
+    }
+
+    /**
+     * Returns {@code true} if the given {@code attribute} is advertised as {@code readOnly} through the schema discovery
+     * endpoint, meaning that values sent by clients are ignored.
+     *
+     * @param attribute the attribute
+     * @return {@code true} if the attribute is read-only. Otherwise, {@code false}
+     */
+    default boolean isReadOnly(Attribute<M, R> attribute) {
+        return false;
+    }
+
+    /**
      * Returns {@code true} if this schema supports any of the given {@code schemas}
      *
      * @param schemas the schemas
