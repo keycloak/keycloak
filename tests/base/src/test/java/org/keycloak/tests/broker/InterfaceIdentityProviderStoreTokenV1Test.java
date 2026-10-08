@@ -1,12 +1,18 @@
 package org.keycloak.tests.broker;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -77,5 +83,54 @@ public interface InterfaceIdentityProviderStoreTokenV1Test extends InterfaceIden
         externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens.getStatusCode());
         checkSuccessfulTokenResponse(externalTokens);
+    }
+
+    @Test
+    default void testOIDCIdentityProviderStoreTokenGrantViaClientSettings() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        // external access enabled initially
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens);
+
+        // remove external token enabled
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()));
+        externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        // external access disabled but idp selected
+        client.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
+        externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        // external access enabled but idp different
+        client.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, "other-idp"));
+        externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        // enable again
+        client.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
+        externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens);
+    }
+
+    class ExternalClientConfig extends DefaultOAuthClientConfiguration {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return super.configure(client)
+                    .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString())
+                    .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS);
+        }
     }
 }

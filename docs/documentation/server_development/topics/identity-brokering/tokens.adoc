@@ -29,6 +29,8 @@ and the client application must have that role within its scope.
 In this case, given that you are accessing a protected service in {project_name}, you need to send the access token issued by {project_name} during the user authentication.
 In the broker configuration page you can automatically assign this role to newly imported users by turning on the `Stored Tokens Readable` switch.
 
+In addition, the client for which the access token was issued must be allowed to retrieve tokens from the identity provider. In the client configuration, **Settings**, section **Capability config**, enable **Allow retrieve external tokens** and add the identity provider alias to **Allowed Identity Providers for External Tokens**. These are the same options as used by V2.
+
 These external tokens can be re-established by either logging in again through the provider, or using the client initiated account linking API.
 
 ==== Identity brokering API V2
