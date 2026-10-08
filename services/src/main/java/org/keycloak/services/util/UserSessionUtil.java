@@ -2,11 +2,13 @@ package org.keycloak.services.util;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -17,6 +19,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserSessionModelDelegate;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -256,6 +259,33 @@ public class UserSessionUtil {
 
     public static UserSessionModel getUserSessionWithImpersonatorClient(KeycloakSession session, RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
         return session.sessions().getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> Objects.equals(clientUUID, userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_CLIENT.toString())));
+    }
+
+    public static void logoutAllUserSessions(KeycloakSession session, RealmModel realm, UserModel user) {
+        if (! LightweightUserAdapter.isLightweightUser(user)) {
+            session.users().setNotBeforeForUser(realm, user, Time.currentTime());
+        }
+
+        try {
+            session.sessions().getUserSessionsStream(realm, user)
+                    .collect(Collectors.toList())
+                    .forEach(userSession -> {
+                        try {
+                            AuthenticationManager.backchannelLogout(session, userSession, true);
+                        } catch (Exception e) {
+                        }
+                    });
+
+            session.sessions().getOfflineUserSessionsStream(realm, user)
+                    .collect(Collectors.toList())
+                    .forEach(userSession -> {
+                        try {
+                            AuthenticationManager.backchannelLogout(session, userSession, true);
+                        } catch (Exception e) {
+                        }
+                    });
+        } catch (Exception e) {
+        }
     }
 
 
