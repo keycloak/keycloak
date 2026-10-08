@@ -94,7 +94,7 @@ public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDepend
 
     private static void addPodSelector(NetworkPolicyFluent<NetworkPolicyBuilder>.SpecNested<NetworkPolicyBuilder> builder, Keycloak keycloak) {
         builder.withNewPodSelector()
-                .withMatchLabels(Utils.allInstanceLabels(keycloak))
+                .withMatchLabels(Utils.serverSelectorLabels(keycloak))
                 .endPodSelector();
     }
 
@@ -145,7 +145,7 @@ public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDepend
                 .endPort();
         ingressBuilder.addNewFrom()
                 .withNewPodSelector()
-                .addToMatchLabels(Utils.allInstanceLabels(keycloak))
+                .addToMatchLabels(Utils.serverSelectorLabels(keycloak))
                 .endPodSelector()
                 .endFrom();
         ingressBuilder.endIngress();
