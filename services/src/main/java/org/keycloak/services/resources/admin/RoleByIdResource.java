@@ -17,6 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -32,6 +34,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -40,7 +43,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -61,6 +66,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.models.utils.ModelToRepresentation.toMappingsRepresentation;
+
 /**
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name
  *
@@ -69,7 +76,7 @@ import org.jboss.resteasy.reactive.NoCache;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
-public class RoleByIdResource extends RoleResource {
+public class RoleByIdResource extends RoleResource implements RoleMappingAwareResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -83,6 +90,16 @@ public class RoleByIdResource extends RoleResource {
         this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent;
+    }
+
+    @Override
+    public KeycloakSession getSession() {
+        return session;
+    }
+
+    @Override
+    public AdminPermissionEvaluator getAuth() {
+        return auth;
     }
 
     /**
@@ -231,17 +248,85 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
 
-        Stream<RoleModel> composites = role.getCompositesStream(search, null, null)
-                .filter(r -> auth.roles().canView(r));
+        return paginate(role.getCompositesStream(search, null, null).filter(auth.roles()::canView), first, max)
+                .map(ModelToRepresentation::toBriefRepresentation);
+    }
 
+    @Path("{role-id}/composites/composite")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation(summary = "Get role's effective children",
+        description = "This will recurse all composite roles to get the result, grouped by realm and client.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getCompositeRoleComposites(final @PathParam("role-id") String id) {
+        RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
+
+        return toMappingsRepresentation(RoleUtils.expandCompositeRolesStream(role.getCompositesStream())
+                .filter(r -> !r.equals(role))
+                .filter(auth.roles()::canView));
+    }
+
+    @Path("{role-id}/composites/inherited")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation(summary = "Get role's inherited children",
+        description = "Returns the roles obtained through the composite children of the role, grouped by realm and client. "
+                + "A role that is both a direct child and inherited is included.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getInheritedRoleComposites(final @PathParam("role-id") String id) {
+        RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
+
+        return toMappingsRepresentation(getInheritedRoles(role.getCompositesStream(), Stream.empty())
+                .filter(r -> !r.equals(role))
+                .filter(auth.roles()::canView));
+    }
+
+    @Path("{role-id}/composites/available")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
+    @Operation(summary = "Get the roles that can still be added as children of the role by the caller",
+        description = "Returns the realm and client roles that are not yet children of the role and that the caller is allowed to add as composite. "
+                + "Pagination applies to client roles only.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getAvailableRoleComposites(final @PathParam("role-id") String id,
+                                                             final @Parameter(description = "filter by role name or client id") @QueryParam("search") String search,
+                                                             final @Parameter(description = "first client role to return") @QueryParam("first") Integer first,
+                                                             final @Parameter(description = "maximum number of client roles to return") @QueryParam("max") Integer max
+    ) {
+        RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
+
+        Set<String> excluded = Stream.concat(Stream.of(role.getId()), role.getCompositesStream().map(RoleModel::getId))
+                .collect(Collectors.toSet());
+
+        return getAvailableMappings(AdminPermissionsSchema.MAP_ROLE_COMPOSITE, search, excluded, first, max);
+    }
+
+    private static Stream<RoleModel> paginate(Stream<RoleModel> roles, Integer first, Integer max) {
         if (first != null && first > 0) {
-            composites = composites.skip(first);
+            roles = roles.skip(first);
         }
         if (max != null && max >= 0) {
-            composites = composites.limit(max);
+            roles = roles.limit(max);
         }
-
-        return composites.map(ModelToRepresentation::toBriefRepresentation);
+        return roles;
     }
 
     /**

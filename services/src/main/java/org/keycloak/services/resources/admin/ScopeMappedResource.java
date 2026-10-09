@@ -18,8 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,6 +36,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -45,17 +45,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ClientMappingsRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.services.util.ScopeMappedUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -67,7 +69,7 @@ import org.jboss.resteasy.reactive.NoCache;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
-public class ScopeMappedResource {
+public class ScopeMappedResource implements RoleMappingAwareResource {
     protected RealmModel realm;
     protected AdminPermissionEvaluator auth;
     protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
@@ -90,18 +92,30 @@ public class ScopeMappedResource {
         this.viewPermission = viewPermission;
     }
 
+    @Override
+    public KeycloakSession getSession() {
+        return session;
+    }
+
+    @Override
+    public AdminPermissionEvaluator getAuth() {
+        return auth;
+    }
+
     /**
      * Get all scope mappings for the client
      *
      * @return
-     * @deprecated the method is not used neither from admin console or from admin client. It may be removed in future releases.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    @Deprecated
     @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get all scope mappings for the client", deprecated = true)
+    @Operation(summary = "Get all scope mappings for the client")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public MappingsRepresentation getScopeMappings() {
         viewPermission.require();
 
@@ -109,25 +123,84 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
 
-        MappingsRepresentation all = new MappingsRepresentation();
-        List<RoleRepresentation> realmRep = scopeContainer.getRealmScopeMappingsStream()
-                .filter(auth.roles()::canViewScopeMapping)
-                .map(ModelToRepresentation::toBriefRepresentation)
-                .collect(Collectors.toList());
-        if (!realmRep.isEmpty()) {
-            all.setRealmMappings(realmRep);
+        return ModelToRepresentation.toMappingsRepresentation(scopeContainer.getScopeMappingsStream().filter(auth.roles()::canViewScopeMapping));
+    }
+
+    @Path("composite")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get effective scope mappings for the client",
+        description = "This will recurse all composite roles to get the result.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getCompositeScopeMappings() {
+        viewPermission.require();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
         }
 
-        Stream<ClientModel> clients = realm.getClientsStream();
-        Map<String, ClientMappingsRepresentation> clientMappings = clients
-                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer, auth.roles()::canViewScopeMapping))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(ClientMappingsRepresentation::getClient, Function.identity()));
+        return ModelToRepresentation.toMappingsRepresentation(
+                RoleUtils.expandCompositeRolesStream(scopeContainer.getScopeMappingsStream()).filter(auth.roles()::canViewScopeMapping));
+    }
 
-        if (!clientMappings.isEmpty()) {
-            all.setClientMappings(clientMappings);
+    @Path("inherited")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get inherited scope mappings",
+        description = "Returns the roles obtained through the composite roles in the scope. "
+                + "A role that is both in the scope directly and inherited is included.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getInheritedScopeMappings() {
+        viewPermission.require();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
         }
-        return all;
+
+        return ModelToRepresentation.toMappingsRepresentation(
+                getInheritedRoles(scopeContainer.getScopeMappingsStream(), Stream.empty()).filter(auth.roles()::canViewScopeMapping));
+    }
+
+    @Path("available")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get the roles that can still be added to the scope by the caller",
+        description = "Returns the roles that are not yet in the scope and that the caller is allowed to add. "
+                + "Realm roles are returned in full, client roles can be paginated with first/max and filtered with search.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public MappingsRepresentation getAvailableScopeMappings(
+            @Parameter(description = "filter by role name or client id") @QueryParam("search") String search,
+            @Parameter(description = "first client role to return") @QueryParam("first") Integer first,
+            @Parameter(description = "maximum number of client roles to return") @QueryParam("max") Integer max) {
+        viewPermission.require();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
+        Set<String> excluded = scopeContainer.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet());
+
+        if (scopeContainer instanceof ClientModel client) {
+            // a client always has its own roles in scope
+            client.getRolesStream().map(RoleModel::getId).forEach(excluded::add);
+        }
+
+        return getAvailableMappings(AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE, search, excluded, first, max);
     }
 
     /**

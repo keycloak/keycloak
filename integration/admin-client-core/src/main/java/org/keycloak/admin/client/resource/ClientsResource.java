@@ -30,6 +30,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**
@@ -63,6 +64,13 @@ public interface ClientsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
+
+    @GET
+    @Path("roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ClientMappingsRepresentation> findRoles(@QueryParam("search") String search,
+                                                 @QueryParam("first") Integer firstResult,
+                                                 @QueryParam("max") Integer maxResults);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

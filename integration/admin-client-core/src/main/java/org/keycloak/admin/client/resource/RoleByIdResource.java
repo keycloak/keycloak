@@ -31,6 +31,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
@@ -72,6 +73,24 @@ public interface RoleByIdResource {
                                                  @QueryParam("search") String search,
                                                  @QueryParam("first") Integer first,
                                                  @QueryParam("max") Integer max);
+
+    @Path("{role-id}/composites/composite")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    MappingsRepresentation getCompositeRoleComposites(@PathParam("role-id") String id);
+
+    @Path("{role-id}/composites/inherited")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    MappingsRepresentation getInheritedRoleComposites(@PathParam("role-id") String id);
+
+    @Path("{role-id}/composites/available")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    MappingsRepresentation getAvailableRoleComposites(@PathParam("role-id") String id,
+                                                       @QueryParam("search") String search,
+                                                       @QueryParam("first") Integer first,
+                                                       @QueryParam("max") Integer max);
 
     @Path("{role-id}/composites/realm")
     @GET

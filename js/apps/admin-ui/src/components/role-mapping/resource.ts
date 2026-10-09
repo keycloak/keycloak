@@ -1,9 +1,6 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
-import {
-  fetchAdminUI,
-  postAdminUI,
-} from "../../context/auth/admin-ui-endpoint";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 type IDQuery = {
@@ -17,27 +14,8 @@ type PaginatingQuery = IDQuery & {
   search?: string;
 };
 
-type EffectiveClientRolesQuery = IDQuery;
-
 type Query = Partial<Omit<PaginatingQuery, "adminClient">> & {
   endpoint: string;
-};
-
-type ClientRole = {
-  id: string;
-  role: string;
-  description?: string;
-  client: string;
-  clientId: string;
-};
-
-export type EffectiveRole = {
-  id: string;
-  name: string;
-  description?: string;
-  clientRole: boolean;
-  client?: string;
-  clientId?: string;
 };
 
 const fetchEndpoint = async (
@@ -53,73 +31,6 @@ const fetchEndpoint = async (
       search: search || "",
     },
   );
-
-export const getAvailableClientRoles = (
-  adminClient: KeycloakAdminClient,
-  query: PaginatingQuery,
-): Promise<ClientRole[]> =>
-  fetchEndpoint(adminClient, { ...query, endpoint: "available-roles" });
-
-export const getEffectiveClientRoles = (
-  adminClient: KeycloakAdminClient,
-  query: EffectiveClientRolesQuery,
-): Promise<ClientRole[]> =>
-  fetchEndpoint(adminClient, { ...query, endpoint: "effective-roles" });
-
-export const getAllEffectiveRoles = (
-  adminClient: KeycloakAdminClient,
-  query: EffectiveClientRolesQuery,
-): Promise<EffectiveRole[]> =>
-  fetchEndpoint(adminClient, { ...query, endpoint: "effective-roles-all" });
-
-type RoleRepresentation = {
-  id: string;
-  name: string;
-  description?: string;
-  composite: boolean;
-  clientRole: boolean;
-  containerId: string;
-};
-
-type ClientMappingRepresentation = {
-  id: string;
-  client: string;
-  mappings: RoleRepresentation[];
-};
-
-export type RoleMappingRepresentation = {
-  realmMappings?: RoleRepresentation[];
-  clientMappings?: Record<string, ClientMappingRepresentation>;
-};
-
-export const getRoleMappings = async (
-  adminClient: KeycloakAdminClient,
-  id: string,
-): Promise<RoleMappingRepresentation> =>
-  fetchAdminUI(
-    adminClient,
-    `/ui-ext/role-mappings/roles/${encodeURIComponent(id)}`,
-    {},
-  );
-
-export type RoleDeleteRequest = {
-  roleId: string;
-  roleName: string;
-  clientId?: string;
-};
-
-export const deleteRoleMappings = async (
-  adminClient: KeycloakAdminClient,
-  type: string,
-  id: string,
-  roles: RoleDeleteRequest[],
-): Promise<void> => {
-  await postAdminUI(
-    adminClient,
-    `/ui-ext/role-mapping-delete/${type}/${encodeURIComponent(id)}`,
-    roles,
-  );
-};
 
 type UserQuery = {
   lastName?: string;

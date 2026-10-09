@@ -76,6 +76,45 @@ For example, an administrator with the `view-clients` role but without the `view
 With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
 In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
 
+=== Admin Console uses the Admin API to list and assign roles
+// https://github.com/keycloak/keycloak/issues/53747
+
+The Admin Console previously relied on internal `ui-ext` endpoints to search the client roles that can be assigned to users, groups, clients, client scopes, and composite roles, to list effective roles, and to remove role mappings.
+Those endpoints applied coarser permission checks than the Admin API.
+For example, an administrator with the `view-clients` role could see the roles of a client in the Admin Console, but could not select them when creating a role-based authorization policy unless they also had the `manage-users` role.
+
+The Admin Console now uses the Admin API for these operations, so that the same permissions apply regardless of whether roles are managed from the Admin Console or through the Admin API.
+To support this, the following endpoints have been added to the Admin API:
+
+* `GET /admin/realms/\{realm}/clients/roles` lists the client roles of all clients of the realm, grouped by client.
+Only the roles the caller is allowed to view are returned, so the `view-clients` role is enough to pick client roles when, for example, creating a role-based authorization policy.
+* `GET /admin/realms/\{realm}/users/\{id}/role-mappings/composite` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings/composite` return the effective role mappings across the realm and all clients, that is, with composite roles expanded and, for users, including the roles inherited from groups.
+* `GET /admin/realms/\{realm}/users/\{id}/role-mappings/inherited` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings/inherited` return only the roles obtained through composite roles and, for users, through group membership, so that a role that is both mapped directly and inherited can be told apart.
+* `GET /admin/realms/\{realm}/users/\{id}/role-mappings/available` and `GET /admin/realms/\{realm}/groups/\{id}/role-mappings/available` return the roles that are not yet mapped and that the caller is allowed to map.
+* `GET /admin/realms/\{realm}/clients/\{id}/scope-mappings/composite`, `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings/composite`, and the corresponding `/inherited` and `/available` endpoints provide the same for scope mappings.
+* `GET /admin/realms/\{realm}/roles-by-id/\{id}/composites/composite` returns the effective children of a composite role, `GET /admin/realms/\{realm}/roles-by-id/\{id}/composites/inherited` the children obtained through its composite children, and `GET /admin/realms/\{realm}/roles-by-id/\{id}/composites/available` the roles that can still be added as children by the caller.
+
+The `/composite`, `/inherited`, and `/available` endpoints return a `MappingsRepresentation` with the roles grouped by realm and client, while `GET /admin/realms/\{realm}/clients/roles` returns a list of `ClientMappingsRepresentation`.
+Client roles are paginated with the `first` and `max` parameters and filtered with the `search` parameter, which matches the role name or the client ID.
+Realm roles returned by the `/available` endpoints are not paginated.
+
+The Java and JavaScript admin clients expose the new endpoints.
+
+The `GET /admin/realms/\{realm}/clients/\{id}/scope-mappings` and `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings` endpoints, previously deprecated, are now used by the Admin Console and are no longer deprecated.
+
+The following internal `ui-ext` endpoints have been removed:
+
+* `GET /admin/realms/\{realm}/ui-ext/available-roles/\{type}/\{id}`
+* `GET /admin/realms/\{realm}/ui-ext/effective-roles/\{type}/\{id}`
+* `GET /admin/realms/\{realm}/ui-ext/effective-roles-all/\{type}/\{id}`
+* `GET /admin/realms/\{realm}/ui-ext/role-mappings/roles/\{id}`
+* `POST /admin/realms/\{realm}/ui-ext/role-mapping-delete/\{type}/\{id}`
+
+These endpoints were not part of the public Admin API and were only intended for the Admin Console.
+If you have custom scripts that call them, use the Admin API endpoints listed above instead.
+
+As a consequence, removing role mappings from a group in the Admin Console now requires the `manage` permission on the group when fine-grained admin permissions are enabled, consistent with the Admin API, instead of the `manage-membership` permission.
+
 === Organization Redirect URL now validated against the account client
 
 The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
