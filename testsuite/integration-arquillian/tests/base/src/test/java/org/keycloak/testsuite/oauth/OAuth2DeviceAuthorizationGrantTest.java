@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,7 +40,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.IDToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -65,7 +63,6 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -104,7 +101,6 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     private static final String DEVICE_APP_WITHOUT_SCOPES = "test-device-without-scopes";
     private static final String SHORT_DEVICE_FLOW_URL = "https://keycloak.org/device";
     private static final String DEVICE_LOGIN_ACR_USER = "device-login-acr";
-    private static final String DEVICE_LOGIN_ACR_TOTP_SECRET = "totpSecret";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -168,14 +164,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 .build();
         realm.users(user);
 
-        UserRepresentation acrUser = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
-                .username(DEVICE_LOGIN_ACR_USER)
-                .email("device-login-acr@localhost")
-                .password("password")
-                .totpSecret(DEVICE_LOGIN_ACR_TOTP_SECRET)
-                .build();
-        realm.users(acrUser);
+        // Dedicated user so OTP is not attached to the shared device-login account
+        realm.users(UserBuilder.create().id(KeycloakModelUtils.generateId()).username(DEVICE_LOGIN_ACR_USER)
+                .email("device-login-acr@localhost").password("password").totpSecret("totpSecret").build());
 
         testRealms.add(realm.build());
     }
@@ -243,7 +234,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         if (clientRep.getAttributes() == null) {
             clientRep.setAttributes(new HashMap<>());
         }
-        clientRep.getAttributes().put(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient());
+        clientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{\"copper\":0,\"silver\":1,\"gold\":2}");
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue("gold");
         client.update(clientRep);
 
@@ -260,7 +251,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             loginPage.assertCurrent();
             oauth.fillLoginForm(DEVICE_LOGIN_ACR_USER, "password");
 
-            // Password alone must not complete device authorization when minimum ACR requires OTP
+            // Password alone must not finish authorization when minimum ACR requires OTP
             loginTotpPage.assertCurrent();
             AccessTokenResponse pendingResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
             Assertions.assertEquals(400, pendingResponse.getStatusCode());
@@ -268,42 +259,26 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             assertNull(pendingResponse.getAccessToken());
             assertNull(pendingResponse.getIdToken());
 
-            loginTotpPage.login(totp.generateTOTP(DEVICE_LOGIN_ACR_TOTP_SECRET));
-
+            loginTotpPage.login(totp.generateTOTP("totpSecret"));
             grantPage.assertCurrent();
             grantPage.accept();
             verificationPage.assertApprovedPage();
 
-            // Respect device polling interval after the pending token poll above
-            timeOffSet.set(5);
-
+            timeOffSet.set(5); // honor device polling interval after the pending token poll
             AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
             Assertions.assertEquals(200, tokenResponse.getStatusCode());
-
-            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-            Assertions.assertEquals("gold", accessToken.getAcr());
-            IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-            Assertions.assertEquals("gold", idToken.getAcr());
+            Assertions.assertEquals("gold", oauth.verifyToken(tokenResponse.getAccessToken()).getAcr());
+            Assertions.assertEquals("gold", oauth.verifyIDToken(tokenResponse.getIdToken()).getAcr());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
             timeOffSet.set(0);
-
             clientRep = client.toRepresentation();
             clientRep.setAttributes(new HashMap<>(originalAttributes));
             client.update(clientRep);
-
             RealmRepresentation realm = adminClient.realm(REALM_NAME).toRepresentation();
             realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
             adminClient.realm(REALM_NAME).update(realm);
         }
-    }
-
-    private String getAcrToLoaMappingForClient() throws IOException {
-        Map<String, Integer> acrLoaMap = new HashMap<>();
-        acrLoaMap.put("copper", 0);
-        acrLoaMap.put("silver", 1);
-        acrLoaMap.put("gold", 2);
-        return JsonSerialization.writeValueAsString(acrLoaMap);
     }
 
     @Test
