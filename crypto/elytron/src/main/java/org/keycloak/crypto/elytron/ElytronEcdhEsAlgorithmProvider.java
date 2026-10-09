@@ -32,7 +32,9 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.EllipticCurve;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
@@ -170,12 +172,40 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
         BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
 
+        ECParameterSpec spec = EllipticCurves.getSpec(crv);
+        if (spec == null) {
+            throw new IllegalArgumentException("Unsupported curve");
+        }
+
+        // Defense-in-depth: validate that the point lies on the named curve
+        if (!isPointOnCurve(x, y, spec.getCurve())) {
+            throw new IllegalArgumentException("Invalid EC point: not on the named curve");
+        }
+
         EcKeyUtil ecKeyUtil = new EcKeyUtil();
         try {
-            return ecKeyUtil.publicKey(x, y, EllipticCurves.getSpec(crv));
+            return ecKeyUtil.publicKey(x, y, spec);
         } catch (JoseException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    /**
+     * Checks that both coordinates are in the field and satisfy the curve equation
+     * {@code y^2 = x^3 + ax + b (mod p)}. Every curve {@link EllipticCurves#getSpec(String)} resolves
+     * has a prime field and cofactor one, so a point that passes also has the correct subgroup order.
+     */
+    private static boolean isPointOnCurve(BigInteger x, BigInteger y, EllipticCurve curve) {
+        if (!(curve.getField() instanceof ECFieldFp field)) {
+            return false;
+        }
+        BigInteger p = field.getP();
+        if (x.signum() < 0 || x.compareTo(p) >= 0 || y.signum() < 0 || y.compareTo(p) >= 0) {
+            return false;
+        }
+        BigInteger lhs = y.multiply(y).mod(p);
+        BigInteger rhs = x.multiply(x).multiply(x).add(curve.getA().multiply(x)).add(curve.getB()).mod(p);
+        return lhs.equals(rhs);
     }
 
     private static byte[] deriveSharedSecret(Key publicKey, Key privateKey)
