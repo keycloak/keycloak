@@ -36,7 +36,9 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -339,10 +341,18 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         // The credential may have been changed after it was validated, e.g. by a password change in the same request
         // or by a concurrent request. Re-hashing the validated password would revert that change.
-        // Read it from the local storage and not from the user cache, after the (slow) hashing. The update below then
-        // works on the same entity, so a change committed in between fails it on the entity version (ModelException).
-        UserModel localUser = UserStoragePrivateUtil.userLocalStorage(s).getUserById(realm, userId);
-        CredentialModel current = (localUser != null ? localUser : userModel).credentialManager().getStoredCredentialById(passwordId);
+        // Read it from the storage and not from the user cache, after the (slow) hashing.
+        CredentialModel current;
+        if (StorageId.isLocalStorage(userId)) {
+            // The update below works on the same entity, so a change committed in between fails it on the entity
+            // version (ModelException).
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(s).getUserById(realm, userId);
+            current = localUser != null ? localUser.credentialManager().getStoredCredentialById(passwordId) : null;
+        } else {
+            // Credentials of users from a user storage provider are kept in the federated storage. Its entity has no
+            // version, so a change committed between this read and the update is not detected.
+            current = UserStorageUtil.userFederatedStorage(s).getStoredCredentialById(realm, userId, passwordId);
+        }
         if (current == null || !Objects.equals(current.getSecretData(), validatedSecretData)) {
             logger.debugf("Skipping re-hash of password credential %s of user %s, it changed after it was validated", passwordId, userId);
             return;

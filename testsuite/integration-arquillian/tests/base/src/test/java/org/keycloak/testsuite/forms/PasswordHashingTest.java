@@ -31,8 +31,10 @@ import javax.crypto.spec.PBEKeySpec;
 
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -52,14 +54,19 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.federation.NoCredentialUserStorageProvider;
+import org.keycloak.testsuite.federation.NoCredentialUserStorageProviderFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.DefaultPasswordHash;
@@ -338,6 +345,58 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         String username = "testPasswordChangedWhileRehashing";
         final String oldPassword = createUser(username);
         final String newPassword = generatePassword();
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy(algorithm + " and hashIterations(2)");
+
+        // Another request changes the password and commits while the queued re-hash computes the new hash.
+        // Configured in a separate transaction, so that the validating transaction only reads, like a login.
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE, username);
+            realm.setAttribute(PasswordChangingHashProviderFactory.PASSWORD_ATTRIBUTE, newPassword);
+        });
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+        });
+
+        // The re-hash of the old password must not overwrite the new password
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertNull(realm.getAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE), "Password must have been changed while re-hashing");
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
+    }
+
+    @Test
+    public void testFederatedStoragePasswordChangedWhileRehashingNotReverted() {
+        // A user from a user storage provider that leaves its credentials to Keycloak, which keeps them in the federated storage
+        ComponentRepresentation provider = new ComponentRepresentation();
+        provider.setName("no-credential");
+        provider.setProviderId(NoCredentialUserStorageProviderFactory.PROVIDER_ID);
+        provider.setProviderType(UserStorageProvider.class.getName());
+        provider.setConfig(new MultivaluedHashMap<>());
+        try (Response response = managedRealm.admin().components().add(provider)) {
+            getCleanup().addComponentId(ApiUtil.getCreatedId(response));
+        }
+
+        String algorithm = "hashAlgorithm(" + PasswordChangingHashProviderFactory.ID + ")";
+        setPasswordPolicy(algorithm + " and hashIterations(1)");
+
+        String username = NoCredentialUserStorageProvider.USERNAME_PREFIX + "password-changed-while-rehashing";
+        final String oldPassword = generatePassword();
+        final String newPassword = generatePassword();
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().updateCredential(UserCredentialModel.password(oldPassword)));
+        });
 
         // The stored hash is now outdated, so validating the old password queues a re-hash of it
         setPasswordPolicy(algorithm + " and hashIterations(2)");
