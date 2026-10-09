@@ -42,6 +42,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
@@ -761,6 +762,44 @@ public class CIBATest extends AbstractClientPoliciesTest {
         additionalParameters.put(OAuth2Constants.CLIENT_ID, TEST_CLIENT_NAME);
         additionalParameters.put(OAuth2Constants.CLIENT_SECRET, TEST_CLIENT_PASSWORD);
         testBackchannelAuthenticationFlow(true, "ABCDE", additionalParameters);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationRequestUsesClientMinimumAcr() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "min-acr-ciba";
+
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            Map<String, Integer> acrLoaMap = new HashMap<>();
+            acrLoaMap.put("copper", 0);
+            acrLoaMap.put("silver", 1);
+            acrLoaMap.put("gold", 2);
+            clientRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue("gold");
+            clientResource.update(clientRep);
+
+            // No acr_values on the backchannel request — client minimum ACR must still be forwarded
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+            AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+            assertThat(authenticationChannelReq.getAcrValues(), is(equalTo("gold")));
+
+            doAuthenticationChannelCallback(testRequest);
+            doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+        } finally {
+            if (clientRep != null) {
+                clientRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue(null);
+            }
+            revertCIBASettings(clientResource, clientRep);
+        }
     }
 
     @Test
