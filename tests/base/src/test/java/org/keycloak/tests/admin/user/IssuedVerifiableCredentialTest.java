@@ -8,6 +8,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
@@ -16,6 +18,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -24,6 +27,7 @@ import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -283,6 +287,71 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         // Verify all IssuedVCs from this wallet are deleted
         List<IssuedVerifiableCredentialRepresentation> afterDelete = userResource.verifiableCredentials().getIssuedCredentials();
         assertThat(afterDelete, empty());
+    }
+
+    @Test
+    @DatabaseTest
+    public void testRevokeIssuedCredentialsByWalletClient() {
+        String user1Id = createUser("wallet-user1", "wallet-user1@test.com");
+        String user2Id = createUser("wallet-user2", "wallet-user2@test.com");
+        String walletAId = createTestClient("wallet-a");
+        String walletBId = createTestClient("wallet-b");
+
+        createIssuedVcViaModelLayer(user1Id, CREDENTIAL_TYPE_1, walletAId, "rev-001");
+        createIssuedVcViaModelLayer(user1Id, CREDENTIAL_TYPE_2, walletAId, "rev-002");
+        createIssuedVcViaModelLayer(user2Id, CREDENTIAL_TYPE_1, walletAId, "rev-003");
+        createIssuedVcViaModelLayer(user1Id, CERT_1, walletBId, "rev-004");
+
+        adminEvents.clear();
+
+        managedRealm.admin().clients().get(walletAId).revokeIssuedVerifiableCredentials();
+
+        List<IssuedVerifiableCredentialRepresentation> user1Creds = managedRealm.admin().users().get(user1Id).verifiableCredentials().getIssuedCredentials();
+        assertThat(user1Creds, hasSize(1));
+        assertEquals(walletBId, user1Creds.get(0).getClientId());
+        assertThat(managedRealm.admin().users().get(user2Id).verifiableCredentials().getIssuedCredentials(), empty());
+
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE,
+                AdminEventPaths.clientResourcePath(walletAId) + "/vc/issued-credentials", ResourceType.CLIENT);
+    }
+
+    @Test
+    public void testRevokeIssuedCredentialsByWalletClient_FeatureDisabled() {
+        managedRealm.updateWithCleanup((realm) -> realm.verifiableCredentialsEnabled(false));
+
+        String walletClientId = createTestClient("wallet-disabled");
+
+        try {
+            managedRealm.admin().clients().get(walletClientId).revokeIssuedVerifiableCredentials();
+            Assertions.fail("Expected BadRequestException when feature is disabled");
+        } catch (BadRequestException e) {
+            assertThat(e.getResponse().getStatus(), is(400));
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void testRemoveIssuedVerifiableCredentialsByClient() {
+        String user1Id = createUser("model-user1", "model-user1@test.com");
+        String user2Id = createUser("model-user2", "model-user2@test.com");
+        String walletAId = createTestClient("model-wallet-a");
+        String walletBId = createTestClient("model-wallet-b");
+
+        createIssuedVcViaModelLayer(user1Id, CREDENTIAL_TYPE_1, walletAId, "rev-001");
+        createIssuedVcViaModelLayer(user1Id, CREDENTIAL_TYPE_2, walletAId, "rev-002");
+        createIssuedVcViaModelLayer(user2Id, CREDENTIAL_TYPE_1, walletAId, "rev-003");
+        createIssuedVcViaModelLayer(user1Id, CERT_1, walletBId, "rev-004");
+
+        int removed = runOnServer.fetch(session -> session.users().removeIssuedVerifiableCredentialsByClient(walletAId), Integer.class);
+        assertEquals(3, removed);
+
+        runOnServer.run(session -> {
+            assertEquals(0, session.users().getIssuedVerifiableCredentialsStreamByUser(user2Id).count());
+
+            List<IssuedVerifiableCredentialModel> remaining = session.users().getIssuedVerifiableCredentialsStreamByUser(user1Id).toList();
+            assertEquals(1, remaining.size());
+            assertEquals(walletBId, remaining.get(0).getClientId());
+        });
     }
 
     @Test
