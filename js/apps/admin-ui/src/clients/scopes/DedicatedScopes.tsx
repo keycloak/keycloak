@@ -38,7 +38,12 @@ export default function DedicatedScopes() {
 
   const [client, setClient] = useState<ClientRepresentation>();
 
-  useFetch(() => adminClient.clients.findOne({ id: clientId }), setClient, []);
+  useFetch(
+    async () =>
+      (await adminClient.clients.findOne({ id: clientId })) ?? undefined,
+    setClient,
+    [],
+  );
 
   const useTab = (tab: DedicatedScopeTab) =>
     useRoutableTab(toDedicatedScope({ realm, clientId, tab }));
@@ -55,7 +60,7 @@ export default function DedicatedScopes() {
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      navigate(
+      void navigate(
         toMapper({
           realm,
           id: client.id!,
@@ -69,7 +74,9 @@ export default function DedicatedScopes() {
           { id: client.id! },
           mappers as ProtocolMapperRepresentation[],
         );
-        setClient(await adminClient.clients.findOne({ id: client.id! }));
+        setClient(
+          (await adminClient.clients.findOne({ id: client.id! })) ?? undefined,
+        );
         addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
         addError("mappingCreatedError", error);

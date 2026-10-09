@@ -16,19 +16,24 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -143,6 +148,168 @@ public class ScopePermissionManagementTest extends AbstractPolicyManagementTest 
 
         try (Response response = permissions.create(permission2)) {
             assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void failCreateWithScopeNotAssociatedWithResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        // a scope that exists in the resource server but is not associated with "Resource A"
+        authorization.scopes().create(new ScopeRepresentation("delete")).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName("Invalid Scope Permission");
+        representation.addResource("Resource A");
+        representation.addScope("delete");
+        representation.addPolicy("Only Marta Policy");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+
+        try (Response response = permissions.create(representation)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+            // the validation error must be surfaced to the client instead of an opaque unknown_error
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("delete"),
+                    "Expected the offending scope name in the error description");
+        }
+    }
+
+    @Test
+    public void failCreateWithScopeNotAssociatedWithResourceWhenResourceTypeIsBlank() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        authorization.scopes().create(new ScopeRepresentation("delete")).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName("Blank ResourceType Scope Permission");
+        representation.setResourceType("   ");
+        representation.addResource("Resource A");
+        representation.addScope("delete");
+        representation.addPolicy("Only Marta Policy");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+
+        try (Response response = permissions.create(representation)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("delete"),
+                    "Expected the offending scope name in the error description");
+        }
+    }
+
+    @Test
+    public void failUpdateWithScopeNotAssociatedWithResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        // a scope that exists in the resource server but is not associated with "Resource A"
+        authorization.scopes().create(new ScopeRepresentation("delete")).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName("Update To Invalid Scope Permission");
+        representation.addResource("Resource A");
+        representation.addScope("read");
+        representation.addPolicy("Only Marta Policy");
+
+        assertCreated(authorization, representation);
+
+        representation.getScopes().clear();
+        representation.addScope("delete");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+        ScopePermissionResource permission = permissions.findById(representation.getId());
+
+        try {
+            permission.update(representation);
+            fail("Expected a Bad Request for a scope not associated with the resource");
+        } catch (BadRequestException expected) {
+            OAuth2ErrorRepresentation error = expected.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("delete"),
+                    "Expected the offending scope name in the error description");
+        }
+    }
+
+    @Test
+    public void testAllowScopeInheritedFromTypedResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        authorization.scopes().create(new ScopeRepresentation("manage")).close();
+
+        ResourceRepresentation typeResource = new ResourceRepresentation();
+        typeResource.setName("Type Resource");
+        typeResource.setType("test-type");
+        typeResource.addScope("manage");
+        authorization.resources().create(typeResource).close();
+
+        ResourceRepresentation userResource = new ResourceRepresentation();
+        userResource.setName("User Typed Resource");
+        userResource.setType("test-type");
+        userResource.setOwner("marta");
+
+        String userResourceId;
+        try (Response response = authorization.resources().create(userResource)) {
+            userResourceId = response.readEntity(ResourceRepresentation.class).getId();
+        }
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+        representation.setName("Typed Resource Inherited Scope Permission");
+        representation.addResource(userResourceId);
+        representation.addScope("manage");
+        representation.addPolicy("Only Marta Policy");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+
+        try (Response response = permissions.create(representation)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void failCreateWithScopeNotInheritedByTypedResource() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        authorization.scopes().create(new ScopeRepresentation("manage")).close();
+        authorization.scopes().create(new ScopeRepresentation("archive")).close();
+
+        ResourceRepresentation typeResource = new ResourceRepresentation();
+        typeResource.setName("Typed Resource For Reject");
+        typeResource.setType("reject-type");
+        typeResource.addScope("manage");
+        authorization.resources().create(typeResource).close();
+
+        ResourceRepresentation userResource = new ResourceRepresentation();
+        userResource.setName("User Typed Resource For Reject");
+        userResource.setType("reject-type");
+        userResource.setOwner("marta");
+
+        String userResourceId;
+        try (Response response = authorization.resources().create(userResource)) {
+            userResourceId = response.readEntity(ResourceRepresentation.class).getId();
+        }
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+        representation.setName("Reject Non-Inherited Scope Permission");
+        representation.addResource(userResourceId);
+        representation.addScope("archive");
+        representation.addPolicy("Only Marta Policy");
+
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+
+        try (Response response = permissions.create(representation)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_request", error.getError());
+            assertTrue(error.getErrorDescription() != null && error.getErrorDescription().contains("archive"),
+                    "Expected the offending scope name in the error description");
         }
     }
 

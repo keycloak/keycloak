@@ -26,13 +26,11 @@ import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,9 +49,6 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
  */
 @AppServerContainer("")
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
-
-    @Page
-    protected AppServerContextRoot appServerContextRootPage;
 
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class

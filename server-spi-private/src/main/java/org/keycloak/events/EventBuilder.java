@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
+import org.keycloak.utils.StringUtil;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.StatusCode;
@@ -136,7 +138,18 @@ public class EventBuilder {
     }
 
     public EventBuilder session(UserSessionModel session) {
-        event.setSessionId(session == null ? null : session.getId());
+        if (session == null) {
+            event.setSessionId(null);
+            return this;
+        }
+        event.setSessionId(session.getId());
+
+        String impersonatorId = session.getNote(ImpersonationSessionNote.IMPERSONATOR_ID.toString());
+        if (StringUtil.isNotBlank(impersonatorId)) {
+            detail(Details.IMPERSONATOR_ID, impersonatorId);
+            detail(Details.IMPERSONATOR, session.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
+        }
+
         return this;
     }
 
@@ -221,7 +234,8 @@ public class EventBuilder {
     }
 
     public void success() {
-        send(this.storeImmediately == null ? false : this.storeImmediately);
+        // Clone the event to avoid further modifications by the builder
+        send(event.clone(), this.storeImmediately == null ? false : this.storeImmediately);
     }
 
     public void error(String error) {
@@ -229,11 +243,14 @@ public class EventBuilder {
             throw new IllegalStateException("Attempted to define event error without first setting the event type");
         }
 
+        // Clone the event to avoid further modifications by the builder,
+        // and asynchronous processors are not confused.
+        Event event = this.event.clone();
         if (!event.getType().name().endsWith("_ERROR")) {
             event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
         }
         event.setError(error);
-        send(this.storeImmediately == null ? true : this.storeImmediately);
+        send(event, this.storeImmediately == null ? true : this.storeImmediately);
     }
 
     @Override
@@ -241,7 +258,13 @@ public class EventBuilder {
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }
 
-    private void send(boolean sendImmediately) {
+    /**
+     * Send the event.
+     *
+     * @param event Always call with a cloned event that the caller will no longer modify
+     * @param sendImmediately if set to true, will send it in a new transaction so it is persisted even if this transaction rolls back
+     */
+    private void send(Event event, boolean sendImmediately) {
         event.setTime(Time.currentTimeMillis());
         event.setId(UUID.randomUUID().toString());
 
@@ -251,21 +274,21 @@ public class EventBuilder {
                 EventStoreProvider store = this.isEventsEnabled ? getEventStoreProvider(innerSession) : null;
                 List<EventListenerProvider> listeners = getEventListeners(innerSession, realm);
 
-                sendNow(store, eventTypes, listeners);
+                sendNow(store, event, eventTypes, listeners);
             });
         } else {
-            sendNow(this.store, eventTypes, this.listeners);
+            sendNow(this.store, event, eventTypes, this.listeners);
         }
     }
 
-    private void sendNow(EventStoreProvider targetStore, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
+    private void sendNow(EventStoreProvider targetStore, Event event, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
         if (targetStore != null) {
             if (eventTypes.isEmpty() && event.getType().isSaveByDefault() || eventTypes.contains(event.getType().name())) {
                 targetStore.onEvent(event);
             }
         }
 
-        traceEvent();
+        traceEvent(session, event);
 
         for (EventListenerProvider l : targetListeners) {
             try {
@@ -276,7 +299,7 @@ public class EventBuilder {
         }
     }
 
-    private void traceEvent() {
+    private static void traceEvent(KeycloakSession session, Event event) {
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.getCurrentSpan();
 

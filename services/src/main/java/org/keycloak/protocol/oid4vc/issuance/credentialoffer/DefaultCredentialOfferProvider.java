@@ -25,6 +25,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
@@ -66,6 +67,18 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetClientId,
             String targetUsername,
             Integer expireAt) {
+        return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUsername,
+                expireAt.longValue());
+    }
+
+    @Override
+    public CredentialOfferState createCredentialOffer(
+            UserModel user,
+            String grantType,
+            List<String> credentialConfigurationIds,
+            String targetClientId,
+            String targetUsername,
+            long expireAt) {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
         //
@@ -153,9 +166,8 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         //   - Targeted `pre-authorized_code` grant
         //
         if (Strings.isEmpty(targetUser) || !loginUserModel.getUsername().equals(targetUser)) {
-            boolean hasCredentialOfferRole = loginUserModel.getRoleMappingsStream()
-                    .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
-            if (!hasCredentialOfferRole) {
+            RoleModel credentialOfferRole = realmModel.getRole(CREDENTIAL_OFFER_CREATE.getName());
+            if (credentialOfferRole == null || !loginUserModel.hasRole(credentialOfferRole)) {
                 throw new CredentialOfferException(Errors.NOT_ALLOWED, "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName());
             }
         }

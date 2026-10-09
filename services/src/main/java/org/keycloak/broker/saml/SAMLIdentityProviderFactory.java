@@ -148,6 +148,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 if (defaultCertificate != null) {
                     if (samlIdentityProviderConfig.getSigningCertificates().length == 0) {
                         samlIdentityProviderConfig.addSigningCertificate(defaultCertificate);
+                        samlIdentityProviderConfig.setValidateSignature(true);
                     }
 
                     if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {

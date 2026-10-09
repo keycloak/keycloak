@@ -11,12 +11,16 @@ identities, and finally add them as a member of the organization.
 An organization can have one or more identity providers associated with it so that they can authenticate their users from
 different sources and enforce different constraints on each of them.
 
-Before you can link an identity provider to an organization, you create an organization at the realm level from the *Identity Providers*
+A single identity provider can also be shared across multiple organizations. Each organization maintains its own independent
+link to the identity provider, with per-association settings that control auto-membership and membership type. This enables
+scenarios where a single corporate identity provider serves multiple business units, each with its own membership rules.
+
+Before you can link an identity provider to an organization, you create an identity provider at the realm level from the *Identity Providers*
 section in the menu. You can link any of the built-in social and identity providers available in the realm to an organization.
 
 == Linking an identity provider to an organization
 
-An identity provider can be linked to an organization from the *Identity providers* tab. If identity providers already exist, you see a list of them and options to search, edit, or unlink from the organization.
+An identity provider can be linked to an organization from the *Identity providers* tab. If identity providers are already linked, you see a list of them with their per-association settings and options to edit or unlink.
 
 .Organization identity providers
 image:images/organizations-identity-providers.png[alt="Organization identity providers"]
@@ -25,39 +29,76 @@ image:images/organizations-identity-providers.png[alt="Organization identity pro
 
 . Click *Link identity provider*
 . Select an *Identity provider*
-. Set the appropriate settings
+. Configure the per-association settings
 . Click *Save*
 
 .Linking identity provider
 image:images/organizations-link-identity-provider.png[alt="Linking identity provider"]
 
-An identity provider has the following settings:
+When linking an identity provider to an organization, the following per-association settings are available:
 
 Identity provider::
-The identity provider you want to link to the organization. An identity provider can only be linked to a single organization.
+The identity provider you want to link to the organization. A single identity provider can be linked to multiple organizations.
 
-Domain::
-The domain from the organization that you want to link with the identity provider.
+Auto membership::
+When enabled, users who authenticate through this identity provider are automatically added as members of the organization,
+subject to the domain gate (see <<authenticating-members_{context},Authenticating members>>). Enabled by default.
 
-Excluded domains::
-A comma-separated list of domains to skip automatic redirection. You can use wildcard domains like `*.example.com` to exclude all subdomains of `example.com`.
+Membership type::
+The membership type assigned to users who are auto-added through this identity provider link.
++
+* *Unmanaged* (default): the user's account persists in the realm even if removed from the organization.
+* *Managed*: the user's lifecycle is bound to the organization -- removing the member or the organization also removes the account.
++
+The *Managed* option is only available when auto membership is enabled and no other organization has already claimed managed membership for this identity provider. At most one organization can have managed membership type for a given identity provider.
++
+For more details on membership types, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
+
+NOTE: Setting auto membership to disabled while membership type is managed is not allowed. If you need invitation-only membership, set auto membership to disabled with the unmanaged membership type.
+
+=== Identity provider display settings
+
+Several settings control how an organization's identity provider appears on the login page. These settings are configured on the identity provider itself (at the realm level) rather than on the per-organization link, because they apply globally regardless of which organization is involved.
+
+To configure these settings, navigate to *Identity Providers* in the menu and select the provider.
 
 Hide on login page::
-If this identity provider should be hidden in login pages when the user is authenticating in the scope of the organization.
+If this identity provider should be hidden on login pages when the user is authenticating in the scope of the organization. This setting is on the identity provider's *Settings* tab.
+
+The remaining two settings are in the *Organization settings* section on the *Settings* tab. This section is visible only when the identity provider is linked to at least one organization.
 
 Hide on login page when organization not resolved::
-If enabled, the identity provider will be hidden on the login page when the organization cannot be resolved based on the user's email domain. Otherwise, the identity provider will be shown on the login page regardless of whether the organization is resolved or not. If 'Hide on login page' is also enabled, the identity provider will always be hidden on the login page.
+If enabled, the identity provider will be hidden on the login page when the organization cannot be resolved based on the user's email domain. Otherwise, the identity provider will be shown on the login page regardless of whether the organization is resolved or not. If *Hide on login page* is also enabled, the identity provider will always be hidden on the login page.
 
 Show on login page for unlinked members::
 If enabled, organization members can see this identity provider on the login page even when they are already linked to another identity provider.
 
-Redirect when email domain matches::
-If members should be automatically redirected to the identity provider when their email domain matches the domain set to the identity provider. If the domain is set to `Any`, members whose email domain matches *any* of the organization domains will be redirected to the identity provider.
+=== Domain routing
 
-If the org is linked with multiple identity providers, the organization authenticator prioritizes the provider that matches the email domain of the user for automatic redirection. If none is found, it tries to locate one whose domain is set to `Any`.
+Domain routing -- which determines how users are redirected to an identity provider based on their email domain -- is configured on the domain itself, not on the identity provider link. To configure which identity provider handles a specific domain and whether auto-redirect is enabled, see <<managing-organization-domains_{context},Managing organization domains>>.
 
-Once linked to an organization, the identity provider can be managed just like any other in a realm by accessing the *Identity Providers* section in the menu. However, the options herein described are only available when managing the identity provider in the scope of an organization. The only exception is the
- *Hide on login page* option that is present here for convenience.
+== Understanding per-association configuration
+
+Each link between an identity provider and an organization carries its own independent configuration. This means:
+
+* The same identity provider can have different auto-membership and membership type settings for each organization it is linked to.
+* Changing the settings on one organization's link does not affect other organizations linked to the same identity provider.
+* Unlinking an identity provider from one organization does not affect its links to other organizations.
+
+The following validation rules apply:
+
+* At most one organization per identity provider can have the *Managed* membership type. This prevents conflicting lifecycle ownership where multiple organizations could claim control over the same user's account.
+* Auto membership disabled combined with managed membership type is not allowed. Managed membership requires auto-membership because the lifecycle binding depends on the automatic onboarding process.
+
+== Viewing organizations from the identity provider detail page
+
+When an identity provider is linked to one or more organizations, its realm-level detail page displays an *Organizations* tab. This tab provides a reverse view -- from the identity provider's perspective -- and contains two sub-tabs:
+
+Organizations::
+Lists all organizations linked to this identity provider, showing the per-association auto membership and membership type settings for each. You can edit the per-association settings or unlink an organization directly from this view.
+
+Domains::
+A read-only cross-reference of all organization domains that route to this identity provider. Each entry shows the domain name, the owning organization, and whether auto-redirect is enabled. To modify domain routing, navigate to the organization's *Domains* tab.
 
 === Mapping federated users to organization groups
 
@@ -83,11 +124,11 @@ Sync Mode Override::
 How membership is managed (Import, Force, Inherit).
 
 Group::
-The group to assign users to. If the IdP is linked to an organization, you can either select realm groups or groups from that organization.
+The group to assign users to. If the IdP is linked to one or more organizations, you can select realm groups or groups from a specific organization. The mapper stores the selected organization, so each mapper targets exactly one organization's groups.
 
 . Click *Save*.
 
-IMPORTANT: Groups are filtered to the organization linked with this identity provider. If the IdP is unlinked from the organization, users will no longer be assigned to organization groups during authentication.
+IMPORTANT: If the identity provider is linked to multiple organizations, and you need to map users to groups in different organizations, create a separate mapper for each organization. If the IdP is unlinked from the mapper's target organization, the organization group mapping becomes inactive and a warning is logged during authentication.
 
 ==== Using the Advanced Group mapper
 
@@ -115,7 +156,7 @@ Regex Claim Values::
 When enabled, claim values are treated as regular expressions for pattern matching. When disabled, values must match exactly.
 
 Group::
-The target group. If the IdP is linked to an organization, you can select groups from that organization alongside with realm groups.
+The target group. If the IdP is linked to one or more organizations, you can select groups from a specific organization alongside realm groups.
 
 . Click *Save*.
 
@@ -123,9 +164,9 @@ The target group. If the IdP is linked to an organization, you can select groups
 
 When configuring group mappers for an identity provider:
 
-* *IdP linked to organization:* Both realm groups and groups from that organization are selectable
-* *IdP not linked to organization:* Only realm groups are selectable
-* *IdP unlinked from organization:* Existing organization group mappings are preserved but no longer active.
+* *IdP linked to one or more organizations:* Both realm groups and groups from the selected organization are selectable. Each mapper targets one organization.
+* *IdP not linked to any organization:* Only realm groups are selectable.
+* *IdP unlinked from the mapper's target organization:* Existing organization group mappings are preserved but no longer active.
 
 ==== Runtime validation
 
@@ -148,11 +189,11 @@ If you unlink an identity provider from an organization:
 * Consider changing those mappings to realm groups if needed
 * Alternatively, re-link the IdP to the organization to restore group mappings
 
-NOTE: Organization groups cannot be shared across organizations. If you move an IdP from one organization to another, update the group mappings accordingly.
+NOTE: Organization groups are isolated per organization. If you link an identity provider to a new organization, create new mappers targeting that organization's groups. Existing mappers targeting the previous organization remain valid as long as that link is still active.
 
 == Editing a linked identity provider
 
-You can edit any of the organization-related settings of a linked identity provider at any time.
+You can edit the per-association settings of a linked identity provider (such as auto membership and membership type) at any time.
 
 .Procedure
 
@@ -165,12 +206,15 @@ You can use the search option for this step.
 . Make the necessary changes.
 . Click *Save*.
 
-.Editing linked identity provider
-image:images/organizations-edit-identity-provider.png[alt="Editing linked identity provider"]
+You can also edit per-association settings from the identity provider's realm-level detail page. Navigate to the *Organizations* tab and click *Edit* on the organization whose settings you want to change.
+
+To edit the identity provider's own settings (such as display options or organization settings), click the *Provider details* link in the identity providers list to navigate to the realm-level identity provider page.
 
 == Unlinking an identity provider from an organization
 
-When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer associated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
+When an identity provider is unlinked from an organization, only the association between that organization and the identity provider is removed. The identity provider remains available as a realm-level provider and stays linked to any other organizations it is associated with.
+
+To delete the unlinked provider entirely, use the *Identity Providers* section in the menu.
 
 .Procedure
 
@@ -181,5 +225,4 @@ You can use the search capabilities for this step.
 . Click the action button (three dots) at the end of the line.
 . Click *Unlink provider*.
 
-.Unlinking identity provider
-image:images/organizations-unlink-identity-provider.png[alt="Unlinking identity provider"]
+You can also unlink from the identity provider's realm-level detail page by navigating to the *Organizations* tab and clicking *Unlink* on the organization.

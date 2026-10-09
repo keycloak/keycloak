@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -47,6 +48,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     private final String images;
     private final long startTimeout;
     private final boolean stateless;
+    private LoadBalancer loadBalancer;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
@@ -104,6 +106,9 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             }
         }
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
+        // none of the Inject* annotations can make the LoadBalancer as a dependency, to ensure it is started before any http request is performed.
+        // it is better to start/manage it here.
+        loadBalancer = new LoadBalancer(this);
     }
 
     private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, Supplier<CountdownLatchLoggingConsumer> clusterLatch) {
@@ -166,6 +171,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     @Override
     public void stop() {
+        Optional.ofNullable(loadBalancer).ifPresent(LoadBalancer::close);
+        loadBalancer = null;
         Arrays.stream(containers)
                 .filter(Objects::nonNull)
                 .forEach(DockerKeycloakDistribution::stop);
@@ -197,10 +204,14 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return containers.length;
     }
 
+    public LoadBalancer getLoadBalancer() {
+        return loadBalancer;
+    }
+
     private void configureClusterNameIfStatelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
         if (!stateless) {
             return;
         }
-        configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);
+        configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
     }
 }

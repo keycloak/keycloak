@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { DEFAULT_REALM } from "../utils/constants.ts";
-import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
+import { assertRequiredFieldError, clickSwitch } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
@@ -80,7 +80,7 @@ test.describe.serial("Realm tests", () => {
 
     await goToRealmSettings(page);
 
-    await switchOff(page, `#${testDisabledName}-switch`);
+    await clickSwitch(page, `#${testDisabledName}-switch`);
     await confirmModal(page);
 
     await assertNotificationMessage(page, "Realm successfully updated");

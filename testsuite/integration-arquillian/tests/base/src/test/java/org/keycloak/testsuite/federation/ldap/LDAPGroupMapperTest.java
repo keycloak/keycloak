@@ -39,6 +39,8 @@ import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
@@ -1178,5 +1180,136 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                     .map(UserModel::getUsername).collect(Collectors.toList());
             assertThat(group1Members, containsInAnyOrder("recuser1", "recuser2", "recuser3"));
         });
+    }
+
+    @Test
+    public void test13_registrationWithDefaultGroupsAndDeferredLdapCreation() {
+        // GH issue #44832: when LDAP user creation is deferred (mandatory attribute not yet
+        // available) and default groups use LDAP_ONLY mode, joinGroup must not NPE on null DN.
+        configureGroupMapperAndRegistration(LDAPGroupMapperMode.LDAP_ONLY, "true", "false");
+        registerAndVerifyDefaultGroups("newuser@test.com", "newuserkeycloak");
+        revertEmailMapperAndRegistration();
+    }
+
+    @Test
+    public void test14_registrationWithDefaultGroupsAndImmediateLdapCreation() {
+        // Verifies the immediate LDAP creation path (email mandatory + Force Default Value ON)
+        // still works correctly with LDAP_ONLY mode after the deferred-creation fix.
+        configureGroupMapperAndRegistration(LDAPGroupMapperMode.LDAP_ONLY, "true", "true");
+        registerAndVerifyDefaultGroups("immediateuser@test.com", "immediateuserkeycloak");
+        revertEmailMapperAndRegistration();
+    }
+
+    private void configureGroupMapperAndRegistration(LDAPGroupMapperMode groupMode,
+            String emailMandatory, String emailForceDefault) {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, groupMode.toString());
+            appRealm.updateComponent(mapperModel);
+            if (emailMandatory != null) {
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "email");
+                LDAPTestUtils.updateConfigOptions(emailMapper,
+                        UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, emailMandatory,
+                        UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, emailForceDefault);
+                appRealm.updateComponent(emailMapper);
+            }
+            appRealm.setRegistrationAllowed(true);
+        });
+    }
+
+    private void revertEmailMapperAndRegistration() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "email");
+            LDAPTestUtils.updateConfigOptions(emailMapper,
+                    UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "false",
+                    UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, "true");
+            appRealm.updateComponent(emailMapper);
+            appRealm.setRegistrationAllowed(false);
+        });
+    }
+
+    private void registerAndVerifyDefaultGroups(String email, String username) {
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("Test", "User", email, username, "Password1", "Password1");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername(appRealm, username);
+            assertThat(user, notNullValue());
+            GroupModel defaultGroup11 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup11");
+            GroupModel defaultGroup12 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup12");
+            Set<GroupModel> groups = user.getGroupsStream().collect(Collectors.toSet());
+            assertThat("User should be in default group 11", groups.contains(defaultGroup11), equalTo(true));
+            assertThat("User should be in default group 12", groups.contains(defaultGroup12), equalTo(true));
+        });
+    }
+
+    // Regression test for the customUserSearchFilter leaking into group lookups.
+    //
+    // Resolving a group by its id goes through LDAPOperationManager.lookupById - the same path the
+    // admin console's group "Members" tab relies on, and the path that actually triggers when the
+    // configured UUID attribute is also a group's naming attribute (e.g. cn in eDirectory, the
+    // setup that originally reported the bug). Before the fix this path unconditionally appended
+    // the User LDAP filter, so the group entry - which has none of the user attributes the filter
+    // matches on, such as mail - was filtered out and the Members tab came back empty.
+    //
+    // Only user searches (LDAPUtils.createQueryForUserSearch) flag the query as a user query, so a
+    // group query built here must resolve the group even while a custom User LDAP filter is set.
+    @Test
+    public void test15_groupLookupByIdIgnoresCustomUserFilter() {
+        // Capture the LDAP id (uuid) of an existing group while no custom filter is configured.
+        String group1Uuid = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+            LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group1");
+            Assertions.assertNotNull(ldapGroup);
+            return ldapGroup.getUuid();
+        }, String.class);
+
+        // Configure a User LDAP filter that matches user entries but never a group entry.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(mail=*@email.org)");
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+                GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+
+                String uuidAttrName = ldapProvider.getLdapIdentityStore().getConfig().getUuidLDAPAttributeName();
+
+                // Querying by the uuid attribute drives the lookupById path. The group must still
+                // be found - if the custom User LDAP filter leaks in, getFirstResult() is null.
+                try (LDAPQuery query = groupMapper.createGroupQuery(false)) {
+                    query.addWhereCondition(new LDAPQueryConditionsBuilder().equal(uuidAttrName, group1Uuid));
+                    LDAPObject ldapGroup = query.getFirstResult();
+                    Assertions.assertNotNull(ldapGroup, "Group lookup by id must not apply the custom User LDAP filter");
+                    Assertions.assertEquals(group1Uuid, ldapGroup.getUuid());
+                }
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+                appRealm.updateComponent(ctx.getLdapModel());
+            });
+        }
     }
 }

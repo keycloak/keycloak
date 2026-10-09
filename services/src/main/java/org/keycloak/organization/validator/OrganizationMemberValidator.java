@@ -17,8 +17,6 @@
 
 package org.keycloak.organization.validator;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,7 +43,6 @@ import org.keycloak.validate.ValidatorConfig;
 
 import static java.util.Optional.ofNullable;
 
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
@@ -140,19 +137,14 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
             return Set.of();
         }
 
-        Set<String> domains = new HashSet<>();
+        Set<String> brokerAliases = brokers.stream()
+                .map(IdentityProviderModel::getAlias)
+                .collect(Collectors.toSet());
 
-        for (IdentityProviderModel broker : brokers) {
-            String domain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-            if (ANY_DOMAIN.equals(domain)) {
-                organization.getDomains().map(OrganizationDomainModel::getName).forEach(domains::add);
-            }
-            else if (domain != null) {
-                domains.add(domain);
-            }
-        }
-
-        return Collections.unmodifiableSet(domains);
+        return organization.getDomains()
+                .filter(d -> brokerAliases.contains(d.getIdentityProviderAlias()))
+                .map(OrganizationDomainModel::getName)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private static Set<String> resolveExpectedDomainsWhenReviewingFederatedUserProfile(OrganizationModel organization, AttributeContext attributeContext) {
@@ -175,11 +167,9 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
             return Set.of();
         }
 
-        // expect the email domain to match the domain set to the broker or none if not set
-        String brokerDomain = broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        if (ANY_DOMAIN.equals(brokerDomain)) {
-            return organization.getDomains().map(OrganizationDomainModel::getName).collect(Collectors.toSet());
-        }
-        return  ofNullable(brokerDomain).map(Set::of).orElse(Set.of());
+        return organization.getDomains()
+                .filter(d -> alias.equals(d.getIdentityProviderAlias()))
+                .map(OrganizationDomainModel::getName)
+                .collect(Collectors.toSet());
     }
 }

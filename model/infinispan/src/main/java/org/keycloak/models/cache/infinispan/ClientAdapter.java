@@ -254,7 +254,8 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
-          .map(id -> cacheSession.getRoleById(cachedRealm, id));
+          .map(id -> cacheSession.getRoleById(cachedRealm, id))
+          .filter(Objects::nonNull);
     }
 
     public void addScopeMapping(RoleModel role) {

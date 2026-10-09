@@ -10,8 +10,11 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -44,6 +47,23 @@ public class OID4VCUtil {
     public static boolean hasVerifiableCredential(KeycloakSession session, UserModel user, CredentialScopeModel credentialScope) {
         return session.users().getVerifiableCredentialsByUser(user.getId())
                 .anyMatch(credential -> credential.getClientScopeId().equals(credentialScope.getId()));
+    }
+
+    /**
+     * Returns the timestamp exposed by the user's password credential.
+     * <p>
+     * The combined credential stream is important for federated users because providers such as LDAP expose their
+     * password modification timestamp as federated credential metadata rather than as a locally stored credential.
+     *
+     * @return the credential timestamp, {@code 0} when the credential has no timestamp, or {@code -1} when no password
+     * credential metadata is available
+     */
+    public static long getPasswordCredentialTimestamp(UserModel user) {
+        return user.credentialManager().getCredentials()
+                .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                .mapToLong(credential -> Optional.ofNullable(credential.getCreatedDate()).orElse(0L))
+                .max()
+                .orElse(-1L);
     }
 
     /**
@@ -92,7 +112,27 @@ public class OID4VCUtil {
             throw new IllegalStateException("Issued credential is expired");
         }
 
+        checkIssuedCredentialNotBefore(session, user, expectedClient, issuedCredential);
+
         return issuedCredential;
+    }
+
+    private static void checkIssuedCredentialNotBefore(KeycloakSession session, UserModel user, ClientModel client, IssuedVerifiableCredentialModel issuedCredential) {
+        Long issuedAt = issuedCredential.getIssuedAt();
+        if (issuedAt == null) {
+            throw new IllegalStateException("Issued credential issue time not present");
+        }
+
+        RealmModel realm = client.getRealm();
+        int notBefore = Math.max(realm.getNotBefore(), client.getNotBefore());
+        int userNotBefore = LightweightUserAdapter.isLightweightUser(user)
+                ? (int) (((LightweightUserAdapter) user).getCreatedTimestamp() / 1000L)
+                : session.users().getNotBeforeOfUser(realm, user);
+        notBefore = Math.max(notBefore, userNotBefore);
+
+        if ((issuedAt / 1000L) < notBefore) {
+            throw new IllegalStateException("Issued credential is stale");
+        }
     }
 
     public static List<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsByUserAndClient(KeycloakSession session, UserModel user, ClientModel client) {

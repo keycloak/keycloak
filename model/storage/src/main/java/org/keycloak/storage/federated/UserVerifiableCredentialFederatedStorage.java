@@ -100,6 +100,15 @@ public interface UserVerifiableCredentialFederatedStorage {
     boolean removeIssuedVerifiableCredential(String issuedCredentialId);
 
     /**
+     * Remove an issued verifiable credential by its ID if it belongs to the specified federated user.
+     *
+     * @param userId the ID of the federated user owning the credential
+     * @param issuedCredentialId the ID of the issued verifiable credential to remove
+     * @return true if removed, false if not found or not owned by the user
+     */
+    boolean removeIssuedVerifiableCredential(String userId, String issuedCredentialId);
+
+    /**
      *  Remove expired issued verifiable credentials for all users.
      */
     void removeExpiredIssuedVerifiableCredentials();

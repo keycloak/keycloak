@@ -33,6 +33,7 @@ public class AdminGroupProtectionRealmConfig extends ScimRealmConfig {
     public static final String ADMIN_VIA_COMPOSITE_GROUP = "admin-via-composite-group";
     public static final String REGULAR_GROUP = "regular-group";
     public static final String REGULAR_USER = "regular-user";
+    public static final String ADMIN_USER = "admin-user";
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
@@ -53,7 +54,10 @@ public class AdminGroupProtectionRealmConfig extends ScimRealmConfig {
                 )
                 .users(
                         UserBuilder.create(REGULAR_USER)
+                                .enabled(true),
+                        UserBuilder.create(ADMIN_USER)
                                 .enabled(true)
+                                .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS)
                 );
     }
 }

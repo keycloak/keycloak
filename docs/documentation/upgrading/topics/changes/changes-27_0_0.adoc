@@ -1,0 +1,108 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Admin client `organizations.findOne` no longer rejects when the organization does not exist
+// https://github.com/keycloak/keycloak/pull/51717
+
+The `organizations.findOne` method in the `@keycloak/keycloak-admin-client` package now resolves to `undefined` when the organization does not exist, instead of rejecting with a 404 error.
+Its declared return type changes from `OrganizationRepresentation` to `OrganizationRepresentation | undefined`.
+
+This aligns the method with the equivalent lookups on other resources, such as `groups.findOne`, `roles.findOneById`, and `clients.findOne`, which already resolve to `undefined` for a missing entity.
+
+After upgrading, code that relies on a rejected promise to detect a missing organization no longer takes that path.
+TypeScript users see a compilation error wherever the result is used without a check.
+Plain JavaScript users receive `undefined` instead of an error, and may only observe the change at a later point in their code.
+
+Replace any handling that catches a 404 from this method with a check for `undefined`:
+
+[source,typescript]
+----
+const organization = await adminClient.organizations.findOne({ id });
+
+if (!organization) {
+  // handle the missing organization
+}
+----
+
+=== Mandatory signature validation for OIDC identity provider backchannel logout tokens
+
+{project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
+
+The OIDC Back-Channel Logout 1.0 specification mandates that logout tokens MUST be signed and that `alg=none` is explicitly prohibited. {project_name} now enforces this requirement.
+
+Other token types (ID tokens, access tokens) continue to respect the `Validate Signatures` setting as before.
+
+If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses backchannel logout, you must configure the identity provider's public key so that {project_name} can validate logout token signatures. Either:
+
+* Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
+* Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
+
+=== Identity provider client secret must be re-entered when changing its destination (CVE-2026-15943)
+
+When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `**********`.
+Previously, an update that sent this masked value back always kept the stored secret, even if the request also changed where that secret is sent.
+A user with the `manage-identity-providers` role could therefore point the identity provider at an attacker-controlled token endpoint and have {project_name} send the real client secret there.
+
+Starting with this release, the stored secret is kept only when the fields that determine where and how it is sent are unchanged: `clientId`, `clientAuthMethod`, `tokenUrl`, `tokenIntrospectionUrl`, and `baseUrl` (GitHub and OpenShift), as well as `tenantId` (Microsoft) and `sandbox` (PayPal).
+If any of these change while the request still contains the masked value, the update is rejected with HTTP `400 Bad Request` and the identity provider is left unchanged.
+To apply such a change, include the actual `clientSecret` in the request.
+The Admin Console clears the *Client Secret* field automatically when one of these fields is edited so that you can enter it again.
+
+The `providerId` of an existing identity provider can no longer be changed through an update request; sending a different value is rejected with HTTP `400 Bad Request`.
+
+Scripts and tools that read an identity provider, modify one of the fields above, and write it back (for example, `kcadm.sh update identity-provider/instances/<alias> -s config.tokenUrl=...`) must now also pass the client secret (`-s config.clientSecret=...`).
+Updates that change other settings, or that use a `${vault.<key>}` expression as the secret, are not affected.
+
+Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
+Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Scope mapping listings filter roles by visibility
+// https://github.com/keycloak/keycloak/issues/53480
+
+The Admin REST API endpoints for reading the scope mappings of a client or a client scope (`GET /admin/realms/\{realm}/clients/\{id}/scope-mappings` and `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings`, including their `realm`, `realm/composite`, `clients/\{client}` and `clients/\{client}/composite` sub-resources) now filter out roles that the caller is allowed neither to view nor to map to users or to client scopes.
+Previously, any caller with permission to view the client or the client scope could see all the roles in its scope, including realm roles without the `view-realm` role and client roles without a *view* permission on the client they belong to.
+After upgrading, callers may see fewer results from these endpoints if the scope contains roles that they are allowed neither to view nor to map.
+Roles that the caller is allowed only to map to client scopes are returned without their attributes, even when `briefRepresentation=false` is requested.
+For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
+With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
+In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
+
+=== Workflow expressions with unsupported characters are rejected
+// https://github.com/keycloak/keycloak/issues/53790
+
+Workflow expressions used in the `on`, `if` and `concurrency` settings are now rejected when they contain characters that are not part of the expression syntax, such as `!`.
+Previously, these characters were silently dropped, so an expression like `!has-role(admin)` was accepted and evaluated as `has-role(admin)`.
+Use the `not`, `and` and `or` operators instead, for example `not has-role(admin)`.
+After upgrading, existing workflows with such an expression in `on` or `if` are no longer executed, and the error is logged when the expression is evaluated.
+If such an expression is used in a `concurrency` setting, the workflow still runs, but that setting no longer restarts or cancels in-progress executions, and the error is logged.
+Update these workflows to fix their expressions.
+
+=== Organization Redirect URL now validated against the account client
+
+The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
+
+Previously, the Redirect URL was used without validation, which could allow an open redirect. After upgrading, if your organization has a custom Redirect URL pointing to your application, you must add that URL to the `account` client's *Valid Redirect URIs*. Otherwise, the redirect will silently fall back to the account console. This does not apply to invitations sent with a custom client, which always use the client's own base URL.
+
+The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Organization Redirect URL
+
+The organization Redirect URL field is now deprecated and will be removed in a future release. When sending invitations, prefer selecting a client to control where users are redirected. Create a client with its base URL set to your desired redirect destination and pass its `client_id` when creating invitations.
+
+=== Organization invitation endpoints without `client_id`
+
+The `invite-user` and `invite-existing-user` admin client overloads that do not accept a `client_id` parameter are now deprecated. Use the overloads that accept an explicit `client_id` instead. When omitted, the endpoints default to the `account` client, but callers should migrate to always specify a client.

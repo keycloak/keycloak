@@ -240,6 +240,24 @@ test.describe.serial("Realm roles test", () => {
     await assertNotificationMessage(page, "Role mapping updated");
   });
 
+  test("should show no users in role when the lookup answers 404", async ({
+    page,
+  }) => {
+    const roleName = `${prefix}-users-in-role-${uuid()}`;
+    await adminClient.createRealmRole({ realm: realmName, name: roleName });
+    // As it does when the role is deleted meanwhile; the admin client returns null.
+    await page.route(`**/roles/${roleName}/users**`, (route) =>
+      route.fulfill({ status: 404, json: { error: "Could not find role" } }),
+    );
+    await page.reload();
+
+    await searchItem(page, searchPlaceHolder, roleName);
+    await clickTableRowItem(page, roleName);
+    await page.getByTestId("usersInRoleTab").click();
+
+    await expect(page.getByText("No direct users")).toBeVisible();
+  });
+
   test.describe.serial("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";

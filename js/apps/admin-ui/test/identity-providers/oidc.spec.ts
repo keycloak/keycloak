@@ -19,6 +19,7 @@ import {
   clickSaveMapper,
   createOIDCProvider,
   goToMappersTab,
+  reenterClientSecret,
   setUrl,
 } from "./main.ts";
 
@@ -47,13 +48,17 @@ test.describe.serial("OIDC identity provider test", () => {
     await clickSaveButton(page);
     await assertInvalidUrlNotification(page, "authorization");
     await clickRevertButton(page);
+    await assertAuthorizationUrl(page);
 
+    // Changing token destination fields clears the masked client secret; re-enter it to save.
     await setUrl(page, "token", "invalid");
+    await reenterClientSecret(page, secret);
     await clickSaveButton(page);
     await assertInvalidUrlNotification(page, "token");
     await clickRevertButton(page);
 
     await setUrl(page, "tokenIntrospection", "invalid");
+    await reenterClientSecret(page, secret);
     await clickSaveButton(page);
     await assertInvalidUrlNotification(page, "tokenIntrospection");
     await clickRevertButton(page);
@@ -93,17 +98,27 @@ test.describe.serial("Edit OIDC Provider", () => {
   test("should add OIDC mapper of type Attribute Importer", async ({
     page,
   }) => {
+    const mapperName = "OIDC Attribute Importer";
     await goToMappersTab(page);
-    await addMapper(page, "oidc-user-attribute", "OIDC Attribute Importer");
+    await addMapper(page, "oidc-user-attribute", mapperName);
     await clickSaveMapper(page);
-    await assertNotificationMessage(page, "Mapper created successfully.");
+    await expect(
+      page.getByRole("row", {
+        name: new RegExp(mapperName, "i"),
+      }),
+    ).toBeVisible();
   });
 
   test("should add OIDC mapper of type Claim To Role", async ({ page }) => {
+    const mapperName = "OIDC Claim to Role";
     await goToMappersTab(page);
-    await addMapper(page, "oidc-role", "OIDC Claim to Role");
+    await addMapper(page, "oidc-role", mapperName);
     await clickSaveMapper(page);
-    await assertNotificationMessage(page, "Mapper created successfully.");
+    await expect(
+      page.getByRole("row", {
+        name: new RegExp(mapperName, "i"),
+      }),
+    ).toBeVisible();
   });
 
   test("should cancel the addition of the OIDC mapper", async ({ page }) => {

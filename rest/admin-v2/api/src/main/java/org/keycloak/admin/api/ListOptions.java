@@ -1,6 +1,5 @@
 package org.keycloak.admin.api;
 
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +35,7 @@ public class ListOptions {
     @Parameter(description = "Index of the first result to return, counted from 0. Defaults to 0.")
     @QueryParam("offset")
     protected Integer offset;
-
+    
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
         return this;
@@ -49,11 +48,6 @@ public class ListOptions {
 
     public ListOptions limit(int limit) {
         this.setLimit(limit);
-        return this;
-    }
-
-    public ListOptions sort(List<SortOption> sort) {
-        this.setSort(sort);
         return this;
     }
 
@@ -99,56 +93,28 @@ public class ListOptions {
     public void setOffset(Integer offset) {
         this.offset = offset;
     }
-
-    public List<SortOption> getSort() {
-        if (sort == null) {
-            return null;
-        }
-        if (sort.isEmpty()) {
-            return List.of();
-        }
-        List<SortOption> options = Arrays.stream(sort.split(","))
-                .map(String::trim)
-                .filter(segment -> !segment.isEmpty())
-                .map(ListOptions::parseSortSegment)
-                .collect(Collectors.toList());
-        if (options.isEmpty()) {
-            throw new IllegalArgumentException("sort must specify at least one field");
-        }
-        return options;
+    
+    public String getSort() {
+        return sort;
     }
-
-    public void setSort(List<SortOption> sort) {
-        if (sort == null) {
-            this.sort = null;
-        } else if (sort.isEmpty()) {
+    
+    public void setSort(String sort) {
+        this.sort = sort;
+    }
+    
+    public ListOptions addSortField(String field) {
+        return addSortField(field, true);
+    }
+    
+    public ListOptions addSortField(String field, boolean ascending) {
+        if (this.sort == null) {
             this.sort = "";
-        } else {
-            this.sort = sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
         }
+        if (!this.sort.isEmpty()) {
+            this.sort += ",";
+        }
+        this.sort += field + (ascending ? "" : "|DESC");
+        return this;
     }
 
-    private static SortOption parseSortSegment(String segment) {
-        String[] parts = segment.split("\\|", 2);
-        String fieldName = parts[0].trim();
-        if (fieldName.isEmpty()) {
-            throw new IllegalArgumentException("sort must specify at least one field");
-        }
-        ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
-                new IllegalArgumentException(String.format("%s is not a sortable field", fieldName)));
-        SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
-        return SortOption.of(field, order);
-    }
-
-    private static SortOrder parseSortOrder(String value) {
-        if (value.isEmpty()) {
-            return SortOrder.ASC;
-        }
-        for (SortOrder order : SortOrder.values()) {
-            if (order.name().equalsIgnoreCase(value)) {
-                return order;
-            }
-        }
-        throw new IllegalArgumentException("sort direction must be asc or desc");
-    }
 }

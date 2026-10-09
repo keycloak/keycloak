@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -106,6 +107,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         SKIP_OTP, SHOW_OTP, ABSTAIN
     }
 
+    private boolean proxyConfigured;
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticatorConfigModel model = context.getAuthenticatorConfig();
@@ -119,10 +122,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return;
         }
 
-        if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(context.getHttpRequest().getHttpHeaders().getRequestHeaders(), config), context)) {
+        if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(context.getHttpRequest(), config), context)) {
             return;
         }
-
         if (tryConcludeBasedOn(voteForDefaultFallback(config), context)) {
             return;
         }
@@ -185,18 +187,20 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                 }).orElse(ABSTAIN);
     }
 
-    private OtpDecision voteForHttpHeaderMatchesPattern(MultivaluedMap<String, String> requestHeaders, Map<String, String> config) {
+    private OtpDecision voteForHttpHeaderMatchesPattern(HttpRequest httpRequest, Map<String, String> config) {
 
         if (!config.containsKey(FORCE_OTP_FOR_HTTP_HEADER) && !config.containsKey(SKIP_OTP_FOR_HTTP_HEADER)) {
             return ABSTAIN;
         }
-
-        //Inverted to allow white-lists, e.g. for specifying trusted remote hosts: X-Forwarded-Host: (1.2.3.4|1.2.3.5)
-        if (containsMatchingRequestHeader(requestHeaders, config.get(SKIP_OTP_FOR_HTTP_HEADER))) {
+        // Only do the skip-OTP rule when the request arrives via a trusted proxy. Protects against injected X-Forwarded-Host (or any matching header)
+        // Inverted to allow white-lists, e.g. for specifying trusted remote hosts: X-Forwarded-Host: (1.2.3.4|1.2.3.5)
+        if (proxyConfigured && httpRequest.isProxyTrusted() && containsMatchingRequestHeader(
+                httpRequest.getHttpHeaders().getRequestHeaders(), config.get(SKIP_OTP_FOR_HTTP_HEADER))) {
             return SKIP_OTP;
         }
 
-        if (containsMatchingRequestHeader(requestHeaders, config.get(FORCE_OTP_FOR_HTTP_HEADER))) {
+        // FORCE is conservative — safe to evaluate regardless of proxy trust.
+        if (containsMatchingRequestHeader(httpRequest.getHttpHeaders().getRequestHeaders(), config.get(FORCE_OTP_FOR_HTTP_HEADER))) {
             return SHOW_OTP;
         }
 
@@ -263,7 +267,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     }
 
     private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {
-        MultivaluedMap<String, String> requestHeaders = session.getContext().getRequestHeaders().getRequestHeaders();
+        HttpRequest httpRequest = session.getContext().getHttpRequest();
         List<Map<String,String>> configs = realm.getAuthenticatorConfigsStream().map(AuthenticatorConfigModel::getConfig)
                 .filter(ConditionalOtpFormAuthenticator::containsConditionalOtpConfig)
                 .toList();
@@ -278,7 +282,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             if (tryConcludeBasedOn(voteForUserRole(session, realm, user, config))) {
                 return true;
             }
-            if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, config))) {
+            if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(httpRequest, config))) {
                 return true;
             }
             if (config.get(DEFAULT_OTP_OUTCOME) != null
@@ -288,7 +292,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             }
             return voteForUserOtpControlAttribute(user, config) == ABSTAIN
                 && voteForUserRole(session, realm, user, config) == ABSTAIN
-                && voteForHttpHeaderMatchesPattern(requestHeaders, config) == ABSTAIN
+                && voteForHttpHeaderMatchesPattern(httpRequest, config) == ABSTAIN
                 && (voteForDefaultFallback(config) == SHOW_OTP || voteForDefaultFallback(config) == ABSTAIN);
         });
     }
@@ -300,6 +304,10 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             || config.containsKey(SKIP_OTP_FOR_HTTP_HEADER)
             || config.containsKey(FORCE_OTP_FOR_HTTP_HEADER)
             || config.containsKey(DEFAULT_OTP_OUTCOME);
+    }
+
+    public void setProxyConfigured(boolean proxyConfigured) {
+        this.proxyConfigured = proxyConfigured;
     }
 
     @Override

@@ -33,7 +33,9 @@ public interface JpaEntityProvider extends Provider {
      * Return the entities that should be added to the entity manager.
      * 
      * @return list of class objects
+     * @deprecated this method is ignored in production and will be removed together with legacy testsuite
      */
+    @Deprecated(forRemoval = true)
 	List<Class<?>> getEntities();
 	
 	/**

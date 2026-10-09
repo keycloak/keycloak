@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -56,6 +58,7 @@ import org.jboss.logging.Logger;
 public class DefaultClientSessionContext implements ClientSessionContext {
 
     private static final Logger logger = Logger.getLogger(DefaultClientSessionContext.class);
+    public static final String ORIGINAL_REFRESH_TOKEN_SCOPE = "original_refresh_token_scope";
 
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<ClientScopeModel> requestedScopes;
@@ -96,13 +99,16 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
-        Stream<ClientScopeModel> requestedScopes;
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = Optional.ofNullable(userSession).map(UserSessionModel::getUser).orElse(null);
+        Set<ClientScopeModel> requestedScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), scopeParam);
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, clientSession, scopeParam)
+                    .collect(Collectors.toSet());
         } else {
-            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user).collect(Collectors.toSet());
         }
-        return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), null, scopeParam, session);
+        return new DefaultClientSessionContext(clientSession, requestedScopes, null, scopeParam, session);
     }
 
 
@@ -190,8 +196,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
             logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
-            String scopeSent = requestedScopeString;
-            if (TokenUtil.isOIDCRequest(scopeSent)) {
+            if (isOIDCRequest()) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
             }
             return scopeParam;
@@ -204,12 +209,21 @@ public class DefaultClientSessionContext implements ClientSessionContext {
                 .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
-        String scopeSent = requestedScopeString;
-        if (TokenUtil.isOIDCRequest(scopeSent)) {
+        if (isOIDCRequest()) {
             scopeParam = TokenUtil.attachOIDCScope(scopeParam);
         }
 
         return scopeParam;
+    }
+
+    private boolean isOIDCRequest() {
+        if (TokenUtil.isOIDCRequest(requestedScopeString)) {
+            return true;
+        }
+        if (OAuth2Constants.REFRESH_TOKEN.equals(getAttribute(Constants.GRANT_TYPE, String.class))) {
+            return TokenUtil.isOIDCRequest(getAttribute(ORIGINAL_REFRESH_TOKEN_SCOPE, String.class));
+        }
+        return false;
     }
 
     /**
@@ -222,7 +236,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * @return see description
      */
     private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), requestedScopeString).getAuthorizationDetailEntries().stream()
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), clientSession, requestedScopeString).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))

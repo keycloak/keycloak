@@ -17,9 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
@@ -38,22 +36,23 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProvider;
+import org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory;
+import org.keycloak.protocol.oidc.refresh.RefreshTokenProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -89,6 +88,8 @@ public class TokenRevocationEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response revoke() {
+        ContentTypeValidationUtil.requireValidContentType(request.getHttpHeaders(), MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+
         event.event(EventType.REVOKE_GRANT);
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
@@ -113,10 +114,22 @@ public class TokenRevocationEndpoint {
 
         checkToken();
         checkIssuedFor();
+        boolean refreshTokenType = TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) ||
+                TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType());
+        RefreshTokenProvider refreshTokenProvider = refreshTokenType ? resolveRefreshTokenProvider() : null;
+
+        if (refreshTokenType) {
+            // Must run before checkUser(), which is the first read of session state. Taking the lock afterwards
+            // would leave the read outside the serialized region and defeat the purpose.
+            refreshTokenProvider.lockForRevocation((RefreshToken) token);
+        }
         checkUser();
 
-        if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            revokeClientSession();
+        if (refreshTokenType) {
+            refreshTokenProvider.revokeToken(token, user, client, event);
+
+            String providerClaim = ((RefreshToken) token).getProvider();
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
             event.detail(Details.REFRESH_TOKEN_ID, token.getId());
@@ -131,15 +144,24 @@ public class TokenRevocationEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(client, formParams));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
+            event.clone()
+                    .detail(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .detail(Details.CLIENT_POLICY_ERROR, cpe.getError())
+                    .detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail())
+                    .error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.add(Response.ok());
+    }
+
+    private RefreshTokenProvider resolveRefreshTokenProvider() {
+        String providerClaim = ((RefreshToken) token).getProvider();
+        String providerId = (providerClaim != null) ? providerClaim : DefaultRefreshTokenProviderFactory.PROVIDER_ID;
+        RefreshTokenProvider provider = session.getProvider(RefreshTokenProvider.class, providerId);
+
+        return provider != null ? provider : session.getProvider(RefreshTokenProvider.class, DefaultRefreshTokenProviderFactory.PROVIDER_ID);
     }
 
     @OPTIONS
@@ -199,6 +221,12 @@ public class TokenRevocationEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_TOKEN_TYPE, "Unsupported token type",
                 Response.Status.BAD_REQUEST);
         }
+
+        if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
+            // The refresh path keys its serialization lock on RefreshToken#getSessionId(), which falls back to the
+            // legacy "session_state" claim. Decode into the same type so both paths compute the same lock id.
+            token = session.tokens().decode(encodedToken, RefreshToken.class);
+        }
     }
 
     private void checkIssuedFor() {
@@ -221,7 +249,11 @@ public class TokenRevocationEndpoint {
         UserSessionUtil.UserSessionValidationResult validationResult = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, client, (UserSessionModel t) -> {});
         if (validationResult.getError() != null) {
-            event.error(validationResult.getError());
+            if (!Errors.USER_SESSION_NOT_FOUND.equals(validationResult.getError())
+               && !Errors.SESSION_EXPIRED.equals(validationResult.getError())
+               && !Errors.INVALID_TOKEN.equals(validationResult.getError())) {
+                event.error(validationResult.getError());
+            }
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
@@ -243,30 +275,6 @@ public class TokenRevocationEndpoint {
         }
     }
 
-    private void revokeClientSession() {
-        if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            UserSessionModel userSession = session.sessions().getOfflineUserSession(realm, token.getSessionId());
-            if (userSession != null) {
-                new UserSessionManager(session).removeClientFromOfflineUserSession(realm, userSession, client, user);
-            }
-        }
-        // Always remove "online" session as well if exists to make sure that issued access-tokens are revoked as well
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
-        if (userSession != null) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            if (clientSession != null) {
-                TokenManager.detachClientSession(clientSession);
-
-                revokeTokenExchangeSession(userSession);
-
-                // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
-                if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-                    session.sessions().removeUserSession(realm, userSession);
-                }
-            }
-        }
-    }
-
     private void revokeAccessToken() {
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
@@ -278,22 +286,8 @@ public class TokenRevocationEndpoint {
         if (token.getSessionId() != null) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionId());
             if (userSession != null) {
-                revokeTokenExchangeSession(userSession);
+                DefaultRefreshTokenProvider.revokeTokenExchangeSession(userSession, token, event);
             }
-        }
-    }
-
-    private void revokeTokenExchangeSession(UserSessionModel userSession) {
-        Map<String, AuthenticatedClientSessionModel> clientSessionModelMap = userSession.getAuthenticatedClientSessions();
-        List<String> revokedClients = new ArrayList<>();
-        clientSessionModelMap.forEach((key, clientSessionModel) -> {
-            if (clientSessionModel.getNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + token.getIssuedFor()) != null) {
-                revokedClients.add(clientSessionModel.getClient().getClientId());
-                TokenManager.detachClientSession(clientSessionModel);
-            }
-        });
-        if (!revokedClients.isEmpty()) {
-            event.detail(Details.TOKEN_EXCHANGE_REVOKED_CLIENTS, String.join(",", revokedClients));
         }
     }
 }

@@ -143,18 +143,18 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         logInWithBroker(bc);
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
         Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
-        webAuthnLoginPage.isCurrent();
+        Assertions.assertFalse(loginPage.isRegisterLinkPresent());
+        loginPage.assertCurrent();
 
         loginPage.login(bc.getUserPassword());
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
@@ -171,21 +171,21 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         logInWithBroker(bc);
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
         Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
         Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
-        webAuthnLoginPage.isCurrent();
+        Assertions.assertFalse(loginPage.isRegisterLinkPresent());
+        loginPage.assertCurrent();
 
         loginPage.login(generatePassword()); // invalid password
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         webAuthnLoginPage.clickAuthenticate();
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
@@ -208,12 +208,12 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         }
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        idpConfirmLinkPage.assertCurrent();
         Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
         // login is automatically now via discoverable passkey
-        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }

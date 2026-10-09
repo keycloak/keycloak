@@ -26,10 +26,12 @@ import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import static java.util.Arrays.asList;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CANONICAL_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_CA_SUBJECT_DN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY;
@@ -60,7 +62,6 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_URI;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSP_FAIL_OPEN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REGULAR_EXPRESSION;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REVALIDATE_CERTIFICATE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.SERIALNUMBER_HEX;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USERNAME_EMAIL_MAPPER;
@@ -101,6 +102,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             CERTIFICATE_POLICY_MODE_ALL,
             CERTIFICATE_POLICY_MODE_ANY
     };
+
+    private boolean legacyCriticalBehavior;
 
     protected static final List<ProviderConfigProperty> configProperties;
     static {
@@ -182,7 +185,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         cRLRelativePath.setDefaultValue("crl.pem");
         cRLRelativePath.setLabel("CRL Path");
         cRLRelativePath.setHelpText("Applied just if CRL checking is ON and CRL Distribution point is OFF. It contains the URL (typically 'http' or 'ldap') " +
-                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. Paths are assumed to be relative to $jboss.server.config.dir. " +
+                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. File paths are relative to the 'conf' directory of the server, and paths that resolve outside that directory are rejected. " +
                 "Multiple CRLs can be included, however it can affect performance as the certificate will be checked against all listed CRLs."
         );
 
@@ -255,11 +258,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         identityConfirmationPageDisallowed.setLabel("Bypass identity confirmation");
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
 
-        ProviderConfigProperty revalidateCertificateEnabled = new ProviderConfigProperty();
-        revalidateCertificateEnabled.setType(BOOLEAN_TYPE);
-        revalidateCertificateEnabled.setName(REVALIDATE_CERTIFICATE);
-        revalidateCertificateEnabled.setLabel("Revalidate Client Certificate");
-        revalidateCertificateEnabled.setHelpText("Forces revalidation of the client certificate according to the certificates defined in the truststore. This is useful when behind a non-validating proxy or when the number of allowed certificate chains would be too large for mutual SSL negotiation.");
+        // revalidate certificate is removed at configuration although accepted for backwards compatibility
+        ProviderConfigProperty caSubjectDn = new ProviderConfigProperty();
+        caSubjectDn.setType(MULTIVALUED_STRING_TYPE);
+        caSubjectDn.setName(CERTIFICATE_CA_SUBJECT_DN);
+        caSubjectDn.setRequired(true);
+        caSubjectDn.setLabel("Certificate Authority subject DN");
+        caSubjectDn.setHelpText("Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format.");
 
         configProperties = asList(mappingMethodList,
                 canonicalDn,
@@ -279,7 +284,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 keyUsage,
                 extendedKeyUsage,
                 identityConfirmationPageDisallowed,
-                revalidateCertificateEnabled,
+                caSubjectDn,
                 certificatePolicy,
                 certificatePolicyMode);
     }
@@ -306,6 +311,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
 
     @Override
     public void init(Config.Scope config) {
+        this.legacyCriticalBehavior = config.getBoolean("legacyCriticalBehavior", Boolean.FALSE);
     }
 
     @Override
@@ -316,4 +322,19 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     public void close() {
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("legacyCriticalBehavior")
+                .type("boolean")
+                .helpText("Boolean to enable legacy critical behavior in the Key Usage and Extended Key Usage validations. This option is deprecated.")
+                .defaultValue("false")
+                .add()
+                .build();
+    }
+
+    public boolean isLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
+    }
 }

@@ -26,6 +26,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.cluster.infinispan.InfinispanClusterProvider;
 import org.keycloak.cluster.infinispan.LockEntry;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -69,6 +70,9 @@ public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFa
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) {
+            logger.warn("The experimental clusterless feature will be removed in a future release. Use the stateless feature instead.");
+        }
         try (var session = factory.create()) {
             lazyInit(session);
         }

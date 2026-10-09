@@ -130,7 +130,7 @@ export const SigningIn = () => {
             >
               <div className="pf-v5-c-icon pf-m-xl">
                 <picture>
-                  {iconDarkSrc && (
+                  {context.environment.darkMode && iconDarkSrc && (
                     <source
                       srcSet={iconDarkSrc}
                       media="(prefers-color-scheme: dark)"

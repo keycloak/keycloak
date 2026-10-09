@@ -48,4 +48,14 @@ public class ElytronKeyStoreTypesTest {
                 KeystoreUtil.KeystoreFormat.PKCS12
         ));
     }
+
+    @Test
+    public void testTruststoreFormats() {
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        Assert.assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.JKS,
+                KeystoreUtil.TruststoreFormat.PKCS12
+        ));
+        Assert.assertEquals(KeystoreUtil.TruststoreFormat.PKCS12, CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType());
+    }
 }

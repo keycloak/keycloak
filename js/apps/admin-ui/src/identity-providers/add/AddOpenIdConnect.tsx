@@ -52,7 +52,7 @@ export default function AddOpenIdConnect() {
         providerId: id,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toIdentityProvider({
           realm,
           providerId: id,

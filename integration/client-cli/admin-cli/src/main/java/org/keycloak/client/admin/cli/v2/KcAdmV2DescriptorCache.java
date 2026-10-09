@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.keycloak.client.cli.util.IoUtil;
 import org.keycloak.client.cli.util.OutputUtil;
 
 public final class KcAdmV2DescriptorCache {
@@ -58,7 +59,9 @@ public final class KcAdmV2DescriptorCache {
         String oldVersion = versionForServer(registry, serverUrl);
 
         try {
-            OutputUtil.MAPPER.writeValue(descriptorPath(newVersion).toFile(), descriptor);
+            Path p = descriptorPath(newVersion);
+            IoUtil.ensureFile(p);
+            OutputUtil.MAPPER.writeValue(p.toFile(), descriptor);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write descriptor: " + descriptorPath(newVersion), e);
         }
@@ -114,7 +117,9 @@ public final class KcAdmV2DescriptorCache {
 
     private void writeRegistry(Registry registry) {
         try {
-            OutputUtil.MAPPER.writeValue(cacheDir.resolve(REGISTRY_FILENAME).toFile(), registry);
+            Path p = cacheDir.resolve(REGISTRY_FILENAME);
+            IoUtil.ensureFile(p);
+            OutputUtil.MAPPER.writeValue(p.toFile(), registry);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write registry: " + cacheDir.resolve(REGISTRY_FILENAME), e);
         }

@@ -18,9 +18,16 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CANONICAL_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_CA_SUBJECT_DN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY;
@@ -370,11 +377,32 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
     }
 
     public boolean getRevalidateCertificateEnabled() {
-        return Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
+        // revalidate is compulsory when CA subject DN is set
+        // maintain previous value for backwards compatibility
+        return !getCASubjectDN().isEmpty() || Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
     }
 
     public X509AuthenticatorConfigModel setRevalidateCertificateEnabled(boolean value) {
         getConfig().put(REVALIDATE_CERTIFICATE, Boolean.toString(value));
+        return this;
+    }
+
+    public List<String> getCASubjectDN() {
+        String value = getConfig().get(CERTIFICATE_CA_SUBJECT_DN);
+        return value != null
+                ? Arrays.stream(Constants.CFG_DELIMITER_PATTERN.split(value)).filter(StringUtil::isNotBlank).toList()
+                : Collections.emptyList();
+    }
+
+    public X509AuthenticatorConfigModel setCASubjectDN(List<String> value) {
+        value = value != null
+                ? value.stream().filter(StringUtil::isNotBlank).toList()
+                : Collections.emptyList();
+        if (!value.isEmpty()) {
+            getConfig().put(CERTIFICATE_CA_SUBJECT_DN, String.join(Constants.CFG_DELIMITER, value));
+        } else {
+            getConfig().remove(CERTIFICATE_CA_SUBJECT_DN);
+        }
         return this;
     }
 }

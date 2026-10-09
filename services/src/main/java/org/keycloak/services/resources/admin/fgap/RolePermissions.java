@@ -481,6 +481,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         }
     }
 
+    @Override
+    public boolean canViewScopeMapping(RoleModel role) {
+        return canView(role) || canMapClientScope(role);
+    }
+
 
     @Override
     public boolean canManage(RoleModel role) {
@@ -513,12 +518,17 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     @Override
     public boolean canView(RoleModel role) {
         if (role.getContainer() instanceof RealmModel) {
-            return root.realm().canViewRealm();
+            if (root.realm().canViewRealm()) {
+                return true;
+            }
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
-            return root.clients().canView(client);
+            if (root.clients().canView(client)) {
+                return true;
+            }
         }
-        return false;
+        // an admin that can map the role is allowed to see it
+        return canMapRole(role);
     }
 
     @Override
@@ -684,6 +694,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return resourceServer;
     }
     private boolean isRealmAdminRole(RoleModel role) {
-        return role.getContainer() instanceof RealmModel && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
+        if (!(role.getContainer() instanceof RealmModel)) {
+            return false;
+        }
+        RealmModel roleRealm = (RealmModel) role.getContainer();
+        return roleRealm.getName().equals(Config.getAdminRealm()) && List.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM).contains(role.getName());
     }
 }

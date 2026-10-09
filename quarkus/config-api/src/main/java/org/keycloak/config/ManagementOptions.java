@@ -117,6 +117,11 @@ public class ManagementOptions {
             .description("The file path to a private key in PEM format for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .build();
 
+    public static final Option<String> HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE_PASSWORD = new OptionBuilder<>("https-management-certificate-key-file-password", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The password to decrypt an encrypted private key in PEM format for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
     public static final Option<File> HTTPS_MANAGEMENT_KEY_STORE_FILE = new OptionBuilder<>("https-management-key-store-file", File.class)
             .category(OptionCategory.MANAGEMENT)
             .description("The key store which holds the certificate information instead of specifying separate files for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)

@@ -82,8 +82,8 @@ on the realm resource associated with the event, so that each realm resource typ
 | `remove-user-attribute` | Remove one or more attributes from the user a|
 * `attribute`: One or more attribute names to remove. This can be a single value or a list of values (e.g., `[value1, value2]`)
 | `notify-user` | Notify the user by email a|
-* `subject`: The email subject
-* `message`: The email message in plain text or HTML format
+* `subject`: The email subject. Either a plain text, optionally referencing <<_workflow_notification_placeholders_, placeholders>>, or a key from the `email` theme message bundle
+* `message`: The email message in plain text or HTML format, optionally referencing <<_workflow_notification_placeholders_, placeholders>>
 * `to`: The recipient email address. If not provided, the user's email address will be used
 | `unlink-user` | Unlink the user from one or more external Identity Providers a|
 * `idp`: One or more Identity Provider aliases to unlink. This can be:
@@ -92,7 +92,44 @@ on the realm resource associated with the event, so that each realm resource typ
 ** `*` to unlink user from all linked Identity Providers
 | `disable-user` | Disable the user | None
 | `delete-user` | Delete the user | None
+| `invite-user` | Send an invitation email with an action token link to the user a|
+* `actions`: Required action names the user must complete. Defaults to `UPDATE_PASSWORD` and `VERIFY_EMAIL`.
+* `client-id`: Client id associated with the action token. Defaults to the realm's system client.
+* `redirect-uri`: Where to redirect the user after completing the required actions. Requires `client-id`.
 |===
+
+The `invite-user` step builds invitation links from the configured hostname, resolved from the realm `frontendUrl` attribute or the `--hostname` option when it is set to a full URL. Because the step runs on a background thread without an active request, one of these must be configured: a workflow containing an `invite-user` step is rejected at creation time with a `400 Bad Request` if none is set. The step is only skipped at runtime if the hostname configuration is removed after the workflow was created.
+
+[[_workflow_notification_placeholders_]]
+== Using placeholders in notifications
+
+The `subject` and `message` settings of the `notify-user` step support placeholders in the `${property}` format, which are
+resolved when the step runs:
+
+[cols="2*", options="header"]
+|===
+|Placeholder
+|Description
+| `${user.<attribute>}` | The value of the given user attribute, for example `${user.firstName}` or `${user.email}`
+| `${realm.name}` | The name of the realm
+| `${realm.displayName}` | The display name of the realm
+| `${workflow.daysUntilNextStep}` | The number of days until the next step in the workflow runs
+|===
+
+A default value can be set for a placeholder by using the `${property:default}` format. If a placeholder cannot be resolved
+and no default value is set, it is rendered as-is.
+
+```yaml
+steps:
+  - uses: notify-user
+    after: 85d
+    with:
+      subject: ${user.firstName:Hello}, log in to keep your account active
+      message: |
+        <p>Your account will be disabled in ${workflow.daysUntilNextStep} days unless you log in.</p>
+  - uses: disable-user
+    after: 5d
+```
 
 [[_workflow_client_steps_]]
 == Client steps

@@ -68,10 +68,14 @@ export const Members = () => {
   const [showMemberships, toggleShowMemberships] = useToggle();
   const { hasAccess } = useAccess();
 
-  useFetch(() => groups.findOne({ id: group()!.id! }), setCurrentGroup, []);
+  useFetch(
+    async () => (await groups.findOne({ id: group()!.id! })) ?? undefined,
+    setCurrentGroup,
+    [],
+  );
 
   const isManager =
-    hasAccess("manage-users") || currentGroup?.access!.manageMembership;
+    hasAccess("manage-users") || currentGroup?.access?.manageMembership;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

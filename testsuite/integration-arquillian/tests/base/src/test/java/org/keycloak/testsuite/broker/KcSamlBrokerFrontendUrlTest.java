@@ -142,7 +142,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "AUTH_RESPONSE", true);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test

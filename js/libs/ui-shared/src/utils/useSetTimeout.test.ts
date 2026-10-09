@@ -20,16 +20,16 @@ describe("useSetTimeout", () => {
 
     // Ensure that setTimeout was actually called with the correct arguments.
     expect(setTimeoutSpy).toHaveBeenCalledTimes(2);
-    expect(setTimeoutSpy).toBeCalledWith(expect.any(Function), 1000);
-    expect(setTimeoutSpy).toBeCalledWith(expect.any(Function), 500);
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 500);
 
     // Ensure callbacks are called after timers run.
-    expect(callback2).not.toBeCalled();
+    expect(callback2).not.toHaveBeenCalled();
     vi.advanceTimersByTime(500);
-    expect(callback1).not.toBeCalled();
-    expect(callback2).toBeCalled();
+    expect(callback1).not.toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalled();
     vi.advanceTimersByTime(500);
-    expect(callback1).toBeCalled();
+    expect(callback1).toHaveBeenCalled();
 
     setTimeoutSpy.mockRestore();
   });
@@ -39,7 +39,7 @@ describe("useSetTimeout", () => {
 
     unmount();
 
-    expect(() => result.current(vi.fn(), 1000)).toThrowError(
+    expect(() => result.current(vi.fn(), 1000)).toThrow(
       "Can't schedule a timeout on an unmounted component.",
     );
   });
@@ -54,11 +54,11 @@ describe("useSetTimeout", () => {
 
     // Timeout should be cleared after unmounting.
     unmount();
-    expect(clearTimeoutSpy).toBeCalled();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
 
     // And the callback should no longer be called.
     vi.runOnlyPendingTimers();
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
 
     setTimeoutSpy.mockRestore();
     clearTimeoutSpy.mockRestore();
@@ -73,11 +73,11 @@ describe("useSetTimeout", () => {
 
     // Timeout should be cleared when cancelling.
     cancel();
-    expect(clearTimeoutSpy).toBeCalled();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
 
     // And the callback should no longer be called.
     vi.runOnlyPendingTimers();
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
 
     setTimeoutSpy.mockRestore();
     clearTimeoutSpy.mockRestore();

@@ -4,7 +4,7 @@ export async function registerByWebAuthn(input) {
 
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
-        returnFailure(input.errmsg);
+        returnFailure("WebAuthnUnsupportedBrowser");
         return;
     }
 

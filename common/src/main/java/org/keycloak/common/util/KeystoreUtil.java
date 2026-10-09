@@ -64,6 +64,10 @@ public class KeystoreUtil {
         public String getPrimaryExtension() {
             return fileExtensions.get(0);
         }
+
+        public boolean isJavaTrustStore() {
+            return this != PEM;
+        }
     }
 
     public enum KeystoreFormat implements StoreFormat {

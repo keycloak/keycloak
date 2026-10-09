@@ -24,13 +24,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.keycloak.json.StringListMapDeserializer;
+import org.keycloak.json.StringListMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -64,7 +64,7 @@ public class ResourceRepresentation {
 
     private String displayName;
 
-    @JsonDeserialize(using = StringListMapDeserializer.class)
+    @StringListMap
     private Map<String, List<String>> attributes;
 
     /**

@@ -51,6 +51,16 @@ backend: {
 ```
 to the `i18next` config object.
 
+## Playwright Test Environment
+
+The Playwright tests under `js/apps/admin-ui/test` accept these environment variables:
+
+- `KEYCLOAK_SERVER_URL` (default: `http://localhost:8080`)
+- `KEYCLOAK_ADMIN_USER` and `KEYCLOAK_ADMIN_PASSWORD` (default: `admin` / `admin`)
+- `KEYCLOAK_REQUIRE_OID4VCI=true` to fail OID4VCI tests when the server feature is missing instead of skipping them
+
+These test-only variables are different from server bootstrap variables such as `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
+
 ## Building
 
 To build a library instead of an app you need to add the `LIB=true` environment variable.

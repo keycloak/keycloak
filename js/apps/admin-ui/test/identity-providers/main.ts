@@ -1,7 +1,8 @@
 import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 
-const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
 const authorizationUrl = `${SERVER_URL}/realms/master/protocol/openid-connect/auth`;
 
@@ -117,6 +118,7 @@ export async function createKubernetesProvider(
   issuerUrl: string,
 ) {
   await clickProviderCard(page, providerName);
+  await expect(page.getByTestId("config.issuer")).toBeEnabled();
   await page.getByTestId("config.issuer").fill(issuerUrl);
   await clickAddButton(page);
 }
@@ -138,11 +140,19 @@ export async function setUrl(page: Page, urlType: UrlType, value: string) {
   await page.getByTestId(`config.${urlType}Url`).fill(value);
 }
 
+export async function reenterClientSecret(page: Page, secret: string) {
+  const field = page.getByTestId("config.clientSecret");
+  await expect(field).toHaveValue("");
+  await field.fill(secret);
+  await expect(field).toHaveValue(secret);
+}
+
 export async function assertInvalidUrlNotification(
   page: Page,
   urlType: UrlType,
 ) {
-  await expect(page.getByTestId("last-alert")).toHaveText(
+  await assertNotificationMessage(
+    page,
     `Could not update the provider. The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
   );
 }
@@ -188,13 +198,32 @@ export async function addMapper(
   mapperName: string,
 ) {
   await page.getByTestId("no-mappers-empty-action").click();
-  await page.locator("#identityProviderMapper").click();
-  await page.getByTestId(`${mapperType}-idp-mapper`).click();
+  await selectItem(
+    page,
+    "#identityProviderMapper",
+    page.getByTestId(`${mapperType}-idp-mapper`),
+  );
   await page.getByTestId("name").fill(mapperName);
 }
 
 export async function clickSaveMapper(page: Page) {
-  await page.getByTestId("new-mapper-save-button").click();
+  const saveMapperButton = page.getByTestId("new-mapper-save-button");
+  await expect(saveMapperButton).toBeEnabled();
+  await saveMapperButton.click();
+  // The add-mapper page is itself /mappers/create, so wait until the save has
+  // navigated away from it before deciding where we are.
+  await expect(page).not.toHaveURL(/\/mappers\/create$/);
+  await expect(page).toHaveURL(/.*mappers(\/[^/]+)?$/);
+
+  // Some mapper forms stay on /mappers/:id after save. Navigate back to the list
+  // so callers can assert the mapper row in a single place.
+  if (/\/mappers\/[^/]+$/.test(page.url())) {
+    const cancelMapperButton = page.getByTestId("new-mapper-cancel-button");
+    if ((await cancelMapperButton.count()) > 0) {
+      await cancelMapperButton.first().click();
+      await expect(page).toHaveURL(/.*mappers$/);
+    }
+  }
 }
 
 export async function clickCancelMapper(page: Page) {

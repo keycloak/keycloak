@@ -104,7 +104,7 @@ export default function WorkflowDetailForm() {
         yaml: data.workflowYAML,
       });
       addAlert(t("workflowCreated"), AlertVariant.success);
-      navigate(toWorkflows({ realm }));
+      void navigate(toWorkflows({ realm }));
     } catch (error) {
       addError("workflowCreateError", error);
     }

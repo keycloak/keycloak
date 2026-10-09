@@ -8,10 +8,9 @@ import java.util.Objects;
 
 import org.keycloak.common.util.TriConsumer;
 import org.keycloak.models.Model;
-import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.common.MultiValuedAttribute;
 
-public class ComplexAttributeSetter<M extends Model, R extends ResourceTypeRepresentation> implements TriConsumer<Attribute<M, R>, R, String> {
+public class ComplexAttributeSetter<M extends Model, R> implements TriConsumer<Attribute<M, R>, R, String> {
 
     private final String name;
     private final String subName;

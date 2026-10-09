@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -321,6 +322,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         var storageProviders = getEnabledStorageProviders(realm, UserQueryMethodsProvider.class).toList();
 
+        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
+            requiresFederatedStorage = false;
+            storageProviders = storageProviders.stream()
+                    .filter(PartialEvaluationStorageProvider.class::isInstance)
+                    .toList();
+        }
+
         if (firstResult == null || firstResult <= 0) {
             // we don't have a first result set, so we start from the beginning and go through all providers.
             var providers = Stream.concat(Stream.of(localStorage()), concatExternalWithFederated(storageProviders, 0, requiresFederatedStorage));
@@ -434,9 +442,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * Executes a query against a user storage provider with graceful degradation.
      * If the provider throws an exception, logs the error and returns an empty stream
      * to allow other providers to continue functioning.
+     *
+     * Graceful degradation only applies to genuine external {@link UserStorageProvider}
+     * components (e.g. LDAP). Local and federated storage share the realm's database, so a
+     * failure there is not a "provider is unreachable" situation but a general outage, and
+     * must propagate rather than silently look like "no results".
      */
-    private static Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery,
+    static Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery,
                                                           Integer firstResult, Integer maxResults) {
+        if (!(provider instanceof UserStorageProvider)) {
+            return pagedQuery.query(provider, firstResult, maxResults);
+        }
         try {
             return pagedQuery.query(provider, firstResult, maxResults);
         } catch (Exception e) {
@@ -453,9 +469,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * Executes a count query against a user storage provider with graceful degradation.
      * If the provider throws an exception, logs the error and returns 0
      * to allow other providers to continue functioning.
+     *
+     * See {@link #queryWithGracefulDegradation} for why local/federated storage is excluded.
      */
-    private int countQueryWithGracefulDegradation(Object provider, CountQuery countQuery, 
+    int countQueryWithGracefulDegradation(Object provider, CountQuery countQuery,
                                                  Integer firstResult, Integer maxResults) {
+        if (!(provider instanceof UserStorageProvider)) {
+            return countQuery.query(provider, firstResult, maxResults);
+        }
         try {
             return countQuery.query(provider, firstResult, maxResults);
         } catch (Exception e) {
@@ -472,19 +493,23 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * Helper method to get total user count from local storage plus all federated storage providers
      * with graceful degradation.
      */
-    private int getTotalUserCountWithGracefulDegradation(RealmModel realm, 
+    private int getTotalUserCountWithGracefulDegradation(RealmModel realm,
                                                         java.util.function.Function<Object, Integer> countFunction) {
         // Count users from local storage
         int localCount = countFunction.apply(localStorage());
-        
+
         // Count users from all enabled storage providers with graceful degradation
         Stream<Object> providers = getEnabledStorageProviders(realm, Object.class);
-        
+
+        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
+            providers = providers.filter(PartialEvaluationStorageProvider.class::isInstance);
+        }
+
         int federatedCount = providers
-            .mapToInt(provider -> countQueryWithGracefulDegradation(provider, 
+            .mapToInt(provider -> countQueryWithGracefulDegradation(provider,
                 (p, firstResult, maxResults) -> countFunction.apply(p), null, null))
             .sum();
-            
+
         return localCount + federatedCount;
     }
 
@@ -511,11 +536,15 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
+        // Published before any removal work, including the federated pre-removal
+        // below. That call deletes the user's federated attributes, so a listener
+        // running after it would observe a user that has already lost part of its
+        // state -- which the "pre removed" contract does not lead anyone to expect.
+        publishUserPreRemovedEvent(realm, user);
+
         if (getFederatedStorage() != null && user.getServiceAccountClientLink() == null) {
             getFederatedStorage().preRemove(realm, user);
         }
-
-        publishUserPreRemovedEvent(realm, user);
 
         StorageId storageId = new StorageId(user.getId());
 
@@ -641,6 +670,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         int localStorageUsersCount = localStorage().getUsersCount(realm, includeServiceAccount);
+
+        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
+            return localStorageUsersCount;
+        }
+
         int storageProvidersUsersCount = mapEnabledStorageProvidersWithTimeout(realm, UserCountMethodsProvider.class,
                 userQueryProvider -> userQueryProvider.getUsersCount(realm))
                 .reduce(0, Integer::sum);
@@ -1014,6 +1048,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return getFederatedStorage().removeIssuedVerifiableCredential(credentialId);
         }
         return false;
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeIssuedVerifiableCredential(userId, credentialId);
+        }
+        return getFederatedStorage() != null && getFederatedStorage().removeIssuedVerifiableCredential(userId, credentialId);
     }
 
     @Override

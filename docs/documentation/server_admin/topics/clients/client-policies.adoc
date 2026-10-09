@@ -10,6 +10,8 @@ To make it easy to secure client applications, it is beneficial to realize the f
 
 To realize these points in a unified way, _Client Policies_ concept is introduced.
 
+NOTE: Client Policies are evaluated for protocol mapper create, update, and delete operations on clients through the Admin REST API. They are not evaluated for protocol mapper operations on client scopes.
+
 == Use-cases
 
 Client Policies realize the following points mentioned as follows.
@@ -156,6 +158,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
 * Enforce scopes granted in link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] or in JWT Authorization Grant are restricted to the ones present in the initial `subject_token` or `assertion` JWT. This executor only allows downscoping of the presented assertion. An error is returned if any extra scope, not originally granted to the JWT, is requested.
 * Enforce claims for assertion grants (`subject_token` in Token Exchange and `assertion` in JWT Authorization Grant). The executor enforces the presence and specific values of a claim in a JWT. It uses a Java regex so it is quite versatile.
+* Enforce that only configured protocol mapper types can be created or updated on clients through the dedicated Admin REST API protocol mapper endpoints using the `allowed-protocol-mappers` executor. Existing mapper types that are not configured can only be preserved with an unchanged type and configuration.
 * Add default **Certificate Authority subject DN** for the client registration service when TLS client authentication (`tls_client_auth`) is configured (see *Using the client registration service* in the link:{securing_apps_link}[securing apps] section for more information). The `tls-client-auth-ca-subject-dn` executor can be used to provide the new compulsory attribute in client registration interface. It can also enforce the configured CA name to reject unwanted values.
 
 Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
@@ -238,3 +241,54 @@ Keycloak, with client policies, provides specific executors to protect the vario
 * *Secure Client URIs*: A generic executor that enforces all client URIs to only accept HTTPS and to not accept any wildcards.
 * *Secure Redirect URIs Enforcer*: An executor that allows different levels of validations for redirect URIs, such as IPv4 and IPv6 loopback addresses, HTTP scheme, wildcards, only permitted domains, or ensuring OAuth 2.1 compliance.
 * *Secure Client URIs Pattern Executor*: This executor is the most generic and flexible for validating client URLs. It allows you to select from a list only the URIs you want to validate, and then validates them providing a list of permitted pattern using regular expressions. Explore this <<ssrf,dedicated section>> to see how this executor can be used to prevent an SSRF attack.
+
+[[_full_scope_disabled_policy]]
+== Enforcing Full Scope Allowed to be disabled
+
+WARNING: The *Full Scope Allowed* switch is deprecated. See the <<_role_scope_mappings, Role scope mappings section>> for details and migration guidance.
+
+By default, clients are created with *Full Scope Allowed* enabled, which causes every access token to contain all roles held by the authenticated user. This is convenient during development, but is a security risk in production: a compromised token grants access to every resource the user can reach. You should disable *Full Scope Allowed* on every client and explicitly grant only the roles that the client actually needs.
+
+To make sure that every new or updated client in a realm always has *Full Scope Allowed* disabled automatically, configure a client policy with the *Full Scope Disabled* executor (`full-scope-disabled`).
+
+=== How the executor works
+
+The `full-scope-disabled` executor acts on the *Create client* and *Update client* events. It has one configuration option:
+
+Auto-configure::
+  When *On* (the default), the executor automatically sets `fullScopeAllowed` to `false` on any client that is created or updated, regardless of the value provided by the caller. This is the recommended mode.
+  When *Off*, the executor instead validates that the client does not have `fullScopeAllowed` enabled, and rejects the create or update request with an error if it does.
+
+=== Procedure
+
+Follow these steps to create a client policy that enforces *Full Scope Allowed* to be disabled for every client in a realm.
+
+. Log in to the Admin Console and select the realm you want to configure.
+. Click *Realm settings* in the menu, then open the *Client policies* tab.
+. Click *Create client policy*, enter a name (for example, `disable-full-scope`), and optionally add a description, then click *Save*.
+. In the policy detail view, click *Add condition* and select *Any Client*. Click *Save* to add the condition.
+  This condition matches every client, so the policy applies to all client registrations and updates in the realm.
+. Click *Add profile* and either select an existing profile or create a new profile that contains the *Full Scope Disabled* executor:
+.. To create a new profile, go to the *Profiles* tab, click *Create client profile*, enter a name (for example, `full-scope-disabled-profile`), and click *Save*.
+.. In the profile detail view, click *Add executor*, select *Full Scope Disabled* from the list, set *Auto-configure* to *On*, and click *Save*.
+. Return to the policy, click *Add profile*, and select the profile you just created.
+. Make sure the policy is *Enabled* and click *Save*.
+
+From this point on, any client that is created or updated through the Admin Console, the Admin REST API, or OIDC Dynamic Client Registration will automatically have *Full Scope Allowed* set to `false`. Existing clients are not retroactively affected; you should manually disable *Full Scope Allowed* on existing clients and configure their <<_role_scope_mappings, role scope mappings>> to grant only the roles they require.
+
+WARNING: Using the *Any Client* condition means the policy also applies to built-in {project_name} clients such as `security-admin-console` and `admin-cli`, which can make it impossible to log in to the Admin Console. See <<_full_scope_disabled_policy_builtin_clients, Excluding built-in clients from the policy>> for mitigations.
+
+[[_full_scope_disabled_policy_builtin_clients]]
+=== Excluding built-in clients from the policy
+
+Built-in {project_name} clients such as `security-admin-console` and `admin-cli` rely on *Full Scope Allowed* being enabled to function correctly. Because the `full-scope-disabled` executor fires on every client update, applying the policy to these clients automatically disables *Full Scope Allowed* on them whenever they are updated, which can make it impossible to log in to the Admin Console. There are some possible mitigations like for instance:
+
+* *Never update the affected built-in clients* — as long as `security-admin-console` and `admin-cli` are never touched after the policy is enabled, they retain their current *Full Scope Allowed* setting. This option is simple but fragile as long as you cannot ensure that clients are really never updated.
+
+* *Exclude specific clients using a marker role with Negative logic* — keep the *Any Client* condition and add a *Client Role* condition with *Negative logic* enabled. Keeping *Any Client* ensures that the policy still applies during client registration, when the *Client Role* condition abstains because no existing client is available. The steps below describe this approach:
++
+.. Choose a marker role name, for example `fsa-permitted-marker-role` ("fsa" standing for "full scope allowed").
+.. For each built-in client that must keep *Full Scope Allowed* enabled (typically `security-admin-console` and `admin-cli`), open the client in the Admin Console, go to the *Roles* tab, and create a client role named `fsa-permitted-marker-role`.
+.. In the client policy, keep the *Any Client* condition and add a *Client Role* condition. Set the role name to `fsa-permitted-marker-role` and enable *Negative logic*. Save the condition.
++
+With this setup, clients that have the `fsa-permitted-marker-role` client role are excluded from updates governed by the policy and retain their *Full Scope Allowed* setting unchanged. All other clients, including newly registered ones, are subject to the policy.

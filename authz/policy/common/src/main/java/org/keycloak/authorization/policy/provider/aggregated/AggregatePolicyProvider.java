@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
@@ -112,30 +113,65 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
 
     @Override
     public boolean evaluate(KeycloakSession session, Policy policy, UserModel subject) {
+        return Outcome.GRANT.equals(evaluateOutcome(session, policy, subject));
+    }
+
+    @Override
+    public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
         DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         int grants = 0;
+        int evaluated = 0;
+        int forceDeny = 0;
 
         for (Policy associatedPolicy : associatedPolicies) {
             PolicyProvider policyProvider = session.getProvider(AuthorizationProvider.class).getProvider(associatedPolicy.getType());
 
             if (policyProvider instanceof PartialEvaluationPolicyProvider partialPolicyProvider) {
-                if (partialPolicyProvider.evaluate(session, associatedPolicy, subject)) {
+                Outcome childOutcome = partialPolicyProvider.evaluateOutcome(session, associatedPolicy, subject);
+
+                if (Outcome.FORCE_DENY.equals(childOutcome)) {
+                    forceDeny++;
+                    continue;
+                }
+
+                if (Outcome.SKIP.equals(childOutcome)) {
+                    continue;
+                }
+
+                evaluated++;
+
+                boolean childGranted = Outcome.GRANT.equals(childOutcome);
+
+                if (Logic.NEGATIVE.equals(associatedPolicy.getLogic())) {
+                    childGranted = !childGranted;
+                }
+
+                if (childGranted) {
                     grants++;
                 }
             } else {
-                return false;
+                forceDeny++;
             }
         }
 
-        if (grants == 0) {
-            return false;
+        if (evaluated == 0) {
+            return forceDeny == 0 ? Outcome.SKIP: Outcome.FORCE_DENY;
         }
 
-        return switch (decisionStrategy) {
+        if (grants == 0) {
+            return Outcome.DENY;
+        }
+
+        // uses total policy count, not just evaluated, so skipped and unsupported children count against unanimity/consensus;
+        // this is intentionally conservative — partial evaluation cannot resolve unsupported policies, so it denies rather
+        // than risk granting access that runtime evaluation would deny
+        boolean granted = switch (decisionStrategy) {
             case AFFIRMATIVE -> true;
             case UNANIMOUS -> grants == associatedPolicies.size();
             case CONSENSUS -> grants > associatedPolicies.size() - grants;
         };
+
+        return granted ? Outcome.GRANT : Outcome.DENY;
     }
 }

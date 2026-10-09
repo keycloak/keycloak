@@ -24,9 +24,11 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
   useFetch(
     () =>
       access.hasAccess("view-realm")
-        ? adminClient.components.findOne({
-            id: user.federationLink!,
-          })
+        ? adminClient.components
+            .findOne({
+              id: user.federationLink!,
+            })
+            .then((component) => component ?? undefined)
         : adminClient.userStorageProvider.name({
             id: user.federationLink!,
           }),

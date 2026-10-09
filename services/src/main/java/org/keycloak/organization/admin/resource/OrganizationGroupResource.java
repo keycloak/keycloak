@@ -38,6 +38,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
@@ -63,6 +64,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RoleMapperResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.utils.GroupUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -107,7 +109,9 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        RealmModel realm = session.getContext().getRealm();
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
         if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
         return rep;
     }
@@ -289,6 +293,7 @@ public class OrganizationGroupResource {
 
             adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
             GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
+            GroupUtils.filterRolesInRepresentation(childRep, session.getContext().getRealm(), session, auth);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
 
         } catch (ModelDuplicateException e) {
@@ -375,6 +380,8 @@ public class OrganizationGroupResource {
             throw ErrorResponse.error("User is already a member of the group", Response.Status.CONFLICT);
         }
 
+        GroupUtils.checkAdminGroupRoles(group, auth);
+
         try {
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE)
@@ -424,6 +431,8 @@ public class OrganizationGroupResource {
             } catch (ModelException me) {
                 throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
             }
+        } else {
+            throw ErrorResponse.error("User not a member", Status.BAD_REQUEST);
         }
     }
 }

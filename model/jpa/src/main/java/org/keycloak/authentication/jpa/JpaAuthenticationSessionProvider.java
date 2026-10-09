@@ -28,15 +28,19 @@ import jakarta.persistence.LockModeType;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.jpa.RootAuthenticationSessionEntity.SESSION_BUCKET_COUNT;
 
 public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransaction implements AuthenticationSessionProvider {
 
@@ -75,14 +79,23 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
             return createRootAuthenticationSession(realm);
         }
         var em = getEntityManager();
-        em.createNamedQuery("insertRootAuthSessionIfAbsent")
-                .setParameter("id", id)
-                .setParameter("realmId", realm.getId())
-                .setParameter("timestamp", Time.currentTimeSeconds())
-                .executeUpdate();
-        var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) {
-            throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");
+        // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
+        // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        RootAuthenticationSessionEntity entity;
+        long now = Time.currentTimeSeconds();
+        for (;;) {
+            EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertRootAuthSessionIfAbsent"))
+                    .setParameter("id", id)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("timestamp", now)
+                    .setParameter("createdOn", now)
+                    .setParameter("sessionBucket", Math.floorMod(id.hashCode(), SESSION_BUCKET_COUNT))
+                    .setParameter("timestampCoarse", RootAuthenticationSessionAdapter.computeTimestampCoarse(now, realm, now))
+                    .executeUpdate();
+            entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (entity != null) {
+                break;
+            }
         }
         if (!Objects.equals(realm.getId(), entity.getRealmId())) {
             throw new ModelException("Another root authentication session with id '" + id + "' already exists in other realm");
@@ -90,8 +103,10 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
         if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
-            // let's restart it
-            entity.setTimestamp(Time.currentTimeSeconds());
+            long restartTime = Time.currentTimeSeconds();
+            entity.setTimestamp(restartTime);
+            entity.setCreatedOn(restartTime);
+            entity.setTimestampCoarse(RootAuthenticationSessionAdapter.computeTimestampCoarse(restartTime, realm, restartTime));
             entity.getAuthenticationSessions().clear();
         }
         return RootAuthenticationSessionAdapter.wrapEntity(session, realm,  entity, authSessionsLimit);
@@ -140,6 +155,16 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         if (entity != null) {
             em.remove(entity);
         }
+    }
+
+    @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        getEntityManager()
+                .createNamedQuery("deleteRootAuthSessionsByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .setParameter("rootSessionIdToKeep", rootAuthenticationSessionIdToKeep)
+                .executeUpdate();
     }
 
     @Override

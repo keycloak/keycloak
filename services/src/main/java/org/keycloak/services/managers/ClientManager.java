@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.keycloak.Config;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.Profile;
@@ -415,7 +416,7 @@ public class ClientManager {
     private boolean isInternalClient(String realmName, String clientId) {
         if (defaultClients.contains(clientId)) return true;
 
-        if (!"master".equals(realmName)) {
+        if (!Config.getAdminRealm().equals(realmName)) {
             return false;
         }
 

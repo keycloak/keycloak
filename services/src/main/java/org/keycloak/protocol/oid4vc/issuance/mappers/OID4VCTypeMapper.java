@@ -31,6 +31,8 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.VCFormat.MSO_MDOC;
+
 /**
  * Allows to add types to the credential subject
  *
@@ -66,6 +68,12 @@ public class OID4VCTypeMapper extends OID4VCMapper {
         return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.VC_INCLUDE_IN_METADATA))
                        .map(Boolean::parseBoolean)
                        .orElse(false);
+    }
+
+    @Override
+    public boolean supportsCredentialFormat(String credentialFormat) {
+        // mDoc uses the configured document type, not a VC-level JSON type member.
+        return !MSO_MDOC.equals(credentialFormat);
     }
 
     @Override

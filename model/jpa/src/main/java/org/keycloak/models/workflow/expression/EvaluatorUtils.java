@@ -25,11 +25,10 @@ public class EvaluatorUtils {
      */
     public static EvaluatorContext createEvaluatorContext(String expression) {
         if (StringUtil.isBlank(expression)) {
-            throw new WorkflowInvalidStateException("Expression cannot be null or empty");
+            throw new WorkflowInvalidStateException("workflowExpressionEmpty");
         }
         if (expression.length() > MAX_EXPRESSION_LENGTH) {
-            throw new WorkflowInvalidStateException(
-                    "Expression exceeds maximum allowed length of %d characters".formatted(MAX_EXPRESSION_LENGTH));
+            throw new WorkflowInvalidStateException("workflowExpressionMaxLength", MAX_EXPRESSION_LENGTH);
         }
         validateExpressionDepth(expression);
 
@@ -39,21 +38,21 @@ public class EvaluatorUtils {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         BooleanConditionParser parser = new BooleanConditionParser(tokens);
 
-        // this replaces the standard error listener, storing all parsing errors if the expressions is malformed
+        // this replaces the standard error listeners, storing all lexing and parsing errors if the expressions is malformed
         ErrorListener errorListener = new ErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
         // parse the expression and check for errors
         EvaluatorContext context = parser.evaluator();
         if (errorListener.hasErrors()) {
-            String lineSeparator = System.lineSeparator();
             String errorDetails = errorListener.getErrorMessages().stream()
                     .map(error -> "- " + error)
-                    .collect(Collectors.joining(lineSeparator));
+                    .collect(Collectors.joining("\n"));
 
-            throw new WorkflowInvalidStateException(String.format("Invalid expression: %s%sError details:%s%s",
-                    expression, lineSeparator, lineSeparator, errorDetails));
+            throw new WorkflowInvalidStateException("workflowExpressionInvalid", expression, errorDetails);
         }
         return context;
     }
@@ -97,8 +96,7 @@ public class EvaluatorUtils {
             }
         }
         if (maxDepth > MAX_EXPRESSION_DEPTH) {
-            throw new WorkflowInvalidStateException(
-                    "Expression exceeds maximum allowed nesting depth of %d".formatted(MAX_EXPRESSION_DEPTH));
+            throw new WorkflowInvalidStateException("workflowExpressionMaxDepth", MAX_EXPRESSION_DEPTH);
         }
     }
 

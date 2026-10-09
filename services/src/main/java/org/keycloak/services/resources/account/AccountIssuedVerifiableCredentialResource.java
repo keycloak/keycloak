@@ -97,7 +97,7 @@ public class AccountIssuedVerifiableCredentialResource {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+        boolean removed = session.users().removeIssuedVerifiableCredential(user.getId(), credentialId);
         if (!removed) {
             logger.warn(String.format("Issued credential with ID '%s' not found for user '%s' in the realm '%s'.", credentialId, user.getUsername(), realm.getName()));
             throw new NotFoundException("Issued credential not found");

@@ -48,7 +48,7 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
     @Override
     protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
         var provider = (OTelTracingProvider) session.getProvider(TracingProvider.class);
-        return new HttpClientBuilder(ApacheHttpClientTelemetry.builder(provider.getOpenTelemetry()).build().newHttpClientBuilder());
+        return new HttpClientBuilder(ApacheHttpClientTelemetry.builder(provider.getOpenTelemetry()).build().createHttpClientBuilder());
     }
 
     @Override
@@ -68,6 +68,8 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY) && Configuration.isTrue(TracingOptions.TRACING_ENABLED);
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT)
+                && Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY)
+                && Configuration.isTrue(TracingOptions.TRACING_ENABLED);
     }
 }

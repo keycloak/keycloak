@@ -83,7 +83,8 @@ public class LoginStatusIframeEndpoint {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
                 String requestOrigin = UriUtils.getOrigin(uriInfo.getRequestUri());
                 validWebOrigins.add(requestOrigin);
-                if (validWebOrigins.contains("*") || validWebOrigins.contains(origin)) {
+                if (validWebOrigins.contains("*")
+                        || validWebOrigins.stream().anyMatch(allowed -> UriUtils.originEquals(origin, allowed))) {
                     return Response.noContent().build();
                 }
                 logger.debugf("client %s does not allow origin=%s for requestOrigin=%s (as determined by the proxy-header setting), init will return a 403", clientId, origin, requestOrigin);

@@ -289,6 +289,16 @@ public class JavaKeystoreKeyProviderTest {
     }
 
     @Test
+    public void invalidKeystoreOutsideKeystoreDirectoriesRelative() throws Exception {
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "../invalid");
+
+        Response response = realm.admin().components().add(rep);
+        assertError(response, "is not under the realm directory");
+    }
+
+    @Test
     public void invalidKeystorePassword() throws Exception {
         generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);

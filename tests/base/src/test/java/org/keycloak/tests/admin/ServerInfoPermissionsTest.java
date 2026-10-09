@@ -18,10 +18,13 @@ package org.keycloak.tests.admin;
 
 
 
+import java.util.Objects;
+
 import jakarta.ws.rs.ForbiddenException;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.info.ServerInfoRepresentation;
+import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -85,6 +88,25 @@ public class ServerInfoPermissionsTest extends AbstractPermissionsTest {
         Assert.assertNull(serverInfo.getSystemInfo().getServerTime());
         Assert.assertNull(serverInfo.getCpuInfo());
         Assert.assertNull(serverInfo.getMemoryInfo());
+
+        // databaseUrl and databaseUser are never exposed in server info
+        assertDatabaseConnectionInfoNotExposed(clients.get("master-admin").serverInfo().getInfo());
+        assertDatabaseConnectionInfoNotExposed(clients.get("master-admin-" + AdminRoles.MANAGE_REALM).serverInfo().getInfo());
+    }
+
+    private void assertDatabaseConnectionInfoNotExposed(ServerInfoRepresentation serverInfo) {
+        SpiInfoRepresentation jpa = serverInfo.getProviders().get("connectionsJpa");
+        Assert.assertNotNull("connectionsJpa SPI should be present", jpa);
+        boolean foundDatabaseUrl = jpa.getProviders().values().stream()
+                .map(p -> p.getOperationalInfo())
+                .filter(Objects::nonNull)
+                .anyMatch(info -> info.containsKey("databaseUrl"));
+        Assert.assertFalse("connectionsJpa operationalInfo should not contain databaseUrl", foundDatabaseUrl);
+        boolean foundDatabaseUser = jpa.getProviders().values().stream()
+                .map(p -> p.getOperationalInfo())
+                .filter(Objects::nonNull)
+                .anyMatch(info -> info.containsKey("databaseUser"));
+        Assert.assertFalse("connectionsJpa operationalInfo should not contain databaseUser", foundDatabaseUser);
     }
 
     protected static class PermissionsTestRealm extends PermissionsTestRealmConfig1 {

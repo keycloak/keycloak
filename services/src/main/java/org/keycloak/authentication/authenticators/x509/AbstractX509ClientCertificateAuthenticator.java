@@ -92,9 +92,18 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String CERTIFICATE_POLICY_MODE_ANY = "Any";
     static final String DEFAULT_MATCH_ALL_EXPRESSION = "(.*?)(?:$)";
     public static final String CONFIRMATION_PAGE_DISALLOWED = "x509-cert-auth.confirmation-page-disallowed";
+    // revalidate is deprecated and will be always true in 27.0
+    @Deprecated(forRemoval = true, since = "26.8")
     public static final String REVALIDATE_CERTIFICATE = "x509-cert-auth.revalidate-certificate-enabled";
+    public static final String CERTIFICATE_CA_SUBJECT_DN = "x509-cert-auth.casubjectdn";
 
-    private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);;
+    private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);
+
+    private boolean legacyCriticalBehavior;
+
+    public AbstractX509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+        this.legacyCriticalBehavior = legacyCriticalBehavior;
+    }
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
         LoginFormsProvider form = context.form();
@@ -125,6 +134,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder())
                     .trustValidation()
+                        .caSubjectDN(config.getCASubjectDN())
                         .enabled(config.getRevalidateCertificateEnabled())
                     .timestampValidation()
                         .enabled(config.isCertValidationEnabled());
@@ -320,5 +330,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    }
+
+    public boolean isLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
     }
 }

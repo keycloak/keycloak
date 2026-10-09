@@ -273,7 +273,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
         }
         if (context.getContextData().containsKey(FEDERATED_ACCESS_TOKEN)) {
-            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
+            String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
+            setFederatedAccessToken(authSession, token);
         }
     }
 

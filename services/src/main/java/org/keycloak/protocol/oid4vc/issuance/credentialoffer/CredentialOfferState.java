@@ -37,8 +37,13 @@ public class CredentialOfferState {
     private CredentialsOffer credentialsOffer;
     private String targetClientId;
     private String targetUserId;
+    private String originatingUserId;
+    private String originatingUserSessionId;
+    private Boolean originatingUserSessionOffline;
+    private Long originatingUserPasswordCredentialCreatedDate;
     private String nonce;
     private String txCode;
+    private Long createdAt;
     private long expiresAt;
     private List<OID4VCAuthorizationDetail> authDetails;
 
@@ -65,6 +70,7 @@ public class CredentialOfferState {
         this.credentialsOffer = credOffer;
         this.targetClientId = clientId;
         this.targetUserId = userId;
+        this.createdAt = Time.currentTimeSeconds();
         this.expiresAt = expiresAt;
         String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
@@ -94,12 +100,48 @@ public class CredentialOfferState {
         return targetUserId;
     }
 
+    public String getOriginatingUserId() {
+        return originatingUserId;
+    }
+
+    public void setOriginatingUserId(String originatingUserId) {
+        this.originatingUserId = originatingUserId;
+    }
+
+    public String getOriginatingUserSessionId() {
+        return originatingUserSessionId;
+    }
+
+    public void setOriginatingUserSessionId(String originatingUserSessionId) {
+        this.originatingUserSessionId = originatingUserSessionId;
+    }
+
+    public Boolean getOriginatingUserSessionOffline() {
+        return originatingUserSessionOffline;
+    }
+
+    public void setOriginatingUserSessionOffline(Boolean originatingUserSessionOffline) {
+        this.originatingUserSessionOffline = originatingUserSessionOffline;
+    }
+
+    public Long getOriginatingUserPasswordCredentialCreatedDate() {
+        return originatingUserPasswordCredentialCreatedDate;
+    }
+
+    public void setOriginatingUserPasswordCredentialCreatedDate(Long originatingUserPasswordCredentialCreatedDate) {
+        this.originatingUserPasswordCredentialCreatedDate = originatingUserPasswordCredentialCreatedDate;
+    }
+
     public String getNonce() {
         return nonce;
     }
 
     public String getTxCode() {
         return txCode;
+    }
+
+    public Long getCreatedAt() {
+        return createdAt;
     }
 
     public long getExpiresAt() {
@@ -142,7 +184,7 @@ public class CredentialOfferState {
 
     @JsonIgnore
     public boolean isExpired() {
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTimeSeconds();
         return expiresAt <= currentTime;
     }
 

@@ -140,24 +140,27 @@ public abstract class RoleResource {
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
-    protected Stream<RoleRepresentation> getRealmRoleComposites(RoleModel role) {
+    protected Stream<RoleRepresentation> getRealmRoleComposites(AdminPermissionEvaluator auth, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> composite.getContainer() instanceof RealmModel)
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected Stream<RoleRepresentation> getClientRoleComposites(ClientModel app, RoleModel role) {
+    protected Stream<RoleRepresentation> getClientRoleComposites(AdminPermissionEvaluator auth, ClientModel app, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> Objects.equals(composite.getContainer(), app))
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected void deleteComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
+    protected void deleteComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");
             }
+            auth.roles().requireMapComposite(composite);
             role.removeCompositeRole(composite);
         }
 

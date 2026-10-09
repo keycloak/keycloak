@@ -1,8 +1,12 @@
 package org.keycloak.protocol.oidc.refresh;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 
 /**
@@ -47,8 +51,36 @@ public interface RefreshTokenProvider extends Provider {
      */
     TokenManager.AccessTokenResponseBuilder refreshAccessToken(RefreshTokenContext ctx) throws OAuthErrorException;
 
+    /**
+     * Invoked when the revocation endpoint receives a request to revoke a refresh token
+     * issued by this provider. The default implementation is a no-op; override to perform
+     * provider-specific cleanup (e.g., revoking associated credentials).
+     *
+     * @param token  the decoded token (refresh/offline) represented as an {@link AccessToken}
+     * @param user   the token subject
+     * @param client the client for which the token was issued
+     * @param event  the event builder for recording revocation events
+     *
+     */
+    void revokeToken(AccessToken token, UserModel user, ClientModel client, EventBuilder event);
+
+    /**
+     * Returns the provider ID that this instance uses to identify issued refresh tokens.
+     * Used for event detail emission during initial issuance
+     * and refresh-token processing when the token does not carry a provider claim
+     */
+    String getProviderId();
+
     @Override
     default void close() {
     }
 
+    /**
+     * Invoked by the revocation endpoint before any session state is read, to serialize this revocation against
+     * concurrent refreshes contending on the same rotation state. The default implementation is a no-op.
+     *
+     * @param refreshToken the decoded refresh token/offline token being revoked
+     */
+    default void lockForRevocation(RefreshToken refreshToken) {
+    }
 }

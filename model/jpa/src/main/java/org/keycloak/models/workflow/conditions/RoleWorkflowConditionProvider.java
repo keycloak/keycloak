@@ -79,10 +79,10 @@ public class RoleWorkflowConditionProvider implements WorkflowConditionProvider 
     @Override
     public void validate() throws WorkflowInvalidStateException {
         if (StringUtil.isBlank(expectedRole)) {
-            throw new WorkflowInvalidStateException("Expected role name not set.");
+            throw new WorkflowInvalidStateException("workflowConditionRoleNotSet");
         }
         if (getRole(expectedRole, session.getContext().getRealm()) == null) {
-            throw new WorkflowInvalidStateException(String.format("Role with name %s does not exist.", expectedRole));
+            throw new WorkflowInvalidStateException("workflowConditionRoleNotFound", expectedRole);
         }
     }
 

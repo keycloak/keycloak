@@ -64,6 +64,16 @@ public record ImmutablePersistentUserSessionEntity(
     }
 
     @Override
+    public int getLastSessionRefreshCoarse() {
+        return 0;
+    }
+
+    @Override
+    public void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse) {
+        readOnly();
+    }
+
+    @Override
     public boolean isOffline() {
         return JpaSessionUtil.offlineFromString(offline);
     }

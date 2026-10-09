@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+import org.keycloak.json.RawJsonValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
@@ -167,11 +167,11 @@ public class RealmRepresentation {
 
     @JsonProperty("clientProfiles")
     @Schema(implementation = ClientProfilesRepresentation.class)
-    protected JsonNode clientProfiles;
+    protected RawJsonValue clientProfiles;
 
     @JsonProperty("clientPolicies")
     @Schema(implementation = ClientPoliciesRepresentation.class)
-    protected JsonNode clientPolicies;
+    protected RawJsonValue clientPolicies;
 
     protected List<UserRepresentation> users;
     protected List<UserRepresentation> federatedUsers;
@@ -1335,7 +1335,7 @@ public class RealmRepresentation {
     public ClientProfilesRepresentation getParsedClientProfiles() {
         try {
             if (clientProfiles == null) return null;
-            return JsonSerialization.mapper.convertValue(clientProfiles, ClientProfilesRepresentation.class);
+            return KeycloakJsonMapperFactory.mapper().convertValue(clientProfiles, ClientProfilesRepresentation.class);
         } catch (IllegalArgumentException ioe) {
             logger.warnf("Failed to deserialize client profiles in the realm %s. Fallback to return empty profiles. Details: %s", realm, ioe.getMessage());
             return null;
@@ -1348,14 +1348,14 @@ public class RealmRepresentation {
             this.clientProfiles = null;
             return;
         }
-        this.clientProfiles = JsonSerialization.mapper.convertValue(clientProfiles, JsonNode.class);
+        this.clientProfiles = KeycloakJsonMapperFactory.mapper().convertValue(clientProfiles, RawJsonValue.class);
     }
 
     @JsonIgnore
     public ClientPoliciesRepresentation getParsedClientPolicies() {
         try {
             if (clientPolicies == null) return null;
-            return JsonSerialization.mapper.convertValue(clientPolicies, ClientPoliciesRepresentation.class);
+            return KeycloakJsonMapperFactory.mapper().convertValue(clientPolicies, ClientPoliciesRepresentation.class);
         } catch (IllegalArgumentException ioe) {
             logger.warnf("Failed to deserialize client policies in the realm %s. Fallback to return empty profiles. Details: %s", realm, ioe.getMessage());
             return null;
@@ -1368,7 +1368,7 @@ public class RealmRepresentation {
             this.clientPolicies = null;
             return;
         }
-        this.clientPolicies = JsonSerialization.mapper.convertValue(clientPolicies, JsonNode.class);
+        this.clientPolicies = KeycloakJsonMapperFactory.mapper().convertValue(clientPolicies, RawJsonValue.class);
     }
 
     public String getBrowserFlow() {

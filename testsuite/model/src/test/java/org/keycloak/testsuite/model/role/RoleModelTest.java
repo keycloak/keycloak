@@ -1,14 +1,19 @@
 package org.keycloak.testsuite.model.role;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import jakarta.persistence.EntityManager;
+
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
@@ -17,6 +22,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.jpa.JpaRealmProvider;
+import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -291,6 +298,54 @@ public class RoleModelTest extends KeycloakModelTest {
             RoleModel parentClientRole = session.roles().getRoleById(realm, parentClientRoleId.get());
             assertThat(parentRealmRole.getCompositesStream().collect(Collectors.toSet()), empty());
             assertThat(parentClientRole.getCompositesStream().collect(Collectors.toSet()), empty());
+            return null;
+        });
+    }
+
+    /**
+     * Regression test for #51510: expanding a composite-role tree bound every parent id of a
+     * breadth-first level into a single IN clause, exceeding the parameter limit of some databases.
+     * Uses a tiny threshold so the frontier spans several chunks, and a child shared by parents
+     * in different chunks to verify that the chunked lookup still returns each child exactly once.
+     */
+    @Test
+    @RequireProvider(value = RealmProvider.class, only = JpaRealmProviderFactory.PROVIDER_ID)
+    public void testCompositeRolesStreamChunksParentIds() {
+        final int threshold = 2;
+        final int parentCount = 5; // spans 3 chunks with threshold 2
+
+        final Set<String> parentIds = new HashSet<>();
+        final Set<String> expectedChildIds = new HashSet<>();
+        final AtomicReference<String> sharedChildId = new AtomicReference<>();
+
+        withRealm(realmId, (session, realm) -> {
+            RoleModel sharedChild = session.roles().addRealmRole(realm, "chunked-shared-child");
+            sharedChildId.set(sharedChild.getId());
+            expectedChildIds.add(sharedChild.getId());
+
+            for (int i = 0; i < parentCount; i++) {
+                RoleModel parent = session.roles().addRealmRole(realm, "chunked-parent-" + i);
+                RoleModel ownChild = session.roles().addRealmRole(realm, "chunked-own-child-" + i);
+                parent.addCompositeRole(ownChild);
+                parent.addCompositeRole(sharedChild);
+                parentIds.add(parent.getId());
+                expectedChildIds.add(ownChild.getId());
+            }
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            JpaRealmProvider provider = new JpaRealmProvider(session, em, null, null, threshold);
+
+            List<String> childIds = provider.getCompositeRolesStream(realm, parentIds)
+                    .map(RoleModel::getId)
+                    .collect(Collectors.toList());
+
+            // every child exactly once: the shared child must not be duplicated across chunks
+            assertThat(childIds, hasSize(expectedChildIds.size()));
+            assertThat(new HashSet<>(childIds), is(expectedChildIds));
+            assertThat(childIds.stream().filter(sharedChildId.get()::equals).count(), is(1L));
             return null;
         });
     }

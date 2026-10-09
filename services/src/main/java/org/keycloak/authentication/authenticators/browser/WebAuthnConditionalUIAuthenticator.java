@@ -42,15 +42,18 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
 
     @Override
     public LoginFormsProvider fillContextForm(AuthenticationFlowContext context) {
-        context.form().setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, Boolean.TRUE);
-        return super.fillContextForm(context);
+        LoginFormsProvider form = super.fillContextForm(context);
+        if (form != null) {
+            // Only render conditional UI when its WebAuthn attributes are available.
+            form.setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, Boolean.TRUE);
+        }
+        return form;
     }
 
     @Override
-    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
+    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase, Object... parameters) {
         // the passkey failed, show error and maintain passkeys
-        context.form().setError(errorCase, "");
-        context.form().setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, Boolean.TRUE);
+        context.form().setError(errorCase, parameters);
 
         AuthenticatorUtils.setupReauthenticationInUsernamePasswordFormError(context);
 

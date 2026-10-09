@@ -1,12 +1,10 @@
 package org.keycloak.admin.api;
 
-import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListOptionsTest {
 
@@ -26,44 +24,12 @@ public class ListOptionsTest {
     }
 
     @Test
-    void testGetSortEmpty() {
+    void testAddSortFields() {
         ListOptions options = new ListOptions();
-        options.setSort(List.of());
-        assertEquals("", options.sort);
-        assertEquals(List.of(), options.getSort());
-    }
-
-    @Test
-    void testGetSort() {
-        ListOptions options = new ListOptions();
-        options.sort = "displayName|desc,clientId";
-        assertEquals(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID)),
-                options.getSort());
-    }
-
-    @Test
-    void testSetSort() {
-        ListOptions options = new ListOptions();
-        options.setSort(List.of(SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
-        assertEquals("clientId|desc", options.sort);
-    }
-
-    @Test
-    void invalidSortFieldThrowsBadRequest() {
-        ListOptions options = new ListOptions();
-        options.sort = "unknown";
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, options::getSort);
-        assertEquals("unknown is not a sortable field", exception.getMessage());
-    }
-
-    @Test
-    void invalidSortDirectionThrowsBadRequest() {
-        ListOptions options = new ListOptions();
-        options.sort = "clientId|what";
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, options::getSort);
-        assertEquals("sort direction must be asc or desc", exception.getMessage());
+        options.addSortField("field");
+        assertEquals("field", options.getSort());
+        options.addSortField("field2", false);
+        assertEquals("field,field2|DESC", options.getSort());
     }
 
 }

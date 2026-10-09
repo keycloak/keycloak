@@ -117,14 +117,16 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test03SpnegoLoginUsernamePassword() throws Exception {
         // User jduke@KC2.COM
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        Assertions.assertFalse(testAppHelper.login("jduke2", "theduke"));
-        Assertions.assertTrue(testAppHelper.login("jduke2", "theduke2"));
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
+        testAppHelper.login("jduke2", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke2", "theduke2");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
 
         // User jduke@KEYCLOAK.ORG
-        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
-
+        testAppHelper.login("jduke", "theduke");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         // Logout
         testAppHelper.logout();
         events.poll();

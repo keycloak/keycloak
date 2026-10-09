@@ -183,7 +183,13 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             });
 
             EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+            EventRepresentation updateCredentialEvent = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).getEvent();
+            String storedCredentialId = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost").credentials().stream()
+                    .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                    .findFirst()
+                    .orElseThrow()
+                    .getId();
+            assertEquals(storedCredentialId, updateCredentialEvent.getDetails().get(Details.CREDENTIAL_ID));
 
             MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);
@@ -289,6 +295,40 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
         managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        EventAssertion.expectLoginSuccess(events.poll());
+
+        timeOffSet.set(350);
+
+        // Should not prompt for re-authentication
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        assertTrue(changePasswordPage.isCancelDisplayed());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        assertKcActionStatus(SUCCESS);
+    }
+
+    @Test
+    public void resetPasswordRequiresNoReAuthWithMaxAuthAgeConfigIntegerOverflow() throws Exception {
+        // retrieve the password required action
+        RequiredActionProviderRepresentation passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
+                .stream()
+                .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
+                .findFirst()
+                .orElseThrow(() -> new Exception("Required action not found"));
+
+        // max auth age close to Integer.MAX_VALUE must not overflow the authTime+maxAge sum and
+        // incorrectly force re-authentication
+        passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, String.valueOf(Integer.MAX_VALUE));
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -566,7 +606,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                 oauth.openLoginForm();
                 loginPage.assertCurrent();
                 loginPage.login("test-user@localhost", "password");
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
                 EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, "test-user@localhost");
 
                 // navigate to the authenticate page with the other auth_session_id, tab_id and client_data

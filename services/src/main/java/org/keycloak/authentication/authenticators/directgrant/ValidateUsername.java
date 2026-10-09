@@ -54,12 +54,28 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         String username = retrieveUsername(context);
-        if (username == null) {
+
+        if (username != null) {
+            username = username.trim();
+        }
+
+        if (username == null || username.isEmpty()) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            context.getEvent().error(Errors.USER_NOT_FOUND);
+            Response challengeResponse = errorResponse(
+                Response.Status.BAD_REQUEST.getStatusCode(),
+                "invalid_grant",
+                "Invalid user credentials");
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
+        }
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
@@ -175,7 +191,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     public String getId() {
         return PROVIDER_ID;
     }
- 
+
     protected String retrieveUsername(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(AuthenticationManager.FORM_USERNAME);

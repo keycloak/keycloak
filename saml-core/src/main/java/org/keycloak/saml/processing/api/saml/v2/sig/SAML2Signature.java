@@ -19,6 +19,8 @@ package org.keycloak.saml.processing.api.saml.v2.sig;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.crypto.dsig.SignatureMethod;
@@ -210,11 +212,12 @@ public class SAML2Signature {
         // Estabilish the IDness of the ID attribute.
         configureIdAttribute(document.getDocumentElement());
 
-        NodeList nodes = document.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                JBossSAMLConstants.ASSERTION.get());
-
-        for (int i = 0; i < nodes.getLength(); i++) {
-            configureIdAttribute((Element) nodes.item(i));
+        for (JBossSAMLConstants protocolElement : Stream.concat(Stream.of(JBossSAMLConstants.ASSERTION), JBossSAMLConstants.ARTIFACT_SIGNED_ELEMENTS.stream())
+                .collect(Collectors.toSet())) {
+            NodeList protocolNodes = document.getElementsByTagNameNS(protocolElement.getNsUri().get(), protocolElement.get());
+            for (int i = 0; i < protocolNodes.getLength(); i++) {
+                configureIdAttribute((Element) protocolNodes.item(i));
+            }
         }
     }
     

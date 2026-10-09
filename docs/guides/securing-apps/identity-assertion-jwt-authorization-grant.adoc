@@ -5,7 +5,7 @@
 <@tmpl.guide
 title="Identity Assertion JWT Authorization Grant"
 priority=140
-summary="Guide for the draft about Identity Assertion JWT Authorization Grant.">
+summary="Guide for the draft about Identity Assertion JWT Authorization Grant (ID-JAG).">
 
 <#include "/templates/experimental-feature.adoc">
 

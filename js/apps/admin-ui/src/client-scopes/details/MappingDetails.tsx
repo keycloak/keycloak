@@ -59,15 +59,17 @@ export default function MappingDetails() {
       let data: ProtocolMapperRepresentation | undefined;
       if (isUpdating) {
         if (isOnClientScope) {
-          data = await adminClient.clientScopes.findProtocolMapper({
-            id,
-            mapperId,
-          });
+          data =
+            (await adminClient.clientScopes.findProtocolMapper({
+              id,
+              mapperId,
+            })) ?? undefined;
         } else {
-          data = await adminClient.clients.findProtocolMapperById({
-            id,
-            mapperId,
-          });
+          data =
+            (await adminClient.clients.findProtocolMapperById({
+              id,
+              mapperId,
+            })) ?? undefined;
         }
         if (!data) {
           throw new Error(t("notFound"));
@@ -139,7 +141,7 @@ export default function MappingDetails() {
           });
         }
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        navigate(toDetails());
+        void navigate(toDetails());
       } catch (error) {
         addError("mappingDeletedError", error);
       }
@@ -171,7 +173,7 @@ export default function MappingDetails() {
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
       if (!isUpdating) {
-        navigate(toDetails());
+        void navigate(toDetails());
       }
     } catch (error) {
       addError(`mapping${key}Error`, error);

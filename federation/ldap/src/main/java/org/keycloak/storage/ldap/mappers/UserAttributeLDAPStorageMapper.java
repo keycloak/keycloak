@@ -410,7 +410,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 private String decodeValue(String value) {
                     if (decodeAsUuid) {
                         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-                        return LDAPUtil.decodeBase64ToUuid(value, ldapConfig);
+                        return LDAPUtil.decodeBase64ToUuid(value, ldapConfig, ldapAttrName);
                     }
                     return value;
                 }
@@ -450,15 +450,6 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         attrs.remove(userModelAttrName);
                     }
                     return attrs;
-                }
-
-                @Override
-                public String getEmail() {
-                    if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
-                    } else {
-                        return super.getEmail();
-                    }
                 }
 
                 @Override

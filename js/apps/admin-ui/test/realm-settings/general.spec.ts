@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { switchOff, switchOn } from "../utils/form.ts";
+import { clickSwitch, switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
-import { assertNotificationMessage } from "../utils/masthead.ts";
+import {
+  assertNotificationMessage,
+  selectActionToggleItem,
+} from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
@@ -69,7 +72,7 @@ test.describe.serial("Realm settings general tab tests", () => {
     await assertNotificationMessage(page, "Realm successfully updated");
 
     // Disable realm
-    await switchOff(page, realmSwitch);
+    await clickSwitch(page, realmSwitch);
     await confirmModal(page);
     await assertNotificationMessage(page, "Realm successfully updated");
   });
@@ -121,5 +124,28 @@ test.describe.serial("Realm settings general tab tests", () => {
     await fillDisplayName(page, "should_be_reverted");
     await clickRevertButton(page);
     await assertDisplayName(page, "display_name");
+  });
+});
+
+test.describe("Realm settings delete", () => {
+  const realmName = `delete-realm-settings-${uuid()}`;
+
+  test.beforeAll(() =>
+    adminClient.createRealm(realmName, { displayName: "Display name only" }),
+  );
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test("deletes the realm by its name when a display name is set", async ({
+    page,
+  }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToRealmSettings(page);
+
+    await selectActionToggleItem(page, "Delete");
+    await confirmModal(page);
+
+    await assertNotificationMessage(page, "The realm has been deleted");
+    expect(await adminClient.getRealm(realmName)).toBeNull();
   });
 });

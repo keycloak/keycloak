@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.LazyModel;
@@ -194,6 +195,13 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    OrganizationIdentityProviderLinkModel getIdentityProviderLink(IdentityProviderModel identityProvider) {
+        if (isUpdated()) {
+            return delegate.get().getIdentityProviderLink(this, identityProvider);
+        }
+        return cached.getIdentityProviderLink(identityProvider.getInternalId());
     }
 
     CachedOrganization getCached() {

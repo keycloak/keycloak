@@ -29,8 +29,8 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
     getValues,
     setValue,
     formState: { errors },
-  } = useFormContext<{ [key: string]: string[] }>();
-  const values = getValues(name);
+  } = useFormContext<{ [key: string]: string[] | undefined }>();
+  const values = getValues(name) || [];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
   const [filterType, setFilterType] = useState<FilterType>("clients");
@@ -42,12 +42,17 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
           values.map((id) => adminClient.roles.findOneById({ id })),
         );
         return Promise.all(
-          roles.map(async (role) => ({
-            role: role!,
-            client: role!.clientRole
-              ? await adminClient.clients.findOne({ id: role?.containerId! })
-              : undefined,
-          })),
+          roles
+            // A role deleted since it was selected comes back as null.
+            .filter((role) => role !== null)
+            .map(async (role) => ({
+              role,
+              client: role.clientRole
+                ? ((await adminClient.clients.findOne({
+                    id: role.containerId!,
+                  })) ?? undefined)
+                : undefined,
+            })),
         );
       }
       return [];
@@ -118,6 +123,11 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeRole", {
+                      name: [row.client?.clientId, row.role.name]
+                        .filter(Boolean)
+                        .join(" "),
+                    })}
                     onClick={() => {
                       setValue(
                         name,

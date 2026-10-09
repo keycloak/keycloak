@@ -38,7 +38,6 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
@@ -95,7 +94,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
@@ -155,13 +153,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesTest.class);
@@ -1157,7 +1153,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         try {
             oauth.client(clientBetaId);
             oauth.openLoginForm();
-            assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
             EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
                     .details(Details.REASON, Details.CLIENT_POLICY_ERROR)

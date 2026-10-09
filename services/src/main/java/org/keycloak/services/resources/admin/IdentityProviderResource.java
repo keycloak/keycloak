@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
@@ -42,15 +43,20 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -115,7 +121,9 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, this.identityProviderModel));
+        IdentityProviderRepresentation rep = StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, this.identityProviderModel));
+        Organizations.filterOrganizationLinks(rep, session, auth);
+        return rep;
     }
 
     /**
@@ -182,6 +190,10 @@ public class IdentityProviderResource {
                 message = "Invalid request";
             }
 
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
+            }
+
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
@@ -199,17 +211,45 @@ public class IdentityProviderResource {
             throw new IllegalArgumentException("Identity Provider alias cannot be changed");
         }
 
+        // providerId selects the config subtype used for masked-secret reuse checks, but persistence
+        // does not update providerId. Reject mismatches so a caller cannot bypass OIDC/OAuth2 guards
+        // by submitting another provider type (for example saml) with a changed token destination.
+        if (providerRep.getProviderId() != null
+                && !Objects.equals(identityProviderModel.getProviderId(), providerRep.getProviderId())) {
+            throw new IllegalArgumentException("Identity Provider providerId cannot be changed");
+        }
+
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(providerRep);
+
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
-            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+            // Invoke on `updated`: it comes from RepresentationToModel / createConfig() and is the
+            // provider-specific subclass that may reject reuse when destination fields change.
+            // The stored identityProviderModel is often a plain IdentityProviderModel from cache.
+            if (updated.canReuseMaskedClientSecret(identityProviderModel)) {
+                updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
+                        ? identityProviderModel.getConfig().get("clientSecret") : null);
+            } else {
+                // Sensitive destination/auth fields changed — require re-entry (same pattern as LDAP)
+                throw new IllegalArgumentException(
+                        "Client secret must be re-entered when the token URL, client ID, authentication method, or related destination settings are changed");
+            }
+        }
+
+        if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+            if (updated.isAllowAdminRoleMapping() != identityProviderModel.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                        + "' role can change the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
+                        Response.Status.FORBIDDEN);
+            }
         }
 
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
     }
-
 
     private IdentityProviderFactory<?> getIdentityProviderFactory() {
         String providerId = identityProviderModel.getProviderId();
@@ -323,7 +363,15 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
+        // Reject attempts to bind the mapper to a different identity provider than the one from the request path.
+        validateMapperRepresenationIdentityProviderAlias(mapper);
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
+        // the mapper belongs to the identity provider from the path, whatever alias the representation carries
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
+        validateMapperAdminRoleMapping(model);
 
         try {
 //            model = realm.addIdentityProviderMapper(model);
@@ -383,8 +431,25 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
+        if (model == null || !identityProviderModel.getAlias().equals(model.getIdentityProviderAlias())) {
+            throw new NotFoundException("Model not found");
+        }
+        // Reject attempts to retarget the update to a different identity provider or mapper via the representation.
+        validateMapperRepresenationIdentityProviderAlias(rep);
+        if (rep.getId() == null || !id.equals(rep.getId())) {
+            throw ErrorResponse.error("The mapper id in the representation [" + rep.getId()
+                    + "] does not match the mapper id from the request path [" + id + "].", Response.Status.BAD_REQUEST);
+        }
+        // check permission for existing model
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
+
         model = RepresentationToModel.toModel(rep);
+        model.setId(id);
+        model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
+        Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
+        validateMapperAdminRoleMapping(model);
 
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -410,6 +475,7 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        Organizations.checkGroupMapperOrgPermission(session, model, auth);
         session.identityProviders().removeMapper(model);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
@@ -495,6 +561,50 @@ public class IdentityProviderResource {
 
         IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
+    }
+
+    private void validateMapperRepresenationIdentityProviderAlias(IdentityProviderMapperRepresentation rep) {
+        String mapperAlias = rep.getIdentityProviderAlias();
+        if (mapperAlias == null || !identityProviderModel.getAlias().equals(mapperAlias)) {
+            throw ErrorResponse.error("The identity provider alias in the mapper representation [" + mapperAlias
+                    + "] does not match the identity provider from the request path [" + identityProviderModel.getAlias() + "].",
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private void validateMapperAdminRoleMapping(IdentityProviderMapperModel mapperModel) {
+        if (mapperModel.getConfig() == null) {
+           throw ErrorResponse.error("Mapper config must not be null.", Response.Status.BAD_REQUEST);
+        }
+        
+        if (mapperGrantsAdminRole(mapperModel) || mapperJoinsAdminGroup(mapperModel)) {
+            if (!identityProviderModel.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
+                        + "A realm administrator must enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting on this identity provider.",
+                        Response.Status.FORBIDDEN);
+            }
+        }
+    }
+
+    private boolean mapperGrantsAdminRole(IdentityProviderMapperModel mapperModel) {
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        if (roleName == null || roleName.trim().isEmpty()) {
+            return false;
+        }
+        RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
+        return role != null && AdminRoles.isAdminRoleOrComposite(role);
+    }
+
+    private boolean mapperJoinsAdminGroup(IdentityProviderMapperModel mapperModel) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        if (groupPath == null || groupPath.trim().isEmpty()) {
+            return false;
+        }
+        GroupModel group = GroupModel.Type.ORGANIZATION.name().equals(mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE))
+          ? KeycloakModelUtils.findGroupByPath(session, realm,
+                 KeycloakModelUtils.getOrganizationForIdpMapper(session, mapperModel, identityProviderModel), groupPath)
+          : KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
+        return group != null && AdminRoles.groupHasAdminRoles(group);
     }
 
 }

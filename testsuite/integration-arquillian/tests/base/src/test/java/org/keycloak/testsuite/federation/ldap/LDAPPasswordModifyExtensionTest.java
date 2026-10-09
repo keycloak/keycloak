@@ -31,7 +31,6 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -106,7 +105,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "New-password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Change password back to previous value
         Assertions.assertTrue(AccountHelper.updatePassword(managedRealm.admin(), "johnkeycloak", "Password1"));
@@ -119,7 +118,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
         registerPage.assertCurrent();
 
         registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(),"registerUserSuccess2");
         Assertions.assertNotNull(user);

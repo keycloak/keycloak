@@ -66,6 +66,18 @@ public class BCCertificateUtilsProviderTest {
         Assert.assertEquals(subject, extractCN(certificate));
     }
 
+    @Test
+    public void testLongSubjectIsTruncatedToRfc5280Limit() {
+        String subject = "a".repeat(80); // exceeds RFC 5280 ub-common-name (64)
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+
+        String cn = extractCN(certificate);
+        Assert.assertEquals(64, cn.length());
+        Assert.assertEquals(subject.substring(0, 64), cn);
+    }
+
     private static String extractCN(X509Certificate certificate) {
         try {
             ASN1Encodable value = new JcaX509CertificateHolder(certificate).getSubject().getRDNs(BCStyle.CN)[0].getFirst().getValue();

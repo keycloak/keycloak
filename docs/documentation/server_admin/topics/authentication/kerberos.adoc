@@ -18,7 +18,7 @@ A typical use case for web authentication is the following:
 
 [WARNING]
 ====
-The https://www.ietf.org/rfc/rfc4559.txt[Negotiate] www-authenticate scheme allows NTLM as a fallback to Kerberos and on some web browsers in Windows NTLM is supported by default.  If a www-authenticate challenge comes from a server outside a browsers permitted list, users may encounter an NTLM dialog prompt.  A user would need to click the cancel button on the dialog to continue as {project_name} does not support this mechanism.  This situation can happen if Intranet web browsers are not strictly configured or if {project_name} serves users in both the Intranet and Internet.  A https://github.com/keycloak/keycloak/issues/8989[custom authenticator] can be used to restrict Negotiate challenges to a whitelist of hosts.
+The https://datatracker.ietf.org/doc/html/rfc4559[Negotiate] www-authenticate scheme allows NTLM as a fallback to Kerberos and on some web browsers in Windows NTLM is supported by default.  If a www-authenticate challenge comes from a server outside a browsers permitted list, users may encounter an NTLM dialog prompt.  A user would need to click the cancel button on the dialog to continue as {project_name} does not support this mechanism.  This situation can happen if Intranet web browsers are not strictly configured or if {project_name} serves users in both the Intranet and Internet.  A https://github.com/keycloak/keycloak/issues/8989[custom authenticator] can be used to restrict Negotiate challenges to a whitelist of hosts.
 ====
 
 Perform the following steps to set up Kerberos authentication:
@@ -138,6 +138,12 @@ https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server[her
 endif::[]
 
 ==== Credential delegation
+
+[WARNING]
+====
+Credential delegation is deprecated and may be removed in a future release. Credential delegation has significant security implications as it allows credentials to be forwarded and reused. See the warning below for more details. Moreover, the use of protocol mappers and carry kerberos ticket within access token may also have security implications.
+Finally, we are not able to properly test it and official support for this feature may not deserve the additional overhead as it seems that feature has not much usage within {project_name} users.
+====
 
 Kerberos supports the credential delegation. Applications may need access to the Kerberos ticket so they can reuse it to interact with other services secured by Kerberos. Because the {project_name} server processed the SPNEGO protocol, you must propagate the GSS credential to your application within the OpenID Connect token claim or a SAML assertion attribute. {project_name} transmits this to your application from the {project_name} server. To insert this claim into the token or assertion, each application must enable the built-in protocol mapper `gss delegation credential`. This mapper is available in the *Mappers* tab of the application's client page.  See <<_protocol-mappers, Protocol Mappers>> chapter for more details.
 

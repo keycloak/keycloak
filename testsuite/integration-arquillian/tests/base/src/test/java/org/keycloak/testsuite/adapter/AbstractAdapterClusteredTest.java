@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.auth.page.login.LoginActions;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.ServerURLs;
 
@@ -37,7 +36,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployer;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Assume;
@@ -79,9 +77,6 @@ public abstract class AbstractAdapterClusteredTest extends AbstractServletsAdapt
 
     @ArquillianResource
     protected Deployer deployer;
-
-    @Page
-    LoginActions loginActionsPage;
 
     @BeforeClass
     public static void checkPropertiesSet() {

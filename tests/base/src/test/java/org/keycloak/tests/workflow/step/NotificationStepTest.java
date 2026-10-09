@@ -133,6 +133,64 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testNotifyUserStepSendsEmailInUserLocale() throws Exception {
+        String realmName = "Realm Italiano";
+        managedRealm.updateWithCleanup(r -> r.displayName(realmName).internationalizationEnabled(true).supportedLocales("en", "it"));
+
+        String locale = "it";
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountDisableNotificationSubject", "Avviso di disabilitazione account");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountDisableNotificationBody", "Il tuo account verra disabilitato tra {0} giorni per {1}.");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationGreeting", "Gentile {0},");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationTimeRemaining", "Tempo rimanente: {0} giorni");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationQuestions", "Per domande contatta gli amministratori di {0}.");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationSignature", "Cordiali saluti,");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationSignatureFrom", "Amministrazione {0}");
+
+        // Create workflow: disable at 10 days, notify 3 days before (at day 7)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(3))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser-it").email("test-it@example.com").name("Mario", "")
+                .attribute(UserModel.LOCALE, locale).build()).close();
+
+        try {
+            // Simulate user being 7 days old (eligible for notify step)
+            runScheduledSteps(Duration.ofDays(7));
+
+            MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test-it@example.com");
+            assertNotNull(testUserMessage, "No email found for test-it@example.com");
+            assertEquals("Avviso di disabilitazione account", testUserMessage.getSubject());
+
+            MailUtils.EmailBody body = MailUtils.getBody(testUserMessage);
+
+            for (String content : List.of(body.getText(), body.getHtml())) {
+                assertTrue(content.contains("Gentile Mario,"), content);
+                assertTrue(content.contains("Il tuo account verra disabilitato tra 3 giorni per inactivity."), content);
+                assertTrue(content.contains("Tempo rimanente: 3 giorni"), content);
+                assertTrue(content.contains("Per domande contatta gli amministratori di " + realmName + "."), content);
+                assertTrue(content.contains("Cordiali saluti,"), content);
+                assertTrue(content.contains("Amministrazione " + realmName), content);
+
+                assertFalse(content.contains("Dear"), content);
+                assertFalse(content.contains("Time remaining"), content);
+                assertFalse(content.contains("If you have questions"), content);
+                assertFalse(content.contains("Best regards"), content);
+            }
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
     public void testNotifyUserStepSkipsUsersWithoutEmailButLogsWarning() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID)
@@ -256,6 +314,75 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                 assertTrue(content.contains("Welcome to " + managedRealm.getName() + "!"));
                 assertTrue(content.contains("The next step is scheduled to 7 days."));
             }
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithCustomSubjectResolvingProperties() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "${user.firstName}, your ${realm.name} account's review is due in ${workflow.daysUntilNextStep} days")
+                                .withConfig("message", "<p>Dear ${user.firstName},</p>")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser6")
+                            .email("test6@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // properties are resolved and the text is not interpreted as a MessageFormat pattern
+            assertEquals("Bob, your " + managedRealm.getName() + " account's review is due in 7 days", message.getSubject());
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithCustomSubjectFromMessageBundle() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "accountNotificationSubject")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser7")
+                            .email("test7@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // a subject matching a key from the email theme message bundle still resolves to the localized text
+            assertEquals("Account Notification", message.getSubject());
         } finally {
             mailServer.runCleanup();
         }

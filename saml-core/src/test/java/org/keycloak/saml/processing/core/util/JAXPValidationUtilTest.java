@@ -18,6 +18,14 @@ package org.keycloak.saml.processing.core.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -48,6 +56,44 @@ public class JAXPValidationUtilTest {
             "<saml:Issuer>urn:test</saml:Issuer>" +
             "</samlp:AuthnRequest>";
 
+
+    @Test
+    public void testFreshValidator() throws Exception {
+        assertThat(JAXPValidationUtil.validator(), Matchers.not(Matchers.sameInstance(JAXPValidationUtil.validator())));
+    }
+
+    @Test
+    public void testConcurrentValidation() throws Exception {
+        int threads = 8;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch ready = new CountDownLatch(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<?>> tasks = new ArrayList<>();
+        try {
+            for (int i = 0; i < threads; i++) {
+                tasks.add(executor.submit(() -> {
+                    ready.countDown();
+                    if (!start.await(30, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting for concurrent validation");
+                    }
+                    for (int j = 0; j < 20; j++) {
+                        JAXPValidationUtil.validate(new ByteArrayInputStream(REQUEST_VALID.getBytes(StandardCharsets.UTF_8)));
+                        assertInputValidation(REQUEST_INVALID, Matchers.notNullValue());
+                    }
+                    return null;
+                }));
+            }
+            assertThat(ready.await(30, TimeUnit.SECONDS), Matchers.is(true));
+            start.countDown();
+            for (Future<?> task : tasks) {
+                task.get(60, TimeUnit.SECONDS);
+            }
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(30, TimeUnit.SECONDS), Matchers.is(true));
+        }
+    }
 
     @Test
     public void testServerSideValidator() throws Exception {

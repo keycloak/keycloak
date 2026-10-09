@@ -43,7 +43,7 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { alias: string },
-    IdentityProviderRepresentation | undefined
+    IdentityProviderRepresentation | null
   >({
     method: "GET",
     path: "/instances/{alias}",
@@ -93,7 +93,7 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
 
   public findOneMapper = this.makeRequest<
     { alias: string; id: string },
-    IdentityProviderMapperRepresentation | undefined
+    IdentityProviderMapperRepresentation | null
   >({
     method: "GET",
     path: "/instances/{alias}/mappers/{id}",

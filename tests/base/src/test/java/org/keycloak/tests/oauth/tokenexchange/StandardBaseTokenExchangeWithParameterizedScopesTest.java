@@ -33,7 +33,7 @@ public class StandardBaseTokenExchangeWithParameterizedScopesTest extends Standa
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.PARAMETERIZED_SCOPES);
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES, Profile.Feature.TOKEN_EXCHANGE_DELEGATION);
         }
     }
 }

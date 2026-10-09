@@ -219,9 +219,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 placeholderText={t("selectARole")}
                 controller={{
                   defaultValue: [],
-                  rules: {
-                    required: true,
-                  },
                 }}
                 options={clientRoles.map((role) => role.name!)}
               />

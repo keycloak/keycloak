@@ -39,7 +39,6 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 
@@ -69,9 +68,6 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
-
-    @Page
-    protected AppPage appPage;
 
     private UPConfig upConfig;
 

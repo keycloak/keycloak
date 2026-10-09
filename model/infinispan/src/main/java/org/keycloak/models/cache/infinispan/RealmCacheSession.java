@@ -190,6 +190,15 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public void clearManagedModels() {
+        managedRealms.clear();
+        managedApplications.clear();
+        managedClientScopes.clear();
+        managedRoles.clear();
+        managedGroups.clear();
+    }
+
+    @Override
     public RealmProvider getRealmDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (realmDelegate != null) return realmDelegate;
@@ -931,7 +940,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (invalidations.contains(id)) {
             return getRoleDelegate().getRoleById(realm, id);
         } else if (managedRoles.containsKey(id)) {
-            return managedRoles.get(id);
+            RoleAdapter cachedRole = managedRoles.get(id);
+            if (realm.getId().equals(cachedRole.realm.getId())) {
+                return cachedRole;
+            }
         }
 
         CachedRole cached = getCachedRole(realm, id);
@@ -1176,7 +1188,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (invalidations.contains(id) || listInvalidations.contains(realm.getId())) {
             return getClientDelegate().getClientById(realm, id);
         } else if (managedApplications.containsKey(id)) {
-            return managedApplications.get(id);
+            ClientModel cachedClient = managedApplications.get(id);
+            if (cachedClient == null || realm.getId().equals(cachedClient.getRealm().getId())) {
+                return cachedClient;
+            }
         }
         CachedClient cached = cache.get(id, CachedClient.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
@@ -1443,6 +1458,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol) {
         return getClientScopeDelegate().getClientScopesByProtocol(realm, protocol);
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        return getClientScopeDelegate().getClientScopesByProtocolForUpdate(realm, protocol);
     }
 
     @Override

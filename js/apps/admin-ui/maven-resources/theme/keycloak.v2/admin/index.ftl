@@ -156,6 +156,7 @@
         "resourceUrl": "${resourceUrl}",
         "logo": "${properties.logo!""}",
         "logoUrl": "${properties.logoUrl!""}",
+        "darkMode": ${darkMode?c},
         "consoleBaseUrl": "${consoleBaseUrl}",
         "masterRealm": "${masterRealm}",
         "resourceVersion": "${resourceVersion}"

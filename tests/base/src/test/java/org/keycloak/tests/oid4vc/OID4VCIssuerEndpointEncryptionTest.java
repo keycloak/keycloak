@@ -1,59 +1,67 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.keys.GeneratedRsaEncKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
-import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.jose.jwe.JWEConstants.RSA1_5;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest {
-
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
 
     @AfterEach
     void logoutAfterEach() {
@@ -132,28 +140,51 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     }
 
     @Test
-    void testRequestCredentialWithIncompleteEncryptionParams() throws Throwable {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
-        withCausePropagation(() -> runOnServer.run(session -> {
-            var authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            var endpoint = prepareIssuerEndpoint(session, authenticator);
+    void testRequestCredentialRejectsKeyManagementAlgorithmDowngrade() throws Exception {
+        FlowData flow = prepareFlow();
+        Map<String, Object> jwkPair = generateRsaJwkWithPrivateKey();
+        JWK responseJwk = (JWK) jwkPair.get("jwk");
 
-            JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
-            CredentialRequest request = new CredentialRequest()
-                    .setCredentialIdentifier("test-credential")
-                    .setCredentialResponseEncryption(new CredentialResponseEncryption().setJwk(jwk));
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
+                .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setJwk(responseJwk));
 
-            try {
-                endpoint.requestCredential(JsonSerialization.writeValueAsString(request));
-                fail("Expected BadRequestException");
-            } catch (BadRequestException e) {
-                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }));
+        // The issuer advertises this key with an RSA-OAEP family algorithm, never legacy RSA1_5.
+        // Encrypt the same request to the same RSA public key (same kid), but downgrade the JWE
+        // header to alg=RSA1_5.
+        JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
+        assertNotEquals(RSA1_5, requestEncryptionJwk.getAlgorithm());
+
+        var response = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .encryptRequest(requestEncryptionJwk, false, RSA1_5)
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
+    }
+
+    @Test
+    void testRequestCredentialWithIncompleteEncryptionParams() throws IOException {
+        // Use an OID4VCI token via the HTTP client (not runOnServer) so the token is verified
+        // against the correct credential-endpoint URI.
+        FlowData flow = prepareFlow();
+
+        JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
+        CredentialRequest request = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setCredentialResponseEncryption(new CredentialResponseEncryption().setJwk(jwk));
+
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest(null)
+                .payload(JsonSerialization.writeValueAsString(request), ContentType.APPLICATION_JSON)
+                .bearerToken(flow.token())
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test
@@ -234,6 +265,89 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         } finally {
             setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "false"));
         }
+    }
+
+    @Test
+    void testUnauthenticatedEncryptedRequestIsRejectedBeforeDecryption() {
+        //header: {"alg":"RSA-OAEP-256","enc":"A256GCM","kid":"test"}
+        String jweLikePayload = "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoidGVzdCJ9.aa.bb.cc.dd";
+
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest()
+                .payload(jweLikePayload, ContentType.create("application/jwt", StandardCharsets.UTF_8))
+                .bearerToken("invalid-access-token")
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), response.getError());
+    }
+
+    @Test
+    void testRequestCredentialEncryptionErrorsAreUniform() throws Exception {
+        ComponentRepresentation keyProvider = new ComponentRepresentation();
+        keyProvider.setName("oid4vci-rsa1_5-encryption");
+        keyProvider.setParentId(testRealm.getId());
+        keyProvider.setProviderId(GeneratedRsaEncKeyProviderFactory.ID);
+        keyProvider.setProviderType(KeyProvider.class.getName());
+        keyProvider.setConfig(new MultivaluedHashMap<>(Map.of("algorithm", List.of(RSA1_5))));
+        try (Response response = testRealm.admin().components().add(keyProvider)) {
+            String id = ApiUtil.getCreatedId(response);
+            testRealm.cleanup().add(r -> r.components().component(id).remove());
+        }
+
+        FlowData flow = prepareFlow();
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))));
+        String requestJson = JsonSerialization.valueAsString(credentialRequest);
+
+        JWK requestEncryptionJwk = Arrays.stream(flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys())
+                .filter(jwk -> RSA1_5.equals(jwk.getAlgorithm()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Issuer metadata must advertise an RSA1_5 encryption key"));
+        String validJwe = encryptCompact(requestJson, requestEncryptionJwk);
+
+        // segment 1 is the wrapped CEK, segment 3 is the AES-GCM ciphertext
+        String jweWithCorruptCek = corruptCompactSegment(validJwe, 1);
+        String jweWithCorruptCiphertext = corruptCompactSegment(validJwe, 3);
+
+        var responseA = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .payload(jweWithCorruptCek, ContentType.create("application/jwt", UTF_8))
+                .send();
+        var responseB = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .payload(jweWithCorruptCiphertext, ContentType.create("application/jwt", UTF_8))
+                .send();
+
+        assertEquals(400, responseA.getStatusCode());
+        assertEquals(400, responseB.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), responseA.getError());
+        assertEquals(responseA.getError(), responseB.getError());
+        assertEquals(responseA.getErrorDescription(), responseB.getErrorDescription());
+    }
+
+    private static String encryptCompact(String payload, JWK issuerEncJwk) throws Exception {
+        PublicKey publicKey = JWKParser.create(issuerEncJwk).toPublicKey();
+        JWEHeader.JWEHeaderBuilder builder = new JWEHeader.JWEHeaderBuilder()
+                .keyId(issuerEncJwk.getKeyId())
+                .algorithm(issuerEncJwk.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .type("JWT");
+        JWE jwe = new JWE().header(builder.build()).content(payload.getBytes(UTF_8));
+        jwe.getKeyStorage().setEncryptionKey(publicKey);
+        return jwe.encodeJwe();
+    }
+
+    // segments: 0=header, 1=encryptedCek, 2=iv, 3=ciphertext, 4=authTag
+    private static String corruptCompactSegment(String compactJwe, int segmentIndex) {
+        String[] parts = compactJwe.split("\\.");
+        byte[] segmentBytes = Base64Url.decode(parts[segmentIndex]);
+        segmentBytes[segmentBytes.length - 1] ^= (byte) 0xFF;
+        parts[segmentIndex] = Base64Url.encode(segmentBytes);
+        return String.join(".", parts);
     }
 
     private FlowData prepareFlow() {
