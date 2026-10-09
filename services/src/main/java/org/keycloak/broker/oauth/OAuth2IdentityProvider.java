@@ -27,7 +27,6 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -97,9 +96,13 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
 
 
     private JsonNode fetchUserProfile(String accessToken) {
-        String userInfoUrl = getConfig().getUserInfoUrl();
+        // Use the client-auth-aware userinfo URL and backchannel client so that tls_client_auth IdPs present
+        // the configured client certificate (and hit the mtls_endpoint_aliases userinfo endpoint when published).
+        // Mirrors OIDCIdentityProvider; without this a generic OAuth2 login completes the mTLS token exchange but
+        // then fails at userinfo because SimpleHttp.create(session) uses the shared client with no client cert.
+        String userInfoUrl = getConfig().getUserInfoUrlForClientAuth();
 
-        try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl)
+        try (SimpleHttpResponse response = executeRequest(userInfoUrl, createBackchannelHttp().doGet(userInfoUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON))) {
             String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);

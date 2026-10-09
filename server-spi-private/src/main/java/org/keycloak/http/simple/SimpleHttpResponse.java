@@ -26,37 +26,47 @@ public class SimpleHttpResponse implements AutoCloseable {
     private final HttpResponse response;
     private final long maxConsumedResponseSize;
     private final ObjectMapper objectMapper;
+    private final Runnable onClose;
     private int statusCode = -1;
     private String responseString;
     private ContentType contentType;
 
     public SimpleHttpResponse(HttpResponse response, long maxConsumedResponseSize, ObjectMapper objectMapper) {
+        this(response, maxConsumedResponseSize, objectMapper, () -> {});
+    }
+
+    public SimpleHttpResponse(HttpResponse response, long maxConsumedResponseSize, ObjectMapper objectMapper, Runnable onClose) {
         this.response = response;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
         this.objectMapper = objectMapper;
+        this.onClose = onClose;
     }
 
     private void readResponse() throws IOException {
         if (statusCode == -1) {
-            statusCode = response.getStatusLine().getStatusCode();
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
 
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                try (InputStream entityStream = entity.getContent()) {
-                    contentType = ContentType.getOrDefault(entity);
-                    Charset charset = contentType.getCharset();
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    try (InputStream entityStream = entity.getContent()) {
+                        contentType = ContentType.getOrDefault(entity);
+                        Charset charset = contentType.getCharset();
 
-                    // TODO: remove manual gzip handling — decompression is already performed by the underlying
-                    // HTTP client (Vert.x/Netty or Apache HttpClient) before the response reaches this code.
-                    Header contentEncoding = response.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
-                    boolean gzip = contentEncoding != null
-                            && ("gzip".equalsIgnoreCase(contentEncoding.getValue()) || "x-gzip".equalsIgnoreCase(contentEncoding.getValue()));
+                        // TODO: remove manual gzip handling — decompression is already performed by the underlying
+                        // HTTP client (Vert.x/Netty or Apache HttpClient) before the response reaches this code.
+                        Header contentEncoding = response.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
+                        boolean gzip = contentEncoding != null
+                                && ("gzip".equalsIgnoreCase(contentEncoding.getValue()) || "x-gzip".equalsIgnoreCase(contentEncoding.getValue()));
 
-                    InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
-                    try (SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize)) {
-                        responseString = StreamUtil.readString(safe, charset != null ? charset : StandardCharsets.UTF_8);
+                        InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
+                        try (SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize)) {
+                            responseString = StreamUtil.readString(safe, charset != null ? charset : StandardCharsets.UTF_8);
+                        }
                     }
                 }
+            } finally {
+                onClose.run();
             }
         }
     }
