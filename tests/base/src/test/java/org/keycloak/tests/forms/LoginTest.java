@@ -27,15 +27,18 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -75,7 +78,9 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -381,22 +386,108 @@ public class LoginTest {
     @Test
     @DatabaseTest
     public void loginDifferentUserAfterDisabledUserThrownOut() {
+        // act: Login as a user
         oauth.openLoginForm();
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
         loginPage.submit();
 
-        assertTrue(oauth.parseLoginResponse().isSuccess());
+        // verify: User is logged in
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertTrue(loginResponse.isSuccess());
+        String code = loginResponse.getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // prepare: User is now disabled
         managedRealm.updateUserWithCleanup("test-user@localhost", user -> user.enabled(false));
 
+        // act: Open the login page again (similar to changing the password or other actions)
+        events.clear();
         oauth.openLoginForm();
-        loginPage.assertCurrent();
 
-        // try to log in as different user
+        // verify: New Authentication session started, but no user logged in. Existing user session should be removed (as the identity cookie is also gone)
+        loginPage.assertCurrent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .userId(accessToken.getSubject())
+                .sessionId(accessToken.getSessionId())
+                .details(Details.REASON, "user session is invalid or user is blocked");
+
+        // act: try to log in as different user
         loginPage.fillLogin("keycloak-user@localhost", getPassword("keycloak-user@localhost"));
         loginPage.submit();
 
-        // keycloak-user@localhost has UPDATE_PASSWORD required action, so should be on password update page
+        // verify: keycloak-user@localhost has UPDATE_PASSWORD required action, so should be on password update page
         updatePasswordPage.assertCurrent();
+    }
+
+    @Test
+    @DatabaseTest
+    public void loginDifferentUserAfterUserDisabledWhileLoginFormIsOpen() {
+        // prepare: Browser flow without the Cookie authenticator, so the flow never checks the identity cookie
+        String realmId = managedRealm.getId();
+        runOnServer.run(session -> {
+            session.getContext().setRealm(session.realms().getRealm(realmId));
+            FlowUtil.inCurrentRealm(session)
+                    .copyBrowserFlow("browser-without-cookie")
+                    .clear()
+                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                    .defineAsBrowserFlow();
+        });
+
+        // act: Login as a user
+        oauth.openLoginForm();
+        loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
+        loginPage.submit();
+
+        // verify: User is logged in
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertTrue(loginResponse.isSuccess());
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // consume initial login event
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
+            .userId(accessToken.getSubject())
+            .sessionId(accessToken.getSessionId());
+
+        // act: Open the login page again. The new authentication session gets the ID of the existing user session,
+        // and as the flow does not check the identity cookie, the login form is shown
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // prepare: User is disabled while the login form is open
+        managedRealm.updateUserWithCleanup("test-user@localhost", user -> user.enabled(false));
+        events.clear();
+
+        // act: Log in as a different user without required actions, so the user session is attached right away
+        loginPage.fillLogin("login-test", getPassword("login-test"));
+        loginPage.submit();
+
+        // verify: Session of the disabled user is logged out, and the different user is logged in.
+        // Both events are sent in the same request, so their order may vary due to identical timestamps
+        // Copied from SSOTest.java
+        EventRepresentation event1 = events.poll();
+        EventRepresentation event2 = events.poll();
+        EventRepresentation logoutEvent = EventType.LOGOUT == EventType.valueOf(event1.getType()) ? event1 : event2;
+        EventRepresentation loginEvent = logoutEvent == event1 ? event2 : event1;
+
+        EventAssertion.assertSuccess(logoutEvent)
+            .type(EventType.LOGOUT)
+            .userId(accessToken.getSubject())
+            .sessionId(accessToken.getSessionId())
+            .details(Details.REASON, "user session is invalid or user is blocked");
+
+        EventAssertion.assertSuccess(loginEvent)
+            .type(EventType.LOGIN)
+            .userId(userId);
+
+        // verify: Different user is logged in
+        loginResponse = oauth.parseLoginResponse();
+        assertTrue(loginResponse.isSuccess());
+        tokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
+        assertEquals(userId, oauth.verifyToken(tokenResponse.getAccessToken()).getSubject());
     }
 
     @Test

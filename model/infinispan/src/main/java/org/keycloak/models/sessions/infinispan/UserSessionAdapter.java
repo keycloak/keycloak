@@ -58,7 +58,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
     private final RealmModel realm;
 
-    private final UserModel user;
+    private UserModel user;
 
     private final UserSessionEntity entity;
 
@@ -343,6 +343,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
     @Override
     public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        this.user = user;
         // Sending a delete statement for each client session may have a performance impact.
         // The update task will clear the entity.getClientSessions() set.
         entity.getClientSessions().forEach(clientUUID -> this.clientSessionUpdateTx.addTask(new EmbeddedClientSessionKey(entity.getId(), clientUUID), Tasks.removeSync(offline)));
