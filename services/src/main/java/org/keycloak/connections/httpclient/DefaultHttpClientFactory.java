@@ -123,12 +123,13 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             @Override
             public String getString(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
-                HttpResponse response = httpClient.execute(request);
-                String body = stringResponseHandler.handleResponse(response);
-                if (body == null) {
-                    throw new IOException("No content returned from HTTP call");
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    String body = stringResponseHandler.handleResponse(response);
+                    if (body == null) {
+                        throw new IOException("No content returned from HTTP call");
+                    }
+                    return body;
                 }
-                return body;
             }
 
             @Override
