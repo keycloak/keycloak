@@ -74,7 +74,7 @@ export const OrganizationSelect = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
+      labelHelp={
         <HelpItem helpText={t(helpText!)} fieldLabelId="organizations" />
       }
       fieldId="organizations"
