@@ -60,7 +60,9 @@ const KeycloakPagination = ({
       perPage={max}
       onNextClick={(_, p) => onNextClick((p - 1) * max)}
       onPreviousClick={(_, p) => onPreviousClick((p - 1) * max)}
-      onPerPageSelect={(_, m, f) => onPerPageSelect(f - 1, m)}
+      onPerPageSelect={(_, perPage, page, startIdx) =>
+        onPerPageSelect(startIdx ?? (page - 1) * perPage, perPage)
+      }
       variant={variant}
     />
   );
