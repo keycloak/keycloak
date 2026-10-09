@@ -135,6 +135,30 @@ public interface GroupsResource {
                                      @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     /**
+     * Get groups by name with optional hierarchy population.
+     * @param search an exact or partial group name.
+     * @param exact whether to match the group name exactly.
+     * @param first index of the first element (pagination offset).
+     * @param max the maximum number of results.
+     * @param briefRepresentation whether to return only basic information rather than full representations,
+     *                            including role mappings and attributes.
+     * @param subGroupsCount whether to include subgroup counts.
+     * @param populateHierarchy whether to return matching groups within their parent hierarchy.
+     *                          If {@code false}, matching groups are returned as a flat list.
+     * @return A list containing the matching groups.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("exact") Boolean exact,
+                                     @QueryParam("first") Integer first,
+                                     @QueryParam("max") Integer max,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                     @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount,
+                                     @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy);
+
+    /**
      * Counts all groups.
      * @return A map containing key "count" with number of groups as value.
      */
