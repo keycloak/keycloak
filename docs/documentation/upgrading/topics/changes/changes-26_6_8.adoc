@@ -73,6 +73,25 @@ If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses b
 * Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
 * Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
 
+=== Identity provider client secret must be re-entered when changing its destination (CVE-2026-15943)
+
+When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `**********`.
+Previously, an update that sent this masked value back always kept the stored secret, even if the request also changed where that secret is sent.
+A user with the `manage-identity-providers` role could therefore point the identity provider at an attacker-controlled token endpoint and have {project_name} send the real client secret there.
+
+Starting with this release, the stored secret is kept only when the fields that determine where and how it is sent are unchanged: `clientId`, `clientAuthMethod`, `tokenUrl`, `tokenIntrospectionUrl`, and `baseUrl` (GitHub and OpenShift), as well as `tenantId` (Microsoft) and `sandbox` (PayPal).
+If any of these change while the request still contains the masked value, the update is rejected with HTTP `400 Bad Request` and the identity provider is left unchanged.
+To apply such a change, include the actual `clientSecret` in the request.
+The Admin Console clears the *Client Secret* field automatically when one of these fields is edited so that you can enter it again.
+
+The `providerId` of an existing identity provider can no longer be changed through an update request; sending a different value is rejected with HTTP `400 Bad Request`.
+
+Scripts and tools that read an identity provider, modify one of the fields above, and write it back (for example, `kcadm.sh update identity-provider/instances/<alias> -s config.tokenUrl=...`) must now also pass the client secret (`-s config.clientSecret=...`).
+Updates that change other settings, or that use a `${vault.<key>}` expression as the secret, are not affected.
+
+Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
+Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

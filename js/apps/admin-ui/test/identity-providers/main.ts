@@ -115,11 +115,19 @@ export async function setUrl(page: Page, urlType: UrlType, value: string) {
   await page.getByTestId(`config.${urlType}Url`).fill(value);
 }
 
+export async function reenterClientSecret(page: Page, secret: string) {
+  const field = page.getByTestId("config.clientSecret");
+  await expect(field).toHaveValue("");
+  await field.fill(secret);
+  await expect(field).toHaveValue(secret);
+}
+
 export async function assertInvalidUrlNotification(
   page: Page,
   urlType: UrlType,
 ) {
-  await expect(page.getByTestId("last-alert")).toHaveText(
+  await assertNotificationMessage(
+    page,
     `Could not update the provider. The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
   );
 }

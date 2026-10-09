@@ -198,13 +198,31 @@ public class IdentityProviderResource {
             providerRep.setInternalId(identityProviderModel.getInternalId());
         }
 
+        // providerId selects the config subtype used for masked-secret reuse checks, but persistence
+        // does not update providerId. Reject mismatches so a caller cannot bypass OIDC/OAuth2 guards
+        // by submitting another provider type (for example saml) with a changed token destination.
+        if (providerRep.getProviderId() != null
+                && !Objects.equals(identityProviderModel.getProviderId(), providerRep.getProviderId())) {
+            throw new IllegalArgumentException("Identity Provider providerId cannot be changed");
+        }
+
         // organization-related information should not be processed by non-organization API
         Organizations.stripOrganizationId(providerRep);
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
-            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+            // Invoke on `updated`: it comes from RepresentationToModel / createConfig() and is the
+            // provider-specific subclass that may reject reuse when destination fields change.
+            // The stored identityProviderModel is often a plain IdentityProviderModel from cache.
+            if (updated.canReuseMaskedClientSecret(identityProviderModel)) {
+                updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null
+                        ? identityProviderModel.getConfig().get("clientSecret") : null);
+            } else {
+                // Sensitive destination/auth fields changed — require re-entry (same pattern as LDAP)
+                throw new IllegalArgumentException(
+                        "Client secret must be re-entered when the token URL, client ID, authentication method, or related destination settings are changed");
+            }
         }
 
         session.identityProviders().update(updated);
@@ -237,7 +255,6 @@ public class IdentityProviderResource {
             }
         });
     }
-
 
     private IdentityProviderFactory<?> getIdentityProviderFactory() {
         String providerId = identityProviderModel.getProviderId();
