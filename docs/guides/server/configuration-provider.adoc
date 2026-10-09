@@ -136,6 +136,6 @@ Once you do that, the server is going to make these additional dependencies avai
 == References
 
 * <@links.server id="configuration"/>
-* https://www.keycloak.org/docs/latest/server_development/#_providers[Server Developer Documentation]
+* {server_providers}[Server Developer Documentation]
 
 </@tmpl.guide>

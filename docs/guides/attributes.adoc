@@ -29,6 +29,7 @@
 :adminguide_name: Server Administration Guide
 :adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
+:adminguide_user_locale: {adminguide_link}#_user_locale_selection
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
@@ -43,4 +44,8 @@
 :keycloak_benchmark_name: Keycloak Benchmark Project
 :ui_customization_guide_name: UI Customization Guide
 :ui_customization_guide_link: {project_doc_base_url}/ui-customization/
-
+:server_providers: {developerguide_link}#_providers
+:observabilityguide_link: https://www.keycloak.org/observability/
+:tracingguide_link: {observabilityguide_link}tracing
+:config_metrics: {observabilityguide_link}configuration-metrics
+:link_logging: https://www.keycloak.org/server/logging

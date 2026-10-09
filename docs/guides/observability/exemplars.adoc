@@ -35,9 +35,8 @@ image::observability/exemplar.png[]
 
 To benefit from exemplars, perform the following steps:
 
-. Enable metrics for {project_name} as described in {section} <@links.observability id="configuration-metrics" />.
-
-. Enable tracing for {project_name} as described in {section} <@links.observability id="tracing" />.
+. Enable metrics for {project_name} as described in {config_metrics}[Gaining Insights with metrics].
+. Enable tracing for {project_name} as described in {tracingguide_link}[Root cause analysis with Tracing].
 
 . Enable exemplar storage in your monitoring system.
 +
