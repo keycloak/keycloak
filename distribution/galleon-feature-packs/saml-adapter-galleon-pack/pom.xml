@@ -186,9 +186,6 @@
                                 <resource>
                                     <directory>${basedir}/src/main/resources</directory>
                                 </resource>
-                                <resource>
-                                    <directory>${basedir}/src/main/layers/${saml.adapter.galleon.pack.metadata.dir}</directory>
-                                </resource>
                             </resources>
                         </configuration>
                     </execution>
