@@ -138,6 +138,7 @@ import org.w3c.dom.NodeList;
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
+    public static final String SAML_FEDERATED_SESSION_NOT_ON_OR_AFTER = "SAML_FEDERATED_SESSION_NOT_ON_OR_AFTER";
     @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
     @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
