@@ -17,6 +17,7 @@ public class KcOidcBrokerIdpPublicKeyMissingUseTest extends AbstractKcOidcBroker
         IdentityProviderRepresentation idp = consumerRealm.admin()
                 .identityProviders().get(getIdpAlias()).toRepresentation();
         idp.getConfig().put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+        idp.getConfig().put("clientSecret", getBrokerClientSecret());
         idp.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL,
                 providerRealm.getBaseUrl() + "/missing-use-jwks/jwks");
         consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
