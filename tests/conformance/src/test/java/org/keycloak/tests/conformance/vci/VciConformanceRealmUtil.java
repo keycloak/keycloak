@@ -136,10 +136,19 @@ public final class VciConformanceRealmUtil {
                 .attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true")
                 // The conformance suite wallet requests DEF-compressed encrypted credential responses
                 .attribute(OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS, "DEF")
-                // Randomize credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
+                // Round credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
                 // carry the precise issuance time, which the suite's unlinkability check (RFC 9901 10.1) warns on.
-                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.RANDOMIZE.name())
-                .attribute(OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS, "300")
+                // ROUND is used instead of RANDOMIZE because RANDOMIZE is probabilistic: the two independent
+                // random offsets occasionally coincide, leaving an iat delta that matches the real inter-issuance
+                // gap and intermittently tripping the check (see keycloak/keycloak#53787). Rounding quantizes iat to
+                // unit boundaries, so the delta between two credentials issued ~1-2s apart is either 0 or a full
+                // unit - never approximately the real gap - which makes the check deterministic. MINUTE is the
+                // coarsest usable unit here: exp is computed from the already-normalized iat and the credential
+                // scopes use a 300s (5 min) expiry, so MINUTE keeps exp exactly 300s after iat; the coarser HOUR
+                // and DAY units would truncate exp back onto iat. MINUTE backdates iat by <= 60s, well inside the
+                // backdating the rest of the suite already tolerates.
+                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.ROUND.name())
+                .attribute(OID4VCIConstants.TIME_ROUND_UNIT, TimeClaimNormalizer.RoundUnit.MINUTE.name())
                 .defaultSignatureAlgorithm(Algorithm.ES256)
                 .clientScopes(createCredentialScope(mdoc))
                 .users(createUserRepWithVc(mdoc));
