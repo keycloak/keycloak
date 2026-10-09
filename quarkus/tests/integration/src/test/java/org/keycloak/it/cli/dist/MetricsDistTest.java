@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -36,13 +37,41 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(stopServer = Mode.MANUAL,
         requestPort = 9000,
         containerExposedPorts = {8080, 9000})
 @Tag(DistributionTest.SLOW)
 public class MetricsDistTest {
+
+    @Test
+    void testJGroupsClusterLabel(KeycloakRunner runner) {
+        for (String option : List.of("", "false", "true")) {
+            var args = new ArrayList<>(List.of("start-dev", "--metrics-enabled=true", "--cache=ispn"));
+            if (!option.isEmpty()) {
+                args.add("--spi-cache-embedded--default--metrics-rename-cluster-label=" + option);
+            }
+            try {
+                CLIResult result = runner.run(args);
+                result.assertNoStartupMessage("A MeterFilter is being configured after a Meter has been registered to this registry.");
+
+                String metrics = when().get("/metrics").then().statusCode(200).extract().asString();
+                List<String> samples = metrics.lines().filter(line -> line.startsWith("vendor_jgroups_")).toList();
+                assertFalse(samples.isEmpty(), "Expected metrics from the embedded JGroups channel");
+                String expectedLabel = "true".equals(option) ? "jgroups_cluster" : "cluster";
+                String absentLabel = "true".equals(option) ? "cluster" : "jgroups_cluster";
+                for (String sample : samples) {
+                    assertTrue(sample.contains(expectedLabel + "=\"ISPN\""), sample);
+                    assertFalse(sample.contains("{" + absentLabel + "=") || sample.contains("," + absentLabel + "="), sample);
+                }
+            } finally {
+                runner.stop();
+            }
+        }
+    }
 
     @Test
     @Launch({ "start-dev" })
