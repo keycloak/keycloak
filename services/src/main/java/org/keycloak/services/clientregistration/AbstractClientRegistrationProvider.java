@@ -49,6 +49,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -70,6 +71,10 @@ import org.keycloak.validation.ValidationUtil;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class AbstractClientRegistrationProvider implements ClientRegistrationProvider {
+
+    private static final Set<String> PRIVILEGED_ATTRIBUTES = Set.of(
+            OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK
+    );
 
     protected KeycloakSession session;
     protected EventBuilder event;
@@ -401,7 +406,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     /**
-     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     * Strips privileged client attributes from non-Admin representations.
      *
      * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
      * without throwing an error.
@@ -414,6 +419,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             return;
         }
         rep.getAttributes().entrySet()
-                .removeIf(e -> e.getKey().startsWith("ssf."));
+                .removeIf(e -> e.getKey().startsWith("ssf.") || PRIVILEGED_ATTRIBUTES.contains(e.getKey()));
     }
 }
