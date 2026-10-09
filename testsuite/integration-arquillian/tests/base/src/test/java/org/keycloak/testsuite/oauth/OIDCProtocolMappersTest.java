@@ -412,7 +412,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createClaimMapper("multi2", "multi2", "multi", "String", true, true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, true,false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
-            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
+            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "named-test-app.hardcoded")).close();
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, true, "'hello_' + user.username", false)).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, true, "new java.util.ArrayList(['A','B'])", true)).close();
@@ -491,10 +491,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
             assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
             Assert.assertNull(accessToken.getResourceAccess("test-app"));
-            assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
+            assertTrue(accessToken.getResourceAccess("named-test-app").getRoles().contains("hardcoded"));
 
             // Assert audiences added through AudienceResolve mapper
-            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "test-app", "app", "account", "confidential-cli"));
+            // The audience-confidential-cli mapper of the realm is ignored, as confidential-cli is not a client of this realm
+            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "test-app", "named-test-app", "account"));
 
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
@@ -855,7 +856,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
             // Assert audience
-            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "confidential-cli", "test-app");
+            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "test-app");
         } finally {
             // Revert
             rolesScope.getProtocolMappers().delete(hardcodedMapperId);
