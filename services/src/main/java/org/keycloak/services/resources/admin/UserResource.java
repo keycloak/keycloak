@@ -165,6 +165,8 @@ public class UserResource {
 
     protected final HttpHeaders headers;
 
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
+
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
@@ -462,7 +464,7 @@ public class UserResource {
     public Stream<UserSessionRepresentation> getSessions() {
         auth.users().requireView(user);
         return session.sessions().getUserSessionsStream(realm, user)
-                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView));
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -595,12 +597,12 @@ public class UserResource {
         auth.users().requireView(user);
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user).stream()
-                .filter(auth.clients()::canView)
+                .filter(this::canViewClient)
                 .collect(Collectors.toSet());
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
         List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
-                .filter(ucm -> auth.clients().canView(ucm.getClient()))
+                .filter(ucm -> canViewClient(ucm.getClient()))
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());
@@ -1311,14 +1313,21 @@ public class UserResource {
      * client.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, final String clientUuid) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, auth.clients()::canView);
-        // Update lastSessionRefresh with the timestamp from clientSession
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
         if (clientSession == null) {
             return null;
         }
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
+        // Update lastSessionRefresh with the timestamp from clientSession
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {

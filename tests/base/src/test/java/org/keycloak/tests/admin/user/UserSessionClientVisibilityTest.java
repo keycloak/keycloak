@@ -57,6 +57,7 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -79,6 +80,8 @@ public class UserSessionClientVisibilityTest {
     private static final String VISIBLE_CLIENT = "visible-app";
     private static final String HIDDEN_CLIENT = "hidden-app";
     private static final String CLIENT_SECRET = "secret";
+    // served by the test framework's callback app, and registered on both clients in the realm config
+    private static final String OAUTH_CALLBACK_URL = "http://localhost:8500/callback/oauth";
 
     @InjectRealm(config = SessionVisibilityRealmConfig.class)
     ManagedRealm managedRealm;
@@ -108,17 +111,33 @@ public class UserSessionClientVisibilityTest {
         removeSessions(managedRealm.admin().users().get(targetUserId));
         managedRealm.cleanup().add(r -> removeSessions(r.users().get(targetUserId)));
 
-        // one regular and one offline session per client
-        for (String clientId : List.of(VISIBLE_CLIENT, HIDDEN_CLIENT)) {
-            for (String scope : new String[] { null, OAuth2Constants.OFFLINE_ACCESS }) {
-                AccessTokenResponse response = oauth.client(clientId, CLIENT_SECRET).scope(scope)
-                        .doPasswordGrantRequest(TARGET_USER, "password");
-                assertEquals(200, response.getStatusCode(), response.getErrorDescription());
-            }
-        }
+        // a single SSO session shared by the visible and the hidden client, then offline tokens for both from it, so the
+        // regular and the offline session each contain both clients
+        oauth.redirectUri(OAUTH_CALLBACK_URL);
+        oauth.scope(null);
+        oauth.client(VISIBLE_CLIENT, CLIENT_SECRET);
+        exchangeCode(oauth.doLogin(TARGET_USER, "password"));
+        joinSsoSession(HIDDEN_CLIENT);
+        // a login that only requests offline access does not keep an SSO session, so offline tokens come last
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        joinSsoSession(VISIBLE_CLIENT);
+        joinSsoSession(HIDDEN_CLIENT);
 
         grantViewClient("fgap-viewer", VISIBLE_CLIENT);
     }
+
+    private void joinSsoSession(String clientId) {
+        oauth.client(clientId, CLIENT_SECRET);
+        oauth.openLoginForm();
+        exchangeCode(oauth.parseLoginResponse());
+    }
+
+    private void exchangeCode(AuthorizationEndpointResponse authorization) {
+        assertTrue(authorization.isSuccess(), authorization.getErrorDescription());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(authorization.getCode());
+        assertEquals(200, response.getStatusCode(), response.getErrorDescription());
+    }
+
 
     private static void removeSessions(UserResource user) {
         user.logout();
@@ -196,6 +215,24 @@ public class UserSessionClientVisibilityTest {
         assertTrue(clients.containsAll(Set.of(visibleClientUuid, hiddenClientUuid)));
     }
 
+    @Test
+    public void clientSessionsHideOtherClientsWithoutViewPermission() {
+        ClientResource client = fgapViewer.realm(managedRealm.getName()).clients().get(visibleClientUuid);
+
+        assertEquals(Set.of(visibleClientUuid), sessionClients(client.getUserSessions(0, 100)),
+                "client sessions must not reveal other clients the admin cannot view");
+        assertEquals(Set.of(visibleClientUuid), sessionClients(client.getOfflineUserSessions(0, 100)),
+                "client offline sessions must not reveal other clients the admin cannot view");
+    }
+
+    @Test
+    public void clientSessionsShowOtherClientsWithViewClients() {
+        ClientResource client = fullViewer.realm(managedRealm.getName()).clients().get(visibleClientUuid);
+
+        assertEquals(Set.of(visibleClientUuid, hiddenClientUuid), sessionClients(client.getUserSessions(0, 100)));
+        assertEquals(Set.of(visibleClientUuid, hiddenClientUuid), sessionClients(client.getOfflineUserSessions(0, 100)));
+    }
+
     private static Set<String> sessionClients(List<UserSessionRepresentation> sessions) {
         assertFalse(sessions.isEmpty());
         return sessions.stream()
@@ -270,10 +307,10 @@ public class UserSessionClientVisibilityTest {
                             .directAccessGrantsEnabled(true),
                     ClientBuilder.create(VISIBLE_CLIENT)
                             .secret(CLIENT_SECRET)
-                            .directAccessGrantsEnabled(true),
+                            .redirectUris(OAUTH_CALLBACK_URL),
                     ClientBuilder.create(HIDDEN_CLIENT)
                             .secret(CLIENT_SECRET)
-                            .directAccessGrantsEnabled(true));
+                            .redirectUris(OAUTH_CALLBACK_URL));
 
             realm.users(UserBuilder.create(TARGET_USER)
                             .password("password")
