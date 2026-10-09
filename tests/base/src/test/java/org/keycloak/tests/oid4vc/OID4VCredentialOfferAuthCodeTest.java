@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -81,6 +82,30 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         } finally {
             clientResource.removeOptionalClientScope(offlineAccessScopeId);
         }
+    }
+
+    @Test
+    public void testAuthCodeOffer_TokenExchangeRejectsMissingOfferState() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        CredentialsOffer credentialOffer = wallet.createCredentialOffer(ctx, req -> req.targetUser(null));
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        String credentialOfferId = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce()).credentialsOfferId();
+
+        AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(credentialOffer.getIssuerState())
+                .send(ctx.getHolder(), TEST_PASSWORD);
+
+        runOnServer.run(session -> {
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            offerStorage.removeOfferState(offerStorage.getOfferStateById(credentialOfferId));
+        });
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authorizationResponse.getCode()).send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertEquals("Invalid authorization_details: No credential offer state for: " + credentialOfferId,
+                tokenResponse.getErrorDescription());
     }
 
     @Test
@@ -222,8 +247,11 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         // Make the access token outlive the offer to verify that offer expiry is only evaluated during token issuance.
         testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
         var realm = testRealm.admin().toRepresentation();
-        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "3");
+        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "60");
         testRealm.admin().update(realm);
+        int credentialExpiry = jwtTypeCredentialScope.getExpiryInSeconds();
+        jwtTypeCredentialScope.setExpiryInSeconds(600);
+        updateCredentialScope(jwtTypeCredentialScope);
 
         try {
             var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
@@ -257,7 +285,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
             assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
             // Move time forward past the offer lifetime but before the issued credential expires.
-            timeOffSet.set(8);
+            timeOffSet.set(65);
 
             CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                     .credentialIdentifier(authorizedIdentifier)
@@ -269,6 +297,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
             realm = testRealm.admin().toRepresentation();
             realm.getAttributes().remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
             testRealm.admin().update(realm);
+            jwtTypeCredentialScope.setExpiryInSeconds(credentialExpiry);
+            updateCredentialScope(jwtTypeCredentialScope);
         }
     }
 

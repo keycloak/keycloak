@@ -452,7 +452,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             String auxCredOfferId = credOfferId;
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
-                    .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
+                    .orElseThrow(() -> getInvalidRequestException("No credential offer state for: " + auxCredOfferId));
 
             if (offerState.isExpired()) {
                 throw getInvalidRequestException("Credential offer has already expired");
