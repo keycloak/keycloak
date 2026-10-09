@@ -272,6 +272,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
+        if (authn != null && authn.getSessionNotOnOrAfter() != null) {
+            long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
+                    .toGregorianCalendar().getTimeInMillis() / 1000;
+            sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
+            authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_NOT_ON_OR_AFTER,
+                    Long.toString(sessionNotOnOrAfterSeconds));
+        }
+
         if (context.getContextData().containsKey(FEDERATED_ACCESS_TOKEN)) {
             String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
             setFederatedAccessToken(authSession, token);
