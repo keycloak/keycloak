@@ -677,6 +677,18 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             Assertions.assertEquals(404, response.getStatus());
         }
 
+        // Test that current user can't move a credential, which belongs to the different user
+        try (SimpleHttpResponse response = moveToFirst(token, otpCredential.getId())) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        // Test that current user can't move his own credential after a credential, which belongs to the different user
+        UserResource currentUser = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        String currentUserPasswordId = currentUser.credentials().get(0).getId();
+        try (SimpleHttpResponse response = moveAfter(token, currentUserPasswordId, otpCredential.getId())) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
         // Test that current user can't delete the credential, which belongs to the different user
         try (SimpleHttpResponse response = simpleHttp
                 .doDelete(getAccountUrl("credentials/" + otpCredential.getId()))
@@ -686,12 +698,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             Assertions.assertEquals(404, response.getStatus());
         }
 
-        // Assert credential was not updated or removed
+        // Assert credential was not updated, moved or removed
         CredentialRepresentation otpCredentialLoaded = user.credentials().stream()
                 .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
                 .findFirst()
                 .get();
         Assertions.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+        Assertions.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
 
     @Test
@@ -776,10 +789,118 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assertions.assertNull(events.poll());
     }
 
+    @Test
+    public void testMoveCredentials() throws IOException {
+        // Token must be obtained before OTP credentials exist, otherwise the direct grant would need an OTP code
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        String userId = user.toRepresentation().getId();
+        Assertions.assertEquals(1, user.credentials().size());
+
+        // Remove any OTP credentials added by this test, even if it fails midway. Registered before the
+        // credentials are added, since realm cleanup runs after every test method (including failed ones)
+        // and sibling tests rely on "test-user@localhost" having exactly one (password) credential.
+        managedRealm.cleanup().add(r -> {
+            UserResource u = r.users().get(userId);
+            u.credentials().stream()
+                    .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                    .forEach(credentialRep -> u.removeCredential(credentialRep.getId()));
+        });
+
+        // Add two OTP credentials to the user through the admin REST API -> order is [password, otp1, otp2]
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
+                .totpSecret("DJmQfC73VGFhw7D4QJ8A")
+                .totpSecret("ABCQfC73VGFhw7D4QJ8A")
+                .build();
+        user.update(userRep);
+
+        List<CredentialRepresentation> creds = user.credentials();
+        Assertions.assertEquals(3, creds.size());
+        List<String> initialIds = List.of(creds.get(0).getId(), creds.get(1).getId(), creds.get(2).getId());
+
+        events.clear();
+
+        // Move first credential after the second one -> [1, 0, 2]
+        assertNoContent(moveAfter(token, initialIds.get(0), initialIds.get(1)));
+        assertSameIds(List.of(initialIds.get(1), initialIds.get(0), initialIds.get(2)), user.credentials());
+
+        // Move last credential to the first position -> [2, 1, 0]
+        assertNoContent(moveToFirst(token, initialIds.get(2)));
+        assertSameIds(List.of(initialIds.get(2), initialIds.get(1), initialIds.get(0)), user.credentials());
+
+        // Moving a credential after itself is a legal no-op
+        assertNoContent(moveAfter(token, initialIds.get(2), initialIds.get(2)));
+        assertSameIds(List.of(initialIds.get(2), initialIds.get(1), initialIds.get(0)), user.credentials());
+
+        // Restore the initial order
+        assertNoContent(moveToFirst(token, initialIds.get(1)));
+        assertNoContent(moveToFirst(token, initialIds.get(0)));
+        assertSameIds(initialIds, user.credentials());
+
+        // Moving credentials must not trigger any event
+        Assertions.assertNull(events.poll());
+    }
+
+    @Test
+    public void testMoveCredentialWithUnknownPreviousCredential() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+        String passwordId = user.credentials().get(0).getId();
+
+        // Unknown credential to move after
+        try (SimpleHttpResponse response = moveAfter(token, passwordId, "not-known")) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+        // Unknown credential to move
+        try (SimpleHttpResponse response = moveToFirst(token, "not-known")) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        assertSameIds(List.of(passwordId), user.credentials());
+    }
+
+    @Test
+    public void testMoveCredentialRequiresManageAccount() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+
+        try (SimpleHttpResponse response = moveToFirst(token, "some-credential-id")) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+        try (SimpleHttpResponse response = moveAfter(token, "some-credential-id", "another-credential-id")) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
     // Send REST request to get all credential containers and credentials of current user
     private List<AccountCredentialResource.CredentialContainer> getCredentials(String token) throws IOException {
         return simpleHttp.doGet(getAccountUrl("credentials"))
                 .auth(token).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+    }
+
+    private SimpleHttpResponse moveToFirst(String token, String credentialId) throws IOException {
+        // SimpleHttp refuses a body-less POST; the endpoint has no @Consumes and ignores this body.
+        return simpleHttp.doPost(getAccountUrl("credentials/" + credentialId + "/moveToFirst"))
+                .auth(token).json("").asResponse();
+    }
+
+    private SimpleHttpResponse moveAfter(String token, String credentialId, String newPreviousCredentialId) throws IOException {
+        return simpleHttp.doPost(getAccountUrl("credentials/" + credentialId + "/moveAfter/" + newPreviousCredentialId))
+                .auth(token).json("").asResponse();
+    }
+
+    private void assertNoContent(SimpleHttpResponse response) throws IOException {
+        try (SimpleHttpResponse r = response) {
+            Assertions.assertEquals(204, r.getStatus());
+        }
+    }
+
+    // Admin credentials() returns the credentials in priority order, so this compares plain id lists
+    private void assertSameIds(List<String> expectedIds, List<CredentialRepresentation> actual) {
+        Assertions.assertEquals(expectedIds.size(), actual.size());
+        for (int i = 0; i < expectedIds.size(); i++) {
+            Assertions.assertEquals(expectedIds.get(i), actual.get(i).getId());
+        }
     }
 
     private void assertLogoutEventsForSessions(UserResource user, Set<String> expectedSessionIds) {
