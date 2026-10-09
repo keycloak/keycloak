@@ -69,6 +69,21 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
         var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
         assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.FIPS_ENABLED), is(true));
+        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.BRISBANE_DISABLED), is(true));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-fips1402"), is(false));
+    }
+
+    @Test
+    public void brisbaneEnabled() {
+        var profile = getProfileWithEnabledFeature(Profile.Feature.FIPS, Profile.Feature.BRISBANE);
+        assertThat(profile.isFeatureEnabled(Profile.Feature.BRISBANE), is(true));
+
+        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.FIPS_ENABLED), is(true));
+        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.BRISBANE_ENABLED), is(true));
+        assertThat(ignoredArtifacts.contains("com.github.slaskawi:brisbane"), is(false));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-brisbane"), is(false));
+        assertThat(ignoredArtifacts.contains("org.keycloak:keycloak-crypto-elytron"), is(false));
     }
 
     @Test
@@ -201,9 +216,11 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
         });
     }
 
-    private Profile getProfileWithEnabledFeature(Profile.Feature feature) {
+    private Profile getProfileWithEnabledFeature(Profile.Feature... features) {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature.%s".formatted(feature.name().toLowerCase()), "enabled");
+        for (Profile.Feature feature : features) {
+            properties.setProperty("keycloak.profile.feature.%s".formatted(feature.name().toLowerCase()), "enabled");
+        }
         return Profile.configure(new PropertiesProfileConfigResolver(properties));
     }
 }

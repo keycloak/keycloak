@@ -76,9 +76,9 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         if (Algorithm.ECDH_ES.equals(header.getAlgorithm())) {
             return derivedKey;
         } else {
-            Cipher cipher = Cipher.getInstance(getAesWrapAlgorithm(header.getAlgorithm()));
-            cipher.init(Cipher.UNWRAP_MODE, new SecretKeySpec(derivedKey, "AES"));
-            return cipher.unwrap(encodedCek, "AES", Cipher.SECRET_KEY).getEncoded();
+            Cipher cipher = WildFlyElytronProvider.getCipher(getAesWrapAlgorithm(header.getAlgorithm()));
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(derivedKey, "AES"));
+            return cipher.doFinal(encodedCek);
         }
     }
 
@@ -109,10 +109,9 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             encryptionProvider.deserializeCEK(keyStorage);
             return new byte[0];
         } else {
-            Cipher cipher = Cipher.getInstance(getAesWrapAlgorithm(header.getAlgorithm()));
-            cipher.init(Cipher.WRAP_MODE, new SecretKeySpec(derivedKey, "AES"));
-            byte[] cekBytes = keyStorage.getCekBytes();
-            return cipher.wrap(new SecretKeySpec(cekBytes, "AES"));
+            Cipher cipher = WildFlyElytronProvider.getCipher(getAesWrapAlgorithm(header.getAlgorithm()));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(derivedKey, "AES"));
+            return cipher.doFinal(keyStorage.getCekBytes());
         }
     }
 

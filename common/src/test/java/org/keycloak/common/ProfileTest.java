@@ -103,6 +103,21 @@ public class ProfileTest {
     }
 
     @Test
+    public void brisbaneRequiresFipsFeature() {
+        Properties properties = new Properties();
+        properties.setProperty("keycloak.profile.feature.brisbane", "enabled");
+
+        Assertions.assertEquals("Feature brisbane depends on disabled feature fips",
+                assertThrows(ProfileException.class,
+                        () -> Profile.configure(new PropertiesProfileConfigResolver(properties))).getMessage());
+
+        properties.setProperty("keycloak.profile.feature.fips", "enabled");
+        Profile.configure(new PropertiesProfileConfigResolver(properties));
+        Assertions.assertTrue(Profile.isFeatureEnabled(Profile.Feature.BRISBANE));
+        Assertions.assertTrue(Profile.isFeatureEnabled(Profile.Feature.FIPS));
+    }
+
+    @Test
     public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
         Properties properties = new Properties();
         properties.setProperty("keycloak.profile.feature.account", "disabled");

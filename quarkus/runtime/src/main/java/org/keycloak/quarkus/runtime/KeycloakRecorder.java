@@ -37,8 +37,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Enablement;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.crypto.FipsProvider;
 import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
@@ -187,7 +187,7 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configureTruststore(FipsMode fipsMode) {
+    public void configureTruststore(FipsMode fipsMode, FipsProvider fipsProvider) {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
@@ -208,7 +208,9 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
+        TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT
+                && fipsProvider == FipsProvider.BOUNCY_CASTLE
+                ? TruststoreFormat.BCFKS : null;
 
         TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
     }
@@ -321,19 +323,21 @@ public class KeycloakRecorder {
         return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue());
     }
 
-    public void setCryptoProvider(FipsMode fipsMode) {
-        String cryptoProvider = fipsMode.getProviderClassName();
+    public void setCryptoProvider(FipsMode fipsMode, FipsProvider fipsProvider) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        FipsProvider resolvedProvider = fipsProvider;
+        String providerName = fipsMode.isFipsEnabled() ? resolvedProvider.toString() : "default";
 
         try {
-            CryptoIntegration.setProvider(
-                    (CryptoProvider) Thread.currentThread().getContextClassLoader().loadClass(cryptoProvider).getDeclaredConstructor().newInstance());
-        } catch (ClassNotFoundException | NoClassDefFoundError cause) {
+            CryptoIntegration.init(classLoader, providerName, fipsMode);
+        } catch (RuntimeException | LinkageError cause) {
             if (fipsMode.isFipsEnabled()) {
-                throw new RuntimeException("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
+                if (resolvedProvider == FipsProvider.BOUNCY_CASTLE) {
+                    throw new RuntimeException("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.", cause);
+                }
+                throw new RuntimeException("Failed to configure Brisbane. Jipher 20.1, Java 25 or later, and a configured OpenSSL FIPS provider are required.", cause);
             }
-            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
-        } catch (Exception cause) {
-            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
+            throw new RuntimeException("Unexpected error when configuring the crypto provider: " + providerName, cause);
         }
     }
 

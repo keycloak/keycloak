@@ -319,9 +319,11 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void fipsKeystoreType(){
+    public void bouncyCastleFipsKeystoreType() {
         makeInterfaceOccupied();
-        putEnvVar("KC_FIPS_MODE", "strict");
+        putEnvVars(Map.of(
+                "KC_FIPS_MODE", "strict"
+        ));
 
         initConfig();
 
@@ -329,6 +331,21 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "https-key-store-type", "BCFKS",
                 "https-management-key-store-type", "BCFKS"
         ));
+        assertManagementEnabled(true);
+    }
+
+    @Test
+    public void brisbaneFipsKeystoreType() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_FIPS_MODE", "strict",
+                "KC_FEATURES", "fips,brisbane"
+        ));
+
+        initConfig();
+
+        assertConfigNull("https-key-store-type");
+        assertConfigNull("https-management-key-store-type");
         assertManagementEnabled(true);
     }
 

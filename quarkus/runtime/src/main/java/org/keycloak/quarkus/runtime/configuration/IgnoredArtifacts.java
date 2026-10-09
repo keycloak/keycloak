@@ -66,6 +66,23 @@ public class IgnoredArtifacts {
             "org.bouncycastle:bc-fips",
             "org.bouncycastle:bctls-fips",
             "org.bouncycastle:bcpkix-fips",
+            "org.bouncycastle:bcutil-fips",
+            "com.github.slaskawi:brisbane",
+            "org.keycloak:keycloak-crypto-brisbane",
+            "org.keycloak:keycloak-crypto-elytron"
+    );
+
+    public static final Set<String> BRISBANE_DISABLED = Set.of(
+            "com.github.slaskawi:brisbane",
+            "org.keycloak:keycloak-crypto-brisbane",
+            "org.keycloak:keycloak-crypto-elytron"
+    );
+
+    public static final Set<String> BRISBANE_ENABLED = Set.of(
+            "org.keycloak:keycloak-crypto-fips1402",
+            "org.bouncycastle:bc-fips",
+            "org.bouncycastle:bctls-fips",
+            "org.bouncycastle:bcpkix-fips",
             "org.bouncycastle:bcutil-fips"
     );
 
@@ -73,7 +90,12 @@ public class IgnoredArtifacts {
         final Profile profile = getCurrentOrCreateFeatureProfile();
         boolean isFipsEnabled = profile.getFeatures().get(Profile.Feature.FIPS);
 
-        return isFipsEnabled ? FIPS_ENABLED : FIPS_DISABLED;
+        if (!isFipsEnabled) {
+            return FIPS_DISABLED;
+        }
+        return Stream.concat(FIPS_ENABLED.stream(),
+                        (profile.isFeatureEnabled(Profile.Feature.BRISBANE) ? BRISBANE_ENABLED : BRISBANE_DISABLED).stream())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     // JDBC Drivers
