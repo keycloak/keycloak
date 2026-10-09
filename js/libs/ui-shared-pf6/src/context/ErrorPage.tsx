@@ -1,3 +1,4 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import {
   Button,
   Content,
@@ -18,8 +19,12 @@ type ErrorPageProps = {
 export const ErrorPage = (props: ErrorPageProps) => {
   const { t, i18n } = useTranslation();
   const error = props.error;
-  const errorMessage = getErrorMessage(error);
-  const networkErrorMessage = getNetworkErrorMessage(error);
+  const errorMessage =
+    error instanceof NetworkError ? null : getErrorMessage(error);
+  const networkErrorMessage =
+    error instanceof NetworkError
+      ? getNetworkErrorMessage(error.responseData)
+      : undefined;
   console.error(error);
 
   function onRetry() {
