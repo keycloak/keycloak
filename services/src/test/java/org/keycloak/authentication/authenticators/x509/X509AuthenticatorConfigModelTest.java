@@ -14,7 +14,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SERIALNUMBER;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
 
 /**
@@ -68,6 +70,19 @@ public class X509AuthenticatorConfigModelTest {
         String userIdentity = (String) extractor.extractUserIdentity(new X509Certificate[] { getCertificate("/certs/UPN-cert.pem") });
 
         assertEquals("test-user", userIdentity);
+    }
+
+    @Test
+    public void testMissingSubjectAltNameReturnsNull() throws Exception {
+        // ANS-cert.pem only contains an otherName (UPN) SAN, but no email SAN
+        X509AuthenticatorConfigModel configModel = new X509AuthenticatorConfigModel()
+                .setMappingSourceType(SUBJECTALTNAME_EMAIL)
+                .setRegularExpression("(.*?)(?:@|$)");
+
+        UserIdentityExtractor extractor = AbstractX509ClientCertificateAuthenticator.UserIdentityExtractorBuilder.fromConfig(configModel);
+        Object userIdentity = extractor.extractUserIdentity(new X509Certificate[] { getCertificate("/certs/ANS-cert.pem") });
+
+        assertNull(userIdentity);
     }
 
     @Test
