@@ -372,7 +372,8 @@ async function main() {
     console.error(`Migration step failed: ${failedStep.command}`);
     console.error(`Report: ${reportMdPath}`);
     console.error(`REPORT_READY:${reportMdPath}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   if (options.failOnUnresolved && residuals.length > 0) {
@@ -380,7 +381,8 @@ async function main() {
       `Found ${residuals.length} unresolved PF5/PF6-temp markers (use report for details): ${reportMdPath}`,
     );
     console.error(`REPORT_READY:${reportMdPath}`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
 
   console.log(`Migration ${options.apply ? "applied" : "analyzed"} successfully.`);
