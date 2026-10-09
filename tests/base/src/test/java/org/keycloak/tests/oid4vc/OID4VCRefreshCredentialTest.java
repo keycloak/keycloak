@@ -554,9 +554,9 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      */
     @Test
     public void testTokenExchangeRejectsExpiredCredentialOffer() {
-        // Configure a short credential offer lifespan (3 seconds)
+        // Keep the wall-clock lifetime comfortably above the browser-based authorization flow.
         RealmRepresentation realmRep = testRealm.admin().toRepresentation();
-        realmRep.getAttributes().put(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "3");
+        realmRep.getAttributes().put(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "60");
         testRealm.admin().update(realmRep);
 
         try {
@@ -577,7 +577,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
             String issuerState = credOffer.getIssuerState();
             assertNotNull(issuerState);
 
-            timeOffSet.set(8);
+            timeOffSet.set(65);
 
             AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
                     .scope(ctx.getScope())

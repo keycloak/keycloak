@@ -33,6 +33,7 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -687,17 +688,23 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         // Make the access token outlive the offer to verify that offer expiry is only evaluated during token issuance.
         testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
         var realm = testRealm.admin().toRepresentation();
-        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "3");
+        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "60");
         testRealm.admin().update(realm);
+        CredentialScopeRepresentation credentialScope = new CredentialScopeRepresentation(getCredentialClientScope());
+        int credentialExpiry = credentialScope.getExpiryInSeconds();
+        credentialScope.setExpiryInSeconds(600);
+        updateCredentialScope(credentialScope);
 
         try {
             AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
-            timeOffSet.set(8);
+            timeOffSet.set(65);
             assertSuccessfulCredentialRequest(tokenResponse);
         } finally {
             timeOffSet.set(0);
             realm.getAttributes().remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
             testRealm.admin().update(realm);
+            credentialScope.setExpiryInSeconds(credentialExpiry);
+            updateCredentialScope(credentialScope);
         }
     }
 
