@@ -1,12 +1,15 @@
 package org.keycloak.ssf.transmitter.subject;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
@@ -127,16 +130,29 @@ public class SubjectManagementService {
      */
     protected boolean hasRelationshipWithReceiver(UserModel user, ClientModel receiverClient) {
         RealmModel realm = session.getContext().getRealm();
-        String clientUuid = receiverClient.getId();
-        if (session.users().getConsentByClient(realm, user.getId(), clientUuid) != null) {
+        if (session.users().getConsentByClient(realm, user.getId(), receiverClient.getId()) != null) {
             return true;
         }
         if (session.sessions().getUserSessionsStream(realm, user)
-                .anyMatch(us -> us.getAuthenticatedClientSessionByClient(clientUuid) != null)) {
+                .anyMatch(us -> hasValidClientSession(realm, receiverClient, us))) {
             return true;
         }
         return session.sessions().getOfflineUserSessionsStream(realm, user)
-                .anyMatch(us -> us.getAuthenticatedClientSessionByClient(clientUuid) != null);
+                .anyMatch(us -> hasValidClientSession(realm, receiverClient, us));
+    }
+
+    /**
+     * Whether the user session and its client session for the receiver
+     * are both unexpired. Session streams can return sessions past their
+     * idle or max lifespan, so presence alone is not enough. Uses the
+     * same checks as token refresh.
+     */
+    protected boolean hasValidClientSession(RealmModel realm, ClientModel receiverClient, UserSessionModel userSession) {
+        AuthenticatedClientSessionModel clientSession =
+                userSession.getAuthenticatedClientSessionByClient(receiverClient.getId());
+        return clientSession != null
+                && AuthenticationManager.isSessionValid(realm, userSession)
+                && AuthenticationManager.isClientSessionValid(realm, receiverClient, userSession, clientSession);
     }
 
     protected SubjectManagementResult registerSubjectForNotification(String callerClientId, SubjectResolution resolution) {

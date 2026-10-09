@@ -455,13 +455,17 @@ public class SsfSubjectManagementTests {
         }
     }
 
+    /**
+     * Sets the receiver's add policy; {@code null} restores the default.
+     * The default is restored by blanking the attribute rather than
+     * omitting it, because a client update only writes the attributes
+     * present in the representation — an omitted key keeps its stored
+     * value. A blank value parses to the default policy.
+     */
     protected void setReceiverSubjectAddPolicy(String policy) {
         ClientRepresentation client = findClientByClientId(RECEIVER);
-        if (policy == null) {
-            client.getAttributes().remove(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY);
-        } else {
-            client.getAttributes().put(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY, policy);
-        }
+        client.getAttributes().put(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY,
+                policy == null ? "" : policy);
         realm.admin().clients().get(client.getId()).update(client);
     }
 

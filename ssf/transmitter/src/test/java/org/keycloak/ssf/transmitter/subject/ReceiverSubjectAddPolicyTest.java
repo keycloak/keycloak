@@ -1,7 +1,9 @@
 package org.keycloak.ssf.transmitter.subject;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -32,6 +34,10 @@ import static org.mockito.Mockito.when;
  * {@link SubjectManagementService#checkReceiverMayAdd}: the
  * {@link ReceiverSubjectAddPolicy} matrix, the admin-exclusion
  * override, and the already-notified idempotency carve-out.
+ *
+ * <p>Session expiry is stubbed via {@link SubjectManagementService#hasValidClientSession}
+ * so the tests don't depend on realm timeout settings; sessions listed in
+ * {@link #expiredSessions} are treated as expired.
  */
 class ReceiverSubjectAddPolicyTest {
 
@@ -47,6 +53,7 @@ class ReceiverSubjectAddPolicyTest {
     UserProvider userProvider;
     UserSessionProvider sessionProvider;
     SubjectManagementService service;
+    Set<UserSessionModel> expiredSessions;
 
     @BeforeEach
     void setUp() {
@@ -70,7 +77,14 @@ class ReceiverSubjectAddPolicyTest {
         lenient().when(sessionProvider.getUserSessionsStream(realm, user)).thenAnswer(i -> Stream.empty());
         lenient().when(sessionProvider.getOfflineUserSessionsStream(realm, user)).thenAnswer(i -> Stream.empty());
 
-        service = new SubjectManagementService(session);
+        expiredSessions = new HashSet<>();
+        service = new SubjectManagementService(session) {
+            @Override
+            protected boolean hasValidClientSession(RealmModel realm, ClientModel receiverClient, UserSessionModel userSession) {
+                return userSession.getAuthenticatedClientSessionByClient(receiverClient.getId()) != null
+                        && !expiredSessions.contains(userSession);
+            }
+        };
     }
 
     void policy(String value) {
@@ -122,6 +136,24 @@ class ReceiverSubjectAddPolicyTest {
         UserSessionModel offlineSession = sessionWithReceiver();
         when(sessionProvider.getOfflineUserSessionsStream(realm, user)).thenAnswer(i -> Stream.of(offlineSession));
         assertNull(checkUser());
+    }
+
+    @Test
+    void authenticated_userWithExpiredSessionForReceiver_denied() {
+        policy("AUTHENTICATED");
+        UserSessionModel userSession = sessionWithReceiver();
+        expiredSessions.add(userSession);
+        when(sessionProvider.getUserSessionsStream(realm, user)).thenAnswer(i -> Stream.of(userSession));
+        assertEquals(SubjectManagementResult.SUBJECT_NOT_PERMITTED, checkUser());
+    }
+
+    @Test
+    void authenticated_userWithExpiredOfflineSessionForReceiver_denied() {
+        policy("AUTHENTICATED");
+        UserSessionModel offlineSession = sessionWithReceiver();
+        expiredSessions.add(offlineSession);
+        when(sessionProvider.getOfflineUserSessionsStream(realm, user)).thenAnswer(i -> Stream.of(offlineSession));
+        assertEquals(SubjectManagementResult.SUBJECT_NOT_PERMITTED, checkUser());
     }
 
     @Test
