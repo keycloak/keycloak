@@ -1,6 +1,12 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import {
   Button,
   ButtonVariant,
@@ -83,11 +89,79 @@ export const MembershipsModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("showMembershipsTitle", { username: user.username })}
       data-testid="showMembershipsDialog"
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("showMembershipsTitle", { username: user.username })}
+    >
+      <ModalHeader
+        title={t("showMembershipsTitle", { username: user.username })}
+      />
+      <ModalBody>
+        <KeycloakDataTable
+          key={key}
+          loader={loader}
+          className="keycloak_user-section_groups-table"
+          isPaginated
+          ariaLabelKey="roleList"
+          searchPlaceholderKey="searchGroup"
+          toolbarItem={
+            <>
+              <Checkbox
+                label={t("directMembership")}
+                key="direct-membership-check"
+                id="kc-direct-membership-checkbox"
+                onChange={() => {
+                  setDirectMembership(!isDirectMembership);
+                  refresh();
+                }}
+                isChecked={isDirectMembership}
+                className="pf-v6-u-mt-sm"
+              />
+              {enabled && (
+                <Popover
+                  aria-label="Basic popover"
+                  position="bottom"
+                  bodyContent={<div>{t("whoWillAppearPopoverTextUsers")}</div>}
+                >
+                  <Button
+                    variant="link"
+                    className="kc-who-will-appear-button"
+                    key="who-will-appear-button"
+                    icon={<QuestionCircleIcon />}
+                  >
+                    {t("whoWillAppearLinkTextUsers")}
+                  </Button>
+                </Popover>
+              )}
+            </>
+          }
+          columns={[
+            {
+              name: "groupMembership",
+              displayKey: "groupMembership",
+              cellRenderer: (group: GroupRepresentation) => group.name || "-",
+              transforms: [cellWidth(40)],
+            },
+            {
+              name: "path",
+              displayKey: "path",
+              cellRenderer: (group: GroupRepresentation) => (
+                <GroupPath group={group} />
+              ),
+              transforms: [cellWidth(45)],
+            },
+          ]}
+          emptyState={
+            <ListEmptyState
+              hasIcon
+              message={t("noGroupMemberships")}
+              instructions={t("noGroupMembershipsText")}
+            />
+          }
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -96,71 +170,8 @@ export const MembershipsModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        key={key}
-        loader={loader}
-        className="keycloak_user-section_groups-table"
-        isPaginated
-        ariaLabelKey="roleList"
-        searchPlaceholderKey="searchGroup"
-        toolbarItem={
-          <>
-            <Checkbox
-              label={t("directMembership")}
-              key="direct-membership-check"
-              id="kc-direct-membership-checkbox"
-              onChange={() => {
-                setDirectMembership(!isDirectMembership);
-                refresh();
-              }}
-              isChecked={isDirectMembership}
-              className="pf-v5-u-mt-sm"
-            />
-            {enabled && (
-              <Popover
-                aria-label="Basic popover"
-                position="bottom"
-                bodyContent={<div>{t("whoWillAppearPopoverTextUsers")}</div>}
-              >
-                <Button
-                  variant="link"
-                  className="kc-who-will-appear-button"
-                  key="who-will-appear-button"
-                  icon={<QuestionCircleIcon />}
-                >
-                  {t("whoWillAppearLinkTextUsers")}
-                </Button>
-              </Popover>
-            )}
-          </>
-        }
-        columns={[
-          {
-            name: "groupMembership",
-            displayKey: "groupMembership",
-            cellRenderer: (group: GroupRepresentation) => group.name || "-",
-            transforms: [cellWidth(40)],
-          },
-          {
-            name: "path",
-            displayKey: "path",
-            cellRenderer: (group: GroupRepresentation) => (
-              <GroupPath group={group} />
-            ),
-            transforms: [cellWidth(45)],
-          },
-        ]}
-        emptyState={
-          <ListEmptyState
-            hasIcon
-            message={t("noGroupMemberships")}
-            instructions={t("noGroupMembershipsText")}
-          />
-        }
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

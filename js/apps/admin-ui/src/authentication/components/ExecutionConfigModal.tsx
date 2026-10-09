@@ -9,6 +9,8 @@ import {
   Flex,
   Form,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
   Tooltip,
 } from "@patternfly/react-core";
@@ -142,77 +144,83 @@ export const ExecutionConfigModal = ({
     <>
       <Tooltip content={t("settings")}>
         <Button
+          icon={<CogIcon />}
           variant="plain"
           aria-label={t("settings")}
           onClick={() => setShow(true)}
-        >
-          <CogIcon />
-        </Button>
+        />
       </Tooltip>
       {configDescription && (
         <Modal
           variant={ModalVariant.small}
           isOpen={show}
-          title={t("executionConfig", { name: configDescription.name })}
           onClose={() => setShow(false)}
+          aria-label={t("executionConfig", { name: configDescription.name })}
         >
-          <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
-            <FormProvider {...form}>
-              <TextControl
-                name="alias"
-                label={t("alias")}
-                labelIcon={t("authenticationAliasHelp")}
-                rules={{ required: t("required") }}
-                isDisabled={!!config}
-              />
-              <DynamicComponents
-                stringify
-                properties={configDescription.properties || []}
-              />
-            </FormProvider>
-            <ActionGroup>
-              <Flex
-                className="pf-v5-u-flex-grow-1"
-                justifyContent={{ default: "justifyContentSpaceBetween" }}
-              >
-                <div>
-                  <Button
-                    className="pf-v5-u-mr-md"
-                    data-testid="save"
-                    variant="primary"
-                    type="submit"
-                  >
-                    {t("save")}
-                  </Button>
-                  <Button
-                    data-testid="cancel"
-                    variant={ButtonVariant.link}
-                    onClick={() => {
-                      setShow(false);
-                    }}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </div>
-                {config && (
-                  <Button
-                    data-testid="clear"
-                    variant={ButtonVariant.link}
-                    onClick={async () => {
-                      await adminClient.authenticationManagement.delConfig({
-                        id: config.id!,
-                      });
-                      setConfig(undefined);
-                      reset();
-                      setShow(false);
-                    }}
-                  >
-                    {t("clear")} <TrashIcon />
-                  </Button>
-                )}
-              </Flex>
-            </ActionGroup>
-          </Form>
+          <ModalHeader
+            title={t("executionConfig", { name: configDescription.name })}
+          />
+          <ModalBody>
+            <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
+              <FormProvider {...form}>
+                <TextControl
+                  name="alias"
+                  label={t("alias")}
+                  labelIcon={t("authenticationAliasHelp")}
+                  rules={{ required: t("required") }}
+                  isDisabled={!!config}
+                />
+                <DynamicComponents
+                  stringify
+                  properties={configDescription.properties || []}
+                />
+              </FormProvider>
+              <ActionGroup>
+                <Flex
+                  className="pf-v6-u-flex-grow-1"
+                  justifyContent={{ default: "justifyContentSpaceBetween" }}
+                >
+                  <div>
+                    <Button
+                      className="pf-v6-u-mr-md"
+                      data-testid="save"
+                      variant="primary"
+                      type="submit"
+                    >
+                      {t("save")}
+                    </Button>
+                    <Button
+                      data-testid="cancel"
+                      variant={ButtonVariant.link}
+                      onClick={() => {
+                        setShow(false);
+                      }}
+                    >
+                      {t("cancel")}
+                    </Button>
+                  </div>
+                  {config && (
+                    <Button
+                      icon={<TrashIcon />}
+                      iconPosition="end"
+                      data-testid="clear"
+                      variant={ButtonVariant.link}
+                      onClick={async () => {
+                        await adminClient.authenticationManagement.delConfig({
+                          id: config.id!,
+                        });
+                        setConfig(undefined);
+                        reset();
+                        setShow(false);
+                      }}
+                    >
+                      {t("clear")}
+                    </Button>
+                  )}
+                </Flex>
+              </ActionGroup>
+            </Form>
+          </ModalBody>
         </Modal>
       )}
     </>

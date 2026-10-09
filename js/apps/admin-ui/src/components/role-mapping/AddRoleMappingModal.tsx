@@ -11,6 +11,9 @@ import {
   DropdownProps,
   MenuToggle,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { cellWidth, TableText } from "@patternfly/react-table";
@@ -95,6 +98,7 @@ export const AddRoleButton = ({
           component="button"
           onClick={() => {
             onFilerTypeChange("clients");
+            toggle();
           }}
         >
           {t("clientRoles")}
@@ -105,6 +109,7 @@ export const AddRoleButton = ({
             component="button"
             onClick={() => {
               onFilerTypeChange("roles");
+              toggle();
             }}
           >
             {t("realmRoles")}
@@ -209,18 +214,37 @@ export const AddRoleMappingModal = ({
   }
 
   return (
-    <Modal
-      variant={ModalVariant.large}
-      title={
-        title ||
-        t("assignRolesTo", {
-          type: filterType === "roles" ? t("realm") : t("client"),
-          client: name,
-        })
-      }
-      isOpen
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.large} isOpen onClose={onClose}>
+      <ModalHeader
+        title={
+          title ||
+          t("assignRolesTo", {
+            type: filterType === "roles" ? t("realm") : t("client"),
+            client: name,
+          })
+        }
+      />
+      <ModalBody>
+        <KeycloakDataTable
+          onSelect={(rows) => setSelectedRows([...rows])}
+          searchPlaceholderKey={
+            filterType === "roles" ? "searchByRoleName" : "search"
+          }
+          isPaginated={!(filterType === "roles" && type !== "roles")}
+          canSelectAll
+          isRadio={isRadio}
+          loader={filterType === "roles" ? loader : clientRolesLoader}
+          ariaLabelKey="associatedRolesText"
+          columns={columns}
+          emptyState={
+            <ListEmptyState
+              message={t("noRoles")}
+              instructions={t("noRealmRolesToAssign")}
+            />
+          }
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="assign"
           key="confirm"
@@ -232,7 +256,7 @@ export const AddRoleMappingModal = ({
           }}
         >
           {actionLabel || t("assign")}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -240,27 +264,8 @@ export const AddRoleMappingModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        onSelect={(rows) => setSelectedRows([...rows])}
-        searchPlaceholderKey={
-          filterType === "roles" ? "searchByRoleName" : "search"
-        }
-        isPaginated={!(filterType === "roles" && type !== "roles")}
-        canSelectAll
-        isRadio={isRadio}
-        loader={filterType === "roles" ? loader : clientRolesLoader}
-        ariaLabelKey="associatedRolesText"
-        columns={columns}
-        emptyState={
-          <ListEmptyState
-            message={t("noRoles")}
-            instructions={t("noRealmRolesToAssign")}
-          />
-        }
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

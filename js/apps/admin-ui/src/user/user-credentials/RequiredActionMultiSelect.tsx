@@ -54,7 +54,7 @@ export const RequiredActionMultiSelect = <
       maxMenuHeight="375px"
       variant={SelectVariant.typeaheadMulti}
       chipGroupProps={{
-        numChips: 3,
+        numLabels: 3,
       }}
       placeholderText={t("requiredActionPlaceholder")}
       menuAppendTo="parent"

@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { clickAddScope } from "./scope.ts";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
 import { OID4VCI_PROTOCOL } from "../utils/oid4vci.ts";
 import { clickTableRowItem, getRowByCellText } from "../utils/table.ts";
@@ -38,8 +39,7 @@ export async function assignOptionalOid4vciClientScope(
   const scopeRow = page.getByRole("row", { name: clientScopeName });
   await scopeRow.getByRole("checkbox").click();
 
-  await page.getByTestId("add-dropdown").click();
-  await page.getByRole("menuitem", { name: "Optional" }).click();
+  await clickAddScope(page, "Optional");
 
   await expect(page.getByText("Scope mapping updated")).toBeVisible();
   await expect(

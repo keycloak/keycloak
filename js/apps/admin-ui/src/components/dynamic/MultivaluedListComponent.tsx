@@ -71,7 +71,7 @@ export const MultiValuedListComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
@@ -95,7 +95,7 @@ export const MultiValuedListComponent = ({
               data-testid={name}
               isDisabled={isDisabled}
               chipGroupProps={{
-                numChips: 3,
+                numLabels: 3,
                 expandedText: t("hide"),
                 collapsedText: t("showRemaining"),
               }}

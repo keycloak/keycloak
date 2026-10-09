@@ -16,7 +16,7 @@ export const RedirectUrl = ({ id }: { id: string }) => {
   return (
     <FormGroup
       label={t("redirectURI")}
-      labelIcon={
+      labelHelp={
         <HelpItem helpText={t("redirectURIHelp")} fieldLabelId="redirectURI" />
       }
       fieldId="kc-redirect-uri"
