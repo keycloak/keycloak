@@ -51,7 +51,9 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -66,6 +68,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 
 /**
  *
@@ -99,6 +102,9 @@ public class ParameterizedScopesOAuthGrantTest {
 
     @InjectPage
     protected OAuthGrantPage grantPage;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
 
     @TestSetup
     public void configureTestRealm() {
@@ -215,6 +221,26 @@ public class ParameterizedScopesOAuthGrantTest {
                 .clientId(THIRD_PARTY_APP)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
                 .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT);
+    }
+
+    @Test
+    public void oauthGrantExposesValidatedRedirectUriToTheme() {
+        realm.updateWithCleanup(r -> r.loginTheme("oauth-redirect-uri"));
+
+        try {
+            oauth.client(THIRD_PARTY_APP, "password");
+            oauth.scope("foo-parameter-scope:redirect");
+            oauth.openLoginForm();
+            oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+            grantPage.assertCurrent();
+
+            String redirectUri = oauth.getRedirectUri();
+            Assertions.assertNotNull(redirectUri);
+            Assertions.assertFalse(redirectUri.isBlank());
+            Assertions.assertEquals(redirectUri, driver.findElement(By.id("oauth-redirect-uri")).getText());
+        } finally {
+            realm.updateWithCleanup(r -> r.loginTheme("keycloak.v2"));
+        }
     }
 
     @Test
@@ -789,6 +815,7 @@ public class ParameterizedScopesOAuthGrantTest {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.PARAMETERIZED_SCOPES, Profile.Feature.TOKEN_EXCHANGE_DELEGATION)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers")
                     .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
                             "http://localhost:8500/ciba/request-authentication-channel");
         }
