@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.enterprise.context.ContextNotActiveException;
 
@@ -38,13 +41,18 @@ import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
@@ -61,6 +69,13 @@ import org.slf4j.LoggerFactory;
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     private static final Logger log = LoggerFactory.getLogger(FreeMarkerEmailTemplateProvider.class);
+    private static final String ASYNC_DELIVERY_EXECUTOR = "email-delivery";
+    /**
+     * Emails waiting to be sent in the background, shared by all sessions. When too many are waiting, for example because
+     * the mail server is slow, further emails are sent right away instead, as without sending in the background.
+     */
+    private static final int MAX_PENDING_ASYNC_DELIVERIES = 1000;
+    private static final AtomicInteger pendingAsyncDeliveries = new AtomicInteger();
     protected KeycloakSession session;
     /**
      * authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link
@@ -71,6 +86,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected RealmModel realm;
     protected UserModel user;
     protected final Map<String, Object> attributes = new HashMap<>();
+    /**
+     * When set, emails are sent in the background, see {@link #setAsyncDelivery(AsyncDeliveryCallback)}.
+     */
+    protected AsyncDeliveryCallback asyncDeliveryCallback;
 
     public FreeMarkerEmailTemplateProvider(KeycloakSession session) {
         this.session = session;
@@ -99,6 +118,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     public EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
         return this;
+    }
+
+    @Override
+    public boolean setAsyncDelivery(AsyncDeliveryCallback callback) {
+        this.asyncDeliveryCallback = callback;
+        return callback != null;
     }
 
     protected String getRealmName() {
@@ -314,6 +339,25 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     protected void send(Map<String, String> config, String subject, String textBody, String htmlBody, String address) throws EmailException {
+        AsyncDeliveryCallback callback = asyncDeliveryCallback;
+        if (callback == null) {
+            sendNow(session, config, user, subject, textBody, htmlBody, address);
+        } else if (reservePendingAsyncDelivery()) {
+            sendAsync(callback, config, subject, textBody, htmlBody, address);
+        } else {
+            // Too many emails are waiting to be sent, so send this one right away, as without sending in the background
+            try {
+                sendNow(session, config, user, subject, textBody, htmlBody, address);
+            } catch (EmailException e) {
+                callback.onFailed(session, e);
+                return;
+            }
+            callback.onSent(session);
+        }
+    }
+
+    private static void sendNow(KeycloakSession session, Map<String, String> config, UserModel user, String subject,
+            String textBody, String htmlBody, String address) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
         if (emailSender == null) {
             throw new EmailException("Email sender provider is disabled or not configured");
@@ -322,6 +366,100 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             emailSender.send(config, user, subject, textBody, htmlBody);
         } else {
             emailSender.send(config, address, subject, textBody, htmlBody);
+        }
+    }
+
+    private void sendAsync(AsyncDeliveryCallback callback, Map<String, String> config, String subject, String textBody,
+            String htmlBody, String address) {
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor(ASYNC_DELIVERY_EXECUTOR);
+        Map<String, String> smtpConfig = new HashMap<>(config);
+        String realmId = realm.getId();
+        String userId = user == null ? null : user.getId();
+
+        Runnable delivery = () -> runInRealm(sessionFactory, realmId, deliverySession -> {
+            EmailException failure = null;
+            try {
+                UserModel recipient = null;
+                if (address == null) {
+                    recipient = deliverySession.users().getUserById(deliverySession.getContext().getRealm(), userId);
+                    if (recipient == null) {
+                        throw new EmailException("The recipient of the email no longer exists");
+                    }
+                }
+                sendNow(deliverySession, smtpConfig, recipient, subject, textBody, htmlBody, address);
+            } catch (EmailException e) {
+                failure = e;
+            } catch (RuntimeException e) {
+                // For example, loading the recipient failed
+                failure = new EmailException("Failed to send the email", e);
+            }
+            if (failure == null) {
+                callback.onSent(deliverySession);
+            } else {
+                callback.onFailed(deliverySession, failure);
+            }
+        });
+
+        // Send only after the data referenced by the email is committed, and not at all when the transaction is rolled back
+        try {
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    try {
+                        executor.execute(() -> {
+                            try {
+                                delivery.run();
+                            } catch (RuntimeException e) {
+                                log.error("Failed to send email", e);
+                            } finally {
+                                releasePendingAsyncDelivery();
+                            }
+                        });
+                    } catch (RejectedExecutionException e) {
+                        // The server is shutting down
+                        releasePendingAsyncDelivery();
+                        reportNotQueued(sessionFactory, realmId, callback, new EmailException("The email could not be queued to be sent", e));
+                    }
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    releasePendingAsyncDelivery();
+                }
+            });
+        } catch (RuntimeException e) {
+            releasePendingAsyncDelivery();
+            throw e;
+        }
+    }
+
+    private static boolean reservePendingAsyncDelivery() {
+        if (pendingAsyncDeliveries.incrementAndGet() > MAX_PENDING_ASYNC_DELIVERIES) {
+            pendingAsyncDeliveries.decrementAndGet();
+            return false;
+        }
+        return true;
+    }
+
+    private static void releasePendingAsyncDelivery() {
+        pendingAsyncDeliveries.decrementAndGet();
+    }
+
+    private static void runInRealm(KeycloakSessionFactory sessionFactory, String realmId, KeycloakSessionTask task) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+            session.getContext().setRealm(session.realms().getRealm(realmId));
+            task.run(session);
+        });
+    }
+
+    private static void reportNotQueued(KeycloakSessionFactory sessionFactory, String realmId, AsyncDeliveryCallback callback,
+            EmailException e) {
+        // The request is already committed at this point, so a failure here must not fail it
+        try {
+            runInRealm(sessionFactory, realmId, session -> callback.onFailed(session, e));
+        } catch (RuntimeException re) {
+            log.error("Failed to report an email that was not sent", re);
         }
     }
 

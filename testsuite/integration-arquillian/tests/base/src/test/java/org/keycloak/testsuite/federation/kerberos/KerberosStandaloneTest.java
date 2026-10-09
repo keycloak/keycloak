@@ -269,6 +269,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         }
 
         // get the email from green mail
+        mail.waitForIncomingEmail(1);
         MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -277,7 +278,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         driver.navigate().to(changePasswordUrl.trim());
         loginPasswordUpdatePage.assertCurrent();
         loginPasswordUpdatePage.changePassword("resetPassword", "resetPassword");
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).withoutDetails(Details.CREDENTIAL_TYPE).clientId(oauth.getClientId()).details(Details.USERNAME, "test-user@localhost");
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).withoutDetails(Details.CREDENTIAL_TYPE).clientId(oauth.getClientId()).details(Details.USERNAME, "test-user@localhost");
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).clientId(oauth.getClientId()).details(Details.USERNAME, "test-user@localhost");
         infoPage.assertCurrent();
         Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());

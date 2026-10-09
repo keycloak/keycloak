@@ -19,6 +19,7 @@ package org.keycloak.testsuite.forms;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
@@ -30,6 +31,7 @@ import org.keycloak.authentication.forms.RegistrationRecaptcha;
 import org.keycloak.authentication.forms.RegistrationTermsAndConditions;
 import org.keycloak.authentication.forms.RegistrationUserCreation;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -801,6 +803,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword("test-user@localhost");
 
+        // There is no mail server, so sending the reset password email fails in the background. Wait for that failure, so its event does not show up among the events asserted below
+        skipEventsUntil(EventType.SEND_RESET_PASSWORD_ERROR);
         events.clear();
 
         driver.navigate().to(registrationUrl);
@@ -814,6 +818,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.EXISTING_USER, "test-user@localhost")
                 .details(Details.AUTHENTICATION_ERROR_DETAIL, Errors.DIFFERENT_USER_AUTHENTICATING)
                 .withoutDetails(Details.USERNAME, Details.EMAIL);
+    }
+
+    /**
+     * Drops events until an event of the given type arrives, or fails after 10 seconds.
+     */
+    private void skipEventsUntil(EventType type) {
+        Retry.execute(() -> assertEquals(type.name(), Objects.requireNonNull(events.poll()).getType()), 100, 100);
     }
 
     protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {

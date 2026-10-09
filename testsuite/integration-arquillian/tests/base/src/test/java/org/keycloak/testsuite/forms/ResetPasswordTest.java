@@ -233,7 +233,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        EventAssertion event = EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+        EventAssertion event = EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                 .userId(userId)
                 .clientId(expectedClientId)
                 .details(Details.USERNAME, username)
@@ -245,6 +245,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             event.withoutDetails(Details.REDIRECT_URI);
         }
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
@@ -449,6 +450,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         initiateResetPasswordFromResetPasswordPage(username);
 
         // Navigate the first browser to the set password page
+        mail.waitForIncomingEmail(expectedMessagesCount);
         assertEquals(expectedMessagesCount, mail.getReceivedMessages().length);
         MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -496,7 +498,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordCancelChangeUser() {
         initiateResetPasswordFromResetPasswordPage("test-user@localhost");
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).details(Details.USERNAME, "test-user@localhost")
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).details(Details.USERNAME, "test-user@localhost")
                 .sessionId(null)
                 .details(Details.EMAIL, "test-user@localhost");
 
@@ -558,12 +560,13 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private String resetPassword(String username, String password, boolean relogin) throws IOException {
         initiateResetPasswordFromResetPasswordPage(username);
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                 .userId(userId)
                 .details(Details.USERNAME, username.trim())
                 .details(Details.EMAIL, "login@test.com")
                 .sessionId(null);
 
+        mail.waitForIncomingEmail(expectedMessagesCount);
         assertEquals(expectedMessagesCount, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
@@ -623,9 +626,10 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         initiateResetPasswordFromResetPasswordPage(username);
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId).sessionId(null)
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).userId(userId).sessionId(null)
                 .details(Details.USERNAME, username).details(Details.EMAIL, "login@test.com");
 
+        mail.waitForIncomingEmail(expectedMessagesCount);
         assertEquals(expectedMessagesCount, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
@@ -689,10 +693,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordExpiredCode() throws IOException {
         initiateResetPasswordFromResetPasswordPage("login-test");
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                 .sessionId(null)
                 .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
@@ -726,10 +731,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -764,10 +770,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -804,10 +811,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -844,10 +852,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -887,10 +896,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -931,10 +941,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try {
             initiateResetPasswordFromResetPasswordPage("login-test");
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -986,10 +997,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
             expectedMessagesCount++;
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -1034,10 +1046,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
             expectedMessagesCount++;
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -1083,10 +1096,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
             expectedMessagesCount++;
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .sessionId(null)
                     .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
+            mail.waitForIncomingEmail(1);
             assertEquals(1, mail.getReceivedMessages().length);
 
             MimeMessage message = mail.getReceivedMessages()[0];
@@ -1178,7 +1192,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             assertEquals(0, mail.getReceivedMessages().length);
 
-            EventAssertion.assertError(events.poll()).type(EventType.SEND_RESET_PASSWORD_ERROR).userId(userId)
+            EventAssertion.assertError(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD_ERROR).userId(userId)
                     .sessionId(null)
                     .details(Details.USERNAME, "login-test").error(Errors.EMAIL_SEND_FAILED);
         } finally {
@@ -1200,13 +1214,14 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         initiateResetPasswordFromResetPasswordPage("login-test");
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
 
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).sessionId(null).userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).sessionId(null).userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -1248,10 +1263,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordBeforeUserIsDisabled() throws IOException {
         initiateResetPasswordFromResetPasswordPage("login-test");
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
         MimeMessage message = mail.getReceivedMessages()[0];
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).sessionId(null).userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).sessionId(null).userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
 
         UserRepresentation user = findUser("login-test");
         user.setEnabled(false);
@@ -1351,7 +1367,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                 .userId(userId)
                 .details(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .clientId(expectedSystemClientId)
@@ -1359,6 +1375,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.EMAIL, "login@test.com")
                 .sessionId(null);
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
@@ -1410,6 +1427,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
@@ -1533,6 +1551,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void changeEmailAddressAfterSendingEmail() throws IOException {
         initiateResetPasswordFromResetPasswordPage(defaultUser.getUsername());
 
+        mail.waitForIncomingEmail(1);
         assertEquals(1, mail.getReceivedMessages().length);
 
         MimeMessage message = mail.getReceivedMessages()[0];
@@ -1590,7 +1609,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String tab1Url = driver.getCurrentUrl();
 
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
+            EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD)
                     .userId(user.getId())
                     .clientId(clientId)
                     .details(Details.REDIRECT_URI, redirectUri)
@@ -1598,6 +1617,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                     .details(Details.EMAIL, user.getEmail())
                     .sessionId(null);
 
+            mail.waitForIncomingEmail(emailCount + 1);
             assertEquals(emailCount + 1, mail.getReceivedMessages().length);
 
             final MimeMessage message = mail.getReceivedMessages()[emailCount];
@@ -1679,5 +1699,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(resetPasswordUrl);
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        // the email is delivered in the background, make sure it does not arrive during the next test
+        Assertions.assertTrue(mail.waitForIncomingEmail(1));
     }
 }

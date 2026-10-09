@@ -17,6 +17,7 @@
 package org.keycloak.tests.sessionlimits;
 
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -65,6 +66,7 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -533,7 +535,7 @@ public class UserSessionLimitsTest {
             loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-            EventRepresentation resetEvent = events.poll();
+            EventRepresentation resetEvent = Awaitility.await().until(events::poll, Objects::nonNull);
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
                     .userId(loginEvent.getUserId())
@@ -585,7 +587,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.changePassword("test-user@localhost");
             loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            EventRepresentation resetEvent = events.poll();
+            EventRepresentation resetEvent = Awaitility.await().until(events::poll, Objects::nonNull);
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
                     .userId(loginEvent.getUserId())
@@ -595,6 +597,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            mailServer.waitForIncomingEmail(1);
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -632,7 +635,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            EventRepresentation resetEvent = events.poll();
+            EventRepresentation resetEvent = Awaitility.await().until(events::poll, Objects::nonNull);
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
                     .userId(loginEvent.getUserId())
@@ -642,6 +645,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            mailServer.waitForIncomingEmail(1);
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -682,7 +686,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            EventRepresentation resetEvent = events.poll();
+            EventRepresentation resetEvent = Awaitility.await().until(events::poll, Objects::nonNull);
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
                     .userId(loginEvent.getUserId())
@@ -692,6 +696,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            mailServer.waitForIncomingEmail(1);
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);

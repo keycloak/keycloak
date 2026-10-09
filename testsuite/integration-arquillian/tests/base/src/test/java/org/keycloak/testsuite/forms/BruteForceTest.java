@@ -1093,8 +1093,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
+        EventAssertion.expectRequiredAction(events.pollWithWait()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
+        mail.waitForIncomingEmail(1);
         MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
 

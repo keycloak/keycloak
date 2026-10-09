@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.events.Event;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -41,6 +42,31 @@ public interface EmailTemplateProvider extends Provider {
     EmailTemplateProvider setUser(UserModel user);
 
     EmailTemplateProvider setAttribute(String name, Object value);
+
+    /**
+     * Send emails in the background after the transaction commits, so the request does not wait for the mail server.
+     * Whether sending worked is then reported to {@code callback} instead of being thrown. Errors from rendering the
+     * email are still thrown.
+     *
+     * @param callback notified once sending finished, {@code null} to send emails right away again
+     * @return {@code true} if emails are now sent in the background, {@code false} if this provider does not support it
+     * and sends them right away
+     */
+    default boolean setAsyncDelivery(AsyncDeliveryCallback callback) {
+        return false;
+    }
+
+    /**
+     * Notified once an email sent with {@link #setAsyncDelivery(AsyncDeliveryCallback)} was sent or failed to send.
+     * It is called from a background thread with a new session that has the realm set, or from the current request
+     * when the email had to be sent right away.
+     */
+    interface AsyncDeliveryCallback {
+
+        void onSent(KeycloakSession session);
+
+        void onFailed(KeycloakSession session, EmailException e);
+    }
 
     void sendEvent(Event event) throws EmailException;
 
