@@ -275,7 +275,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             verificationPage.assertApprovedPage();
 
             // Respect device polling interval after the pending token poll above
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
             Assertions.assertEquals(200, tokenResponse.getStatusCode());
@@ -286,7 +286,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("gold", idToken.getAcr());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
 
             clientRep = client.toRepresentation();
             clientRep.setAttributes(new HashMap<>(originalAttributes));
