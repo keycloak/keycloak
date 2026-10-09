@@ -121,6 +121,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("client_attestation_pop_signing_alg_values_supported")
     private List<String> clientAttestationPopSigningAlgValuesSupported;
 
+    @JsonProperty("challenge_endpoint")
+    private String challengeEndpoint;
+
     @JsonProperty("introspection_endpoint_auth_methods_supported")
     private List<String> introspectionEndpointAuthMethodsSupported;
 
@@ -430,6 +433,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setClientAttestationPopSigningAlgValuesSupported(List<String> clientAttestationPopSigningAlgValuesSupported) {
         this.clientAttestationPopSigningAlgValuesSupported = clientAttestationPopSigningAlgValuesSupported;
+    }
+
+    public String getChallengeEndpoint() {
+        return challengeEndpoint;
+    }
+
+    public void setChallengeEndpoint(String challengeEndpoint) {
+        this.challengeEndpoint = challengeEndpoint;
     }
 
     public List<String> getIntrospectionEndpointAuthMethodsSupported() {
