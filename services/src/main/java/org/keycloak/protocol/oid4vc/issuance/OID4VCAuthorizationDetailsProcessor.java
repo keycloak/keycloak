@@ -55,6 +55,7 @@ import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
@@ -345,14 +346,26 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         IssuedVerifiableCredentialModel issuedCredential = createIssuedVerifiableCredential(userSession.getUser(), clientSessionCtx.getClientSession().getClient(), credentialScope);
         oid4vcAuthzDetailResponse.setIssuedCredentialId(issuedCredential.getId());
 
-        // An authorization-code offer has served its purpose once the access token is bound
-        // to the issued credential. A pre-authorized-code offer remains available until it
-        // expires because its replay detection occurs during the token exchange.
-        CredentialOfferState offerState = getCredentialOfferState(clientSessionCtx);
-        if (offerState != null
-                && !PRE_AUTH_GRANT_TYPE.equals(clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class))
-                && isLastOid4vcAuthorizationDetail(clientSessionCtx, oid4vcAuthzDetailResponse)) {
-            session.getProvider(CredentialOfferStorage.class).removeOfferState(offerState);
+        getCredentialOfferState(clientSessionCtx);
+    }
+
+    @Override
+    public void afterTokenResponseCreated(ClientSessionContext clientSessionCtx,
+                                          OID4VCAuthorizationDetail oid4vcAuthzDetailResponse) {
+        if (!AUTHORIZATION_CODE.equals(clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class))
+                || !isLastOid4vcAuthorizationDetail(clientSessionCtx, oid4vcAuthzDetailResponse)) {
+            return;
+        }
+
+        String credentialOfferId = clientSessionCtx.getAttribute(CREDENTIALS_OFFER_ID_ATTR, String.class);
+        if (credentialOfferId == null) {
+            return;
+        }
+
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+        CredentialOfferState offerState = offerStorage.getOfferStateById(credentialOfferId);
+        if (offerState != null) {
+            offerStorage.removeOfferState(offerState);
         }
     }
 

@@ -52,6 +52,38 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
+    public void testAuthCodeOffer_RemainsAvailableWhenTokenIssuanceFails() {
+        String offlineAccessScopeId = testRealm.admin().clientScopes().findAll().stream()
+                .filter(scope -> "offline_access".equals(scope.getName()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+        var clientResource = testRealm.admin().clients().get(client.getId());
+        clientResource.addOptionalClientScope(offlineAccessScopeId);
+
+        try {
+            var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+            CredentialsOffer credentialOffer = wallet.createCredentialOffer(ctx, req -> req.targetUser(null));
+            String issuerState = credentialOffer.getIssuerState();
+            CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+
+            AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()
+                    .scope(ctx.getScope() + " offline_access")
+                    .issuerState(issuerState)
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authorizationResponse.getCode()).send();
+            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+            assertEquals("invalid_request", tokenResponse.getError());
+            assertEquals("Unsupported to request offline access together with oid4vci credential", tokenResponse.getErrorDescription());
+
+            CredentialOfferResponse offerResponse = wallet.credentialsOfferRequest(ctx, offerURI).send();
+            assertEquals(HttpStatus.SC_OK, offerResponse.getStatusCode(), "Credential offer must remain available after token issuance fails");
+        } finally {
+            clientResource.removeOptionalClientScope(offlineAccessScopeId);
+        }
+    }
+
+    @Test
     public void testAuthCodeOffer_Anonymous() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
