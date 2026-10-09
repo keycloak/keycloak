@@ -400,7 +400,9 @@ public class AuthenticationManager {
         if (rootLogoutSession != null) {
             authSessionId = rootLogoutSession.getId();
             browserCookiePresent = true;
-        } else if (userSession != null && (logoutSession == null || (logoutSession.getParentSession() != null
+        } else if (userSession != null && (logoutSession == null
+                || !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())
+                || (logoutSession.getParentSession() != null
                 && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
             authSessionId = userSession.getId();
             rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
