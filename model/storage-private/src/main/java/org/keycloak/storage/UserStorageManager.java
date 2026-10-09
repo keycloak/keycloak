@@ -194,7 +194,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return null;
         }
 
-        return new ReadOnlyUserModelDelegate(user, false);
+        // Allow removing local group memberships for users that no longer exist in the
+        // external store: group membership is stored in JPA, not in LDAP, so leaveGroup
+        // is safe even when the user is otherwise read-only. joinGroup is intentionally
+        // kept blocked to avoid creating local-only mappings for LDAP-managed groups.
+        return new ReadOnlyUserModelDelegate(user, false) {
+            @Override
+            public void leaveGroup(GroupModel group) {
+                delegate.leaveGroup(group);
+            }
+        };
     }
 
     private UserStorageProviderModel getUserStorageProviderModel(RealmModel realm, UserModel user) {
