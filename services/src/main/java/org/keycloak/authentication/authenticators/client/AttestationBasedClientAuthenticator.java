@@ -118,9 +118,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             return;
         }
 
-        logger.debugf(OAUTH_CLIENT_ATTESTATION_HEADER + ": " + attestationValue);
-        logger.debugf(OAUTH_CLIENT_ATTESTATION_POP_HEADER + ": " + attestationPoPValue);
-
         context.attempted();
 
         try {
