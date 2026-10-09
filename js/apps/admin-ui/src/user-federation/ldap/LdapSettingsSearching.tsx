@@ -115,7 +115,7 @@ export const LdapSettingsSearching = ({
           label={t("searchScope")}
           labelIcon={t("searchScopeHelp")}
           controller={{
-            defaultValue: "1",
+            defaultValue: "2",
           }}
           options={[
             { key: "1", value: t("oneLevel") },
