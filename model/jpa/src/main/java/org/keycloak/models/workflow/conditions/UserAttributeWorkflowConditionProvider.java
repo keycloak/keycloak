@@ -152,6 +152,7 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
      *
      * @param keyValuePair the key-value pair string to parse
      * @return a {@link String} array where the first element is the key and the second element is the value.
+     * @throws WorkflowInvalidStateException if the string does not parse to exactly one pair.
      */
     public static String[] parseKeyValuePair(String keyValuePair) {
         Properties props = new Properties();
@@ -160,6 +161,16 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
         } catch (java.io.IOException e) {
             throw new WorkflowInvalidStateException("workflowConditionAttributeInvalid", keyValuePair);
         }
+
+        // Input parsing to no entry, because it is empty or its key reads as a '#' or '!'
+        // comment, would reach the iterator below and raise NoSuchElementException instead of
+        // the exception above. Input parsing to several, from multiple lines, would resolve to
+        // an arbitrary one because Properties is a Hashtable. Both leave the condition
+        // matching a resource set that was never configured.
+        if (props.size() != 1) {
+            throw new WorkflowInvalidStateException("workflowConditionAttributeInvalid", keyValuePair);
+        }
+
         String key = props.stringPropertyNames().iterator().next();
         String value = props.getProperty(key);
         return new String[]{key, value};
