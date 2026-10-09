@@ -50,15 +50,6 @@ public class OrganizationBuilder extends Builder<OrganizationRepresentation> {
         return this;
     }
 
-    /**
-     * @deprecated The redirect URL of organizations is deprecated, use {@code client_id} on invitation endpoints instead.
-     */
-    @Deprecated
-    public OrganizationBuilder redirectUrl(String redirectUrl) {
-        rep.setRedirectUrl(redirectUrl);
-        return this;
-    }
-
     public OrganizationBuilder domains(String... domains) {
         return domains(Arrays.stream(domains).map(OrganizationDomainBuilder::create).toArray(OrganizationDomainBuilder[]::new));
     }

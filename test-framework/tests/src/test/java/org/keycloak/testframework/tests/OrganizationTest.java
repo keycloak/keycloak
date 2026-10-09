@@ -100,7 +100,6 @@ public class OrganizationTest {
         Assertions.assertEquals(CUSTOM_ORG_REF, rep.getName());
         Assertions.assertEquals("custom-alias", rep.getAlias());
         Assertions.assertEquals("A custom organization", rep.getDescription());
-        Assertions.assertEquals("http://localhost:8080/custom", rep.getRedirectUrl());
         Assertions.assertEquals(List.of("value1", "value2"), rep.getAttributes().get("key"));
 
         Assertions.assertEquals(List.of("custom.org", "custom.test"), domainNames(rep));
@@ -260,7 +259,6 @@ public class OrganizationTest {
             return organization.name(CUSTOM_ORG_REF)
                     .alias("custom-alias")
                     .description("A custom organization")
-                    .redirectUrl("http://localhost:8080/custom")
                     .domains("custom.org", "custom.test")
                     .attributes(Map.of("key", List.of("value1", "value2")));
         }
