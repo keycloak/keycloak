@@ -92,7 +92,6 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
@@ -416,13 +415,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return error;
     }
 
-    private static String extractOAuthErrorCode(String response) {
+    private String extractOAuthErrorCode(String response) {
         if (StringUtil.isBlank(response)) {
             return null;
         }
         try {
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response, OAuth2ErrorRepresentation.class);
-            return error != null ? error.getError() : null;
+            // Parsed as a generic tree, not bound to OAuth2ErrorRepresentation, since IdPs may include
+            // extension fields (e.g. error_uri) that would otherwise fail strict POJO deserialization
+            // and hide a legitimate error code such as invalid_grant.
+            return getJsonProperty(asJsonNode(response), OAuth2Constants.ERROR);
         } catch (IOException e) {
             return null;
         }
@@ -713,8 +714,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         logger.debugf("No expiration metadata for %s session token (legacy session before migration)", getConfig().getAlias());
         if (Booleans.isTrue(getConfig().isStoreToken())) {
-            logger.debugf("Falling back to DB token for %s", getConfig().getAlias());
-            return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
+            // Don't refresh the DB-stored token here - leave this session token as unusable and let the
+            // caller (retrieveToken) fall back to exchangeStoredToken itself, so that fallback is only
+            // attempted once instead of being retried a second time against the IdP if it also fails.
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
 
         // storeToken is disabled, so there is no DB-persisted token to fall back to. Preserve the
