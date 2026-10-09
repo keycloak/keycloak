@@ -46,6 +46,7 @@ import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
+import org.keycloak.exportimport.util.WorkflowExportImportUtils;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
@@ -86,6 +87,8 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStepProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
@@ -529,6 +532,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
 
         importOrganizations(rep, newRealm);
+        WorkflowExportImportUtils.importWorkflows(session, newRealm, rep);
     }
 
     @Override
@@ -1302,6 +1306,15 @@ public class DefaultExportImportManager implements ExportImportManager {
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
         for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
             String providerType = entry.getKey();
+            if (WorkflowProvider.class.getName().equals(providerType)) {
+                if (!newRealm.getId().equals(parentId)) {
+                    throw new ModelException("Workflows must be top-level realm components");
+                }
+                continue;
+            }
+            if (WorkflowStepProvider.class.getName().equals(providerType)) {
+                throw new ModelException("Workflow steps must belong to a workflow");
+            }
             for (ComponentExportRepresentation compRep : entry.getValue()) {
                 ComponentModel component = new ComponentModel();
                 component.setId(compRep.getId());
