@@ -57,6 +57,15 @@ For example, an administrator with the `view-clients` role but without the `view
 With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
 In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
 
+=== Workflow expressions with unsupported characters are rejected
+// https://github.com/keycloak/keycloak/issues/53790
+
+Workflow expressions used in the `on`, `if` and `concurrency` settings are now rejected when they contain characters that are not part of the expression syntax, such as `!`.
+Previously, these characters were silently dropped, so an expression like `!has-role(admin)` was accepted and evaluated as `has-role(admin)`.
+Use the `not`, `and` and `or` operators instead, for example `not has-role(admin)`.
+After upgrading, existing workflows with such expressions are no longer executed, and an error is logged when they are evaluated.
+Update these workflows to fix their expressions.
+
 === Organization Redirect URL now validated against the account client
 
 The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
