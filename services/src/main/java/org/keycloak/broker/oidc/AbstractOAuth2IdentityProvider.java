@@ -393,7 +393,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
                 OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
 
-                if (newResponse == null || newResponse.getToken() == null) {
+                if (newResponse == null || StringUtil.isBlank(newResponse.getToken())) {
                     // No explicit error reported, so this doesn't prove the refresh token is invalid - treat as transient.
                     throw new IdentityBrokerException("Refresh token response from " + getConfig().getAlias() + " (HTTP status " + status + ") did not contain an access token");
                 }

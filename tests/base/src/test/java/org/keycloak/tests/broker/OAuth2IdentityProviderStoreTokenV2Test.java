@@ -141,6 +141,10 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
     public void testRefreshTransientFailurePreservesStoredToken() {
         ManagedRealm realm = getRealm();
 
+        // disable session token storage so the refresh goes through exchangeStoredToken(), the method
+        // whose transient-failure handling this test is meant to exercise
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.FALSE.toString()));
+
         oauth.openLoginForm();
         loginWithIdP();
 
@@ -164,7 +168,11 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
         httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 503, null, (String) null));
         try {
             String failingTokenUrl = "http://127.0.0.1:" + httpServer.getAddress().getPort() + path;
-            realm.updateIdentityProvider(IDP_ALIAS, idp -> idp.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, failingTokenUrl));
+            realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+                idp.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, failingTokenUrl);
+                // changing the token URL requires the client secret to be re-entered (CVE-2026-15943)
+                idp.getConfig().put("clientSecret", "test-secret");
+            });
 
             // a transient (non invalid_grant) refresh failure is surfaced as a retryable gateway error
             AccessTokenResponse failedRefresh = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
@@ -176,6 +184,7 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
             httpServer.removeContext(path);
             IdentityProviderRepresentation rep = idpResource.toRepresentation();
             rep.getConfig().put(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, originalTokenUrl);
+            rep.getConfig().put("clientSecret", "test-secret");
             idpResource.update(rep);
         }
 
