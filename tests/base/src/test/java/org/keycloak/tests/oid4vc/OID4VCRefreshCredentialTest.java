@@ -23,6 +23,8 @@ import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -36,6 +38,8 @@ import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
@@ -67,6 +71,7 @@ import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.events.Details.CREDENTIAL_TYPE;
 import static org.keycloak.events.Details.REASON;
 
@@ -216,6 +221,19 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertEquals(issuedCred1.getIssuedAt(), issuedCred2.getIssuedAt());
         assertEquals(issuedCred1.getExpiresAt(), issuedCred2.getExpiresAt());
         assertEquals(issuedCred1.getRevision(), issuedCred2.getRevision());
+    }
+
+    @Test
+    public void testRefreshRemovesLegacyCredentialsOfferId() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        String legacyRefreshToken = addLegacyCredentialsOfferId(tokenResponse.getRefreshToken());
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(legacyRefreshToken);
+        assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
+
+        assertNoLegacyCredentialsOfferId(refreshResponse.getAccessToken());
+        assertNoLegacyCredentialsOfferId(refreshResponse.getRefreshToken());
     }
 
 
@@ -982,6 +1000,31 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .scope(ctx.getScope())
                 .send(user.getUsername(), TEST_PASSWORD);
         return assertAndGetAccessTokenResponse(authResponse);
+    }
+
+    private String addLegacyCredentialsOfferId(String refreshToken) {
+        return runOnServer.fetchString(session -> {
+            try {
+                RefreshToken token = new JWSInput(refreshToken).readJsonContent(RefreshToken.class);
+                token.getAuthorizationDetails().stream()
+                        .filter(detail -> OPENID_CREDENTIAL.equals(detail.getType()))
+                        .forEach(detail -> detail.getCustomData().put("credentials_offer_id", "legacy-offer-id"));
+                return session.tokens().encode(token);
+            } catch (JWSInputException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void assertNoLegacyCredentialsOfferId(String token) {
+        try {
+            AccessToken parsedToken = new JWSInput(token).readJsonContent(AccessToken.class);
+            assertTrue(parsedToken.getAuthorizationDetails().stream()
+                    .filter(detail -> OPENID_CREDENTIAL.equals(detail.getType()))
+                    .noneMatch(detail -> detail.getCustomData().containsKey("credentials_offer_id")));
+        } catch (JWSInputException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected AccessTokenResponse authzCodeFlow(String issuerState) {

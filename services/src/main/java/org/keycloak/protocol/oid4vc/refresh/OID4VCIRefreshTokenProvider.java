@@ -66,6 +66,7 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
     private static final String NOTE_LATEST_GENERATED_TOKEN_ID = "latestGeneratedTokenId";
     private static final String NOTE_USE_COUNT = "useCount";
     private static final String NOTE_LAST_REFRESH = "lastRefresh";
+    private static final String LEGACY_CREDENTIALS_OFFER_ID = "credentials_offer_id";
     private static final int ROTATION_RECORD_CLOCK_SKEW_SECONDS = 10;
     private String pendingRotationKey;
     private Map<String, String> pendingRotationRecord;
@@ -204,7 +205,23 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
 
     @Override
     protected void afterRefreshTokenGenerated(RefreshTokenContext ctx, TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        removeLegacyCredentialsOfferId(responseBuilder.getAccessToken().getAuthorizationDetails());
+        if (responseBuilder.getRefreshToken() != null) {
+            removeLegacyCredentialsOfferId(responseBuilder.getRefreshToken().getAuthorizationDetails());
+        }
+        removeLegacyCredentialsOfferId(responseBuilder.getClientSessionCtx()
+                .getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class));
         flushRotationRecord(ctx, responseBuilder.getRefreshToken());
+    }
+
+    private static void removeLegacyCredentialsOfferId(List<AuthorizationDetailsJSONRepresentation> authorizationDetails) {
+        if (authorizationDetails == null) {
+            return;
+        }
+
+        authorizationDetails.stream()
+                .filter(detail -> OPENID_CREDENTIAL.equals(detail.getType()))
+                .forEach(detail -> detail.getCustomData().remove(LEGACY_CREDENTIALS_OFFER_ID));
     }
 
     @Override
