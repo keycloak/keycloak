@@ -43,6 +43,8 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -59,11 +61,13 @@ public class UserManagedPermissionService {
     private final Identity identity;
     private final AuthorizationProvider authorization;
     private final PermissionService delegate;
+    private final AdminEventBuilder adminEvent;
 
     public UserManagedPermissionService(KeycloakIdentity identity, ResourceServer resourceServer, AuthorizationProvider authorization, AdminEventBuilder eventBuilder) {
         this.identity = identity;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
+        this.adminEvent = eventBuilder;
         delegate = new PermissionService(resourceServer, authorization, null, eventBuilder);
     }
 
@@ -81,7 +85,16 @@ public class UserManagedPermissionService {
         representation.addResource(resourceId);
         representation.setOwner(identity.getId());
 
-        return findById(delegate.create(representation).getId());
+        Policy policy = delegate.create(representation);
+
+        representation.setId(policy.getId());
+        adminEvent.resource(ResourceType.AUTHORIZATION_POLICY)
+                .operation(OperationType.CREATE)
+                .resourcePath("authz", "protection", "uma-policy", policy.getId())
+                .representation(representation)
+                .success();
+
+        return findById(policy.getId());
     }
 
     @Path("{policyId}")
