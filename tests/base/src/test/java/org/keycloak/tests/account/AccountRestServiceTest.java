@@ -99,6 +99,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -294,6 +295,194 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user = updateAndGet(user, token);
         Assertions.assertEquals("bobby@localhost", user.getEmail());
         Assertions.assertFalse(user.isEmailVerified());
+    }
+
+    @Test
+    public void testUpdateProfilePhoneNumberChangeResetsPhoneNumberVerified() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        registerPhoneNumberCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"phoneNumber\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"phoneNumberVerified\"," + PERMISSIONS_ADMIN_EDITABLE + "}"
+                + "]}");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
+
+        // Setting a number on a user that was never verified does not create the flag
+        user.getAttributes().put("phoneNumber", List.of("+15555550123"));
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("+15555550123"), user.getAttributes().get("phoneNumber"));
+        Assertions.assertNull(user.getAttributes().get("phoneNumberVerified"));
+
+        // An administrator asserts verification
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
+        setPhoneNumberVerified(userResource, "+15555550123");
+        user = getUser(token);
+        Assertions.assertEquals(List.of("true"), user.getAttributes().get("phoneNumberVerified"));
+
+        // Same number - flag not reset
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("+15555550123"), user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("true"), user.getAttributes().get("phoneNumberVerified"));
+
+        // Different number - flag must be reset to false
+        events.clear();
+        user.getAttributes().put("phoneNumber", List.of("+15555550199"));
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("+15555550199"), user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId())
+            .details(Details.PREF_PREVIOUS + "phoneNumber", "+15555550123")
+            .details(Details.PREF_UPDATED + "phoneNumber", "+15555550199")
+            .details(Details.PREF_PREVIOUS + "phoneNumberVerified", "true")
+            .details(Details.PREF_UPDATED + "phoneNumberVerified", "false");
+
+        // Different number with the flag set in another case, as accepted by the boolean claim mapper - flag must be reset to false
+        org.keycloak.representations.idm.UserRepresentation upperCase = userResource.toRepresentation();
+        upperCase.singleAttribute("phoneNumberVerified", "TRUE");
+        userResource.update(upperCase);
+        user = getUser(token);
+        user.getAttributes().put("phoneNumber", List.of("+15555550198"));
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+
+        // Removing the number - flag must be reset to false
+        setPhoneNumberVerified(userResource, "+15555550123");
+        user = getUser(token);
+        Assertions.assertEquals(List.of("true"), user.getAttributes().get("phoneNumberVerified"));
+        user.getAttributes().remove("phoneNumber");
+        user = updateAndGet(user, token);
+        Assertions.assertNull(user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+
+        // An administrator changing the number does not reset the flag, as with email
+        setPhoneNumberVerified(userResource, "+15555550123");
+        org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+        ur.singleAttribute("phoneNumber", "+15555550100");
+        userResource.update(ur);
+        ur = userResource.toRepresentation();
+        Assertions.assertEquals(List.of("+15555550100"), ur.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("true"), ur.getAttributes().get("phoneNumberVerified"));
+    }
+
+    @Test
+    public void testUpdateProfilePhoneNumberChangeResetsUserEditablePhoneNumberVerified() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        registerPhoneNumberCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"phoneNumber\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"phoneNumberVerified\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
+        org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+        ur.singleAttribute("phoneNumber", "+15555550123");
+        ur.singleAttribute("phoneNumberVerified", "false");
+        userResource.update(ur);
+
+        // Setting the flag together with a different number - flag must stay false
+        events.clear();
+        user = getUser(token);
+        user.getAttributes().put("phoneNumber", List.of("+15555550199"));
+        user.getAttributes().put("phoneNumberVerified", List.of("true"));
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("+15555550199"), user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId())
+            .details(Details.PREF_UPDATED + "phoneNumber", "+15555550199")
+            .withoutDetails(Details.PREF_PREVIOUS + "phoneNumberVerified", Details.PREF_UPDATED + "phoneNumberVerified");
+
+        // Keeping the flag set together with a different number - flag must be reset to false
+        setPhoneNumberVerified(userResource, "+15555550123");
+        events.clear();
+        user = getUser(token);
+        user.getAttributes().put("phoneNumber", List.of("+15555550199"));
+        user.getAttributes().put("phoneNumberVerified", List.of("true"));
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId())
+            .details(Details.PREF_PREVIOUS + "phoneNumberVerified", "true")
+            .details(Details.PREF_UPDATED + "phoneNumberVerified", "false");
+    }
+
+    @Test
+    public void testUpdateProfileUnmanagedPhoneNumberChangeResetsPhoneNumberVerified() throws IOException {
+        managedRealm.updateWithCleanup(r -> r.registrationEmailAsUsername(false));
+        registerUserCleanup("test-user@localhost");
+        registerPhoneNumberCleanup("test-user@localhost");
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+        setUserProfileConfiguration("{\"unmanagedAttributePolicy\": \"ENABLED\", \"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
+        setPhoneNumberVerified(userResource, "+15555550123");
+
+        // Omitting the flag together with a different number - flag must be reset to false, not removed
+        events.clear();
+        user = getUser(token);
+        user.getAttributes().put("phoneNumber", List.of("+15555550199"));
+        user.getAttributes().remove("phoneNumberVerified");
+        user = updateAndGet(user, token);
+        Assertions.assertEquals(List.of("+15555550199"), user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId())
+            .details(Details.PREF_PREVIOUS + "phoneNumberVerified", "true")
+            .details(Details.PREF_UPDATED + "phoneNumberVerified", "false");
+
+        // Omitting both the number and the flag - flag must be reset to false, not removed
+        setPhoneNumberVerified(userResource, "+15555550123");
+        user = getUser(token);
+        user.getAttributes().remove("phoneNumber");
+        user.getAttributes().remove("phoneNumberVerified");
+        user = updateAndGet(user, token);
+        Assertions.assertNull(user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+    }
+
+    private void registerPhoneNumberCleanup(String username) {
+        // the phone attributes are removed while the user profile configuration of the test is still in place
+        managedRealm.cleanup().add(r -> {
+            UserResource userResource = AdminApiUtil.findUserByUsernameId(r, username);
+            org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+            ur.setAttributes(new HashMap<>(Optional.ofNullable(ur.getAttributes()).orElse(Map.of())));
+            ur.getAttributes().remove("phoneNumber");
+            ur.getAttributes().remove("phoneNumberVerified");
+            userResource.update(ur);
+        });
+    }
+
+    private static void setPhoneNumberVerified(UserResource userResource, String phoneNumber) {
+        org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+        ur.singleAttribute("phoneNumber", phoneNumber);
+        ur.singleAttribute("phoneNumberVerified", "true");
+        userResource.update(ur);
     }
 
     @Test

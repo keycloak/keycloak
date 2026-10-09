@@ -42,53 +42,55 @@ public enum UserProfileContext {
     /**
      * In this context, a user profile is managed by themselves during an authentication flow such as when updating the user profile.
      */
-    UPDATE_PROFILE(false, true, true),
+    UPDATE_PROFILE(false, true, true, true),
 
     /**
      * In this context, a user profile is managed through the management interface such as the Admin API.
      */
-    USER_API(true, false, false),
+    USER_API(true, false, false, false),
 
     /**
      * In this context, a user profile is managed by themselves through the account console.
      */
-    ACCOUNT(false, true, true),
+    ACCOUNT(false, true, true, true),
 
     /**
      * In this context, a user profile is managed by themselves when authenticating through a broker.
      */
-    IDP_REVIEW(false, true, false),
+    IDP_REVIEW(false, true, false, true),
 
     /**
      * In this context, a user profile is managed by themselves when registering to a realm.
      */
-    REGISTRATION(false, true, false),
+    REGISTRATION(false, true, false, false),
 
     /**
      * In this context, a user profile is managed by themselves when updating their email through an application initiated action.
      * In this context, only the {@link UserModel#EMAIL} attribute is supported.
      */
-    UPDATE_EMAIL(false, true, true, Set.of(UserModel.EMAIL)::contains),
+    UPDATE_EMAIL(false, true, true, false, Set.of(UserModel.EMAIL)::contains),
 
     /**
      * In this context, a user profile is managed through the management interface such as the Admin API.
      */
-    SCIM(true, false, false);
+    SCIM(true, false, false, false);
 
     private final boolean resetEmailVerified;
+    private final boolean resetPhoneNumberVerified;
     private final Predicate<String> attributeSelector;
     private final boolean adminContext;
     private final boolean authFlowContext;
     
-    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified, Predicate<String> attributeSelector){
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified, boolean resetPhoneNumberVerified, Predicate<String> attributeSelector){
         this.adminContext = adminContext;
         this.authFlowContext = authFlowContext;
         this.resetEmailVerified = resetEmailVerified;
+        this.resetPhoneNumberVerified = resetPhoneNumberVerified;
         this.attributeSelector = attributeSelector;
     }
 
-    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified){
-        this(adminContext, authFlowContext, resetEmailVerified, StringUtil::isNotBlank);
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified, boolean resetPhoneNumberVerified){
+        this(adminContext, authFlowContext, resetEmailVerified, resetPhoneNumberVerified, StringUtil::isNotBlank);
     }
 
     /**
@@ -110,6 +112,13 @@ public enum UserProfileContext {
      */
     public boolean isResetEmailVerified() {
         return resetEmailVerified;
+    }
+
+    /**
+     * @return true means that the phoneNumberVerified attribute must be reset to false in this context when the phoneNumber attribute is updated
+     */
+    public boolean isResetPhoneNumberVerified() {
+        return resetPhoneNumberVerified;
     }
 
     /**
