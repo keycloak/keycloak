@@ -63,7 +63,8 @@ In the Admin Console, these roles are no longer listed in the *Scope* tab of cli
 Workflow expressions used in the `on`, `if` and `concurrency` settings are now rejected when they contain characters that are not part of the expression syntax, such as `!`.
 Previously, these characters were silently dropped, so an expression like `!has-role(admin)` was accepted and evaluated as `has-role(admin)`.
 Use the `not`, `and` and `or` operators instead, for example `not has-role(admin)`.
-After upgrading, existing workflows with such expressions are no longer executed, and an error is logged when they are evaluated.
+After upgrading, existing workflows with such an expression in `on` or `if` are no longer executed, and the error is logged when the expression is evaluated.
+If such an expression is used in a `concurrency` setting, the workflow still runs, but that setting no longer restarts or cancels in-progress executions, and the error is logged.
 Update these workflows to fix their expressions.
 
 === Organization Redirect URL now validated against the account client
