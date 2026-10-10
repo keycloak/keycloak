@@ -19,6 +19,7 @@ package org.keycloak.credential;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +36,9 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -295,6 +299,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         if (!provider.policyCheck(passwordPolicy, password)) {
             final int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
             final String hashAlgorithm = passwordPolicy != null ? passwordPolicy.getHashAlgorithm() : null;
+            final String validatedSecretData = password.getSecretData();
             // Refresh the password in a different transaction, do not fail if there is a model exception on current modifications due to concurrent logins.
             // Also do not start it as a nested transaction, as the current transaction might have auto-migrated the credential.
             // see: JpaUserCredentialStore#toModel for the on-the-fly migration of the salt column
@@ -304,7 +309,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                     try {
                         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
                                 (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
-                                        password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId()));
+                                        password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId(),
+                                        validatedSecretData));
                     } catch (ModelException e) {
                         logger.info("Error re-hashing the password in a different transaction", e);
                     }
@@ -319,7 +325,12 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private static void refreshPassword(KeycloakSession s, String hashAlgorithm, int iterations, String challenge,
-            String passwordId, Long passwordDate, String passwordLabel, String userId) {
+            String passwordId, Long passwordDate, String passwordLabel, String userId, String validatedSecretData) {
+        RealmModel realm = s.getContext().getRealm();
+        UserModel userModel = s.users().getUserById(realm, userId);
+        if (userModel == null) {
+            return;
+        }
         PasswordCredentialModel newPassword = ((hashAlgorithm != null)
                 ? s.getProvider(PasswordHashProvider.class, hashAlgorithm)
                 : s.getProvider(PasswordHashProvider.class))
@@ -327,10 +338,26 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         newPassword.setId(passwordId);
         newPassword.setCreatedDate(passwordDate);
         newPassword.setUserLabel(passwordLabel);
-        UserModel userModel = s.users().getUserById(s.getContext().getRealm(), userId);
-        if (userModel != null) {
-            userModel.credentialManager().updateStoredCredential(newPassword);
+
+        // The credential may have been changed after it was validated, e.g. by a password change in the same request
+        // or by a concurrent request. Re-hashing the validated password would revert that change.
+        // Read it from the storage and not from the user cache, after the (slow) hashing.
+        CredentialModel current;
+        if (StorageId.isLocalStorage(userId)) {
+            // The update below works on the same entity, so a change committed in between fails it on the entity
+            // version (ModelException).
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(s).getUserById(realm, userId);
+            current = localUser != null ? localUser.credentialManager().getStoredCredentialById(passwordId) : null;
+        } else {
+            // Credentials of users from a user storage provider are kept in the federated storage. Its entity has no
+            // version, so a change committed between this read and the update is not detected.
+            current = UserStorageUtil.userFederatedStorage(s).getStoredCredentialById(realm, userId, passwordId);
         }
+        if (current == null || !Objects.equals(current.getSecretData(), validatedSecretData)) {
+            logger.debugf("Skipping re-hash of password credential %s of user %s, it changed after it was validated", passwordId, userId);
+            return;
+        }
+        userModel.credentialManager().updateStoredCredential(newPassword);
     }
 
     @Override
