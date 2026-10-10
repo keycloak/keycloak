@@ -35,6 +35,8 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.util.AcrNotFulfilledException;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -1236,7 +1238,7 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
-        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
+        enforceForcedLevelOfAuthenticationWithoutConditions();
 
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
@@ -1254,6 +1256,29 @@ public class AuthenticationProcessor {
 
     public String nextRequiredAction() {
         return AuthenticationManager.nextRequiredAction(session, authenticationSession, request, event);
+    }
+
+    /**
+     * Flows without the "Condition - Level of Authentication" never set a level themselves, so a forced level is verified against
+     * the level the ACR protocol mapper reports: 1 for an active authentication and 0 for an SSO authentication, or the level a client
+     * policy assigned to the selected flow. This is not limited to the browser flow, because the registration and the reset credentials
+     * flows finish the authentication on their own. Passive requests do not reach {@link #authenticationComplete()} and call it directly.
+     */
+    public void enforceForcedLevelOfAuthenticationWithoutConditions() {
+        AcrStore acrStore = new AcrStore(session, authenticationSession);
+        if (!acrStore.isLevelOfAuthenticationForced()) {
+            return;
+        }
+        AuthenticationFlowModel topFlow = realm.getAuthenticationFlowById(flowId);
+        if (topFlow == null
+                || !AuthenticatorUtil.getExecutionsByType(realm, flowId, ConditionalLoaAuthenticatorFactory.PROVIDER_ID).isEmpty()) {
+            return;
+        }
+        int requestedLoa = acrStore.getRequestedLevelOfAuthentication(topFlow);
+        int effectiveLoa = acrStore.getEffectiveLevelOfAuthentication();
+        if (requestedLoa > effectiveLoa) {
+            throw new AcrNotFulfilledException(requestedLoa, effectiveLoa);
+        }
     }
 
     public AuthenticationProcessor.Result createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {

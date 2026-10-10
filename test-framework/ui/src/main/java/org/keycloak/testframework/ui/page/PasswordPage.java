@@ -44,6 +44,10 @@ public class PasswordPage extends AbstractLoginPage {
         submitButton.click();
     }
 
+    public void resetPassword() {
+        resetPasswordLink.click();
+    }
+
     public String getPassword() {
         return passwordInput.getAttribute("value");
     }

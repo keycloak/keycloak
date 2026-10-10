@@ -240,6 +240,7 @@ Creating an advanced flow such as this can have side effects. For example, if yo
 <<_client_policies, Client Policies>> can be used to dynamically select an Authentication Flow based on specific conditions, such as requesting a particular scope or an ACR (Authentication Context Class Reference) using the `AuthenticationFlowSelectorExecutor` in combination with the condition you prefer.
 
 The `AuthenticationFlowSelectorExecutor` allows you to select an appropriate authentication flow and set the level of authentication to be applied once the selected flow is completed.
+A registration or a password reset started from the login page does not complete the selected flow and does not reach that level.
 
 A possible configuration involves using the `ACRCondition` in combination with the `AuthenticationFlowSelectorExecutor`. This setup enables you to select an authentication flow based on the requested ACR and have the ACR value included in the token using <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
 
@@ -422,9 +423,13 @@ and hence will be added to all newly created clients in the realm.
 
 In case you do not want `acr` claim inside tokens or you need some custom logic for adding it, you can remove the client scope from your client.
 
-Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
-one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
-in the authentication flow), then {project_name} will throw an error.
+When the login request uses the `claims` parameter to request `acr` as an essential claim, {project_name} returns one of the requested levels or rejects the login.
+The login is rejected, for example, when the requested level is unknown or higher than the level of any condition in the authentication flow.
+The same applies to flows without a Conditional - Level Of Authentication condition, where an active login reaches level 1 and a login based only on the SSO session reaches level 0,
+and to logins that complete in the registration or reset credentials flow.
+A flow selected by a client policy reaches the level configured in the policy instead, see <<_client-policy-auth-flow, Using Client Policies to Select an Authentication Flow>>.
+A rejected interactive login ends on an error page.
+A rejected login with `prompt=none` returns the error `unmet_authentication_requirements`, or `login_required` if reaching the requested level requires user interaction.
 
 [[_step-up-authentication-saml]]
 ==== Step-up authentication for SAML
@@ -494,7 +499,7 @@ When the `step-up-authentication-saml` feature is enabled, the <<_mapping-acr-to
 
 In summary, when the step-up authentication is configured for SAML, {project_name} will process the specified context level in the SAML request and the minimum ACR allowed for the client (if they are present) to obtain the LoA (integer level) that should be reached in the authentication. If there is no available level that satisfies the request, the error is returned per specification. If the URI/LoA mapping returns a level that satisfies the request, the authentication flow is started, enforcing that Level of Authentication to be reached.
 
-In order to maintain backwards compatibility, {project_name} does not return an error and continues adding the previous ACR `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified` to the response in the following situations:
+For backwards compatibility, {project_name} adds the authentication context `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified` to the response in the following situations:
 
 * The feature `step-up-authentication-saml` is not enabled in {project_name}.
 * The SAML client does not define any mapping between context URI and LoA. Use the client mapping instead of the general realm mapping when you just need to apply the step-up for some specific SAML clients.
@@ -502,7 +507,9 @@ In order to maintain backwards compatibility, {project_name} does not return an 
 +
 NOTE: The mapper and the client scope `AuthnContextClassRef` are automatically created and assigned to SAML clients when the `step-up-authentication-saml` feature is enabled (for new and migrated realms). If the feature was disabled at creation or migration time and want to be used afterwards, the client scope with the mapper should be created and assigned to the client manually.
 +
-* The LoA calculated at request time is not achieved by the authentication flow. For example, if the authentication flow used for authentication is not a step-up flow, or there is a misconfiguration between the URI/LoA mapping and the final level reached in the step-up authentication flow.
+* The authentication flow is not a step-up flow and therefore records no level. {project_name} still enforces the requested level: an active login reaches level 1 and a login based only on the SSO session reaches level 0.
+
+If the authentication flow does not reach the requested level, the login is rejected. A rejected interactive login ends on an error page. A rejected passive login returns a response with the `NoAuthnContext` status.
 
 [[_registration-rc-client-flows]]
 ==== Registration or Reset credentials requested by client

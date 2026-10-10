@@ -124,9 +124,33 @@ public class AcrStore {
         }
     }
 
+    /**
+     * @return true if the current authentication reached the requested level, see {@link #getEffectiveLevelOfAuthentication()}
+     */
     public boolean isLevelOfAuthenticationSatisfiedFromCurrentAuthentication(AuthenticationFlowModel topFlow) {
-        return getRequestedLevelOfAuthentication(topFlow)
-                <= getAuthenticatedLevelCurrentAuthentication();
+        return getRequestedLevelOfAuthentication(topFlow) <= getEffectiveLevelOfAuthentication();
+    }
+
+    /**
+     * @return the level reached by the current authentication, see {@link #getEffectiveLevelOfAuthentication(int, boolean)}
+     */
+    public int getEffectiveLevelOfAuthentication() {
+        return getEffectiveLevelOfAuthentication(getLevelOfAuthenticationFromCurrentAuthentication(), AuthenticatorUtil.isSSOAuthentication(authSession));
+    }
+
+    /**
+     * Level reached by an authentication, shared by the enforcement of a requested level and by the ACR protocol mapper. A recorded
+     * level wins. Without one, an active authentication is level 1 and an authentication satisfied solely by the SSO cookie is level 0.
+     *
+     * @param level level recorded for the authentication, {@link Constants#NO_LOA} if none
+     * @param ssoAuthentication true if the authentication was satisfied solely by the SSO cookie
+     * @return the effective level, never lower than {@link Constants#MINIMUM_LOA}
+     */
+    public static int getEffectiveLevelOfAuthentication(int level, boolean ssoAuthentication) {
+        if (level < Constants.MINIMUM_LOA) {
+            return ssoAuthentication ? Constants.MINIMUM_LOA : 1;
+        }
+        return level;
     }
 
 
@@ -190,19 +214,32 @@ public class AcrStore {
     }
 
     /**
-     * Set level to the current authentication session if an auth flow loa is present and is higher then the current loa
+     * Set the level assigned by the client policy flow selector to the current authentication session, if it is higher than the
+     * current level. It applies only when the completed flow is the flow the policy selected, so a registration or a reset credentials
+     * flow does not reach it.
+     *
+     * @param completedFlowId id of the top level flow which completed the authentication
      */
-    public void setAuthFlowLevelAuthenticatedToCurrentRequest() {
-        // Prefer the client note; fall back to the auth note for logins started on an older server.
+    public void setAuthFlowLevelAuthenticatedToCurrentRequest(String completedFlowId) {
+        // Prefer the client notes; fall back to the auth notes for logins started on an older server.
         String authFlowLoaNote = authSession.getClientNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION);
         if (authFlowLoaNote == null) {
             authFlowLoaNote = authSession.getAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION);
         }
-        if (authFlowLoaNote != null) {
-            int authFlowLoa = Integer.parseInt(authFlowLoaNote);
-            if (getLevelOfAuthenticationFromCurrentAuthentication() < authFlowLoa) {
-                setLevelAuthenticatedToCurrentRequest(authFlowLoa);
-            }
+        if (authFlowLoaNote == null) {
+            return;
+        }
+        String requestedFlowAlias = authSession.getClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        if (requestedFlowAlias == null) {
+            requestedFlowAlias = authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        }
+        AuthenticationFlowModel completedFlow = authSession.getRealm().getAuthenticationFlowById(completedFlowId);
+        if (completedFlow == null || !completedFlow.getAlias().equals(requestedFlowAlias)) {
+            return;
+        }
+        int authFlowLoa = Integer.parseInt(authFlowLoaNote);
+        if (getLevelOfAuthenticationFromCurrentAuthentication() < authFlowLoa) {
+            setLevelAuthenticatedToCurrentRequest(authFlowLoa);
         }
     }
 
@@ -215,11 +252,6 @@ public class AcrStore {
         saveCurrentAuthenticatedLevelsMap(levels);
     }
 
-
-    private int getAuthenticatedLevelCurrentAuthentication() {
-        String authSessionLoaNote = authSession.getAuthNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return authSessionLoaNote == null ? NO_LOA : Integer.parseInt(authSessionLoaNote);
-    }
 
     /**
      * @return highest authenticated level from previous authentication, which is still valid (not yet expired)
@@ -234,6 +266,10 @@ public class AcrStore {
         int currentTime = Time.currentTime();
 
         Map<Integer, Integer> configuredMaxAges = LoAUtil.getLoaMaxAgesConfiguredInRealmFlow(authSession.getRealm(), flowId);
+        if (configuredMaxAges.isEmpty()) {
+            // the flow has no level conditions, the levels of the previous authentications do not apply to it
+            return NO_LOA;
+        }
         levels = new TreeMap<>(levels);
 
         for (Map.Entry<Integer, Integer> entry : levels.entrySet()) {

@@ -85,3 +85,29 @@ Previously {project_name} treated the semicolon (`;`) as a query parameter delim
 Because different layers of the server applied this rule inconsistently, the parameters used to process a request could differ from those used to verify its signature.
 {project_name} now treats the semicolon as a literal character, so the same request yields a single parameter.
 If any of your clients rely on the semicolon as a query parameter delimiter, update them to use the ampersand instead.
+
+=== Stricter enforcement of the requested level of authentication
+
+Previously, {project_name} could complete a login at a lower level of authentication than the client requested.
+This happened when the authentication flow skipped the steps for the requested level, usually because the user already had a session.
+{project_name} now rejects such logins.
+For OpenID Connect clients, the requested level is the level of an essential `acr` claim.
+For SAML clients, it is the level of the requested authentication context or of the minimum ACR value of the client.
+
+The enforcement now also applies to:
+
+* Authentication flows without a `Conditional - Level Of Authentication` condition.
+In these flows, an active login reaches level 1 and a login based only on the SSO session reaches level 0, the same levels that the `acr` claim has always reported.
+A flow selected by a client policy reaches the level configured in the policy instead.
+A request for level 0 is satisfied by an existing session without asking the user to authenticate again.
+* Logins that complete in the registration or reset credentials flow.
+A registration or password reset that cannot reach the requested level fails before the account is created or the password is changed.
+Neither reaches a level that a client policy assigned to the selected flow.
+
+An active login in a flow without the condition reaches at least level 1 even if the session previously reached other levels in a different flow, and the `acr` claim reports it accordingly.
+
+A rejected interactive login ends on an error page.
+A rejected passive login returns an error to the client:
+
+* OpenID Connect: `unmet_authentication_requirements` if the login completed without user interaction, for example through the SSO session or a client certificate, or `login_required` if reaching the requested level requires user interaction.
+* SAML: the `NoAuthnContext` status.
