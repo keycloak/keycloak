@@ -131,6 +131,8 @@ public class ClientResource {
 
     protected final ClientConnection clientConnection;
 
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
+
     public ClientResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
@@ -603,7 +605,7 @@ public class ClientResource {
                         .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
                         .filter(userSession -> auth.users().canView(userSession.getUser())),
                 computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -950,7 +952,7 @@ public class ClientResource {
      * @return a reference to the constructed representation.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
 
         // Update lastSessionRefresh with the timestamp from clientSession
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
@@ -958,6 +960,13 @@ public class ClientResource {
             rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         }
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
     }
 
     private static ClientScopeRepresentation toRepresentation(ClientScopeModel clientScopeModel) {

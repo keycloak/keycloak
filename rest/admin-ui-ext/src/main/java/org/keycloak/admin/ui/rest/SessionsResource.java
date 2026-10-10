@@ -1,5 +1,7 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,6 +36,7 @@ public class SessionsResource {
     private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
 
     public SessionsResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         this.session = session;
@@ -139,7 +142,7 @@ public class SessionsResource {
                 .map(s -> toRepresentation(s, OFFLINE));
     }
 
-    private static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
+    private SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
         SessionRepresentation rep = new SessionRepresentation();
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
@@ -150,9 +153,15 @@ public class SessionsResource {
         rep.setType(type);
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
-            rep.getClients().put(client.getId(), client.getClientId());
+            if (canViewClient(client)) {
+                rep.getClients().put(client.getId(), client.getClientId());
+            }
         }
         rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;
+    }
+
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
     }
 }
