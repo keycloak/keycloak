@@ -62,9 +62,9 @@ class BackchannelAuthenticationEndpointSignedRequestParser extends BackchannelAu
         if (header.getAlgorithm() == Algorithm.none) {
             throw new RuntimeException("None signed algorithm is not allowed");
         }
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, headerAlgorithm.name());
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, headerAlgorithm.getName());
         if (signatureProvider == null) {
-            throw new RuntimeException("Not found provider for the algorithm " + headerAlgorithm.name());
+            throw new RuntimeException("Not found provider for the algorithm " + headerAlgorithm.getName());
         }
         if (!signatureProvider.isAsymmetricAlgorithm()) {
             throw new RuntimeException("Signed algorithm is not allowed");

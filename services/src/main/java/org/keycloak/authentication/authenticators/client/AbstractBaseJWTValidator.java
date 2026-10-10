@@ -151,7 +151,7 @@ public abstract class AbstractBaseJWTValidator {
             return failure("Invalid signature algorithm");
         }
 
-        String algorithmName = jws.getHeader().getAlgorithm().name();
+        String algorithmName = jws.getHeader().getRawAlgorithm();
 
         if ("none".equalsIgnoreCase(algorithmName)) {
             return failure("Invalid signature algorithm");
