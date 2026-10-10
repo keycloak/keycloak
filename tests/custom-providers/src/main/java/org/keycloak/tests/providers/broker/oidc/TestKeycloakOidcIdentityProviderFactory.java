@@ -25,6 +25,7 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
     public static final String IGNORE_MAX_AGE_PARAM = "ignore-max-age-param";
     public static final String USE_SINGLE_REFRESH_TOKEN = "use-single-refresh-token";
     public static final String PREFERRED_USERNAME = "preferred-username";
+    public static final String LEGACY_ID = "legacy-id";
 
     public static void setIgnoreMaxAgeParam(IdentityProviderRepresentation rep) {
         rep.getConfig().put(IGNORE_MAX_AGE_PARAM, Boolean.TRUE.toString());
@@ -44,6 +45,10 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
             @Override
             public BrokeredIdentityContext getFederatedIdentity(String response) {
                 BrokeredIdentityContext context = super.getFederatedIdentity(response);
+                String legacyId = model.getConfig().get(LEGACY_ID);
+                if (legacyId != null) {
+                    context.setLegacyId(legacyId);
+                }
                 String preferredUsername = getPreferredUsername();
 
                 if (preferredUsername != null) {

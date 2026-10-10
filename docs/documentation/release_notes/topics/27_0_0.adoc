@@ -40,6 +40,11 @@ See the upgrading guide for details.
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
 
+== Audit event for identity provider link replacement
+
+When client-initiated account linking replaces an existing link, {project_name} emits `FEDERATED_IDENTITY_OVERRIDE_LINK` with the previous and new external account IDs and usernames.
+Overrides during first broker login now include both account IDs in the event as well.
+
 = Themes
 
 == Login and welcome UI upgraded to PatternFly 6

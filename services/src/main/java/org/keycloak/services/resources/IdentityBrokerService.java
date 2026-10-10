@@ -53,6 +53,7 @@ import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkA
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
@@ -101,6 +102,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
@@ -767,9 +769,12 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         boolean shouldMigrateId = false;
         // try to find the user using legacy ID
         if (federatedUser == null && context.getLegacyId() != null) {
-            federatedIdentityModel = new FederatedIdentityModel(federatedIdentityModel, context.getLegacyId());
-            federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
-            shouldMigrateId = true;
+            FederatedIdentityModel legacyIdentity = new FederatedIdentityModel(federatedIdentityModel, context.getLegacyId());
+            federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, legacyIdentity);
+            if (federatedUser != null) {
+                federatedIdentityModel = legacyIdentity;
+                shouldMigrateId = true;
+            }
         }
 
         // Check if linking was requested (for example by kc_action) or if we're authenticating
@@ -939,10 +944,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             // Add federated identity link here
             if (!(federatedUser instanceof LightweightUserAdapter)) {
-                checkOverrideLink(authSession, federatedUser, providerAlias);
-
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
+                checkOverrideLink(authSession, federatedUser, federatedIdentityModel);
                 try {
                     session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
                 } catch (ModelDuplicateException de) {
@@ -989,23 +993,25 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
     }
 
-    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, String providerAlias) {
+    private void checkOverrideLink(AuthenticationSessionModel authSession, UserModel federatedUser, FederatedIdentityModel newIdentity) {
         String isOverride = authSession.getAuthNote(IdpConfirmOverrideLinkAuthenticator.OVERRIDE_LINK);
         if (!Boolean.parseBoolean(isOverride)) {
             return;
         }
 
         FederatedIdentityModel previous = session.users()
-                .getFederatedIdentity(realmModel, federatedUser, providerAlias);
+                .getFederatedIdentity(realmModel, federatedUser, newIdentity.getIdentityProvider());
         if (previous == null) {
             return;
         }
 
-        session.users().removeFederatedIdentity(realmModel, federatedUser, providerAlias);
+        session.users().removeFederatedIdentity(realmModel, federatedUser, newIdentity.getIdentityProvider());
 
         event.clone()
                 .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, newIdentity.getUserId())
                 .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previous.getUserId())
                 .success();
     }
 
@@ -1198,15 +1204,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         UserModel authenticatedUser = authSession.getAuthenticatedUser();
         authSession.setAuthenticatedUser(authenticatedUser);
+        String providerAlias = context.getIdpConfig().getAlias();
 
         this.event.client(authSession.getClient())
                 .user(authenticatedUser)
                 .detail(Details.USERNAME, authenticatedUser.getUsername());
 
-        logger.debugf("Will try to link identity provider [%s] to user [%s]", context.getIdpConfig().getAlias(), authenticatedUser.getUsername());
+        logger.debugf("Will try to link identity provider [%s] to user [%s]", providerAlias, authenticatedUser.getUsername());
 
         if (federatedUser != null && !authenticatedUser.getId().equals(federatedUser.getId())) {
-            logger.debugf("Cannot link user '%s' to identity provider '%s' . Other user '%s' already linked with the identity provider", authenticatedUser.getUsername(), context.getIdpConfig().getAlias(), federatedUser.getUsername());
+            logger.debugf("Cannot link user '%s' to identity provider '%s' . Other user '%s' already linked with the identity provider", authenticatedUser.getUsername(), providerAlias, federatedUser.getUsername());
             String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
             return redirectToErrorWhenLinkingFailed(authSession, Errors.FEDERATED_IDENTITY_EXISTS, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, idpDisplayName);
         }
@@ -1225,13 +1232,39 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return redirectToErrorWhenLinkingFailed(authSession, Errors.NOT_ALLOWED, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
         }
 
+        FederatedIdentityModel existingLinkForCurrentUser = federatedUser == null
+                ? this.session.users().getFederatedIdentity(this.realmModel, authenticatedUser, providerAlias)
+                : null;
+        boolean replacedExistingLink = false;
+        if (federatedUser == null && existingLinkForCurrentUser != null) {
+            if (!context.getIdpConfig().isAllowLinkingWithExistingFederatedIdentity()) {
+                logger.debugf("Cannot link user '%s' to identity provider '%s'. Existing link found for this user and replacement is disabled", authenticatedUser.getUsername(), providerAlias);
+                String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
+                return redirectToErrorWhenLinkingFailed(authSession, Errors.FEDERATED_IDENTITY_EXISTS, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, idpDisplayName);
+            }
+
+            // Use remove+add because some storage implementations do not update the broker user ID through updateFederatedIdentity.
+            this.session.users().removeFederatedIdentity(this.realmModel, authenticatedUser, providerAlias);
+            this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+            clearBrokerSessionTokens(authenticatedUser, providerAlias);
+            federatedUser = authenticatedUser;
+            replacedExistingLink = true;
+
+            if (isDebugEnabled()) {
+                logger.debugf("Replaced existing identity provider link [%s] for user [%s]. Previous federated user id [%s], new federated user id [%s]",
+                        providerAlias, authenticatedUser.getUsername(), existingLinkForCurrentUser.getUserId(), newModel.getUserId());
+            }
+
+            emitOverriddenLinkEvent(authenticatedUser, existingLinkForCurrentUser, newModel);
+        }
+
         if (federatedUser != null) {
-            if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
-                FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
+            if (!replacedExistingLink && Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
+                FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, providerAlias);
                 if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
                     this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
                     if (isDebugEnabled()) {
-                        logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+                        logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, providerAlias);
                     }
                 }
             }
@@ -1260,8 +1293,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // Maybe broker logout should be rather always skiped in case of broker-linking
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
         if (userSession != null && userSession.getNote(Details.IDENTITY_PROVIDER) == null) {
-            userSession.setNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());
-            userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+            String externalProvider = userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER);
+            if (!replacedExistingLink || externalProvider == null || providerAlias.equals(externalProvider)) {
+                userSession.setNote(Details.IDENTITY_PROVIDER, providerAlias);
+                userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+            }
         }
 
         authSession.setAuthNote(IdpLinkAction.IDP_LINK_STATUS, RequiredActionContext.KcActionStatus.SUCCESS.name());
@@ -1284,6 +1320,41 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                     .success();
         }
         return redirectAfterIDPLinking(authSession);
+    }
+
+    private void clearBrokerSessionTokens(UserModel user, String providerAlias) {
+        try (Stream<UserSessionModel> online = session.sessions().getUserSessionsStream(realmModel, user);
+             Stream<UserSessionModel> offline = session.sessions().getOfflineUserSessionsStream(realmModel, user)) {
+            Stream.concat(online, offline).forEach(userSession -> {
+                String legacyProvider = Optional.ofNullable(userSession.getNote(Details.IDENTITY_PROVIDER))
+                        .orElseGet(() -> userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER));
+                for (String note : ProtocolMapperUtils.BROKER_CREDENTIAL_NOTES) {
+                    String providerNote = note + ":" + providerAlias;
+                    if (userSession.getNote(providerNote) != null) {
+                        userSession.removeNote(providerNote);
+                    }
+                    if (providerAlias.equals(legacyProvider) && userSession.getNote(note) != null) {
+                        userSession.removeNote(note);
+                    }
+                }
+                if (providerAlias.equals(userSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
+                    userSession.removeNote(OIDCIdentityProvider.EXCHANGE_PROVIDER);
+                }
+            });
+        }
+    }
+
+    private void emitOverriddenLinkEvent(UserModel user, FederatedIdentityModel previousIdentity, FederatedIdentityModel newIdentity) {
+        event.clone()
+                .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .user(user)
+                .detail(Details.USERNAME, user.getUsername())
+                .detail(Details.IDENTITY_PROVIDER, newIdentity.getIdentityProvider())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, newIdentity.getUserName())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, newIdentity.getUserId())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previousIdentity.getUserName())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previousIdentity.getUserId())
+                .success();
     }
 
     private Response redirectAfterIDPLinking(AuthenticationSessionModel authSession) {
