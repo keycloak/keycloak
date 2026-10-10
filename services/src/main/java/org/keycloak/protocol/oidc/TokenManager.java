@@ -1322,10 +1322,14 @@ public class TokenManager {
             Object reuseId = oldRefreshToken.getOtherClaims().get(Constants.REUSE_ID);
             boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
             if (offlineTokenRequested) {
+                String grantType = clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class);
+                String resource = clientSessionCtx.getAttribute(OAuth2Constants.RESOURCE, String.class);
                 clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session);
                 if (oldRefreshToken.getNonce() != null) {
                     clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldRefreshToken.getNonce());
                 }
+                clientSessionCtx.setAttribute(Constants.GRANT_TYPE, grantType);
+                clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, resource);
             }
             generateRefreshToken(offlineTokenRequested);
             if (realm.isRevokeRefreshToken()) {

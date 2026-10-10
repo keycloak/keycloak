@@ -9,6 +9,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -51,6 +52,8 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -64,6 +67,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_NOT_MATCHING;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,10 +75,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = OfflineTokenRefreshTest.OfflineTokenServerConfig.class)
 public class OfflineTokenRefreshTest {
 
     private static final String OFFLINE_CLIENT_ID = "offline-client";
+    private static final String OFFLINE_RESOURCE = "urn:client:" + OFFLINE_CLIENT_ID;
     private static final String OFFLINE_CLIENT_APP_URI = "http://localhost:8080/offline-client";
     private static final String TEST_APP_REDIRECT_URI = "http://localhost:8080/auth/realms/test/app/auth";
     private String userId;
@@ -364,6 +369,58 @@ public class OfflineTokenRefreshTest {
     }
 
     @Test
+    public void offlineRefreshWithoutResourcePreservesResourceAndAudience() {
+        AccessTokenResponse initialResponse = createOfflineToken(OFFLINE_RESOURCE);
+
+        assertEquals(OFFLINE_RESOURCE, oauth.parseRefreshToken(initialResponse.getRefreshToken()).getOtherClaims().get(OAuth2Constants.RESOURCE));
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(initialResponse.getRefreshToken()).send();
+        assertEquals(200, refreshResponse.getStatusCode());
+        assertResourceAndAudience(refreshResponse);
+        assertEquals(OFFLINE_RESOURCE, oauth.parseRefreshToken(refreshResponse.getRefreshToken()).getOtherClaims().get(OAuth2Constants.RESOURCE));
+    }
+
+    @Test
+    public void offlineRefreshWithMatchingResourcePreservesResourceAndAudience() {
+        AccessTokenResponse initialResponse = createOfflineToken(OFFLINE_RESOURCE);
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(initialResponse.getRefreshToken())
+                .resource(OFFLINE_RESOURCE)
+                .send();
+        assertEquals(200, refreshResponse.getStatusCode());
+        assertResourceAndAudience(refreshResponse);
+        assertEquals(OFFLINE_RESOURCE, oauth.parseRefreshToken(refreshResponse.getRefreshToken()).getOtherClaims().get(OAuth2Constants.RESOURCE));
+    }
+
+    @Test
+    public void offlineRefreshWithMismatchedResourceReturnsInvalidTarget() {
+        AccessTokenResponse initialResponse = createOfflineToken(OFFLINE_RESOURCE);
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(initialResponse.getRefreshToken())
+                .resource("urn:client:other-client")
+                .send();
+        assertEquals(400, refreshResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_TARGET, refreshResponse.getError());
+        assertEquals(ERROR_NOT_MATCHING, refreshResponse.getErrorDescription());
+    }
+
+    private AccessTokenResponse createOfflineToken(String resource) {
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client(OFFLINE_CLIENT_ID, "secret1");
+        AccessTokenResponse response = oauth.passwordGrantRequest("test-user@localhost", "password")
+                .resource(resource)
+                .send();
+        assertEquals(200, response.getStatusCode());
+        return response;
+    }
+
+    private void assertResourceAndAudience(AccessTokenResponse response) {
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertEquals(1, accessToken.getAudience().length);
+        assertEquals(OFFLINE_CLIENT_ID, accessToken.getAudience()[0]);
+    }
+
+    @Test
     public void offlineTokenRefreshWithoutOfflineAccessScope() {
         ClientResource offlineClientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
         ClientRepresentation clientRep = offlineClientResource.toRepresentation();
@@ -635,6 +692,13 @@ public class OfflineTokenRefreshTest {
                     .realmRoles("user", "offline_access"));
 
             return builder;
+        }
+    }
+
+    public static class OfflineTokenServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.RESOURCE_INDICATORS);
         }
     }
 
