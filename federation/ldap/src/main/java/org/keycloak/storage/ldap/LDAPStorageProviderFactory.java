@@ -467,56 +467,36 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
         realm.addComponentModel(mapperModel);
 
-        // CN is typically used as RDN for Active Directory deployments
-        if (ldapConfig.getRdnLdapAttribute().equalsIgnoreCase(LDAPConstants.CN)) {
+        // "givenName" is the standard LDAP attribute for the first name (RFC 4519), regardless of vendor or edit mode
+        mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
+                UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
+                UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
+                UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
+                UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
+        realm.addComponentModel(mapperModel);
 
-            if (usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.CN)) {
+        // "cn" is mandatory for the "person" object class, so it must be filled when registering new users into LDAP,
+        // unless it is already written by the username mapper
+        if (editMode == UserStorageProvider.EditMode.WRITABLE && !usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.CN)) {
+            // CN is typically used as RDN for Active Directory deployments
+            if (ldapConfig.getRdnLdapAttribute().equalsIgnoreCase(LDAPConstants.CN)) {
 
-                // For AD deployments with "cn" as username, we will map "givenName" to first name
-                mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
-                        UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
-                        UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
+                // For AD deployments with "sAMAccountName" as username and writable, we need to map "cn" as username as well (this is needed so we can register new users from KC into LDAP)
+                mapperModel = KeycloakModelUtils.createComponentModel("username-cn", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                        UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
+                        UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
                         UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
-                        UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
+                        UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
                         UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
-                realm.addComponentModel(mapperModel);
-
             } else {
-                if (editMode == UserStorageProvider.EditMode.WRITABLE) {
 
-                    // For AD deployments with "sAMAccountName" as username and writable, we need to map "cn" as username as well (this is needed so we can register new users from KC into LDAP) and we will map "givenName" to first name.
-                    mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
-                            UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
-                            UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
-                            UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
-                            UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
-                            UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
-                    realm.addComponentModel(mapperModel);
-
-                    mapperModel = KeycloakModelUtils.createComponentModel("username-cn", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
-                            UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
-                            UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
-                            UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
-                            UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
-                            UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
-                    realm.addComponentModel(mapperModel);
-                } else {
-
-                    // For read-only LDAP, we map "cn" as full name
-                    mapperModel = KeycloakModelUtils.createComponentModel("full name", model.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
-                            FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
-                            FullNameLDAPStorageMapper.READ_ONLY, readOnly,
-                            FullNameLDAPStorageMapper.WRITE_ONLY, "false");
-                    realm.addComponentModel(mapperModel);
-                }
+                // Otherwise "cn" holds the full name, composed of first and last name. It is write-only, as the first name is read from "givenName"
+                mapperModel = KeycloakModelUtils.createComponentModel("full name", model.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                        FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
+                        FullNameLDAPStorageMapper.READ_ONLY, "false",
+                        FullNameLDAPStorageMapper.WRITE_ONLY, "true");
             }
-        } else {
-            mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
-                    UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
-                    UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
-                    UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
-                    UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
-                    UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
             realm.addComponentModel(mapperModel);
         }
 

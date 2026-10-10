@@ -18,6 +18,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: KDC Service
+givenName: KDC Service
 sn: Service
 uid: krbtgt
 userPassword: secret
@@ -36,6 +37,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: KDC Service
+givenName: KDC Service
 sn: Service
 uid: krbtgt2
 userPassword: secret
@@ -53,6 +55,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: LDAP
+givenName: LDAP
 sn: Service
 uid: ldap
 userPassword: randall
@@ -70,6 +73,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: HTTP
+givenName: HTTP
 sn: Service
 uid: HTTP
 userPassword: httppwd
@@ -87,6 +91,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: Horatio
+givenName: Horatio
 sn: Nelson
 mail: hnelson@keycloak.org
 uid: hnelson
@@ -105,6 +110,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: Java
+givenName: Java
 sn: Duke
 mail: jduke@keycloak.org
 uid: jduke
@@ -123,6 +129,7 @@ objectClass: inetOrgPerson
 objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: gsstestserver
+givenName: gsstestserver
 sn: Service
 uid: gsstestserver
 userPassword: gsstestpwd

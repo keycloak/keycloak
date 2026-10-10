@@ -235,19 +235,19 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             // assert that user "fullnameUser" is not in local DB
             Assertions.assertNull(session.users().getUserByUsername(appRealm, "fullname"));
 
-            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
+            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "givenName" attribute in LDAP (currently mapped to model firstName)
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", null, "4578");
 
-            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
+            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ("givenName"). The default write-only "full name" mapper keeps filling "cn"
             ComponentModel firstNameMapper =  LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "first name");
             String ldapFirstNameAttributeName = firstNameMapper.getConfig().getFirst(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
             appRealm.removeComponent(firstNameMapper);
 
             ComponentRepresentation firstNameMapperRepp = ModelToRepresentation.toRepresentation(session, firstNameMapper, true);
 
-            ComponentModel fullNameMapperModel = KeycloakModelUtils.createComponentModel("full name", ldapModel.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+            ComponentModel fullNameMapperModel = KeycloakModelUtils.createComponentModel("test full name", ldapModel.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
                     FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
                     FullNameLDAPStorageMapper.READ_ONLY, "false");
             appRealm.addComponentModel(fullNameMapperModel);
@@ -263,7 +263,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
             // change mapper to writeOnly
-            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "full name");
+            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "test full name");
             fullNameMapperModel.getConfig().putSingle(FullNameLDAPStorageMapper.WRITE_ONLY, "true");
             appRealm.updateComponent(fullNameMapperModel);
         });
@@ -291,7 +291,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             session.users().removeUser(appRealm, fullnameUser);
 
             // Revert mappers
-            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "full name");
+            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "test full name");
             appRealm.removeComponent(fullNameMapperModel);
         });
 
