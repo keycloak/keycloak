@@ -368,8 +368,12 @@ public final class JGroupsConfigurator {
               ))
         );
 
-        if (!udp && InfinispanUtils.isVirtualThreadsEnabled()) {
+        if (!udp) {
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
+                    // Using per-destination bundler is important to not block the communication to other nodes
+                    // if one node is shut down or becomes unreachable. For example with network policies on
+                    // Kubernetes, for a Pod that has been terminated, and further connection attempt will
+                    // lead to a network timeout that would otherwise block the flow to other nodes.
                     Map.of(
                             "bundler_type", "per-destination",
                             "bundler.use_single_sender_thread", "false"
