@@ -9,6 +9,7 @@ import { ReactNode, useMemo, type JSX } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 
 import { ScrollForm } from "../main";
+import { HiddenComponent } from "./HiddenComponent";
 import { LocaleSelector } from "./LocaleSelector";
 import { MultiInputComponent } from "./MultiInputComponent";
 import { OptionComponent } from "./OptionsComponent";
@@ -27,6 +28,7 @@ export type Options = {
 
 export type InputType =
   | "text"
+  | "hidden"
   | "textarea"
   | "select"
   | "select-radiobuttons"
@@ -57,6 +59,7 @@ export const FIELDS: {
   [type in InputType]: (props: UserProfileFieldProps) => JSX.Element;
 } = {
   text: TextComponent,
+  hidden: HiddenComponent,
   textarea: TextAreaComponent,
   select: SelectComponent,
   "select-radiobuttons": OptionComponent,
@@ -189,12 +192,13 @@ const FormField = ({
   const inputType = useMemo(() => determineInputType(attribute), [attribute]);
 
   const Component =
-    attribute.multivalued ||
-    (isMultiValue(value) && attribute.annotations?.inputType === undefined)
+    inputType !== "hidden" &&
+    (attribute.multivalued ||
+      (isMultiValue(value) && attribute.annotations?.inputType === undefined))
       ? FIELDS["multi-input"]
       : FIELDS[inputType];
 
-  if (attribute.name === "locale")
+  if (attribute.name === "locale" && inputType !== "hidden")
     return (
       <LocaleSelector
         form={form}
@@ -217,22 +221,27 @@ const FormField = ({
 
 const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
-function determineInputType(
+export function determineInputType(
   attribute: UserProfileAttributeMetadata,
 ): InputType {
-  // Always treat the root attributes as a text field.
+  const inputType = attribute.annotations?.inputType;
+
+  // Allow hidden to override any field, including root attributes and locale.
+  if (inputType === "hidden") {
+    return "hidden";
+  }
+
+  // Root attributes always render as text — other annotations are ignored.
   if (isRootAttribute(attribute.name)) {
     return "text";
   }
 
-  const inputType = attribute.annotations?.inputType;
-
-  // if we have an valid input type use that to render
+  // For non-root attributes, honour any valid annotation.
   if (isValidInputType(inputType)) {
     return inputType;
   }
 
-  // In all other cases use the default
+  // In all other cases use the default.
   return DEFAULT_INPUT_TYPE;
 }
 
