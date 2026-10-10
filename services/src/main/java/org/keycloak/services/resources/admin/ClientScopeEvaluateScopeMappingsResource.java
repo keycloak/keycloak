@@ -89,7 +89,9 @@ public class ClientScopeEvaluateScopeMappingsResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<RoleRepresentation> getGrantedScopeMappings() {
-        return getGrantedRoles(session).map(ModelToRepresentation::toBriefRepresentation);
+        return getGrantedRoles(session)
+                .filter(auth.roles()::canViewScopeMapping)
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -109,9 +111,14 @@ public class ClientScopeEvaluateScopeMappingsResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<RoleRepresentation> getNotGrantedScopeMappings() {
+        if (client.isFullScopeAllowed()) {
+            return Stream.empty();
+        }
+
         Set<RoleModel> grantedRoles = getGrantedRoles(session).collect(Collectors.toSet());
 
         return roleContainer.getRolesStream()
+                .filter(auth.roles()::canViewScopeMapping)
                 .filter(((Predicate<RoleModel>) grantedRoles::contains).negate())
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
@@ -128,7 +135,6 @@ public class ClientScopeEvaluateScopeMappingsResource {
                 clientScopes.stream().anyMatch(scopeContainer -> scopeContainer.hasScope(role));
 
         return roleContainer.getRolesStream()
-                .filter(auth.roles()::canView)
                 .filter(hasClientScope);
     }
 

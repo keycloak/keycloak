@@ -6,11 +6,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -37,10 +42,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +56,7 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,6 +65,9 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
 
     @InjectAdminClientFactory
     AdminClientFactory scopedClientFactory;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @Test
     public void testIgnoreAdminRolesGrantedViaProtocolMapper() {
@@ -248,6 +259,78 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         }
     }
 
+    @Test
+    public void testClientScopeEvaluationFiltersRealmRolesCallerCannotView() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+
+        Map<String, List<String>> attributes = Map.of("classification", List.of("sensitive"));
+        testRealm.roles().create(RoleBuilder.create().name("granted-role").attributes(attributes).build());
+        testRealm.roles().create(RoleBuilder.create().name("not-granted-role").attributes(attributes).build());
+        RoleRepresentation grantedRole = testRealm.roles().get("granted-role").toRepresentation();
+
+        ClientRepresentation evaluatedClient = createRestrictedScopeClient(testRealm, "evaluated-client");
+        testRealm.clients().get(evaluatedClient.getId()).getScopeMappings().realmLevel().add(List.of(grantedRole));
+
+        createDelegatedAdmin(testRealm, "view-clients-admin", AdminRoles.VIEW_CLIENTS);
+        createDelegatedAdmin(testRealm, "view-realm-admin", AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_REALM);
+
+        runAs(realmName, "view-clients-admin", userClient -> {
+            assertForbidden("view-clients admin must not view a realm role directly",
+                    () -> userClient.realm(realmName).rolesById().getRole(grantedRole.getId()));
+            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "granted")));
+                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "not-granted")));
+            }
+        });
+
+        runAs(realmName, "view-realm-admin", userClient -> {
+            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+                List<RoleRepresentation> granted = evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "granted");
+                Set<String> grantedNames = toNames(granted);
+                assertTrue(grantedNames.contains("granted-role"));
+                assertFalse(grantedNames.contains("not-granted-role"));
+                assertNull(granted.stream().filter(role -> "granted-role".equals(role.getName()))
+                        .findFirst().orElseThrow().getAttributes());
+
+                List<RoleRepresentation> notGranted = evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "not-granted");
+                Set<String> notGrantedNames = toNames(notGranted);
+                assertTrue(notGrantedNames.contains("not-granted-role"));
+                assertFalse(notGrantedNames.contains("granted-role"));
+                assertNull(notGranted.stream().filter(role -> "not-granted-role".equals(role.getName()))
+                        .findFirst().orElseThrow().getAttributes());
+            }
+        });
+
+        ClientRepresentation update = testRealm.clients().get(evaluatedClient.getId()).toRepresentation();
+        update.setFullScopeAllowed(true);
+        testRealm.clients().get(evaluatedClient.getId()).update(update);
+
+        runAs(realmName, "view-clients-admin", userClient -> {
+            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "granted")));
+                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "not-granted")));
+            }
+        });
+
+        runAs(realmName, "view-realm-admin", userClient -> {
+            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+                Set<String> grantedNames = toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "granted"));
+                assertTrue(grantedNames.contains("granted-role"));
+                assertTrue(grantedNames.contains("not-granted-role"));
+                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                        evaluatedClient.getId(), realmName, "not-granted")));
+            }
+        });
+    }
+
     private void createDelegatedAdmin(RealmResource realm, String username, String... adminRoles) {
         createUser(realm, username);
         for (String adminRole : adminRoles) {
@@ -262,6 +345,20 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
 
     private static Set<String> toNames(List<RoleRepresentation> roles) {
         return roles == null ? Set.of() : roles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
+    private List<RoleRepresentation> evaluateScopeMappings(Client httpClient, Keycloak userClient, String realmName,
+                                                            String evaluatedClientId, String roleContainerId, String result) {
+        WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                .path("admin").path("realms").path(realmName)
+                .path("clients").path(evaluatedClientId)
+                .path("evaluate-scopes").path("scope-mappings").path(roleContainerId).path(result)
+                .register(new BearerAuthFilter(userClient.tokenManager()));
+
+        try (Response response = target.request(MediaType.APPLICATION_JSON).get()) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return response.readEntity(new GenericType<List<RoleRepresentation>>() {});
+        }
     }
 
     @Test
