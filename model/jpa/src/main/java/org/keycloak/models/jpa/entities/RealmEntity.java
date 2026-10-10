@@ -51,8 +51,8 @@ import org.hibernate.annotations.Nationalized;
 @Table(name="REALM")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm"),
-        @NamedQuery(name="getRealmIdsWithNameContaining", query="select realm.id from RealmEntity realm where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%') or LOWER(realm.displayName) like CONCAT('%', LOWER(:search), '%')"),
+        @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm order by realm.name"),
+        @NamedQuery(name="getRealmIdsWithNameContaining", query="select realm.id from RealmEntity realm where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%') or LOWER(realm.displayName) like CONCAT('%', LOWER(:search), '%') order by realm.name"),
         @NamedQuery(name="getRealmIdByName", query="select realm.id from RealmEntity realm where realm.name = :name"),
         @NamedQuery(name="getRealmIdsWithProviderType", query="select distinct c.realm.id from ComponentEntity c where c.providerType = :providerType"),
 })
