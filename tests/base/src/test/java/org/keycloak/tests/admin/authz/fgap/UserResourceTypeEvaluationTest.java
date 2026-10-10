@@ -59,6 +59,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROU
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -314,6 +315,32 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
             // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/792b673f49d5faeed8b3bb2c61fb4a3b404df695/services/src/main/java/org/keycloak/services/resources/admin/RoleMapperResource.java#L243
             assertThat(ex, instanceOf(NotFoundException.class));
         }
+    }
+
+    @Test
+    public void testMapRolesNotDeniedByPermissionForAnotherScope() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserRepresentation userBob = createUser("bob");
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation allowBob = createUserPolicy(realm, adminPermissionsClient, "Only Bob User Policy", userBob.getId());
+
+        RoleRepresentation testRole = new RoleRepresentation();
+        testRole.setName("testRole");
+        realm.admin().roles().create(testRole);
+        realm.cleanup().add(r -> r.roles().get("testRole").remove());
+        RoleRepresentation role = realm.admin().roles().get("testRole").toRepresentation();
+
+        // myadmin can map any role, to any user
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.ROLES_RESOURCE_TYPE, allowMyAdmin, Set.of(MAP_ROLE));
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(MAP_ROLES));
+
+        // an all-users permission for a different scope, whose policy does not match myadmin
+        createAllPermission(adminPermissionsClient, usersType, allowBob, Set.of(MANAGE_GROUP_MEMBERSHIP));
+
+        // must not affect map-roles
+        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(role));
+        assertTrue(realm.admin().users().get(userAlice.getId()).roles().realmLevel().listAll().stream()
+                .anyMatch(r -> "testRole".equals(r.getName())));
     }
 
     @Test
