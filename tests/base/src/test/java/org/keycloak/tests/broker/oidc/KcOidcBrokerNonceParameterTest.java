@@ -1,17 +1,12 @@
 package org.keycloak.tests.broker.oidc;
 
-import java.util.Map;
-
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -19,6 +14,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -37,6 +34,9 @@ public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
             config = NonceConsumerRealmConfig.class)
     ManagedRealm consumerRealm;
 
+    @InjectRunOnServer(realmRef = "consumer")
+    RunOnServerClient runOnServer;
+
     @Test
     public void testNonceSet() {
         disableUpdateProfileOnFirstLogin();
@@ -49,10 +49,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
         IDToken idToken = toIdToken(response.getIdToken());
 
         assertEquals("123456", idToken.getNonce());
-        String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        assertNotNull(federatedIdTokenString);
-        IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        assertNotNull(federatedIdToken.getNonce());
+        assertNotNull(brokeredIdToken(idToken.getSessionId()).getNonce());
     }
 
     @Test
@@ -71,10 +68,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
         IDToken idToken = toIdToken(response.getIdToken());
 
         assertNull(idToken.getNonce());
-        String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        assertNotNull(federatedIdTokenString);
-        IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        assertNull(federatedIdToken.getNonce());
+        assertNull(brokeredIdToken(idToken.getSessionId()).getNonce());
     }
 
     private AuthorizationEndpointResponse doLoginSocialWithNonce(String nonce) {
@@ -83,6 +77,22 @@ public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
         loginPage.fillLogin(getUserLogin(), getUserPassword());
         loginPage.submit();
         return oauth.parseLoginResponse();
+    }
+
+    /**
+     * The ID token the identity provider issued is held as a session note. It is a credential of the external provider,
+     * so it cannot be read through a protocol mapper and has to be read from the session directly.
+     */
+    private IDToken brokeredIdToken(String sessionId) {
+        String realmName = consumerRealm.getName();
+        String encoded = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            return userSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + IDP_OIDC_ALIAS);
+        }, String.class);
+
+        assertNotNull(encoded, "Identity provider did not store an ID token in the user session");
+        return toIdToken(encoded);
     }
 
     private IDToken toIdToken(String encoded) {
@@ -96,24 +106,11 @@ public class KcOidcBrokerNonceParameterTest extends AbstractKcOidcBrokerTest {
     static class NonceConsumerRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            ProtocolMapperRepresentation sessionNoteMapper = new ProtocolMapperRepresentation();
-            sessionNoteMapper.setName(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-            sessionNoteMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            sessionNoteMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
-            sessionNoteMapper.setConfig(Map.of(
-                    ProtocolMapperUtils.USER_SESSION_NOTE,
-                    OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + IDP_OIDC_ALIAS,
-                    OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME,
-                    OIDCIdentityProvider.FEDERATED_ID_TOKEN,
-                    OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN,
-                    Boolean.TRUE.toString()));
-
             return configureConsumerRealm(realm,
                     createOidcIdentityProvider())
                     .clients(ClientBuilder.create("consumer-client")
                             .publicClient()
-                            .redirectUris("*")
-                            .protocolMappers(sessionNoteMapper));
+                            .redirectUris("*"));
         }
     }
 }

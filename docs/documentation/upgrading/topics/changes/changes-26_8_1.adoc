@@ -47,6 +47,24 @@ You can use the following provider option to increase or decrease the limit.
 bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
 ----
 
+=== Session note mappers no longer expose identity provider tokens
+
+When a user authenticates through an external identity provider, {project_name} stores the tokens issued by that provider as notes on the user session.
+The supported way to retrieve them is the broker token endpoint; its authorization requirements depend on the enabled Identity Brokering API version.
+Previously, the *User Session Note* mapper copied any session note into a token claim without checking what the note held.
+An administrator who only held the `manage` permission on a single client could therefore configure a mapper for `FEDERATED_ACCESS_TOKEN` and receive the upstream token of every user who logged in to that client, bypassing the broker token endpoint's authorization checks entirely.
+The same applied to the SAML *User Session Note* mapper, which copied the note into a SAML attribute.
+
+Both mappers now refuse to read the session notes that hold identity provider tokens: `FEDERATED_ACCESS_TOKEN`, `FEDERATED_REFRESH_TOKEN`, `FEDERATED_TOKEN_EXPIRATION`, and `FEDERATED_ID_TOKEN`, together with the per-provider forms such as `FEDERATED_ACCESS_TOKEN:my-idp`.
+Creating or updating a client with such a mapper is rejected with a `400 Bad Request`, and so is importing a realm that contains one.
+A mapper that already exists, because it was configured before upgrading, is retained but no longer produces a claim or an attribute, and {project_name} logs a warning naming the mapper and the client.
+
+Existing deployments continue to start because the mappers are read from the database rather than imported, but a client with such a mapper cannot be updated until the mapper is removed.
+If you provision realms from an exported JSON file, remove the mapper from the file before importing it again.
+
+After upgrading, if any of your applications read an identity provider token from a token claim or a SAML attribute, change them to call the broker token endpoint; its authorization requirements depend on the enabled Identity Brokering API version.
+For more details, see the link:{adminguide_link}#retrieving-external-idp-tokens[Retrieving external IDP tokens] section of the {adminguide_name}.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
