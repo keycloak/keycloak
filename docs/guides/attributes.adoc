@@ -29,6 +29,7 @@
 :adminguide_name: Server Administration Guide
 :adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
+:adminguide_x509: {adminguide_link}#_x509
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
