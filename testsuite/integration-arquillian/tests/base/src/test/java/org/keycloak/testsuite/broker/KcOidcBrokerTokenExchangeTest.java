@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,11 +35,15 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
+import org.keycloak.broker.provider.BrokeredUserChangeTracker;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -50,14 +55,19 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
@@ -68,6 +78,7 @@ import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -88,6 +99,9 @@ import static org.hamcrest.Matchers.nullValue;
  */
 @EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
 public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -116,6 +130,39 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
                 assertThat(response.getStatus(), equalTo(200));
             }
         }
+    }
+
+    // Tests the changes made to the existing user by the identity provider mappers are reported
+    @Test
+    public void testExternalInternalTokenExchangeWithExistingUserReportsChanges() throws Exception {
+        assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
+
+        RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
+        ClientRepresentation brokerApp = providerRealm.clients().findByClientId("brokerapp").get(0);
+        ProtocolMappersResource protocolMappers = providerRealm.clients().get(brokerApp.getId()).getProtocolMappers();
+        ProtocolMapperRepresentation hardCodedClaim = protocolMappers.getMappers().stream()
+                .filter(mapper -> "hard-coded".equals(mapper.getName()))
+                .findFirst().orElseThrow();
+        hardCodedClaim.getConfig().put(HardcodedClaim.CLAIM_VALUE, "changed");
+        protocolMappers.update(hardCodedClaim.getId(), hardCodedClaim);
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
+        String userId = realmsResouce().realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId();
+        events.clear();
+
+        try (Client httpClient = AdminClientUtil.createResteasyClient();
+             Response response = sendExternalInternalTokenExchangeRequest(getConsumerTokenEndpoint(httpClient), tokenResponse.getIdToken(), OAuth2Constants.ID_TOKEN_TYPE)) {
+            assertThat(response.getStatus(), equalTo(200));
+        }
+
+        List<EventRepresentation> updateEvents = BrokerTestTools.pollProfileUpdateEvents(events, userId);
+        Assertions.assertEquals(1, updateEvents.size());
+        EventAssertion.assertSuccess(updateEvents.get(0))
+                .type(EventType.UPDATE_PROFILE)
+                .details(Details.CONTEXT, BrokeredUserChangeTracker.IDP_SYNC_CONTEXT)
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.PREF_PREVIOUS + "mapped-from-claim", "hard-coded")
+                .details(Details.PREF_UPDATED + "mapped-from-claim", "changed");
     }
 
     @Test
