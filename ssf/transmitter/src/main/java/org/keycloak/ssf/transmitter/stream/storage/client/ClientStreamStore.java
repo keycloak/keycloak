@@ -75,6 +75,11 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_USER_SUBJECT_FORMAT_KEY = "ssf.userSubjectFormat";
     public static final String SSF_DEFAULT_SUBJECTS_KEY = "ssf.defaultSubjects";
     public static final String SSF_AUTO_NOTIFY_ON_LOGIN_KEY = "ssf.autoNotifyOnLogin";
+    /**
+     * Which subjects the receiver may add via {@code subjects/add}.
+     * See {@link org.keycloak.ssf.transmitter.subject.ReceiverSubjectAddPolicy}.
+     */
+    public static final String SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY = "ssf.receiverSubjectAddPolicy";
     public static final String SSF_REQUIRE_SERVICE_ACCOUNT_KEY = "ssf.requireServiceAccount";
     public static final String SSF_REQUIRED_ROLE_KEY = "ssf.requiredRole";
     public static final String SSF_MIN_VERIFICATION_INTERVAL_KEY = "ssf.minVerificationInterval";

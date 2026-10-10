@@ -211,6 +211,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.userSubjectFormat",
       "ssf.defaultSubjects",
       "ssf.autoNotifyOnLogin",
+      "ssf.receiverSubjectAddPolicy",
       "ssf.requireServiceAccount",
       "ssf.requiredRole",
       "ssf.allowEmitEvents",
