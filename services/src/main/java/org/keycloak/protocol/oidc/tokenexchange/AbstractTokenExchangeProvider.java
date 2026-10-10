@@ -458,7 +458,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         } catch (IdentityBrokerException ignore) {
         }
 
-        return session.identityProviders().getAllStream(IdentityProviderQuery.type(EXCHANGE_EXTERNAL_TOKEN)).map(idpModel -> {
+        return session.identityProviders().getAllStream(IdentityProviderQuery.type(EXCHANGE_EXTERNAL_TOKEN).with(IdentityProviderModel.ENABLED, "true")).map(idpModel -> {
             IdentityProvider<?> idp = IdentityBrokerService.getIdentityProvider(session, idpModel.getAlias());
 
             if (idp instanceof ExchangeExternalToken external && external.isIssuer(alias, formParams)) {
