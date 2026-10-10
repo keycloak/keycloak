@@ -74,7 +74,7 @@ sso__realm_ldap__credential
 ----
 Note the doubled underscores between __sso__ and __realm__ and also between __ldap__ and __credential__.
 
-To learn more about key resolvers, see link:{adminguide_link}#_vault-key-resolvers[Key resolvers section in the Server Administration guide].
+To learn more about key resolvers, see the link:{adminguide_vault}[Key resolvers chapter in the Server Administration guide].
 
 == Example: Use an LDAP bind credential secret in the Admin Console
 
