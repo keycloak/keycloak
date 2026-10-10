@@ -458,7 +458,7 @@ public class DescriptionConverter {
         }
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
-        response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+        response.setBackchannelLogoutRevokeOfflineTokens(config.getBackchannelLogoutRevokeOfflineTokens());
         if (config.isUseDPoP()) {
             response.setDpopBoundAccessTokens(Boolean.TRUE);
         } else {
