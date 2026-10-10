@@ -660,6 +660,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
             }
 
+            // check the client is allowed to retrieve tokens from this provider
+            OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
+            if (!oidcClient.getExternalTokenEnabled() || !oidcClient.getExternalAllowedIdentityProviders().contains(providerAlias)) {
+                event.detail(Details.REASON, "Client not allowed to retrieve token for the provider");
+                event.error(Errors.NOT_ALLOWED);
+                return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not allowed to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
+            }
+
             UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
             IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
             if (Booleans.isFalse(identityProviderConfig.isStoreToken())) {
