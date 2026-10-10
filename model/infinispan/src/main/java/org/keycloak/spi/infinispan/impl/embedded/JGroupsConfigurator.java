@@ -372,7 +372,7 @@ public final class JGroupsConfigurator {
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
                     // Using per-destination bundler is important to not block the communication to other nodes
                     // if one node is shut down or becomes unreachable. For example with network policies on
-                    // Kubernetes, for a Pod that has been terminated, and further connection attempt will
+                    // Kubernetes, for a Pod that has been terminated, any further connection attempt will
                     // lead to a network timeout that would otherwise block the flow to other nodes.
                     Map.of(
                             "bundler_type", "per-destination",
