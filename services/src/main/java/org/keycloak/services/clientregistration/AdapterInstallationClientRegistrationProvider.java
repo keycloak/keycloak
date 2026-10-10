@@ -60,7 +60,8 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
         auth.requireView(client, true);
 
         ClientManager clientManager = new ClientManager(new RealmManager(session));
-        Object rep = clientManager.toInstallationRepresentation(session.getContext().getRealm(), client, session.getContext().getUri().getBaseUri());
+        Object rep = clientManager.toInstallationRepresentation(session.getContext().getRealm(), client,
+                session.getContext().getUri().getBaseUri(), !auth.isViewOnly());
 
         event.client(client.getClientId()).success();
         return Response.ok(rep).build();
