@@ -58,6 +58,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -214,6 +215,20 @@ public class AuthenticationManager {
         long currentTime = Time.currentTimeMillis();
         long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm);
+        if (!userSession.isOffline()) {
+            String brokerSessionNotAfter = userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_NOT_ON_OR_AFTER);
+            if (brokerSessionNotAfter != null) {
+                try {
+                    long upstreamExpiry = TimeUnit.SECONDS.toMillis(Long.parseLong(brokerSessionNotAfter));
+                    if (lifespan == -1L || upstreamExpiry < lifespan) {
+                        lifespan = upstreamExpiry;
+                    }
+                } catch (NumberFormatException e) {
+                    logger.debugv("Session {0}: invalid broker session expiry note value: {1}",
+                            userSession.getId(), brokerSessionNotAfter);
+                }
+            }
+        }
         long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()), realm);
 
