@@ -40,7 +40,7 @@
            }
            </#outputformat>
         </script>
-        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
+        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!(properties.kcButtonDefaultClass!'')} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
             ${msg("webauthn-doAuthenticate")}
         </a>
     </#if>

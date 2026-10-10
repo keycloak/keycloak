@@ -16,14 +16,14 @@
                 </div>
 
                 <@passwordCommons.logoutOtherSessions/>
-
-                <@buttons.actionGroup horizontal=true>
-                    <@buttons.button id="kc-submit" label="doSubmit"/>
-                    <#if isAppInitiatedAction??>
-                        <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
-                    </#if>
-                </@buttons.actionGroup>
             </div>
+
+            <@buttons.actionGroup horizontal=true>
+                <@buttons.button id="kc-submit" label="doSubmit"/>
+                <#if isAppInitiatedAction??>
+                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
+                </#if>
+            </@buttons.actionGroup>
         </form>
     </#if>
 </@layout.registrationLayout>

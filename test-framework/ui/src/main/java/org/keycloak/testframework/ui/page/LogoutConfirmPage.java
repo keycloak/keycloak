@@ -29,7 +29,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LogoutConfirmPage extends AbstractLoginPage {
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "kc-logout")
     private WebElement confirmLogoutButton;
 
     public LogoutConfirmPage(ManagedWebDriver driver) {

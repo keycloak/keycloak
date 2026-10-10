@@ -130,7 +130,7 @@
                     <div class="${properties.kcLabelWrapperClass!} subtitle">
                         <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="${properties.kcTitleWrapperClass!'col-md-10'}">
                         <h1 id="kc-page-title"><#nested "header"></h1>
                     </div>
                 </div>
@@ -143,7 +143,7 @@
                     <div class="${properties.kcLabelWrapperClass!} subtitle">
                         <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
                     </div>
-                    <div class="col-md-10">
+                    <div class="${properties.kcTitleWrapperClass!'col-md-10'}">
                         <#nested "show-username">
                         <div id="kc-username" class="${properties.kcFormGroupClass!}">
                             <label id="kc-attempted-username">${auth.attemptedUsername}</label>

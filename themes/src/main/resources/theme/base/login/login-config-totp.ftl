@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
     <#if section = "header">
@@ -53,7 +54,7 @@
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">${msg("authenticatorCode")}</label> <span class="required">*</span>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("authenticatorCode")} <span class="required">*</span></label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="totp" name="totp" autocomplete="one-time-code" class="${properties.kcInputClass!}"
@@ -75,7 +76,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="userLabel" class="${properties.kcLabelClass!}">${msg("loginTotpDeviceName")}</label> <#if totp.otpCredentials?size gte 1><span class="required">*</span></#if>
+                    <label for="userLabel" class="${properties.kcLabelClass!}">${msg("loginTotpDeviceName")}<#if totp.otpCredentials?size gte 1> <span class="required">*</span></#if></label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
@@ -96,19 +97,10 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <#if isAppInitiatedAction??>
-                        <input type="submit"
-                               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-                               id="saveTOTPBtn" value="${msg("doSubmit")}"
-                        />
-                        <button type="submit"
-                                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                                id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
-                        </button>
+                        <@buttons.button id="saveTOTPBtn" label="doSubmit" fullWidth=false class=["kcButtonLargeClass"] value=msg("doSubmit") />
+                        <@buttons.button id="cancelTOTPBtn" name="cancel-aia" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" />
                     <#else>
-                        <input type="submit"
-                               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                               id="saveTOTPBtn" value="${msg("doSubmit")}"
-                        />
+                        <@buttons.button id="saveTOTPBtn" label="doSubmit" class=["kcButtonLargeClass"] value=msg("doSubmit") />
                     </#if>
                 </div>
             </div>
