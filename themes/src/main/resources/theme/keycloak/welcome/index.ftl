@@ -12,7 +12,7 @@
       <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
     </#if>
     <#if properties.darkMode?boolean>
-      <script type="module" async blocking="render">
+      <script type="module" async blocking="render" nonce="${nonce.value}">
           <#outputformat "JavaScript">
           const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

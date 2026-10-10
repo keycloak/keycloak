@@ -108,7 +108,7 @@
         </#if>
     </table>
 
-    <script>
+    <script nonce="${nonce.value}">
         function testUrl(url, responseId) {
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
