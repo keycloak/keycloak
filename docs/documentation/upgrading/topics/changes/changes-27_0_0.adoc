@@ -76,6 +76,11 @@ For example, an administrator with the `view-clients` role but without the `view
 With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
 In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
 
+// https://github.com/keycloak/keycloak/issues/53555
+The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}/evaluate-scopes/scope-mappings/\{role-container}/granted` and `not-granted`) apply the same role visibility rules under both legacy RBAC and fine-grained admin permissions V2.
+After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
+Callers allowed only to map roles to client scopes can still see those roles without their attributes, and roles in the effective scope appear under `granted` rather than `not-granted`.
+
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790
 
