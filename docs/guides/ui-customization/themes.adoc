@@ -514,7 +514,7 @@ and resources.
 
 By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
 
-With internationalization enabled, the locale is resolved according to the logic described in the https://www.keycloak.org/docs/latest/server_admin/#_user_locale_selection[Server Administration documentation].
+With internationalization enabled, the locale is resolved according to the logic described in the {adminguide_user_locale}[Server Administration documentation].
 
 This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
 
@@ -523,4 +523,4 @@ The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, whi
 Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realm's default language.
 
 === Additional resources for Locale selector
-* For more details on creating and deploying a custom provider, see https://www.keycloak.org/docs/latest/server_development/index.html#_providers[Service Provider Interfaces].
+* For more details on creating and deploying a custom provider, see {server_providers}[Service Provider Interfaces].
