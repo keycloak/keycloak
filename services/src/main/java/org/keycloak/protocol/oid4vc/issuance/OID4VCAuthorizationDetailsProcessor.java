@@ -55,6 +55,7 @@ import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
@@ -166,7 +167,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         // https://github.com/keycloak/keycloak/pull/49958
         OID4VCAuthorizationDetail cloned = authzDetail.clone();
         cloned.setIssuedCredentialId(null);
-        cloned.setCredentialsOfferId(null);
         return cloned;
     }
 
@@ -261,7 +261,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             throw getInvalidRequestException("User '" + user.getUsername() + "' does not have verifiable credential '" + credScope.getCredentialConfigurationId() + "'.");
         }
 
-        OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope, null);
+        OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
         return responseAuthDetail;
@@ -296,7 +296,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                 // Generate `authorization_details` for the AccessToken Response
                 // This is the same logic as we use when a credential offer is created
                 //
-                OID4VCAuthorizationDetail authDetail = generateResponseAuthorizationDetails(credScope, null);
+                OID4VCAuthorizationDetail authDetail = generateResponseAuthorizationDetails(credScope);
                 authorizationDetails.add(authDetail);
             }
         }
@@ -345,6 +345,28 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         // Create issued-credential and set its ID in authorization_details
         IssuedVerifiableCredentialModel issuedCredential = createIssuedVerifiableCredential(userSession.getUser(), clientSessionCtx.getClientSession().getClient(), credentialScope);
         oid4vcAuthzDetailResponse.setIssuedCredentialId(issuedCredential.getId());
+
+        getCredentialOfferState(clientSessionCtx);
+    }
+
+    @Override
+    public void afterTokenResponseCreated(ClientSessionContext clientSessionCtx,
+                                          OID4VCAuthorizationDetail oid4vcAuthzDetailResponse) {
+        if (!AUTHORIZATION_CODE.equals(clientSessionCtx.getAttribute(Constants.GRANT_TYPE, String.class))
+                || !isLastOid4vcAuthorizationDetail(clientSessionCtx, oid4vcAuthzDetailResponse)) {
+            return;
+        }
+
+        String credentialOfferId = clientSessionCtx.getAttribute(CREDENTIALS_OFFER_ID_ATTR, String.class);
+        if (credentialOfferId == null) {
+            return;
+        }
+
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+        CredentialOfferState offerState = offerStorage.getOfferStateById(credentialOfferId);
+        if (offerState != null) {
+            offerStorage.removeOfferState(offerState);
+        }
     }
 
     @Override
@@ -352,10 +374,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         // No cleanup needed
     }
 
-    public OID4VCAuthorizationDetail generateResponseAuthorizationDetails(CredentialScopeModel credScope, String credOffersId) {
+    public OID4VCAuthorizationDetail generateResponseAuthorizationDetails(CredentialScopeModel credScope) {
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setCredentialsOfferId(credOffersId);
         authDetail.setType(OPENID_CREDENTIAL);
 
         String credConfigId = Optional.ofNullable(credScope.getCredentialConfigurationId())
@@ -423,10 +444,19 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         if (credOfferId != null) {
+            // For the authorization-code flow, issuer_state is available when the token
+            // request is processed. Retain the derived identifier only for the remainder of
+            // this server-side request so the post-processing hook can consume the offer.
+            clientSessionCtx.setAttribute(CREDENTIALS_OFFER_ID_ATTR, credOfferId);
+
             String auxCredOfferId = credOfferId;
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
-                    .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
+                    .orElseThrow(() -> getInvalidRequestException("No credential offer state for: " + auxCredOfferId));
+
+            if (offerState.isExpired()) {
+                throw getInvalidRequestException("Credential offer has already expired");
+            }
 
             // Check same login user as the user for which the credential offer is targeted
             String offerUserId = offerState.getTargetUserId();
@@ -444,5 +474,23 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return offerState;
+    }
+
+    private boolean isLastOid4vcAuthorizationDetail(ClientSessionContext clientSessionCtx,
+                                                     OID4VCAuthorizationDetail authorizationDetail) {
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetails = clientSessionCtx.getAttribute(
+                Constants.AUTHORIZATION_DETAILS_RESPONSE, List.class);
+        if (authorizationDetails == null) {
+            return true;
+        }
+
+        for (int i = authorizationDetails.size() - 1; i >= 0; i--) {
+            AuthorizationDetailsJSONRepresentation detail = authorizationDetails.get(i);
+            if (OPENID_CREDENTIAL.equals(detail.getType())) {
+                return detail == authorizationDetail;
+            }
+        }
+
+        return true;
     }
 }

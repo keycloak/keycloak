@@ -457,10 +457,14 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 
-        // Attempt to fetch the credential offer again after it has been consumed
-        CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
-        assertEquals("invalid_credential_offer_request", res.getError());
-        assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
+        // The offer is retained so the pre-authorized-code handler can report a replay.
+        CredentialOfferResponse offerResponse = wallet.credentialsOfferRequest(ctx, offerURI).send();
+        assertEquals(HttpStatus.SC_OK, offerResponse.getStatusCode());
+
+        AccessTokenResponse replayResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertFalse(replayResponse.isSuccess(), "Reusing a pre-authorized code must fail");
+        assertEquals("invalid_grant", replayResponse.getError());
+        assertEquals("Pre-authorized code has already been used", replayResponse.getErrorDescription());
     }
 
     @Test

@@ -35,8 +35,6 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
 public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation implements Cloneable {
 
     public static final String CLAIMS = "claims";
-    public static final String CREDENTIALS_OFFER_ID = "credentials_offer_id";
-
     /**
      * Access token (and refresh token) claim with reference to the issued-credential ID. Can be used to link issued-credential
      * with token to be able to check at credential-request (or refresh-token request) if particular issued-credential still exists
@@ -60,9 +58,6 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     @JsonProperty(CLAIMS)
     private List<ClaimsDescription> claims;
 
-    @JsonProperty(CREDENTIALS_OFFER_ID)
-    private String credentialsOfferId;
-
     @JsonProperty(ISSUED_CREDENTIAL_ID)
     private String issuedCredentialId;
 
@@ -80,14 +75,6 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
 
     public void setCredentialIdentifiers(List<String> credentialIdentifiers) {
         this.credentialIdentifiers = credentialIdentifiers;
-    }
-
-    public String getCredentialsOfferId() {
-        return credentialsOfferId;
-    }
-
-    public void setCredentialsOfferId(String credentialsOfferId) {
-        this.credentialsOfferId = credentialsOfferId;
     }
 
     public String getIssuedCredentialId() {
@@ -120,14 +107,13 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         OID4VCAuthorizationDetail that = (OID4VCAuthorizationDetail) o;
         return Objects.equals(credentialConfigurationId, that.credentialConfigurationId)
                 && Objects.equals(credentialIdentifiers, that.credentialIdentifiers)
-                && Objects.equals(credentialsOfferId, that.credentialsOfferId)
                 && Objects.equals(issuedCredentialId, that.issuedCredentialId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(),
-                credentialConfigurationId, credentialIdentifiers, credentialsOfferId, issuedCredentialId);
+                credentialConfigurationId, credentialIdentifiers, issuedCredentialId);
     }
 
     @Override
