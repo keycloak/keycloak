@@ -380,6 +380,10 @@ Admin and account console use a single template `index.ftl` for rendering the ap
 
 For a list of templates in other theme types look at the `theme/base/<THEME_TYPE>` directory in the JAR file at `$KEYCLOAK_HOME/lib/lib/main/org.keycloak.keycloak-themes-<VERSION>.jar`.
 
+The OAuth consent template (`login-oauth-grant.ftl`) provides the validated redirect URI for the current authentication session as
+`oauth.redirectUri`. Themes can use it to show the callback host or identify localhost callbacks. Avoid reading the redirect URI
+from browser-provided query parameters.
+
 .Procedure
 
 . Copy the template from the base theme to your own theme.
