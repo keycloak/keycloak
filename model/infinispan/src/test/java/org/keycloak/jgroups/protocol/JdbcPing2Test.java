@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -23,6 +25,7 @@ import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 
+import org.awaitility.Awaitility;
 import org.hamcrest.CoreMatchers;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
@@ -68,8 +71,8 @@ public class JdbcPing2Test {
     }
 
     /**
-     * 100 iterations would run approx 8 minutes and should complete successfully,
-     * with an average of 3.3 seconds in converging.
+     * 100 iterations would run approx 3:15 minutes and should complete successfully,
+     * with an average of 1.25 seconds in converging.
      */
     @Test
     @Ignore
@@ -233,16 +236,38 @@ public class JdbcPing2Test {
 
                 // Simulate a row change to trigger a cleanup of the table.
                 jdbcPing.handleView(jdbcPing.getTransport().view(), jdbcPing.getTransport().view(), true);
-                try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
-                    ps.setString(1, jdbcPing.getClusterName());
-                    try (ResultSet resultSet = ps.executeQuery()) {
-                        resultSet.last();
-                        assertThat(resultSet.getRow(), CoreMatchers.equalTo(1));
+                // The cleanup runs asynchronously after the initial view
+                Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+                    try (PreparedStatement ps = con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
+                        ps.setString(1, jdbcPing.getClusterName());
+                        try (ResultSet resultSet = ps.executeQuery()) {
+                            resultSet.last();
+                            assertThat(resultSet.getRow(), CoreMatchers.equalTo(1));
+                        }
                     }
-                }
+                });
             }
         } finally {
             Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void testViewChangeDoesNotWaitForDatabase() throws Exception {
+        try (JChannel channel = createChannel("0")) {
+            channel.connect("ISPN");
+            KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = channel.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            CountDownLatch latch = new CountDownLatch(1);
+            jdbcPing.blockConnections = latch;
+            try {
+                var view = jdbcPing.getTransport().view();
+                var future = CompletableFuture.runAsync(() -> jdbcPing.handleView(view, view, true));
+                // A later view change returns although the database does not answer
+                future.get(5, TimeUnit.SECONDS);
+            } finally {
+                latch.countDown();
+                jdbcPing.blockConnections = null;
+            }
         }
     }
 

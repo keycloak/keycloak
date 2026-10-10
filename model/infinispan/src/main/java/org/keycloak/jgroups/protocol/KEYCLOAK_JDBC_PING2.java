@@ -29,11 +29,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -80,6 +84,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
     private volatile Future<?> healthCheckTask;
+    private final Queue<Runnable> viewChanges = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean viewChangeDrainActive = new AtomicBoolean();
+    private final ReentrantLock viewChangeLock = new ReentrantLock();
+    private volatile boolean stopped = true;
     private volatile Runnable onHealthRestored;
 
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
@@ -151,15 +159,108 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         }
     }
 
+    /**
+     * Updates the discovery table on a view change, asynchronously unless a member joined.
+     * <p>
+     * {@code FILE_PING.down(VIEW_CHANGE)} calls this method, and JGroups' {@code GMS} passes the view up the stack
+     * (to Infinispan's {@code receiveClusterView}) only after it returned.
+     * It also sends the {@code VIEW_ACK} only after that, and the coordinator waits for it
+     * ({@code view_ack_collection_timeout}, 2 seconds by default) before it processes the next membership change.
+     * Doing the database work here would let a slow or unavailable database delay the view installation on this node,
+     * and with it the topology handling and the next membership change in the cluster.
+     * A hung statement is bounded only by the network timeout set in {@link #getConnection()}.
+     * <p>
+     * The discovery table is only needed by nodes that join or merge, and it is rewritten on every find
+     * ({@code write_data_on_find}). A slightly outdated table is therefore corrected eventually, and a joining node
+     * contacts the oldest entry and doesn't become the coordinator right away.
+     * <p>
+     * A view with joiners (including the initial view) is handled synchronously: the nodes need to learn the physical
+     * addresses of the new members before the view is used, otherwise messages are dropped with
+     * "JGRP000032: no physical address for ...". The coordinator also writes the new members to the table synchronously.
+     * Views in which members only left are handled asynchronously.
+     * <p>
+     * The work of consecutive view changes runs one after the other in the order of the view changes, on the
+     * JGroups timer (which allows blocking tasks), so the deletes and writes of one view change can't overtake those
+     * of the previous one.
+     * Work that is still queued when the protocol stops is dropped.
+     */
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
-        super.handleView(new_view, old_view, coord_changed);
-        if (coord_changed) {
-            try {
-                removeStaleEntries();
-            } catch (Exception e) {
-                log.error(String.format("%s: failed handling view change", local_addr), e);
+        Runnable task = () -> handleViewSync(new_view, old_view, coord_changed);
+        if (View.diff(old_view, new_view)[0].length > 0) {
+            runViewChangeSynchronously(task);
+        } else {
+            viewChanges.add(task);
+            scheduleViewChangeDrain();
+        }
+    }
+
+    /**
+     * Runs the view change on the calling thread, after the view changes that are still queued, to keep the order.
+     */
+    private void runViewChangeSynchronously(Runnable task) {
+        viewChangeLock.lock();
+        try {
+            Runnable queued;
+            while ((queued = viewChanges.poll()) != null) {
+                queued.run();
             }
+            task.run();
+        } finally {
+            viewChangeLock.unlock();
+        }
+    }
+
+    /**
+     * Runs the queued view changes one after the other on the timer.
+     * At most one drain task is active, which is what keeps the database updates in order.
+     */
+    private void scheduleViewChangeDrain() {
+        if (viewChangeDrainActive.compareAndSet(false, true)) {
+            try {
+                timer.execute(this::drainViewChanges, true);
+            } catch (RuntimeException e) {
+                viewChangeDrainActive.set(false);
+                throw e;
+            }
+        }
+    }
+
+    private void drainViewChanges() {
+        try {
+            while (true) {
+                // polling inside the lock keeps the order against a synchronous view change
+                viewChangeLock.lock();
+                try {
+                    Runnable task = viewChanges.poll();
+                    if (task == null) {
+                        break;
+                    }
+                    if (!stopped) {
+                        task.run();
+                    }
+                } finally {
+                    viewChangeLock.unlock();
+                }
+            }
+        } finally {
+            viewChangeDrainActive.set(false);
+        }
+        // A view change might have been queued after the last poll and before the flag was reset, and its caller
+        // saw the flag still set and didn't schedule a drain.
+        if (!viewChanges.isEmpty() && !stopped) {
+            scheduleViewChangeDrain();
+        }
+    }
+
+    private void handleViewSync(View new_view, View old_view, boolean coord_changed) {
+        try {
+            super.handleView(new_view, old_view, coord_changed);
+            if (coord_changed) {
+                removeStaleEntries();
+            }
+        } catch (Exception e) {
+            log.error(String.format("%s: failed handling view change", local_addr), e);
         }
     }
 
@@ -266,6 +367,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     public void start() throws Exception {
         super.start();
+        stopped = false;
         healthCheckTask = timer.scheduleWithFixedDelay(() -> runHealthCheck(log),
                 HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
@@ -276,6 +378,18 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (task != null) {
             task.cancel(false);
             healthCheckTask = null;
+        }
+        stopped = true;
+        viewChanges.clear();
+        try {
+            // super.stop() removes the entry of this node, a running view change must not write it again afterwards
+            if (viewChangeLock.tryLock(5, TimeUnit.SECONDS)) {
+                viewChangeLock.unlock();
+            } else {
+                log.warn("%s: view change handling did not stop in time", local_addr);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         super.stop();
     }

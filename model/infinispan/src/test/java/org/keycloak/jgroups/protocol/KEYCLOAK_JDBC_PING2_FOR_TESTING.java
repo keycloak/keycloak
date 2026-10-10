@@ -20,13 +20,28 @@ package org.keycloak.jgroups.protocol;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * This overwrites the get connection method again to avoid the JPA style connection handling
  */
 public class KEYCLOAK_JDBC_PING2_FOR_TESTING extends KEYCLOAK_JDBC_PING2 {
+    /**
+     * When set, every connection request waits until the latch is released, simulating a slow database.
+     */
+    public volatile CountDownLatch blockConnections;
+
     @Override
     protected Connection getConnection() {
+        CountDownLatch latch = blockConnections;
+        if (latch != null) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
         try {
             return dataSource != null? dataSource.getConnection() :
                     DriverManager.getConnection(connection_url, connection_username, connection_password);
