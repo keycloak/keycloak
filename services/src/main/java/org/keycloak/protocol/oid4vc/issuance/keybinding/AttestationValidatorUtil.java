@@ -16,7 +16,6 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -113,13 +112,13 @@ public class AttestationValidatorUtil {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF,
                         "The x5c certificate chain is not trusted by a configured attester trust provider");
             }
-            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getRawAlgorithm(), keycloakSession);
         } else if (header.getKeyId() != null) {
             JWK resolvedJwk = keyResolver.resolveKey(header.getKeyId(), rawHeader, rawPayload);
             if (resolvedJwk == null) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
             }
-            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getRawAlgorithm(), keycloakSession);
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Neither x5c nor kid present in attestation JWT header");
         }
@@ -293,8 +292,7 @@ public class AttestationValidatorUtil {
 
     private static void validateJwsHeader(KeycloakSession session, JWSHeader header, VCIssuanceContext vcIssuanceContext,
                                           String proofTypeKeyForSigningAlgPolicy) {
-        String alg = Optional.ofNullable(header.getAlgorithm())
-                .map(Algorithm::name)
+        String alg = Optional.ofNullable(header.getRawAlgorithm())
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing algorithm in JWS header"));
 
         List<String> supportedAsymmetricAlgs = CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
