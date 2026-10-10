@@ -79,6 +79,22 @@ class AdminClient {
     ).at(0);
   }
 
+  async updateClient(
+    clientName: string,
+    payload: ClientRepresentation,
+    realmName: string = this.#client.realmName,
+  ) {
+    const client = await this.getClient(clientName, realmName);
+    if (!client) {
+      throw new Error(`Client not found: ${clientName}`);
+    }
+    await this.#login();
+    await this.#client.clients.update(
+      { id: client.id!, realm: realmName },
+      payload,
+    );
+  }
+
   async deleteClient(
     clientName: string,
     realmName: string = this.#client.realmName,

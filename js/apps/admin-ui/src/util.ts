@@ -126,6 +126,39 @@ export function convertToFormValues<T extends FieldValues>(
   });
 }
 
+/**
+ * Normalizes a three-state boolean attribute ("true", "false" or unset to inherit) to the canonical form used by
+ * select controls. The server accepts "true" and "false" ignoring case and surrounding whitespace, anything else
+ * is treated as unset.
+ */
+export const normalizeBooleanOverride = (value?: unknown) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return normalized === "true" || normalized === "false" ? normalized : "";
+};
+
+/** Largest value the server accepts for integer attributes, which are parsed with Java's `Integer.parseInt`. */
+const MAX_INTEGER_ATTRIBUTE_VALUE = 2_147_483_647;
+
+/**
+ * Normalizes an integer attribute that overrides a realm setting when set ("" inherits). The server parses the
+ * value with Java's `Integer.parseInt` and only accepts non-negative results up to `Integer.MAX_VALUE`. Accepted
+ * spellings (e.g. "+1", "-0" or "007") are canonicalized to the value the server applies, so that opening and saving
+ * the client does not change the effective setting. Anything else (e.g. from imports) is treated as unset so that
+ * the form does not resubmit a value the server would reject.
+ */
+export const normalizeNonNegativeIntegerOverride = (value?: unknown) => {
+  const normalized = String(value ?? "").trim();
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    return "";
+  }
+  const parsed = Number(normalized);
+  return parsed >= 0 && parsed <= MAX_INTEGER_ATTRIBUTE_VALUE
+    ? String(parsed)
+    : "";
+};
+
 export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
   obj: T,
 ): G {

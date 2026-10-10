@@ -36,6 +36,7 @@ import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
@@ -53,6 +54,7 @@ import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.RefreshRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
@@ -266,6 +268,50 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .credentialIdentifier(credentialIdentifier)
                 .send().getCredentialResponse();
         assertSuccessfulCredentialResponse(credResponse);
+    }
+
+    /**
+     * The client-level "Revoke Refresh Token" override must be honored by the OID4VCI refresh token provider, which keeps
+     * its own rotation state. With revocation disabled for the realm but enabled for the client, the refresh token must be
+     * rotated on use and a replay of the previous refresh token must be rejected.
+     **/
+    @Test
+    public void testRefreshTokenRotationHonoursClientOverride() {
+        assertFalse(Boolean.TRUE.equals(testRealm.admin().toRepresentation().getRevokeRefreshToken()), "Test expects revocation to be disabled for the realm");
+        setClientAttributes(client, Map.of(
+                OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "true",
+                OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, "0"));
+        try {
+            AccessTokenResponse tokenResponse = authzCodeFlow();
+            assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+            String initialRefreshToken = tokenResponse.getRefreshToken();
+
+            // First use of the refresh token rotates it
+            timeOffSet.set(10);
+            AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+            assertTrue(refreshResponse.isSuccess(), "Refresh token exchange should succeed");
+            EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN);
+
+            // Replaying the initial refresh token exceeds the max reuse of the client override
+            timeOffSet.set(20);
+            AccessTokenResponse replayResponse = new RefreshRequest(initialRefreshToken, oauth).send();
+            assertFalse(replayResponse.isSuccess(), "Replayed refresh token must be rejected");
+            assertEquals(INVALID_GRANT, replayResponse.getError());
+            assertEquals("Maximum allowed refresh token reuse exceeded", replayResponse.getErrorDescription());
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.REFRESH_TOKEN_ERROR)
+                    .error(Errors.INVALID_TOKEN);
+
+            // The rotated refresh token is still usable
+            timeOffSet.set(30);
+            refreshResponse = wallet.refreshRequest(ctx).send();
+            assertTrue(refreshResponse.isSuccess(), "Rotated refresh token exchange should succeed");
+            EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN);
+        } finally {
+            setClientAttributes(client, Map.of(
+                    OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "",
+                    OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, ""));
+        }
     }
 
     /**
