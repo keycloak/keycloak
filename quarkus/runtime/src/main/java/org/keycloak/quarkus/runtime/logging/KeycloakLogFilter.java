@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Filter;
@@ -103,7 +104,7 @@ public abstract class KeycloakLogFilter implements Filter {
                     }
                     return p.substring(QUARKUS_HIBERNATE_ORM_UNSUPPORTED_PROPERTIES_PREFIX.length());
                 })
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     public static void setKeycloakDefaultUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
