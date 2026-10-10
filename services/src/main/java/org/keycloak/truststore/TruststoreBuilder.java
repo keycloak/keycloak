@@ -27,6 +27,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -269,32 +270,22 @@ public class TruststoreBuilder {
     static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
         try (FileInputStream pemInputStream = new FileInputStream(file)) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
-            boolean loadedAny = false;
-            while (pemInputStream.available() > 0) {
-                X509Certificate cert;
-                try {
-                    cert = (X509Certificate) certFactory.generateCertificate(pemInputStream);
-                    loadedAny = true;
-                } catch (CertificateException e) {
-                    if (pemInputStream.available() > 0 || !loadedAny) {
-                        // any remaining input means there is an actual problem with the key contents or
-                        // file format
-                        if (isPem || loadedAny) {
-                            throw e;
-                        }
-                        LOGGER.debugf(e,
-                                "The file %s may not be in PEM format, it will not be used to create the merged truststore",
-                                new File(file).getAbsolutePath());
-                        continue;
-                    }
-                    LOGGER.debugf(e,
-                            "The trailing entry for %s generated a certificate exception, assuming instead that the file ends with comments",
-                            new File(file).getAbsolutePath());
-                    continue;
+            Collection<? extends Certificate> certs;
+            try {
+                certs = certFactory.generateCertificates(pemInputStream);
+            } catch (CertificateException e) {
+                if (isPem || KeystoreUtil.getTruststoreFormat(file).orElse(null) == TruststoreFormat.PEM) {
+                    throw e;
                 }
+                LOGGER.debugf(e,
+                        "The file %s may not be in PEM format, it will not be used to create the merged truststore",
+                        new File(file).getAbsolutePath());
+                return false;
+            }
+            for (Certificate cert : certs) {
                 setCertificateEntry(truststore, cert);
             }
-            return loadedAny;
+            return !certs.isEmpty();
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to initialize truststore, could not merge: " + new File(file).getAbsolutePath(), e);
