@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.zip.GZIPOutputStream;
 
@@ -12,8 +13,6 @@ import org.keycloak.theme.ResourceLoader;
 
 import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
-
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
@@ -27,7 +26,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
     public InputStream getEncodedStream(StreamSupplier producer, String... path) {
         try {
-            File encodedFile = ResourceLoader.getFile(cacheDir, String.join("/", path) +  ".gz");
+            File encodedFile = ResourceLoader.getFile(cacheDir, String.join("/", path) + ".gz");
             if (encodedFile == null) {
                 return null;
             }
@@ -65,13 +64,15 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
             IOUtils.copy(is, gos);
         }
 
+        // Avoid REPLACE_EXISTING: on Windows, replacing a file that another thread is currently
+        // streaming would fail because Windows locks open files. Instead, let the first thread to
+        // move win; if another thread already created the target, discard the temp file and use theirs.
         try {
-            Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
-            return target;
-        } catch (IOException io) {
-            logger.warnf(io, "Fail to move temporary file to %s", target.toString());
-            return null;
+            Files.move(tmpEncodedFile.toPath(), target.toPath());
+        } catch (FileAlreadyExistsException e) {
+            Files.deleteIfExists(tmpEncodedFile.toPath());
         }
+        return target;
     }
 
 }
