@@ -559,8 +559,14 @@ public class DatabaseIndexChecker implements Runnable {
      * are not captured: an occupant never sits on the table of the expected index, so only
      * its table is needed, for the conflict report.
      *
-     * <p>The lookup is best-effort: if it fails (e.g. the database rejects the query or the
-     * permissions are insufficient), the error is logged and no occupant is reported.
+     * <p>The lookup is scoped to the schema of the checked tables: the current schema of the
+     * connection when no explicit schema is configured. A null schema pattern would be treated
+     * as no restriction by the JDBC metadata calls, so it must never be passed: index names
+     * are unique per schema, and an occupant in another schema does not block the creation.
+     *
+     * <p>The lookup is best-effort: if it fails (e.g. the database rejects the query, the
+     * current schema cannot be resolved, or the permissions are insufficient), the error is
+     * logged and no occupant is reported.
      */
     private Map<String, String> findIndexNameOccupants(Connection connection, DatabaseMetaData metaData, Set<String> expectedIndexNames, Set<String> foundIndexNames, Set<String> checkedTables, String productName, boolean storesLower, boolean storesUpper) {
         var unfoundNames = new HashSet<>(expectedIndexNames);
@@ -578,13 +584,19 @@ public class DatabaseIndexChecker implements Runnable {
                 findOracleIndexNameOccupants(connection, unfoundNames, checkedTables, occupants, storesLower, storesUpper);
             } else {
                 // the remaining databases match the table name in getIndexInfo exactly, so
-                // the tables are enumerated first and each is queried on its own
-                try (var tables = metaData.getTables(null, dbSchema, "%", null)) {
-                    while (tables.next()) {
-                        var table = tables.getString("TABLE_NAME");
-                        try (var rs = metaData.getIndexInfo(null, dbSchema, table, false, true)) {
-                            while (rs.next()) {
-                                addIndexNameOccupant(occupants, unfoundNames, checkedTables, rs.getString("INDEX_NAME"), table, storesLower, storesUpper);
+                // the tables are enumerated first and each is queried on its own. The lookup
+                // stays in the schema of the checked tables: a null schema pattern would lift
+                // the restriction and report occupants from other schemas as conflicts, where
+                // index names are only unique per schema and those do not block the creation.
+                String metadataSchema = resolveMetadataSchema(connection, storesLower, storesUpper);
+                if (metadataSchema != null) {
+                    try (var tables = metaData.getTables(null, metadataSchema, "%", null)) {
+                        while (tables.next()) {
+                            var table = tables.getString("TABLE_NAME");
+                            try (var rs = metaData.getIndexInfo(null, metadataSchema, table, false, true)) {
+                                while (rs.next()) {
+                                    addIndexNameOccupant(occupants, unfoundNames, checkedTables, rs.getString("INDEX_NAME"), table, storesLower, storesUpper);
+                                }
                             }
                         }
                     }
@@ -626,6 +638,22 @@ public class DatabaseIndexChecker implements Runnable {
                 }
             }
         }
+    }
+
+    /**
+     * The schema the JDBC metadata calls of the occupant lookup are scoped to: the configured
+     * schema when set, else the current schema of the connection, identifier-normalized the same
+     * way as the table names the schema pattern is matched against. {@code null} when the
+     * current schema cannot be resolved: the lookup is skipped then, because JDBC treats a
+     * null schema pattern as no restriction and a schema-wide restriction is what makes the
+     * occupant lookup correct in the first place.
+     */
+    private String resolveMetadataSchema(Connection connection, boolean storesLower, boolean storesUpper) throws SQLException {
+        String schema = dbSchema != null ? dbSchema : connection.getSchema();
+        if (schema == null || schema.isBlank()) {
+            return null;
+        }
+        return normalizeIdentifier(schema, storesLower, storesUpper);
     }
 
     private static void addIndexNameOccupant(Map<String, String> occupants, Set<String> unfoundNames, Set<String> checkedTables, String indexName, String tableName, boolean storesLower, boolean storesUpper) {

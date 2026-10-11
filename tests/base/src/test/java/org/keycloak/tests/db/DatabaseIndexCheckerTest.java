@@ -34,6 +34,12 @@ public class DatabaseIndexCheckerTest {
     // the checker never visits it, so it stands in for the tables outside the check
     private static final String UNCHECKED_TABLE_NAME = "SERVER_CONFIG";
     private static final String UNCHECKED_TABLE_COLUMN = "SERVER_CONFIG_KEY";
+    // a schema other than the one the checked tables live in: an index with the same name
+    // there must not be reported as a conflict, because index names are unique per schema
+    // and an occupant in another schema does not block the creation
+    private static final String OTHER_SCHEMA_NAME = "KC_INDEX_CHECKER_OTHER";
+    private static final String OTHER_SCHEMA_TABLE = "OTHER_SCHEMA_TABLE";
+    private static final String OTHER_SCHEMA_COLUMN = "OTHER_COL";
 
     @TestOnServer
     public void testDetectsMissingIndexWithCorrectSql(KeycloakSession session) {
@@ -343,6 +349,49 @@ public class DatabaseIndexCheckerTest {
         assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
     }
 
+    @TestOnServer
+    public void testIgnoresIndexNameOccupantInOtherSchema(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        // the occupant lookup queries the JDBC metadata on H2 (and DB2, which is not part
+        // of the test matrix): PostgreSQL and Oracle take a vendor-specific branch and the
+        // MySQL family does not run the lookup at all, so there is nothing to pin there
+        if (!getDatabaseProduct(factory).contains("h2")) {
+            return;
+        }
+        var schema = factory.getSchema();
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+
+        // Same-named index in a schema other than the one of the checked tables: the lookup
+        // must stay in the schema of the checked tables, because the JDBC metadata calls
+        // treat a null schema pattern as no restriction and would report the foreign index
+        // as a conflict even though index names are unique per schema here.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndexInOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, OTHER_SCHEMA_COLUMN, INDEX_NAME);
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            // the name is free in the schema of the checked tables, so the expected index
+            // remains creatable and is not reported as conflicting
+            assertThat(detect.getConflictingIndexesName(), is(empty()));
+            assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+
+            teardownOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, OTHER_SCHEMA_COLUMN, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                teardownOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, OTHER_SCHEMA_COLUMN, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
     private static DatabaseIndexChecker checker(JpaConnectionProviderFactory factory, KeycloakSession session, String schema) {
         return new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
     }
@@ -476,6 +525,53 @@ public class DatabaseIndexCheckerTest {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to drop index " + indexName, e);
+        }
+    }
+
+    private static void createIndexInOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String tableName, String column, String indexName) {
+        runDdlInOtherSchema(factory, schemaName,
+                "CREATE SCHEMA IF NOT EXISTS " + schemaName,
+                "CREATE TABLE " + schemaName + "." + tableName + " (K INT PRIMARY KEY, " + column + " INT)",
+                "CREATE INDEX " + indexName + " ON " + schemaName + "." + tableName + " (" + column + ")");
+    }
+
+    private static void teardownOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String tableName, String column, String indexName) {
+        runDdlInOtherSchema(factory, schemaName,
+                "DROP INDEX IF EXISTS " + schemaName + "." + indexName,
+                "DROP TABLE IF EXISTS " + schemaName + "." + tableName,
+                "DROP SCHEMA IF EXISTS " + schemaName);
+    }
+
+    /**
+     * Creates and removes the objects of the other-schema setup from a separate thread,
+     * mirroring {@link #createIndex(JpaConnectionProviderFactory, String, String, String...)}:
+     * the DDL must not enlist in the JTA transaction of the @TestOnServer thread.
+     */
+    private static void runDdlInOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String... statements) {
+        var failure = new AtomicReference<RuntimeException>();
+        Thread thread = new Thread(() -> {
+            try {
+                try (Connection connection = factory.getConnection()) {
+                    connection.setAutoCommit(true);
+                    try (Statement stmt = connection.createStatement()) {
+                        for (String statement : statements) {
+                            stmt.executeUpdate(statement);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                failure.set(new RuntimeException("Failed to run DDL in schema " + schemaName, e));
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        if (failure.get() != null) {
+            throw failure.get();
         }
     }
 
