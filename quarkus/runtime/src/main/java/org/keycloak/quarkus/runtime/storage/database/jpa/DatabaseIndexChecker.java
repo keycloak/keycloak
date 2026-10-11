@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -104,6 +105,12 @@ public class DatabaseIndexChecker implements Runnable {
 
     private static final String TASK_KEY = "db-index-checker";
 
+    /**
+     * Marker for a function or expression index part that the database reports without a
+     * column name, and for a changelog column defined via {@code valueComputed}.
+     */
+    private static final String EXPRESSION_COLUMN = "__expression__";
+
     private void runInternal() {
         logger.debug("Running database index checker");
 
@@ -167,11 +174,11 @@ public class DatabaseIndexChecker implements Runnable {
             var existingIndexes = getExistingIndexesFromDatabase(metaData, tablesToCheck);
 
             var invalidIndexNames = getInvalidIndexNames(connection, metaData, expectedIndexes.keySet());
-            existingIndexes.removeAll(invalidIndexNames);
+            invalidIndexNames.forEach(existingIndexes::remove);
 
             return expectedIndexes.entrySet().stream()
-                    .filter(e -> !existingIndexes.contains(e.getKey()))
-                    .map(e -> new IndexInfo(e.getValue().tableName, e.getValue().indexName, e.getValue().sql, invalidIndexNames.contains(e.getKey())))
+                    .filter(e -> !isIndexPresent(e.getValue(), existingIndexes.get(e.getKey()), storesLower, storesUpper))
+                    .map(e -> new IndexInfo(e.getValue().tableName, e.getValue().indexName, e.getValue().sql, e.getValue().columns, invalidIndexNames.contains(e.getKey())))
                     .toList();
         } catch (SQLException | LiquibaseException e) {
             logger.warn("Unable to check for missing database indexes", e);
@@ -336,7 +343,7 @@ public class DatabaseIndexChecker implements Runnable {
                                     return sqlStr;
                                 })
                                 .collect(Collectors.joining("; "));
-                        var info = new IndexInfo(cic.getTableName(), cic.getIndexName(), sql);
+                        var info = new IndexInfo(cic.getTableName(), cic.getIndexName(), sql, expectedColumns(cic));
                         expectedIndexes.put(cic.getIndexName().toUpperCase(), info);
                         logger.debugf("Create index (%s), %s", change.getChangeSet(), info);
                     } else if (change instanceof DropIndexChange dic && dic.getIndexName() != null) {
@@ -357,18 +364,107 @@ public class DatabaseIndexChecker implements Runnable {
         return expectedIndexes;
     }
 
-    private Set<String> getExistingIndexesFromDatabase(DatabaseMetaData metaData, Collection<String> tables) throws SQLException {
-        var existingIndexes = new HashSet<String>();
+    /**
+     * Columns of the changelog index in ordinal order, or {@code null} when any column is an
+     * expression ({@code valueComputed}) whose resulting column name cannot be compared with
+     * the metadata reported by the database.
+     */
+    private static List<String> expectedColumns(CreateIndexChange cic) {
+        List<String> columns = new ArrayList<>();
+        for (var column : cic.getColumns()) {
+            var name = column.getName();
+            if (name == null || name.isBlank()) {
+                return null;
+            }
+            if (column.getValueComputed() != null) {
+                return null;
+            }
+            columns.add(name);
+        }
+        return columns;
+    }
+
+    /**
+     * An index matches the expected changelog entry when its name is present and it is defined
+     * on the same table with the same column list. When either side contains an expression
+     * column (or the database did not report columns for the index), the comparison falls back
+     * to the index name alone, preserving the previous behavior.
+     */
+    private static boolean isIndexPresent(IndexInfo expected, List<ExistingIndex> existing, boolean storesLower, boolean storesUpper) {
+        if (existing == null) {
+            return false;
+        }
+        for (var candidate : existing) {
+            if (isIndexPresentOnExpectedTable(expected, candidate, storesLower, storesUpper)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isIndexPresentOnExpectedTable(IndexInfo expected, ExistingIndex existing, boolean storesLower, boolean storesUpper) {
+        if (!existing.tableName().equals(normalizeIdentifier(expected.tableName(), storesLower, storesUpper))) {
+            // an index with the same name exists on a different table: it does not satisfy this expectation
+            return false;
+        }
+        var expectedColumns = expected.columns();
+        var existingColumns = existing.columns();
+        if (expectedColumns == null || existingColumns == null || expectedColumns.isEmpty() || existingColumns.isEmpty()) {
+            return true;
+        }
+        if (expectedColumns.contains(EXPRESSION_COLUMN) || existingColumns.contains(EXPRESSION_COLUMN)) {
+            return true;
+        }
+        if (expectedColumns.size() != existingColumns.size()) {
+            return false;
+        }
+        for (int i = 0; i < expectedColumns.size(); i++) {
+            if (!normalizeColumn(expectedColumns.get(i), storesLower, storesUpper)
+                    .equals(normalizeColumn(existingColumns.get(i), storesLower, storesUpper))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Normalizes a column name for comparison: case-folded per the database identifier storage,
+     * and with a Liquibase-style prefix-length suffix such as {@code BROKER_SESSION_ID(255)}
+     * stripped, so a {@code valueComputed} column definition still matches the column the
+     * database reports.
+     */
+    private static String normalizeColumn(String column, boolean storesLower, boolean storesUpper) {
+        var normalized = column.trim();
+        int paren = normalized.indexOf('(');
+        if (paren > 0 && normalized.endsWith(")")) {
+            normalized = normalized.substring(0, paren).trim();
+        }
+        return normalizeIdentifier(normalized, storesLower, storesUpper);
+    }
+
+    private Map<String, List<ExistingIndex>> getExistingIndexesFromDatabase(DatabaseMetaData metaData, Collection<String> tables) throws SQLException {
+        var existingIndexes = new HashMap<String, List<ExistingIndex>>();
 
         for (var table : tables) {
+            // indexName -> (ordinal position -> column name), kept per table so an index
+            // with the same name on a different table is not conflated with this one
+            var indexesOnTable = new HashMap<String, TreeMap<Short, String>>();
             try (var rs = metaData.getIndexInfo(null, dbSchema, table, false, true)) {
                 while (rs.next()) {
                     var indexName = rs.getString("INDEX_NAME");
                     if (indexName != null) {
-                        existingIndexes.add(indexName.toUpperCase());
+                        var column = rs.getString("COLUMN_NAME");
+                        // JDBC drivers report a function/expression index part with a null COLUMN_NAME
+                        indexesOnTable.computeIfAbsent(indexName.toUpperCase(), k -> new TreeMap<>())
+                                .put(rs.getShort("ORDINAL_POSITION"), column != null ? column : EXPRESSION_COLUMN);
                     }
                 }
             }
+            // On MySQL and MariaDB index names are scoped per table, so the same name may
+            // legitimately exist on more than one checked table: keep every candidate.
+            indexesOnTable.forEach((name, columnsByPosition) ->
+                    existingIndexes.computeIfAbsent(name, k -> new ArrayList<>())
+                            .add(new ExistingIndex(table, columnsByPosition.values().stream().toList())));
         }
         return existingIndexes;
     }
@@ -495,10 +591,16 @@ public class DatabaseIndexChecker implements Runnable {
         return name;
     }
 
-    private record IndexInfo(String tableName, String indexName, String sql, boolean invalid) {
-        IndexInfo(String tableName, String indexName, String sql) {
-            this(tableName, indexName, sql, false);
+    private record IndexInfo(String tableName, String indexName, String sql, List<String> columns, boolean invalid) {
+        IndexInfo(String tableName, String indexName, String sql, List<String> columns) {
+            this(tableName, indexName, sql, columns, false);
         }
+    }
+
+    /**
+     * An index found in the database: the table it is defined on and its columns in ordinal order.
+     */
+    private record ExistingIndex(String tableName, List<String> columns) {
     }
     private record ChangesetInfo(String id, String author, String filePath) {
     }
