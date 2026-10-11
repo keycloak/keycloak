@@ -72,6 +72,12 @@ import org.jboss.logging.Logger;
  * migrations will not retry. This checker detects those (and any other) missing indexes and logs a {@code WARN} with
  * the {@code CREATE INDEX} statement so operators can apply it manually.
  *
+ * <p>An index whose name is already occupied by an existing index with a different definition
+ * (wrong columns on the expected table, or the name taken on another table where index names
+ * are unique per schema) is reported as conflicting: it is never created automatically, because
+ * the creation would fail with the name already in use, and the log asks for a rename or drop
+ * of the existing index instead.
+ *
  * <p>The check is non-blocking and never prevents startup. If the metadata query itself fails (e.g. insufficient
  * permissions), the error is logged and silently ignored.
  */
@@ -124,15 +130,25 @@ public class DatabaseIndexChecker implements Runnable {
                     if (missing.isEmpty()) {
                         return null;
                     }
+                    // a conflicting index name blocks the creation of the expected index, so it is
+                    // reported separately and never passed to the automatic creation path
+                    var conflicting = missing.stream().filter(info -> info.conflictingTable() != null).toList();
+                    for (var info : conflicting) {
+                        logMissingIndex(info);
+                    }
+                    var creatable = missing.stream().filter(info -> info.conflictingTable() == null).toList();
+                    if (creatable.isEmpty()) {
+                        return null;
+                    }
                     try (var connection = connectionSupplier.get()) {
                         if (supportsOnlineIndexCreation(connection)) {
-                            createIndexes(connection, missing);
+                            createIndexes(connection, creatable);
                             return null;
                         }
                     } catch (SQLException e) {
                         logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
                     }
-                    for (var info : missing) {
+                    for (var info : creatable) {
                         logMissingIndex(info);
                     }
                     return null;
@@ -154,9 +170,25 @@ public class DatabaseIndexChecker implements Runnable {
         return getMissingIndexes().stream().map(IndexInfo::indexName).toList();
     }
 
+    /**
+     * The {@code CREATE INDEX} statement for each missing index whose name is not occupied by
+     * a conflicting existing index: an occupied name would make the statement fail, so those
+     * indexes are reported by {@link #getConflictingIndexesName()} with a rename or drop of the
+     * existing index instead.
+     */
     public Map<String, String> getMissingIndexesSql() {
         return getMissingIndexes().stream()
+                .filter(info -> info.conflictingTable() == null)
                 .collect(Collectors.toMap(IndexInfo::indexName, IndexInfo::sql));
+    }
+
+    /**
+     * Names of the missing indexes whose name is already occupied by an existing index with
+     * a different definition: those are never created automatically, because the creation
+     * would fail with the name in use, and are logged for a manual rename or drop instead.
+     */
+    public List<String> getConflictingIndexesName() {
+        return getMissingIndexes().stream().filter(info -> info.conflictingTable() != null).map(IndexInfo::indexName).toList();
     }
 
     private List<IndexInfo> getMissingIndexes() {
@@ -169,6 +201,7 @@ public class DatabaseIndexChecker implements Runnable {
             var metaData = connection.getMetaData();
             var storesLower = metaData.storesLowerCaseIdentifiers();
             var storesUpper = metaData.storesUpperCaseIdentifiers();
+            var productName = metaData.getDatabaseProductName().toLowerCase();
 
             var tablesToCheck = expectedIndexes.values().stream()
                     .map(info -> normalizeIdentifier(info.tableName, storesLower, storesUpper))
@@ -180,7 +213,11 @@ public class DatabaseIndexChecker implements Runnable {
 
             return expectedIndexes.entrySet().stream()
                     .filter(e -> !isIndexPresent(e.getValue(), existingIndexes.get(e.getKey()), storesLower, storesUpper))
-                    .map(e -> new IndexInfo(e.getValue().tableName, e.getValue().indexName, e.getValue().sql, e.getValue().columns, invalidIndexNames.contains(e.getKey())))
+                    .map(e -> {
+                        boolean invalid = invalidIndexNames.contains(e.getKey());
+                        return new IndexInfo(e.getValue().tableName, e.getValue().indexName, e.getValue().sql, e.getValue().columns,
+                                invalid, conflictingTable(e.getValue(), existingIndexes.get(e.getKey()), invalid, productName, storesLower, storesUpper));
+                    })
                     .toList();
         } catch (SQLException | LiquibaseException e) {
             logger.warn("Unable to check for missing database indexes", e);
@@ -300,7 +337,18 @@ public class DatabaseIndexChecker implements Runnable {
     }
 
     private void logMissingIndex(IndexInfo info) {
-        if (info.invalid) {
+        if (info.conflictingTable() != null) {
+            if (info.conflictingTable().equals(info.tableName())) {
+                logger.warnf("Conflicting database index %s on table %s: an index with this name already exists on this table"
+                        + " with a different definition. Rename or drop the existing index, then create the expected index"
+                        + " manually: %s",
+                        info.indexName, info.tableName, info.sql);
+            } else {
+                logger.warnf("Conflicting database index %s on table %s: an index with this name already exists on table %s."
+                        + " Rename or drop the existing index, then create the expected index manually: %s",
+                        info.indexName, info.tableName, info.conflictingTable(), info.sql);
+            }
+        } else if (info.invalid) {
             logger.warnf("Invalid database index %s on table %s (possibly from a failed concurrent creation). Drop and recreate the index: DROP INDEX CONCURRENTLY IF EXISTS %s; %s",
                     info.indexName, info.tableName, qualifyPostgresIdentifier(info.indexName), addOnlineSyntax(info.sql, true, false, false));
         } else {
@@ -427,6 +475,39 @@ public class DatabaseIndexChecker implements Runnable {
             }
         }
         return true;
+    }
+
+    /**
+     * The table of an existing index that occupies the name of the expected index but does not
+     * satisfy it, or {@code null} when the name is free. The expected index cannot be created
+     * until that index is renamed or dropped, so the conflict is reported instead of a create
+     * attempt that is guaranteed to fail.
+     *
+     * <p>For a same-named index on the expected table (with a different definition) the value is
+     * the expected table itself. For a same-named index on another table the value is that table;
+     * this only applies where index names are unique per schema (e.g. PostgreSQL and Oracle), since
+     * MySQL, MariaDB and MSSQL scope index names per table and creating the expected index on its
+     * own table succeeds there. An invalid same-named index is handled by the drop-and-recreate
+     * path instead, so it is not a conflict.
+     */
+    private static String conflictingTable(IndexInfo expected, List<ExistingIndex> existing, boolean invalid, String productName, boolean storesLower, boolean storesUpper) {
+        if (invalid || existing == null || existing.isEmpty()) {
+            return null;
+        }
+        var expectedTable = normalizeIdentifier(expected.tableName(), storesLower, storesUpper);
+        for (var candidate : existing) {
+            if (candidate.tableName().equals(expectedTable)) {
+                // the name is occupied on the expected table with a different definition
+                return expected.tableName();
+            }
+        }
+        if (productName.contains("mysql") || productName.contains("mariadb") || productName.contains("microsoft")) {
+            // index names are scoped per table: a same-named index on another table does not
+            // block creating the expected index on its own table
+            return null;
+        }
+        // index names are unique per schema: a same-named index on any table blocks the creation
+        return existing.get(0).tableName();
     }
 
     /**
@@ -594,9 +675,9 @@ public class DatabaseIndexChecker implements Runnable {
         return name;
     }
 
-    private record IndexInfo(String tableName, String indexName, String sql, List<String> columns, boolean invalid) {
+    private record IndexInfo(String tableName, String indexName, String sql, List<String> columns, boolean invalid, String conflictingTable) {
         IndexInfo(String tableName, String indexName, String sql, List<String> columns) {
-            this(tableName, indexName, sql, columns, false);
+            this(tableName, indexName, sql, columns, false, null);
         }
     }
 
