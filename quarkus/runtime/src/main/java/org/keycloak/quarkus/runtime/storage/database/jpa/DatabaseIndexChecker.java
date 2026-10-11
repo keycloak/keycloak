@@ -76,7 +76,9 @@ import org.jboss.logging.Logger;
  * (wrong columns on the expected table, or the name taken on another table where index names
  * are unique per schema) is reported as conflicting: it is never created automatically, because
  * the creation would fail with the name already in use, and the log asks for a rename or drop
- * of the existing index instead.
+ * of the existing index instead. Where index names are unique per schema, the occupant of a
+ * missing index name is looked up schema-wide, so an index on a table without expected indexes
+ * cannot hide the conflict.
  *
  * <p>The check is non-blocking and never prevents startup. If the metadata query itself fails (e.g. insufficient
  * permissions), the error is logged and silently ignored.
@@ -207,6 +209,16 @@ public class DatabaseIndexChecker implements Runnable {
                     .map(info -> normalizeIdentifier(info.tableName, storesLower, storesUpper))
                     .collect(Collectors.toSet());
             var existingIndexes = getExistingIndexesFromDatabase(metaData, tablesToCheck);
+            if (areIndexNamesSchemaUnique(productName)) {
+                // The scan above only visits tables that have an expected index. Where index
+                // names are unique per schema, an existing index with the same name on any
+                // other table occupies the name as well, so such occupants are looked up
+                // schema-wide and reported as conflicts instead of a create attempt that
+                // cannot succeed.
+                findIndexNameOccupants(connection, metaData, expectedIndexes.keySet(), existingIndexes.keySet(), tablesToCheck, productName, storesLower, storesUpper)
+                        .forEach((name, table) -> existingIndexes.computeIfAbsent(name, k -> new ArrayList<>())
+                                .add(new ExistingIndex(table, List.of())));
+            }
 
             var invalidIndexNames = getInvalidIndexNames(connection, metaData, expectedIndexes.keySet());
             invalidIndexNames.forEach(existingIndexes::remove);
@@ -501,13 +513,13 @@ public class DatabaseIndexChecker implements Runnable {
                 return expected.tableName();
             }
         }
-        if (productName.contains("mysql") || productName.contains("mariadb") || productName.contains("microsoft")) {
-            // index names are scoped per table: a same-named index on another table does not
-            // block creating the expected index on its own table
-            return null;
+        if (areIndexNamesSchemaUnique(productName)) {
+            // index names are unique per schema: a same-named index on any table blocks the creation
+            return existing.get(0).tableName();
         }
-        // index names are unique per schema: a same-named index on any table blocks the creation
-        return existing.get(0).tableName();
+        // index names are scoped per table: a same-named index on another table does not
+        // block creating the expected index on its own table
+        return null;
     }
 
     /**
@@ -524,6 +536,111 @@ public class DatabaseIndexChecker implements Runnable {
             normalized = normalized.substring(0, paren).trim();
         }
         return normalizeIdentifier(normalized, storesLower, storesUpper);
+    }
+
+    /**
+     * Whether index names are unique per schema rather than scoped per table: the case for
+     * PostgreSQL, Oracle and H2. MySQL, MariaDB and MSSQL scope index names per table, so a
+     * same-named index on another table does not block creating the expected index on its
+     * own table there.
+     */
+    private static boolean areIndexNamesSchemaUnique(String productName) {
+        return !(productName.contains("mysql") || productName.contains("mariadb") || productName.contains("microsoft"));
+    }
+
+    /**
+     * Finds the existing indexes that occupy the name of an expected index on a table without
+     * expected indexes: the per-table scan never visits those tables, but where index names
+     * are unique per schema such an index still blocks creating the expected index, so it must
+     * be reported as a conflict rather than left to a create attempt that cannot succeed.
+     *
+     * <p>Only names the per-table scan did not find anywhere are looked up: a name found on a
+     * checked table is already known to the conflict detection. The columns of the occupant
+     * are not captured: an occupant never sits on the table of the expected index, so only
+     * its table is needed, for the conflict report.
+     *
+     * <p>The lookup is best-effort: if it fails (e.g. the database rejects the query or the
+     * permissions are insufficient), the error is logged and no occupant is reported.
+     */
+    private Map<String, String> findIndexNameOccupants(Connection connection, DatabaseMetaData metaData, Set<String> expectedIndexNames, Set<String> foundIndexNames, Set<String> checkedTables, String productName, boolean storesLower, boolean storesUpper) {
+        var unfoundNames = new HashSet<>(expectedIndexNames);
+        unfoundNames.removeAll(foundIndexNames);
+        if (unfoundNames.isEmpty()) {
+            return Map.of();
+        }
+        var occupants = new HashMap<String, String>();
+        try {
+            if (productName.contains("postgres")) {
+                // the PostgreSQL driver matches the table name in getIndexInfo by equality
+                // only, so query the catalog directly instead
+                findPostgresIndexNameOccupants(connection, unfoundNames, checkedTables, occupants, storesLower, storesUpper);
+            } else if (productName.contains("oracle")) {
+                findOracleIndexNameOccupants(connection, unfoundNames, checkedTables, occupants, storesLower, storesUpper);
+            } else {
+                // the remaining databases match the table name in getIndexInfo exactly, so
+                // the tables are enumerated first and each is queried on its own
+                try (var tables = metaData.getTables(null, dbSchema, "%", null)) {
+                    while (tables.next()) {
+                        var table = tables.getString("TABLE_NAME");
+                        try (var rs = metaData.getIndexInfo(null, dbSchema, table, false, true)) {
+                            while (rs.next()) {
+                                addIndexNameOccupant(occupants, unfoundNames, checkedTables, rs.getString("INDEX_NAME"), table, storesLower, storesUpper);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Unable to look up existing indexes schema-wide, an index occupying the name of a missing index on a table without expected indexes may go unnoticed", e);
+        }
+        return occupants;
+    }
+
+    private void findPostgresIndexNameOccupants(Connection connection, Set<String> unfoundNames, Set<String> checkedTables, Map<String, String> occupants, boolean storesLower, boolean storesUpper) throws SQLException {
+        String sql = dbSchema != null
+                ? "SELECT UPPER(ci.relname), ct.relname FROM pg_index i JOIN pg_class ci ON ci.oid = i.indexrelid JOIN pg_class ct ON ct.oid = i.indrelid JOIN pg_namespace n ON n.oid = ct.relnamespace WHERE n.nspname = ? AND i.indisvalid"
+                : "SELECT UPPER(ci.relname), ct.relname FROM pg_index i JOIN pg_class ci ON ci.oid = i.indexrelid JOIN pg_class ct ON ct.oid = i.indrelid JOIN pg_namespace n ON n.oid = ct.relnamespace WHERE n.nspname = current_schema AND i.indisvalid";
+        try (var ps = connection.prepareStatement(sql)) {
+            if (dbSchema != null) {
+                ps.setString(1, dbSchema);
+            }
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    addIndexNameOccupant(occupants, unfoundNames, checkedTables, rs.getString(1), rs.getString(2), storesLower, storesUpper);
+                }
+            }
+        }
+    }
+
+    private void findOracleIndexNameOccupants(Connection connection, Set<String> unfoundNames, Set<String> checkedTables, Map<String, String> occupants, boolean storesLower, boolean storesUpper) throws SQLException {
+        String sql = dbSchema != null
+                ? "SELECT INDEX_NAME, TABLE_NAME FROM ALL_INDEXES WHERE OWNER = ?"
+                : "SELECT INDEX_NAME, TABLE_NAME FROM ALL_INDEXES WHERE OWNER = SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA')";
+        try (var ps = connection.prepareStatement(sql)) {
+            if (dbSchema != null) {
+                ps.setString(1, dbSchema);
+            }
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    addIndexNameOccupant(occupants, unfoundNames, checkedTables, rs.getString(1), rs.getString(2), storesLower, storesUpper);
+                }
+            }
+        }
+    }
+
+    private static void addIndexNameOccupant(Map<String, String> occupants, Set<String> unfoundNames, Set<String> checkedTables, String indexName, String tableName, boolean storesLower, boolean storesUpper) {
+        if (indexName == null || tableName == null) {
+            return;
+        }
+        var name = indexName.toUpperCase();
+        if (!unfoundNames.contains(name) || occupants.containsKey(name)) {
+            return;
+        }
+        if (checkedTables.contains(normalizeIdentifier(tableName, storesLower, storesUpper))) {
+            // the per-table scan is authoritative for tables with expected indexes
+            return;
+        }
+        occupants.put(name, tableName);
     }
 
     private Map<String, List<ExistingIndex>> getExistingIndexesFromDatabase(DatabaseMetaData metaData, Collection<String> tables) throws SQLException {

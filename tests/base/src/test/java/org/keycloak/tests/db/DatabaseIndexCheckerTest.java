@@ -30,6 +30,10 @@ public class DatabaseIndexCheckerTest {
     private static final String TABLE_NAME = "OFFLINE_USER_SESSION";
     private static final String TEMP_INDEX_NAME = "IDX_USS_BROKER_SESSION_TMP";
     private static final String OTHER_TABLE_NAME = "OFFLINE_CLIENT_SESSION";
+    // a table of the fully migrated schema without any expected index: the per-table scan of
+    // the checker never visits it, so it stands in for the tables outside the check
+    private static final String UNCHECKED_TABLE_NAME = "SERVER_CONFIG";
+    private static final String UNCHECKED_TABLE_COLUMN = "SERVER_CONFIG_KEY";
 
     @TestOnServer
     public void testDetectsMissingIndexWithCorrectSql(KeycloakSession session) {
@@ -284,6 +288,54 @@ public class DatabaseIndexCheckerTest {
         } finally {
             if (!restored) {
                 dropIndex(factory, OTHER_TABLE_NAME, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testReportsConflictForSameNamedIndexOnTableWithoutExpectedIndexes(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+        var dbProduct = getDatabaseProduct(factory);
+        // index names are unique per schema here (the same holds for PostgreSQL and Oracle),
+        // while MySQL, MariaDB and MSSQL scope them per table
+        boolean schemaUniqueNames = !(dbProduct.contains("mysql") || dbProduct.contains("mariadb") || dbProduct.contains("microsoft"));
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+
+        // Variant of the conflict where the same-named index sits on a table that has no
+        // expected index of its own, so the per-table scan never visits it: on the databases
+        // with schema-unique index names it still occupies the name, so the expected index
+        // must be reported as conflicting, not as creatable.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME, UNCHECKED_TABLE_COLUMN);
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            if (schemaUniqueNames) {
+                // the name is blocked by a table outside the check, so the expected index
+                // cannot be created until the existing one is renamed or dropped
+                assertThat(detect.getConflictingIndexesName(), hasItem(INDEX_NAME));
+                assertThat(detect.getMissingIndexesSql(), not(hasKey(INDEX_NAME)));
+            } else {
+                // index names are scoped per table, so the same-named index on the unchecked
+                // table does not block creating the expected index on its own table
+                assertThat(detect.getConflictingIndexesName(), is(empty()));
+                assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+            }
+
+            dropIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME);
             }
             renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
         }
