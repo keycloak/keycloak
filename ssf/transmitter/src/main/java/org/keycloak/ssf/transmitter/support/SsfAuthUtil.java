@@ -1,14 +1,21 @@
 package org.keycloak.ssf.transmitter.support;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
@@ -27,13 +34,115 @@ public class SsfAuthUtil {
 
     public static AuthenticationManager.AuthResult authenticate() {
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        var authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-        var auth = authenticator.authenticate();
+        AuthenticationManager.AuthResult auth;
+        try {
+            auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+        } catch (NotAuthorizedException e) {
+            // Thrown by AppAuthManager.extractAuthorizationHeaderToken when the
+            // Authorization header does not carry a Bearer token (unsupported
+            // scheme or no token part). RFC 6750 §3.1 treats an attempt with an
+            // unsupported authentication method like a request without
+            // credentials: bare challenge, no error code. The exception's own
+            // response has no entity and would be rewritten by
+            // KeycloakErrorHandler without the challenge, hence the mapping.
+            throw unauthorized(session, null);
+        }
         if (auth == null) {
-            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            // RFC 6750 §3.1: a request without any credentials gets a bare
+            // challenge; only a request that presented a bearer token which
+            // failed validation gets error="invalid_token".
+            boolean tokenPresent = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.AUTHORIZATION) != null;
+            throw unauthorized(session, tokenPresent ? "Token verification failed" : null);
         }
         SsfAuthUtil.setAuth(session, auth);
         return auth;
+    }
+
+    /**
+     * Builds a 401 response carrying the RFC 6750 {@code WWW-Authenticate: Bearer}
+     * challenge for the current realm. When {@code errorDescription} is
+     * {@code null} the challenge carries no error code (no credentials were
+     * presented); otherwise it carries {@code error="invalid_token"}.
+     */
+    public static Response unauthorizedResponse(KeycloakSession session, String errorDescription) {
+        StringBuilder challenge = new StringBuilder("Bearer realm=")
+                .append(quote(session.getContext().getRealm().getName()));
+        Object entity;
+        if (errorDescription != null) {
+            challenge.append(", error=").append(quote(OAuthErrorException.INVALID_TOKEN))
+                    .append(", error_description=").append(quote(errorDescription));
+            entity = new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_TOKEN, errorDescription);
+        } else {
+            // RFC 6750 §3.1: no credentials presented, so neither the
+            // challenge nor the body carries error information. The entity
+            // must still be non-null so RESTEasy returns this response
+            // as-is instead of routing it through KeycloakErrorHandler.
+            entity = Map.of();
+        }
+        return withNoStore(Response.status(Response.Status.UNAUTHORIZED))
+                .header(HttpHeaders.WWW_AUTHENTICATE, challenge.toString())
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(entity)
+                .build();
+    }
+
+    /**
+     * Builds a 403 response for a bearer token that verified but lacks the
+     * privileges required by the endpoint (RFC 6750 §3.1 {@code insufficient_scope}).
+     * Used for every {@link #canRead()} / {@link #canManage()} failure: missing
+     * scope, missing required role, non-service-account bearer, or a client
+     * that is not configured as an SSF receiver. The challenge advertises the
+     * required scope so the receiver knows what to request.
+     */
+    public static Response insufficientScopeResponse(KeycloakSession session, String requiredScope) {
+        String description = "Token is not authorized for the " + requiredScope + " scope";
+        String challenge = "Bearer realm=" + quote(session.getContext().getRealm().getName())
+                + ", error=" + quote(OAuthErrorException.INSUFFICIENT_SCOPE)
+                + ", error_description=" + quote(description)
+                + ", scope=" + quote(requiredScope);
+        return withNoStore(Response.status(Response.Status.FORBIDDEN))
+                .header(HttpHeaders.WWW_AUTHENTICATE, challenge)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INSUFFICIENT_SCOPE, description))
+                .build();
+    }
+
+    /**
+     * Auth error responses must not be cached. The resource methods carry
+     * {@code @NoCache}, but the 401 from {@link #authenticate()} is thrown
+     * inside the sub-resource locator before any annotated method runs, so
+     * the headers are set explicitly here. Mirrors {@code TokenEndpoint}.
+     */
+    private static Response.ResponseBuilder withNoStore(Response.ResponseBuilder builder) {
+        return builder
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header("Pragma", "no-cache");
+    }
+
+    private static final Pattern HEADER_CONTROL_CHARS = Pattern.compile("[\\x00-\\x1F\\x7F]");
+
+    /**
+     * Renders a value as an RFC 9110 quoted-string for use in a
+     * {@code WWW-Authenticate} challenge: ASCII control characters (including
+     * CR/LF) are stripped so the value cannot break or ambiguously shape the
+     * header, and {@code "} / {@code \} are backslash-escaped. Non-ASCII is
+     * kept, as RFC 9110 permits obs-text inside quoted-strings.
+     */
+    static String quote(String value) {
+        String sanitized = value == null ? "" : HEADER_CONTROL_CHARS.matcher(value).replaceAll("");
+        return '"' + sanitized.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
+    }
+
+    /**
+     * Exception variant of {@link #unauthorizedResponse(KeycloakSession, String)}
+     * for sub-resource locators that cannot return a {@link Response}. The
+     * response carries an entity, so RESTEasy returns it as-is instead of
+     * handing the exception to {@code KeycloakErrorHandler}, which would
+     * drop the {@code WWW-Authenticate} header. {@link ErrorResponseException}
+     * still marks the transaction rollback-only.
+     */
+    private static WebApplicationException unauthorized(KeycloakSession session, String errorDescription) {
+        return new ErrorResponseException(unauthorizedResponse(session, errorDescription));
     }
 
     private static void setAuth(KeycloakSession session, AuthenticationManager.AuthResult auth) {

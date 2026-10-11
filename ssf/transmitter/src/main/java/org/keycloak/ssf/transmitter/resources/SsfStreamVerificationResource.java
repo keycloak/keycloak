@@ -12,6 +12,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
@@ -73,6 +74,7 @@ public class SsfStreamVerificationResource {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Forbidden — token lacks the required scope, role, or receiver configuration"),
             @APIResponse(responseCode = "404", description = "Stream not found"),
             @APIResponse(responseCode = "429", description = "Too Many Requests — minimum verification interval not yet elapsed")
     })
@@ -80,7 +82,7 @@ public class SsfStreamVerificationResource {
         try {
 
             if (!SsfAuthUtil.canManage()) {
-                return Response.status(Response.Status.UNAUTHORIZED).build();
+                return SsfAuthUtil.insufficientScopeResponse(session, Ssf.SCOPE_SSF_MANAGE);
             }
 
             String streamId = verificationRequest.getStreamId();
@@ -176,10 +178,13 @@ public class SsfStreamVerificationResource {
             long lastVerifiedAtTime = Long.parseLong(lastVerifiedAt);
             long timeSinceLastVerification = currentTime - lastVerifiedAtTime;
             if (timeSinceLastVerification < minVerificationIntervalSeconds) {
+                long retryAfterSeconds = minVerificationIntervalSeconds - timeSinceLastVerification;
                 throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        // RFC 6585 §4: tell the receiver when it may retry
+                        .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
                         .type(MediaType.APPLICATION_JSON)
                         .entity(new SsfErrorRepresentation("too_many_requests",
-                                "Wait at least " + (minVerificationIntervalSeconds - timeSinceLastVerification)
+                                "Wait at least " + retryAfterSeconds
                                         + " seconds before triggering another verification"))
                         .build());
             }
