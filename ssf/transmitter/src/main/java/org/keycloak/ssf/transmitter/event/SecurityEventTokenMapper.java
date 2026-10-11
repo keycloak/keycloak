@@ -150,7 +150,7 @@ public class SecurityEventTokenMapper {
     public SsfSecurityEventToken generateStreamUpdatedEvent(StreamConfig stream, StreamStatus newStatus) {
         try {
             SsfSecurityEventToken token = newSecurityEventToken(stream);
-            token.setTxn(UUID.randomUUID().toString());
+            token.setTxn(randomTxn());
 
             OpaqueSubjectId subId = new OpaqueSubjectId();
             subId.setId(stream.getStreamId());
@@ -175,8 +175,8 @@ public class SecurityEventTokenMapper {
         try {
             SsfSecurityEventToken verificationEventToken = newSecurityEventToken(stream);
 
-            // Set transaction ID
-            verificationEventToken.setTxn(UUID.randomUUID().toString());
+            // Set transaction ID — no originating Keycloak event here.
+            verificationEventToken.setTxn(randomTxn());
 
             // Set subject ID
             OpaqueSubjectId subId = new OpaqueSubjectId();
@@ -212,6 +212,44 @@ public class SecurityEventTokenMapper {
         return securityEventToken;
     }
 
+    /**
+     * Resolves the SET {@code txn} claim for a token derived from a
+     * Keycloak event. The transaction identifier is the id of the
+     * originating event — the user {@link Event} when it is a real one,
+     * otherwise the {@link AdminEvent} (the admin-action paths build a
+     * synthetic, id-less user event around the admin event) — so a SET a
+     * receiver reports back can be traced to the exact entry in the
+     * realm's user / admin event log, and every SET fanned out to
+     * multiple streams for the same event shares one {@code txn}.
+     *
+     * <p>This is the semantic SSF 1.0 §4.1.9 asks for: {@code txn}
+     * "MUST be unique to the underlying event that caused the
+     * Transmitter to generate the SET", while the same value MAY be
+     * reused across SETs "to indicate that the SETs originated from the
+     * same underlying cause". The Keycloak event id is exactly that
+     * cause. Falls back to a fresh random UUID when neither event
+     * carries an id, e.g. events constructed outside {@code EventBuilder}.
+     *
+     * @see <a href="https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#section-4.1.9">SSF 1.0 §4.1.9</a>
+     */
+    protected String resolveTxn(Event userEvent, AdminEvent adminEvent) {
+        if (userEvent != null && userEvent.getId() != null && !userEvent.getId().isBlank()) {
+            return userEvent.getId();
+        }
+        if (adminEvent != null && adminEvent.getId() != null && !adminEvent.getId().isBlank()) {
+            return adminEvent.getId();
+        }
+        return randomTxn();
+    }
+
+    /**
+     * {@code txn} for SETs with no originating Keycloak event (stream
+     * verification, stream-updated, synthetic emits): a fresh UUID.
+     */
+    protected String randomTxn() {
+        return UUID.randomUUID().toString();
+    }
+
 
     /**
      * Generates a session revoked event for a user- or admin-initiated
@@ -241,7 +279,7 @@ public class SecurityEventTokenMapper {
             String userId = userEvent.getUserId();
 
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
-            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setTxn(resolveTxn(userEvent, adminEvent));
 
             // Set subject ID (complex subject with user and session,
             // plus tenant when the configured user-subject format
@@ -315,7 +353,7 @@ public class SecurityEventTokenMapper {
             }
 
             SsfSecurityEventToken eventToken = newSecurityEventToken(streamConfig);
-            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setTxn(resolveTxn(userEvent, adminEvent));
 
             // Set subject ID — composeUserSubject wraps in a complex
             // subject with a tenant sibling when the configured format
@@ -364,7 +402,7 @@ public class SecurityEventTokenMapper {
             String userId = userEvent.getUserId();
 
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
-            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setTxn(resolveTxn(userEvent, adminEvent));
             eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
 
             RiscAccountDisabled accountDisabledEvent = new RiscAccountDisabled();
@@ -402,7 +440,7 @@ public class SecurityEventTokenMapper {
             String userId = userEvent.getUserId();
 
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
-            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setTxn(resolveTxn(userEvent, adminEvent));
             eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
 
             RiscAccountEnabled accountEnabledEvent = new RiscAccountEnabled();
@@ -482,7 +520,7 @@ public class SecurityEventTokenMapper {
             }
 
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
-            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setTxn(resolveTxn(userEvent, adminEvent));
             eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
 
             RiscAccountPurged accountPurgedEvent = new RiscAccountPurged();
@@ -616,7 +654,7 @@ public class SecurityEventTokenMapper {
                                                         SubjectId subjectId) {
         try {
             SsfSecurityEventToken token = newSecurityEventToken(stream);
-            token.setTxn(UUID.randomUUID().toString());
+            token.setTxn(randomTxn());
             token.setSubjectId(subjectId);
 
             Map<String, Object> events = new HashMap<>();
@@ -1341,6 +1379,8 @@ public class SecurityEventTokenMapper {
         event.getDetails().put("admin", "true");
         event.getDetails().put(Details.REASON, "logout_all_user_sessions");
 
-        return toSecurityEventToken(event, stream);
+        // Pass the admin event through: it is the originating event
+        // (txn) and marks the revocation as admin-initiated.
+        return toSecurityEventToken(event, adminEvent, stream);
     }
 }

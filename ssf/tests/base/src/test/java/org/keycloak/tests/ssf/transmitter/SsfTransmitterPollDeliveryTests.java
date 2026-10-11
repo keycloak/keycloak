@@ -20,6 +20,7 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
@@ -196,6 +197,20 @@ public class SsfTransmitterPollDeliveryTests {
                 "polled SET should carry the realm issuer");
         Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
                 "polled SET should carry the CAEP session-revoked event");
+
+        // txn is the id of the originating Keycloak event (#48896): the
+        // SET must be traceable to the LOGOUT entry in the realm's event
+        // log for the test user.
+        String txn = set.path("txn").asText(null);
+        Assertions.assertNotNull(txn, "polled SET should carry a txn");
+        String testUserId = realm.admin().users().search(TEST_USER, true).get(0).getId();
+        EventRepresentation originatingEvent = realm.admin().getEvents(List.of("LOGOUT"), null, testUserId,
+                        null, null, null, 0, 100).stream()
+                .filter(e -> txn.equals(e.getId()))
+                .findFirst()
+                .orElse(null);
+        Assertions.assertNotNull(originatingEvent,
+                "SET txn=" + txn + " should be the id of the LOGOUT event stored for " + TEST_USER);
 
         // Second poll WITH ack of the jti from the first poll → the
         // outbox row should transition to DELIVERED and the second
