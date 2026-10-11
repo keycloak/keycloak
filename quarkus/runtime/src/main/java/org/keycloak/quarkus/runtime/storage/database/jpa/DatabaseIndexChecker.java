@@ -107,7 +107,9 @@ public class DatabaseIndexChecker implements Runnable {
 
     /**
      * Marker for a function or expression index part that the database reports without a
-     * column name, and for a changelog column defined via {@code valueComputed}.
+     * column name. A changelog column defined via {@code valueComputed} never produces this
+     * marker: such a definition yields no usable expected column list, so the comparison
+     * matches by index name on the expected table.
      */
     private static final String EXPRESSION_COLUMN = "__expression__";
 
@@ -387,8 +389,8 @@ public class DatabaseIndexChecker implements Runnable {
     /**
      * An index matches the expected changelog entry when its name is present and it is defined
      * on the same table with the same column list. When either side contains an expression
-     * column (or the database did not report columns for the index), the comparison falls back
-     * to the index name alone, preserving the previous behavior.
+     * column (or the database did not report columns for the index), the column comparison is
+     * skipped and the index matches by name on the expected table.
      */
     private static boolean isIndexPresent(IndexInfo expected, List<ExistingIndex> existing, boolean storesLower, boolean storesUpper) {
         if (existing == null) {
@@ -430,8 +432,9 @@ public class DatabaseIndexChecker implements Runnable {
     /**
      * Normalizes a column name for comparison: case-folded per the database identifier storage,
      * and with a Liquibase-style prefix-length suffix such as {@code BROKER_SESSION_ID(255)}
-     * stripped, so a {@code valueComputed} column definition still matches the column the
-     * database reports.
+     * stripped. Indexes with a {@code valueComputed} column are never compared column by
+     * column, so the stripping only matters for a plain column definition that carries such
+     * a suffix while the database reports the bare column name.
      */
     private static String normalizeColumn(String column, boolean storesLower, boolean storesUpper) {
         var normalized = column.trim();
