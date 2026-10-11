@@ -26,6 +26,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resteasy.HttpRequestImpl;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
@@ -510,6 +511,51 @@ public class RedirectUtilsTest {
                 RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=val", set, false, Collections.emptySet()));
         Assert.assertEquals("Empty forbidden set should allow forbidden params in fragment", "https://example.com/callback#state=val",
                 RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=val", set, false, Collections.emptySet()));
+    }
+
+    @Test
+    public void testVerifyRedirectUriClientBasedOverloadWithForbiddenParams() {
+        // Contract of the client-based overload with an explicit forbidden-parameters set, as used
+        // by the SAML call sites (see keycloak/keycloak#53823): passing an empty set disables the
+        // forbidden-parameter check while redirect matching itself stays fully intact, and passing
+        // the OIDC set keeps rejecting OIDC response parameters mixed into the redirect URI.
+        ClientModel client = mockClient(null, Stream.of("https://example.com/acs*").collect(Collectors.toSet()));
+
+        Assert.assertNull("Client-based overload must return null for a null client",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", null, true, Collections.emptySet()));
+
+        Assert.assertEquals("Empty forbidden set: SAML ACS URL with OIDC-named query parameter is accepted",
+                "https://example.com/acs?state=foo",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", client, true, Collections.emptySet()));
+        Assert.assertEquals("Empty forbidden set: fragment parameters are irrelevant to the match too",
+                "https://example.com/acs#state=foo",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs#state=foo", client, true, Collections.emptySet()));
+        Assert.assertNull("Empty forbidden set does not bypass redirect matching",
+                RedirectUtils.verifyRedirectUri(session, "https://evil.com/acs?state=foo", client, true, Collections.emptySet()));
+
+        Assert.assertNull("OIDC forbidden set still rejects OIDC response parameters mixed into the redirect URI",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", client, true, RedirectUtils.FORBIDDEN_OIDC_PARAMS));
+    }
+
+    private static ClientModel mockClient(String rootUrl, Set<String> redirectUris) {
+        return (ClientModel) java.lang.reflect.Proxy.newProxyInstance(ClientModel.class.getClassLoader(),
+                new Class<?>[]{ClientModel.class},
+                (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getRootUrl":
+                            return rootUrl;
+                        case "getRedirectUris":
+                            return redirectUris;
+                        case "toString":
+                            return "ClientModelStub";
+                        case "hashCode":
+                            return System.identityHashCode(proxy);
+                        case "equals":
+                            return proxy == args[0];
+                        default:
+                            return null;
+                    }
+                });
     }
 
     @Test

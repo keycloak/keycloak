@@ -52,4 +52,39 @@ public class SamlClientTest extends AbstractSamlTest {
             assertThat(s, Matchers.containsString("Wrong client protocol."));
         }
     }
+
+    @Test
+    public void testLoginAcceptsAcsUrlWithOidcNamedParameter() throws ParsingException, ConfigurationException, ProcessingException, IOException, URISyntaxException {
+        // Regression test for keycloak/keycloak#53823: a SAML ACS URL that carries a query parameter named
+        // after an OIDC response parameter (here: state) used to be rejected with "Invalid redirect uri",
+        // because the SAML call sites inherited the OIDC forbidden-parameters check from the fix for #49430.
+        // SAML responses never append OIDC parameters, so the ACS URL must not be checked against them.
+        AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, getSamlAssertionConsumerUrl() + "?state=foo", REALM_NAME);
+        Document samlRequest = SAML2Request.convert(loginRep);
+        URI samlEndpoint = getAuthServerSamlEndpoint(REALM_NAME);
+
+        HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
+
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            Assertions.assertNotEquals(400, response.getStatusLine().getStatusCode(),
+                    "SAML AuthnRequest must not be rejected only because its ACS URL contains an OIDC-named query parameter");
+        }
+    }
+
+    @Test
+    public void testLoginStillRejectsAcsUrlOutsideValidRedirects() throws ParsingException, ConfigurationException, ProcessingException, IOException, URISyntaxException {
+        // Guard: the ACS URL validation itself must stay intact, a redirect URI not matching the
+        // client's configured redirect URIs is still refused.
+        AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, "https://evil.example.com/acs?state=foo", REALM_NAME);
+        Document samlRequest = SAML2Request.convert(loginRep);
+        URI samlEndpoint = getAuthServerSamlEndpoint(REALM_NAME);
+
+        HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
+
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            Assertions.assertEquals(400, response.getStatusLine().getStatusCode());
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            assertThat(s, Matchers.containsString("Invalid redirect uri"));
+        }
+    }
 }

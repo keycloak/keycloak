@@ -73,8 +73,12 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri) {
+        return verifyRedirectUri(session, redirectUri, client, requireRedirectUri, FORBIDDEN_OIDC_PARAMS);
+    }
+
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri, Set<String> forbiddenParams) {
         if (client != null)
-            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri);
+            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri, forbiddenParams);
         return null;
     }
 
