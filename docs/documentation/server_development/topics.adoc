@@ -50,11 +50,7 @@ include::topics/user-storage/import.adoc[]
 
 include::topics/user-storage/cache.adoc[]
 
-include::topics/user-storage/javaee.adoc[]
-
 include::topics/user-storage/rest.adoc[]
-
-include::topics/user-storage/migration.adoc[]
 
 include::topics/user-storage/stream-interfaces.adoc[]
 

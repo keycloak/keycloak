@@ -98,7 +98,3 @@ include::topics/threat/auth-sessions-limit.adoc[]
 include::topics/threat/sql.adoc[]
 include::topics/account.adoc[]
 include::topics/admin-cli.adoc[]
-
-//ifeval::[{project_community}==true]
-//include::topics/MigrationFromOlderVersions.adoc[]
-//endif::[]
