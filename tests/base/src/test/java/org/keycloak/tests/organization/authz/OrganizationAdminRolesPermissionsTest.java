@@ -606,6 +606,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("testIdpView");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             manageOrgsResource.identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().get(idpRep.getAlias()).remove());
 
@@ -974,6 +975,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("genericOrgBoundIdp");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             idpRep.setOrganizationLinks(List.of(new OrganizationIdentityProviderLinkRepresentation(orgId)));
 
             try (Response response = viewOrgsManageIdpsResource.identityProviders().create(idpRep)) {
@@ -1028,6 +1030,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("leakTestIdp");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             manageOrgsResource.identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().get("leakTestIdp").remove());
 
@@ -1097,6 +1100,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("sharedIdp");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             manageOrgsResource.identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().get("sharedIdp").remove());
 

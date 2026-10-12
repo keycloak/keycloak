@@ -3,8 +3,6 @@ package org.keycloak.tests.admin.identityprovider;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderModel;
@@ -45,7 +43,8 @@ public class AbstractIdentityProviderTest {
             idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
         }
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE,
+                AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 
         if (secret != null) {
             idpRep.getConfig().put("clientSecret", secret);
@@ -71,9 +70,7 @@ public class AbstractIdentityProviderTest {
         idp.setEnabled(enabled);
         idp.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
         idp.getConfig().putIfAbsent("validateSignature", "false");
-        if (SAMLIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
-            idp.getConfig().putIfAbsent(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
-        }
+
         return idp;
     }
 
