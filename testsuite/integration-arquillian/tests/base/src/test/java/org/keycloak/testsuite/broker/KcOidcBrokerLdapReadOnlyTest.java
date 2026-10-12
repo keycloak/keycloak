@@ -15,7 +15,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider.EditMode;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
@@ -138,7 +140,19 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
             RealmModel appRealm = ctx.getRealm();
 
             LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
-            LDAPObject user = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, username, "f", "l", email , new MultivaluedHashMap<>());
+
+            // add the user to LDAP directly, as the default mappers of a read-only provider do not fill all mandatory LDAP attributes (e.g. "cn")
+            LDAPConfig ldapConfig = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
+            LDAPObject user = new LDAPObject();
+            user.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
+            user.setObjectClasses(ldapConfig.getUserObjectClasses());
+            user.setSingleAttribute(ldapConfig.getUsernameLdapAttribute(), username);
+            user.setSingleAttribute(LDAPConstants.CN, "f l");
+            user.setSingleAttribute(LDAPConstants.GIVENNAME, "f");
+            user.setSingleAttribute(LDAPConstants.SN, "l");
+            user.setSingleAttribute(LDAPConstants.EMAIL, email);
+            LDAPUtils.computeAndSetDn(ldapConfig, user);
+            ctx.getLdapProvider().getLdapIdentityStore().add(user);
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user, "Password1");
         });
     }

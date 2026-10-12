@@ -76,15 +76,15 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             // assert that user "fullnameUser" is not in local DB
             Assertions.assertNull(session.users().getUserByUsername(appRealm, "fullname"));
 
-            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
+            // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "givenName" attribute in LDAP (currently mapped to model firstName)
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
 
-            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
+            // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ("givenName"). The default write-only "full name" mapper keeps filling "cn"
             ComponentModel firstNameMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "first name");
             String ldapFirstNameAttributeName = firstNameMapper.getConfig().getFirst(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
             appRealm.removeComponent(firstNameMapper);
 
-            ComponentModel fullNameMapperModel = KeycloakModelUtils.createComponentModel("full name", ldapModel.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+            ComponentModel fullNameMapperModel = KeycloakModelUtils.createComponentModel("test full name", ldapModel.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
                     FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
                     FullNameLDAPStorageMapper.READ_ONLY, "false");
             appRealm.addComponentModel(fullNameMapperModel);

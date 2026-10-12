@@ -26,6 +26,7 @@ objectclass: organizationalPerson
 objectclass: inetOrgPerson
 uid: jbrown
 cn: James
+givenName: James
 sn: Brown
 mail: jbrown@keycloak.org
 postalCode: 88441
@@ -38,6 +39,7 @@ objectclass: organizationalPerson
 objectclass: inetOrgPerson
 uid: bwilson
 cn: Bruce
+givenName: Bruce
 sn: Wilson
 sn: Schneider
 mail: bwilson@keycloak.org
