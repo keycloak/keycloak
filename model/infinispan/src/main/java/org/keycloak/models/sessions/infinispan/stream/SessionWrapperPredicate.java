@@ -25,6 +25,11 @@ import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
+ * Matches cache entries by realm. May return loading markers on caches that support them
+ * (e.g. user session caches). This is fine for removal operations, but callers that access
+ * entity fields beyond {@code getRealmId()} or {@code getClientSessions()} must filter
+ * loading markers out via {@link SessionEntityWrapper#isLoadingMarker()}.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @ProtoTypeId(Marshalling.SESSION_WRAPPER_PREDICATE)

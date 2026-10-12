@@ -4,6 +4,36 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB
+// https://github.com/keycloak/keycloak/issues/53251
+
+{project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB in all modes.
+Previously, this was only applied when the `stateless` feature was enabled.
+This prevents stale-snapshot reads that can resurrect deleted sessions in the cache, and prevents deadlocks that occur under concurrent logins.
+If binary logging is enabled with `binlog_format = STATEMENT`, this change will cause write operations to fail.
+{project_name} logs an error at startup when it detects this incompatible setting.
+
+See the link:https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level[Transaction isolation level] section in the database configuration guide for details on `binlog_format` requirements.
+
+=== `UserSessionPersisterProvider.findUserSessionsByUserId` is now required
+// https://github.com/keycloak/keycloak/issues/53251
+
+The `findUserSessionsByUserId` method in the `UserSessionPersisterProvider` SPI is no longer a default method.
+Previously, the interface provided a default implementation that threw `IllegalStateException`.
+All implementations of `UserSessionPersisterProvider` must now provide this method.
+
+If you have a custom `UserSessionPersisterProvider` implementation, add the following method:
+
+[source,java]
+----
+@Override
+public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+    // Return user-session ids mapped to their associated client UUIDs
+}
+----
+
+Implementations that do not persist sessions (equivalent to the built-in disabled provider) should return `Collections.emptyMap()`.
+
 === Admin client `organizations.findOne` no longer rejects when the organization does not exist
 // https://github.com/keycloak/keycloak/pull/51717
 

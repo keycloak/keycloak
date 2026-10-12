@@ -39,6 +39,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -525,8 +526,21 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         var offlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, true);
         var onlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, false);
         userSessionPersister.onUserRemoved(realm, user);
-        removeCachedUserAndClientSessions(offlineForRemoval, true);
-        removeCachedUserAndClientSessions(onlineForRemoval, false);
+
+        // Defer cache removal to after the DB transaction commits.
+        // If we removed from cache first, a concurrent reader could re-load the session
+        // from the DB (which hasn't committed the delete yet) and CAS it back into the cache.
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                removeCachedUserAndClientSessions(offlineForRemoval, true);
+                removeCachedUserAndClientSessions(onlineForRemoval, false);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+            }
+        });
     }
 
     @Override
@@ -714,22 +728,31 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         SessionEntityWrapper<UserSessionEntity> wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
 
-        SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
-        if (existingSession != null) {
-            // skip import the client sessions, they should have been imported too.
-            log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
-            return existingSession;
-        }
+        try {
+            clientSessionTx.placeLoadingMarkers(clientSessionsById, offline);
+            SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
+            if (existingSession != null) {
+                if (existingSession.isLoadingMarker()) {
+                    log.debugf("CAS failed for sessionId=%s offline=%s — session was likely deleted during import", sessionId, offline);
+                    return null;
+                }
+                // skip import the client sessions, they should have been imported too.
+                log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
+                return existingSession;
+            }
 
-        // importing here when the transaction has the changelog available.
-        if (!offline) {
-            migrateRememberMe(persistentUserSession);
-        }
+            // importing here when the transaction has the changelog available.
+            if (!offline) {
+                migrateRememberMe(persistentUserSession);
+            }
 
-        // Import client sessions
-        clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
-        clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
-        return wrappedUserSessionEntity;
+            // Import client sessions (uses CAS replace with pre-placed markers)
+            clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
+            clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
+            return wrappedUserSessionEntity;
+        } finally {
+            clientSessionTx.cleanupAllLoadingMarkers(offline);
+        }
     }
 
     // new import logic has been added to PersistentSessionsChangelogBasedTransaction, no longer in use.
