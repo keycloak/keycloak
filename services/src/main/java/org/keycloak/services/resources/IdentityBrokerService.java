@@ -115,6 +115,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.IdentityBrokeringAPIContext;
@@ -651,9 +652,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             }
 
             if (!canReadBrokerToken(token)) {
-                errorEventSent = true;
                 event.detail(Details.REASON, "Client not authorized to retrieve tokens for provider");
                 event.error(Errors.UNAUTHORIZED_CLIENT);
+                errorEventSent = true;
                 return corsResponse(forbidden("Client not authorized to retrieve tokens from identity provider"), clientModel);
             }
 
@@ -677,9 +678,9 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 this.event.success();
                 return response;
             } catch (WebApplicationException e) {
-                errorEventSent = true;
                 this.event.detail(Details.REASON, e.getMessage());
                 this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                errorEventSent = true;
                 return corsResponse(e.getResponse(), clientModel);
             } finally {
                 if (Booleans.isTrue(identityProviderConfig.isStoreToken()) && !Objects.equals(oldToken, identity.getToken())) {
@@ -688,9 +689,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             }
 
         } catch (WebApplicationException e) {
-            errorEventSent = true;
-            this.event.detail(Details.REASON, e.getMessage());
-            this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            if (!errorEventSent) {
+                this.event.detail(Details.REASON, e.getMessage());
+                this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                errorEventSent = true;
+            }
             return e.getResponse();
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_OBTAIN_TOKEN, e, providerAlias);
@@ -759,6 +762,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         if (Booleans.isTrue(identityProviderConfig.isLinkOnly())) {
             event.error(Errors.NOT_ALLOWED);
+            errorEventSent = true;
             return redirectToErrorPage(authenticationSession, Response.Status.BAD_REQUEST, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, providerAlias);
         }
 
@@ -1578,9 +1582,13 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
     private void fireErrorEvent(String message, Throwable throwable) {
         if (!errorEventSent) {
-            errorEventSent = true;
             this.event.detail(Details.REASON, message);
-            this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            try {
+                this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                errorEventSent = true;
+            } catch (Exception e) {
+                ServicesLogger.LOGGER.couldNotFireEvent(e);
+            }
         }
 
         if (throwable != null) {
