@@ -41,6 +41,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SIGNING_CERTIF
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
@@ -244,6 +245,7 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
                     .attribute(POST_BINDING_RESPONSE, "true")
                     .attribute(POST_BINDING_AUTHN_REQUEST, "true")
                     .attribute(VALIDATE_SIGNATURE, "false")
+                    .attribute(WANT_ASSERTIONS_SIGNED, "false")
                     .attribute(WANT_AUTHN_REQUESTS_SIGNED, "false")
                     .attribute(BACKCHANNEL_SUPPORTED, "false")
                     .attribute(ARTIFACT_BINDING_RESPONSE, "false")
