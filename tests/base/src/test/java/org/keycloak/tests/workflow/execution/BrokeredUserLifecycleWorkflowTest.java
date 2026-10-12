@@ -353,8 +353,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         identityProviderRepresentation.setDisplayName(providerId);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
-        identityProviderRepresentation.setConfig(Map.of("validateSignature", "false"));
-
+        identityProviderRepresentation.getConfig().put("validateSignature", "false");
         return identityProviderRepresentation;
     }
 

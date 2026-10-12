@@ -63,7 +63,7 @@ public class KcSamlBrokerTest extends AbstractKcSamlBrokerTest {
         Map<String, String> config = idp.getConfig();
         config.put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true");
         config.put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, consumerSigningCert);
-        config.remove(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE);
+        config.put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
 
         consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
 

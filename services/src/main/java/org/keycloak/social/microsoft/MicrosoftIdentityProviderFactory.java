@@ -44,7 +44,10 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
 
     @Override
     public MicrosoftIdentityProviderConfig createConfig() {
-        return new MicrosoftIdentityProviderConfig();
+        MicrosoftIdentityProviderConfig config = new MicrosoftIdentityProviderConfig();
+        config.setUseJwksUrl(true);
+        config.setJwksUrl("https://login.microsoftonline.com/common/discovery/v2.0/keys");
+        return config;
     }
 
     @Override

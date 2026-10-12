@@ -41,7 +41,10 @@ public class GitLabIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public OIDCIdentityProviderConfig createConfig() {
-        return new OIDCIdentityProviderConfig();
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
+        config.setUseJwksUrl(true);
+        config.setJwksUrl("https://gitlab.com/oauth/discovery/keys");
+        return config;
     }
 
     @Override
