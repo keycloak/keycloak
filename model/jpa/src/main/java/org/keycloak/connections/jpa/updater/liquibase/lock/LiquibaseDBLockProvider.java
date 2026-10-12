@@ -58,6 +58,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     }
 
 
+    @SuppressWarnings("required.method.not.called") // connection lifecycle managed by provider
     private void lazyInit() {
         if (!initialized) {
             LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);

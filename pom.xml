@@ -223,6 +223,7 @@
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <plugin.antrun.version>1.8</plugin.antrun.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <checkerframework.version>4.3.1</checkerframework.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 
         <!-- Surefire Settings -->
@@ -1635,6 +1636,56 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>checkerframework</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                    <version>${checkerframework.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <fork>true</fork>
+                            <annotationProcessorPaths combine.children="append">
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker-qual</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                                <arg>-Xlint:-removal</arg>
+                                <arg>-processor</arg>
+                                <arg>org.checkerframework.checker.resourceleak.ResourceLeakChecker</arg>
+                                <!-- Skipped classes will be reduced once https://github.com/typetools/checker-framework/issues/8340 is fixed -->
+                                <arg>-AskipDefs=ConditionalCredentialAuthenticatorFactory|LoAUtil|CryptoUtils|SecureClientAuthenticatorExecutorFactory|ProtocolMappersClientRegistrationPolicyFactory|LinkedAccountsResource|UserPolicyProviderFactory|MigrateTo2_1_0|ExportUtils|DefaultHttpClientFactory|ExportImportManager|JsonLdContextDocumentLoader|IframeUtil|DeviceEndpoint|ThemeResource|WelcomeResource|SSLSocketFactory|AllowedProtocolMappersExecutorFactory|LDAPOperationManager|LDAPContextManager|LDAPStartTlsClose|MSSQLAsyncCommitIntegrator|PostgreSQLAsyncCommitIntegrator|Ipatuura|IpatuuraUserStorageProvider|AbstractFileBasedImportProvider|PushDeliveryService|JAXBUtil|JAXPValidationUtil|HttpRequestImpl|ResteasyKeycloakContext|SafeBasicResponseHandlerTest</arg>
+                                <arg>-Astubs=${maven.multiModuleProjectDirectory}/.mvn/checkerframework/jdk.astub</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>testsuite</id>
             <activation>

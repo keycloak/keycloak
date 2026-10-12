@@ -247,6 +247,7 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
+    @SuppressWarnings({"override.return", "required.method.not.called", "reset.not.owning"})
     public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
         // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
         return new CustomSSLSocketFactory(delegate) {

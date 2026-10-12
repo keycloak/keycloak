@@ -38,6 +38,7 @@ public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
     }
 
     @Override
+    @SuppressWarnings("required.method.not.called") // ClassLoader intentionally lives for server lifetime
     public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
         return new DefaultProviderLoader(info, createClassLoader(baseClassLoader, resource.split(";")));
     }

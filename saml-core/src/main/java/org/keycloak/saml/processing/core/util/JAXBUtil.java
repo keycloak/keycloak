@@ -17,6 +17,7 @@
 package org.keycloak.saml.processing.core.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import javax.xml.transform.Source;
@@ -43,7 +44,9 @@ import org.xml.sax.SAXParseException;
  *
  * @author Anil.Saldhana@redhat.com
  * @since May 26, 2009
+ * @deprecated Unused, scheduled for removal in 27.0. See <a href="https://github.com/keycloak/keycloak/issues/53853">#53853</a>
  */
+@Deprecated
 public class JAXBUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
@@ -172,18 +175,29 @@ public class JAXBUtil {
 
         // Get the sources
         Source[] schemaSources = new Source[schemaLocations.length];
+        InputStream[] streams = new InputStream[schemaLocations.length];
 
         int i = 0;
-        for (String schemaLocation : schemaLocations) {
-            URL schemaURL = SecurityActions.loadResource(JAXBUtil.class, schemaLocation);
-            if (schemaURL == null)
-                throw logger.nullValueError("Schema URL :" + schemaLocation);
+        try {
+            for (String schemaLocation : schemaLocations) {
+                URL schemaURL = SecurityActions.loadResource(JAXBUtil.class, schemaLocation);
+                if (schemaURL == null)
+                    throw logger.nullValueError("Schema URL :" + schemaLocation);
 
-            schemaSources[i++] = new StreamSource(schemaURL.openStream());
+                streams[i] = schemaURL.openStream();
+                schemaSources[i] = new StreamSource(streams[i]);
+                i++;
+            }
+
+            Schema schema = schemaFactory.newSchema(schemaSources);
+            unmarshaller.setSchema(schema);
+        } finally {
+            for (InputStream stream : streams) {
+                if (stream != null) {
+                    stream.close();
+                }
+            }
         }
-
-        Schema schema = schemaFactory.newSchema(schemaSources);
-        unmarshaller.setSchema(schema);
 
         return unmarshaller;
     }

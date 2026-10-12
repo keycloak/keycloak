@@ -72,8 +72,9 @@ public abstract class AKPJWKTest {
     }
 
     private JWK getJwk(String algorithm) throws IOException {
-        InputStream inputStream = getClass().getResourceAsStream(algorithm.replace('-', '_') + ".jose.json");
-        return JsonSerialization.readValue(inputStream, JWK.class);
+        try (InputStream inputStream = getClass().getResourceAsStream(algorithm.replace('-', '_') + ".jose.json")) {
+            return JsonSerialization.readValue(inputStream, JWK.class);
+        }
     }
 
     private void testPrefix(String algorithm) throws NoSuchAlgorithmException {

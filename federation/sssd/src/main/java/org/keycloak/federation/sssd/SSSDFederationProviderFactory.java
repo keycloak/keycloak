@@ -27,6 +27,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 
+import org.checkerframework.checker.mustcall.qual.NotOwning;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -75,10 +76,12 @@ public class SSSDFederationProviderFactory implements UserStorageProviderFactory
         return new PAMAuthenticator(username, factors);
     }
 
+    @NotOwning
     protected DBusConnection getDbusConnection() {
         return dbusConnection;
     }
 
+    @SuppressWarnings("required.method.not.called") // DBusConnection lifecycle managed by factory
     private void lazyInit() {
         if (dbusConnection == null) {
             synchronized (this) {

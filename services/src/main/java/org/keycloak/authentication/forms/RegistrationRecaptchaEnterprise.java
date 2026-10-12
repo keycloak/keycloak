@@ -20,6 +20,7 @@
 package org.keycloak.authentication.forms;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -92,8 +93,10 @@ public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptc
                 throw new Exception(response.getStatusLine().getReasonPhrase());
             }
 
-            RecaptchaAssessmentResponse assessment = JsonSerialization.readValue(
-                    response.getEntity().getContent(), RecaptchaAssessmentResponse.class);
+            RecaptchaAssessmentResponse assessment;
+            try (InputStream content = response.getEntity().getContent()) {
+                assessment = JsonSerialization.readValue(content, RecaptchaAssessmentResponse.class);
+            }
             LOGGER.tracef("Got assessment response: %s", assessment);
 
             String tokenAction = assessment.getTokenProperties().getAction();

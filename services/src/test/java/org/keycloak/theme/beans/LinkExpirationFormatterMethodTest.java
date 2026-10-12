@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import freemarker.template.TemplateModelException;
 import org.junit.Assert;
@@ -153,47 +153,51 @@ public class LinkExpirationFormatterMethodTest {
     @Test
     public void convert() throws IOException {
         String[] units = { "seconds", "minutes", "hours", "days"};
-        for (Path path : Files.list(Paths.get("../themes/src/main/resources-community/theme/base/email/messages" )).collect(Collectors.toList())) {
-            Properties p = new Properties();
-            p.load(Files.newBufferedReader(path, StandardCharsets.UTF_8));
-            FileWriter fw = new FileWriter(path.toFile(), true);
-            boolean firstEntry = true;
-            for (String unit : units) {
-                StringBuilder choicePattern = new StringBuilder();
-                String base = "linkExpirationFormatter.timePeriodUnit." + unit;
-                String defaultValue = p.getProperty(base);
-                if (defaultValue == null) {
-                    continue;
+        try (Stream<Path> paths = Files.list(Paths.get("../themes/src/main/resources-community/theme/base/email/messages"))) {
+            for (Path path : paths.toList()) {
+                Properties p = new Properties();
+                try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    p.load(reader);
                 }
-                choicePattern.append("{0,choice,0#").append(defaultValue).append("|");
-                int last = 0;
-                int entry = 0;
-                String previous = defaultValue;
-                for (int i = 0; i < 10; ++i) {
-                    String value = p.getProperty(base + "." + i);
-                    if (value != null) {
-                        last = i;
-                        if (!Objects.equals(value, previous)) {
-                            entry = i;
-                            previous = value;
-                            choicePattern.append(i).append("#").append(value).append("|");
+                try (FileWriter fw = new FileWriter(path.toFile(), true)) {
+                    boolean firstEntry = true;
+                    for (String unit : units) {
+                        StringBuilder choicePattern = new StringBuilder();
+                        String base = "linkExpirationFormatter.timePeriodUnit." + unit;
+                        String defaultValue = p.getProperty(base);
+                        if (defaultValue == null) {
+                            continue;
                         }
+                        choicePattern.append("{0,choice,0#").append(defaultValue).append("|");
+                        int last = 0;
+                        int entry = 0;
+                        String previous = defaultValue;
+                        for (int i = 0; i < 10; ++i) {
+                            String value = p.getProperty(base + "." + i);
+                            if (value != null) {
+                                last = i;
+                                if (!Objects.equals(value, previous)) {
+                                    entry = i;
+                                    previous = value;
+                                    choicePattern.append(i).append("#").append(value).append("|");
+                                }
+                            }
+                        }
+                        choicePattern.append(last).append("<").append(defaultValue).append("}");
+                        if (entry == 0) {
+                            choicePattern.setLength(0);
+                            choicePattern.append(defaultValue);
+                        }
+                        choicePattern.insert(0, base + "=");
+                        choicePattern.append("\n");
+                        if (firstEntry) {
+                            fw.write("\n");
+                            firstEntry = false;
+                        }
+                        fw.write(choicePattern.toString());
                     }
                 }
-                choicePattern.append(last).append("<").append(defaultValue).append("}");
-                if (entry == 0) {
-                    choicePattern.setLength(0);
-                    choicePattern.append(defaultValue);
-                }
-                choicePattern.insert(0, base + "=");
-                choicePattern.append("\n");
-                if (firstEntry) {
-                    fw.write("\n");
-                    firstEntry = false;
-                }
-                fw.write(choicePattern.toString());
             }
-            fw.close();
         }
     }
 

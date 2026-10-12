@@ -33,6 +33,7 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.checkerframework.checker.mustcall.qual.Owning;
 
 public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> {
 
@@ -125,7 +126,7 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
         }
     }
 
-    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
+    private @Owning SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
         SimpleHttpResponse response = request.asResponse();
         try {
             int status = response.getStatus();

@@ -101,6 +101,7 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.checkerframework.checker.mustcall.qual.Owning;
 import org.jboss.logging.Logger;
 
 /**
@@ -673,7 +674,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
-    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
+    private @Owning SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
         SimpleHttpResponse response = request.asResponse();
         try {
             if (response.getStatus() != 200) {

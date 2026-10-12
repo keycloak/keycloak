@@ -48,29 +48,31 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
     }
 
     private File createEncodedFile(StreamSupplier producer, File target) throws IOException {
-        InputStream is = producer.getInputStream();
-        if (is == null) {
-            return null;
-        }
-
-        File parent = target.getParentFile();
-        if (!parent.isDirectory()) {
-            if (parent.mkdirs() && !parent.isDirectory()) {
-                logger.warnf("Fail to create cache directory %s", parent.toString());
+        try (InputStream is = producer.getInputStream()) {
+            if (is == null) {
+                return null;
             }
-        }
-        File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
 
-        try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
-            IOUtils.copy(is, gos);
-        }
+            File parent = target.getParentFile();
+            if (!parent.isDirectory()) {
+                if (parent.mkdirs() && !parent.isDirectory()) {
+                    logger.warnf("Fail to create cache directory %s", parent.toString());
+                }
+            }
+            File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
 
-        try {
-            Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
-            return target;
-        } catch (IOException io) {
-            logger.warnf(io, "Fail to move temporary file to %s", target.toString());
-            return null;
+            try (FileOutputStream fos = new FileOutputStream(tmpEncodedFile);
+                 GZIPOutputStream gos = new GZIPOutputStream(fos)) {
+                IOUtils.copy(is, gos);
+            }
+
+            try {
+                Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
+                return target;
+            } catch (IOException io) {
+                logger.warnf(io, "Fail to move temporary file to %s", target.toString());
+                return null;
+            }
         }
     }
 

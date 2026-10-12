@@ -94,11 +94,10 @@ public abstract class CertificateIdentityExtractorTest {
 
 
     private X509Certificate getCertificate(String resourceFilename) throws Exception {
-        InputStream is = getClass().getResourceAsStream(resourceFilename);
-
-        String s = StreamUtil.readString(is, Charset.defaultCharset());
-
-        return PemUtils.decodeCertificate(s);
+        try (InputStream is = getClass().getResourceAsStream(resourceFilename)) {
+            String s = StreamUtil.readString(is, Charset.defaultCharset());
+            return PemUtils.decodeCertificate(s);
+        }
     }
 
 

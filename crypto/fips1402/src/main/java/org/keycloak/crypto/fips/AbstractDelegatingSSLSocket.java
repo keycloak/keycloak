@@ -38,6 +38,7 @@ import javax.net.ssl.SSLSocket;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings({"type.argument", "reset.not.owning", "contracts.conditional.postcondition"})
 abstract class AbstractDelegatingSSLSocket extends SSLSocket {
 
     private final SSLSocket delegate;

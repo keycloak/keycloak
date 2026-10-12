@@ -105,11 +105,12 @@ public final class SimpleHttpTest {
         @Test
         public void withCharset() throws IOException {
             HttpResponse httpResponse = createBasicResponse(entity);
-            SimpleHttpResponse response = new SimpleHttpResponse(httpResponse, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE, new ObjectMapper());
-            if (success) {
-                assertEquals(original, response.asString());
-            } else {
-                assertNotEquals(original, response.asString());
+            try (SimpleHttpResponse response = new SimpleHttpResponse(httpResponse, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE, new ObjectMapper())) {
+                if (success) {
+                    assertEquals(original, response.asString());
+                } else {
+                    assertNotEquals(original, response.asString());
+                }
             }
         }
 

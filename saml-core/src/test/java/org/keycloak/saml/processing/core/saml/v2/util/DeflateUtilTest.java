@@ -18,6 +18,7 @@
 package org.keycloak.saml.processing.core.saml.v2.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 
@@ -41,8 +42,9 @@ public class DeflateUtilTest {
         String msgString = "String To Encode";
         byte[] msg = msgString.getBytes();
         byte[] encoded = DeflateUtil.encode(msg);
-        String decoded = new String(DeflateUtil.decode(encoded).readAllBytes());
-        Assert.assertEquals(msgString, decoded);
+        try (InputStream decoded = DeflateUtil.decode(encoded)) {
+            Assert.assertEquals(msgString, new String(decoded.readAllBytes()));
+        }
     }
 
 }
