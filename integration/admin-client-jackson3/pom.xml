@@ -34,6 +34,13 @@
             <groupId>dev.resteasy.providers</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
             <version>${version.resteasy.jackson.provider}</version>
+            <!-- TODO: drop when the ${resteasy.version} and {version.resteasy.jackson.provider} are synced -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
