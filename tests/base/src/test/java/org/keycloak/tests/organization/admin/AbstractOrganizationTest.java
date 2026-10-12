@@ -124,8 +124,18 @@ public abstract class AbstractOrganizationTest {
             id = ApiUtil.getCreatedId(response);
         }
 
-        managedRealm.admin().identityProviders().create(broker).close();
-        managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+        try (Response response = managedRealm.admin().identityProviders().create(broker)) {
+            String responseBody = response.hasEntity() ? response.readEntity(String.class) : "<empty response body>";
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus(),
+                    "Failed to create identity provider " + broker.getAlias() + ": " + responseBody);
+        }
+        try (Response response = managedRealm.admin().organizations().get(id).identityProviders()
+                .addIdentityProvider(broker.getAlias())) {
+            String responseBody = response.hasEntity() ? response.readEntity(String.class) : "<empty response body>";
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus(),
+                    "Failed to link identity provider " + broker.getAlias()
+                            + " to organization " + name + ": " + responseBody);
+        }
 
         if (orgDomains != null && orgDomains.length > 0) {
             org = managedRealm.admin().organizations().get(id).toRepresentation();
@@ -334,7 +344,8 @@ public abstract class AbstractOrganizationTest {
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
                 "defaultScope", "email profile",
-                "syncMode", "IMPORT"
+                "syncMode", "IMPORT",
+                "validateSignature", "false"
         )));
         return idp;
     }
