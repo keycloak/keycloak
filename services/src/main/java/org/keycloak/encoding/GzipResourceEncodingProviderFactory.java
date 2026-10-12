@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
 import org.keycloak.Config;
 import org.keycloak.common.Version;
@@ -27,7 +27,6 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
 
     private volatile File cacheDir;
     private volatile File previousCacheDir;
-    private final AtomicLong generation = new AtomicLong();
 
     @Override
     public ResourceEncodingProvider create(KeycloakSession session) {
@@ -61,9 +60,13 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             deleteDirectoryQuietly(prev);
         }
 
-        // current dir becomes previous — in-flight providers may still write to it
-        previousCacheDir = cacheDir;
-        cacheDir = createCacheDir();
+        File newDir = createCacheDir();
+        if (newDir != null) {
+            // only rotate if the new directory was actually created; otherwise keep using the existing
+            // cacheDir rather than leaving it null, which would wrongly re-trigger the full-wipe startup path
+            previousCacheDir = cacheDir;
+            cacheDir = newDir;
+        }
     }
 
     @Override
@@ -102,8 +105,9 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     }
 
     private File createCacheDir() {
-        // counter avoids directory name collisions when clearCache() is called twice within the same millisecond
-        File dir = new File(cacheRoot(), Version.RESOURCES_VERSION + "-" + Time.currentTimeMillis() + "-" + generation.incrementAndGet());
+        // a random UUID (rather than an in-process counter) avoids collisions even across multiple instances
+        // that happen to share the same cache root
+        File dir = new File(cacheRoot(), Version.RESOURCES_VERSION + "-" + Time.currentTimeMillis() + "-" + UUID.randomUUID());
         dir.mkdirs();
         if (!dir.isDirectory()) {
             logger.warn("Failed to create gzip cache directory " + dir.getAbsolutePath());

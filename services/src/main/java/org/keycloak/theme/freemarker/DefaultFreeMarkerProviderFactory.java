@@ -49,7 +49,7 @@ public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFacto
     }
 
     @Override
-    public void clearCache() {
+    public synchronized void clearCache() {
         if (cache != null) {
             ConcurrentHashMap<String, Template> newCache = new ConcurrentHashMap<>();
             cache = newCache;

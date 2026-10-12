@@ -18,14 +18,15 @@
 package org.keycloak.tests.theme;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
 
 import org.keycloak.common.Version;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -43,7 +44,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -60,26 +60,54 @@ public class ThemeManagerClearCacheTest {
     KeycloakUrls keycloakUrls;
 
     @Test
-    public void clearCacheRemovesGzipCachedResource() throws IOException {
+    public void clearCacheServesUpdatedGzipResource() throws IOException {
+        String themeName = "gzip-cache-test";
         String resourcesVersion = runOnServer.fetch(session -> Version.RESOURCES_VERSION, String.class);
-        String url = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css";
+        String url = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/" + themeName + "/css/test-cache.css";
+
+        runOnServer.run(session -> {
+            try {
+                Path themeDir = Paths.get(System.getProperty("kc.home.dir"), "themes", themeName, "login");
+                Files.createDirectories(themeDir.resolve("resources/css"));
+                Files.writeString(themeDir.resolve("theme.properties"), "parent=base\n");
+                Files.writeString(themeDir.resolve("resources/css/test-cache.css"), "marker-v1");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         // the default injected HttpClient auto-decompresses gzip responses and hides the Content-Encoding header,
         // so a client with content compression disabled is needed to observe it
         try (CloseableHttpClient client = HttpClientBuilder.create().disableContentCompression().build()) {
-            requestWithGzip(client, url);
-            assertTrue(gzipCacheFileExists(resourcesVersion), "expected the gzip cache file to exist after the request");
+            try {
+                String v1 = requestGzipContent(client, url);
+                assertTrue(v1.contains("marker-v1"), "initial response should contain marker-v1");
 
-            // clearCache swaps to a new directory; the previous one is retained briefly for in-flight requests
-            runOnServer.run(session -> session.theme().clearCache());
-            // a second clearCache cleans up the previous generation's directory
-            runOnServer.run(session -> session.theme().clearCache());
+                // modify the resource on disk
+                runOnServer.run(session -> {
+                    try {
+                        Files.writeString(Paths.get(System.getProperty("kc.home.dir"),
+                                "themes", themeName, "login", "resources", "css", "test-cache.css"), "marker-v2");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 
-            assertFalse(gzipCacheFileExists(resourcesVersion),
-                    "old gzip cache directory should have been removed");
+                // without clearing cache, the stale gzip-cached response is still served
+                String stale = requestGzipContent(client, url);
+                assertTrue(stale.contains("marker-v1"),
+                        "without clearCache, cached gzip response should still serve old content");
 
-            // subsequent requests still work with gzip encoding
-            requestWithGzip(client, url);
+                // a single clearCache() call must be enough to make the updated content visible
+                runOnServer.run(session -> session.theme().clearCache());
+
+                String v2 = requestGzipContent(client, url);
+                assertTrue(v2.contains("marker-v2"),
+                        "after a single clearCache call, updated content should be served");
+            } finally {
+                deleteThemeDir(themeName);
+                runOnServer.run(session -> session.theme().clearCache());
+            }
         }
     }
 
@@ -125,44 +153,35 @@ public class ThemeManagerClearCacheTest {
             assertTrue(v2.contains("marker-v2"),
                     "after clearCache, updated template content should be served");
         } finally {
-            runOnServer.run(session -> {
-                try {
-                    Path themeRoot = Paths.get(System.getProperty("kc.home.dir"), "themes", themeName);
-                    if (Files.exists(themeRoot)) {
-                        try(var w = Files.walk(themeRoot)) {
-                            w.sorted(Comparator.reverseOrder())
-                                    .forEach(p -> { try { Files.delete(p); } catch (IOException ignored) {} });
-                        }
-                    }
-                } catch (IOException ignored) {}
-            });
+            deleteThemeDir(themeName);
             runOnServer.run(session -> session.theme().clearCache());
         }
     }
 
-    private void requestWithGzip(CloseableHttpClient client, String url) throws IOException {
+    private String requestGzipContent(CloseableHttpClient client, String url) throws IOException {
         HttpGet get = new HttpGet(url);
         get.addHeader("Accept-Encoding", "gzip");
         try (CloseableHttpResponse response = client.execute(get)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             assertEquals("gzip", response.getFirstHeader("Content-Encoding").getValue());
+            try (GZIPInputStream gis = new GZIPInputStream(response.getEntity().getContent())) {
+                return new String(gis.readAllBytes(), StandardCharsets.UTF_8);
+            }
         }
     }
 
-    private boolean gzipCacheFileExists(String resourcesVersion) {
-        return runOnServer.fetch(session -> {
-            java.io.File cacheRoot = Paths.get(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache").toFile();
-            if (!cacheRoot.isDirectory()) return false;
-            java.io.File[] dirs = cacheRoot.listFiles();
-            if (dirs == null) return false;
-            for (java.io.File dir : dirs) {
-                if (dir.getName().startsWith(resourcesVersion)
-                        && new java.io.File(dir, "welcome/keycloak/css/welcome.css.gz").isFile()) {
-                    return true;
+    private void deleteThemeDir(String themeName) {
+        runOnServer.run(session -> {
+            try {
+                Path themeRoot = Paths.get(System.getProperty("kc.home.dir"), "themes", themeName);
+                if (Files.exists(themeRoot)) {
+                    try (var w = Files.walk(themeRoot)) {
+                        w.sorted(Comparator.reverseOrder())
+                                .forEach(p -> { try { Files.delete(p); } catch (IOException ignored) {} });
+                    }
                 }
-            }
-            return false;
-        }, Boolean.class);
+            } catch (IOException ignored) {}
+        });
     }
 
     private String renderTemplate(String themeName, String templateName) {
