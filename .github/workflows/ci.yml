@@ -155,6 +155,10 @@ jobs:
       - id: unit-test-setup
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
+        with:
+          # Checker Framework 4.3.1 crashes on JDK 25 due to a duplicate module name in checker.jar and checker-qual.jar
+          # (both declare module org.checkerframework.checker.qual), causing NoClassDefFoundError for dataflow.qual classes.
+          java-version: "21"
 
       - name: Run Checker Framework ResourceLeakChecker
         run: |
