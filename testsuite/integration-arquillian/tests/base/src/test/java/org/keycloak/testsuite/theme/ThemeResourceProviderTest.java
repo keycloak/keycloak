@@ -137,14 +137,19 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
     // the gzip cache directory is named "<resourcesVersion>-<timestamp>-<uuid>" rather than just
-    // "<resourcesVersion>", so the generation directory has to be located by its prefix
+    // "<resourcesVersion>", so the generation directory has to be located by its prefix. More than one
+    // generation can share that prefix (clearCache() keeps the previous one around too), and listFiles()
+    // order is unspecified, so every matching generation is checked for the actual cache file.
     private static File findGzipCacheFile(String tmpDir, String resourcesVersion) {
         File cacheRoot = Paths.get(tmpDir, "kc-gzip-cache").toFile();
         File[] dirs = cacheRoot.listFiles();
         if (dirs != null) {
             for (File dir : dirs) {
                 if (dir.getName().startsWith(resourcesVersion)) {
-                    return Paths.get(dir.getPath(), "welcome", "keycloak", "css", "welcome.css.gz").toFile();
+                    File candidate = Paths.get(dir.getPath(), "welcome", "keycloak", "css", "welcome.css.gz").toFile();
+                    if (candidate.isFile()) {
+                        return candidate;
+                    }
                 }
             }
         }
