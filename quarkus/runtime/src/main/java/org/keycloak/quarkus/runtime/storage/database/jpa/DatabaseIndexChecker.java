@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.storage.database.jpa;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -208,7 +209,7 @@ public class DatabaseIndexChecker implements Runnable {
             var tablesToCheck = expectedIndexes.values().stream()
                     .map(info -> normalizeIdentifier(info.tableName, storesLower, storesUpper))
                     .collect(Collectors.toSet());
-            var existingIndexes = getExistingIndexesFromDatabase(metaData, tablesToCheck);
+            var existingIndexes = getExistingIndexesFromDatabase(connection, metaData, storesLower, storesUpper, tablesToCheck);
             if (areIndexNamesSchemaUnique(productName)) {
                 // The scan above only visits tables that have an expected index. Where index
                 // names are unique per schema, an existing index with the same name on any
@@ -671,8 +672,28 @@ public class DatabaseIndexChecker implements Runnable {
         occupants.put(name, tableName);
     }
 
-    private Map<String, List<ExistingIndex>> getExistingIndexesFromDatabase(DatabaseMetaData metaData, Collection<String> tables) throws SQLException {
+    /**
+     * The existing indexes of the checked tables, by index name, as reported by the JDBC
+     * metadata.
+     *
+     * <p>The scan is kept to the schema of the checked tables: the current schema of the
+     * connection when no explicit schema is configured. JDBC treats a null schema pattern
+     * as no restriction, so with {@code dbSchema} unset the call can also return indexes of
+     * an identically named table in another schema, which are then reported under the
+     * requested table name and would wrongly satisfy the expectation; rows of other
+     * schemas and catalogs are therefore filtered out.
+     *
+     * <p>The rows carry {@code TABLE_SCHEM} and {@code TABLE_CAT}, so a row can be
+     * attributed to the requested table only when its schema and catalog match the
+     * connection scope. Drivers report one or the other (e.g. the MySQL family fills the
+     * catalog and leaves the schema null), and a driver that reports neither cannot leak
+     * rows of other schemas in the first place: a row is only dropped when a non-null
+     * reported value differs from the resolved scope.
+     */
+    private Map<String, List<ExistingIndex>> getExistingIndexesFromDatabase(Connection connection, DatabaseMetaData metaData, boolean storesLower, boolean storesUpper, Collection<String> tables) throws SQLException {
         var existingIndexes = new HashMap<String, List<ExistingIndex>>();
+        String metadataSchema = resolveMetadataSchema(connection, storesLower, storesUpper);
+        String metadataCatalog = normalizeIdentifier(connection.getCatalog(), storesLower, storesUpper);
 
         for (var table : tables) {
             // indexName -> (ordinal position -> column name), kept per table so an index
@@ -680,6 +701,11 @@ public class DatabaseIndexChecker implements Runnable {
             var indexesOnTable = new HashMap<String, TreeMap<Short, String>>();
             try (var rs = metaData.getIndexInfo(null, dbSchema, table, false, true)) {
                 while (rs.next()) {
+                    if (!isRowInScope(rs, metadataSchema, metadataCatalog, storesLower, storesUpper)) {
+                        // the row is an index of an identically named table in another
+                        // schema or catalog: it must not satisfy the expectation of this table
+                        continue;
+                    }
                     var indexName = rs.getString("INDEX_NAME");
                     if (indexName != null) {
                         var column = rs.getString("COLUMN_NAME");
@@ -696,6 +722,24 @@ public class DatabaseIndexChecker implements Runnable {
                             .add(new ExistingIndex(table, columnsByPosition.values().stream().toList())));
         }
         return existingIndexes;
+    }
+
+    /**
+     * Whether a row of {@link DatabaseMetaData#getIndexInfo} belongs to the schema or
+     * catalog the checked tables live in: the configured schema when set, else the current
+     * schema and catalog of the connection. A row of another schema or catalog is an index
+     * of an identically named table there and must not satisfy an expectation of this
+     * table. Only a non-null reported value that differs rules the row out, so a driver
+     * that reports neither value keeps all rows, as it cannot attribute rows of other
+     * schemas to the requested table in the first place.
+     */
+    private static boolean isRowInScope(ResultSet rs, String metadataSchema, String metadataCatalog, boolean storesLower, boolean storesUpper) throws SQLException {
+        String rowSchema = normalizeIdentifier(rs.getString("TABLE_SCHEM"), storesLower, storesUpper);
+        String rowCatalog = normalizeIdentifier(rs.getString("TABLE_CAT"), storesLower, storesUpper);
+        if (metadataSchema != null && rowSchema != null && !rowSchema.equals(metadataSchema)) {
+            return false;
+        }
+        return metadataCatalog == null || rowCatalog == null || rowCatalog.equals(metadataCatalog);
     }
 
     // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
@@ -815,6 +859,9 @@ public class DatabaseIndexChecker implements Runnable {
     }
 
     private static String normalizeIdentifier(String name, boolean storesLower, boolean storesUpper) {
+        if (name == null) {
+            return null;
+        }
         if (storesLower) return name.toLowerCase();
         if (storesUpper) return name.toUpperCase();
         return name;
