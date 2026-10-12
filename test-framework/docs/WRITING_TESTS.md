@@ -241,7 +241,7 @@ The client configuration will be restored after the test method has executed.
 * `updateUserWithCleanup(username, update)` - Modify a user
 * `updateIdentityProvider(alias, update)` - Modify an identity provider
 * `updateClientScope(id, update)` - Modify a client scope
-* `updateClientProfile(name, update)` / `updateClientPolicy(name, update)` - Modify client profiles/policies
+* `updateClientProfile(List<ClientProfileRepresentation>)` / `updateClientPolicy(List<ClientPolicyRepresentation>)` - Replace client profiles/policies
 * `updateComponent(id, update)` - Modify a component
 
 ### `update` and `add` methods
