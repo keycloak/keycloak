@@ -1,6 +1,5 @@
 package org.keycloak.tests.broker.saml;
 
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
@@ -23,100 +22,65 @@ public class KcSamlBrokerSessionNotOnOrAfterEnforcementTest extends AbstractKcSa
 
     @Test
     public void testSessionInvalidatedAfterUpstreamSessionNotOnOrAfter() {
-        RealmRepresentation providerRealmRep = getProviderRealm().admin().toRepresentation();
-        int originalLifespan = providerRealmRep.getSsoSessionMaxLifespan();
+        getProviderRealm().updateWithCleanup(r -> r.ssoSessionMaxLifespan(SHORT_SESSION_LIFESPAN_SECONDS));
 
-        try {
-            providerRealmRep.setSsoSessionMaxLifespan(SHORT_SESSION_LIFESPAN_SECONDS);
-            getProviderRealm().admin().update(providerRealmRep);
+        logInAsUserInIDP();
+        updateAccountInformation();
 
-            logInAsUserInIDP();
-            updateAccountInformation();
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        assertNotNull(tokenResponse.getAccessToken());
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertEquals(200, tokenResponse.getStatusCode());
-            assertNotNull(tokenResponse.getAccessToken());
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertEquals(200, refreshResponse.getStatusCode());
+        assertNull(refreshResponse.getError());
 
-            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(200, refreshResponse.getStatusCode());
-            assertNull(refreshResponse.getError());
+        timeOffSet.set(SHORT_SESSION_LIFESPAN_SECONDS + 30);
 
-            timeOffSet.set(SHORT_SESSION_LIFESPAN_SECONDS + 30);
-
-            AccessTokenResponse failedRefresh = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
-            assertEquals(400, failedRefresh.getStatusCode(),
-                    "Session should be expired due to upstream SessionNotOnOrAfter");
-        } finally {
-            timeOffSet.set(0);
-            providerRealmRep.setSsoSessionMaxLifespan(originalLifespan);
-            getProviderRealm().admin().update(providerRealmRep);
-        }
+        AccessTokenResponse failedRefresh = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
+        assertEquals(400, failedRefresh.getStatusCode(),
+                "Session should be expired due to upstream SessionNotOnOrAfter");
     }
 
     @Test
     public void testSessionStillValidBeforeUpstreamSessionNotOnOrAfter() {
-        RealmRepresentation providerRealmRep = getProviderRealm().admin().toRepresentation();
-        int originalLifespan = providerRealmRep.getSsoSessionMaxLifespan();
+        getProviderRealm().updateWithCleanup(r -> r.ssoSessionMaxLifespan(SHORT_SESSION_LIFESPAN_SECONDS));
 
-        try {
-            providerRealmRep.setSsoSessionMaxLifespan(SHORT_SESSION_LIFESPAN_SECONDS);
-            getProviderRealm().admin().update(providerRealmRep);
+        logInAsUserInIDP();
+        updateAccountInformation();
 
-            logInAsUserInIDP();
-            updateAccountInformation();
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertEquals(200, tokenResponse.getStatusCode());
+        timeOffSet.set(SHORT_SESSION_LIFESPAN_SECONDS - 30);
 
-            timeOffSet.set(SHORT_SESSION_LIFESPAN_SECONDS - 30);
-
-            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(200, refreshResponse.getStatusCode(),
-                    "Session should still be valid before upstream SessionNotOnOrAfter");
-            assertNotNull(refreshResponse.getAccessToken());
-        } finally {
-            timeOffSet.set(0);
-            providerRealmRep.setSsoSessionMaxLifespan(originalLifespan);
-            getProviderRealm().admin().update(providerRealmRep);
-        }
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertEquals(200, refreshResponse.getStatusCode(),
+                "Session should still be valid before upstream SessionNotOnOrAfter");
+        assertNotNull(refreshResponse.getAccessToken());
     }
 
     @Test
     public void testLocalMaxLifespanHonouredWhenShorterThanUpstream() {
-        RealmRepresentation providerRealmRep = getProviderRealm().admin().toRepresentation();
-        RealmRepresentation consumerRealmRep = getConsumerRealm().admin().toRepresentation();
-        int originalProviderLifespan = providerRealmRep.getSsoSessionMaxLifespan();
-        int originalConsumerLifespan = consumerRealmRep.getSsoSessionMaxLifespan();
-
         int shortLocalLifespan = 180;
         int longUpstreamLifespan = 600;
 
-        try {
-            providerRealmRep.setSsoSessionMaxLifespan(longUpstreamLifespan);
-            getProviderRealm().admin().update(providerRealmRep);
-            consumerRealmRep.setSsoSessionMaxLifespan(shortLocalLifespan);
-            getConsumerRealm().admin().update(consumerRealmRep);
+        getProviderRealm().updateWithCleanup(r -> r.ssoSessionMaxLifespan(longUpstreamLifespan));
+        getConsumerRealm().updateWithCleanup(r -> r.ssoSessionMaxLifespan(shortLocalLifespan));
 
-            logInAsUserInIDP();
-            updateAccountInformation();
+        logInAsUserInIDP();
+        updateAccountInformation();
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertEquals(200, tokenResponse.getStatusCode());
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
 
-            timeOffSet.set(shortLocalLifespan + 30);
+        timeOffSet.set(shortLocalLifespan + 30);
 
-            AccessTokenResponse failedRefresh = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(400, failedRefresh.getStatusCode(),
-                    "Session should expire based on local max lifespan when shorter than upstream");
-        } finally {
-            timeOffSet.set(0);
-            providerRealmRep.setSsoSessionMaxLifespan(originalProviderLifespan);
-            getProviderRealm().admin().update(providerRealmRep);
-            consumerRealmRep.setSsoSessionMaxLifespan(originalConsumerLifespan);
-            getConsumerRealm().admin().update(consumerRealmRep);
-        }
+        AccessTokenResponse failedRefresh = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertEquals(400, failedRefresh.getStatusCode(),
+                "Session should expire based on local max lifespan when shorter than upstream");
     }
 }
