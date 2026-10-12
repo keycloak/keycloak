@@ -17,12 +17,16 @@
 
 package org.keycloak.organization.authentication.authenticators.broker;
 
+import java.net.URI;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.RequiredActionContextResult;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -31,6 +35,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -54,12 +59,20 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
 
     private static final Logger logger = Logger.getLogger(IdpAddOrganizationMemberAuthenticator.class);
 
+    public static final String VERIFY_ORGANIZATION_EMAIL = "VERIFY_ORGANIZATION_EMAIL";
+
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+        authenticateImpl(context, serializedCtx, brokerContext, true);
     }
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+        authenticateImpl(context, serializedCtx, brokerContext, false);
+    }
+
+    private void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx,
+            BrokeredIdentityContext brokerContext, boolean resendEmail) {
         KeycloakSession session = context.getSession();
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         UserModel user = context.getUser();
@@ -96,6 +109,9 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
 
         OrganizationModel organization = Organizations.resolveOrganization(session);
         IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
+        // Establish the same email/trust state that broker import would otherwise apply only after
+        // this flow. Membership and organization group mappers must not run ahead of that decision.
+        brokerContext.getIdp().updateBrokeredEmail(session, context.getRealm(), user, brokerContext);
         String emailDomain = Organizations.getEmailDomain(user.getEmail());
 
         for (String orgId : idpConfig.getOrganizationIds()) {
@@ -107,6 +123,11 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             if (link == null || !link.isAutoMembership()) continue;
 
             if (!passesDomainGate(org, emailDomain)) continue;
+
+            if (org.getDomains().findAny().isPresent() && !org.isMember(user) && !user.isEmailVerified()) {
+                verifyEmail(context, resendEmail);
+                return;
+            }
 
             try {
                 if (link.getMembershipType() == MembershipType.MANAGED) {
@@ -120,6 +141,38 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
         }
 
         context.success();
+    }
+
+    private void verifyEmail(AuthenticationFlowContext context, boolean resendEmail) {
+        String action = UserModel.RequiredAction.VERIFY_EMAIL.name();
+        KeycloakSession session = context.getSession();
+        context.getAuthenticationSession().setAuthNote(VERIFY_ORGANIZATION_EMAIL, context.getUser().getEmail());
+        RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(RequiredActionProvider.class, action);
+        RequiredActionContextResult verification = new RequiredActionContextResult(context.getAuthenticationSession(),
+                context.getRealm(), context.getEvent(), session, context.getHttpRequest(), context.getUser(), factory) {
+            @Override
+            public URI getActionUrl(String code) {
+                return context.getActionUrl(code);
+            }
+
+            @Override
+            public LoginFormsProvider form() {
+                return context.form();
+            }
+        };
+        RequiredActionProvider provider = session.getProvider(RequiredActionProvider.class, action);
+        if (resendEmail) {
+            provider.processAction(verification);
+        } else {
+            provider.requiredActionChallenge(verification);
+        }
+        if (verification.getChallenge() != null) {
+            context.forceChallenge(verification.getChallenge());
+        } else {
+            context.failure(AuthenticationFlowError.INVALID_USER, context.form()
+                    .setError(Messages.EMAIL_VERIFICATION_PENDING).createErrorPage(Response.Status.BAD_REQUEST));
+        }
     }
 
     /**

@@ -24,6 +24,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -37,6 +38,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -48,11 +51,15 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
+import org.keycloak.tests.utils.MailUtils;
 
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.organization.admin.AbstractOrganizationTest.addHardcodedOrganizationGroupMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -99,6 +106,63 @@ public class OrganizationPostBrokerMembershipTest {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @InjectMailServer
+    MailServer mail;
+
+    @InjectPage
+    VerifyEmailPage verifyEmailPage;
+
+    @Test
+    public void testDomainMembershipRequiresVerificationWithRealmVerifyEmailDisabled() throws Exception {
+        OrganizationRepresentation org = setupUnverifiedEmailBroker();
+
+        assertFalse(consumerRealm.admin().toRepresentation().isVerifyEmail());
+        assertRequiresEmailVerification(org);
+    }
+
+    @Test
+    public void testTrustEmailDoesNotOverrideExplicitlyUnverifiedEmail() throws Exception {
+        OrganizationRepresentation org = setupUnverifiedEmailBroker();
+        IdentityProviderRepresentation idp = consumerRealm.admin().identityProviders().get(IDP_ALIAS).toRepresentation();
+        idp.setTrustEmail(true);
+        consumerRealm.admin().identityProviders().get(IDP_ALIAS).update(idp);
+
+        assertRequiresEmailVerification(org);
+    }
+
+    @Test
+    public void testEmailChangedDuringReviewRequiresVerification() throws Exception {
+        setupBroker(IDP_ALIAS);
+        createProviderUser("alice", "alice@acme.com", "password");
+        UserRepresentation providerUser = providerRealm.admin().users().searchByUsername("alice", true).get(0);
+        providerUser.setLastName("");
+        providerRealm.admin().users().get(providerUser.getId()).update(providerUser);
+
+        OrganizationRepresentation org = createOrg("org-a", "acme.com");
+        linkIdpToOrg(org.getId(), IDP_ALIAS, true, "MANAGED");
+        setDomainRouting(org.getId(), "acme.com", IDP_ALIAS);
+
+        oAuth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("alice@acme.com");
+        loginUsernamePage.submit();
+        loginPage.fillLogin("alice", "password");
+        loginPage.submit();
+        updateProfilePage.prepareUpdate().email("CHANGED@ACME.COM").firstName("Alice").lastName("User").submit();
+
+        UserRepresentation user = consumerRealm.admin().users().searchByEmail("changed@acme.com", true).get(0);
+        assertFalse(user.isEmailVerified());
+        assertIsNotMember(user.getId(), org.getId());
+        verifyEmailPage.assertCurrent();
+
+        mail.waitForIncomingEmail(1);
+        assertEquals("changed@acme.com", MailUtils.getRecipient(mail.getLastReceivedMessage()));
+        driver.open(MailUtils.getPasswordResetEmailLink(mail.getLastReceivedMessage()));
+
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertIsMemberWithType(user.getId(), org.getId(), MembershipType.MANAGED);
+        assertTrue(oAuth.parseLoginResponse().isSuccess());
+    }
 
     // ==================== Group 1: SP-Initiated — New User ====================
 
@@ -497,6 +561,40 @@ public class OrganizationPostBrokerMembershipTest {
 
     // ==================== Infrastructure helpers ====================
 
+    private OrganizationRepresentation setupUnverifiedEmailBroker() {
+        setupBroker(IDP_ALIAS);
+        IdentityProviderRepresentation idp = consumerRealm.admin().identityProviders().get(IDP_ALIAS).toRepresentation();
+        idp.setTrustEmail(false);
+        consumerRealm.admin().identityProviders().get(IDP_ALIAS).update(idp);
+        createProviderUser("alice", "alice@acme.com", "password", false);
+        OrganizationRepresentation org = createOrg("org-a", "acme.com");
+        linkIdpToOrg(org.getId(), IDP_ALIAS, true, MembershipType.MANAGED.name());
+        return org;
+    }
+
+    private void assertRequiresEmailVerification(OrganizationRepresentation org) throws Exception {
+        String groupId = addHardcodedOrganizationGroupMapper(consumerRealm.admin().organizations().get(org.getId()),
+                consumerRealm.admin().identityProviders().get(IDP_ALIAS), "employees", IdentityProviderMapperSyncMode.IMPORT);
+        String userId = loginViaBrokerWithIdpHint(IDP_ALIAS, "alice", "password", "alice@acme.com");
+        assertFalse(consumerRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
+        assertIsNotMember(userId, org.getId());
+        assertTrue(consumerRealm.admin().users().get(userId).getFederatedIdentity().isEmpty());
+        verifyEmailPage.assertCurrent();
+        assertTrue(mail.waitForIncomingEmail(1));
+        assertTrue(consumerRealm.admin().organizations().get(org.getId()).groups().group(groupId).getMembers(null, null, false).isEmpty());
+
+        verifyEmailPage.clickResendEmail();
+        verifyEmailPage.assertCurrent();
+        assertIsNotMember(userId, org.getId());
+        driver.open(MailUtils.getPasswordResetEmailLink(mail.getLastReceivedMessage()));
+
+        assertTrue(consumerRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
+        assertIsMemberWithType(userId, org.getId(), MembershipType.MANAGED);
+        assertEquals(List.of(userId), consumerRealm.admin().organizations().get(org.getId()).groups().group(groupId)
+                .getMembers(null, null, false).stream().map(UserRepresentation::getId).toList());
+        assertTrue(oAuth.parseLoginResponse().isSuccess());
+    }
+
     private void setupBroker(String alias) {
         IdentityProviderRepresentation idp = AbstractOrganizationTest.createRealOrgBroker(alias, providerRealm);
         consumerRealm.admin().identityProviders().create(idp).close();
@@ -508,11 +606,15 @@ public class OrganizationPostBrokerMembershipTest {
     }
 
     private void createProviderUser(String username, String email, String password) {
+        createProviderUser(username, email, password, true);
+    }
+
+    private void createProviderUser(String username, String email, String password, boolean emailVerified) {
         UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .password(password)
                 .email(email)
-                .emailVerified(true)
+                .emailVerified(emailVerified)
                 .name(username.substring(0, 1).toUpperCase() + username.substring(1), "User")
                 .enabled(true)
                 .build();

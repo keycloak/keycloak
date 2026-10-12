@@ -28,6 +28,8 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -38,12 +40,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.organization.authentication.authenticators.broker.IdpAddOrganizationMemberAuthenticator;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -130,6 +134,14 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         }
 
         event.success();
+
+        if (Objects.equals(user.getEmail(), authSession.getAuthNote(IdpAddOrganizationMemberAuthenticator.VERIFY_ORGANIZATION_EMAIL))
+                && authSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null
+                && LoginActionsService.FIRST_BROKER_LOGIN_PATH.equals(authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH))) {
+            authSession.removeAuthNote(IdpAddOrganizationMemberAuthenticator.VERIFY_ORGANIZATION_EMAIL);
+            authSession.setAuthNote(AbstractIdentityProvider.BROKER_VERIFIED_EMAIL, user.getEmail());
+            return tokenContext.brokerFlow(null, null, LoginActionsService.FIRST_BROKER_LOGIN_PATH);
+        }
 
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
 

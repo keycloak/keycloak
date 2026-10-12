@@ -150,6 +150,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
                 // login to the organization identity provider and run the configured first broker login flow
                 loginPage.login(email, bc.getUserPassword());
+                verifyEmail();
                 assertIsMember(email, organization);
                 managedRealm.admin().logoutAll();
                 providerRealm.logoutAll();

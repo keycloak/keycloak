@@ -19,6 +19,20 @@ If a SAML client uses back-channel SLO with `SessionIndex` and has *Client signa
 
 Newly created SAML clients already default to requiring client signatures. Deployments that import realm JSON may still have unsigned clients and are the primary group affected by this change.
 
+=== Email verification before domain-based organization membership
+
+Automatic membership through a linked identity provider now requires a verified email address when the organization has configured domains.
+If the address is unverified, the first broker login flow requires email verification before granting membership, even when the realm's *Verify email* setting is disabled.
+
+Configure the realm's email server so users can complete verification, or enable *Trust Email* for an identity provider whose email verification you trust.
+An OpenID Connect provider returning `email_verified=false`, or a user changing their address during profile review, still requires local verification.
+
+Existing memberships, organizations without domains, and invitation-based membership are unaffected.
+If verification is completed in another browser or the original authentication session is lost, users must sign in through the identity provider again and follow the account-linking prompts.
+Identity provider mappers using `IMPORT` are not replayed during this retry.
+
+Custom identity providers that synchronize email outside `AbstractIdentityProvider` should implement `UserAuthenticationIdentityProvider.updateBrokeredEmail` to expose their email verification policy.
+
 === Admin client `organizations.findOne` no longer rejects when the organization does not exist
 // https://github.com/keycloak/keycloak/pull/51717
 
