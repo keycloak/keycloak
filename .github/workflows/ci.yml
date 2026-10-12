@@ -144,6 +144,31 @@ jobs:
         run: |
           ./mvnw test -am -pl "$(.github/scripts/find-modules-with-unit-tests.sh)"
 
+  sast-check:
+    name: SAST Check
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: unit-test-setup
+        name: Unit test setup
+        uses: ./.github/actions/unit-test-setup
+        with:
+          # JDK 22+ eagerly resolves types referenced by RuntimeVisibleTypeAnnotations (JDK-8225377).
+          # This breaks the Checker Framework, which writes type annotations referencing types
+          # that may not be on the downstream module's classpath.
+          # https://github.com/typetools/checker-framework/issues/8346
+          java-version: "21"
+
+      - name: Run Checker Framework ResourceLeakChecker
+        run: |
+          # Select production dependencies via the distribution. Quarkus, model/infinispan,
+          # admin-cli, db-compatibility-verifier, src/test sources and skipDefs classes are not checked.
+          # Always do a clean build to ensure all resources are checked for leaks, as the Checker Framework plugin only checks resources that are compiled in the current build.
+          ./mvnw clean package -e --fail-at-end -am -DskipTests -Pcheckerframework -pl quarkus/dist
+
   base-integration-tests:
     name: Base IT
     needs: build
@@ -1406,6 +1431,7 @@ jobs:
       - conditional
       - build
       - unit-tests
+      - sast-check
       - base-integration-tests
       - adapter-integration-tests
       - adapter-integration-tests-strict-cookies

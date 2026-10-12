@@ -1509,7 +1509,10 @@ public class SamlService extends AuthorizationEndpointBase {
                         throw new ProcessingException(String.format("Artifact resolution failed with status: %d", result.getStatusLine().getStatusCode()));
                     }
 
-                    Document soapBodyContents = Soap.extractSoapMessage(result.getEntity().getContent());
+                    Document soapBodyContents;
+                    try (InputStream entityContent = result.getEntity().getContent()) {
+                        soapBodyContents = Soap.extractSoapMessage(entityContent);
+                    }
                     SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
                     if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
                         throw new ProcessingException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");

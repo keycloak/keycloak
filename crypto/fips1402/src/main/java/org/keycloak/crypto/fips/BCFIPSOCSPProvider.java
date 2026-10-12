@@ -19,6 +19,7 @@
 package org.keycloak.crypto.fips;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -429,8 +430,8 @@ public class BCFIPSOCSPProvider extends OCSPProvider {
         JcaX509CertificateHolder holder = new JcaX509CertificateHolder(cert);
         Extension aia = holder.getExtension(Extension.authorityInfoAccess);
         if (aia != null) {
-            try {
-                ASN1InputStream in = new ASN1InputStream(aia.getExtnValue().getOctetStream());
+            try (InputStream octetStream = aia.getExtnValue().getOctetStream();
+                 ASN1InputStream in = new ASN1InputStream(octetStream)) {
                 ASN1Sequence seq = (ASN1Sequence)in.readObject();
                 AuthorityInformationAccess authorityInfoAccess = AuthorityInformationAccess.getInstance(seq);
                 for (AccessDescription ad : authorityInfoAccess.getAccessDescriptions()) {

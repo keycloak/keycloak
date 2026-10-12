@@ -289,6 +289,12 @@
         	<groupId>org.keycloak</groupId>
         	<artifactId>keycloak-config-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.checkerframework</groupId>
+            <artifactId>checker-qual</artifactId>
+            <version>${checkerframework.version}</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

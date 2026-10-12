@@ -17,6 +17,7 @@
 package org.keycloak.saml.processing.core.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import javax.xml.transform.Source;
@@ -43,7 +44,9 @@ import org.xml.sax.SAXParseException;
  *
  * @author Anil.Saldhana@redhat.com
  * @since May 26, 2009
+ * @deprecated Unused, scheduled for removal in 27.0. See <a href="https://github.com/keycloak/keycloak/issues/53853">#53853</a>
  */
+@Deprecated
 public class JAXBUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
@@ -174,16 +177,21 @@ public class JAXBUtil {
         Source[] schemaSources = new Source[schemaLocations.length];
 
         int i = 0;
-        for (String schemaLocation : schemaLocations) {
-            URL schemaURL = SecurityActions.loadResource(JAXBUtil.class, schemaLocation);
-            if (schemaURL == null)
-                throw logger.nullValueError("Schema URL :" + schemaLocation);
+        try (SchemaInputStreams streams = new SchemaInputStreams()) {
+            for (String schemaLocation : schemaLocations) {
+                URL schemaURL = SecurityActions.loadResource(JAXBUtil.class, schemaLocation);
+                if (schemaURL == null)
+                    throw logger.nullValueError("Schema URL :" + schemaLocation);
 
-            schemaSources[i++] = new StreamSource(schemaURL.openStream());
+                InputStream stream = schemaURL.openStream();
+                streams.add(stream);
+                schemaSources[i] = new StreamSource(stream);
+                i++;
+            }
+
+            Schema schema = schemaFactory.newSchema(schemaSources);
+            unmarshaller.setSchema(schema);
         }
-
-        Schema schema = schemaFactory.newSchema(schemaSources);
-        unmarshaller.setSchema(schema);
 
         return unmarshaller;
     }
