@@ -153,13 +153,11 @@ public class SAML2Request {
         if (resourceURL == null)
             throw logger.resourceNotFound(fileName);
 
-        InputStream is = null;
-        try {
-            is = resourceURL.openStream();
+        try (InputStream is = resourceURL.openStream()) {
+            return getAuthnRequestType(is);
         } catch (IOException e) {
             throw logger.processingError(e);
         }
-        return getAuthnRequestType(is);
     }
 
     /**

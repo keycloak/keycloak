@@ -54,7 +54,8 @@ public final class MultivaluedHashMapValueSerializer extends JsonSerializer<Mult
     @Override
     public boolean isEmpty(SerializerProvider provider, MultivaluedHashMap<String, String> value) {
         // if all properties are ignored, consider the map as empty
-        return getIgnoredProperties(provider.getGenerator()).containsAll(value.keySet());
+        JsonGenerator gen = provider.getGenerator();
+        return getIgnoredProperties(gen).containsAll(value.keySet());
     }
 
     private static Set<String> getIgnoredProperties(JsonGenerator gen) {

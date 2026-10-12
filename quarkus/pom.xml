@@ -61,5 +61,21 @@
             </snapshots>
         </repository>
     </repositories>
-    
+
+    <profiles>
+        <profile>
+            <id>checkerframework</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <!-- ResourceLeakChecker coverage of Quarkus modules is deferred; keep their other annotation processors enabled. -->
+                            <compilerArgs combine.self="override" />
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

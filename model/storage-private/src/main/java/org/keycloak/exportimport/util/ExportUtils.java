@@ -510,8 +510,7 @@ public class ExportUtils {
 
     public static void exportUsersToStream(KeycloakSession session, RealmModel realm, List<UserModel> usersToExport, ObjectMapper mapper, OutputStream os, ExportOptions options) throws IOException {
         JsonFactory factory = mapper.getFactory();
-        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
-        try {
+        try (JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8)) {
             if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
                 generator.useDefaultPrettyPrinter();
             }
@@ -528,8 +527,6 @@ public class ExportUtils {
 
             generator.writeEndArray();
             generator.writeEndObject();
-        } finally {
-            generator.close();
         }
     }
 
@@ -539,8 +536,7 @@ public class ExportUtils {
 
     public static void exportFederatedUsersToStream(KeycloakSession session, RealmModel realm, List<String> usersToExport, ObjectMapper mapper, OutputStream os, ExportOptions options) throws IOException {
         JsonFactory factory = mapper.getFactory();
-        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
-        try {
+        try (JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8)) {
             if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
                 generator.useDefaultPrettyPrinter();
             }
@@ -557,8 +553,6 @@ public class ExportUtils {
 
             generator.writeEndArray();
             generator.writeEndObject();
-        } finally {
-            generator.close();
         }
     }
 

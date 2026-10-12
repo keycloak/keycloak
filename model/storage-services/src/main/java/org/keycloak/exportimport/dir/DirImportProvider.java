@@ -142,8 +142,10 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         Objects.requireNonNull(federatedUserFiles, "directory not found: " + getRootDirectory().getName());
 
         // Import realm first
-        InputStream is = parseFile(realmFile);
-        final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        final RealmRepresentation realmRep;
+        try (InputStream is = parseFile(realmFile)) {
+            realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        }
         if (!realmRep.getRealm().equals(realmName)) {
             throw new IllegalStateException(String.format("File name / realm name mismatch. %s, contains realm %s. File name should be %s", realmFile.getName(), realmRep.getRealm(), realmRep.getRealm() + "-realm.json"));
         }
