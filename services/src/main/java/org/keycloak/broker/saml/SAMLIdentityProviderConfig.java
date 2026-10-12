@@ -455,11 +455,6 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     @Override
     public void validate(RealmModel realm) {
-        // Secure-by-default: write validateSignature and wantAssertionsSigned=true if absent
-        // so the values are persisted explicitly and sign-verification is on by default.
-        getConfig().putIfAbsent(VALIDATE_SIGNATURE, "true");
-        getConfig().putIfAbsent(WANT_ASSERTIONS_SIGNED, "true");
-
         SslRequired sslRequired = realm.getSslRequired();
 
         checkUrl(sslRequired, getSingleLogoutServiceUrl(), SINGLE_LOGOUT_SERVICE_URL);
