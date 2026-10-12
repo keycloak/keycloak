@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -37,11 +37,16 @@ import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -53,6 +58,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -66,6 +73,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -98,6 +106,9 @@ public class UserSessionClientVisibilityTest {
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     private String targetUserId;
     private String visibleClientUuid;
     private String hiddenClientUuid;
@@ -123,7 +134,8 @@ public class UserSessionClientVisibilityTest {
         joinSsoSession(VISIBLE_CLIENT);
         joinSsoSession(HIDDEN_CLIENT);
 
-        grantViewClient("fgap-viewer", VISIBLE_CLIENT);
+        grantView("fgap-viewer", targetUserId, AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        grantView("fgap-viewer", visibleClientUuid, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE);
     }
 
     private void joinSsoSession(String clientId) {
@@ -138,7 +150,6 @@ public class UserSessionClientVisibilityTest {
         assertEquals(200, response.getStatusCode(), response.getErrorDescription());
     }
 
-
     private static void removeSessions(UserResource user) {
         user.logout();
         // logout leaves offline sessions in place
@@ -149,6 +160,17 @@ public class UserSessionClientVisibilityTest {
                 // no offline token for this client
             }
         }
+    }
+
+    @Test
+    public void delegatedViewerCanOnlyViewGrantedUserAndClient() {
+        var realm = fgapViewer.realm(managedRealm.getName());
+        String otherUserId = managedRealm.admin().users().search("full-viewer", true).get(0).getId();
+
+        assertEquals(TARGET_USER, realm.users().get(targetUserId).toRepresentation().getUsername());
+        assertThrows(ForbiddenException.class, () -> realm.users().get(otherUserId).toRepresentation());
+        assertEquals(VISIBLE_CLIENT, realm.clients().get(visibleClientUuid).toRepresentation().getClientId());
+        assertThrows(ForbiddenException.class, () -> realm.clients().get(hiddenClientUuid).toRepresentation());
     }
 
     @Test
@@ -201,6 +223,34 @@ public class UserSessionClientVisibilityTest {
     }
 
     @Test
+    public void persistedConsentsHideClientsWithoutViewPermission() {
+        createPersistedConsents();
+        List<Map<String, Object>> allConsents = fullViewer.realm(managedRealm.getName()).users().get(targetUserId).getConsents();
+        assertEquals(Set.of(VISIBLE_CLIENT, HIDDEN_CLIENT), consentClientIds(allConsents));
+        allConsents.forEach(UserSessionClientVisibilityTest::assertConsentMetadata);
+
+        List<Map<String, Object>> visibleConsents = fgapViewer.realm(managedRealm.getName()).users().get(targetUserId).getConsents();
+
+        assertEquals(List.of(allConsents.stream().filter(c -> VISIBLE_CLIENT.equals(c.get("clientId"))).findFirst().orElseThrow()),
+                visibleConsents);
+        assertEquals(visibleClientUuid, offlineTokenClient(visibleConsents.get(0)));
+    }
+
+    @Test
+    public void persistedConsentsShowAllClientsWithViewClients() {
+        createPersistedConsents();
+        List<Map<String, Object>> consents = fullViewer.realm(managedRealm.getName()).users().get(targetUserId).getConsents();
+
+        assertEquals(2, consents.size());
+        assertEquals(Set.of(VISIBLE_CLIENT, HIDDEN_CLIENT), consentClientIds(consents));
+        for (Map<String, Object> consent : consents) {
+            assertConsentMetadata(consent);
+            assertEquals(VISIBLE_CLIENT.equals(consent.get("clientId")) ? visibleClientUuid : hiddenClientUuid,
+                    offlineTokenClient(consent));
+        }
+    }
+
+    @Test
     public void uiExtSessionsHideClientsWithoutViewPermission() throws IOException {
         Set<String> clients = uiExtSessionClients(fgapViewer);
 
@@ -213,6 +263,47 @@ public class UserSessionClientVisibilityTest {
         Set<String> clients = uiExtSessionClients(fullViewer);
 
         assertTrue(clients.containsAll(Set.of(visibleClientUuid, hiddenClientUuid)));
+    }
+
+    @Test
+    public void uiExtSessionSearchDoesNotRevealHiddenClientUsage() throws IOException {
+        for (String type : List.of("REGULAR", "OFFLINE")) {
+            for (String clientUuid : new String[] { null, visibleClientUuid }) {
+                JsonNode hiddenSearch = uiExtSessions(fgapViewer, clientUuid, type, HIDDEN_CLIENT);
+                assertTrue(hiddenSearch.isEmpty(), "search must not match a hidden client in " + type + " sessions");
+
+                JsonNode visibleSearch = uiExtSessions(fgapViewer, clientUuid, type, VISIBLE_CLIENT);
+                assertEquals(1, visibleSearch.size());
+                assertEquals(Set.of(visibleClientUuid), uiExtSessionClients(visibleSearch));
+
+                JsonNode fullSearch = uiExtSessions(fullViewer, clientUuid, type, HIDDEN_CLIENT);
+                assertEquals(1, fullSearch.size());
+                assertEquals(Set.of(visibleClientUuid, hiddenClientUuid), uiExtSessionClients(fullSearch));
+            }
+        }
+    }
+
+    @Test
+    public void uiExtClientSessionsHideOtherClientsWithoutViewPermission() throws IOException {
+        for (String type : List.of("REGULAR", "OFFLINE")) {
+            JsonNode sessions = uiExtSessions(fgapViewer, visibleClientUuid, type, null);
+
+            assertEquals(1, sessions.size());
+            assertEquals(Set.of(visibleClientUuid), uiExtSessionClients(sessions));
+            assertThrows(ForbiddenException.class, () -> uiExtSessions(fgapViewer, hiddenClientUuid, type, null));
+        }
+    }
+
+    @Test
+    public void uiExtClientSessionsShowOtherClientsWithViewClients() throws IOException {
+        for (String type : List.of("REGULAR", "OFFLINE")) {
+            for (String clientUuid : List.of(visibleClientUuid, hiddenClientUuid)) {
+                JsonNode sessions = uiExtSessions(fullViewer, clientUuid, type, null);
+
+                assertEquals(1, sessions.size());
+                assertEquals(Set.of(visibleClientUuid, hiddenClientUuid), uiExtSessionClients(sessions));
+            }
+        }
     }
 
     @Test
@@ -253,39 +344,70 @@ public class UserSessionClientVisibilityTest {
         return grants.get(0).get("client");
     }
 
-    private Set<String> uiExtSessionClients(Keycloak admin) throws IOException {
-        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
-        try (Response response = httpClient.target(keycloakUrls.getBaseUrl().toString())
-                .path("admin").path("realms").path(managedRealm.getName())
-                .path("ui-ext").path("sessions")
-                .queryParam("max", 100)
-                .register(new BearerAuthFilter(admin.tokenManager()))
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-            JsonNode sessions = JsonSerialization.readValue(response.readEntity(String.class), JsonNode.class);
-
-            Set<String> clients = new HashSet<>();
-            for (JsonNode session : sessions) {
-                if (targetUserId.equals(session.get("userId").asText())) {
-                    session.get("clients").fieldNames().forEachRemaining(clients::add);
-                }
+    private void createPersistedConsents() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, TARGET_USER);
+            for (String clientId : List.of(VISIBLE_CLIENT, HIDDEN_CLIENT)) {
+                ClientModel client = realm.getClientByClientId(clientId);
+                UserConsentModel consent = new UserConsentModel(client);
+                consent.addGrantedClientScope(client.getClientScopes(true).get("profile"));
+                UserConsentManager.addConsent(session, realm, user, consent);
             }
-            return clients;
+        });
+    }
+
+    private static void assertConsentMetadata(Map<String, Object> consent) {
+        assertEquals(List.of("profile"), consent.get("grantedClientScopes"));
+        assertNotNull(consent.get("createdDate"));
+        assertNotNull(consent.get("lastUpdatedDate"));
+    }
+
+    private Set<String> uiExtSessionClients(Keycloak admin) throws IOException {
+        return uiExtSessionClients(uiExtSessions(admin, null, "ALL", null));
+    }
+
+    private Set<String> uiExtSessionClients(JsonNode sessions) {
+        Set<String> clients = new HashSet<>();
+        for (JsonNode session : sessions) {
+            if (targetUserId.equals(session.get("userId").asText())) {
+                session.get("clients").fieldNames().forEachRemaining(clients::add);
+            }
+        }
+        return clients;
+    }
+
+    private JsonNode uiExtSessions(Keycloak admin, String clientUuid, String type, String search) throws IOException {
+        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
+        try {
+            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin").path("realms").path(managedRealm.getName())
+                    .path("ui-ext").path("sessions");
+            if (clientUuid != null) {
+                target = target.path("client").queryParam("clientId", clientUuid);
+            }
+            target = target.queryParam("max", 100).queryParam("type", type);
+            if (search != null) {
+                target = target.queryParam("search", search);
+            }
+            String response = target.register(new BearerAuthFilter(admin.tokenManager()))
+                    .request(MediaType.APPLICATION_JSON).get(String.class);
+            JsonNode sessions = JsonSerialization.readValue(response, JsonNode.class);
+            assertTrue(sessions.isArray());
+            return sessions;
         } finally {
             httpClient.close();
         }
     }
 
-    private void grantViewClient(String username, String clientId) {
+    private void grantView(String username, String resourceId, String resourceType) {
         ClientResource permissionsClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         String userId = managedRealm.admin().users().search(username, true).get(0).getId();
-        String clientUuid = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation().getId();
 
         UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(managedRealm, permissionsClient,
                 KeycloakModelUtils.generateId(), userId);
-        ScopePermissionRepresentation permission = PermissionTestUtils.createPermission(permissionsClient, clientUuid,
-                AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(AdminPermissionsSchema.VIEW), policy);
+        ScopePermissionRepresentation permission = PermissionTestUtils.createPermission(permissionsClient, resourceId,
+                resourceType, Set.of(AdminPermissionsSchema.VIEW), policy);
         // removing the policy may already have removed the permission
         managedRealm.cleanup().add(r -> {
             ScopePermissionsResource permissions = r.clients().get(permissionsClient.toRepresentation().getId())
@@ -323,7 +445,7 @@ public class UserSessionClientVisibilityTest {
                             .name("Fgap", "Viewer")
                             .email("fgap-viewer@localhost")
                             .emailVerified(true)
-                            .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM, AdminRoles.VIEW_USERS),
+                            .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM),
                     UserBuilder.create("full-viewer")
                             .password("password")
                             .name("Full", "Viewer")
