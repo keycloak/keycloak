@@ -25,26 +25,7 @@ public class ManagedUserCleanup {
     }
 
     void runCleanupTasks(UserResource user) {
-        List<RuntimeException> failures = new LinkedList<>();
-        int total = cleanupTasks.size();
-        try {
-            for (UserCleanup task : cleanupTasks) {
-                try {
-                    task.cleanup(user);
-                } catch (RuntimeException e) {
-                    failures.add(e);
-                }
-            }
-        } finally {
-            cleanupTasks.clear();
-        }
-
-        if (!failures.isEmpty()) {
-            IllegalStateException failure = new IllegalStateException(
-                    "Failed to run %d of %d cleanup tasks for the user".formatted(failures.size(), total));
-            failures.forEach(failure::addSuppressed);
-            throw failure;
-        }
+        CleanupTasks.runAll(cleanupTasks, t -> t.cleanup(user), "user");
     }
 
     public interface UserCleanup {

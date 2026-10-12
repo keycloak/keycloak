@@ -34,26 +34,7 @@ public class ManagedClientCleanup {
     }
 
     void runCleanupTasks(ClientResource client) {
-        List<RuntimeException> failures = new LinkedList<>();
-        int total = cleanupTasks.size();
-        try {
-            for (ClientCleanup task : cleanupTasks) {
-                try {
-                    task.cleanup(client);
-                } catch (RuntimeException e) {
-                    failures.add(e);
-                }
-            }
-        } finally {
-            cleanupTasks.clear();
-        }
-
-        if (!failures.isEmpty()) {
-            IllegalStateException failure = new IllegalStateException(
-                    "Failed to run %d of %d cleanup tasks for the client".formatted(failures.size(), total));
-            failures.forEach(failure::addSuppressed);
-            throw failure;
-        }
+        CleanupTasks.runAll(cleanupTasks, t -> t.cleanup(client), "client");
     }
 
     public interface ClientCleanup {

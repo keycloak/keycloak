@@ -72,6 +72,20 @@ public class ManagedCleanupTest {
         Assertions.assertEquals(List.of(), executed);
     }
 
+    @Test
+    public void cleanupContinuesAfterAssertionError() {
+        List<String> executed = new ArrayList<>();
+        ManagedRealmCleanup cleanup = new ManagedRealmCleanup()
+                .add(r -> {
+                    executed.add("first");
+                    throw new AssertionError("first");
+                })
+                .add(r -> executed.add("second"));
+
+        assertFailures(() -> cleanup.runCleanupTasks(null), "Failed to run 1 of 2 cleanup tasks for the realm", "first");
+        Assertions.assertEquals(List.of("first", "second"), executed);
+    }
+
     private static void fail(List<String> executed, String task) {
         executed.add(task);
         throw new RuntimeException(task);
