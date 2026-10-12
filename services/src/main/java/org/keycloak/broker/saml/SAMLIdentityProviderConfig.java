@@ -118,7 +118,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public boolean isValidateSignature() {
-        return Boolean.valueOf(getConfig().getOrDefault(VALIDATE_SIGNATURE, "true"));
+        return Boolean.valueOf(getConfig().get(VALIDATE_SIGNATURE));
     }
 
     public void setValidateSignature(boolean validateSignature) {
@@ -187,7 +187,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public boolean isWantAssertionsSigned() {
-        return Boolean.valueOf(getConfig().getOrDefault(WANT_ASSERTIONS_SIGNED, "true"));
+        return Boolean.valueOf(getConfig().get(WANT_ASSERTIONS_SIGNED));
     }
 
     public void setWantAssertionsSigned(boolean wantAssertionsSigned) {
@@ -455,6 +455,11 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     @Override
     public void validate(RealmModel realm) {
+        // Secure-by-default: write validateSignature and wantAssertionsSigned=true if absent
+        // so the values are persisted explicitly and sign-verification is on by default.
+        getConfig().putIfAbsent(VALIDATE_SIGNATURE, "true");
+        getConfig().putIfAbsent(WANT_ASSERTIONS_SIGNED, "true");
+
         SslRequired sslRequired = realm.getSslRequired();
 
         checkUrl(sslRequired, getSingleLogoutServiceUrl(), SINGLE_LOGOUT_SERVICE_URL);

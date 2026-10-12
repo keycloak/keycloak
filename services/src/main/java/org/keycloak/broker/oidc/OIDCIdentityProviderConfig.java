@@ -74,7 +74,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     }
 
     public boolean isValidateSignature() {
-        return Boolean.parseBoolean(getConfig().getOrDefault(VALIDATE_SIGNATURE, "true"));
+        return Boolean.parseBoolean(getConfig().get(VALIDATE_SIGNATURE));
     }
 
     public void setValidateSignature(boolean validateSignature) {
@@ -166,6 +166,9 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
+        // Secure-by-default: write validateSignature=true if absent so the value is
+        // persisted explicitly and getters/validate() always read a stored value.
+        getConfig().putIfAbsent(VALIDATE_SIGNATURE, "true");
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
