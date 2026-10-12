@@ -1354,7 +1354,10 @@ public class UserResource {
         }
 
         if (redirectUri != null) {
-            redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
+            // the email link completes with an info page that sends the browser straight to the redirect
+            // URI, or with required actions ending on such a page - OIDC response parameters are never
+            // appended, so the SAML exemption applies (see keycloak/keycloak#53823)
+            redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client, true, RedirectUtils.resolveForbiddenParams(client));
             if (redirectUri == null) {
                 throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
             }

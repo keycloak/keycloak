@@ -472,7 +472,9 @@ public class SamlService extends AuthorizationEndpointBase {
             String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
-                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client);
+                // a SAML response never appends OIDC response parameters to the ACS URL, so the ACS URL
+                // of a SAML client is not checked against them (see keycloak/keycloak#53823)
+                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client, true, RedirectUtils.resolveForbiddenParams(client));
             } else {
                 if ((requestAbstractType.getProtocolBinding() != null
                         && JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri()
