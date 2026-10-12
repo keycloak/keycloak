@@ -79,6 +79,33 @@ describe("determineInputType", () => {
       determineInputType(attr({ name: "bio", annotations: { inputType: "textarea" } })),
     ).toBe("textarea");
   });
+
+  it("returns 'text' for a hidden attribute when isAdminContext is true", () => {
+    expect(
+      determineInputType(
+        attr({ name: "customField", annotations: { inputType: "hidden" } }),
+        true,
+      ),
+    ).toBe("text");
+  });
+
+  it("returns 'text' for a hidden root attribute (username) when isAdminContext is true", () => {
+    expect(
+      determineInputType(
+        attr({ name: "username", annotations: { inputType: "hidden" } }),
+        true,
+      ),
+    ).toBe("text");
+  });
+
+  it("returns 'hidden' for a hidden attribute when isAdminContext is false (default)", () => {
+    expect(
+      determineInputType(
+        attr({ name: "customField", annotations: { inputType: "hidden" } }),
+        false,
+      ),
+    ).toBe("hidden");
+  });
 });
 
 // ─── HiddenComponent ────────────────────────────────────────────────────────

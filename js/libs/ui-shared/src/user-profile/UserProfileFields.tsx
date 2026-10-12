@@ -84,6 +84,7 @@ export type UserProfileFieldsProps = {
   supportedLocales: string[];
   currentLocale: string;
   hideReadOnly?: boolean;
+  isAdminContext?: boolean;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
   ) => JSX.Element | undefined;
@@ -101,6 +102,7 @@ export const UserProfileFields = ({
   supportedLocales,
   currentLocale,
   hideReadOnly = false,
+  isAdminContext = false,
   renderer,
 }: UserProfileFieldsProps) => {
   // Group attributes by group, for easier rendering.
@@ -158,6 +160,7 @@ export const UserProfileFields = ({
                   currentLocale={currentLocale}
                   renderer={renderer}
                   attribute={attribute}
+                  isAdminContext={isAdminContext}
                 />
               ))}
             </div>
@@ -173,6 +176,7 @@ type FormFieldProps = {
   supportedLocales: string[];
   currentLocale: string;
   attribute: UserProfileAttributeMetadata;
+  isAdminContext: boolean;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
   ) => JSX.Element | undefined;
@@ -185,11 +189,15 @@ const FormField = ({
   supportedLocales,
   currentLocale,
   attribute,
+  isAdminContext,
 }: FormFieldProps) => {
   const value = form.watch(
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
-  const inputType = useMemo(() => determineInputType(attribute), [attribute]);
+  const inputType = useMemo(
+    () => determineInputType(attribute, isAdminContext),
+    [attribute, isAdminContext],
+  );
 
   const Component =
     inputType !== "hidden" &&
@@ -223,12 +231,13 @@ const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
 export function determineInputType(
   attribute: UserProfileAttributeMetadata,
+  isAdminContext = false,
 ): InputType {
   const inputType = attribute.annotations?.inputType;
 
-  // Allow hidden to override any field, including root attributes and locale.
+  // Admins can always see and edit hidden fields; for users, honour the annotation.
   if (inputType === "hidden") {
-    return "hidden";
+    return isAdminContext ? DEFAULT_INPUT_TYPE : "hidden";
   }
 
   // Root attributes always render as text — other annotations are ignored.
