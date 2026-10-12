@@ -246,6 +246,7 @@ public class AbstractUserTest {
         IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
         rep.setAlias(alias);
         rep.setProviderId("oidc");
+        rep.setConfig(Map.of("validateSignature", "false"));
 
         managedRealm.admin().identityProviders().create(rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep, ResourceType.IDENTITY_PROVIDER);

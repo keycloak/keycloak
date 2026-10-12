@@ -415,6 +415,7 @@ public abstract class AbstractOrganizationTest {
                 .attribute("clientId", "broker-app")
                 .attribute("clientSecret", "broker-secret")
                 .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                .attribute("validateSignature", "false")
                 .hideOnLoginPage()
                 .build();
     }
@@ -435,7 +436,8 @@ public abstract class AbstractOrganizationTest {
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
                 "defaultScope", "email profile",
-                "syncMode", "IMPORT"
+                "syncMode", "IMPORT",
+                "validateSignature", "false"
         ));
 
         consumerRealm.admin().identityProviders().create(idp).close();

@@ -19,6 +19,7 @@ package org.keycloak.tests.organization.authz;
 
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -119,6 +120,8 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("dummy");
             idpRep.setProviderId("oidc");
+
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             realmAdminResource.identityProviders().create(idpRep).close();
 
             //create IdP
@@ -481,6 +484,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("testIdpLink");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             manageOrgsResource.identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().get(idpRep.getAlias()).remove());
 
@@ -548,6 +552,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("testIdpUnlink");
             idpRep.setProviderId("oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             manageOrgsResource.identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().get(idpRep.getAlias()).remove());
 

@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
@@ -367,12 +369,18 @@ public class LinkedAccountsRestServiceTest {
                 String[] providers = new String[] {"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
                 for (int i = 0; i < providers.length; i++) {
                     String[] idpInfo = providers[i].split(":");
-                    testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                    IdentityProviderBuilder idpBuilder = IdentityProviderBuilder.create()
                             .providerId(idpInfo[0])
                             .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
                             .displayName(idpInfo.length == 1 ? null : idpInfo[2])
-                            .attribute("guiOrder", String.valueOf(i))
-                            .build());
+                            .attribute("guiOrder", String.valueOf(i));
+                    if ("saml".equals(idpInfo[0])) {
+                        idpBuilder.attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                                .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
+                    } else {
+                        idpBuilder.attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+                    }
+                    testRealm.addIdentityProvider(idpBuilder.build());
                 }
 
                 addFederatedIdentities(testRealm, "github", "gitlab", "mysaml");

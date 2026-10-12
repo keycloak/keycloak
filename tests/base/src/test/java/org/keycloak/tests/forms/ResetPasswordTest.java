@@ -103,6 +103,7 @@ public class ResetPasswordTest {
             .attribute("tokenUrl", BASE_URL + "/realms/" + PROVIDER_REALM_NAME + "/protocol/openid-connect/token")
             .attribute("jwksUrl", BASE_URL + "/realms/" + PROVIDER_REALM_NAME + "/protocol/openid-connect/certs")
             .attribute("logoutUrl", BASE_URL + "/realms/" + PROVIDER_REALM_NAME + "/protocol/openid-connect/logout")
+            .attribute("validateSignature", "false")
             .build();
 
         consumerRealm.admin().identityProviders().create(idp).close();
