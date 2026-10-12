@@ -721,6 +721,10 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             return false;
         }
 
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, client.getId())) {
+            return true;
+        }
+
         if (realm.getName().equals(Config.getAdminRealm())) {
             return client.getClientId().endsWith(AdminRoles.APP_SUFFIX);
         }
