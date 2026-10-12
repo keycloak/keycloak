@@ -219,6 +219,31 @@ public void testSomethingThatRequiresRegistration() {
 
 The changes will then be reverted after the test method has executed.
 
+### `updateClientWithCleanup(...)`
+
+Similar to `updateWithCleanup(...)`, but for modifying a client within the realm:
+
+```java
+@Test
+public void testClientWithShortTokenLifespan() {
+    managedRealm.updateClientWithCleanup("my-client", c -> c.attribute("access.token.lifespan", "60"));
+    
+    // Test with short token lifespan
+}
+```
+
+The client configuration will be restored after the test method has executed.
+
+### Other `update*WithCleanup` methods
+
+`ManagedRealm` provides additional methods for modifying resources within the realm with automatic cleanup:
+
+* `updateUserWithCleanup(username, update)` - Modify a user
+* `updateIdentityProvider(alias, update)` - Modify an identity provider
+* `updateClientScope(id, update)` - Modify a client scope
+* `updateClientProfile(name, update)` / `updateClientPolicy(name, update)` - Modify client profiles/policies
+* `updateComponent(id, update)` - Modify a component
+
 ### `update` and `add` methods
 
 There are a number of utilities that allow adding or updating resources within a realm, with cleanup after the test 
@@ -501,7 +526,7 @@ Complete list of resources that can be injected into tests:
 | Annotation           | Java class                                                        | Description                                    |
 |----------------------|-------------------------------------------------------------------|------------------------------------------------|
 | `@InjectRunOnServer` | `org.keycloak.testframework.remote.runonserver.RunOnServerClient` | Execute code on the Keycloak server            |
-| `@InjectTimeOffSet`  | `org.keycloak.testframework.remote.timeoffset.TimeOffSet`         | Set the timeoffset used on the Keycloak server |
+| `@InjectTimeOffSet`  | `org.keycloak.testframework.remote.timeoffset.TimeOffSet`         | Set the timeoffset used on the Keycloak server. Lifecycle is `METHOD` by default, so the offset is automatically reset to 0 after each test — do not reset it manually in finally blocks or `@AfterEach`. |
 
 ## `keycloak-test-framework-oauth` extension
 

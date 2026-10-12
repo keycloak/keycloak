@@ -46,7 +46,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -180,21 +179,13 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     @Test
     public void concurrentLoginSingleUserSingleClientRehash() throws Throwable {
         LOGGER.info("*********************************************");
-        final RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-
-        try {
-            realmRep.setPasswordPolicy("hashAlgorithm(pbkdf2-sha256)");
-            managedRealm.admin().update(realmRep);
-            // change the password of the test user to the same to force re-hashing
-            CredentialRepresentation rep = new CredentialRepresentation();
-            rep.setTemporary(Boolean.FALSE);
-            rep.setValue("password");
-            rep.setType(CredentialRepresentation.PASSWORD);
-            AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user1.getUsername()).resetPassword(rep);
-        } finally {
-            realmRep.setPasswordPolicy("");
-            managedRealm.admin().update(realmRep);
-        }
+        managedRealm.updateWithCleanup(r -> r.passwordPolicy("hashAlgorithm(pbkdf2-sha256)"));
+        // change the password of the test user to the same to force re-hashing
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setTemporary(Boolean.FALSE);
+        rep.setValue("password");
+        rep.setType(CredentialRepresentation.PASSWORD);
+        AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user1.getUsername()).resetPassword(rep);
 
         // execute the login to re-hash in parallel
         run(2, 10, (KeycloakRunnable) (int threadIndex, Keycloak keycloak, RealmResource realm) -> {
