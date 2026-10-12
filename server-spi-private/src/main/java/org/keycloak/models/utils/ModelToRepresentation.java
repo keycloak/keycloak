@@ -74,6 +74,7 @@ import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationIdentityProviderLinkModel;
@@ -213,6 +214,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
         REALM_EXCLUDED_ATTRIBUTES.add("scimEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add(OAuth2DeviceConfig.OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS);
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -564,6 +566,7 @@ public class ModelToRepresentation {
         rep.setActionTokenGeneratedByUserLifespan(realm.getActionTokenGeneratedByUserLifespan());
         rep.setOAuth2DeviceCodeLifespan(realm.getOAuth2DeviceConfig().getLifespan());
         rep.setOAuth2DevicePollingInterval(realm.getOAuth2DeviceConfig().getPoolingInterval());
+        rep.setOAuth2DeviceMaxFailedVerificationAttempts(realm.getOAuth2DeviceConfig().getMaxFailedVerificationAttempts());
         rep.setSmtpServer(new HashMap<>(realm.getSmtpConfig()));
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
