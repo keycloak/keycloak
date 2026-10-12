@@ -27,6 +27,7 @@ public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
                         .providerId("oidc")
                         .attribute("unsupported-themeConfig", "This value is not shown in the Keycloak theme")
                         .attribute("kcTheme-idpConfigValue", "This value is shown in the Keycloak theme")
+                        .attribute("validateSignature", "false")
                         .build()).close();
 
         oauth.realm(TEST_REALM_NAME);

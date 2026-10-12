@@ -152,7 +152,10 @@ public abstract class AbstractKcOidcBrokerTest extends AbstractBrokerLoginTest {
                 .attribute("prompt", "login")
                 .attribute("loginHint", "true")
                 .attribute("backchannelSupported", "true")
-                .attribute("defaultScope", "email profile");
+                .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/provider/protocol/openid-connect/certs")
+                .attribute("defaultScope", "email profile")
+                .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
     }
 
     protected static RealmBuilder configureConsumerRealm(RealmBuilder realm, IdentityProviderBuilder idpBuilder) {

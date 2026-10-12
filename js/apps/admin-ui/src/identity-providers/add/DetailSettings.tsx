@@ -116,6 +116,11 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     name: "config.validateSignature",
   });
 
+  const wantAssertionsSigned = useWatch({
+    control,
+    name: "config.wantAssertionsSigned",
+  });
+
   const useMetadataDescriptorUrl = useWatch({
     control,
     name: "config.useMetadataDescriptorUrl",
@@ -198,7 +203,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         divider={false}
         dropdownItems={[
           ...(provider?.providerId?.includes("saml") &&
-          validateSignature === "true" &&
+          (validateSignature === "true" || wantAssertionsSigned === "true") &&
           useMetadataDescriptorUrl === "true" &&
           metadataDescriptorUrl &&
           !formState.isDirty &&
@@ -212,7 +217,8 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                 </DropdownItem>,
               ]
             : provider?.providerId?.includes("saml") &&
-                validateSignature === "true" &&
+                (validateSignature === "true" ||
+                  wantAssertionsSigned === "true") &&
                 useMetadataDescriptorUrl !== "true" &&
                 metadataDescriptorUrl &&
                 !formState.isDirty

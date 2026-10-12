@@ -647,7 +647,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
                 "defaultScope", "email profile",
-                "syncMode", "IMPORT"
+                "syncMode", "IMPORT",
+                "validateSignature", "false"
         )));
         try (Response response = realm.admin().identityProviders().create(idpRep)) {
             assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));

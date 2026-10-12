@@ -6,6 +6,7 @@ import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 import {
   addMapper,
   assertAuthorizationUrl,
@@ -42,6 +43,10 @@ test.describe.serial("OIDC identity provider test", () => {
       page,
       "Identity provider successfully created",
     );
+
+    const provider = await adminClient.getIdentityProvider(oidcProviderName);
+    expect(provider?.config?.validateSignature).toBe("true");
+
     await assertAuthorizationUrl(page);
 
     await setUrl(page, "authorization", "invalid");
@@ -87,7 +92,12 @@ test.describe.serial("Edit OIDC Provider", () => {
   const alias = `edit-oidc-${uuid()}`;
 
   test.beforeEach(async ({ page }) => {
-    await adminClient.createIdentityProvider(oidcProviderName, alias);
+    await adminClient.createIdentityProvider(
+      oidcProviderName,
+      alias,
+      undefined,
+      { validateSignature: "false" },
+    );
     await login(page);
     await goToIdentityProviders(page);
     await clickTableRowItem(page, oidcProviderName);
@@ -126,5 +136,54 @@ test.describe.serial("Edit OIDC Provider", () => {
     await addMapper(page, "oidc-role", "OIDC Claim to Role");
     await clickCancelMapper(page);
     await assertOnMappingPage(page);
+  });
+});
+
+test.describe("OIDC signature defaults", () => {
+  const alias = `oidc-sig-defaults-${uuid()}`;
+  const addOidcUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/oidc/add`;
+
+  async function disableDiscovery(page: Parameters<typeof login>[0]) {
+    await page.locator("#kc-discovery-endpoint-switch").click();
+  }
+
+  test.afterAll(() => adminClient.deleteIdentityProvider(alias));
+
+  test("should enable the validate-signature switch by default on the add form", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.goto(addOidcUrl);
+    await disableDiscovery(page);
+
+    const validateSignature = page.getByTestId("config.validateSignature");
+    await validateSignature.waitFor({ state: "attached" });
+    await expect(validateSignature).toBeChecked();
+  });
+
+  test("should persist validateSignature=true when creating a provider without discovery", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.goto(addOidcUrl);
+    await disableDiscovery(page);
+
+    await page.getByTestId("alias").fill(alias);
+    await page
+      .getByTestId("config.authorizationUrl")
+      .fill("https://idp.example/auth");
+    await page.getByTestId("config.tokenUrl").fill("https://idp.example/token");
+    await page.getByTestId("config.clientId").fill("broker-client");
+    await page.getByTestId("config.clientSecret").fill("broker-secret");
+    await page.getByTestId("config.jwksUrl").fill("https://idp.example/jwks");
+    await page.getByTestId("createProvider").click();
+
+    await assertNotificationMessage(
+      page,
+      "Identity provider successfully created",
+    );
+
+    const provider = await adminClient.getIdentityProvider(alias);
+    expect(provider?.config?.validateSignature).toBe("true");
   });
 });

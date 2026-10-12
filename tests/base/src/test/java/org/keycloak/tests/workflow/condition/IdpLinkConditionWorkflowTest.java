@@ -255,6 +255,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
                 .attribute("userInfoUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/userinfo")
                 .attribute("defaultScope", "email profile")
                 .attribute("backchannelSupported", "true")
+                .attribute("validateSignature", "false")
                 .build();
 
         managedRealm.admin().identityProviders().create(rep).close();
