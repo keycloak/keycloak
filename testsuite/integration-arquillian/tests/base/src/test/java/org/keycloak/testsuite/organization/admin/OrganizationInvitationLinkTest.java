@@ -158,7 +158,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
 
-            acceptInvitation(organization, user, "AUTH_RESPONSE");
+            // Add the member without consuming the invitation so the already-member response is exercised.
+            try (Response membership = organization.members().addMember(user.getId())) {
+                assertThat(membership.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            }
 
             String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
             driver.navigate().to(link);
