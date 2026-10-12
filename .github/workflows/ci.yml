@@ -156,15 +156,16 @@ jobs:
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
         with:
-          # Checker Framework 4.3.1 crashes on JDK 25 due to a duplicate module name in checker.jar and checker-qual.jar
-          # (both declare module org.checkerframework.checker.qual), causing NoClassDefFoundError for dataflow.qual classes.
+          # JDK 22+ eagerly resolves types referenced by RuntimeVisibleTypeAnnotations (JDK-8225377).
+          # This breaks the Checker Framework, which writes type annotations referencing types
+          # that may not be on the downstream module's classpath.
+          # https://github.com/typetools/checker-framework/issues/8346
           java-version: "21"
 
       - name: Run Checker Framework ResourceLeakChecker
         run: |
-          # Must not use a parallel build here, as the Checker Framework plugin is not thread-safe and will fail with a parallel build.
           # Always do a clean build to ensure all resources are checked for leaks, as the Checker Framework plugin only checks resources that are compiled in the current build.
-          ./mvnw clean package -T1 -e --fail-at-end -am -DskipTests -Pcheckerframework -pl quarkus/dist
+          ./mvnw clean package -e --fail-at-end -am -DskipTests -Pcheckerframework -pl quarkus/dist
 
   base-integration-tests:
     name: Base IT
