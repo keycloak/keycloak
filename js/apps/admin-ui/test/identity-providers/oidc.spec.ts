@@ -87,7 +87,12 @@ test.describe.serial("Edit OIDC Provider", () => {
   const alias = `edit-oidc-${uuid()}`;
 
   test.beforeEach(async ({ page }) => {
-    await adminClient.createIdentityProvider(oidcProviderName, alias);
+    await adminClient.createIdentityProvider(
+      oidcProviderName,
+      alias,
+      undefined,
+      { validateSignature: "false" },
+    );
     await login(page);
     await goToIdentityProviders(page);
     await clickTableRowItem(page, oidcProviderName);
