@@ -94,6 +94,17 @@ Previously, the Redirect URL was used without validation, which could allow an o
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
 
+=== The `admin-permissions` client is treated as an internal client
+// https://github.com/keycloak/keycloak/issues/51630
+
+When fine-grained admin permissions V2 are enabled on a realm, the `admin-permissions` client holds the whole authorization model of that realm.
+This client is now treated as an internal client, the same way the `realm-management` client already is, so it can no longer be managed through the Admin REST API.
+Previously, an administrator with a *manage* permission on clients could update it, including changing its `clientId`, even though the `access.manage` field returned for the client was already `false`.
+
+After upgrading, requests that update the `admin-permissions` client are rejected with a 403 status.
+Requests that delete it are also rejected with a 403 status, where previously they were rejected with a 400 status.
+Configuring the permissions and the policies of the realm is not affected, as it requires the `manage-realm` role rather than a permission on the client.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
