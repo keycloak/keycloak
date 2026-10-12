@@ -327,6 +327,36 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testManageAllClientsDoesNotGrantManageOnAdminPermissionsClient() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        String adminPermissionsClientId = adminPermissionsClient.toRepresentation().getId();
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(adminPermissionsClientId);
+
+        // the admin-permissions client holds the whole FGAP model, so a Clients:manage permission must not grant manage on it
+        ClientRepresentation rep = clientResource.toRepresentation();
+        assertThat(rep.getAccess().get("manage"), is(false));
+        assertThat(rep.getAccess().get("configure"), is(false));
+
+        // enforcement has to agree with the access report above
+        rep.setName("somethingNew");
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.update(rep));
+
+        // renaming it must not be possible either, otherwise it could be deleted as a regular client afterwards
+        ClientRepresentation renamed = adminPermissionsClient.toRepresentation();
+        renamed.setClientId("renamed-admin-permissions");
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.update(renamed));
+
+        // nothing was persisted
+        ClientRepresentation current = adminPermissionsClient.toRepresentation();
+        assertThat(current.getClientId(), is(Constants.ADMIN_PERMISSIONS_CLIENT_ID));
+        assertThat(current.getName(), nullValue());
+    }
+
+    @Test
     public void testClientScopeEvaluation() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
