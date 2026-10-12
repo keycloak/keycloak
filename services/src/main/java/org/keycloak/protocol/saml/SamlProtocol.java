@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -269,9 +268,7 @@ public class SamlProtocol implements LoginProtocol {
         SamlClient samlClient = new SamlClient(client);
         boolean postBinding = samlClient.forcePostBinding() || SamlProtocol.SAML_POST_BINDING.equals(clientData.getResponseMode());
         event.detail(Details.REDIRECT_URI, clientData.getRedirectUri());
-        // the forbidden-parameters check guards OIDC response parameters from being mixed into the
-        // redirect URI; SAML responses never append those parameters, so the redirect URI is not checked against them
-        String validRedirectUri = RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), client, true, Collections.emptySet());
+        String validRedirectUri = RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), client);
         if (validRedirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
