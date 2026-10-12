@@ -74,7 +74,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     }
 
     public boolean isValidateSignature() {
-        return Boolean.parseBoolean(getConfig().get("validateSignature"));
+        return Boolean.parseBoolean(getConfig().getOrDefault(VALIDATE_SIGNATURE, "true"));
     }
 
     public void setValidateSignature(boolean validateSignature) {

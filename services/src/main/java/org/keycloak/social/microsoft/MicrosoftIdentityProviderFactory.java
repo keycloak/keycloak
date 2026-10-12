@@ -18,6 +18,7 @@ package org.keycloak.social.microsoft;
 
 import java.util.List;
 
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
@@ -39,12 +40,18 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
 
     @Override
     public MicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new MicrosoftIdentityProvider(session, new MicrosoftIdentityProviderConfig(model));
+        MicrosoftIdentityProviderConfig config = new MicrosoftIdentityProviderConfig(model);
+        config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.JWKS_URL, "https://login.microsoftonline.com/common/discovery/v2.0/keys");
+        return new MicrosoftIdentityProvider(session, config);
     }
 
     @Override
     public MicrosoftIdentityProviderConfig createConfig() {
-        return new MicrosoftIdentityProviderConfig();
+        MicrosoftIdentityProviderConfig config = new MicrosoftIdentityProviderConfig();
+        config.setUseJwksUrl(true);
+        config.setJwksUrl("https://login.microsoftonline.com/common/discovery/v2.0/keys");
+        return config;
     }
 
     @Override

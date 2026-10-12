@@ -132,6 +132,7 @@ public class KcSamlUserSessionLimitsBrokerTest extends AbstractUserSessionLimits
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
                     .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                    .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                     .attribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "false")
                     .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
                     .attribute(SAMLIdentityProviderConfig.FORCE_AUTHN, "false")
