@@ -1398,6 +1398,17 @@ public class SecurityEventTokenMapper {
      * with the concrete session id from the resource path rather than the
      * {@code "ALL"} placeholder, so the resulting {@link CaepSessionRevoked}
      * SET names exactly the session that was revoked.
+     *
+     * <p>Deliberately no store lookup here, unlike the {@code REVOKE_GRANT}
+     * path (see {@link #shouldIgnoreRevokeGrant}): that check exists because a
+     * token revocation usually only detaches one client and leaves the session
+     * alive, so the stores are the only way to tell whether anything ended.
+     * Deleting a user session through the admin API always ends the online
+     * session, exactly like a user-initiated {@link EventType#LOGOUT}, which
+     * is mapped without consulting the stores either. An offline session that
+     * may survive under the same id is a per-client grant rather than the SSO
+     * session a receiver correlates by {@code sid}, and the logout path
+     * already announces session-revoked regardless of such a survivor.
      */
     protected SsfSecurityEventToken generateLogoutEventForAdminUserSessionDelete(String userId, String sessionId, AdminEvent adminEvent, StreamConfig stream) {
 
