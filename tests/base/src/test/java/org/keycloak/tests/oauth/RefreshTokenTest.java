@@ -1027,10 +1027,8 @@ public class RefreshTokenTest {
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
         String refreshToken1 = loginAndForceNewLoginPage();
 
-        // Snapshot user before logout — logout sets notBefore as a side effect
-        UserRepresentation originalUserRep = user.admin().toRepresentation();
-        user.cleanup().add(u -> u.update(originalUserRep));
-
+        // Logout sets notBefore on the user, which can't be reset through an update, so the user is re-created after the test
+        user.dirty();
         user.admin().logout();
 
         // Continue with login
