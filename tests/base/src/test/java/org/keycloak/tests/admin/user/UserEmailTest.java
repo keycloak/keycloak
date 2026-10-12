@@ -684,7 +684,7 @@ public class UserEmailTest extends AbstractUserTest {
     }
 
     @Test
-    public void sendExecuteActionsEmailWithOidcNamedParameterOnSamlClient() {
+    public void sendExecuteActionsEmailWithOidcNamedParameterOnSamlClient() throws IOException {
         // #53823: a redirect URI of a SAML client may carry query parameters named like OIDC response
         // parameters (e.g. state or code) - the SAML flow never appends those parameters itself, so
         // the forbidden-OIDC-parameter check must not reject the redirect URI of a SAML client.
@@ -728,6 +728,28 @@ public class UserEmailTest extends AbstractUserTest {
             Assertions.assertEquals(i + 1, mailServer.getReceivedMessages().length,
                     "execute-actions-email for a SAML client must accept a redirect URI carrying the OIDC-named parameter '" + oidcNamedParams[i] + "'");
         }
+
+        // The link in the last email must also complete through the action-token flow for the SAML
+        // client: the token is verified (the forbidden-parameter set follows the client protocol on
+        // the consuming side too), the required action is completed, and the redirect URI survives
+        // verbatim to the final info page's back-to-application link.
+        String link = MailUtils.getPasswordResetEmailLink(mailServer.getReceivedMessages()[mailServer.getReceivedMessages().length - 1]);
+        driver.open(link);
+
+        // fresh authentication session: the confirmation info page
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        // complete the required action
+        passwordUpdatePage.assertCurrent();
+        passwordUpdatePage.changePassword("update-pass-1", "update-pass-1");
+
+        // the account-updated info page offers the original redirect URI back to the application
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+        String backToApplicationUrl = infoPage.getBackToApplicationUrl();
+        assertEquals("https://sp.example/acs?code=x", backToApplicationUrl,
+                "the SAML redirect URI with the OIDC-named parameter must survive the action-token flow verbatim");
 
         // OIDC client: the very same redirect URI is rejected - forbidden OIDC response parameters must
         // not be pre-populated in the redirect URI of an OIDC client (CVE-2026-9689).
