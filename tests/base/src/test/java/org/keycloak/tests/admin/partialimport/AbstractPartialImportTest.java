@@ -213,6 +213,7 @@ public class AbstractPartialImportTest {
             Map<String, String> config = new HashMap<>();
             config.put("clientSecret", "secret");
             config.put("clientId", alias);
+            config.put("validateSignature", "false");
             idpRep.setConfig(config);
             providers.add(idpRep);
 

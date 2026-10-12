@@ -42,6 +42,10 @@ test.describe.serial("OIDC identity provider test", () => {
       page,
       "Identity provider successfully created",
     );
+
+    const provider = await adminClient.getIdentityProvider(oidcProviderName);
+    expect(provider?.config?.validateSignature).toBe("true");
+
     await assertAuthorizationUrl(page);
 
     await setUrl(page, "authorization", "invalid");
@@ -87,7 +91,12 @@ test.describe.serial("Edit OIDC Provider", () => {
   const alias = `edit-oidc-${uuid()}`;
 
   test.beforeEach(async ({ page }) => {
-    await adminClient.createIdentityProvider(oidcProviderName, alias);
+    await adminClient.createIdentityProvider(
+      oidcProviderName,
+      alias,
+      undefined,
+      { validateSignature: "false" },
+    );
     await login(page);
     await goToIdentityProviders(page);
     await clickTableRowItem(page, oidcProviderName);
