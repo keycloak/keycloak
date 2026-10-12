@@ -1060,12 +1060,20 @@ public class RefreshTokenTest {
             assertNotNull(refreshToken);
 
             if (!oauth.getEndpoints().getIssuer().startsWith("https://")) {   // test checkSsl
-                realm.updateWithCleanup(r -> r.sslRequired(SslRequired.ALL.toString()));
+                RealmRepresentation realmRep = realm.admin().toRepresentation();
+                String origSslRequired = realmRep.getSslRequired();
+                realmRep.setSslRequired(SslRequired.ALL.toString());
+                realm.admin().update(realmRep);
 
-                AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshToken);
-                assertEquals(403, response.getStatusCode());
-                assertEquals(INVALID_REQUEST, response.getError());
-                assertEquals("HTTPS required", response.getErrorDescription());
+                try {
+                    AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshToken);
+                    assertEquals(403, response.getStatusCode());
+                    assertEquals(INVALID_REQUEST, response.getError());
+                    assertEquals("HTTPS required", response.getErrorDescription());
+                } finally {
+                    realmRep.setSslRequired(origSslRequired);
+                    realm.admin().update(realmRep);
+                }
             }
 
             AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshToken);

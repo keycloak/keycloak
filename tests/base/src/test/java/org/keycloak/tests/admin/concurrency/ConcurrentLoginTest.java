@@ -187,6 +187,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         rep.setType(CredentialRepresentation.PASSWORD);
         AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user1.getUsername()).resetPassword(rep);
 
+        // restore default policy so concurrent logins trigger a rehash from pbkdf2-sha256 back to default
+        managedRealm.updateWithCleanup(r -> r.passwordPolicy(""));
+
         // execute the login to re-hash in parallel
         run(2, 10, (KeycloakRunnable) (int threadIndex, Keycloak keycloak, RealmResource realm) -> {
             try (CloseableHttpClient httpClient = getHttpsAwareClient()) {
