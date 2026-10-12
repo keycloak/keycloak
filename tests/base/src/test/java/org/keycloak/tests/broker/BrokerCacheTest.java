@@ -1,5 +1,7 @@
 package org.keycloak.tests.broker;
 
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.FederatedIdentityModel;
@@ -86,6 +88,7 @@ public class BrokerCacheTest {
         idp.setAlias(IDP_ALIAS);
         idp.setProviderId("oidc");
         idp.setEnabled(true);
+        idp.setConfig(Map.of("validateSignature", "false"));
         managedRealm.admin().identityProviders().create(idp).close();
     }
 }

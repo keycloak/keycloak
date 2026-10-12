@@ -92,6 +92,7 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
             label={t("validateSignature")}
             labelIcon={t("validateSignatureHelp")}
             isDisabled={readOnly}
+            defaultValue={"true"}
             stringify
           />
           {(validateSignature === "true" ||

@@ -352,6 +352,7 @@ public class FlowTest extends AbstractAuthenticationTest {
             IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
             idp.setAlias("idp");
             idp.setProviderId("oidc");
+            idp.setConfig(Map.of("validateSignature", "false"));
 
             Response response = realmResource.identityProviders().create(idp);
             Assertions.assertNotNull(ApiUtil.getCreatedId(response));

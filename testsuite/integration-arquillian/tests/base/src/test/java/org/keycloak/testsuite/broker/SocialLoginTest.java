@@ -436,6 +436,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idp.setStoreToken(true);
         idp.getConfig().put("clientId", getConfig(provider, "clientId"));
         idp.getConfig().put("clientSecret", getConfig(provider, "clientSecret"));
+        idp.getConfig().put("validateSignature", "false");
 
         if (provider == GOOGLE_HOSTED_DOMAIN) {
             final String hostedDomain = getConfig(provider, "hostedDomain");

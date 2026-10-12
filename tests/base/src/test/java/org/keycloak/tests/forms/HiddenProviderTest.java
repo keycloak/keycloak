@@ -67,11 +67,13 @@ public class HiddenProviderTest {
                             .providerId("oidc")
                             .alias("visible-oidc")
                             .displayName("VisibleOIDC")
+                            .attribute("validateSignature", "false")
                             .build(),
                     IdentityProviderBuilder.create()
                             .providerId("oidc")
                             .alias("hidden-oidc")
                             .displayName("HiddenOIDC")
+                            .attribute("validateSignature", "false")
                             .hideOnLoginPage()
                             .build()
             );

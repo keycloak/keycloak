@@ -141,7 +141,12 @@ public class ParTest extends AbstractClientPoliciesTest {
         realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app")
                 .webOrigins(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrantsEnabled().build());
 
-        realm.addIdentityProvider(IdentityProviderBuilder.create().alias(IDENTITY_PROVIDER_ALIAS).providerId("oidc").build());
+        realm.addIdentityProvider(
+                IdentityProviderBuilder.create()
+                        .alias(IDENTITY_PROVIDER_ALIAS)
+                        .providerId("oidc")
+                        .attribute("validateSignature", "false")
+                        .build());
 
         testRealms.add(realm);
     }

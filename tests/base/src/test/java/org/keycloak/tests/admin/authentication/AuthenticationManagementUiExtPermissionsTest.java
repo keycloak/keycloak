@@ -276,6 +276,7 @@ public class AuthenticationManagementUiExtPermissionsTest {
             realm.identityProviders(IdentityProviderBuilder.create()
                     .providerId("oidc")
                     .alias(HIDDEN_IDP)
+                    .attribute("validateSignature", "false")
                     .postBrokerLoginFlowAlias(IDP_FLOW));
 
             realm.clients(ClientBuilder.create("myclient")

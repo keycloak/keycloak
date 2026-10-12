@@ -116,6 +116,11 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     name: "config.validateSignature",
   });
 
+  const wantAssertionsSigned = useWatch({
+    control,
+    name: "config.wantAssertionsSigned",
+  });
+
   const useMetadataDescriptorUrl = useWatch({
     control,
     name: "config.useMetadataDescriptorUrl",
@@ -198,7 +203,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         divider={false}
         dropdownItems={[
           ...(provider?.providerId?.includes("saml") &&
-          validateSignature === "true" &&
+          (validateSignature === "true" || wantAssertionsSigned === "true") &&
           useMetadataDescriptorUrl === "true" &&
           metadataDescriptorUrl &&
           !formState.isDirty &&
@@ -212,7 +217,8 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                 </DropdownItem>,
               ]
             : provider?.providerId?.includes("saml") &&
-                validateSignature === "true" &&
+                (validateSignature === "true" ||
+                  wantAssertionsSigned === "true") &&
                 useMetadataDescriptorUrl !== "true" &&
                 metadataDescriptorUrl &&
                 !formState.isDirty
@@ -289,18 +295,23 @@ export default function DetailSettings() {
 
   const toFormValues = (
     p: IdentityProviderRepresentation,
-  ): IdentityProviderRepresentation =>
-    p.config
-      ? {
-          ...p,
-          config: Object.fromEntries(
-            Object.entries(p.config).map(([key, value]) => [
-              beerify(key),
-              value,
-            ]),
-          ),
-        }
-      : p;
+  ): IdentityProviderRepresentation => {
+    if (!p.config) return p;
+
+    const transformedConfig = Object.fromEntries(
+      Object.entries(p.config).map(([key, value]) => [beerify(key), value]),
+    );
+
+    if (p.providerId?.includes("saml")) {
+      if (transformedConfig.validateSignature === undefined) {
+        transformedConfig.validateSignature = "true";
+      }
+      if (transformedConfig.wantAssertionsSigned === undefined) {
+        transformedConfig.wantAssertionsSigned = "true";
+      }
+    }
+    return { ...p, config: transformedConfig };
+  };
 
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();

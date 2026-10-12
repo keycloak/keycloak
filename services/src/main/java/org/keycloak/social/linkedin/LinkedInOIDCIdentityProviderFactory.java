@@ -92,7 +92,10 @@ public class LinkedInOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public OIDCIdentityProviderConfig createConfig() {
-        return new OIDCIdentityProviderConfig();
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
+        config.setUseJwksUrl(true);
+        config.setJwksUrl("https://www.linkedin.com/oauth/openid/jwks");
+        return config;
     }
 
     private static OIDCConfigurationRepresentation getWellKnownMetadata(KeycloakSession session) {
