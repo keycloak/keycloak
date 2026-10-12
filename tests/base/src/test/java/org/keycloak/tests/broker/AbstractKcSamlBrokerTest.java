@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -15,6 +17,7 @@ import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -34,6 +37,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.FORCE_AUTHN;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_RESPONSE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
@@ -79,6 +83,14 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
         return IDP_SAML_ALIAS;
     }
 
+    protected static String activeRs256SigCert(ManagedRealm realm) {
+        return realm.admin().keys().getKeyMetadata().getKeys().stream()
+                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
+                        && Algorithm.RS256.equals(k.getAlgorithm()))
+                .map(KeysMetadataRepresentation.KeyMetadataRepresentation::getCertificate)
+                .findFirst().orElseThrow();
+    }
+
     // Mirrors the OIDC config's configureBrokerEndpoints(): the SAML broker endpoints and the consumer's
     // SAML entity id depend on the runtime realm base URLs, which are only available once the realms exist.
     // Rewrite them here from ManagedRealm#getBaseUrl() instead of hard-coding localhost:8080, so the tests
@@ -99,6 +111,7 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
         idpConfig.put(SINGLE_SIGN_ON_SERVICE_URL, providerSamlEndpoint);
         idpConfig.put(ARTIFACT_RESOLUTION_SERVICE_URL, providerSamlEndpoint);
         idpConfig.put(SINGLE_LOGOUT_SERVICE_URL, providerSamlEndpoint);
+        idpConfig.put(SIGNING_CERTIFICATE_KEY, activeRs256SigCert(getProviderRealm()));
         idpResource.update(idp);
 
         // Provider-side client representing the consumer: its SAML entity id and broker endpoints must
@@ -170,7 +183,7 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
             clientAttributes.put(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, consumerBrokerEndpoint);
             clientAttributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
             clientAttributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
-            clientAttributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
+            clientAttributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true");
             clientAttributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
             clientAttributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
             clientAttributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
