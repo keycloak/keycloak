@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -29,7 +30,6 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -51,8 +51,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -68,15 +68,15 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
     @Test
     public void testPreventDeletingAdminPermissionsClient() {
+        // the client is internal, so the request is rejected by the permission check the same way it is for realm-management
         try {
             adminPermissionsClient.remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            assertThat(ex, instanceOf(BadRequestException.class));
-            OAuth2ErrorRepresentation error = ((BadRequestException) ex).getResponse().readEntity(OAuth2ErrorRepresentation.class);
-            assertThat(error.getError(), is("invalid_request"));
-            assertThat(error.getErrorDescription(), is("Could not delete client"));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
+
+        assertThat(adminPermissionsClient.toRepresentation(), notNullValue());
     }
 
     @Test
@@ -84,6 +84,17 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         ClientRepresentation representation = adminPermissionsClient.toRepresentation();
         assertFalse(representation.getAccess().get("manage"));
         assertFalse(representation.getAccess().get("configure"));
+
+        // enforcement has to agree with the access report above, even for a full admin
+        representation.setName("somethingNew");
+        try {
+            adminPermissionsClient.update(representation);
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        assertThat(adminPermissionsClient.toRepresentation().getName(), nullValue());
     }
 
     @Test
