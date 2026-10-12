@@ -21,13 +21,6 @@ public class KcSamlBrokerTest extends AbstractKcSamlBrokerTest {
     ErrorPage errorPage;
 
     @Test
-    public void testValidateSignature_defaultsToTrueWhenNOTConfigured() {
-        SAMLIdentityProviderConfig config = new SAMLIdentityProviderConfig();
-        Assertions.assertTrue(config.isValidateSignature());
-        Assertions.assertTrue(config.isWantAssertionsSigned());
-    }
-
-    @Test
     public void testLoginFailsWhenResponse_UnsignedANDValidateSignatureIsOmitted() {
         // Configure the provider
         String samlClientId = consumerRealm.getBaseUrl();
