@@ -150,6 +150,19 @@ http[s]://{host:port}{kc_realms_path}/{realm-name}/broker/{broker-alias}/endpoin
 
 Ensure you save any configuration changes before accessing the descriptor.
 
+[[_identity_broker_saml_session_lifetime]]
+==== Upstream session lifetime enforcement
+
+When an external SAML Identity Provider includes a `SessionNotOnOrAfter` attribute in its `AuthnStatement`, {project_name} enforces that limit on the brokered user session.
+The effective session lifespan is the shorter of the local realm's SSO session max lifespan and the upstream `SessionNotOnOrAfter` value.
+This ensures that {project_name} respects the session lifetime set by the upstream Identity Provider.
+
+If the Identity Provider's `Allowed Clock Skew` is configured, {project_name} adds that tolerance to the upstream `SessionNotOnOrAfter` value before comparing it with the local lifespan.
+
+NOTE: This enforcement applies only to online (browser) sessions.
+Offline sessions, created when a client requests the `offline_access` scope, are not subject to the upstream `SessionNotOnOrAfter` limit.
+Offline sessions represent long-lived grants that are designed to outlive the SSO session and are governed by their own lifespan settings (`offlineSessionMaxLifespan` and `offlineSessionIdleTimeout`).
+
 [[_identity_broker_saml_login_hint]]
 ==== Send subject in SAML requests
 

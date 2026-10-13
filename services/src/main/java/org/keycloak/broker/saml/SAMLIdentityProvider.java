@@ -103,6 +103,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
@@ -276,7 +277,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
                     .toGregorianCalendar().getTimeInMillis() / 1000;
             sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
-            authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_NOT_ON_OR_AFTER,
+            authSession.setUserSessionNote(AuthenticationManager.FEDERATED_SESSION_NOT_ON_OR_AFTER,
                     Long.toString(sessionNotOnOrAfterSeconds));
         }
 
