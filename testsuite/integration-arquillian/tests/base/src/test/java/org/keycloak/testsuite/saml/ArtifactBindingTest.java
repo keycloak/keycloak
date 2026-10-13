@@ -683,6 +683,11 @@ public class ArtifactBindingTest extends AbstractSamlTest {
 
     @Test
     public void testArtifactBindingWithBackchannelLogout() {
+        // SessionIndex back-channel logout requires client signature (#53535).
+        String signingCert = adminClient.realm(REALM_NAME).clients()
+                .findByClientId(SAML_CLIENT_ID_SALES_POST_SIG).get(0)
+                .getAttributes().get(SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE);
+
         try (SamlMessageReceiver backchannelLogoutReceiver = new SamlMessageReceiver(8082);
              ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
                      .setAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING, "true")
@@ -704,21 +709,27 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                     .build()
                     .execute();
 
-            // We need new SamlClient so that logout is not done using cookie -> frontchannel logout
-            new SamlClientBuilder()
-                    // Initiate logout as SAML_CLIENT_ID_SALES_POST2 and expect backchannel call to SAML_CLIENT_ID_SALES_POST
-                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST2, POST)
-                        .nameId(nameIdRef::get)
-                        .sessionIndex(sessionIndexRef::get)
-                    .build()
-                    .executeAndTransform(r -> {
-                        SAMLDocumentHolder saml2ObjectHolder = POST.extractResponse(r);
-                        assertThat(saml2ObjectHolder.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            // Enable signature only for SessionIndex logout so AuthnRequest above stays unsigned.
+            try (ClientAttributeUpdater signatureEnabler = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST2)
+                    .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "true")
+                    .setAttribute(SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE, signingCert)
+                    .update()) {
 
-                        return null;
-                    });
+                // We need new SamlClient so that logout is not done using cookie -> frontchannel logout
+                new SamlClientBuilder()
+                        // Initiate logout as SAML_CLIENT_ID_SALES_POST2 and expect backchannel call to SAML_CLIENT_ID_SALES_POST
+                        .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST2, POST)
+                            .nameId(nameIdRef::get)
+                            .sessionIndex(sessionIndexRef::get)
+                            .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                        .build()
+                        .executeAndTransform(r -> {
+                            SAMLDocumentHolder saml2ObjectHolder = POST.extractResponse(r);
+                            assertThat(saml2ObjectHolder.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
 
-
+                            return null;
+                        });
+            }
 
             // Check whether logoutReceiver contains correct LogoutRequest
             await()
