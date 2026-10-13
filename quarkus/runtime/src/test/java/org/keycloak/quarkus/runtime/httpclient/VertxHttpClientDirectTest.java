@@ -1,0 +1,142 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.quarkus.runtime.httpclient;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.keycloak.connections.httpclient.ProxyMappings;
+
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+
+/**
+ * Tests for {@link VertxHttpClientProvider#createDirectHttpClient(DnsResolver)}: requests connect to
+ * the address the resolver returns, without proxy or redirects, while TLS still verifies the
+ * URL's hostname.
+ */
+public class VertxHttpClientDirectTest {
+
+    private static final String HOST = "push.example.test";
+
+    private Vertx vertx;
+    private final AtomicInteger requests = new AtomicInteger();
+
+    @Before
+    public void startVertx() {
+        vertx = Vertx.vertx();
+    }
+
+    @After
+    public void stopVertx() throws Exception {
+        vertx.close().toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void connectsToResolvedAddress() throws Exception {
+        int port = startServer(new HttpServerOptions());
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), loopback());
+             CloseableHttpResponse res = client.execute(new HttpGet("http://" + HOST + ":" + port + "/hello"))) {
+            assertEquals(200, res.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void doesNotFollowRedirects() throws Exception {
+        int port = startServer(new HttpServerOptions());
+        try (CloseableHttpClient client = directClient(new WebClientOptions().setFollowRedirects(true), loopback());
+             CloseableHttpResponse res = client.execute(new HttpGet("http://" + HOST + ":" + port + "/redirect"))) {
+            assertEquals(302, res.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void rejectedResolutionOpensNoConnection() throws Exception {
+        int port = startServer(new HttpServerOptions());
+        DnsResolver rejecting = host -> {
+            throw new UnknownHostException("rejected " + host);
+        };
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), rejecting)) {
+            assertThrows(UnknownHostException.class,
+                    () -> client.execute(new HttpGet("http://" + HOST + ":" + port + "/hello")));
+        }
+        assertEquals(0, requests.get());
+    }
+
+    @Test
+    public void tlsVerifiesUrlHostnameNotPinnedAddress() throws Exception {
+        SelfSignedCertificate certificate = SelfSignedCertificate.create(HOST);
+        int port = startServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(certificate.keyCertOptions()));
+        WebClientOptions options = new WebClientOptions().setTrustOptions(certificate.trustOptions()).setVerifyHost(true);
+
+        // The certificate names HOST only, so this succeeds only if TLS checks HOST, not 127.0.0.1.
+        try (CloseableHttpClient client = directClient(options, loopback());
+             CloseableHttpResponse res = client.execute(new HttpGet("https://" + HOST + ":" + port + "/hello"))) {
+            assertEquals(200, res.getStatusLine().getStatusCode());
+        }
+
+        // Hostname verification is still on: another name pinned to the same address fails.
+        try (CloseableHttpClient client = directClient(options, loopback())) {
+            assertThrows(IOException.class,
+                    () -> client.execute(new HttpGet("https://other.example.test:" + port + "/hello")));
+        }
+    }
+
+    private CloseableHttpClient directClient(WebClientOptions options, DnsResolver resolver) {
+        HttpClient httpClient = vertx.createHttpClient(options);
+        // A proxy mapping to an unreachable port: any request routed through it would fail.
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(".*;http://127.0.0.1:1");
+        VertxHttpClientProvider provider = new VertxHttpClientProvider(WebClient.wrap(httpClient, options), httpClient,
+                10_000_000L, 5000L, 0, 1000L, 2.0, false, 0.5, proxyMappings);
+        return provider.createDirectHttpClient(resolver);
+    }
+
+    private int startServer(HttpServerOptions options) throws Exception {
+        HttpServer server = vertx.createHttpServer(options).requestHandler(req -> {
+            requests.incrementAndGet();
+            if ("/redirect".equals(req.path())) {
+                req.response().setStatusCode(302).putHeader("Location", "/hello").end();
+            } else {
+                req.response().end("Hello world!");
+            }
+        });
+        return server.listen(0, "127.0.0.1").toCompletionStage().toCompletableFuture()
+                .get(10, TimeUnit.SECONDS).actualPort();
+    }
+
+    private static DnsResolver loopback() {
+        return host -> new InetAddress[]{InetAddress.getByName("127.0.0.1")};
+    }
+}

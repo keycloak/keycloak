@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,6 +20,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SocketAddress;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -29,6 +32,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -42,10 +46,20 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
 
     private final HttpClient httpClient;
     private final VertxHttpClientProvider provider;
+    private final DnsResolver directResolver;
 
     VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider) {
+        this(httpClient, provider, null);
+    }
+
+    /**
+     * @param directResolver when set, requests resolve their host with it and connect to the
+     *                       resolved address directly, without proxy or redirects
+     */
+    VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider, DnsResolver directResolver) {
         this.httpClient = httpClient;
         this.provider = provider;
+        this.directResolver = directResolver;
     }
 
     @Override
@@ -55,11 +69,23 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
                     "HttpContext is not supported by the Vert.x HTTP client bridge (HTTP_CLIENT_V2). "
                     + "Remove the HttpContext parameter or switch back to the Apache HTTP client (HTTP_CLIENT v1).");
         }
-        return provider.executeWithRetry(() -> doExecuteInternal(target, request));
+        URI uri = resolveUri(target, request);
+        // Resolved once, outside the retry loop: a rejected or unknown host is not retried and
+        // keeps its exception type, as with the Apache client.
+        SocketAddress server = directResolver != null ? resolveDirectServer(uri) : null;
+        return provider.executeWithRetry(() -> doExecuteInternal(uri, server, request));
     }
 
-    private CloseableHttpResponse doExecuteInternal(HttpHost target, HttpRequest request) throws IOException {
-        URI uri = resolveUri(target, request);
+    private SocketAddress resolveDirectServer(URI uri) throws IOException {
+        InetAddress[] addresses = directResolver.resolve(uri.getHost());
+        if (addresses == null || addresses.length == 0) {
+            throw new UnknownHostException(uri.getHost());
+        }
+        int port = uri.getPort() != -1 ? uri.getPort() : "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+        return SocketAddress.inetSocketAddress(port, addresses[0].getHostAddress());
+    }
+
+    private CloseableHttpResponse doExecuteInternal(URI uri, SocketAddress server, HttpRequest request) throws IOException {
         String method = request.getRequestLine().getMethod();
         long maxSize = provider.getMaxConsumedResponseSize();
 
@@ -98,9 +124,14 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         if (connectTimeoutMs > 0) {
             reqOptions.setConnectTimeout(connectTimeoutMs);
         }
-        ProxyOptions proxy = provider.resolveProxyForHost(uri.getHost());
-        if (proxy != null) {
-            reqOptions.setProxyOptions(proxy);
+        if (server != null) {
+            // The URI host still drives the Host header, SNI and certificate verification.
+            reqOptions.setServer(server).setFollowRedirects(false);
+        } else {
+            ProxyOptions proxy = provider.resolveProxyForHost(uri.getHost());
+            if (proxy != null) {
+                reqOptions.setProxyOptions(proxy);
+            }
         }
 
         CompletableFuture<CloseableHttpResponse> future = new CompletableFuture<>();
