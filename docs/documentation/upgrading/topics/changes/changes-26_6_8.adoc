@@ -116,6 +116,14 @@ Only an administrator with the `manage-realm` permission can enable the setting.
 After upgrading, if you rely on identity provider mappers to assign administrative roles or to add brokered users to groups that carry administrative roles, an administrator with the `manage-realm` permission must enable *Allow granting admin roles via mappers* on each affected identity provider.
 Note that this change does not remove existing role or group assignments that may have been previously granted by identity provider mappers. If such removal is needed it needs to be done explicitly.
 
+=== Realm-level default client scopes require `manage-realm`
+// https://github.com/keycloak/keycloak/issues/50588
+
+Changing the realm-level default and optional client scopes through the Admin REST API endpoints `default-default-client-scopes/{clientScopeId}` and `default-optional-client-scopes/{clientScopeId}` now requires the `manage-realm` role.
+Previously `manage-clients` was sufficient, even though these lists determine which client scopes every newly created client in the realm receives.
+Administrators who hold only `manage-clients` can still create, update, and delete individual client scopes, and can still read the realm-level lists; they can no longer change which of them are realm defaults.
+If you have automation that manages realm default client scopes with a `manage-clients` account, grant it `manage-realm` or run it with an account that already has it.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
