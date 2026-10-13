@@ -29,7 +29,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -205,8 +204,6 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
                     .orElseThrow();
             provider.setEnabled(enabled);
             realm.updateComponent(provider);
-            // the member count is cached per organization, drop it so the next count is loaded again
-            session.getProvider(CacheRealmProvider.class).clear();
         });
     }
 
