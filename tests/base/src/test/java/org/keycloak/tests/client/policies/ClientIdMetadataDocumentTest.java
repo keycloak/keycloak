@@ -19,6 +19,7 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdM
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
+import org.keycloak.protocol.oauth2.cimd.provider.AbstractPersistentClientIdMetadataDocumentProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
@@ -119,7 +120,7 @@ public class ClientIdMetadataDocumentTest {
         // register policies : no trusted domain
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("spiffe"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("localhost", "example.com","mcp.example.com"));
 
         updatePolicy(conditionConfig, executorConfig);
@@ -165,7 +166,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -339,7 +340,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -564,7 +565,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -642,7 +643,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         updatePolicy(conditionConfig, executorConfig);
 
@@ -656,7 +657,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -745,7 +746,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -791,7 +792,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -812,7 +813,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -825,7 +826,7 @@ public class ClientIdMetadataDocumentTest {
     @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientId() throws Exception {
         // register profiles
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "127.0.0.1",
                 "10.0.0.0", "example.co.jp", "10.255.255.255", "172.16.0.0", "[::1]", "[0:0:0:0:0:0:0:1]",
                 "172.31.255.255", "192.168.0.0", "192.168.255.255", "[fe12:3456:789a:1::]"));
@@ -871,7 +872,7 @@ public class ClientIdMetadataDocumentTest {
     @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientId2() throws Exception {
         // update profiles
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com"));
         updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
                 ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
@@ -918,6 +919,78 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorVerifyClientId3() throws Exception {
+        // the domains below are trusted, but resolve to an address that must not be fetched from
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("localhost", "127.0.0.1", "[::1]", "10.0.0.1", "169.254.0.1",
+                "192.168.0.1", "224.0.0.1"));
+        updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
+                ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
+
+        // loopback addresses
+        assertLoginAndError("https://localhost:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://[::1]:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // private address
+        assertLoginAndError("https://10.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://192.168.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // link-local address
+        assertLoginAndError("https://169.254.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // multicast address
+        assertLoginAndError("https://224.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // the check can be switched off for development
+        executorConfig.setAllowPrivateUseAddresses(true);
+        updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
+                ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
+        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotManagedClient() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // a client whose clientId is a URL matching the policy, but not registered by CIMD
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(CLIENT_ID);
+        clientRep.setRedirectUris(List.of(REDIRECT_URI));
+        clientRep.setPublicClient(true);
+        try (Response response = realm.admin().clients().create(clientRep)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        String cid = findByClientIdByAdmin().getId();
+
+        // a fetch of the metadata would fail the authorization request
+        cimd.setStatus(Response.Status.NOT_FOUND);
+
+        try {
+            // the executor must leave the client untouched
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).open();
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            String code = oauth.parseLoginResponse().getCode();
+            Assertions.assertNotNull(code);
+
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+            // the client is still the one created by the administrator
+            ClientRepresentation persisted = findByClientIdByAdmin();
+            Assertions.assertTrue(persisted.isPublicClient());
+            Assertions.assertNull(persisted.getAttributes().get(AbstractPersistentClientIdMetadataDocumentProvider.CIMD_CACHE_EXPIRY_TIME_IN_SEC));
+
+            logout(tokenResponse.getIdToken());
+        } finally {
+            deleteClientByAdmin(cid);
+        }
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientMetadata() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
@@ -925,7 +998,7 @@ public class ClientIdMetadataDocumentTest {
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost",
                 "mcpclient.example.org", "www.example.org",
                 "[::1]", "client.example.com"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost",
                 "mcpclient.example.org", "www.example.org",
@@ -1006,6 +1079,17 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
         cimd.getRepresentation().setJwksUri("https://10.255.255.1:443/mcp");
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // sector_identifier_uri : not allowed domain
+        cimd.getRepresentation().setJwksUri(JWKS_URI);
+        cimd.getRepresentation().setSectorIdentifierUri("https://sector.example.org/sector");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // request_uris : not allowed domain
+        cimd.getRepresentation().setSectorIdentifierUri(null);
+        cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setRequestUris(null);
     }
 
     @Test
@@ -1014,7 +1098,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setOnlyAllowConfidentialClient(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
@@ -1046,7 +1130,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
@@ -1096,7 +1180,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         // acceptPublicClientWithConfidentialClientOnlyGrant is not set, so default value (false) is applied
@@ -1123,7 +1207,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
@@ -1182,7 +1266,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setOnlyAllowConfidentialClient(false);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "www.example.co.jp"));
@@ -1214,7 +1298,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "[::1]", "localhost", "127.0.0.1"));
         executorConfig.setRequiredProperties(List.of("client_uri", "logo_uri"));
@@ -1287,7 +1371,7 @@ public class ClientIdMetadataDocumentTest {
     }
 
     private ClientIdMetadataDocumentExecutor.Configuration createDefaultExecutorConfig() {
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setAllowHttpScheme(true);
         return executorConfig;
@@ -1329,6 +1413,13 @@ public class ClientIdMetadataDocumentTest {
                     .build());
             return r;
         });
+    }
+
+    // the metadata and the jwks are served from localhost, so the address check has to be switched off
+    private static ClientIdMetadataDocumentExecutor.Configuration newExecutorConfig() {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowPrivateUseAddresses(true);
+        return executorConfig;
     }
 
     private void updatePolicy(ClientIdUriSchemeCondition.Configuration conditionConfig,
