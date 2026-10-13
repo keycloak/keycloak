@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -29,6 +30,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
@@ -126,6 +128,61 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
             assertEquals(1, results.size());
             assertEquals("orga", results.get(0).getAlias());
         });
+    }
+
+    @Test
+    public void testGetMembersIncludesFederatedMembers() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            RealmModel realm = session.getContext().getRealm();
+            orgProvider.addManagedMember(orga, session.users().addUser(realm, "local-a"));
+            orgProvider.addMember(orga, session.users().addUser(realm, "local-b"));
+            orgProvider.addMember(orga, session.users().getUserByUsername(realm, "thor"));
+            orgProvider.addMember(orga, session.users().getUserByUsername(realm, "zeus"));
+        });
+
+        try {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+
+                assertEquals(4, orgProvider.getMembersCount(orga));
+
+                // local members first (sorted by username), then federated members
+                assertEquals(List.of("local-a", "local-b", "thor", "zeus"), usernames(orgProvider, orga, Map.of(), null, null, null));
+
+                // paging across local and federated members
+                assertEquals(List.of("local-b", "thor"), usernames(orgProvider, orga, Map.of(), null, 1, 2));
+                assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(), null, 2, 1));
+                assertEquals(List.of("zeus"), usernames(orgProvider, orga, Map.of(), null, 3, 10));
+                assertEquals(List.of(), usernames(orgProvider, orga, Map.of(), null, 4, 10));
+
+                // search
+                assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "HO"), false, null, null));
+                assertEquals(List.of("local-a", "local-b"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "local"), false, null, null));
+                assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "thor"), true, null, null));
+                assertEquals(List.of(), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "tho"), true, null, null));
+
+                // federated memberships are always unmanaged
+                assertEquals(List.of("local-a"), usernames(orgProvider, orga, Map.of(MembershipType.NAME, MembershipType.MANAGED.name()), null, null, null));
+                assertEquals(List.of("local-b", "thor", "zeus"), usernames(orgProvider, orga, Map.of(MembershipType.NAME, MembershipType.UNMANAGED.name()), null, null, null));
+            });
+        } finally {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+                RealmModel realm = session.getContext().getRealm();
+                for (String username : List.of("local-a", "local-b")) {
+                    UserModel user = session.users().getUserByUsername(realm, username);
+                    if (user != null) {
+                        session.users().removeUser(realm, user);
+                    }
+                }
+            });
+        }
+    }
+
+    private static List<String> usernames(OrganizationProvider orgProvider, OrganizationModel org, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
+        return orgProvider.getMembersStream(org, filters, exact, first, max).map(UserModel::getUsername).toList();
     }
 
 }
