@@ -4,6 +4,22 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Realm client session statistics respect client visibility
+// https://github.com/keycloak/keycloak/issues/50917
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/client-session-stats` now returns online and offline session statistics only for clients the caller is allowed to view.
+It continues to require the `view-realm` or `manage-realm` role.
+Previously, either realm role allowed callers to retrieve statistics for clients they could not view.
+After upgrading, such callers receive fewer entries, or an empty list if no clients with sessions are visible to them.
+
+Client visibility follows the same permission checks as the client-specific session count endpoints across RBAC, fine-grained admin permissions v1, and v2:
+
+* The `view-clients` and `manage-clients` admin roles grant visibility to all clients.
+* Fine-grained admin permissions v1 grant client visibility through the `view`, `configure`, or `manage` permission.
+* Fine-grained admin permissions v2 keep the Clients `view` and `manage` scopes independent. When access is granted only through fine-grained permissions, `manage` alone does not grant visibility.
+
+Counts for visible clients continue to include all their sessions, independently of the caller's permission to view the associated users.
+
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
 
