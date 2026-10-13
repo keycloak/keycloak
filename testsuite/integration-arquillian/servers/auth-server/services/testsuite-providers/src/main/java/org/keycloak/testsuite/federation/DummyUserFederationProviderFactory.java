@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -46,8 +47,14 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     private static final Logger logger = Logger.getLogger(DummyUserFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "dummy";
 
-    private AtomicInteger fullSyncCounter = new AtomicInteger();
-    private AtomicInteger changedSyncCounter = new AtomicInteger();
+    // Test-only configuration: when set on the component model, sync() sleeps for this many
+    // milliseconds to simulate a slow sync run (used to test the periodic sync gate)
+    public static final String SYNC_DELAY_MS_CONFIG = "test-sync-delay-ms";
+
+    private final AtomicInteger fullSyncCounter = new AtomicInteger();
+    private final AtomicInteger changedSyncCounter = new AtomicInteger();
+    private final AtomicInteger lastFullSyncStartEpochSec = new AtomicInteger();
+    private final AtomicInteger fullSyncInFlight = new AtomicInteger();
 
     private Map<String, UserModel> users = new HashMap<String, UserModel>();
 
@@ -87,7 +94,11 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     @Override
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         logger.info("syncAllUsers invoked");
+        lastFullSyncStartEpochSec.set(Time.currentTime());
+        fullSyncInFlight.incrementAndGet();
         fullSyncCounter.incrementAndGet();
+        sleepIfConfigured(model);
+        fullSyncInFlight.decrementAndGet();
         return SynchronizationResult.empty();
     }
 
@@ -100,6 +111,28 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
 
     public int getFullSyncCounter() {
         return fullSyncCounter.get();
+    }
+
+    public int getLastFullSyncStartEpochSec() {
+        return lastFullSyncStartEpochSec.get();
+    }
+
+    public boolean isFullSyncInFlight() {
+        return fullSyncInFlight.get() > 0;
+    }
+
+    // Simulate a slow sync run when SYNC_DELAY_MS_CONFIG is set on the component model
+    private static void sleepIfConfigured(UserStorageProviderModel model) {
+        String delayMs = model.getConfig().getFirst(SYNC_DELAY_MS_CONFIG);
+        if (delayMs == null) {
+            return;
+        }
+
+        try {
+            Thread.sleep(Long.parseLong(delayMs));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public int getChangedSyncCounter() {

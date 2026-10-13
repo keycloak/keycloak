@@ -29,6 +29,7 @@ import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageProviderModel.SyncMode;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -169,8 +170,12 @@ public class SyncFederationTest extends AbstractAuthTest {
     }
 
     private static UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
+        return findDummyProviderModel(realm, "test-sync-dummy");
+    }
+
+    private static UserStorageProviderModel findDummyProviderModel(RealmModel realm, String name) {
         return realm.getComponentsStream()
-                .filter(component -> Objects.equals(component.getName(), "test-sync-dummy"))
+                .filter(component -> Objects.equals(component.getName(), name))
                 .map(UserStorageProviderModel::new)
                 .findFirst()
                 .orElse(null);
@@ -431,6 +436,107 @@ public class SyncFederationTest extends AbstractAuthTest {
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
             appRealm.removeComponent(dummyModel);
         });
+    }
+
+    /**
+     * The periodic gate (UserStorageSyncTask.isSyncPeriod) measures the time since the last sync,
+     * and the timer schedules each periodic run 'period' seconds after the previous run started.
+     * The gate must therefore measure from the start of the previous run: if the finish time of a
+     * run longer than one second is recorded instead, the next timer tick is skipped and the
+     * effective sync period doubles.
+     *
+     * See https://github.com/keycloak/keycloak/issues/53930
+     */
+    @Test
+    public void test06PeriodicSyncRunsAtConfiguredPeriodWhenSyncTakesLongerThanASecond() {
+        final String providerName = "test-sync-dummy-slow";
+
+        // Enable the timer for the dummy provider, with a full sync that takes 1.2 seconds
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+            model.setPriority(1);
+            model.setName(providerName);
+            model.setFullSyncPeriod(2);
+            model.setChangedSyncPeriod(-1);
+            model.setLastSync(0);
+            model.getConfig().putSingle(DummyUserFederationProviderFactory.SYNC_DELAY_MS_CONFIG, "1200");
+
+            appRealm.addComponentModel(model);
+        });
+
+        try {
+            int baseline = testingClient.server().fetch(session -> {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                return ((DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME)).getFullSyncCounter();
+            }, Integer.class);
+
+            // The first periodic run starts one period after the component is added and takes 1.2
+            // seconds. Wait for it to finish so that the start of a run and the recorded lastSync
+            // stamp can be compared. The timer keeps running afterwards.
+            Map<String, Integer> firstRun = waitForFinishedRun(providerName, 15000);
+            int runStart = firstRun.get("runStart");
+            int lastSyncStamp = firstRun.get("lastSync");
+
+            // lastSync must record when the sync run started, not when it finished. The observed
+            // run took 1.2 seconds, so a stamp after the start of the run means the finish time
+            // was recorded and the next timer tick will be skipped.
+            Assertions.assertTrue(lastSyncStamp <= runStart,
+                    "lastSync should record the start of the sync run, but the recorded time was " + lastSyncStamp + " while the run started at " + runStart);
+
+            // A run taking 1.2 seconds must not postpone the following timer ticks. Within the
+            // window below the timer ticks three times after the first run started, so at least
+            // three runs in total should have started, one per configured period. With the finish
+            // time recorded instead, every other tick would be skipped.
+            sleep(5500);
+
+            int totalRuns = testingClient.server().fetch(session -> {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                return ((DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME)).getFullSyncCounter();
+            }, Integer.class) - baseline;
+
+            Assertions.assertTrue(totalRuns >= 3, "Periodic sync should start once per period, but only " + totalRuns + " runs started");
+        } finally {
+            // Cancel the timer and remove the provider
+            testingClient.server().run(session -> {
+                RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm, providerName);
+
+                if (dummyModel != null) {
+                    StoreSyncEvent.fire(session, appRealm, dummyModel, true);
+                    appRealm.removeComponent(dummyModel);
+                }
+            });
+        }
+    }
+
+    private Map<String, Integer> waitForFinishedRun(String providerName, long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+
+        while (System.currentTimeMillis() < deadline) {
+            Map<String, Integer> state = testingClient.server().fetch(session -> {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
+                RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm, providerName);
+
+                Map<String, Integer> state1 = new HashMap<>();
+                state1.put("lastSync", dummyModel.getLastSync(SyncMode.FULL));
+                state1.put("runStart", dummyFedFactory.getLastFullSyncStartEpochSec());
+                state1.put("inFlight", dummyFedFactory.isFullSyncInFlight() ? 1 : 0);
+                return state1;
+            }, Map.class);
+
+            if (state.get("lastSync") > 0 && state.get("runStart") > 0 && state.get("inFlight") == 0) {
+                return state;
+            }
+
+            sleep(500);
+        }
+
+        throw new AssertionError("No periodic sync run finished within " + timeoutMs + " ms");
     }
 
     private static void sleep(long ms) {
