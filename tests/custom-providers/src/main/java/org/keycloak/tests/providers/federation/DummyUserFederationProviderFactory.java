@@ -28,11 +28,14 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageProviderModel.SyncMode;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 
@@ -48,6 +51,13 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     public static final String PROVIDER_NAME = "dummy";
 
     public static final String SYNC_DELAY_SECONDS = "syncDelaySeconds";
+
+    /**
+     * When set to a positive value, the full sync persists this value as the provider's {@code lastSync} while the run
+     * is still in progress, simulating a newer sync run completing on another cluster node. Used to reproduce the
+     * overlapping-run scenario where the cluster lock has expired for a long sync.
+     */
+    public static final String SIMULATE_CONCURRENT_LAST_SYNC = "simulateConcurrentLastSync";
 
     private AtomicInteger fullSyncCounter = new AtomicInteger();
     private AtomicInteger changedSyncCounter = new AtomicInteger();
@@ -91,6 +101,7 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         logger.info("syncAllUsers invoked");
         fullSyncCounter.incrementAndGet();
+        simulateConcurrentNewerRun(sessionFactory, realmId, model);
         simulateSyncDuration(model);
         return SynchronizationResult.empty();
     }
@@ -108,6 +119,20 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
         if (delay > 0) {
             Time.setOffset(Time.getOffset() + delay);
         }
+    }
+
+    private void simulateConcurrentNewerRun(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        int concurrentLastSync = model.get(SIMULATE_CONCURRENT_LAST_SYNC, 0);
+        if (concurrentLastSync <= 0) {
+            return;
+        }
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, s -> {
+            RealmModel realm = s.realms().getRealm(realmId);
+            s.getContext().setRealm(realm);
+            UserStorageProviderModel stored = new UserStorageProviderModel(realm.getComponent(model.getId()));
+            stored.setLastSync(concurrentLastSync, SyncMode.FULL);
+            realm.updateComponent(stored);
+        });
     }
 
     public int getFullSyncCounter() {

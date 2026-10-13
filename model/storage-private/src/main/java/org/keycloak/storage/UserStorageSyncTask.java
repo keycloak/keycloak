@@ -209,8 +209,11 @@ final class UserStorageSyncTask implements ScheduledTask {
     private void updateLastSyncInterval(KeycloakSession session, int syncStartTime) {
         UserStorageProviderModel provider = getStorageModel(session);
 
+        // keep max lastSync/start time
+        int lastSync = Math.max(provider.getLastSync(syncMode), syncStartTime);
+
         // Update persistent provider in DB
-        provider.setLastSync(syncStartTime, syncMode);
+        provider.setLastSync(lastSync, syncMode);
 
         RealmModel realm = session.getContext().getRealm();
 
