@@ -44,6 +44,18 @@ Existing V1 clients without this configuration receive an HTTP 403 response when
 
 While V1 is enabled, these settings are also shown in the Admin Console for public clients. V2 hides them for public clients because it only supports confidential clients.
 
+=== Privileged client attributes can no longer be set through dynamic client registration
+// https://github.com/keycloak/keycloak/issues/53814
+
+The `external.token.enabled` and `external.token.idp` client attributes allow a client to retrieve the stored tokens of external identity providers through the identity brokering API, so they are reserved for administrators.
+Client registration requests authenticated with an initial access token or a registration access token, as well as anonymous registrations, now silently ignore all `external.token.*` attributes, in the same way as the `ssf.*` attributes.
+Requests authenticated with an administrator bearer token, the Admin REST API and the Admin Console are not affected.
+
+If you provision clients that retrieve external tokens through the `default` client registration provider, for example with the `kcreg` tool and an initial access token, set these attributes with administrator credentials instead.
+This also applies to clients of the identity brokering API V1, which now require these attributes as well.
+Clients that set these attributes through dynamic client registration before the upgrade keep them.
+Review the clients that have `external.token.enabled` set to `true` and remove the setting where it was not granted by an administrator.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 
