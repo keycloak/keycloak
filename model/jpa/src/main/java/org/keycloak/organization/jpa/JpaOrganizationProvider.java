@@ -74,6 +74,8 @@ import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.utils.StringUtil;
 
@@ -562,12 +564,20 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             }
 
             String search = criteria.get(UserModel.SEARCH);
-            Stream<UserModel> federated = getFederatedMembersStream(group)
-                    .filter(user -> matchesSearch(user, search, exactSearch))
-                    .skip(federatedFirst);
+            Integer federatedMax = max != null && max >= 0 ? max - localIds.size() : null;
+            Stream<UserModel> federated;
 
-            if (max != null && max >= 0) {
-                federated = federated.limit(max - localIds.size());
+            if (search == null) {
+                // no in-memory filtering needed, page the ids in the database and only resolve the users on the page
+                federated = getFederatedMembersStream(group, (int) federatedFirst, federatedMax);
+            } else {
+                federated = getFederatedMembersStream(group, null, null)
+                        .filter(user -> matchesSearch(user, search, exactSearch))
+                        .skip(federatedFirst);
+
+                if (federatedMax != null) {
+                    federated = federated.limit(federatedMax);
+                }
             }
 
             members = Stream.concat(members, federated);
@@ -635,19 +645,62 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return membershipType == null || MembershipType.UNMANAGED.name().equalsIgnoreCase(membershipType);
     }
 
-    private Stream<UserModel> getFederatedMembersStream(GroupModel group) {
+    private Stream<UserModel> getFederatedMembersStream(GroupModel group, Integer first, Integer max) {
+        List<String> providerIds = getEnabledUserStorageProviderIds();
+
+        if (providerIds.isEmpty()) {
+            return Stream.empty();
+        }
+
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
         Root<FederatedUserGroupMembershipEntity> membership = queryBuilder.from(FederatedUserGroupMembershipEntity.class);
 
         queryBuilder.select(membership.get("userId"));
-        queryBuilder.where(builder.equal(membership.get("groupId"), group.getId()),
-                builder.equal(membership.get("realmId"), getRealm().getId()));
+        queryBuilder.where(getFederatedMembershipPredicates(builder, membership, group, providerIds));
         queryBuilder.orderBy(builder.asc(membership.get("userId")));
 
-        return closing(em.createQuery(queryBuilder).getResultStream())
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream())
                 .map(id -> userProvider.getUserById(getRealm(), id))
                 .filter(Objects::nonNull);
+    }
+
+    private long countFederatedMembers(GroupModel group) {
+        List<String> providerIds = getEnabledUserStorageProviderIds();
+
+        if (providerIds.isEmpty()) {
+            return 0;
+        }
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+        Root<FederatedUserGroupMembershipEntity> membership = countQuery.from(FederatedUserGroupMembershipEntity.class);
+
+        countQuery.select(builder.count(membership));
+        countQuery.where(getFederatedMembershipPredicates(builder, membership, group, providerIds));
+
+        return em.createQuery(countQuery).getSingleResult();
+    }
+
+    private Predicate[] getFederatedMembershipPredicates(CriteriaBuilder builder, Root<FederatedUserGroupMembershipEntity> membership,
+            GroupModel group, List<String> providerIds) {
+        return new Predicate[] {
+                builder.equal(membership.get("groupId"), group.getId()),
+                builder.equal(membership.get("realmId"), getRealm().getId()),
+                membership.get("storageProviderId").in(providerIds)
+        };
+    }
+
+    /**
+     * Users from a disabled provider can not be resolved, so their memberships are left out of both the list and the count.
+     */
+    private List<String> getEnabledUserStorageProviderIds() {
+        RealmModel realm = getRealm();
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .map(UserStorageProviderModel::new)
+                .filter(UserStorageProviderModel::isEnabled)
+                .map(UserStorageProviderModel::getId)
+                .toList();
     }
 
     /**
@@ -704,15 +757,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         long count = countLocalMembers(group, Map.of(), false);
 
         if (includeFederatedMembers(Map.of())) {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-            Root<FederatedUserGroupMembershipEntity> membership = countQuery.from(FederatedUserGroupMembershipEntity.class);
-
-            countQuery.select(builder.count(membership));
-            countQuery.where(builder.equal(membership.get("groupId"), group.getId()),
-                    builder.equal(membership.get("realmId"), getRealm().getId()));
-
-            count += em.createQuery(countQuery).getSingleResult();
+            count += countFederatedMembers(group);
         }
 
         return count;

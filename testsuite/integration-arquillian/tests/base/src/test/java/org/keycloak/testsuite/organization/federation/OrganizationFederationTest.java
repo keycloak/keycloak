@@ -29,10 +29,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
@@ -168,7 +170,19 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
                 assertEquals(List.of("local-a"), usernames(orgProvider, orga, Map.of(MembershipType.NAME, MembershipType.MANAGED.name()), null, null, null));
                 assertEquals(List.of("local-b", "thor", "zeus"), usernames(orgProvider, orga, Map.of(MembershipType.NAME, MembershipType.UNMANAGED.name()), null, null, null));
             });
+
+            // members from a disabled provider can not be resolved, so they are left out of both the list and the count
+            setUserPropsProviderEnabled(false);
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+
+                assertEquals(2, orgProvider.getMembersCount(orga));
+                assertEquals(List.of("local-a", "local-b"), usernames(orgProvider, orga, Map.of(), null, null, null));
+                assertEquals(List.of(), usernames(orgProvider, orga, Map.of(), null, 2, 10));
+            });
         } finally {
+            setUserPropsProviderEnabled(true);
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
                 RealmModel realm = session.getContext().getRealm();
                 for (String username : List.of("local-a", "local-b")) {
@@ -179,6 +193,21 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
                 }
             });
         }
+    }
+
+    private void setUserPropsProviderEnabled(boolean enabled) {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserStorageProviderModel provider = realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                    .filter(component -> "user-props".equals(component.getName()))
+                    .map(UserStorageProviderModel::new)
+                    .findFirst()
+                    .orElseThrow();
+            provider.setEnabled(enabled);
+            realm.updateComponent(provider);
+            // the member count is cached per organization, drop it so the next count is loaded again
+            session.getProvider(CacheRealmProvider.class).clear();
+        });
     }
 
     private static List<String> usernames(OrganizationProvider orgProvider, OrganizationModel org, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
