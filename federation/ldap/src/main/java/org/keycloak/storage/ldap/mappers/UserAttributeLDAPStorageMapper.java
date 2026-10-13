@@ -89,11 +89,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             checkDuplicateEmail(userModelAttrName, ldapAttrValue, realm, ldapProvider.getSession(), user);
 
             String replacedPostfix = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
-            if(ldapAttrValue != null)
-            {
+            if(ldapAttrValue != null) {
                 replacedPostfix = replacedPostfix.replace("{" + ldapAttrName + "}", ldapAttrValue);
-                if (replacedPostfix.equals(ldapAttrName))
-                {
+                if (replacedPostfix.equals(ldapAttrName)) {
                     replacedPostfix = replacedPostfix.replace(ldapAttrName, ldapAttrValue);
                 }
             }

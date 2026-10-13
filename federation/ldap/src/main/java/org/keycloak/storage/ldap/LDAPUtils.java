@@ -63,8 +63,7 @@ public class LDAPUtils {
 
     private static final Pattern VARIABLES_PATTERN;
 
-    static
-    {
+    static {
         String variablesRegex = "\\{([^}]*)\\}";
         VARIABLES_PATTERN = Pattern.compile(variablesRegex);
     }
@@ -75,8 +74,7 @@ public class LDAPUtils {
      * @param input The input String to match the regex.
      * @return the matcher corresponding to the input
      */
-    public static Matcher matchVariableInString(String input)
-    {
+    public static Matcher matchVariableInString(String input) {
         return VARIABLES_PATTERN.matcher(input);
     }
 
@@ -184,8 +182,7 @@ public class LDAPUtils {
 
         Matcher matcher = matchVariableInString(usernameAttr);
         String ldapUsername;
-        if (matcher.find())
-        {
+        if (matcher.find()) {
             ldapUsername = usernameAttr;
 
             for (String attributeKey : ldapUser.getAttributes().keySet())
@@ -196,8 +193,7 @@ public class LDAPUtils {
                 }
 
                 Set<String> attributes = ldapUser.getAttributes().get(attributeKey);
-                if (attributes != null && !attributes.isEmpty())
-                {
+                if (attributes != null && !attributes.isEmpty()) {
                     ldapUsername = ldapUsername.replace("{" + attributeKey + "}", attributes.stream().findFirst().get());
                 }
             }
