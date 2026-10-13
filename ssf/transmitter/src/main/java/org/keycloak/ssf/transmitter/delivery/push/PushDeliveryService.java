@@ -34,7 +34,15 @@ public class PushDeliveryService {
         // bound to it any more (the /verify request's session is closed by
         // then). Likewise, transmitterConfig is captured once so delivery
         // doesn't depend on the thread-local session via Ssf.transmitter().
-        this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        this(session.getProvider(HttpClientProvider.class).getHttpClient(), transmitterConfig);
+    }
+
+    /**
+     * @param httpClient client used for delivery, e.g. one that enforces the
+     *                   push SSRF deny policy at connection time
+     */
+    public PushDeliveryService(HttpClient httpClient, SsfTransmitterConfig transmitterConfig) {
+        this.httpClient = httpClient;
         this.transmitterConfig = transmitterConfig;
     }
 

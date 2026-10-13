@@ -204,6 +204,12 @@ successful match the URL itself must use the `https` scheme and must not resolve
 site-local/unique-local/multicast address. Rejections are reported as HTTP `400` with a generic message;
 the operator-facing log entry contains the rejected URL and a suggested allow-list entry.
 
+The address check is applied again on every delivery, to the addresses the connection is actually made to, so a
+receiver cannot pass validation and then change its DNS records to point at an internal address. A host resolving
+to any private address fails the delivery attempt. Because an HTTP proxy resolves the target host itself, PUSH
+delivery connects to receivers directly and does not use the outgoing HTTP proxy configuration; it also does not
+follow redirects. Deployments that must send PUSH deliveries through a proxy need `allow-insecure-push-targets`.
+
 PUSH delivery uses exponential backoff (8 attempts by default). After the attempt budget is exhausted, the row
 transitions to `DEAD_LETTER` and is retained for 30 days for inspection in the *Event Search* sub-tab.
 

@@ -1,5 +1,6 @@
 package org.keycloak.ssf.transmitter;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.events.outbox.OutboxBackoff;
 import org.keycloak.events.outbox.OutboxCleanupTask;
 import org.keycloak.events.outbox.OutboxConfig;
@@ -29,6 +31,7 @@ import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
+import org.keycloak.ssf.transmitter.delivery.push.PrivateAddressDenyingDnsResolver;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
@@ -43,7 +46,10 @@ import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.TruststoreProvider;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory, SsfTransmitterServiceBuilder {
@@ -171,6 +177,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      */
     protected ProviderEventListener ssfProviderEventListener;
 
+    /**
+     * Push delivery client that enforces the private-address deny policy at
+     * connection time. Built lazily on first use, since it needs a session
+     * for the truststore, and closed with the factory.
+     */
+    protected volatile CloseableHttpClient pushHttpClient;
+
 
     @Override
     public String getId() {
@@ -199,7 +212,47 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public PushDeliveryService createPushDelivery(KeycloakSession session, SsfTransmitterContext ctx) {
-        return new PushDeliveryService(session, ctx.config());
+        if (ctx.config().isAllowInsecurePushTargets()) {
+            // Closed-network deployments: private targets are allowed, so
+            // the shared client (with its proxy mappings) is used as is.
+            return new PushDeliveryService(session, ctx.config());
+        }
+        return new PushDeliveryService(getPushHttpClient(session), ctx.config());
+    }
+
+    protected CloseableHttpClient getPushHttpClient(KeycloakSession session) {
+        if (pushHttpClient == null) {
+            synchronized (this) {
+                if (pushHttpClient == null) {
+                    pushHttpClient = createPushHttpClient(session);
+                }
+            }
+        }
+        return pushHttpClient;
+    }
+
+    /**
+     * Builds the client for push delivery when private targets are not
+     * allowed. The private-address deny policy is enforced by its DNS
+     * resolver on every connection, so a receiver that rebinds its host
+     * after stream configuration still cannot reach internal addresses.
+     *
+     * <p>No proxy is configured: a proxy resolves the target host itself,
+     * out of reach of the resolver, so delivery connects directly. Redirects
+     * are not followed, so the receiver cannot bounce the request elsewhere.
+     */
+    protected CloseableHttpClient createPushHttpClient(KeycloakSession session) {
+        HttpClientBuilder builder = new HttpClientBuilder(
+                HttpClients.custom().setDnsResolver(new PrivateAddressDenyingDnsResolver()))
+                .disableCookies(true)
+                .disableRedirectHandling();
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider != null && truststoreProvider.getTruststore() != null) {
+            builder.hostnameVerification(truststoreProvider.getPolicy());
+            builder.trustStore(truststoreProvider.getTruststore());
+        }
+        return builder.build();
     }
 
     @Override
@@ -702,6 +755,19 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.SSF);
+    }
+
+    @Override
+    public void close() {
+        CloseableHttpClient client = pushHttpClient;
+        pushHttpClient = null;
+        if (client != null) {
+            try {
+                client.close();
+            } catch (IOException e) {
+                log.warn("Failed to close SSF push delivery HTTP client", e);
+            }
+        }
     }
 
 }

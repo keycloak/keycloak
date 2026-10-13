@@ -16,6 +16,7 @@
  */
 package org.keycloak.ssf.transmitter.support;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -191,10 +192,15 @@ public final class SsfPushUrlValidator {
      * are accepted — a push to an unresolvable host fails harmlessly at
      * delivery time and is not an SSRF.
      *
+     * <p>This check alone cannot stop DNS rebinding, since the host is
+     * resolved again at delivery time; {@code PrivateAddressDenyingDnsResolver}
+     * enforces the same policy on the push client's connections.
+     *
      * <p>The predicate combination ({@code isLoopbackAddress() ||
      * isAnyLocalAddress() || isLinkLocalAddress() || isSiteLocalAddress()
      * || isMulticastAddress()} plus the IPv6 unique-local check) mirrors
-     * {@code SslRequired.isLocal} in {@code keycloak-common}.
+     * {@code SslRequired.isLocal} in {@code keycloak-common}; the 0.0.0.0/8
+     * and 100.64.0.0/10 checks are additions for SSRF.
      */
     private void validateSchemeAndHost(String pushUrl) {
         if (allowInsecure) {
@@ -236,13 +242,32 @@ public final class SsfPushUrlValidator {
         }
     }
 
-    private static boolean isPrivateOrLoopback(InetAddress address) {
+    /**
+     * The deny policy shared by the configuration-time check here and the
+     * delivery-time check in {@code PrivateAddressDenyingDnsResolver}, which
+     * closes the DNS-rebinding gap between the two resolutions.
+     */
+    public static boolean isPrivateOrLoopback(InetAddress address) {
         return address.isLoopbackAddress()
                 || address.isAnyLocalAddress()
                 || address.isLinkLocalAddress()
                 || address.isSiteLocalAddress()
                 || address.isMulticastAddress()
-                || isUniqueLocalIpv6(address);
+                || isUniqueLocalIpv6(address)
+                || isUnroutableIpv4(address);
+    }
+
+    /**
+     * IPv4 ranges with no JDK predicate: 0.0.0.0/8 (RFC 1122) and the
+     * carrier-grade NAT range 100.64.0.0/10 (RFC 6598).
+     */
+    private static boolean isUnroutableIpv4(InetAddress address) {
+        if (!(address instanceof Inet4Address)) {
+            return false;
+        }
+        byte[] bytes = address.getAddress();
+        return (bytes[0] & 0xFF) == 0
+                || ((bytes[0] & 0xFF) == 100 && (bytes[1] & 0xC0) == 0x40);
     }
 
     /**

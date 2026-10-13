@@ -382,6 +382,19 @@ class SsfPushUrlValidatorTest {
     }
 
     @Test
+    void validate_strict_rejectsUnroutableIpv4WithoutJdkPredicate() {
+        // 0.0.0.0/8 beyond the unspecified address, and the carrier-grade
+        // NAT range 100.64.0.0/10.
+        for (String addr : new String[]{"0.1.2.3", "100.64.0.1", "100.127.255.254"}) {
+            String url = "https://" + addr + "/feeds/x";
+            SsfPushUrlValidationException ex = assertThrows(SsfPushUrlValidationException.class,
+                    () -> strict.validate(url, set("https://" + addr + "/*")));
+            assertEquals(Reason.HOST_PRIVATE, ex.getReason(), addr + " must be classified as private");
+        }
+        assertDoesNotThrow(() -> strict.validate("https://100.128.0.1/feeds/x", set("https://100.128.0.1/*")));
+    }
+
+    @Test
     void validate_strict_rejectsMulticast() {
         // 224.0.0.0/4 — IPv4 multicast.
         SsfPushUrlValidationException ex = assertThrows(SsfPushUrlValidationException.class,
