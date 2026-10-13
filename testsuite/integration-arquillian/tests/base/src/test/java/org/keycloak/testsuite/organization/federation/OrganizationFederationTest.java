@@ -163,6 +163,10 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
                 assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "HO"), false, null, null));
                 assertEquals(List.of("local-a", "local-b"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "local"), false, null, null));
                 assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "thor"), true, null, null));
+                assertEquals(List.of("thor"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "t*r"), false, null, null));
+                assertEquals(List.of("local-a", "local-b", "thor", "zeus"), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "*"), false, null, null));
+                assertEquals(List.of(), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "r*t"), false, null, null));
+                assertEquals(List.of(), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "*".repeat(5000) + "x"), false, null, null));
                 assertEquals(List.of(), usernames(orgProvider, orga, Map.of(UserModel.SEARCH, "tho"), true, null, null));
 
                 // federated memberships are always unmanaged

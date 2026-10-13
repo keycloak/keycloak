@@ -18,14 +18,11 @@
 package org.keycloak.organization.jpa;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -720,9 +717,29 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return fields.anyMatch(value::equals);
         }
 
-        Pattern pattern = Pattern.compile(Arrays.stream(value.split("\\*", -1)).map(Pattern::quote).collect(Collectors.joining(".*")));
+        String[] parts = value.split("\\*", -1);
 
-        return fields.anyMatch(field -> pattern.matcher(field).find());
+        return fields.anyMatch(field -> containsInOrder(field, parts));
+    }
+
+    /**
+     * Whether the parts occur in the value in order, which is a "contains" match where {@code *} matches anything.
+     * Taking the first occurrence of each part is enough, and keeps the match linear instead of backtracking.
+     */
+    private static boolean containsInOrder(String value, String[] parts) {
+        int from = 0;
+
+        for (String part : parts) {
+            int index = value.indexOf(part, from);
+
+            if (index < 0) {
+                return false;
+            }
+
+            from = index + part.length();
+        }
+
+        return true;
     }
 
     private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
