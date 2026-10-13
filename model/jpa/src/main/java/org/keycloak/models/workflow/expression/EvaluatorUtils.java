@@ -38,8 +38,10 @@ public class EvaluatorUtils {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         BooleanConditionParser parser = new BooleanConditionParser(tokens);
 
-        // this replaces the standard error listener, storing all parsing errors if the expressions is malformed
+        // this replaces the standard error listeners, storing all lexing and parsing errors if the expressions is malformed
         ErrorListener errorListener = new ErrorListener();
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 

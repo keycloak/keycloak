@@ -210,13 +210,17 @@ public class OrganizationGroupsResource {
         // builds hierarchy mainly for admin UI
         if (populateHierarchy) {
             String internalGroupId = organizationProvider.getOrganizationGroup(organization).getId();
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId);
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId)
+                    .peek(rep -> GroupUtils.filterRolesInRepresentation(rep, realm, session, auth));
         }
 
         return groups.map(group -> {
             GroupRepresentation rep = briefRepresentation ?
                     ModelToRepresentation.groupToBriefRepresentation(group) :
                     ModelToRepresentation.toRepresentation(group, true);
+            if (!briefRepresentation) {
+                GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            }
             if (subGroupsCount) {
                 rep.setSubGroupCount(group.getSubGroupsCount());
             }
@@ -248,6 +252,9 @@ public class OrganizationGroupsResource {
         GroupRepresentation rep = briefRepresentation ?
                 ModelToRepresentation.groupToBriefRepresentation(found) :
                 ModelToRepresentation.toRepresentation(found, true);
+        if (!briefRepresentation) {
+            GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+        }
         if (subGroupsCount) {
             rep.setSubGroupCount(found.getSubGroupsCount());
         }

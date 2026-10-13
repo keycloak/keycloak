@@ -30,6 +30,8 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.SessionExpiration;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -65,6 +67,8 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
         var entity = new RootAuthenticationSessionEntity();
         entity.setId(Objects.requireNonNull(id));
         entity.setTimestamp(timestamp);
+        entity.setCreatedOn(timestamp);
+        entity.setTimestampCoarse(computeTimestampCoarse(timestamp, realm, timestamp));
         entity.setAuthenticationSessions(new HashMap<>());
         entity.setRealmId(realm.getId());
         return new RootAuthenticationSessionAdapter(entity, realm, session, authSessionsLimit);
@@ -117,6 +121,7 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
+        entity.setTimestampCoarse(computeTimestampCoarse(timestamp, realm, entity.getCreatedOn()));
     }
 
     @Override
@@ -176,7 +181,9 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
     @Override
     public void restartSession(RealmModel realm) {
         entity.getAuthenticationSessions().clear();
-        entity.setTimestamp(Time.currentTimeSeconds());
+        long now = Time.currentTimeSeconds();
+        entity.setTimestamp(now);
+        entity.setTimestampCoarse(computeTimestampCoarse(now, realm, entity.getCreatedOn()));
         if (adapters != null) {
             adapters.clear();
         }
@@ -191,6 +198,11 @@ class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel
 
     public RootAuthenticationSessionEntity getEntity() {
         return entity;
+    }
+
+    static long computeTimestampCoarse(long timestamp, RealmModel realm, long createdOn) {
+        int lifespan = SessionExpiration.getAuthSessionLifespan(realm);
+        return SessionExpirationUtils.computeLastSessionRefreshCoarse((int) timestamp, lifespan, (int) createdOn);
     }
 
     private Map<String, AuthenticateSessionAdapter> adapters() {

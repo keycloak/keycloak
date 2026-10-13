@@ -56,6 +56,7 @@ import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.expiration.ExpirationTask;
 import org.keycloak.models.sessions.infinispan.expiration.ExpirationTaskFactory;
 import org.keycloak.models.sessions.infinispan.listeners.EmbeddedUserSessionExpirationListener;
+import org.keycloak.models.sessions.infinispan.listeners.SessionResurrectionGuardListener;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -95,6 +96,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
     private EmbeddedUserSessionExpirationListener expirationListener;
+    // Additive, minimal guard against session resurrection (GH issue #51127). Only registered on the user
+    // session caches that are backed by a database, as only those are susceptible to the race. Client
+    // sessions are not covered: their keys (userSessionId + clientId) can be legitimately reused after a
+    // delete (e.g. UserSessionAdapter#restartSession), unlike user session IDs, which are random UUIDs
+    // that are never intentionally reused.
+    private SessionResurrectionGuardListener<String, UserSessionEntity> sessionResurrectionListener;
+    private SessionResurrectionGuardListener<String, UserSessionEntity> offlineSessionResurrectionListener;
     private ExpirationTask expirationTask;
 
     private long offlineSessionCacheEntryLifespanOverride;
@@ -145,12 +153,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
         }
-        // Deprecated since 26.8: caching of persistent user sessions is disabled by default and will be removed in a future release.
-        boolean defaultUseCaches = !MultiSiteUtils.isPersistentSessionsEnabled();
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, defaultUseCaches) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
-        if (useCaches && MultiSiteUtils.isPersistentSessionsEnabled()) {
-            log.warn("Caching of persistent user sessions is deprecated since Keycloak 26.8 and will be removed in a future release. Remove the spi-user-sessions--infinispan--use-caches option to disable caching.");
-        }
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, DEFAULT_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
@@ -189,11 +192,17 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             if (useCaches) {
                 try (var session = factory.create()) {
-                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
-                    offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR, true);
+                    offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs, null, true);
                     clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                     offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 }
+                // Persistent sessions: the user session caches below are backed by the database, so they are
+                // susceptible to the resurrection race and need the guard.
+                sessionResurrectionListener = new SessionResurrectionGuardListener<>();
+                sessionCacheHolder.cache().addListener(sessionResurrectionListener);
+                offlineSessionResurrectionListener = new SessionResurrectionGuardListener<>();
+                offlineSessionCacheHolder.cache().addListener(offlineSessionResurrectionListener);
             } else {
                 sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
@@ -203,7 +212,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         } else {
             try (var session = factory.create()) {
                 sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
-                offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+                offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs, null, true);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 var blockingManager = session.getProvider(InfinispanConnectionProvider.class).getBlockingManager();
@@ -212,6 +221,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // Only add the event listener to session caches
             // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
             sessionCacheHolder.cache().addListener(expirationListener);
+            // Volatile sessions: the online user session cache has no database behind it, so it is not
+            // susceptible to the resurrection race. Only the offline user session cache falls back to the
+            // database (via JpaUserSessionPersisterProvider) and therefore needs the guard.
+            offlineSessionResurrectionListener = new SessionResurrectionGuardListener<>();
+            offlineSessionCacheHolder.cache().addListener(offlineSessionResurrectionListener);
         }
         startExpirationTask(factory);
         if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
@@ -270,10 +284,31 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {
+                // Bulk realm-wide removal ("logout all sessions in a realm") bypasses per-key tombstoning
+                // for performance (see PersistentUserSessionProvider#removeEntriesByRealm), so record a
+                // per-realm "not-before" watermark instead, BEFORE the local removal below runs. The removal
+                // below (onRemoveUserSessionsEvent -> removeLocalUserSessions) only touches the local,
+                // in-memory embedded cache (no database or network I/O), so it completes quickly even for a
+                // large realm - well within the guard listener's tombstone grace period - but recording the
+                // watermark first, rather than after the removal returns, still closes the window for its
+                // entire duration rather than leaving it open until it finishes. This event (and therefore
+                // this watermark) is only fired once the removal from the database (PersistentUserSessionProvider
+                // #removeUserSessions -> UserSessionPersisterProvider#removeUserSessions) has already committed,
+                // since SessionEventsSenderTransaction is enlisted with enlistAfterCompletion.
+                // Realm deletion (REALM_REMOVED_SESSION_EVENT) does not need this: once the realm is gone, a
+                // resurrected session cannot be used.
+                String realmId = sessionEvent.getRealmId();
+                if (sessionResurrectionListener != null) {
+                    sessionResurrectionListener.recordRealmNotBefore(realmId);
+                }
+                if (offlineSessionResurrectionListener != null) {
+                    offlineSessionResurrectionListener.recordRealmNotBefore(realmId);
+                }
+
                 if (provider instanceof InfinispanUserSessionProvider) {
-                    ((InfinispanUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                    ((InfinispanUserSessionProvider) provider).onRemoveUserSessionsEvent(realmId);
                 } else if (provider instanceof PersistentUserSessionProvider) {
-                    ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                    ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(realmId);
                 }
             }
 
@@ -323,6 +358,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (expirationListener != null) {
             sessionCacheHolder.cache().removeListener(expirationListener);
             expirationListener = null;
+        }
+        if (sessionResurrectionListener != null) {
+            sessionCacheHolder.cache().removeListener(sessionResurrectionListener);
+            sessionResurrectionListener = null;
+        }
+        if (offlineSessionResurrectionListener != null) {
+            offlineSessionCacheHolder.cache().removeListener(offlineSessionResurrectionListener);
+            offlineSessionResurrectionListener = null;
         }
         if (expirationTask != null) {
             expirationTask.stop();
@@ -374,7 +417,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caching of persistent user sessions. Disabled by default since Keycloak 26.8. When enabled, sessions are cached in the embedded Infinispan to reduce database load, but this is deprecated and will be removed in a future release. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
+                .helpText("Enable or disable caching of persistent user sessions in the embedded Infinispan. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
                 .add();
 
         builder.property()

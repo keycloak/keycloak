@@ -8,6 +8,10 @@ You can conduct transient sessions in {project_name}. When using transient sessi
 The `sid` and `session_state` of the tokens are usually empty when the token is issued with transient sessions. So during transient sessions, the client application cannot refresh tokens or validate a specific session.
 Sometimes these actions are unnecessary, so you can avoid the additional resource use of persisting user sessions. This session saves performance, memory, and network communication (in cluster and cross-data center environments) resources.
 
-At this moment, transient sessions are automatically used just during <<_service_accounts, service account authentication>> with disabled token refresh. Note that token refresh is
-automatically disabled during service account authentication unless explicitly enabled by client switch `Use refresh tokens for client credentials grant`.
+At this moment, transient sessions are automatically used for example in the following cases:
+
+* <<_service_accounts, Service account authentication>> with disabled token refresh. Note that token refresh is automatically disabled during service account authentication unless explicitly enabled by client switch `Use refresh tokens for client credentials grant`, but this client switch is deprecated and not recommended to be used.
+* link:{securing_apps_jwt_authorization_grant_link}[JWT Authorization Grant].
+* Some scenarios related to link:{authorizationguide_link}[Authorization Services].
+* <<_oid4vci_pre_authorized_code_flow, OID4VCI Pre-Authorized Code Flow>>.
 

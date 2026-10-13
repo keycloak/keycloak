@@ -23,7 +23,6 @@ import org.keycloak.tests.webauthn.registration.AuthAttachmentRegisterTest;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-// This test should be ignored on Firefox: See https://github.com/keycloak/keycloak/issues/10368
 public class PwdLessAuthAttachmentRegTest extends AuthAttachmentRegisterTest {
 
     @Override

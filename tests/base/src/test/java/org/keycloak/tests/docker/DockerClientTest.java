@@ -180,7 +180,8 @@ public class DockerClientTest {
         result = dockerClientContainer.execInContainer("docker", "logout");
         printCommandResult(result);
         assertThat("Error performing logout", result.getExitCode(), is(0));
-        assertLogin(dockerUser);
+
+        events.skipAll();
 
         ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation clientRep = client.toRepresentation();

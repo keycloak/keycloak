@@ -74,6 +74,7 @@ public class UserSessionManager {
         } else {
             // keep a reused offline client session's identity pins in sync with the online one
             ParameterizedScopeTypeProvider.syncPinnedIdentities(clientSession, offlineClientSession);
+            offlineClientSession.setTimestamp(clientSession.getTimestamp());
         }
     }
 

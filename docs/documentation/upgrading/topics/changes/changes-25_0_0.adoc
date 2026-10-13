@@ -184,7 +184,7 @@ To enable histograms for latencies, set the option `cache-metrics-histograms-ena
 The metrics provided by {project_name} now include HTTP server metrics starting with `http_server`.
 See below for some examples.
 
-[source]
+[source,subs="-specialchars"]
 ----
 http_server_active_requests 1.0
 http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 1.0

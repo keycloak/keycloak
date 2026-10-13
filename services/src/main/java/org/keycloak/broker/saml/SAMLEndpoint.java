@@ -74,6 +74,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -392,10 +393,19 @@ public class SAMLEndpoint {
                 }
             }
 
+            String logoutServiceUrl = config.getSingleLogoutServiceUrl();
+            if (StringUtil.isBlank(logoutServiceUrl)) {
+                logger.debugf("IdP '%s' has no Single Logout Service URL; skipping LogoutResponse", config.getAlias());
+                event.success();
+                return session.getProvider(LoginFormsProvider.class)
+                        .setSuccess(Messages.SUCCESS_LOGOUT)
+                        .createInfoPage();
+            }
+
             String issuerURL = getEntityId(session.getContext().getUri(), realm);
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(request.getID());
-            builder.destination(config.getSingleLogoutServiceUrl());
+            builder.destination(logoutServiceUrl);
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                         .relayState(relayState);
@@ -412,9 +422,9 @@ public class SAMLEndpoint {
             }
             try {
                 if (postBinding) {
-                    return binding.postBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
+                    return binding.postBinding(builder.buildDocument()).response(logoutServiceUrl);
                 } else {
-                    return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
+                    return binding.redirectBinding(builder.buildDocument()).response(logoutServiceUrl);
                 }
             } catch (ConfigurationException e) {
                 throw new RuntimeException(e);

@@ -102,28 +102,35 @@ The `actionTokens` distributed cache is used to track metadata about action toke
 
 TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory:debug`.
 
-=== User session caching (deprecated)
-
-WARNING: Caching of persistent user and offline sessions is deprecated since {project_name} 26.8 and will be removed in a future release.
+=== User session caching
 
 A user session tracks an authenticated user across one or more applications (client sessions). Offline sessions are long-lived sessions backed by offline tokens.
-User sessions, client sessions, offline user sessions, and offline client sessions are stored in the database. The embedded Infinispan caches (`sessions`, `clientSessions`, `offlineSessions`, `offlineClientSessions`) exist but are not populated by default.
+User sessions, client sessions, offline user sessions, and offline client sessions are stored in the database. The embedded Infinispan caches (`sessions`, `clientSessions`, `offlineSessions`, `offlineClientSessions`) are used to cache this data in memory.
 
-To temporarily re-enable session caching (for example, to reduce database load at the cost of increased memory usage and the risk of data loss on restart), set:
+By default, with persistent user sessions enabled, sessions are loaded on-demand from the database into the embedded caches.
+Cached sessions are available to any node in the cluster without a database round-trip.
+In-memory caches are limited to 10000 entries per node by default (configurable via `--cache-embedded-sessions-max-count` etc.)
+Cache entries use a single owner per entry.
+
+==== Disabling session caching
+
+This setting is only available when persistent user sessions are enabled.
+To disable session caching, set:
 
 [source]
 ----
-spi-user-sessions--infinispan--use-caches=true
+spi-user-sessions--infinispan--use-caches=false
 ----
 
-When enabled:
+Reasons to consider disabling session caching:
 
-* Sessions are loaded on-demand from the database into the embedded caches.
-* Cached sessions are available to any node in the cluster without a database round-trip.
-* In-memory caches are limited to 10000 entries per node by default (configurable via `--cache-embedded-sessions-max-count` etc.).
-* Cache entries use a single owner per entry.
+* *Reduced memory usage* on each {project_name} node, as sessions are no longer held in the embedded cache.
+* *Less network traffic between cluster nodes*, as there is no cache synchronization overhead
+* *Reduced impact on slow or stalling nodes* when serving requests.
 
-This option will be removed in a future release. Remove it from your configuration before upgrading to that release.
+When session caching is disabled, every session read goes directly to the database.
+This may increase database connection usage and CPU load, especially for workloads that rely heavily on token introspection or token exchange.
+For deployments that are already using persistent sessions, the database's own caching layer should prevent any additional IOPS.
 
 === Volatile user sessions (deprecated)
 

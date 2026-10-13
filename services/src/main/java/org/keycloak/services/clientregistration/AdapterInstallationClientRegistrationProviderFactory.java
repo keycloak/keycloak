@@ -24,6 +24,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+@Deprecated(forRemoval = true, since = "26.8")
 public class AdapterInstallationClientRegistrationProviderFactory implements ClientRegistrationProviderFactory {
 
     @Override

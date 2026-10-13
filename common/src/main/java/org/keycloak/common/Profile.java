@@ -71,7 +71,7 @@ public class Profile {
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.PREVIEW, 2, Feature.ADMIN_API),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
@@ -180,7 +180,10 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
+        HTTP_CLIENT("Apache-based outbound HTTP client", Type.DEFAULT, 1),
+        HTTP_CLIENT_V2("Vert.x-based outbound HTTP client", Type.EXPERIMENTAL, 2),
+
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 

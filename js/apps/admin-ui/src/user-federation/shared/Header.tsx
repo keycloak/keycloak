@@ -11,6 +11,7 @@ import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { CustomUserFederationRouteParams } from "../routes/CustomUserFederation";
 import { toUserFederation } from "../routes/UserFederation";
@@ -36,6 +37,8 @@ export const Header = ({
 
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-realm");
 
   const { control, setValue } = useFormContext();
 
@@ -95,6 +98,7 @@ export const Header = ({
                   {t("deleteProvider")}
                 </DropdownItem>,
               ]}
+              isReadOnly={!isManager}
               isEnabled={field.value?.[0] === "true" || field.value === "true"}
               onToggle={(value) => {
                 if (!value) {

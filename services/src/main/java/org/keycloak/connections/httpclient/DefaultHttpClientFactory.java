@@ -24,10 +24,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
@@ -57,7 +59,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * }
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultHttpClientFactory implements HttpClientFactory {
+public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
     private static final String configScope = "keycloak.connectionsHttpClient.default.";
@@ -123,12 +125,13 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             @Override
             public String getString(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
-                HttpResponse response = httpClient.execute(request);
-                String body = stringResponseHandler.handleResponse(response);
-                if (body == null) {
-                    throw new IOException("No content returned from HTTP call");
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    String body = stringResponseHandler.handleResponse(response);
+                    if (body == null) {
+                        throw new IOException("No content returned from HTTP call");
+                    }
+                    return body;
                 }
-                return body;
             }
 
             @Override
@@ -454,6 +457,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .defaultValue("0.5")
                 .add()
                 .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT);
     }
 
     private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {

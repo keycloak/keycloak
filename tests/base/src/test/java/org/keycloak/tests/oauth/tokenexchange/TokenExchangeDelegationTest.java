@@ -89,6 +89,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.representations.IDToken.ACT;
 import static org.keycloak.representations.IDToken.MAY_ACT;
 import static org.keycloak.representations.IDToken.PREFERRED_USERNAME;
 import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertActPresent;
@@ -429,6 +430,32 @@ public class TokenExchangeDelegationTest {
 
         // logout
         AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).logout();
+    }
+
+    @Test
+    public void introspectionMapperCannotOverwriteDelegationActor() {
+        addDelegationPermission();
+
+        ProtocolMapperModel actorMapper = HardcodedClaim.create(
+                "introspection-act-sub-mapper", "act.sub", "mapper-actor", "String", false, false, true);
+
+        String clientId = oauth.getClientId();
+        String mapperId;
+        try (Response response = oauth.clientResource().getProtocolMappers()
+                .createMapper(ModelToRepresentation.toRepresentation(actorMapper))) {
+            Assertions.assertEquals(201, response.getStatus(), "Mapper creation should succeed");
+            mapperId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> AdminApiUtil.findClientByClientId(r, clientId).getProtocolMappers().delete(mapperId));
+
+        final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        AccessTokenResponse res = loginWithDelegation(scope);
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+
+        tokenExchangeDelegationSuccess(res.getAccessToken(), getActorToken());
+
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
     }
 
     @Test
@@ -935,6 +962,29 @@ public class TokenExchangeDelegationTest {
     }
 
     @Test
+    public void rejectMayActClientPolicyConsentParameterForms() {
+        addDelegationPermission();
+
+        realm.updateWithCleanup(r -> r.clientProfile(ClientProfileBuilder.create().name("executor").executor(RejectMayActClaimExecutorFactory.PROVIDER_ID, null).build())
+                .clientPolicy(ClientPolicyBuilder.create().name("policy").condition(AnyClientConditionFactory.PROVIDER_ID, null).profile("executor").build()));
+
+        // username and email lookups are case insensitive, but the consent note keeps each parameter verbatim
+        for (String parameter : List.of(administrator.getEmail(), administrator.getEmail().toUpperCase(),
+                administrator.getUsername().toUpperCase())) {
+            final String scope = OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + parameter;
+            AccessTokenResponse res = loginWithDelegation(scope, grants -> MatcherAssert.assertThat(grants,
+                    Matchers.hasItem("Delegate token to administrator " + parameter + "?")));
+            Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+            assertScopeContains(res.getScope(), scope);
+            assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId(), null, null);
+
+            LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+            Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT);
+        }
+    }
+
+    @Test
     public void rejectMayActClientPolicyRejectAny() {
         addDelegationPermission();
 
@@ -1116,7 +1166,11 @@ public class TokenExchangeDelegationTest {
         Assertions.assertTrue(introspectRes.isSuccess());
         try {
             TokenMetadataRepresentation rep = introspectRes.asTokenMetadata();
+            Assertions.assertTrue(rep.isActive());
             Assertions.assertEquals(USERNAME, rep.getUserName());
+            actValidator.accept(rep);
+            Assertions.assertEquals(teToken.getOtherClaims().get(ACT), rep.getOtherClaims().get(ACT),
+                    "Introspection should preserve the complete act claim");
         } catch (IOException e) {
             Assertions.fail(e);
         }

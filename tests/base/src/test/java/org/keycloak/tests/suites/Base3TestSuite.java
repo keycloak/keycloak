@@ -5,10 +5,12 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectPackages({
+        "org.keycloak.tests.httpclient",
         "org.keycloak.tests.model",
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
+        "org.keycloak.tests.oidc",
         "org.keycloak.tests.policy",
         "org.keycloak.tests.providers",
         "org.keycloak.tests.saml",
@@ -22,7 +24,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.url",
         "org.keycloak.tests.vault",
         "org.keycloak.tests.welcomepage",
-        "org.keycloak.tests.workflow"
+        "org.keycloak.tests.workflow",
+        "org.keycloak.tests.x509",
 })
 public class Base3TestSuite {
 }

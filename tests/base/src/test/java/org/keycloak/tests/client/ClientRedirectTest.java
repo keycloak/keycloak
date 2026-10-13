@@ -26,7 +26,9 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.events.EventType;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.testframework.annotations.InjectDependency;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -38,6 +40,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.common.BasicUserConfig;
@@ -57,6 +60,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @KeycloakIntegrationTest
 public class ClientRedirectTest extends AbstractClientRegistrationTest {
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @InjectRealm(config = ClientRedirectRealmConfig.class)
     ManagedRealm managedRealm;
@@ -88,10 +94,10 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
         oauth.doLogin(managedUser.getUsername(), managedUser.getPassword());
 
         driver.open(managedRealm.getBaseUrl() + "/clients/launchpad-test/redirect");
-        assertEquals("http://example.org/launchpad", driver.getCurrentUrl());
+        assertEquals(keycloakUrls.getBaseUrl() + "/launchpad", driver.getCurrentUrl());
 
         driver.open(managedRealm.getBaseUrl() + "/clients/dummy-test/redirect");
-        assertEquals("http://example.org/dummy/base-path", driver.getCurrentUrl());
+        assertEquals(keycloakUrls.getBaseUrl() + "/dummy/base-path", driver.getCurrentUrl());
     }
 
     @Test
@@ -128,7 +134,7 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
         URI logout = KeycloakUriBuilder.fromUri(getAuthServerRoot())
                 .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, "http://example.org/redirected")
+                .queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, keycloakUrls.getBaseUrl() + "/redirected")
                 .queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint)
                 .build(realmName);
 
@@ -139,18 +145,21 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
                 .type(EventType.LOGOUT_ERROR)
                 .error(OAuthErrorException.INVALID_REDIRECT_URI)
                 .clientId(oauth.getClientId());
-        assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
+        assertThat(driver.getCurrentUrl(), is(not(equalTo(keycloakUrls.getBaseUrl() + "/redirected"))));
     }
 
     private static class ClientRedirectRealmConfig extends AbstractClientRegistrationTest.ClientRegistrationRealmConfig {
+
+        @InjectDependency
+        KeycloakUrls keycloakUrls;
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             return super.configure(realm)
                     .name("redirect")
                     .id("redirect")
-                    .clients(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl("http://example.org/launchpad"))
-                    .clients(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl("http://example.org/dummy"));
+                    .clients(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl(keycloakUrls.getBaseUrl() + "/launchpad"))
+                    .clients(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl(keycloakUrls.getBaseUrl() + "/dummy"));
         }
     }
 }

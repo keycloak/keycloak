@@ -43,6 +43,7 @@ import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
@@ -176,13 +177,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        UserModel model = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realm, id);
+        UserModel model = session.users().getUserById(realm, id);
 
-        if (model == null || model.getServiceAccountClientLink() == null) {
-            return model;
+        if (model == null || !StorageId.isLocalStorage(model.getId()) || model.getServiceAccountClientLink() != null) {
+            return null;
         }
 
-        return null;
+        return model;
     }
 
     @Override

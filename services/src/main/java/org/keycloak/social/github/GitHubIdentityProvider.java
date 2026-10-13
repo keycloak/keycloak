@@ -214,24 +214,25 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
     private void verifyToken(String accessToken) throws IOException {
         String tokenUrl = DEFAULT_APPLICATIONS_URL + "/" + getConfig().getClientId() + "/token";
-        SimpleHttpResponse response = SimpleHttp.create(session).doPost(tokenUrl)
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doPost(tokenUrl)
                 .header("Authorization",  BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
-                .json(Map.of("access_token", accessToken)).asResponse();
+                .json(Map.of("access_token", accessToken)).asResponse()) {
 
-        JsonNode jsonNodeResponse = response.asJson();
-        if (response.getStatus() != 200) {
-            String errorMessage = getJsonProperty(jsonNodeResponse, "message");
-            throw new RuntimeException("Error message: " + errorMessage);
-        }
+            JsonNode jsonNodeResponse = response.asJson();
+            if (response.getStatus() != 200) {
+                String errorMessage = getJsonProperty(jsonNodeResponse, "message");
+                throw new RuntimeException("Error message: " + errorMessage);
+            }
 
-        JsonNode appNode = jsonNodeResponse.get("app");
-        if (appNode == null || appNode.isNull()) {
-            throw new RuntimeException("Invalid token check response: 'app' field is missing.");
-        }
+            JsonNode appNode = jsonNodeResponse.get("app");
+            if (appNode == null || appNode.isNull()) {
+                throw new RuntimeException("Invalid token check response: 'app' field is missing.");
+            }
 
-        String clientId = getJsonProperty(appNode, "client_id");
-        if (!getConfig().getClientId().equals(clientId)) {
-            throw new RuntimeException("Client ID does not match the client_id in the access token check response.");
+            String clientId = getJsonProperty(appNode, "client_id");
+            if (!getConfig().getClientId().equals(clientId)) {
+                throw new RuntimeException("Client ID does not match the client_id in the access token check response.");
+            }
         }
     }
 

@@ -155,7 +155,7 @@ export default function AddMapper() {
       }
 
       setMapperTypes(mappers);
-      setIdp(idp);
+      setIdp(idp ?? undefined);
     },
     [id],
   );

@@ -150,7 +150,8 @@ styles=css/styles.css css/theme-styles.css
     const loginCss = (
       await fetch(
         joinPath(
-          "/resources/",
+          environment.adminBaseUrl,
+          "resources",
           environment.resourceVersion,
           "/login/keycloak.v2/css/styles.css",
         ),

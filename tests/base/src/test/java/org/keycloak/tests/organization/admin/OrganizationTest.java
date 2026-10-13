@@ -583,7 +583,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation created = realm.admin().organizations().get(orgWithoutDomainsId).toRepresentation();
         assertEquals("no-domain-org", created.getName());
         assertEquals("no-domain-org", created.getAlias());
-        assertThat(created.getDomains() == null || created.getDomains().isEmpty(), is(true));
+        assertNotNull(created.getDomains());
+        assertTrue(created.getDomains().isEmpty());
 
         // verify that the organization can be retrieved
         OrganizationRepresentation orgWithDomains = createRepresentation("org-with-domains", "example.com");
@@ -612,9 +613,9 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertThat("Organization with domains should have at least one domain", 
                     foundOrgWithDomains.get().getDomains().size(), greaterThan(0));
             
-            assertThat("Organization without domains should have no domains", 
-                    foundOrgWithoutDomains.get().getDomains() == null || 
-                    foundOrgWithoutDomains.get().getDomains().isEmpty(), is(true));
+            assertNotNull(foundOrgWithoutDomains.get().getDomains());
+            assertTrue(foundOrgWithoutDomains.get().getDomains().isEmpty(),
+                    "Organization without domains should have no domains");
 
             List<OrganizationRepresentation> search = realm.admin().organizations().search("with-domains", false, -1, -1);
 
@@ -626,6 +627,49 @@ public class OrganizationTest extends AbstractOrganizationTest {
         } finally {
             realm.admin().organizations().get(orgWithDomainsId).delete().close();
             realm.admin().organizations().get(orgWithoutDomainsId).delete().close();
+        }
+    }
+
+    @Test
+    public void testWithoutDomainsRoundTrip() {
+        OrganizationRepresentation org = new OrganizationRepresentation();
+        org.setName("roundtrip-org");
+        org.setAlias("roundtrip-org");
+
+        String orgId;
+        try (Response response = realm.admin().organizations().create(org)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            orgId = ApiUtil.getCreatedId(response);
+        }
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgId);
+
+        try {
+            OrganizationRepresentation saved = orgResource.toRepresentation();
+            assertNotNull(saved.getDomains());
+            assertTrue(saved.getDomains().isEmpty());
+
+            OrganizationRepresentation withDomain = orgResource.toRepresentation();
+            OrganizationDomainRepresentation domain = new OrganizationDomainRepresentation();
+            domain.setName("temporary.example.org");
+            withDomain.addDomain(domain);
+            try (Response response = orgResource.update(withDomain)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+
+            OrganizationRepresentation afterAdd = orgResource.toRepresentation();
+            assertEquals(1, afterAdd.getDomains().size());
+            assertNotNull(afterAdd.getDomain("temporary.example.org"));
+
+            try (Response response = orgResource.update(saved)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+
+            OrganizationRepresentation afterRestore = orgResource.toRepresentation();
+            assertNotNull(afterRestore.getDomains());
+            assertTrue(afterRestore.getDomains().isEmpty());
+        } finally {
+            orgResource.delete().close();
         }
     }
 
@@ -775,40 +819,77 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testImportLegacyAliases() {
+        RealmRepresentation importedRealm = new RealmRepresentation();
+        importedRealm.setRealm("legacy-organization-aliases-" + KeycloakModelUtils.generateId());
+        importedRealm.setOrganizationsEnabled(true);
+        OrganizationRepresentation unicode = createRepresentation("unicode");
+        unicode.setAlias("café");
+        OrganizationRepresentation quoted = createRepresentation("quoted");
+        quoted.setAlias("acme\"alias");
+        importedRealm.setOrganizations(List.of(unicode, quoted));
+
+        adminClient.realms().create(importedRealm);
+        try {
+            List<OrganizationRepresentation> organizations = adminClient.realm(importedRealm.getRealm())
+                    .organizations().list(null, null);
+            assertThat(organizations.stream().map(OrganizationRepresentation::getAlias).toList(),
+                    containsInAnyOrder(unicode.getAlias(), quoted.getAlias()));
+        } finally {
+            adminClient.realm(importedRealm.getRealm()).remove();
+        }
+    }
+
+    @Test
     public void testSpecialCharsAlias() {
         OrganizationRepresentation org = createRepresentation("acme");
         OrganizationDomainRepresentation orgDomain = new OrganizationDomainRepresentation();
         orgDomain.setName("acme.com");
         org.addDomain(orgDomain);
 
-        org.setAlias("acme&@#!");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        // Reject scope delimiters, control characters, backslashes, and the reserved wildcard alias.
+        for (String alias : List.of(" ", "\n", "acme alias", "acme\nalias", "acme\\alias", "acme\u007falias", "acme\u0085alias", "*")) {
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus(), alias);
+            }
         }
 
-        // blank alias will be replaced with org name, which is valid
-        org.setAlias("");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            String id = ApiUtil.getCreatedId(response);
-            realm.cleanup().add(r -> r.organizations().get(id).delete().close());
+        // '&', '@', '#', '!', '/' and ':' are valid OAuth 2.0 scope characters (RFC 6749, Section 3.3)
+        // and are therefore allowed in the alias
+        // Unicode and double quotes were accepted before scope-token validation was introduced.
+        for (String alias : List.of("acme", "acme-2", "acme_alias", "acme&@#!/:", "~acme.alias~", "café", "acme\"alias", "acme*corp")) {
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus(), alias);
+                String id = ApiUtil.getCreatedId(response);
+                try {
+                    assertEquals(alias, realm.admin().organizations().get(id).toRepresentation().getAlias());
+                } finally {
+                    realm.admin().organizations().get(id).delete().close();
+                }
+            }
         }
 
-        org.setAlias(" ");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
+        // Both an omitted alias and an empty alias default to the organization name.
+        for (String alias : new String[] {null, ""}) {
+            org.setName("acme-2");
+            org.setAlias(alias);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+                String id = ApiUtil.getCreatedId(response);
+                try {
+                    assertEquals(org.getName(), realm.admin().organizations().get(id).toRepresentation().getAlias());
+                } finally {
+                    realm.admin().organizations().get(id).delete().close();
+                }
+            }
 
-        org.setAlias("\n");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        }
-
-        // when alias is empty, name is used as alias
-        org.setName("acme@");
-        org.setAlias("");
-        try (Response response = realm.admin().organizations().create(org)) {
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            // The name used as the fallback alias must still pass validation.
+            org.setName("acme\\backslash");
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            }
         }
     }
 
@@ -1346,5 +1427,22 @@ public class OrganizationTest extends AbstractOrganizationTest {
         try (Response response = orgResource.update(fetched)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testGetByDomainNameWithMalformedDomain() {
+        createOrganization();
+
+        runOnServer.run(session -> {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+
+            assertNotNull(provider.getByDomainName("neworg.org"));
+
+            assertNull(provider.getByDomainName(null));
+
+            for (String malformed : List.of("", " ", "my_org", "neworg;org", "neworg org", "neworg.org.", "new_org.org", "2802@neworg.org", "*.")) {
+                assertNull(provider.getByDomainName(malformed), malformed);
+            }
+        });
     }
 }

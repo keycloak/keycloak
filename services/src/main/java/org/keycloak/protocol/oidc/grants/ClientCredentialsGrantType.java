@@ -119,6 +119,10 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         if (!useRefreshToken()) {
             // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
             sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
+        } else {
+            logger.warnf("Client '%s' in the realm '%s' has enabled switch 'Use refresh tokens for client credentials grant'. The switch is deprecated and " +
+                    "will be removed in the future version. It is recommended to disable the switch and update your client application to not rely on this switch being enabled",
+                    client.getClientId(), realm.getName());
         }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,

@@ -2,6 +2,7 @@ package org.keycloak.tests.broker;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
@@ -192,6 +193,49 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
 
             getTimeOffSet().set(0);
         }
+    }
+
+    @Test
+    default void testStoreTokenDisabledLegacySessionFallback() {
+        // Regression test for a session that authenticated before FEDERATED_TOKEN_EXPIRATION
+        // notes were introduced: with storeToken=false there is no DB-persisted copy to fall
+        // back to, so the (still valid) session access token must be served as-is instead of
+        // being rejected.
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(false);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.TRUE.toString());
+        });
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+        AccessToken accessToken = oauth.parseToken(internalTokens.getAccessToken(), AccessToken.class);
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertTrue(externalTokens.isSuccess());
+        checkSuccessfulTokenResponse(externalTokens);
+
+        // simulate a legacy session by dropping the expiration note, leaving only the access token note
+        String realmName = realm.getName();
+        String sessionId = accessToken.getSessionId();
+        getRunOnServer().run(session -> {
+            RealmModel r = session.realms().getRealmByName(realmName);
+            UserSessionModel userSession = session.sessions().getUserSession(r, sessionId);
+            userSession.removeNote(AbstractOAuth2IdentityProvider.FEDERATED_TOKEN_EXPIRATION + ":" + IDP_ALIAS);
+            userSession.removeNote(AbstractOAuth2IdentityProvider.FEDERATED_TOKEN_EXPIRATION);
+        });
+
+        AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens2.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens2);
+        Assertions.assertEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+
+        // storeToken is disabled, so the DB copy must remain absent throughout
+        Assertions.assertNull(getTokenFromDatabase(realm.getName()));
     }
 
     @Test

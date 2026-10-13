@@ -3,13 +3,10 @@
 
 <@tmpl.guide
 title="Managing Keycloak Clients"
-summary="Manage Keycloak OIDC and SAML clients declaratively using the operator.">
+summary="Manage Keycloak OIDC and SAML clients declaratively using the operator."
+preview="true">
 
 == Managing OIDC and SAML clients with the Operator
-
-<#include "/templates/experimental-feature.adoc">
-
-To provide feedback, use the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
 
 The {project_name} Operator can manage OIDC and SAML clients declaratively through Custom Resources.
 The operator creates, updates, and deletes clients on the {project_name} server to match the desired state defined in the CR.
@@ -126,7 +123,7 @@ kind: Secret
 metadata:
   name: my-app-credentials
   labels:
-    operator.keycloak.org/kind: KeycloakOIDCClient <1> 
+    operator.keycloak.org/kind: KeycloakOIDCClient <1>
 stringData:
   client-secret-key: "my-secret"
 ----
@@ -147,7 +144,7 @@ spec:
         name: my-app-credentials # <2>
         key: client-secret-key # <3>
 ----
-<1> Required label for the Secret to be usable by an KeycloakOIDCClient 
+<1> Required label for the Secret to be usable by an KeycloakOIDCClient
 <2> Name of the Kubernetes Secret in the same namespace.
 <3> Key within the Secret that holds the client secret value.
 

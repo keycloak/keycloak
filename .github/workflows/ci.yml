@@ -6,6 +6,7 @@ on:
       - main
       - dependabot/**
       - copilot/**
+      - tmp/**
   pull_request:
   workflow_dispatch:
 
@@ -160,10 +161,11 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run base tests
+        # enable the http-optimized-serializers feature for the old testsuite to verify it works as expected
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=http-optimized-serializers -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -322,7 +324,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [17, 21]
+        version: [17, 21, 27]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -423,6 +425,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Volatile Sessions IT
+
+  http-client-v2-tests:
+    name: HTTP Client v2 IT
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-quarkus == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run HTTP Client v2 tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=HttpClientV2TestSuite
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: HTTP Client v2 IT
 
   external-infinispan-tests:
     name: External Infinispan IT
@@ -1388,6 +1414,7 @@ jobs:
       - jdk-integration-tests
       - store-integration-tests
       - volatile-sessions-tests
+      - http-client-v2-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests

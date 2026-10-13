@@ -1246,11 +1246,6 @@ public class AuthenticationProcessor {
             Response response = AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
             return response;
         } else {
-
-            // Visit the LoginProtocol for authentication completeness
-            LoginProtocol loginProtocol = session.getProvider(LoginProtocol.class, authenticationSession.getProtocol());
-            loginProtocol.authenticationComplete(authenticationSession);
-
             event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             Response response = AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
             return response;

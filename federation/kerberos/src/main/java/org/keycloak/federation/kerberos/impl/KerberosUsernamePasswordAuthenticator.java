@@ -18,6 +18,7 @@
 package org.keycloak.federation.kerberos.impl;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -28,25 +29,37 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosJdkProvider;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.models.ModelException;
 
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KerberosUsernamePasswordAuthenticator {
+public class KerberosUsernamePasswordAuthenticator extends KerberosServerSubjectAuthenticator {
 
     private static final Logger logger = Logger.getLogger(KerberosUsernamePasswordAuthenticator.class);
 
-    protected final CommonKerberosConfig config;
     private LoginContext loginContext;
+    private final boolean disableKerberosAuthenticationRoundTrip;
 
     public KerberosUsernamePasswordAuthenticator(CommonKerberosConfig config) {
-        this.config = config;
+        this(config, false);
+    }
+
+    @Deprecated(since = "26.8.1", forRemoval = true)
+    public KerberosUsernamePasswordAuthenticator(CommonKerberosConfig config, boolean disableKerberosAuthenticationRoundTrip) {
+        super(config);
+        this.disableKerberosAuthenticationRoundTrip = disableKerberosAuthenticationRoundTrip;
     }
 
 
@@ -90,15 +103,49 @@ public class KerberosUsernamePasswordAuthenticator {
      */
     public boolean validUser(String username, String password) {
         try {
-            authenticateSubject(username, password);
-            logoutSubject();
-            return true;
+            Subject clientSubject = authenticateSubject(username, password);
+            if (disableKerberosAuthenticationRoundTrip) {
+                logger.warnf("Kerberos authentication round-trip is disabled (disable-kerberos-authentication-round-trip). This behavior is deprecated and will be removed in future releases.");
+                return true;
+            }
+            Subject serverSubject = authenticateServerSubject();
+            return validateKerberosServiceTicketRoundTrip(clientSubject, serverSubject);
         } catch (LoginException le) {
             checkKerberosServerAvailable(le);
             checkKerberosUsername(le);
 
             logger.debug("Failed to authenticate user " + username, le);
             return false;
+        } finally {
+            logoutSubject();
+            logoutServerSubject();
+        }
+    }
+
+    protected boolean validateKerberosServiceTicketRoundTrip(Subject clientSubject, Subject serverSubject) {
+        KerberosClient client = null;
+        KerberosServer server = null;
+        try {
+            GSSManager manager = GSSManager.getInstance();
+            client = new KerberosClient(manager, clientSubject, config.getServerPrincipal());
+            server = new KerberosServer(manager, serverSubject, config.getServerPrincipal());
+            byte[] token = new byte[0];
+            while (token != null && (!client.isEstablised() || !server.isEstablised())) {
+                token = client.processToken(token);
+                if (token != null) {
+                    token = server.processToken(token);
+                }
+            }
+            return client.isEstablised() && server.isEstablised();
+        } catch (LoginException e) {
+            return false;
+        } finally {
+            if (client != null) {
+                client.dispose();
+            }
+            if (server != null) {
+                server.dispose();
+            }
         }
     }
 
@@ -193,5 +240,144 @@ public class KerberosUsernamePasswordAuthenticator {
 
     protected Configuration createJaasConfiguration() {
         return KerberosJdkProvider.getProvider().createJaasConfigurationForUsernamePasswordLogin(config.isDebug());
+    }
+
+    private static class KerberosContext {
+
+        private final GSSCredential credential;
+        private final GSSContext context;
+
+        public KerberosContext(GSSCredential credential, GSSContext context) {
+            this.credential = credential;
+            this.context = context;
+        }
+
+        public GSSCredential getCredential() {
+            return credential;
+        }
+
+        public GSSContext getContext() {
+            return context;
+        }
+
+        public void dispose() {
+            dispose(credential);
+            dispose(context);
+        }
+
+        public static void dispose(GSSCredential credential) {
+            if (credential != null) {
+                try {
+                    credential.dispose();
+                } catch (GSSException e) {
+                    //no-op
+                }
+            }
+        }
+
+        public static void dispose(GSSContext context) {
+            if (context != null) {
+                try {
+                    context.dispose();
+                } catch (GSSException e) {
+                    //no-op
+                }
+            }
+        }
+    }
+
+    private static class KerberosClient {
+
+        private final Subject clientSubject;
+        private final KerberosContext clientContext;
+
+        public KerberosClient(GSSManager manager, Subject clientSubject, String serverName) throws LoginException {
+            this.clientSubject = clientSubject;
+            this.clientContext = Subject.doAs(clientSubject, (PrivilegedAction<KerberosContext>) () -> {
+                GSSCredential credential = null;
+                GSSContext context = null;
+                try {
+                    GSSName target = manager.createName(serverName, KerberosConstants.KRB5_NAME_OID, KerberosConstants.KRB5_OID);
+                    credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, KerberosConstants.KRB5_OID, GSSCredential.INITIATE_ONLY);
+                    context = manager.createContext(target, KerberosConstants.KRB5_OID, credential, GSSContext.DEFAULT_LIFETIME);
+                    context.requestMutualAuth(true);
+                    return new KerberosContext(credential, context);
+                } catch (GSSException e) {
+                    logger.warn("Error creating GSS context for the client", e);
+                    KerberosContext.dispose(credential);
+                    KerberosContext.dispose(context);
+                    return null;
+                }
+            });
+            if (clientContext == null) {
+                throw new LoginException("Error creating GSS context for the client");
+            }
+        }
+
+        public byte[] processToken(byte[] token) {
+            return Subject.doAs(clientSubject, (PrivilegedAction<byte[]>) () -> {
+                try {
+                    return clientContext.getContext().initSecContext(token, 0, token.length);
+                } catch (GSSException e) {
+                    logger.debug("Exception performing initSecContext", e);
+                    return null;
+                }
+            });
+        }
+
+        public boolean isEstablised() {
+            return clientContext.getContext().isEstablished();
+        }
+
+        public void dispose() {
+            clientContext.dispose();
+        }
+    }
+
+    private static class KerberosServer  {
+
+        private final Subject serverSubject;
+        private final KerberosContext serverContext;
+
+        public KerberosServer(GSSManager manager, Subject serverSubject, String serverName) throws LoginException {
+            this.serverSubject = serverSubject;
+            this.serverContext = Subject.doAs(serverSubject, (PrivilegedAction<KerberosContext>) () -> {
+                GSSCredential credential = null;
+                GSSContext context = null;
+                try {
+                    GSSName acceptorName = manager.createName(serverName, KerberosConstants.KRB5_NAME_OID, KerberosConstants.KRB5_OID);
+                    credential = manager.createCredential(acceptorName, GSSCredential.DEFAULT_LIFETIME, KerberosConstants.KRB5_OID, GSSCredential.ACCEPT_ONLY);
+                    context = manager.createContext(credential);
+                    return new KerberosContext(credential, context);
+                } catch (GSSException e) {
+                    logger.warn("Error creating GSS context for the server", e);
+                    KerberosContext.dispose(credential);
+                    KerberosContext.dispose(context);
+                    return null;
+                }
+            });
+            if (serverContext == null) {
+                throw new LoginException("Error creating GSS context for the server");
+            }
+        }
+
+        public byte[] processToken(byte[] token) {
+            return Subject.doAs(serverSubject, (PrivilegedAction<byte[]>) () -> {
+                try {
+                    return serverContext.getContext().acceptSecContext(token, 0, token.length);
+                } catch (GSSException e) {
+                    logger.debug("Exception performing acceptSecContext", e);
+                    return null;
+                }
+            });
+        }
+
+        public boolean isEstablised() {
+            return serverContext.getContext().isEstablished();
+        }
+
+        public void dispose() {
+            serverContext.dispose();
+        }
     }
 }

@@ -371,6 +371,12 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {hasAccess("manage-realm") && (
+        <SwitchField
+          field="config.allowAdminRoleMapping"
+          label="allowAdminRoleMapping"
+        />
+      )}
       {isClientAuthFederatedEnabled && isOIDC && (
         <SwitchField
           field="config.supportsClientAssertions"

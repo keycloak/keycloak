@@ -5,11 +5,8 @@
 
 <@tmpl.guide
 title="Admin API v2: Reference"
-summary="REST API for managing Keycloak resources. Experimental feature.">
-
-<#include "/templates/experimental-feature.adoc">
-
-To provide feedback, use the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
+summary="REST API for managing Keycloak resources. Preview feature."
+preview="true">
 
 == Prerequisites
 

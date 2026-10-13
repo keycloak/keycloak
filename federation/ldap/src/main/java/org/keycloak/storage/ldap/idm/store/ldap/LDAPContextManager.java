@@ -1,17 +1,19 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import java.io.IOException;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.models.KeycloakSession;
@@ -38,6 +40,8 @@ public final class LDAPContextManager implements AutoCloseable {
     private final LDAPConfig ldapConfig;
     private final Meter.MeterProvider<Timer> requestTimer;
     private StartTlsResponse tlsResponse;
+    private final AtomicReference<SSLSocket> tlsSocket = new AtomicReference<>();
+    private final AtomicReference<Socket> tlsTransport = new AtomicReference<>();
     private LdapContext ldapContext;
 
     @Deprecated(forRemoval = true, since = "26.8")
@@ -106,7 +110,7 @@ public final class LDAPContextManager implements AutoCloseable {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = startTLS(ldapContext, sslSocketFactory);
+                tlsResponse = startTLS(ldapContext, sslSocketFactory, tlsSocket, tlsTransport);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -143,11 +147,20 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     public static StartTlsResponse startTLS(LdapContext ldapContext, SSLSocketFactory sslSocketFactory) throws NamingException {
+        return startTLS(ldapContext, sslSocketFactory, null, null);
+    }
+
+    static StartTlsResponse startTLS(LdapContext ldapContext, SSLSocketFactory sslSocketFactory, AtomicReference<SSLSocket> tlsSocket, AtomicReference<Socket> tlsTransport) throws NamingException {
         StartTlsResponse tls = null;
 
         try {
             tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
-            tls.negotiate(sslSocketFactory);
+            if (tlsSocket == null) {
+                tls.negotiate(sslSocketFactory);
+            } else {
+                SSLSocketFactory factory = sslSocketFactory == null ? (SSLSocketFactory) SSLSocketFactory.getDefault() : sslSocketFactory;
+                tls.negotiate(LDAPStartTlsClose.trackingFactory(factory, tlsSocket, tlsTransport));
+            }
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);
             NamingException ne = new AuthenticationException("Could not negotiate TLS");
@@ -294,19 +307,17 @@ public final class LDAPContextManager implements AutoCloseable {
 
     @Override
     public void close() {
-        if (tlsResponse != null) {
-            try {
-                tlsResponse.close();
-            } catch (IOException e) {
-                logger.error("Could not close Ldap tlsResponse.", e);
+        try {
+            if (tlsResponse != null) {
+                LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
             }
-        }
-
-        if (ldapContext != null) {
-            try {
-                ldapContext.close();
-            } catch (NamingException e) {
-                logger.error("Could not close Ldap context.", e);
+        } finally {
+            if (ldapContext != null) {
+                try {
+                    ldapContext.close();
+                } catch (NamingException e) {
+                    logger.error("Could not close Ldap context.", e);
+                }
             }
         }
     }

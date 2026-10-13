@@ -26,9 +26,9 @@ import static org.hamcrest.Matchers.not;
 @DatabaseTest
 public class DatabaseIndexCheckerTest {
 
-    private static final String INDEX_NAME = "IDX_USER_SESSION_EXPIRATION_CREATED";
+    private static final String INDEX_NAME = "IDX_OFFLINE_USS_BY_BROKER_SESSION_ID";
     private static final String TABLE_NAME = "OFFLINE_USER_SESSION";
-    private static final String TEMP_INDEX_NAME = "IDX_USS_EXPIRATION_CREATED_TMP";
+    private static final String TEMP_INDEX_NAME = "IDX_USS_BROKER_SESSION_TMP";
 
     @TestOnServer
     public void testDetectsMissingIndexWithCorrectSql(KeycloakSession session) {
@@ -48,14 +48,11 @@ public class DatabaseIndexCheckerTest {
             String sql = missingSql.get(INDEX_NAME);
             String dbProduct = getDatabaseProduct(factory);
 
-            if (dbProduct.contains("postgresql")) {
-                assertThat(sql, containsString("INCLUDE"));
-                assertThat(sql, not(containsString("OPTIMIZE_FOR_SEQUENTIAL_KEY")));
-            } else if (dbProduct.contains("microsoft")) {
-                assertThat(sql, containsString("INCLUDE"));
-                assertThat(sql, containsString("OPTIMIZE_FOR_SEQUENTIAL_KEY"));
+            if (dbProduct.contains("postgresql") || dbProduct.contains("microsoft")) {
+                assertThat(sql, containsString("WHERE"));
+                assertThat(sql, containsString("BROKER_SESSION_ID IS NOT NULL"));
             } else {
-                assertThat(sql, not(containsString("INCLUDE")));
+                assertThat(sql, not(containsString("WHERE")));
             }
         } finally {
             renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);

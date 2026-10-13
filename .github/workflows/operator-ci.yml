@@ -6,6 +6,7 @@ on:
       - main
       - dependabot/**
       - copilot/**
+      - tmp/**
   pull_request:
   workflow_dispatch:
 
@@ -105,7 +106,7 @@ jobs:
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -233,7 +234,7 @@ jobs:
           version: v3.14.4
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -300,7 +301,7 @@ jobs:
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -414,7 +415,7 @@ jobs:
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}

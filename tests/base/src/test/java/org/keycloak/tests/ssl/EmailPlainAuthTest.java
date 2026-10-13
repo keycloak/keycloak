@@ -8,6 +8,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -31,6 +32,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
@@ -45,6 +47,7 @@ import static org.keycloak.tests.ssl.AbstractSslEmailTest.resourcePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @KeycloakIntegrationTest(config = EmailPlainAuthTest.ServerConfig.class)
 class EmailPlainAuthTest {
@@ -69,6 +72,9 @@ class EmailPlainAuthTest {
 
     @InjectPage
     LoginPage loginPage;
+
+    @InjectPage
+    ErrorPage errorPage;
 
     @BeforeEach
     void setUp() {
@@ -121,6 +127,31 @@ class EmailPlainAuthTest {
         code = oauth.parseLoginResponse().getCode();
         assertThat("Should be able to log in without email verification after it was completed",
                 code, is(notNullValue()));
+    }
+
+    @Test
+    void testVerifyEmailFailsWhenStarttlsRequiredButNotAdvertised() {
+        realm.updateWithCleanup(r -> {
+            Map<String, String> smtp = r.build().getSmtpServer();
+            smtp.put("ssl", "false");
+            smtp.put("starttls", "true");
+            return r;
+        });
+
+        oauth.openLoginForm();
+        loginPage.fillLogin(user.getUsername(), "password");
+        loginPage.submit();
+
+        EventRepresentation event = events.poll();
+        EventAssertion.assertError(event)
+                .type(EventType.SEND_VERIFY_EMAIL_ERROR)
+                .error(Errors.EMAIL_SEND_FAILED)
+                .details(Details.USERNAME, user.getUsername());
+
+        assertThat("Email should not have been received when STARTTLS is required but unsupported",
+                mailServer.getLastReceivedMessage(), is(nullValue()));
+        assertThat("Error page should show email failure message",
+                errorPage.getError(), is("Failed to send email, please try again later."));
     }
 
     static class ServerConfig implements KeycloakServerConfig {

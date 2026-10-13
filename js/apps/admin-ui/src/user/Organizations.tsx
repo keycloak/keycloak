@@ -183,7 +183,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
       )}
       {openOrganizationPicker && (
         <OrganizationModal
-          isJoin={shouldJoin}
+          mode={shouldJoin ? "join" : "send"}
           existingOrgs={userOrgs}
           onClose={() => setOpenOrganizationPicker(false)}
           onAdd={async (orgs) => {

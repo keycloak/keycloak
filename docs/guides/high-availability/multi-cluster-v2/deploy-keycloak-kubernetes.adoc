@@ -10,7 +10,7 @@ tileVisible="false"
 This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover from single Pod failures or site failures.
 
 These instructions are intended for use with the setup described in the <@links.ha id="multi-cluster-v2-concepts"/> {section}.
-Ensure that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> are met before proceeding.
+Ensure that the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> infrastructure requirements are met before proceeding.
 
 While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
 
@@ -21,7 +21,7 @@ While this blueprint uses {kubernetes}, the concepts are not limited to {kuberne
 Each {kubernetes} cluster's ingress routes traffic to {project_name} Pods based on the `/health/ready` readiness probe, while the external load balancer probes `/lb-check` on each cluster to detect site-level failures.
 * A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes in all clusters.
 The following example assumes a PostgreSQL database.
-Any database supported by {project_name} will work.
+Any {project_name} supported database may be used provided that the selected database deployment can satisfy the required high-availability, synchronous-replication, consistency and latency characteristics. Database HA design and failover behavior are outside {project_name} and must be validated with the database vendor.
 How to configure the database for high availability is out of scope for this guide.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
 

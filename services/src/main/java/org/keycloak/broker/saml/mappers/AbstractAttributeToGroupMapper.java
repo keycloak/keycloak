@@ -40,7 +40,7 @@ public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityPro
             return;
         }
 
-        if (this.applies(mapperModel, context)) {
+        if (this.applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
             user.joinGroup(group);
         }
     }
@@ -53,7 +53,7 @@ public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityPro
         }
 
         String groupId = group.getId();
-        if (!context.hasMapperAssignedGroup(groupId)) {
+        if (!context.hasMapperAssignedGroup(groupId) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
             if (this.applies(mapperModel, context)) {
                 context.addMapperAssignedGroup(groupId);
                 user.joinGroup(group);

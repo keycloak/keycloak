@@ -38,7 +38,8 @@ public class WebOriginsUtils {
         if (origins.contains(Constants.INCLUDE_REDIRECTS)) {
             origins.remove(Constants.INCLUDE_REDIRECTS);
             for (String redirectUri : RedirectUtils.resolveValidRedirects(session, client.getRootUrl(), client.getRedirectUris())) {
-                if (redirectUri.startsWith("http://") || redirectUri.startsWith("https://")) {
+                if (redirectUri.regionMatches(true, 0, "http://", 0, 7)
+                        || redirectUri.regionMatches(true, 0, "https://", 0, 8)) {
                     origins.add(UriUtils.getOrigin(redirectUri));
                 }
             }

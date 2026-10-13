@@ -39,7 +39,7 @@ export class Realms extends Resource {
 
   public findOne = this.makeRequest<
     { realm: string },
-    RealmRepresentation | undefined
+    RealmRepresentation | null
   >({
     method: "GET",
     path: "/{realm}",
