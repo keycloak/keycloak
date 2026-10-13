@@ -81,6 +81,16 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
+        // Pagination is not the subject of this test and the embedded ApacheDS is unreliable with paged searches,
+        // which intermittently caused incomplete group lookups
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ctx.getLdapModel().put(LDAPConstants.PAGINATION, "false");
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
         runOnServer.run(LdapHelper.prepareGroupsLDAPTest());
     }
 
@@ -1107,9 +1117,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
+            // pagination is disabled for this test class, enable it here as the fallback is what is tested
             // batch size 0 effectively disables pagination, code must fall back to non-paginated search
             ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
-            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.PAGINATION, "true", LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
             appRealm.updateComponent(mapperModel);
         });
 
@@ -1128,9 +1139,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            // revert batch size change
+            // revert pagination and batch size changes
             ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
-            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.PAGINATION, "false", LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
             appRealm.updateComponent(mapperModel);
         });
     }
