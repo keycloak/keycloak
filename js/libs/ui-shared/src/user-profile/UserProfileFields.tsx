@@ -137,36 +137,71 @@ export const UserProfileFields = ({
     return null;
   }
 
+  // In user context, groups whose every attribute is hidden are excluded from
+  // the visible sections. Their hidden inputs must still render so the values
+  // are retained on form submission.
+  const hiddenOnlyGroupAttributes = !isAdminContext
+    ? groupsWithAttributes
+        .filter(
+          ({ attributes }) =>
+            attributes.length > 0 &&
+            attributes.every(
+              (attribute) => determineInputType(attribute) === "hidden",
+            ),
+        )
+        .flatMap(({ attributes }) => attributes)
+    : [];
+
   return (
-    <ScrollForm
-      label={t("jumpToSection")}
-      sections={groupsWithAttributes
-        .filter((group) => group.attributes.length > 0)
-        .map(({ group, attributes }) => ({
-          title: label(t, group.displayHeader, group.name) || t("general"),
-          panel: (
-            <div className="pf-v5-c-form">
-              {group.displayDescription && (
-                <Text className="pf-v5-u-pb-lg">
-                  {label(t, group.displayDescription, "")}
-                </Text>
-              )}
-              {attributes.map((attribute) => (
-                <FormField
-                  key={attribute.name}
-                  t={t}
-                  form={form}
-                  supportedLocales={supportedLocales}
-                  currentLocale={currentLocale}
-                  renderer={renderer}
-                  attribute={attribute}
-                  isAdminContext={isAdminContext}
-                />
-              ))}
-            </div>
-          ),
-        }))}
-    />
+    <>
+      {hiddenOnlyGroupAttributes.map((attribute) => (
+        <FormField
+          key={attribute.name}
+          t={t}
+          form={form}
+          supportedLocales={supportedLocales}
+          currentLocale={currentLocale}
+          renderer={renderer}
+          attribute={attribute}
+          isAdminContext={false}
+        />
+      ))}
+      <ScrollForm
+        label={t("jumpToSection")}
+        sections={groupsWithAttributes
+          .filter((group) => group.attributes.length > 0)
+          .filter((group) =>
+            isAdminContext ||
+            group.attributes.some(
+              (attribute) => determineInputType(attribute) !== "hidden",
+            ),
+          )
+          .map(({ group, attributes }) => ({
+            title: label(t, group.displayHeader, group.name) || t("general"),
+            panel: (
+              <div className="pf-v5-c-form">
+                {group.displayDescription && (
+                  <Text className="pf-v5-u-pb-lg">
+                    {label(t, group.displayDescription, "")}
+                  </Text>
+                )}
+                {attributes.map((attribute) => (
+                  <FormField
+                    key={attribute.name}
+                    t={t}
+                    form={form}
+                    supportedLocales={supportedLocales}
+                    currentLocale={currentLocale}
+                    renderer={renderer}
+                    attribute={attribute}
+                    isAdminContext={isAdminContext}
+                  />
+                ))}
+              </div>
+            ),
+          }))}
+      />
+    </>
   );
 };
 

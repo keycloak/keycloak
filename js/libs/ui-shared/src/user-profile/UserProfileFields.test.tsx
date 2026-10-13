@@ -1,9 +1,9 @@
-import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { UserProfileAttributeGroupMetadata, UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { cleanup, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { afterEach, describe, it, expect } from "vitest";
 import { HiddenComponent } from "./HiddenComponent";
-import { FIELDS, determineInputType } from "./UserProfileFields";
+import { FIELDS, UserProfileFields, determineInputType } from "./UserProfileFields";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -23,6 +23,31 @@ const Harness = ({
 }) => {
   const form = useForm();
   return <FormProvider {...form}>{children(form)}</FormProvider>;
+};
+
+/** Renders UserProfileFields through the full component path. */
+const FieldsHarness = ({
+  attributes,
+  groups = [],
+  isAdminContext = false,
+}: {
+  attributes: UserProfileAttributeMetadata[];
+  groups?: UserProfileAttributeGroupMetadata[];
+  isAdminContext?: boolean;
+}) => {
+  const form = useForm();
+  return (
+    <FormProvider {...form}>
+      <UserProfileFields
+        t={t as never}
+        form={form as never}
+        userProfileMetadata={{ attributes, groups }}
+        supportedLocales={[]}
+        currentLocale="en"
+        isAdminContext={isAdminContext}
+      />
+    </FormProvider>
+  );
 };
 
 // ─── determineInputType ─────────────────────────────────────────────────────
@@ -106,6 +131,24 @@ describe("determineInputType", () => {
       ),
     ).toBe("hidden");
   });
+
+  it("a group whose only attribute is hidden is fully hidden in user context", () => {
+    expect(
+      determineInputType(
+        attr({ name: "tenantId", annotations: { inputType: "hidden" } }),
+        false,
+      ),
+    ).toBe("hidden");
+  });
+
+  it("a group whose only attribute is hidden is visible in admin context", () => {
+    expect(
+      determineInputType(
+        attr({ name: "tenantId", annotations: { inputType: "hidden" } }),
+        true,
+      ),
+    ).toBe("text");
+  });
 });
 
 // ─── HiddenComponent ────────────────────────────────────────────────────────
@@ -179,6 +222,106 @@ describe("FIELDS map", () => {
 
   it("includes 'hidden' alongside all other input types", () => {
     expect(Object.keys(FIELDS)).toContain("hidden");
+  });
+});
+
+// ─── UserProfileFields integration ──────────────────────────────────────────
+// These tests render through UserProfileFields → FormField → determineInputType
+// to verify that component-selection and group-visibility paths work end-to-end.
+
+describe("UserProfileFields integration", () => {
+  afterEach(cleanup);
+
+  it("renders a hidden input for a regular attribute via FormField → determineInputType", () => {
+    const { container } = render(
+      <FieldsHarness
+        attributes={[attr({ name: "customField", annotations: { inputType: "hidden" } })]}
+      />,
+    );
+    expect(container.querySelector("input[type='hidden']")).not.toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("renders a hidden input for a root attribute (username) via FormField → determineInputType", () => {
+    const { container } = render(
+      <FieldsHarness
+        attributes={[attr({ name: "username", annotations: { inputType: "hidden" } })]}
+      />,
+    );
+    expect(container.querySelector("input[type='hidden']")).not.toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("renders a hidden input for a multivalued attribute via FormField → determineInputType", () => {
+    const { container } = render(
+      <FieldsHarness
+        attributes={[
+          attr({ name: "tags", multivalued: true, annotations: { inputType: "hidden" } }),
+        ]}
+      />,
+    );
+    expect(container.querySelector("input[type='hidden']")).not.toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("renders a hidden input for a locale attribute via FormField → determineInputType", () => {
+    const { container } = render(
+      <FieldsHarness
+        attributes={[attr({ name: "locale", annotations: { inputType: "hidden" } })]}
+      />,
+    );
+    expect(container.querySelector("input[type='hidden']")).not.toBeNull();
+  });
+
+  it("hides a group section header when all its attributes are hidden in user context", () => {
+    render(
+      <FieldsHarness
+        attributes={[
+          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+        ]}
+        groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
+      />,
+    );
+    expect(screen.queryByText("Internal Fields")).toBeNull();
+  });
+
+  it("shows a group section header when all attributes are hidden in admin context", () => {
+    render(
+      <FieldsHarness
+        attributes={[
+          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+        ]}
+        groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
+        isAdminContext
+      />,
+    );
+    expect(screen.getAllByText("Internal Fields").length).toBeGreaterThan(0);
+  });
+
+  it("still renders a hidden input for a hidden-only group attribute (submission retention)", () => {
+    const { container } = render(
+      <FieldsHarness
+        attributes={[
+          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+        ]}
+        groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
+      />,
+    );
+    // Group section header is hidden…
+    expect(screen.queryByText("Internal Fields")).toBeNull();
+    // …but the hidden input must still be in the DOM so its value is submitted.
+    expect(container.querySelector("input[type='hidden']")).not.toBeNull();
+  });
+
+  it("renders a text input (not hidden) for a hidden attribute in admin context", () => {
+    render(
+      <FieldsHarness
+        attributes={[attr({ name: "customField", annotations: { inputType: "hidden" } })]}
+        isAdminContext
+      />,
+    );
+    expect(screen.getByRole("textbox")).toBeTruthy();
   });
 });
 
