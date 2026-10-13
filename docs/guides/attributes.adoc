@@ -45,9 +45,5 @@
 :keycloak_benchmark_link: https://www.keycloak.org/keycloak-benchmark/
 :keycloak_benchmark_name: Keycloak Benchmark Project
 :ui_customization_guide_name: UI Customization Guide
-:ui_customization_guide_link: https://www.keycloak.org/ui-customization/
-:observabilityguide_link: https://www.keycloak.org/observability/
-:tracingguide_link: {observabilityguide_link}tracing
-:config_metrics: {observabilityguide_link}configuration-metrics
-:link_logging: https://www.keycloak.org/server/logging
+:ui_customization_guide_link: {project_doc_base_url}/ui-customization/
 :server_providers: {developerguide_link}#_providers
