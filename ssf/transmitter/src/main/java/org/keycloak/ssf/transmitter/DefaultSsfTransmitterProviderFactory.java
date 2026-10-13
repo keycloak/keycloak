@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientBuilder;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.outbox.OutboxBackoff;
 import org.keycloak.events.outbox.OutboxCleanupTask;
 import org.keycloak.events.outbox.OutboxConfig;
@@ -271,13 +272,24 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * resolver on every connection, so a receiver that rebinds its host
      * after stream configuration still cannot reach internal addresses.
      *
-     * <p>No proxy is configured: a proxy resolves the target host itself,
-     * out of reach of the resolver, so delivery connects directly. Redirects
-     * are not followed, so the receiver cannot bounce the request elsewhere.
+     * <p>The client otherwise carries the configured outgoing HTTP client
+     * settings, such as the client keystore, timeouts and tracing. No proxy
+     * is used: a proxy resolves the target host itself, out of reach of the
+     * resolver, so delivery connects directly. Redirects are not followed,
+     * so the receiver cannot bounce the request elsewhere.
      */
     protected CloseableHttpClient createPushHttpClient(KeycloakSession session) {
+        PrivateAddressDenyingDnsResolver dnsResolver = new PrivateAddressDenyingDnsResolver();
+        HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+        try {
+            return httpClientProvider.createDirectHttpClient(dnsResolver);
+        } catch (UnsupportedOperationException e) {
+            log.warnf("%s; SSF push delivery uses a client without the outgoing HTTP client settings",
+                    e.getMessage());
+        }
+
         HttpClientBuilder builder = new HttpClientBuilder(
-                HttpClients.custom().setDnsResolver(new PrivateAddressDenyingDnsResolver()))
+                HttpClients.custom().setDnsResolver(dnsResolver))
                 .disableCookies(true)
                 .disableRedirectHandling();
 
