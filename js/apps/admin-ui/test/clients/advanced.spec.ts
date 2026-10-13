@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
@@ -30,10 +30,7 @@ import {
   switchOffExcludeSessionStateSwitch,
   saveAuthFlowOverride,
   revertAuthFlowOverride,
-  saveOid4vci,
-  revertOid4vci,
-  assertOid4vciEnabled,
-  switchOid4vciEnabled,
+  assertOid4vciSection,
 } from "./advanced.ts";
 
 test.describe.serial("Advanced tab test", () => {
@@ -134,6 +131,8 @@ test.describe.serial("Client Offline Session Max", () => {
   });
 });
 
+const OID4VCI_SERVER_FEATURE = "OID4VC_VCI";
+
 test.describe.serial("OpenID for Verifiable Credentials", () => {
   const realmName = `oid4vci-test-${uuidv4()}`;
   const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
@@ -165,23 +164,11 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
     test("should handle OID4VC section visibility based on feature flag", async ({
       page,
     }) => {
-      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+      const featureEnabled = await adminClient.isFeatureEnabled(
+        OID4VCI_SERVER_FEATURE,
+      );
 
-      const isVisible = await toggleSwitch.isVisible();
-
-      if (isVisible) {
-        await toggleSwitch.scrollIntoViewIfNeeded();
-        await assertOid4vciEnabled(page, false);
-        await switchOid4vciEnabled(page, true);
-        await saveOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-        await switchOid4vciEnabled(page, false);
-        await assertOid4vciEnabled(page, false);
-        await revertOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-      } else {
-        await expect(toggleSwitch).toBeHidden();
-      }
+      await assertOid4vciSection(page, featureEnabled);
     });
   });
 });
