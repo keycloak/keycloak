@@ -74,6 +74,17 @@ Updates that change other settings, or that use a `${vault.<key>}` expression as
 Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
 Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
 
+=== Privileged client attributes can no longer be set through dynamic client registration
+// https://github.com/keycloak/keycloak/issues/53814
+
+The `external.token.enabled` and `external.token.idp` client attributes allow a client to retrieve the stored tokens of external identity providers through the identity brokering API, so they are reserved for administrators.
+Client registration requests authenticated with an initial access token or a registration access token, as well as anonymous registrations, now silently ignore all `external.token.*` attributes, in the same way as the `ssf.*` attributes.
+Requests authenticated with an administrator bearer token, the Admin REST API and the Admin Console are not affected.
+
+If you provision clients that retrieve external tokens through the `default` client registration provider, for example with the `kcreg` tool and an initial access token, set these attributes with administrator credentials instead.
+Clients that set these attributes through dynamic client registration before the upgrade keep them.
+Review the clients that have `external.token.enabled` set to `true` and remove the setting where it was not granted by an administrator.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
