@@ -221,6 +221,14 @@ public class CertificateValidator {
          * @return revocation status
          */
         public abstract OCSPProvider.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException;
+
+        /**
+         * Returns {@code true} when the administrator configured an explicit OCSP
+         * responder URI that overrides the certificate's AIA extension.
+         */
+        public boolean hasConfiguredResponder() {
+            return false;
+        }
     }
 
     public abstract static class CRLLoaderImpl {
@@ -242,6 +250,11 @@ public class CertificateValidator {
             this.session = session;
             this.responderUri = responderUri;
             this.responderCert = responderCert;
+        }
+
+        @Override
+        public boolean hasConfiguredResponder() {
+            return responderUri != null && !responderUri.trim().isEmpty();
         }
 
         @Override
@@ -917,7 +930,7 @@ public class CertificateValidator {
                 checkRevocationStatusUsingCRLDistributionPoints(_certChain, session, _crlAbortIfNonUpdated);
             }
         }
-        if (_ocspEnabled && trustValidated) {
+        if (_ocspEnabled && (trustValidated || ocspChecker.hasConfiguredResponder())) {
             checkRevocationUsingOCSP(_certChain);
         }
         return this;
