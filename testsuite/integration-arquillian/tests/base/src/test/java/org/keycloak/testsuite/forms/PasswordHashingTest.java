@@ -375,15 +375,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testFederatedStoragePasswordChangedWhileRehashingNotReverted() {
-        // A user from a user storage provider that leaves its credentials to Keycloak, which keeps them in the federated storage
-        ComponentRepresentation provider = new ComponentRepresentation();
-        provider.setName("no-credential");
-        provider.setProviderId(NoCredentialUserStorageProviderFactory.PROVIDER_ID);
-        provider.setProviderType(UserStorageProvider.class.getName());
-        provider.setConfig(new MultivaluedHashMap<>());
-        try (Response response = managedRealm.admin().components().add(provider)) {
-            getCleanup().addComponentId(ApiUtil.getCreatedId(response));
-        }
+        addNoCredentialUserStorage();
 
         String algorithm = "hashAlgorithm(" + PasswordChangingHashProviderFactory.ID + ")";
         setPasswordPolicy(algorithm + " and hashIterations(1)");
@@ -420,6 +412,90 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNull(realm.getAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE), "Password must have been changed while re-hashing");
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
+    }
+
+    @Test
+    public void testPasswordChangedBeforeRehashCommitNotReverted() {
+        String algorithm = "hashAlgorithm(" + PasswordChangingHashProviderFactory.ID + ")";
+        setPasswordPolicy(algorithm + " and hashIterations(1)");
+
+        String username = "testPasswordChangedBeforeRehashCommit";
+        final String oldPassword = createUser(username);
+        final String newPassword = generatePassword();
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy(algorithm + " and hashIterations(2)");
+
+        // Another request changes the password and commits after the queued re-hash read the credential, before it
+        // writes the new hash
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE, username);
+            realm.setAttribute(PasswordChangingHashProviderFactory.PASSWORD_ATTRIBUTE, newPassword);
+            realm.setAttribute(PasswordChangingHashProviderFactory.BEFORE_COMMIT_ATTRIBUTE, Boolean.TRUE.toString());
+        });
+
+        // The failed re-hash must not fail the validating request
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+        });
+
+        // The re-hash of the old password must not overwrite the new password
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertNull(realm.getAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE), "Password must have been changed before the re-hash committed");
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
+            assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
+        });
+    }
+
+    @Test
+    public void testFederatedStoragePasswordChangedBeforeRehashCommitNotReverted() {
+        addNoCredentialUserStorage();
+
+        String algorithm = "hashAlgorithm(" + PasswordChangingHashProviderFactory.ID + ")";
+        setPasswordPolicy(algorithm + " and hashIterations(1)");
+
+        String username = NoCredentialUserStorageProvider.USERNAME_PREFIX + "password-changed-before-rehash-commit";
+        final String oldPassword = generatePassword();
+        final String newPassword = generatePassword();
+
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().updateCredential(UserCredentialModel.password(oldPassword)));
+        });
+
+        // The stored hash is now outdated, so validating the old password queues a re-hash of it
+        setPasswordPolicy(algorithm + " and hashIterations(2)");
+
+        // Another request changes the password and commits after the queued re-hash read the credential, before it
+        // writes the new hash
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            realm.setAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE, username);
+            realm.setAttribute(PasswordChangingHashProviderFactory.PASSWORD_ATTRIBUTE, newPassword);
+            realm.setAttribute(PasswordChangingHashProviderFactory.BEFORE_COMMIT_ATTRIBUTE, Boolean.TRUE.toString());
+        });
+
+        // The failed re-hash must not fail the validating request
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)));
+        });
+
+        // The re-hash of the old password must not overwrite the new password
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertNull(realm.getAttribute(PasswordChangingHashProviderFactory.USERNAME_ATTRIBUTE), "Password must have been changed before the re-hash committed");
             assertTrue(user.credentialManager().isValid(UserCredentialModel.password(newPassword)), "New password must be valid");
             assertFalse(user.credentialManager().isValid(UserCredentialModel.password(oldPassword)), "Old password must not be valid");
         });
@@ -563,6 +639,18 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         final String password = generatePassword();
         AdminApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), password);
         return password;
+    }
+
+    // A user storage provider that leaves the credentials of its users to Keycloak, which keeps them in the federated storage
+    private void addNoCredentialUserStorage() {
+        ComponentRepresentation provider = new ComponentRepresentation();
+        provider.setName("no-credential");
+        provider.setProviderId(NoCredentialUserStorageProviderFactory.PROVIDER_ID);
+        provider.setProviderType(UserStorageProvider.class.getName());
+        provider.setConfig(new MultivaluedHashMap<>());
+        try (Response response = managedRealm.admin().components().add(provider)) {
+            getCleanup().addComponentId(ApiUtil.getCreatedId(response));
+        }
     }
 
     private void setPasswordPolicy(String policy) {

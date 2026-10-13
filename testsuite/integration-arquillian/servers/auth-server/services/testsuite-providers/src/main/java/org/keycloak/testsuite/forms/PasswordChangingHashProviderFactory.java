@@ -21,6 +21,7 @@ import org.keycloak.credential.hash.AbstractPbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -34,6 +35,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * <p>
  * The change is configured with the realm attributes {@link #USERNAME_ATTRIBUTE} and {@link #PASSWORD_ATTRIBUTE}. It
  * happens once, when a password other than the configured one is hashed, and removes the attributes.
+ * <p>
+ * With the realm attribute {@link #BEFORE_COMMIT_ATTRIBUTE} set to {@code true}, the change happens when the transaction
+ * that hashed the password commits, before its own changes are written. This simulates a password change that commits
+ * after a re-hash read the credential and before it wrote the new hash.
  */
 public class PasswordChangingHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory {
 
@@ -41,6 +46,7 @@ public class PasswordChangingHashProviderFactory extends AbstractPbkdf2PasswordH
 
     public static final String USERNAME_ATTRIBUTE = "test.passwordChangingHash.username";
     public static final String PASSWORD_ATTRIBUTE = "test.passwordChangingHash.password";
+    public static final String BEFORE_COMMIT_ATTRIBUTE = "test.passwordChangingHash.beforeCommit";
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
@@ -64,10 +70,28 @@ public class PasswordChangingHashProviderFactory extends AbstractPbkdf2PasswordH
             return;
         }
 
+        if (Boolean.parseBoolean(realm.getAttribute(BEFORE_COMMIT_ATTRIBUTE))) {
+            session.getTransactionManager().enlistPrepare(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    changePassword(session, username, newPassword);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                }
+            });
+        } else {
+            changePassword(session, username, newPassword);
+        }
+    }
+
+    private static void changePassword(KeycloakSession session, String username, String newPassword) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), otherSession -> {
             RealmModel otherRealm = otherSession.getContext().getRealm();
             otherRealm.removeAttribute(USERNAME_ATTRIBUTE);
             otherRealm.removeAttribute(PASSWORD_ATTRIBUTE);
+            otherRealm.removeAttribute(BEFORE_COMMIT_ATTRIBUTE);
             UserModel user = otherSession.users().getUserByUsername(otherRealm, username);
             user.credentialManager().updateCredential(UserCredentialModel.password(newPassword));
         });

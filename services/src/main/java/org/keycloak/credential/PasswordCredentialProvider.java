@@ -341,16 +341,14 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         // The credential may have been changed after it was validated, e.g. by a password change in the same request
         // or by a concurrent request. Re-hashing the validated password would revert that change.
-        // Read it from the storage and not from the user cache, after the (slow) hashing.
+        // Read it from the storage and not from the user cache, after the (slow) hashing. The update below works on the
+        // same entity, so a change committed after this read fails it on the entity version (ModelException).
         CredentialModel current;
         if (StorageId.isLocalStorage(userId)) {
-            // The update below works on the same entity, so a change committed in between fails it on the entity
-            // version (ModelException).
             UserModel localUser = UserStoragePrivateUtil.userLocalStorage(s).getUserById(realm, userId);
             current = localUser != null ? localUser.credentialManager().getStoredCredentialById(passwordId) : null;
         } else {
-            // Credentials of users from a user storage provider are kept in the federated storage. Its entity has no
-            // version, so a change committed between this read and the update is not detected.
+            // Credentials of users from a user storage provider are kept in the federated storage.
             current = UserStorageUtil.userFederatedStorage(s).getStoredCredentialById(realm, userId, passwordId);
         }
         if (current == null || !Objects.equals(current.getSecretData(), validatedSecretData)) {
