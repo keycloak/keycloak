@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useAccess } from "../context/access/Access";
 import {
   ClientScope,
   allClientScopeTypes,
@@ -34,6 +35,7 @@ export const ChangeTypeDropdown = ({
   const [open, setOpen] = useState(false);
 
   const { addAlert, addError } = useAlerts();
+  const { hasAccess } = useAccess();
 
   return (
     <Select
@@ -43,7 +45,10 @@ export const ChangeTypeDropdown = ({
       toggle={(ref) => (
         <MenuToggle
           id="change-type-dropdown"
-          isDisabled={selectedRows.length === 0}
+          isDisabled={
+            selectedRows.length === 0 ||
+            (!clientId && !hasAccess("manage-realm"))
+          }
           ref={ref}
           onClick={() => setOpen(!open)}
           isExpanded={open}
