@@ -487,7 +487,9 @@ public class UserResource {
         auth.users().requireView(user);
         ClientModel client = realm.getClientById(clientUuid);
         if (client == null) {
-            throw new NotFoundException("Client not found");
+            // we do this to make sure somebody can't phish ids
+            if (auth.clients().canList()) throw new NotFoundException("Client not found");
+            else throw new ForbiddenException();
         }
         auth.clients().requireView(client);
         return new UserSessionManager(session).findOfflineSessionsStream(realm, user)

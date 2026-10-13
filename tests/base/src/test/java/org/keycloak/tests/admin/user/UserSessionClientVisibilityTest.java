@@ -197,6 +197,8 @@ public class UserSessionClientVisibilityTest {
         assertEquals(Set.of(visibleClientUuid), visible.get(0).getClients().keySet());
 
         assertThrows(ForbiddenException.class, () -> user.getOfflineSessions(hiddenClientUuid));
+        // an unknown client must look the same as a hidden one, so client ids cannot be probed
+        assertThrows(ForbiddenException.class, () -> user.getOfflineSessions(KeycloakModelUtils.generateId()));
     }
 
     @Test
@@ -205,6 +207,7 @@ public class UserSessionClientVisibilityTest {
 
         assertEquals(1, user.getOfflineSessions(visibleClientUuid).size());
         assertEquals(1, user.getOfflineSessions(hiddenClientUuid).size());
+        assertThrows(NotFoundException.class, () -> user.getOfflineSessions(KeycloakModelUtils.generateId()));
     }
 
     @Test
