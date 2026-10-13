@@ -57,6 +57,7 @@
 
     <modules>
         <module>licenses-processor</module>
+        <module>spotbugs-logging-plugin</module>
     </modules>
 
     <build>
