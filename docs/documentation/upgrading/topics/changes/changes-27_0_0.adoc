@@ -29,6 +29,7 @@ An OpenID Connect provider returning `email_verified=false`, or a user changing 
 
 Existing memberships, organizations without domains, and invitation-based membership are unaffected.
 If verification is completed in another browser or the original authentication session is lost, users must sign in through the identity provider again and follow the account-linking prompts.
+Local verification is preserved for a limited time on this retry with the same identity provider account and unchanged email address, including with `FORCE` synchronization.
 Identity provider mappers using `IMPORT` are not replayed during this retry.
 
 Custom identity providers that synchronize email outside `AbstractIdentityProvider` should implement `UserAuthenticationIdentityProvider.updateBrokeredEmail` to expose their email verification policy.

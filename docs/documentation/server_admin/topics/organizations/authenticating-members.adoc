@@ -116,6 +116,8 @@ For example, an OpenID Connect provider returning `email_verified=false` does no
 An email address changed during first-login profile review requires verification.
 These requirements apply equally to identity providers linked to one organization or shared by several organizations, and to both managed and unmanaged membership.
 If verification is completed in another browser or after the original authentication session is lost, sign in through the identity provider again and follow the account-linking prompts to complete onboarding.
+For the configured email-verification lifespan after confirmation, the next sign-in with the same identity provider account and unchanged email address preserves local verification, including with `FORCE` synchronization.
+If this temporary state expires or becomes unavailable, verification may be requested again. A different unverified email address still requires verification before domain-based membership is granted.
 This retry uses the configured mapper synchronization modes for an existing local account; `IMPORT` mappers are not replayed.
 
 === Step 5: Member assignment

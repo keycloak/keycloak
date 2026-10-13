@@ -18,7 +18,11 @@
 package org.keycloak.organization.authentication.authenticators.broker;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -28,14 +32,18 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -58,8 +66,6 @@ import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganiza
 public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthenticator {
 
     private static final Logger logger = Logger.getLogger(IdpAddOrganizationMemberAuthenticator.class);
-
-    public static final String VERIFY_ORGANIZATION_EMAIL = "VERIFY_ORGANIZATION_EMAIL";
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -109,6 +115,12 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
 
         OrganizationModel organization = Organizations.resolveOrganization(session);
         IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
+        String emailVerificationKey = getEmailVerificationKey(context, brokerContext);
+        if (emailVerificationKey != null && user.isEmailVerified() && user.getEmail().equalsIgnoreCase(brokerContext.getEmail())
+                && session.singleUseObjects().remove(emailVerificationKey) != null) {
+            // Preserve local verification on this onboarding retry, without changing normal IdP synchronization.
+            context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.BROKER_VERIFIED_EMAIL, user.getEmail());
+        }
         // Establish the same email/trust state that broker import would otherwise apply only after
         // this flow. Membership and organization group mappers must not run ahead of that decision.
         brokerContext.getIdp().updateBrokeredEmail(session, context.getRealm(), user, brokerContext);
@@ -125,7 +137,7 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
             if (!passesDomainGate(org, emailDomain)) continue;
 
             if (org.getDomains().findAny().isPresent() && !org.isMember(user) && !user.isEmailVerified()) {
-                verifyEmail(context, resendEmail);
+                verifyEmail(context, brokerContext, resendEmail);
                 return;
             }
 
@@ -143,10 +155,25 @@ public class IdpAddOrganizationMemberAuthenticator extends AbstractIdpAuthentica
         context.success();
     }
 
-    private void verifyEmail(AuthenticationFlowContext context, boolean resendEmail) {
+    private static String getEmailVerificationKey(AuthenticationFlowContext context, BrokeredIdentityContext brokerContext) {
+        String email = context.getUser().getEmail();
+        if (email == null || brokerContext.getId() == null || brokerContext.getId().isBlank()) {
+            return null;
+        }
+        // Encode each component so provider-controlled identifiers cannot collide with key separators.
+        String binding = Stream.of(context.getRealm().getId(), context.getUser().getId(),
+                        brokerContext.getIdpConfig().getInternalId(), brokerContext.getId(), email.toLowerCase(Locale.ROOT))
+                .map(value -> Base64Url.encode(value.getBytes(StandardCharsets.UTF_8)))
+                .collect(Collectors.joining("."));
+        // Bound the key length for the database-backed single-use object provider.
+        return "kc.org.broker.email.verified." + HashUtils.sha256UrlEncodedHash(binding, StandardCharsets.UTF_8);
+    }
+
+    private void verifyEmail(AuthenticationFlowContext context, BrokeredIdentityContext brokerContext, boolean resendEmail) {
         String action = UserModel.RequiredAction.VERIFY_EMAIL.name();
         KeycloakSession session = context.getSession();
-        context.getAuthenticationSession().setAuthNote(VERIFY_ORGANIZATION_EMAIL, context.getUser().getEmail());
+        context.getAuthenticationSession().setAuthNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION,
+                getEmailVerificationKey(context, brokerContext));
         RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(RequiredActionProvider.class, action);
         RequiredActionContextResult verification = new RequiredActionContextResult(context.getAuthenticationSession(),

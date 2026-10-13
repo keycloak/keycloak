@@ -24,7 +24,9 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -35,6 +37,8 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -48,9 +52,13 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
+import org.keycloak.testframework.ui.page.IdpLinkEmailPage;
+import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -112,6 +120,94 @@ public class OrganizationPostBrokerMembershipTest {
 
     @InjectPage
     VerifyEmailPage verifyEmailPage;
+
+    @InjectPage
+    ProceedPage proceedPage;
+
+    @InjectPage
+    InfoPage infoPage;
+
+    @InjectPage
+    IdpConfirmLinkPage confirmLinkPage;
+
+    @InjectPage
+    IdpLinkEmailPage linkEmailPage;
+
+    @Test
+    public void testForceSyncPreservesEmailVerifiedInAnotherBrowser() throws Exception {
+        OrganizationRepresentation org = setupUnverifiedEmailBroker();
+        UserRepresentation user = startForceSyncEmailVerification();
+
+        verifyEmailInAnotherBrowser();
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertIsNotMember(user.getId(), org.getId());
+
+        retryBrokerLoginAndLinkAccount(user);
+
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertTrue(oAuth.parseLoginResponse().isSuccess());
+        assertIsMemberWithType(user.getId(), org.getId(), MembershipType.MANAGED);
+        assertEquals(2, mail.getReceivedMessages().length, "Retry must not send another verification email");
+    }
+
+    @Test
+    public void testForceSyncPreservesEmailVerifiedAfterAuthenticationSessionRemoval() throws Exception {
+        OrganizationRepresentation org = setupUnverifiedEmailBroker();
+        UserRepresentation user = startForceSyncEmailVerification();
+
+        String cookie = driver.driver().manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
+        String realmId = consumerRealm.getId();
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            String rootId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(cookie);
+            RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+            assertNotNull(root);
+            session.authenticationSessions().removeRootAuthenticationSession(realm, root);
+        });
+
+        verifyEmailInAnotherBrowser();
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertIsNotMember(user.getId(), org.getId());
+
+        retryBrokerLoginAndLinkAccount(user);
+
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertTrue(oAuth.parseLoginResponse().isSuccess());
+        assertIsMemberWithType(user.getId(), org.getId(), MembershipType.MANAGED);
+        assertEquals(2, mail.getReceivedMessages().length, "Retry must not send another verification email");
+    }
+
+    @Test
+    public void testForceSyncRequiresVerificationWhenEmailChangesOnRetry() throws Exception {
+        OrganizationRepresentation org = setupUnverifiedEmailBroker();
+        UserRepresentation user = startForceSyncEmailVerification();
+
+        verifyEmailInAnotherBrowser();
+        assertTrue(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertIsNotMember(user.getId(), org.getId());
+
+        String changedEmail = "changed@acme.com";
+        UserRepresentation providerUser = providerRealm.admin().users().searchByUsername(user.getUsername(), true).get(0);
+        providerUser.setEmail(changedEmail);
+        providerRealm.admin().users().get(providerUser.getId()).update(providerUser);
+
+        retryBrokerLoginAndLinkAccount(user);
+
+        verifyEmailPage.assertCurrent();
+        assertFalse(consumerRealm.admin().users().get(user.getId()).toRepresentation().isEmailVerified());
+        assertIsNotMember(user.getId(), org.getId());
+        assertTrue(mail.waitForIncomingEmail(3));
+        var message = mail.getLastReceivedMessage();
+        assertEquals(changedEmail, MailUtils.getRecipient(message));
+        driver.open(MailUtils.getPasswordResetEmailLink(message));
+
+        UserRepresentation verifiedUser = consumerRealm.admin().users().get(user.getId()).toRepresentation();
+        assertEquals(changedEmail, verifiedUser.getEmail());
+        assertTrue(verifiedUser.isEmailVerified());
+        assertTrue(oAuth.parseLoginResponse().isSuccess());
+        assertIsMemberWithType(user.getId(), org.getId(), MembershipType.MANAGED);
+    }
 
     @Test
     public void testDomainMembershipRequiresVerificationWithRealmVerifyEmailDisabled() throws Exception {
@@ -560,6 +656,41 @@ public class OrganizationPostBrokerMembershipTest {
     }
 
     // ==================== Infrastructure helpers ====================
+
+    private UserRepresentation startForceSyncEmailVerification() {
+        consumerRealm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setTrustEmail(true);
+            idp.getConfig().put("syncMode", IdentityProviderSyncMode.FORCE.name());
+        });
+
+        UserRepresentation providerUser = providerRealm.admin().users().searchByUsername("alice", true).get(0);
+        String userId = loginViaBrokerWithIdpHint(IDP_ALIAS, providerUser.getUsername(), "password", providerUser.getEmail());
+        verifyEmailPage.assertCurrent();
+        return consumerRealm.admin().users().get(userId).toRepresentation();
+    }
+
+    private void verifyEmailInAnotherBrowser() throws Exception {
+        assertTrue(mail.waitForIncomingEmail(1));
+        String verificationLink = MailUtils.getPasswordResetEmailLink(mail.getLastReceivedMessage());
+
+        // Open the verification link without the original browser's cookies.
+        driver.cookies().deleteAll();
+        driver.open(verificationLink);
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+        infoPage.assertCurrent();
+    }
+
+    private void retryBrokerLoginAndLinkAccount(UserRepresentation user) throws Exception {
+        driver.cookies().deleteAll();
+        providerRealm.admin().logoutAll();
+        loginViaBrokerWithIdpHint(IDP_ALIAS, user.getUsername(), "password", user.getEmail());
+        confirmLinkPage.assertCurrent();
+        confirmLinkPage.clickLinkAccount();
+        linkEmailPage.assertCurrent();
+        assertTrue(mail.waitForIncomingEmail(2));
+        driver.open(MailUtils.getPasswordResetEmailLink(mail.getLastReceivedMessage()));
+    }
 
     private OrganizationRepresentation setupUnverifiedEmailBroker() {
         setupBroker(IDP_ALIAS);

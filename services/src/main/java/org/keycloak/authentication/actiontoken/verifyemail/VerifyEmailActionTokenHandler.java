@@ -16,6 +16,7 @@
  */
 package org.keycloak.authentication.actiontoken.verifyemail;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -40,7 +41,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.organization.authentication.authenticators.broker.IdpAddOrganizationMemberAuthenticator;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
@@ -135,12 +135,20 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
 
         event.success();
 
-        if (Objects.equals(user.getEmail(), authSession.getAuthNote(IdpAddOrganizationMemberAuthenticator.VERIFY_ORGANIZATION_EMAIL))
+        String organizationEmailVerification = token.getNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION);
+        if (organizationEmailVerification != null
+                && organizationEmailVerification.equals(authSession.getAuthNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION))
                 && authSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null
                 && LoginActionsService.FIRST_BROKER_LOGIN_PATH.equals(authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH))) {
-            authSession.removeAuthNote(IdpAddOrganizationMemberAuthenticator.VERIFY_ORGANIZATION_EMAIL);
+            authSession.removeAuthNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION);
             authSession.setAuthNote(AbstractIdentityProvider.BROKER_VERIFIED_EMAIL, user.getEmail());
             return tokenContext.brokerFlow(null, null, LoginActionsService.FIRST_BROKER_LOGIN_PATH);
+        }
+
+        if (organizationEmailVerification != null) {
+            // The signed token retains this binding even if the original broker authentication session is gone.
+            session.singleUseObjects().put(organizationEmailVerification,
+                    realm.getActionTokenGeneratedByUserLifespan(VerifyEmailActionToken.TOKEN_TYPE), Map.of());
         }
 
         String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
