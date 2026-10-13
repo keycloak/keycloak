@@ -1,5 +1,7 @@
 package org.keycloak.ssf.transmitter.delivery.push;
 
+import java.io.IOException;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
@@ -28,6 +30,8 @@ public class PushDeliveryService {
 
     private final SsfTransmitterConfig transmitterConfig;
 
+    private final boolean bypassesOutgoingProxy;
+
     public PushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
         // Resolve the shared HttpClient up front so push delivery can later
         // run on an async executor thread that has no live KeycloakSession
@@ -37,13 +41,21 @@ public class PushDeliveryService {
         this(session.getProvider(HttpClientProvider.class).getHttpClient(), transmitterConfig);
     }
 
-    /**
-     * @param httpClient client used for delivery, e.g. one that enforces the
-     *                   push SSRF deny policy at connection time
-     */
     public PushDeliveryService(HttpClient httpClient, SsfTransmitterConfig transmitterConfig) {
+        this(httpClient, transmitterConfig, false);
+    }
+
+    /**
+     * @param httpClient            client used for delivery, e.g. one that enforces the
+     *                              push SSRF deny policy at connection time
+     * @param bypassesOutgoingProxy whether {@code httpClient} connects directly although
+     *                              an outgoing proxy is configured; adds a hint to the
+     *                              log when a delivery cannot connect
+     */
+    public PushDeliveryService(HttpClient httpClient, SsfTransmitterConfig transmitterConfig, boolean bypassesOutgoingProxy) {
         this.httpClient = httpClient;
         this.transmitterConfig = transmitterConfig;
+        this.bypassesOutgoingProxy = bypassesOutgoingProxy;
     }
 
     /**
@@ -125,7 +137,14 @@ public class PushDeliveryService {
                 return PushDeliveryOutcome.delivered(status, endpointUrl);
             }
         } catch (Exception e) {
-            log.errorf(e, "Error delivering event jti=%s to url %s", eventToken.getJti(), endpointUrl);
+            if (bypassesOutgoingProxy && e instanceof IOException
+                    && !(e instanceof PrivateAddressDenyingDnsResolver.PrivateAddressException)) {
+                log.errorf(e, "Error delivering event jti=%s to url %s. Push delivery connects directly and does not"
+                        + " use the configured outgoing HTTP proxy; set the allow-insecure-push-targets SPI option"
+                        + " if the receiver is only reachable through the proxy", eventToken.getJti(), endpointUrl);
+            } else {
+                log.errorf(e, "Error delivering event jti=%s to url %s", eventToken.getJti(), endpointUrl);
+            }
             return PushDeliveryOutcome.transportFailure(e, endpointUrl);
         }
     }

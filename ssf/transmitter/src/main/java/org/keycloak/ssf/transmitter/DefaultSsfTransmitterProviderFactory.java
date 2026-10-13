@@ -184,6 +184,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      */
     protected volatile CloseableHttpClient pushHttpClient;
 
+    /**
+     * Whether an outgoing proxy is configured that {@link #pushHttpClient}
+     * bypasses. Set together with the client, before it is published.
+     */
+    protected boolean outgoingProxyConfigured;
+
 
     @Override
     public String getId() {
@@ -217,18 +223,46 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             // the shared client (with its proxy mappings) is used as is.
             return new PushDeliveryService(session, ctx.config());
         }
-        return new PushDeliveryService(getPushHttpClient(session), ctx.config());
+        CloseableHttpClient httpClient = getPushHttpClient(session);
+        return new PushDeliveryService(httpClient, ctx.config(), outgoingProxyConfigured);
     }
 
     protected CloseableHttpClient getPushHttpClient(KeycloakSession session) {
         if (pushHttpClient == null) {
             synchronized (this) {
                 if (pushHttpClient == null) {
+                    outgoingProxyConfigured = isOutgoingProxyConfigured();
+                    if (outgoingProxyConfigured) {
+                        log.info("An outgoing HTTP proxy is configured, but SSF push delivery connects to receivers"
+                                + " directly; set the allow-insecure-push-targets SPI option if receivers are only"
+                                + " reachable through the proxy");
+                    }
                     pushHttpClient = createPushHttpClient(session);
                 }
             }
         }
         return pushHttpClient;
+    }
+
+    /**
+     * Whether the default HTTP client routes requests through a proxy, from
+     * its {@code proxy-mappings} option or the proxy environment variables
+     * it falls back to. Push delivery ignores that proxy, so this only
+     * drives the hint logged when a delivery cannot connect.
+     */
+    protected boolean isOutgoingProxyConfigured() {
+        Config.Scope httpClientConfig = Config.scope("connectionsHttpClient", "default");
+        String[] proxyMappings = httpClientConfig == null ? null : httpClientConfig.getArray("proxy-mappings");
+        if (proxyMappings != null && proxyMappings.length > 0) {
+            return true;
+        }
+        for (String name : List.of("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY")) {
+            String value = System.getenv(name);
+            if (value != null && !value.isBlank()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
