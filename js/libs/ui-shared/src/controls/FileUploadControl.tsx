@@ -46,36 +46,52 @@ export const FileUploadControl = <
     defaultValue,
   });
 
+  // PatternFly exposes no props for the visible filename input. A callback ref
+  // keeps the ARIA state scoped to this instance and updates it on each render.
+  const associateError = (container: HTMLDivElement | null) => {
+    const input = container?.querySelector<HTMLInputElement>("input[readonly]");
+    input?.setAttribute("aria-invalid", String(!!fieldState.error));
+    if (fieldState.error) {
+      input?.setAttribute("aria-errormessage", `${props.id}-filename-error`);
+    } else {
+      input?.removeAttribute("aria-errormessage");
+    }
+  };
+
   return (
     <FormLabel
+      id={`${props.id}-filename`}
       name={props.name}
       label={props.label}
       labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
     >
-      <FileUpload
-        isRequired={required}
-        data-testid={props["data-testid"] || props.name}
-        filename={filename}
-        browseButtonText={t("browse")}
-        validated={
-          fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        hideDefaultPreview
-        isDisabled={props.isDisabled}
-        type="text"
-        onFileInputChange={(_, file) => {
-          field.onChange(file);
-          setFilename(file.name);
-        }}
-        onClearClick={() => {
-          field.onChange(null);
-          setFilename("");
-        }}
-        {...rest}
-        {...field}
-      />
+      <div ref={associateError}>
+        <FileUpload
+          isRequired={required}
+          data-testid={props["data-testid"] || props.name}
+          filename={filename}
+          browseButtonText={t("browse")}
+          validated={
+            fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
+          }
+          hideDefaultPreview
+          isDisabled={props.isDisabled}
+          type="text"
+          onFileInputChange={(_, file) => {
+            field.onChange(file);
+            setFilename(file.name);
+          }}
+          onClearClick={() => {
+            field.onChange(null);
+            setFilename("");
+          }}
+          {...rest}
+          {...field}
+          filenameAriaLabel={props.filenameAriaLabel ?? props.label}
+        />
+      </div>
     </FormLabel>
   );
 };
