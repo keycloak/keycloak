@@ -791,7 +791,7 @@ public class RealmAdminResource {
             for (Map.Entry<String, Long> entry : activeCount.entrySet()) {
                 Map<String, String> map = new HashMap<>();
                 ClientModel client = realm.getClientById(entry.getKey());
-                if (client == null)
+                if (client == null || !auth.clients().canView(client))
                     continue;
                 map.put("id", client.getId());
                 map.put("clientId", client.getClientId());
@@ -807,7 +807,7 @@ public class RealmAdminResource {
                 if (map == null) {
                     map = new HashMap<>();
                     ClientModel client = realm.getClientById(entry.getKey());
-                    if (client == null)
+                    if (client == null || !auth.clients().canView(client))
                         continue;
                     map.put("id", client.getId());
                     map.put("clientId", client.getClientId());
