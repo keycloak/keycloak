@@ -200,6 +200,8 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
+        WaitUtils.waitForPageToLoad();
+
         errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
@@ -263,6 +265,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         oauth.openLoginForm();
 
         logInWithBroker(bc);
+
+        WaitUtils.waitForPageToLoad();
+
         errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
@@ -575,6 +580,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         idpRep.setEnabled(false);
         identityProviderResource.update(idpRep);
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        WaitUtils.waitForPageToLoad();
+
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), is("Page not found"));
     }
