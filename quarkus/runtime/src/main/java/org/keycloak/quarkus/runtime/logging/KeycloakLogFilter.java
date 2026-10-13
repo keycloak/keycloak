@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -139,7 +140,8 @@ public abstract class KeycloakLogFilter implements Filter {
             return false;
         }
 
-        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+        // The profile is null when records are filtered asynchronously after a failed startup has reset it
+        if (Profile.getInstance() != null && MultiSiteUtils.isPersistentSessionsEnabled()) {
             // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
             // https://github.com/keycloak/keycloak/issues/39816
             if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.infinispan.CLUSTER") && ISPN000312_PATTERN.matcher(record.getMessage()).matches()) {
