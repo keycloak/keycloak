@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -45,6 +46,8 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
 
     private static final Logger logger = Logger.getLogger(DummyUserFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "dummy";
+
+    public static final String SYNC_DELAY_SECONDS = "syncDelaySeconds";
 
     private AtomicInteger fullSyncCounter = new AtomicInteger();
     private AtomicInteger changedSyncCounter = new AtomicInteger();
@@ -88,6 +91,7 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         logger.info("syncAllUsers invoked");
         fullSyncCounter.incrementAndGet();
+        simulateSyncDuration(model);
         return SynchronizationResult.empty();
     }
 
@@ -95,7 +99,15 @@ public class DummyUserFederationProviderFactory implements UserStorageProviderFa
     public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         logger.info("syncChangedUsers invoked");
         changedSyncCounter.incrementAndGet();
+        simulateSyncDuration(model);
         return SynchronizationResult.empty();
+    }
+
+    private void simulateSyncDuration(UserStorageProviderModel model) {
+        int delay = model.get(SYNC_DELAY_SECONDS, 0);
+        if (delay > 0) {
+            Time.setOffset(Time.getOffset() + delay);
+        }
     }
 
     public int getFullSyncCounter() {
