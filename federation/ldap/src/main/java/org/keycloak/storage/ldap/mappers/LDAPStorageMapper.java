@@ -19,7 +19,7 @@ package org.keycloak.storage.ldap.mappers;
 
 import java.util.List;
 import java.util.Set;
-import javax.naming.AuthenticationException;
+import javax.naming.NamingException;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -127,7 +127,7 @@ public interface LDAPStorageMapper extends Provider {
      * @param ldapException
      * @return true if mapper processed the AuthenticationException and did some actions based on that. In that case, AuthenticationException won't be rethrown!
      */
-    boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm);
+    boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, NamingException ldapException, RealmModel realm);
 
     /**
      * Gets the ldap provider associated to the mapper.
