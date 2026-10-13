@@ -16,6 +16,18 @@
  */
 package org.keycloak.saml.processing.api.saml.v2.sig;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.dsig.DigestMethod;
+import javax.xml.crypto.dsig.SignatureMethod;
+import javax.xml.crypto.dsig.XMLSignatureException;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -23,20 +35,11 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.SignatureUtilTransferObject;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import javax.xml.crypto.MarshalException;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.SignatureMethod;
-import javax.xml.crypto.dsig.XMLSignatureException;
-import javax.xml.parsers.ParserConfigurationException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-import org.keycloak.rotation.KeyLocator;
 
 /**
  * Class that deals with SAML2 Signature
@@ -209,11 +212,12 @@ public class SAML2Signature {
         // Estabilish the IDness of the ID attribute.
         configureIdAttribute(document.getDocumentElement());
 
-        NodeList nodes = document.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                JBossSAMLConstants.ASSERTION.get());
-
-        for (int i = 0; i < nodes.getLength(); i++) {
-            configureIdAttribute((Element) nodes.item(i));
+        for (JBossSAMLConstants protocolElement : Stream.concat(Stream.of(JBossSAMLConstants.ASSERTION), JBossSAMLConstants.ARTIFACT_SIGNED_ELEMENTS.stream())
+                .collect(Collectors.toSet())) {
+            NodeList protocolNodes = document.getElementsByTagNameNS(protocolElement.getNsUri().get(), protocolElement.get());
+            for (int i = 0; i < protocolNodes.getLength(); i++) {
+                configureIdAttribute((Element) protocolNodes.item(i));
+            }
         }
     }
     

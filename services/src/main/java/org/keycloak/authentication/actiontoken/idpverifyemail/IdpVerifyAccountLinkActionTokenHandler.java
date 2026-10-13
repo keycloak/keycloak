@@ -16,38 +16,47 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
-import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.actiontoken.*;
+import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
-import org.keycloak.events.*;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.Urls;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.util.Collections;
-import java.util.stream.Stream;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
+import org.jboss.logging.Logger;
 
 /**
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
 public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHandler<IdpVerifyAccountLinkActionToken> {
+
+    private static final Logger logger = Logger.getLogger(IdpVerifyAccountLinkActionTokenHandler.class);
 
     public IdpVerifyAccountLinkActionTokenHandler() {
         super(
@@ -57,6 +66,18 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
           EventType.IDENTITY_PROVIDER_LINK_ACCOUNT,
           Errors.INVALID_TOKEN
         );
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        // Revoke any outstanding cross-browser account-link proof whenever a federated identity is removed.
+        // Every removal path (Account console, Admin API, broker unlink step) funnels through
+        // UserProvider#removeFederatedIdentity, which fires this event synchronously within the transaction.
+        factory.register(event -> {
+            if (event instanceof FederatedIdentityModel.FederatedIdentityRemovedEvent removed) {
+                clearUserVerified(removed.getKeycloakSession(), removed.getUser(), removed.getFederatedIdentity());
+            }
+        });
     }
 
     @Override
@@ -81,37 +102,40 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
-        if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
-            event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(session.getContext().getAuthenticationSession())
-                    .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
-                    .createInfoPage();
+        if (authSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+            return sendLinkConfirmedAlready(session, event, user, token);
         }
 
-        event.success();
+        AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
 
         if (tokenContext.isAuthenticationSessionFresh()) {
+            AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getCompoundAuthenticationSessionId());
+            ClientModel originalClient = realm.getClientById(compoundId.getClientUUID());
+            AuthenticationSessionModel origAuthSession = asm.getAuthenticationSessionByIdAndClient(realm,
+                    compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
+            if (origAuthSession == null || origAuthSession.getAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME) != null) {
+                return sendLinkConfirmedAlready(session, event, user, token);
+            }
+
             token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
 
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
             UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                    authSession.getClient().getClientId(), authSession.getTabId());
+                    authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            return forms.setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias()))
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }
 
-        // verify user email as we know it is valid as this entry point would never have gotten here.
-        user.setEmailVerified(true);
+        event.success();
 
         if (token.getOriginalCompoundAuthenticationSessionId() != null) {
-            AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(realm, authSession, true);
 
             AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getOriginalCompoundAuthenticationSessionId());
@@ -120,16 +144,14 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
-            } else {
-
-                session.authenticationSessions().updateNonlocalSessionAuthNotes(
-                        compoundId,
-                  Collections.singletonMap(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername())
-                );
+                authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_CROSS_BROWSER, Boolean.TRUE.toString());
             }
+
+            setUserVerifiedSingleObject(token, realm, session, user);
 
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
@@ -140,8 +162,71 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
 
-    private boolean isVerifyEmailActionSet(UserModel user, AuthenticationSessionModel authSession) {
-        return Stream.concat(user.getRequiredActionsStream(), authSession.getRequiredActions().stream())
-                .anyMatch(RequiredAction.VERIFY_EMAIL.name()::equals);
+    private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
+        String externalId = token.getExternalId();
+        if (externalId == null || externalId.isBlank()) {
+            logger.warnf("Not storing email verification proof for user '%s' and identity provider '%s' because the external id is missing.",
+                    user.getId(), token.getIdentityProviderAlias());
+            return;
+        }
+        int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
+        String userId = user.getId();
+        String idpAlias = token.getIdentityProviderAlias();
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, externalId), singleObjectLifespan, Map.of());
+    }
+
+    /**
+     * If a cross-browser account-link proof exists for this federated identity, remove it. Proofs are
+     * keyed by the persisted federated user id ({@link FederatedIdentityModel#getUserId()}).
+     */
+    private static void clearUserVerified(KeycloakSession session, UserModel user, String idpAlias, String federatedUserId) {
+        if (session == null || user == null || idpAlias == null || federatedUserId == null) {
+            return;
+        }
+        session.singleUseObjects().remove(getUserVerifiedSingleObjectKey(user.getId(), idpAlias, federatedUserId));
+    }
+
+    /**
+     * Atomically consume the cross-browser account-link proof and run {@code runnable} only if this
+     * caller won the consume. Returns {@code false} if no proof was present (already consumed or never created).
+     */
+    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String federatedUserId, Runnable runnable) {
+        if (user == null) {
+            return false;
+        }
+
+        if (federatedUserId == null || federatedUserId.isBlank()) {
+            return false;
+        }
+
+        SingleUseObjectProvider singleObjects = session.singleUseObjects();
+        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), federatedUserId);
+        boolean isUserVerified = singleObjects.remove(singleObjectKey) != null;
+
+        if (isUserVerified) {
+            runnable.run();
+        }
+
+        return isUserVerified;
+    }
+
+    static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+        return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
+    }
+
+    private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {
+        event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
+        return session.getProvider(LoginFormsProvider.class)
+                .setAuthenticationSession(session.getContext().getAuthenticationSession())
+                .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                .createInfoPage();
+    }
+
+    private void clearUserVerified(KeycloakSession session, UserModel user, FederatedIdentityModel link) {
+        if (link == null) {
+            return;
+        }
+        clearUserVerified(session, user, link.getIdentityProvider(), link.getUserId());
     }
 }

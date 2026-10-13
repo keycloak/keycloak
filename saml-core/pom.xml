@@ -28,9 +28,11 @@
 
     <artifactId>keycloak-saml-core</artifactId>
     <name>Keycloak SAML Core</name>
-    <description/>
+    <description>Keycloak SAML Core</description>
 
     <properties>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.security-manager.tests>true</skip.security-manager.tests>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>

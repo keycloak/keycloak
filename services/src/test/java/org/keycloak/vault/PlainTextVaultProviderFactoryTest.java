@@ -1,17 +1,19 @@
 package org.keycloak.vault;
 
+import java.util.Set;
+
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-
-import java.util.Set;
 
 /**
  * Tests for {@link FilesPlainTextVaultProviderFactory}.
@@ -27,7 +29,7 @@ public class PlainTextVaultProviderFactoryTest {
     public void shouldInitializeVaultCorrectly() {
         //given
         VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString());
-        KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+        KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
         FilesPlainTextVaultProviderFactory factory = new FilesPlainTextVaultProviderFactory() {
             @Override
             protected String getRealmName(KeycloakSession session) {
@@ -134,6 +136,11 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public Set<String> getPropertyNames() {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+        @Override
+        public Scope root() {
             throw new UnsupportedOperationException("not implemented");
         }
     }

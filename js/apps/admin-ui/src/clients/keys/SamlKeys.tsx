@@ -1,5 +1,11 @@
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import {
+  FormPanel,
+  HelpItem,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -16,14 +22,10 @@ import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
 import { Certificate } from "./Certificate";
@@ -36,19 +38,38 @@ type SamlKeysProps = {
   save: () => void;
 };
 
+type KeyMapping = {
+  name: string;
+  title: string;
+  key: string;
+  regenerateKey: string;
+  relatedKeys: string[];
+};
+
 const KEYS = ["saml.signing", "saml.encryption"] as const;
 export type KeyTypes = (typeof KEYS)[number];
 
-const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
+const KEYS_MAPPING: { [key in KeyTypes]: KeyMapping } = {
   "saml.signing": {
     name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
+    regenerateKey: "reGenerateSigning",
+    relatedKeys: [],
   },
   "saml.encryption": {
     name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
+    regenerateKey: "reGenerateEncryption",
+    relatedKeys: [
+      convertAttributeNameToForm("attributes.saml.encryption.algorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.keyAlgorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.digestMethod"),
+      convertAttributeNameToForm(
+        "attributes.saml.encryption.maskGenerationFunction",
+      ),
+    ],
   },
 };
 
@@ -59,6 +80,7 @@ type KeySectionProps = {
   onChanged: (key: KeyTypes) => void;
   onGenerate: (key: KeyTypes, regenerate: boolean) => void;
   onImport: (key: KeyTypes) => void;
+  save: () => void;
 };
 
 const KeySection = ({
@@ -68,6 +90,7 @@ const KeySection = ({
   onChanged,
   onGenerate,
   onImport,
+  save,
 }: KeySectionProps) => {
   const { t } = useTranslation();
   const { control, watch } = useFormContext<FormFields>();
@@ -78,6 +101,14 @@ const KeySection = ({
   const [showImportDialog, toggleImportDialog] = useToggle();
 
   const section = watch(name as keyof FormFields);
+
+  const useMetadataDescriptorUrl = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.saml.useMetadataDescriptorUrl",
+    ),
+    "false",
+  );
+
   return (
     <>
       {showImportDialog && (
@@ -88,7 +119,7 @@ const KeySection = ({
         />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
-        <TextContent className="pf-u-pb-lg">
+        <TextContent className="pf-v5-u-pb-lg">
           <Text>{t(`${title}Explain`)}</Text>
         </TextContent>
         <FormAccess role="manage-clients" isHorizontal>
@@ -111,9 +142,12 @@ const KeySection = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     const v = value.toString();
-                    if (v === "true") {
+                    if (v === "true" && useMetadataDescriptorUrl === "true") {
+                      field.onChange(v);
+                      save();
+                    } else if (v === "true") {
                       onChanged(attr);
                       field.onChange(v);
                     } else {
@@ -127,34 +161,41 @@ const KeySection = ({
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      {keyInfo?.certificate && section === "true" && (
-        <Card isFlat>
-          <CardBody className="kc-form-panel__body">
-            <Form isHorizontal>
-              <Certificate keyInfo={keyInfo} />
-              <ActionGroup>
-                <Button
-                  variant="secondary"
-                  onClick={() => onGenerate(attr, true)}
-                >
-                  {t("regenerate")}
-                </Button>
-                <Button variant="secondary" onClick={() => onImport(attr)}>
-                  {t("importKey")}
-                </Button>
-                <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("export")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </CardBody>
-        </Card>
-      )}
+      {useMetadataDescriptorUrl !== "true" &&
+        keyInfo?.certificate &&
+        section === "true" && (
+          <Card isFlat>
+            <CardBody className="kc-form-panel__body">
+              <Form isHorizontal>
+                <Certificate
+                  helpTextKey={`saml${key}CertificateHelp`}
+                  keyInfo={keyInfo}
+                />
+                <ActionGroup>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onGenerate(attr, true)}
+                  >
+                    {t("regenerate")}
+                  </Button>
+                  <Button variant="secondary" onClick={() => onImport(attr)}>
+                    {t("importKey")}
+                  </Button>
+                  <Button variant="tertiary" onClick={toggleImportDialog}>
+                    {t("export")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </CardBody>
+          </Card>
+        )}
     </>
   );
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();
@@ -179,19 +220,26 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const generate = async (attr: KeyTypes) => {
     const index = KEYS.indexOf(attr);
     try {
-      const info = [...(keyInfo || [])];
-      info[index] = await adminClient.clients.generateKey({
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      const generatedKey = await adminClient.clients.generateKey({
         id: clientId,
         attr,
       });
 
-      setKeyInfo(info);
       saveAs(
-        new Blob([info[index].privateKey!], {
+        new Blob([generatedKey.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+
+      const serverInfo = await adminClient.clients.getKeyInfo({
+        id: clientId,
+        attr,
+      });
+      const info = [...(keyInfo || [])];
+      info[index] = serverInfo;
+      setKeyInfo(info);
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -211,17 +259,23 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
+      for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+        setValue(key, ""); // remove related attributes when disabled
+      }
       save();
     },
   });
 
+  const regenerateKey = selectedType
+    ? KEYS_MAPPING[selectedType].regenerateKey
+    : "";
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "reGenerateSigning",
-    messageKey: "reGenerateSigningExplain",
+    titleKey: regenerateKey,
+    messageKey: regenerateKey + "Explain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
-    onConfirm: () => {
-      generate(selectedType!);
+    onConfirm: async () => {
+      await generate(selectedType!);
     },
   });
 
@@ -231,8 +285,12 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         <SamlKeysDialog
           id={clientId}
           attr={isChanged}
+          localeKey={key}
           onClose={() => {
             setIsChanged(undefined);
+            for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+              setValue(key, ""); // take defaults when enabled
+            }
             save();
             setRefresh(refresh + 1);
           }}
@@ -251,13 +309,17 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               id={clientId}
               attr={attr}
               onClose={() => setImportOpen(undefined)}
+              onImported={() => setRefresh(refresh + 1)}
             />
           )}
           <KeySection
             clientId={clientId}
             keyInfo={keyInfo?.[index]}
             attr={attr}
-            onChanged={setIsChanged}
+            onChanged={(type) => {
+              setIsChanged(type);
+              setSelectedType(type);
+            }}
             onGenerate={(type, isNew) => {
               setSelectedType(type);
               if (!isNew) {
@@ -267,6 +329,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               }
             }}
             onImport={() => setImportOpen(attr)}
+            save={save}
           />
         </Fragment>
       ))}

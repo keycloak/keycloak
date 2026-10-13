@@ -36,7 +36,8 @@ import jakarta.persistence.Table;
         @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScopeId from ClientScopeClientMappingEntity m where m.clientId = :clientId and m.defaultScope = :defaultScope"),
         @NamedQuery(name="deleteClientScopeClientMapping", query="delete from ClientScopeClientMappingEntity where clientId = :clientId and clientScopeId = :clientScopeId"),
         @NamedQuery(name="deleteClientScopeClientMappingByClient", query="delete from ClientScopeClientMappingEntity where clientId = :clientId"),
-        @NamedQuery(name="deleteClientScopeClientMappingByClientScope", query="delete from ClientScopeClientMappingEntity where clientScopeId = :clientScopeId")
+        @NamedQuery(name="deleteClientScopeClientMappingByClientScope", query="delete from ClientScopeClientMappingEntity where clientScopeId = :clientScopeId"),
+        @NamedQuery(name="addClientScopeToAllClients", query="insert into ClientScopeClientMappingEntity (clientScopeId, defaultScope, clientId) select :clientScopeId, :defaultScope, client.id from ClientEntity client where client.realmId = :realmId and client.bearerOnly <> true and client.protocol = :clientProtocol")
 })
 @Entity
 @Table(name="CLIENT_SCOPE_CLIENT")

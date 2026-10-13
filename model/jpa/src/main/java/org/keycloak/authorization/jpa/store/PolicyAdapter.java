@@ -16,6 +16,14 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
@@ -28,13 +36,6 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
-
-import jakarta.persistence.EntityManager;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -153,7 +154,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     @Override
@@ -170,7 +171,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
         Set<Resource> set = new HashSet<>();
         ResourceServer resourceServer = getResourceServer();
         for (ResourceEntity res : entity.getResources()) {
-            set.add(storeFactory.getResourceStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, res.getId()));
+            set.add(storeFactory.getResourceStore().findById(resourceServer, res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }
@@ -180,7 +181,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
         Set<Scope> set = new HashSet<>();
         ResourceServer resourceServer = getResourceServer();
         for (ScopeEntity res : entity.getScopes()) {
-            set.add(storeFactory.getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, res.getId()));
+            set.add(storeFactory.getScopeStore().findById(resourceServer, res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }

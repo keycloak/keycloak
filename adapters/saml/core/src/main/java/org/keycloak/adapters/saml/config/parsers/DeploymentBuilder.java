@@ -17,37 +17,37 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.jboss.logging.Logger;
-import org.keycloak.adapters.saml.DefaultSamlDeployment;
-import org.keycloak.adapters.saml.RoleMappingsProviderUtils;
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.config.IDP;
-import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
-import org.keycloak.adapters.saml.config.SP;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.exceptions.ParsingException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.HashSet;
-import java.util.Set;
-import org.keycloak.adapters.cloned.HttpClientBuilder;
-import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.adapters.cloned.HttpClientBuilder;
+import org.keycloak.adapters.saml.DefaultSamlDeployment;
+import org.keycloak.adapters.saml.RoleMappingsProviderUtils;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.config.IDP;
+import org.keycloak.adapters.saml.config.Key;
+import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
+import org.keycloak.adapters.saml.config.PemUtils;
+import org.keycloak.adapters.saml.config.SP;
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.exceptions.ParsingException;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +58,6 @@ public class DeploymentBuilder {
     protected static Logger log = Logger.getLogger(DeploymentBuilder.class);
 
     public SamlDeployment build(InputStream xml, ResourceLoader resourceLoader) throws ParsingException {
-        CryptoIntegration.init(DeploymentBuilder.class.getClassLoader());
         DefaultSamlDeployment deployment = new DefaultSamlDeployment();
         DefaultSamlDeployment.DefaultIDP defaultIDP = new DefaultSamlDeployment.DefaultIDP();
         DefaultSamlDeployment.DefaultSingleSignOnService sso = new DefaultSamlDeployment.DefaultSingleSignOnService();
@@ -73,7 +72,7 @@ public class DeploymentBuilder {
         try {
             URI.create(sp.getEntityID());
         } catch (IllegalArgumentException ex) {
-            log.warnf("Entity ID is not an URI, assertion that restricts audience will fail. Update Entity ID to be URI.", sp.getEntityID());
+            log.warnf("Entity ID '%s' is not an URI, assertion that restricts audience will fail. Update Entity ID to be URI.", sp.getEntityID());
         }
         deployment.setForceAuthentication(sp.isForceAuthentication());
         deployment.setIsPassive(sp.isIsPassive());

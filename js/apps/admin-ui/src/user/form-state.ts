@@ -8,7 +8,7 @@ import { beerify, debeerify } from "../util";
 
 export type UserFormFields = Omit<
   UIUserRepresentation,
-  "attributes" | "userProfileMetadata | unmanagedAttributes"
+  "attributes" | "userProfileMetadata" | "unmanagedAttributes"
 > & {
   attributes?: KeyValueType[] | Record<string, string | string[]>;
   unmanagedAttributes?: KeyValueType[] | Record<string, string | string[]>;
@@ -45,7 +45,7 @@ export function toUserRepresentation(
     : data.unmanagedAttributes;
 
   for (const key in unmanagedAttributes) {
-    if (attributes && Object.hasOwn(attributes, key)) {
+    if (Object.hasOwn(attributes, key)) {
       throw Error(
         `Attribute ${key} is a managed attribute and is already available from the user details.`,
       );

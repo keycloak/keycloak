@@ -1,14 +1,13 @@
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { KeycloakDataTable, useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../utils/useFetch";
+import { useAdminClient } from "../admin-client";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { translationFormatter } from "../utils/translationFormatter";
 
 type ClientProfile = ClientProfileRepresentation & {
   global: boolean;
@@ -32,6 +31,8 @@ export type AddClientProfileModalProps = {
 };
 
 export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
 
@@ -45,6 +46,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
     (allProfiles) => {
       const globalProfiles = allProfiles.globalProfiles?.map(
         (globalProfiles) => ({
+          id: globalProfiles.name,
           ...globalProfiles,
           global: true,
         }),
@@ -115,7 +117,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
           },
           {
             name: "description",
-            displayKey: "description",
+            cellFormatters: [translationFormatter(t)],
           },
         ]}
         emptyState={

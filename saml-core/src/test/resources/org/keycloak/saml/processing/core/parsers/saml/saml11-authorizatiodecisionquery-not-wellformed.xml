@@ -1,0 +1,24 @@
+<samlp:Request
+    xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol"
+    xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
+    MajorVersion="1" MinorVersion="1"
+    RequestID="authz-query-123"
+    IssueInstant="2026-04-30T10:00:00Z">
+
+    <samlp:AuthorizationDecisionQuery>
+        <!-- Subject being queried -->
+        <saml:Subject>
+            <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
+                user@example.com
+            </saml:NameIdentifier>
+        </saml:Subject>   problematic text
+
+        <saml:Resource>https://example.com</saml:Resource>
+
+        <!-- Action allowed -->
+        <saml:Action Namespace="urn:oasis:names:tc:SAML:1.0:action:rwedc-admin">
+            Read
+        </saml:Action>
+
+    </samlp:AuthorizationDecisionQuery>
+</samlp:Request>

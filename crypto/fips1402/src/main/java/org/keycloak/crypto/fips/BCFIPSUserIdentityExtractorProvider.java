@@ -18,6 +18,20 @@
 
 package org.keycloak.crypto.fips;
 
+import java.io.ByteArrayInputStream;
+import java.security.Principal;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
+import org.keycloak.common.crypto.UserIdentityExtractor;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -30,19 +44,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.jboss.logging.Logger;
-import org.keycloak.common.crypto.UserIdentityExtractor;
-import org.keycloak.common.crypto.UserIdentityExtractorProvider;
-
-import java.io.ByteArrayInputStream;
-import java.security.Principal;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -58,7 +59,7 @@ public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorP
 
         private ASN1ObjectIdentifier x500NameStyle;
         Function<X509Certificate[],Principal> x500Name;
-        
+
         public X500NameRDNExtractorBCProvider(String attrName, Function<X509Certificate[], Principal> x500Name) {
             this.x500NameStyle = BCStyle.INSTANCE.attrNameToOID(attrName);
             this.x500Name = x500Name;
@@ -71,23 +72,21 @@ public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorP
                 throw new IllegalArgumentException();
 
             X500Name name = new X500Name(x500Name.apply(certs).getName());
-            if (name != null) {
-                RDN[] rnds = name.getRDNs(x500NameStyle);
-                if (rnds != null && rnds.length > 0) {
-                    RDN cn = rnds[0];
-                    if(cn.isMultiValued()){
-                        AttributeTypeAndValue[] attributeTypeAndValues = cn.getTypesAndValues();
-                        Optional<AttributeTypeAndValue> optionalFirst = Arrays.stream(attributeTypeAndValues).filter(attributeTypeAndValue -> attributeTypeAndValue.getType().getId().equals(x500NameStyle.getId())).findFirst();
-                        if(optionalFirst.isPresent()) {
-                            return IETFUtils.valueToString(optionalFirst.get().getValue());
-                        }
-                        else {
-                            return null;
-                        }
+            RDN[] rnds = name.getRDNs(x500NameStyle);
+            if (rnds != null && rnds.length > 0) {
+                RDN cn = rnds[0];
+                if(cn.isMultiValued()){
+                    AttributeTypeAndValue[] attributeTypeAndValues = cn.getTypesAndValues();
+                    Optional<AttributeTypeAndValue> optionalFirst = Arrays.stream(attributeTypeAndValues).filter(attributeTypeAndValue -> attributeTypeAndValue.getType().getId().equals(x500NameStyle.getId())).findFirst();
+                    if(optionalFirst.isPresent()) {
+                        return IETFUtils.valueToString(optionalFirst.get().getValue());
                     }
                     else {
-                        return IETFUtils.valueToString(cn.getFirst().getValue());
+                        return null;
                     }
+                }
+                else {
+                    return IETFUtils.valueToString(cn.getFirst().getValue());
                 }
             }
             return null;
@@ -147,34 +146,41 @@ public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorP
                                 return obj;
                             }
 
-                            byte[] otherNameBytes = (byte[]) obj;
+                            // From Java 21, the 3rd entry can be present with the type-id as String and 4th entry with the value (either in String or byte format).
+                            // See javadoc of X509Certificate.getSubjectAlternativeNames in Java 21. For the sake of simplicity, we just ignore those additional String entries and
+                            // always parse it from byte (2nd entry) as we still need to support Java 17 and it is not reliable anyway that entries are present in Java 21.
+                            if (obj instanceof byte[]) {
+                                byte[] otherNameBytes = (byte[]) obj;
 
-                            try {
-                                ASN1InputStream asn1Stream = new ASN1InputStream(new ByteArrayInputStream(otherNameBytes));
-                                ASN1Encodable asn1otherName = asn1Stream.readObject();
-                                asn1otherName = unwrap(asn1otherName);
+                                try {
+                                    ASN1InputStream asn1Stream = new ASN1InputStream(new ByteArrayInputStream(otherNameBytes));
+                                    ASN1Encodable asn1otherName = asn1Stream.readObject();
+                                    asn1otherName = unwrap(asn1otherName);
 
-                                ASN1Sequence asn1Sequence = ASN1Sequence.getInstance(asn1otherName);
+                                    ASN1Sequence asn1Sequence = ASN1Sequence.getInstance(asn1otherName);
 
-                                if (asn1Sequence != null) {
-                                    ASN1Encodable encodedOid = asn1Sequence.getObjectAt(0);
-                                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(unwrap(encodedOid));
-                                    tempOid = oid.getId();
+                                    if (asn1Sequence != null) {
+                                        ASN1Encodable encodedOid = asn1Sequence.getObjectAt(0);
+                                        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(unwrap(encodedOid));
+                                        tempOid = oid.getId();
 
-                                    ASN1Encodable principalNameEncoded = asn1Sequence.getObjectAt(1);
-                                    DERUTF8String principalName = DERUTF8String.getInstance(unwrap(principalNameEncoded));
+                                        ASN1Encodable principalNameEncoded = asn1Sequence.getObjectAt(1);
+                                        DERUTF8String principalName = DERUTF8String.getInstance(unwrap(principalNameEncoded));
 
-                                    tempOtherName = principalName.getString();
+                                        tempOtherName = principalName.getString();
 
-                                    // We found UPN among the 'otherName' principal. We don't need to look other
-                                    if (UPN_OID.equals(tempOid)) {
-                                        foundUpn = true;
-                                        break;
+                                        // We found UPN among the 'otherName' principal. We don't need to look other
+                                        if (UPN_OID.equals(tempOid)) {
+                                            foundUpn = true;
+                                            break;
+                                        }
                                     }
-                                }
 
-                            } catch (Exception e) {
-                                logger.error("Failed to parse subjectAltName", e);
+                                } catch (Exception e) {
+                                    logger.error("Failed to parse subjectAltName", e);
+                                }
+                            } else {
+                                logger.tracef("Ignoring the Subject alternative name entry. Entry number: %d, value: %s", i + 1, obj);
                             }
                         }
 

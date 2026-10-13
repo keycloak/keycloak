@@ -1,32 +1,45 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
+import {
+  useEnvironment,
+  type FallbackProps,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
-  AlertActionCloseButton,
   AlertActionLink,
   AlertVariant,
   PageSection,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
-import { type FallbackProps } from "../../context/ErrorBoundary";
-
 export const ErrorRenderer = ({ error }: FallbackProps) => {
+  const { keycloak } = useEnvironment();
   const { t } = useTranslation();
+  const isPermissionError =
+    error instanceof NetworkError && error.response.status === 403;
 
-  const reset = () => {
-    window.location.href = window.location.origin + window.location.pathname;
-  };
+  let message;
+  if (isPermissionError) {
+    message = t("forbiddenAdminConsole");
+  } else {
+    message = error.message;
+  }
 
   return (
     <PageSection>
       <Alert
         isInline
         variant={AlertVariant.danger}
-        title={error.message}
-        actionClose={
-          <AlertActionCloseButton title={error.message} onClose={reset} />
-        }
+        title={message}
         actionLinks={
-          <AlertActionLink onClick={reset}>{t("retry")}</AlertActionLink>
+          isPermissionError ? (
+            <AlertActionLink onClick={async () => await keycloak.logout()}>
+              {t("signOut")}
+            </AlertActionLink>
+          ) : (
+            <AlertActionLink onClick={() => location.reload()}>
+              {t("reload")}
+            </AlertActionLink>
+          )
         }
       ></Alert>
     </PageSection>

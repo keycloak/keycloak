@@ -1,0 +1,34 @@
+[id="scheduling-workflows_{context}"]
+
+[[_scheduling_workflows_]]
+= Scheduling workflows
+
+Workflows can be scheduled to run periodically according to a defined interval. This is done using the `schedule` setting
+in the workflow definition.
+
+A key difference between event-based triggering and scheduled workflows is that scheduled workflows follows a passive execution model
+where the workflow engine periodically checks for realm resources that meet the defined condition.
+
+```yaml
+name: Track inactive users
+schedule:
+  after: 5s
+  batch-size: 100
+```
+
+This method of scheduling is useful for automating tasks that need to be performed regularly, such as cleaning up inactive
+users or enforcing specific policies on realm resources. It is an alternative to event-based triggering, but it can also
+be used in combination with it. When used together, the workflow will be triggered either by the defined event or by the schedule.
+
+When a workflow is scheduled, it will be triggered automatically at the defined interval. At each run, the workflow engine
+will query for the realm resources that matches the workflow's condition and will create a workflow execution for each of them,
+up to the defined batch size. If no condition is defined, the workflow will be executed for all realm resources of the type associated
+with the workflow. In the example above, the workflow is scheduled to run every 5 seconds and will process up to 100 realm resources at each run.
+
+The `schedule` setting supports the following parameters:
+
+*   `after`: Defines the interval between each run of the workflow.
+
+*   `batch-size`: Defines the maximum number of realm resources to process at each run.
+
+

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,10 @@ public class AttributeMetadata {
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
     private int guiOrder;
-    
+    private boolean multivalued;
+    private String defaultValue;
+    private Function<AttributeContext, Map<String, Object>> annotationDecorator = (c) -> c.getMetadata().getAnnotations();
+    private boolean defaultAttribute;
 
     AttributeMetadata(String attributeName, int guiOrder) {
         this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
@@ -112,6 +116,10 @@ public class AttributeMetadata {
 
     public String getName() {
         return attributeName;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
     }
 
     public int getGuiOrder() {
@@ -199,9 +207,17 @@ public class AttributeMetadata {
         return this;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
     @Override
     public AttributeMetadata clone() {
-        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, writeAllowed, required, readAllowed);
+        AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, new ArrayList<>(writeAllowed), required, new ArrayList<>(readAllowed));
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
@@ -215,9 +231,13 @@ public class AttributeMetadata {
         if (attributeGroupMetadata != null) {
             cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
         }
+        cloned.setMultivalued(multivalued);
+        cloned.setDefaultValue(defaultValue);
+        cloned.setAnnotationDecorator(annotationDecorator);
+        cloned.setDefault(defaultAttribute);
         return cloned;
     }
-    
+
     public String getAttributeDisplayName() {
         if(attributeDisplayName == null || attributeDisplayName.trim().isEmpty())
             return attributeName;
@@ -259,5 +279,27 @@ public class AttributeMetadata {
     public AttributeMetadata setValidators(List<AttributeValidatorMetadata> validators) {
         this.validators = validators;
         return this;
+    }
+
+    public AttributeMetadata setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
+
+    public Map<String, Object> getAnnotations(AttributeContext context) {
+        return annotationDecorator.apply(context);
+    }
+
+    public AttributeMetadata setAnnotationDecorator(Function<AttributeContext, Map<String, Object>> annotationDecorator) {
+        this.annotationDecorator = annotationDecorator;
+        return this;
+    }
+
+    public void setDefault(boolean defaultAttribute) {
+        this.defaultAttribute = defaultAttribute;
+    }
+
+    public boolean isDefault() {
+        return defaultAttribute;
     }
 }

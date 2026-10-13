@@ -34,8 +34,9 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
         return usernameInput.getAttribute("value");
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-profile";
     }
     
     public boolean isUsernamePresent() {
@@ -44,11 +45,6 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
         } catch (NoSuchElementException nse) {
             return false;
         }
-    }
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
     }
 
     public static class Update extends LoginUpdateProfilePage.Update {

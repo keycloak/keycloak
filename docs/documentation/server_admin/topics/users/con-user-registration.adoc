@@ -22,6 +22,22 @@ See the <<_identity_broker_first_login, First login flow section in the Identity
 
 Also users coming from the <<_user-storage-federation, 3rd-party user storage>> (for example LDAP) are automatically available in {project_name} when the particular user storage is enabled
 
+.Clarification on verify email
+When self-registrations is enabled together with *Verify email* realm switch, then password will not be set by default
+on the registration form. User will need first to verify his email and he will be able to setup his password on the subsequent screen. This is recommended
+for security reason, so that self-registered user can set his password or other credentials after verifying email. Note it is also recommended
+to enable <<enabling-forgot-password, Forget password>>, so that if user fails to verify his email during self-registration, he can do it later by following
+*Forget password* flow without being stuck.
+
+If you still prefer to keep password on the initial registration form and make email verification to be done once user self-registers with his password, you can
+setup the configuration option on the <<_authentication-flows,Registration authentication flow>>. It can be done in the admin console by following tab *Authentication* ->
+flow *registration* (or other flow, which you bind as registration flow) -> Settings of *Password validation* -> Enable *Always set password on register form*.
+
+Note that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
+
+.Registration validation configuration
+image:images/registration-always-set-password-on-register-form-config.png[]
+
 [role="_additional-resources"]
 .Additional resources
 * For more information on customizing user registration, see the link:{developerguide_link}[{developerguide_name}].

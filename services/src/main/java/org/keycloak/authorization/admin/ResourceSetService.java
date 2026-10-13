@@ -16,9 +16,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,7 +31,9 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -45,15 +44,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -76,7 +69,18 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -87,8 +91,8 @@ public class ResourceSetService {
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
-    private KeycloakSession session;
-    private ResourceServer resourceServer;
+    private final KeycloakSession session;
+    private final ResourceServer resourceServer;
 
     public ResourceSetService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -122,7 +126,11 @@ public class ResourceSetService {
     }
 
     public ResourceRepresentation create(ResourceRepresentation resource) {
+        // direct creation of resources it's not expected for admin permission
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+
         requireManage();
+        validateUris(resource);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
 
@@ -156,21 +164,27 @@ public class ResourceSetService {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
+        validateUris(resource);
         resource.setId(id);
-        StoreFactory storeFactory = this.authorization.getStoreFactory();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource.getId());
-
-        if (model == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
+        getResource(id);
         toModel(resource, resourceServer, authorization);
 
         audit(resource, OperationType.UPDATE);
 
         return Response.noContent().build();
+    }
+
+    private Resource getResource(String id) {
+        ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        Resource model = resourceStore.findById(resourceServer, id);
+
+        if (model == null || !model.getResourceServer().equals(resourceServer)) {
+            throw new NotFoundException();
+        }
+
+        return model;
     }
 
     @Path("{resource-id}")
@@ -180,18 +194,14 @@ public class ResourceSetService {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response delete(@PathParam("resource-id") String id) {
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
-
-        if (resource == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
+        Resource resource = getResource(id);
         //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
         ResourceRepresentation resourceRep = toRepresentation(resource, resourceServer, authorization);
+        StoreFactory storeFactory = authorization.getStoreFactory();
 
-        storeFactory.getResourceStore().delete(resourceServer.getRealm(), id);
+        storeFactory.getResourceStore().delete(id);
 
         audit(resourceRep, OperationType.DELETE);
 
@@ -215,14 +225,7 @@ public class ResourceSetService {
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
-
-        if (model == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
-        return Response.ok(toRepresentation.apply(model)).build();
+        return Response.ok(toRepresentation.apply(getResource(id))).build();
     }
 
     @Path("{resource-id}/scopes")
@@ -239,7 +242,7 @@ public class ResourceSetService {
     public Response getScopes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -290,7 +293,7 @@ public class ResourceSetService {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = resourceStore.findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -311,7 +314,7 @@ public class ResourceSetService {
                 resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
                 resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-            for (Resource resourceType : resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilter, null, null)) {
+            for (Resource resourceType : resourceStore.find(resourceServer, resourceFilter, null, null)) {
                 policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
         }
@@ -347,7 +350,7 @@ public class ResourceSetService {
     public Response getAttributes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -369,7 +372,7 @@ public class ResourceSetService {
         @APIResponse(responseCode = "204", description = "No Content")
     })
     public Response find(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -402,7 +405,7 @@ public class ResourceSetService {
                          @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
-                         @QueryParam("max") Integer maxResult) {
+                         @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResult) {
         return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
@@ -416,7 +419,7 @@ public class ResourceSetService {
                          @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
-                         @QueryParam("max") Integer maxResult,
+                         @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResult,
                          BiFunction<Resource, Boolean, ?> toRepresentation) {
         requireView();
 
@@ -475,7 +478,7 @@ public class ResourceSetService {
             search.put(Resource.FilterOption.SCOPE_ID, scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
-        List<Resource> resources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+        List<Resource> resources = storeFactory.getResourceStore().find(this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
             Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
@@ -483,7 +486,7 @@ public class ResourceSetService {
             attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
             attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getClientId()});
 
-            List<Resource> serverResources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
+            List<Resource> serverResources = storeFactory.getResourceStore().find(this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override
@@ -520,13 +523,13 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
     }
 
@@ -539,6 +542,23 @@ public class ResourceSetService {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
         } else {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
+        }
+    }
+
+    private static void validateUris(ResourceRepresentation resource) {
+        Set<String> uris = resource.getUris();
+
+        if (uris == null) {
+            return;
+        }
+
+        for (String uri : uris) {
+            String error = PathMatcher.validateTemplate(uri);
+            if (error != null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                        "URI [" + uri + "] is not a valid template: " + error,
+                        Status.BAD_REQUEST);
+            }
         }
     }
 }

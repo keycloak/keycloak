@@ -1,16 +1,5 @@
 package org.keycloak.protocol.docker.installation;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ClientInstallationProvider;
-import org.keycloak.protocol.docker.DockerAuthV2Protocol;
-import org.keycloak.protocol.docker.installation.compose.DockerComposeZipContent;
-
-import jakarta.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +10,19 @@ import java.security.cert.Certificate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.Config;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ClientInstallationProvider;
+import org.keycloak.protocol.docker.DockerAuthV2Protocol;
+import org.keycloak.protocol.docker.installation.compose.DockerComposeZipContent;
+
+import org.jboss.logging.Logger;
 
 public class DockerComposeYamlInstallationProvider implements ClientInstallationProvider {
     private static Logger log = Logger.getLogger(DockerComposeYamlInstallationProvider.class);

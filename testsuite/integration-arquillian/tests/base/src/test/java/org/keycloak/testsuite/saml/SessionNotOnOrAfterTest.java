@@ -1,30 +1,31 @@
 package org.keycloak.testsuite.saml;
 
 import java.util.List;
-import org.junit.Test;
+import java.util.Set;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import java.util.Set;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import org.junit.Assert;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
-import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 
 /**
  * @author mhajas
@@ -40,14 +41,14 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
         assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         ResponseType resp = (ResponseType) ob;
 
-        Assert.assertNotNull(resp);
-        Assert.assertNotNull(resp.getAssertions());
+        Assertions.assertNotNull(resp);
+        Assertions.assertNotNull(resp.getAssertions());
         assertThat(resp.getAssertions().size(), greaterThan(0));
-        Assert.assertNotNull(resp.getAssertions().get(0));
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion());
+        Assertions.assertNotNull(resp.getAssertions().get(0));
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion());
 
         // session lifespan
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getStatements());
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getStatements());
         Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
         AuthnStatementType authType = statements.stream()
                 .filter(statement -> statement instanceof AuthnStatementType)
@@ -59,15 +60,15 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
         assertThat(authType.getSessionNotOnOrAfter(), is(XMLTimeUtil.add(authType.getAuthnInstant(), ssoMaxLifespan * 1000L)));
 
         // Conditions
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
         ConditionsType condition = resp.getAssertions().get(0).getAssertion().getConditions();
 
-        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessCodeLifespan * 1000L), condition.getNotOnOrAfter());
+        Assertions.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessCodeLifespan * 1000L), condition.getNotOnOrAfter());
 
         // SubjectConfirmation (confirmationData has no NotBefore, using the previous one because it's the same)
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getSubject());
-        Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getSubject().getConfirmation());
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getSubject());
+        Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getSubject().getConfirmation());
         List<SubjectConfirmationType> confirmations = resp.getAssertions().get(0).getAssertion().getSubject().getConfirmation();
 
         SubjectConfirmationDataType confirmationData = confirmations.stream()
@@ -76,8 +77,8 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                 .findFirst()
                 .orElse(null);
 
-        Assert.assertNotNull(confirmationData);
-        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessTokenLifespan * 1000L), confirmationData.getNotOnOrAfter());
+        Assertions.assertNotNull(confirmationData);
+        Assertions.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessTokenLifespan * 1000L), confirmationData.getNotOnOrAfter());
 
         return null;
     }

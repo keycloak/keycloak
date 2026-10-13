@@ -4,13 +4,15 @@ import {
   InputGroup,
   TextInput,
   TextInputProps,
+  TextInputTypes,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { type TFunction } from "i18next";
 import { Fragment, useEffect, useMemo } from "react";
 import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
 
-import { UserProfileFieldProps } from "./UserProfileFields";
+import { InputType, UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
 import { UserFormFields, fieldName, labelAttribute } from "./utils";
 
@@ -19,6 +21,7 @@ export const MultiInputComponent = ({
   form,
   attribute,
   renderer,
+  ...rest
 }: UserProfileFieldProps) => (
   <UserProfileGroup t={t} form={form} attribute={attribute} renderer={renderer}>
     <MultiLineInput
@@ -26,9 +29,12 @@ export const MultiInputComponent = ({
       form={form}
       aria-label={labelAttribute(t, attribute)}
       name={fieldName(attribute.name)!}
+      defaultValue={[attribute.defaultValue || ""]}
       addButtonLabel={t("addMultivaluedLabel", {
         fieldLabel: labelAttribute(t, attribute),
       })}
+      isDisabled={attribute.readOnly}
+      {...rest}
     />
   </UserProfileGroup>
 );
@@ -40,11 +46,13 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   addButtonLabel?: string;
   isDisabled?: boolean;
   defaultValue?: string[];
+  inputType: InputType;
 };
 
 const MultiLineInput = ({
   t,
   name,
+  inputType,
   form,
   addButtonLabel,
   isDisabled = false,
@@ -84,6 +92,10 @@ const MultiLineInput = ({
     });
   };
 
+  const type = inputType.startsWith("html")
+    ? (inputType.substring("html".length + 2) as TextInputTypes)
+    : "text";
+
   useEffect(() => {
     register(name);
   }, [register]);
@@ -93,24 +105,29 @@ const MultiLineInput = ({
       {fields.map((value, index) => (
         <Fragment key={index}>
           <InputGroup>
-            <TextInput
-              data-testid={name + index}
-              onChange={(value) => updateValue(index, value)}
-              name={`${name}.${index}.value`}
-              value={value}
-              isDisabled={isDisabled}
-              {...rest}
-            />
-            <Button
-              data-testid={"remove" + index}
-              variant={ButtonVariant.link}
-              onClick={() => remove(index)}
-              tabIndex={-1}
-              aria-label={t("remove")}
-              isDisabled={fields.length === 1 || isDisabled}
-            >
-              <MinusCircleIcon />
-            </Button>
+            <InputGroupItem isFill>
+              <TextInput
+                data-testid={name + index}
+                onChange={(_event, value) => updateValue(index, value)}
+                name={`${name}.${index}.value`}
+                value={value}
+                isDisabled={isDisabled}
+                type={type}
+                {...rest}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                data-testid={"remove" + index}
+                variant={ButtonVariant.link}
+                onClick={() => remove(index)}
+                tabIndex={-1}
+                aria-label={t("remove")}
+                isDisabled={fields.length === 1 || isDisabled}
+              >
+                <MinusCircleIcon />
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {index === fields.length - 1 && (
             <Button

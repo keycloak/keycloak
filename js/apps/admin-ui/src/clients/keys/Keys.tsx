@@ -1,5 +1,6 @@
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -8,43 +9,45 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  FormGroup,
   PageSection,
-  Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { SyncAltIcon } from "@patternfly/react-icons";
 import { saveAs } from "file-saver";
 import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { convertAttributeNameToForm } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
-import { Certificate } from "./Certificate";
+import { KeyInfoArea } from "./Certificate";
 import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
 import { ImportFile, ImportKeyDialog } from "./ImportKeyDialog";
 
 type KeysProps = {
   save: () => void;
+  refresh: () => void;
   clientId: string;
   hasConfigureAccess?: boolean;
 };
 
 const attr = "jwt.credential";
 
-export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
+export const Keys = ({
+  clientId,
+  save,
+  refresh: refreshParent,
+  hasConfigureAccess,
+}: KeysProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     control,
-    register,
     getValues,
     formState: { isDirty },
   } = useFormContext<FormFields>();
@@ -55,7 +58,10 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     useToggle();
   const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
+  const refresh = () => {
+    setKey(key + 1);
+    refreshParent();
+  };
 
   const useJwksUrl = useWatch({
     control,
@@ -64,13 +70,21 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   });
 
   useFetch(
-    () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
+    async () => {
+      try {
+        return await adminClient.clients.getKeyInfo({ id: clientId, attr });
+      } catch (error) {
+        addError("getKeyInfoError", error);
+        return {} as CertificateRepresentation;
+      }
+    },
     (info) => setKeyInfo(info),
     [key],
   );
 
   const generate = async (config: KeyStoreConfig) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const keyStore = await adminClient.clients.generateAndDownloadKey(
         {
           id: clientId,
@@ -98,8 +112,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
         formData.append(key, value);
       }
 
-      formData.append("file", file.value!);
-
+      formData.append("file", file);
       await adminClient.clients.uploadCertificate(
         { id: clientId, attr },
         formData,
@@ -138,58 +151,25 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
             fineGrainedAccess={hasConfigureAccess}
             isHorizontal
           >
-            <FormGroup
-              hasNoPaddingTop
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm("attributes.use.jwks.url")}
               label={t("useJwksUrl")}
-              fieldId="useJwksUrl"
-              labelIcon={
-                <HelpItem
-                  helpText={t("useJwksUrlHelp")}
-                  fieldLabelId="useJwksUrl"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm("attributes.use.jwks.url")}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    data-testid="useJwksUrl"
-                    id="useJwksUrl-switch"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange(`${value}`)}
-                    aria-label={t("useJwksUrl")}
-                  />
-                )}
-              />
-            </FormGroup>
+              labelIcon={t("useJwksUrlHelp")}
+              stringify
+            />
             {useJwksUrl !== "true" &&
               (keyInfo ? (
-                <Certificate plain keyInfo={keyInfo} />
+                <KeyInfoArea keyInfo={keyInfo} />
               ) : (
-                "No client certificate configured"
+                "No public key configured"
               ))}
             {useJwksUrl === "true" && (
-              <FormGroup
+              <TextControl
+                name={convertAttributeNameToForm("attributes.jwks.url")}
                 label={t("jwksUrl")}
-                fieldId="jwksUrl"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("jwksUrlHelp")}
-                    fieldLabelId="jwksUrl"
-                  />
-                }
-              >
-                <KeycloakTextInput
-                  id="jwksUrl"
-                  type="url"
-                  {...register(
-                    convertAttributeNameToForm("attributes.jwks.url"),
-                  )}
-                />
-              </FormGroup>
+                labelIcon={t("jwksUrlHelp")}
+                type="url"
+              />
             )}
             <ActionGroup>
               <Button
@@ -213,6 +193,14 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 isDisabled={useJwksUrl === "true"}
               >
                 {t("import")}
+              </Button>
+              <Button
+                data-testid="reload"
+                variant="secondary"
+                onClick={refresh}
+                isDisabled={useJwksUrl === "true"}
+              >
+                <SyncAltIcon /> {t("refresh")}
               </Button>
             </ActionGroup>
           </FormAccess>

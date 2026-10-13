@@ -1,12 +1,20 @@
 package org.keycloak.testsuite.broker;
 
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -14,28 +22,22 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.ReverseProxy;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import jakarta.ws.rs.core.Response;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -43,6 +45,10 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
 
@@ -68,7 +74,14 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 return realm;
             }
 
-            @Override 
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                RealmRepresentation realm = super.createProviderRealm();
+                realm.setEventsListeners(Collections.singletonList("jboss-logging"));
+                return realm;
+            }
+
+            @Override
             public List<ClientRepresentation> createProviderClients() {
                 List<ClientRepresentation> clients = super.createProviderClients();
 
@@ -114,7 +127,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.baseUrl(proxy.getUrl());
         oauth.openLoginForm();
@@ -125,15 +138,11 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
         log.debug("Logging in");
 
         // make sure the frontend url is used to build the redirect uri when redirecting to the broker
-        try {
-            assertThat(driver.getCurrentUrl(), containsString("client_id=" + URLEncoder.encode(proxy.getUrl(), "UTF-8")));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        assertThat(driver.getCurrentUrl(), containsString("client_id=" + URLEncoder.encode(proxy.getUrl(), StandardCharsets.UTF_8)));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "AUTH_RESPONSE", true);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -203,16 +212,13 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 .execute(response -> {
                     assertThat(response, Matchers.statusCodeIsHC(Response.Status.BAD_REQUEST));
                     String consumerRealmId = realmsResouce().realm(bc.consumerRealmName()).toRepresentation().getId();
-                    events.expect(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
-                            .clearDetails()
-                            .session((String) null)
-                            .realm(consumerRealmId)
-                            .user((String) null)
-                            .client((String) null)
+                    EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
+                            .sessionId(null)
+                            .userId(null)
+                            .clientId(null)
                             .error(Errors.INVALID_SAML_RESPONSE)
-                            .detail("reason", Errors.INVALID_DESTINATION)
-                            .assertEvent();
-                    events.assertEmpty();
+                            .details("reason", Errors.INVALID_DESTINATION);
+                    Assertions.assertNull(events.poll());
                 });
     }
 

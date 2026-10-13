@@ -16,20 +16,18 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
-import java.util.HashSet;
-import java.util.Set;
-import org.jboss.logging.Logger;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
-import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,11 +52,11 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
 
             if (effect == null) {
                 PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
-                
+
                 if (policyProvider == null) {
                     throw new RuntimeException("No policy provider found for policy [" + associatedPolicy.getType() + "]");
                 }
-                
+
                 policyProvider.evaluate(defaultEvaluation);
                 evaluation.denyIfNoEffect();
                 decisions.put(permission, defaultEvaluation.getEffect());
@@ -66,7 +64,7 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
                 defaultEvaluation.setEffect(effect);
             }
         }
-        logger.debugv("Policy {} was evaluated with status {} in {} mode after processing {} associated policies: {}", policy.getName(), evaluation.getEffect(), policy.getDecisionStrategy(), policy.getAssociatedPolicies().size(), policy.getAssociatedPolicies());
+        logger.debugf("Policy %s was evaluated with status %s in %s mode after processing %s associated policies: %s", policy.getName(), evaluation.getEffect(), policy.getDecisionStrategy(), policy.getAssociatedPolicies().size(), policy.getAssociatedPolicies());
     }
 
     @Override

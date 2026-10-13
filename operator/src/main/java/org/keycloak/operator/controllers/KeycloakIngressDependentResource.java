@@ -16,26 +16,37 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Optional;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpec;
+
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.quarkus.logging.Log;
+import org.jboss.logging.Logger;
 
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
-import java.util.HashMap;
-import java.util.Optional;
-
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
-
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakIngressDependentResource extends CRUDKubernetesDependentResource<Ingress, Keycloak> {
+
+    private static final Logger LOG = Logger.getLogger(KeycloakIngressDependentResource.class.getName());
 
     public static class EnabledCondition implements Condition<Ingress, Keycloak> {
         @Override
@@ -44,6 +55,8 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
             return isIngressEnabled(primary);
         }
     }
+
+    private static final ThreadLocal<Boolean> USE_SSA = new ThreadLocal<>();
 
     public KeycloakIngressDependentResource() {
         super(Ingress.class);
@@ -54,10 +67,38 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
     }
 
     @Override
+    public Ingress update(Ingress actual, Ingress desired, Keycloak primary, Context<Keycloak> context) {
+        try {
+            return super.update(actual, desired, primary, context);
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 422) {
+                // This attempts to recover from errors like "Failure executing: PATCH" / "Invalid value: cannot set both port name & port number."
+                // when the server side apply fails.
+            	try {
+                    LOG.info("Failed to update Ingress with server-side apply, retrying with client-side", e);
+                    USE_SSA.set(false);
+                    return super.update(actual, desired, primary, context);
+            	} finally {
+            		USE_SSA.remove();
+            	}
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    protected boolean useSSA(Context<Keycloak> context) {
+    	if (Boolean.FALSE.equals(USE_SSA.get())) {
+    		return false;
+    	}
+    	return super.useSSA(context);
+    }
+
+    @Override
     public Ingress desired(Keycloak keycloak, Context<Keycloak> context) {
         var annotations = new HashMap<String, String>();
         boolean tlsConfigured = isTlsConfigured(keycloak);
-        var port = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloak);
+        var portName = tlsConfigured ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
 
         if (tlsConfigured) {
             annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
@@ -74,19 +115,12 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                     .withName(getName(keycloak))
                     .withNamespace(keycloak.getMetadata().getNamespace())
+                    .addToLabels(optionalSpec.map(IngressSpec::getLabels).orElse(null))
                     .addToLabels(Utils.allInstanceLabels(keycloak))
                     .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                     .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
-                    .withNewDefaultBackend()
-                        .withNewService()
-                            .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
-                            .withNewPort()
-                                .withNumber(port)
-                            .endPort()
-                        .endService()
-                    .endDefaultBackend()
                     .addNewRule()
                         .withNewHttp()
                             .addNewPath()
@@ -95,7 +129,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                                     .withNewService()
                                         .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                                         .withNewPort()
-                                            .withNumber(port)
+                                            .withName(portName)
                                             .endPort()
                                     .endService()
                                 .endBackend()
@@ -106,8 +140,26 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .build();
 
         final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
+        String hostname = null;
         if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
-            ingress.getSpec().getRules().get(0).setHost(hostnameSpec.getHostname());
+            hostname = hostnameSpec.getHostname();
+
+            try {
+                hostname = new URL(hostname).getHost();
+                Log.debug("Hostname is a URL, extracting host: " + hostname);
+            }
+            catch (MalformedURLException e) {
+                Log.debug("Hostname is not a URL, using as is: " + hostname);
+            }
+
+            ingress.getSpec().getRules().get(0).setHost(hostname);
+        }
+
+        if (hostname != null) {
+            String[] hosts = new String[] {hostname};
+            optionalSpec.map(IngressSpec::getTlsSecret).ifPresent(tlsSecret ->
+                ingress.getSpec().getTls().add(new IngressTLSBuilder().addToHosts(hosts).withSecretName(tlsSecret).build())
+            );
         }
 
         return ingress;

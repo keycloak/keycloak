@@ -22,21 +22,22 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
+
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.RealmBuilder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,79 +55,75 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").addWebOrigins(VALID_CORS_URL);
+        oauth.origin(null);
     }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         testRealms.add(realm.build());
     }
 
     @Test
     public void postLogout_validRequestWithValidOrigin() throws Exception {
-        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        AccessTokenResponse tokenResponse = loginUser();
         String refreshTokenString = tokenResponse.getRefreshToken();
         oauth.origin(VALID_CORS_URL);
 
-        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Response.Status.NO_CONTENT));
-            assertCors(response);
-        }
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
+        assertTrue(response.isSuccess());
+        assertCors(response);
     }
 
     @Test
     public void postLogout_validRequestWithInValidOriginShouldFail() throws Exception {
-        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        AccessTokenResponse tokenResponse = loginUser();
         String refreshTokenString = tokenResponse.getRefreshToken();
         oauth.origin(INVALID_CORS_URL);
 
-        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Response.Status.NO_CONTENT));
-            assertNotCors(response);
-        }
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+        assertNotCors(response);
     }
 
     @Test
     public void postLogout_invalidRequestWithValidOrigin() throws Exception {
-        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        AccessTokenResponse tokenResponse = loginUser();
         String refreshTokenString = tokenResponse.getRefreshToken();
         oauth.origin(VALID_CORS_URL);
 
         // Logout with invalid refresh token
-        try (CloseableHttpResponse response = oauth.doLogout("invalid-refresh-token", "password")) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-            assertCors(response);
-        }
+        LogoutResponse response = oauth.doLogout("invalid-refresh-token");
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertCors(response);
 
         // Logout with invalid client secret
-        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "invalid-secret")) {
-            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusLine().getStatusCode());
-            assertCors(response);
-        }
+        response = oauth.client(oauth.getClientId(), "invalid-secret").doLogout(refreshTokenString);
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
+        assertCors(response);
     }
 
-    private OAuthClient.AccessTokenResponse loginUser() {
+    private AccessTokenResponse loginUser() {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-        return oauth.doAccessTokenRequest(code, "password");
+        return oauth.doAccessTokenRequest(code);
     }
 
 
-    private static void assertCors(CloseableHttpResponse response) {
-        assertEquals("true", response.getFirstHeader("Access-Control-Allow-Credentials").getValue());
-        assertEquals(VALID_CORS_URL, response.getFirstHeader("Access-Control-Allow-Origin").getValue());
-        assertEquals("Access-Control-Allow-Methods", response.getFirstHeader("Access-Control-Expose-Headers").getValue());
+    private static void assertCors(LogoutResponse response) {
+        assertEquals("true", response.getHeader("Access-Control-Allow-Credentials"));
+        assertEquals(VALID_CORS_URL, response.getHeader("Access-Control-Allow-Origin"));
+        assertEquals("Access-Control-Allow-Methods", response.getHeader("Access-Control-Expose-Headers"));
     }
 
-    private static void assertNotCors(CloseableHttpResponse response) {
-        assertNull(response.getFirstHeader("Access-Control-Allow-Credentials"));
-        assertNull(response.getFirstHeader("Access-Control-Allow-Origin"));
-        assertNull(response.getFirstHeader("Access-Control-Expose-Headers"));
+    private static void assertNotCors(LogoutResponse response) {
+        assertNull(response.getHeader("Access-Control-Allow-Credentials"));
+        assertNull(response.getHeader("Access-Control-Allow-Origin"));
+        assertNull(response.getHeader("Access-Control-Expose-Headers"));
     }
 
 

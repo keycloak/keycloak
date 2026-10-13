@@ -5,5 +5,13 @@
   }, {
     "name" : "incorrect",
     "types": [ "admin" ]
+  },
+  {
+    "name" : "organization",
+    "types": [ "login" ]
+  },
+  {
+    "name" : "themeconfig",
+    "types": [ "login" ]
   }]
 }

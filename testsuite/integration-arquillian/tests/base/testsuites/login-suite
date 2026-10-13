@@ -1,0 +1,5 @@
+org.keycloak.testsuite.actions
+org.keycloak.testsuite.forms
+KcOidcBrokerLoginHintTest
+KcOidcFirstBrokerLoginTest
+KcOidcMultipleTabsBrokerTest

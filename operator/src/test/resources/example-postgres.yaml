@@ -16,10 +16,7 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          # WARN: this image is not ARM64 native, consider using "postgres:latest" or "registry.redhat.io/rhel9/postgresql-15:latest" if you need that
-          # See also https://github.com/sclorg/postgresql-container/pull/527
-          # Using c8s instead of c9s as c9s requires additional arguments for emulation on ARM machines, while c8s works OOTB
-          image: quay.io/sclorg/postgresql-15-c8s:latest
+          image: quay.io/sclorg/postgresql-15-c9s:latest
           volumeMounts:
             - mountPath: /var/lib/pgsql/data
               name: cache-volume
@@ -48,7 +45,6 @@ metadata:
 spec:
   selector:
     app: postgresql-db
-  type: LoadBalancer
   ports:
   - port: 5432
     targetPort: 5432

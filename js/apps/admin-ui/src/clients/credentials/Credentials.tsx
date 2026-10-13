@@ -2,6 +2,12 @@ import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-ad
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import {
+  HelpItem,
+  SelectControl,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   Alert,
   AlertVariant,
@@ -9,28 +15,25 @@ import {
   Card,
   CardBody,
   ClipboardCopy,
-  Divider,
+  Form,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { useFetch } from "../../utils/useFetch";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { FormFields } from "../ClientDetails";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
+import { convertAttributeNameToForm } from "../../util";
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -43,6 +46,8 @@ export type CredentialsProps = {
 };
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
@@ -55,6 +60,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     control,
     formState: { isDirty },
     handleSubmit,
+    reset,
   } = useFormContext<FormFields>();
 
   const clientAuthenticatorType = useWatch({
@@ -65,7 +71,19 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
 
   const [secret, setSecret] = useState("");
   const [accessToken, setAccessToken] = useState("");
-  const [open, isOpen] = useState(false);
+
+  const selectedProvider = providers.find(
+    (provider) => provider.id === clientAuthenticatorType,
+  );
+
+  const { componentTypes } = useServerInfo();
+  const providerProperties = useMemo(
+    () =>
+      componentTypes?.["org.keycloak.authentication.ClientAuthenticator"]?.find(
+        (p) => p.id === clientAuthenticatorType,
+      )?.clientProperties,
+    [clientAuthenticatorType, componentTypes],
+  );
 
   useFetch(
     () =>
@@ -135,7 +153,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       <FormAccess
         onSubmit={handleSubmit(save)}
         isHorizontal
-        className="pf-u-mt-md"
+        className="pf-v5-u-mt-md"
         role="manage-clients"
         fineGrainedAccess={client.access?.configure}
       >
@@ -143,47 +161,37 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
         <AccessTokenConfirm />
         <Card isFlat>
           <CardBody>
-            <FormGroup
+            <SelectControl
+              name="clientAuthenticatorType"
               label={t("clientAuthenticator")}
-              fieldId="kc-client-authenticator-type"
-              labelIcon={
-                <HelpItem
-                  helpText={t("clientAuthenticatorTypeHelp")}
-                  fieldLabelId="clientAuthenticator"
-                />
-              }
-            >
-              <Controller
-                name="clientAuthenticatorType"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <Select
-                    toggleId="kc-client-authenticator-type"
-                    required
-                    onToggle={isOpen}
-                    onSelect={(_, value) => {
-                      field.onChange(value as string);
-                      isOpen(false);
-                    }}
-                    selections={field.value}
-                    variant={SelectVariant.single}
-                    aria-label={t("clientAuthenticator")}
-                    isOpen={open}
-                  >
-                    {providers.map((option) => (
-                      <SelectOption
-                        selected={option.id === field.value}
-                        key={option.id}
-                        value={option.id}
-                      >
-                        {option.displayName}
-                      </SelectOption>
-                    ))}
-                  </Select>
+              labelIcon={t("clientAuthenticatorTypeHelp")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={providers.map(({ id, displayName }) => ({
+                key: id!,
+                value: displayName || id!,
+              }))}
+            />
+            {clientAuthenticatorType === "client-secret" && (
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.client.secret.authentication.allowed.method",
                 )}
+                label={t("clientSecretAuthenticationAllowedMethod")}
+                labelIcon={t("clientSecretAuthenticationAllowedMethodHelp")}
+                controller={{
+                  defaultValue: "",
+                }}
+                isScrollable
+                maxMenuHeight="200px"
+                options={[
+                  { key: "", value: t("any") },
+                  { key: "client_secret_basic", value: "client_secret_basic" },
+                  { key: "client_secret_post", value: "client_secret_post" },
+                ]}
               />
-            </FormGroup>
+            )}
             {(clientAuthenticatorType === "client-jwt" ||
               clientAuthenticatorType === "client-secret-jwt") && (
               <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
@@ -194,24 +202,33 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               </FormGroup>
             )}
             {clientAuthenticatorType === "client-x509" && <X509 />}
-            <ActionGroup>
-              <Button variant="primary" type="submit" isDisabled={!isDirty}>
-                {t("save")}
-              </Button>
-            </ActionGroup>
-          </CardBody>
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && <Divider />}
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && (
-            <CardBody>
+            {providerProperties && (
+              <Form>
+                <DynamicComponents
+                  properties={providerProperties}
+                  convertToName={(name) =>
+                    convertAttributeNameToForm(`attributes.${name}`)
+                  }
+                />
+              </Form>
+            )}
+            {selectedProvider?.supportsSecret && (
               <ClientSecret
                 client={client}
                 secret={secret}
                 toggle={toggleClientSecretConfirm}
+                refresh={refresh}
               />
-            </CardBody>
-          )}
+            )}
+            <ActionGroup>
+              <Button variant="primary" type="submit" isDisabled={!isDirty}>
+                {t("save")}
+              </Button>
+              <Button variant="link" onClick={() => reset()}>
+                {t("revert")}
+              </Button>
+            </ActionGroup>
+          </CardBody>
         </Card>
         <Card isFlat>
           <CardBody>

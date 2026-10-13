@@ -17,8 +17,11 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpResponse;
+import java.util.Map;
+
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -31,11 +34,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -51,24 +52,23 @@ public class AuthorizeClientUtil {
         if (response != null) {
             if (cors != null) {
                 cors.allowAllOrigins();
-                HttpResponse httpResponse = session.getContext().getHttpResponse();
-                cors.build(httpResponse);
+                cors.add();
             }
             throw new WebApplicationException(response);
         }
 
         ClientModel client = processor.getClient();
         if (client == null) {
-            throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors.allowAllOrigins());
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors);
         }
-        
+
         if(!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors.allowAllOrigins());
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors);
         }
 
         if (cors != null) {
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
         }
 
         String protocol = client.getProtocol();

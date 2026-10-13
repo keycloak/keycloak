@@ -17,9 +17,11 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.Optional;
+
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -27,7 +29,7 @@ import org.keycloak.models.UserModel;
 /**
  * @author Alexander Schwartz
  */
-public abstract class SubjectCredentialManagerCacheAdapter extends LegacyUserCredentialManager {
+public abstract class SubjectCredentialManagerCacheAdapter extends UserCredentialManager {
 
     public SubjectCredentialManagerCacheAdapter(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, realm, user);
@@ -39,6 +41,12 @@ public abstract class SubjectCredentialManagerCacheAdapter extends LegacyUserCre
     public boolean updateCredential(CredentialInput input) {
         invalidateCacheForEntity();
         return super.updateCredential(input);
+    }
+
+    @Override
+    public Optional<CredentialModel> updateCredentialAndGet(CredentialInput input) {
+        invalidateCacheForEntity();
+        return super.updateCredentialAndGet(input);
     }
 
     @Override

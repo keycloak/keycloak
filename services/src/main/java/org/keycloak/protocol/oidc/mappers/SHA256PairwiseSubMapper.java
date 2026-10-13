@@ -1,6 +1,15 @@
 package org.keycloak.protocol.oidc.mappers;
 
-import org.jboss.logging.Logger;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -11,14 +20,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     public static final String PROVIDER_ID = "sha256";
@@ -27,7 +29,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     private final Charset charset;
 
     public SHA256PairwiseSubMapper() {
-        charset = Charset.forName("UTF-8");
+        charset = StandardCharsets.UTF_8;
     }
 
     public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
@@ -58,7 +60,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
 
     @Override
     public String getHelpText() {
-        return "Calculates a pairwise subject identifier using a salted sha-256 hash. See OpenID Connect specification for more info about pairwise subject identifiers.";
+        return "Calculates a pairwise subject identifier using a salted sha-256 hash and adds it to the 'sub' claim. See OpenID Connect specification for more info about pairwise subject identifiers.";
     }
 
     @Override
@@ -75,7 +77,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
             throw new IllegalStateException("Salt not available on mappingModel. Please update protocol mapper");
         }
 
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         byte[] salt = saltStr.getBytes(charset);
         String pairwiseSub = generateSub(sectorIdentifier, localSub, salt);
         logger.tracef("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);

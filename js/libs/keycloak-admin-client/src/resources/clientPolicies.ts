@@ -38,9 +38,16 @@ export class ClientPolicies extends Resource<{ realm?: string }> {
 
   /* Client Policies */
 
-  public listPolicies = this.makeRequest<{}, ClientPoliciesRepresentation>({
+  public listPolicies = this.makeRequest<
+    { includeGlobalPolicies?: boolean },
+    ClientPoliciesRepresentation
+  >({
     method: "GET",
     path: "/policies",
+    queryParamKeys: ["include-global-policies"],
+    keyTransform: {
+      includeGlobalPolicies: "include-global-policies",
+    },
   });
 
   public updatePolicy = this.makeRequest<ClientPoliciesRepresentation, void>({

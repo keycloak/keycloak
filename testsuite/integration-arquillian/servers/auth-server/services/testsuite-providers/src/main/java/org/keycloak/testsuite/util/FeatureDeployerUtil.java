@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,16 +26,19 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.DefaultProviderLoader;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
-import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSession;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resources.KeycloakApplication;
+
+import org.jboss.logging.Logger;
 
 /**
  * Used to dynamically reload EnvironmentDependentProviderFactories after some feature is enabled/disabled
@@ -50,7 +54,9 @@ public class FeatureDeployerUtil {
     private static final Logger logger = Logger.getLogger(FeatureDeployerUtil.class);
 
     public static void initBeforeChangeFeature(Profile.Feature feature) {
-        if (deployersCache.containsKey(feature)) return;
+        if (deployersCache.containsKey(feature)) {
+            return;
+        }
 
         // Compute which provider factories are enabled before feature is enabled (disabled)
         Map<ProviderFactory, Spi>  factoriesBefore = loadEnabledEnvironmentFactories();
@@ -69,10 +75,10 @@ public class FeatureDeployerUtil {
 
             KeycloakDeploymentInfo di = createDeploymentInfo(factories);
 
-            manager = new ProviderManager(di, FeatureDeployerUtil.class.getClassLoader());
+            manager = new ProviderManager(di, FeatureDeployerUtil.class.getClassLoader(), Collections.singleton(new TestsuiteProviderLoader(di)));
             deployersCache.put(feature, manager);
         }
-        ProviderManagerRegistry.SINGLETON.deploy(manager);
+        deploy(manager);
     }
 
     public static void undeployFactoriesAfterFeatureDisabled(Profile.Feature feature) {
@@ -90,7 +96,7 @@ public class FeatureDeployerUtil {
             loadFactories(manager);
             deployersCache.put(feature, manager);
         }
-        ProviderManagerRegistry.SINGLETON.undeploy(manager);
+        undeploy(manager);
     }
 
     private static Map<ProviderFactory, Spi> getFactoriesDependentOnFeature(Map<ProviderFactory, Spi> factoriesDisabled, Map<ProviderFactory, Spi> factoriesEnabled) {
@@ -127,10 +133,11 @@ public class FeatureDeployerUtil {
 
         Map<ProviderFactory, Spi> providerFactories = new HashMap<>();
         for (Spi spi : loader.loadSpis()) {
+            Config.Scope scope = Config.scope(spi.getName(), Config.getProvider(spi.getName()));
             List<ProviderFactory> currentFactories = loader.load(spi);
             for (ProviderFactory factory : currentFactories) {
                 if (factory instanceof EnvironmentDependentProviderFactory) {
-                    if (((EnvironmentDependentProviderFactory) factory).isSupported()) {
+                    if (((EnvironmentDependentProviderFactory) factory).isSupported(scope)) {
                         providerFactories.put(factory, spi);
                     }
                 }
@@ -146,5 +153,20 @@ public class FeatureDeployerUtil {
         ClassLoader classLoader = DefaultKeycloakSession.class.getClassLoader();
         DefaultProviderLoader loader = new DefaultProviderLoader(di, classLoader);
         loader.loadSpis().forEach(pm::load);
+    }
+
+    static void deploy(ProviderManager pm) {
+        DefaultKeycloakSessionFactory deployer = KeycloakApplication.getSessionFactory();
+        if (deployer == null) {
+            throw new IllegalStateException("No active KeycloakApplication");
+        }
+        deployer.deploy(pm);
+    }
+
+    static void undeploy(ProviderManager pm) {
+        DefaultKeycloakSessionFactory deployer = KeycloakApplication.getSessionFactory();
+        if (deployer != null) {
+            deployer.undeploy(pm);
+        }
     }
 }

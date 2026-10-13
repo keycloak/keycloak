@@ -17,14 +17,14 @@
 
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.

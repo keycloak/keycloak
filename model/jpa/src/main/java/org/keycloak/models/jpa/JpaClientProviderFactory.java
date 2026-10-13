@@ -17,20 +17,27 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 
-import jakarta.persistence.EntityManager;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
@@ -40,7 +47,9 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
 
     private static final List<String> REQUIRED_SEARCHABLE_ATTRIBUTES = Arrays.asList(
         "saml_idp_initiated_sso_url_name",
-        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER
+        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER,
+        "jwt.credential.issuer",
+        "jwt.credential.sub"
     );
 
     @Override
@@ -54,12 +63,27 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
         if (searchableAttrsArr != null) {
             s.addAll(Arrays.asList(searchableAttrsArr));
         }
+        if (Profile.isFeatureEnabled(Profile.Feature.SSF)) {
+            // needed to find SSF streams configured on SSF Receiver clients
+            s.add("ssf.enabled");
+            s.add("ssf.stream.id");
+        }
         clientSearchableAttributes = Collections.unmodifiableSet(s);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            factory.register(event -> {
+                if (event instanceof RealmModel.RealmAttributeUpdateEvent attrUpdateEvent) {
+                    if (Objects.equals(attrUpdateEvent.getAttributeName(), RealmAttributes.ADMIN_PERMISSIONS_ENABLED) && Boolean.parseBoolean(attrUpdateEvent.getAttributeValue())) {
+                        KeycloakSession keycloakSession = attrUpdateEvent.getKeycloakSession();
+                        RealmModel realm = attrUpdateEvent.getRealm();
+                        AdminPermissionsSchema.SCHEMA.init(keycloakSession, realm);
+                    }
+                }
+            });
+        }
     }
 
     @Override

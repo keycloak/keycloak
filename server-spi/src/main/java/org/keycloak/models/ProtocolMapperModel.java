@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -37,6 +38,21 @@ public class ProtocolMapperModel implements Serializable {
     protected String consentText;
     protected Map<String, String> config;
 
+    public ProtocolMapperModel() {
+
+    }
+
+    public ProtocolMapperModel(ProtocolMapperModel model) {
+        this.id = model.id;
+        this.name = model.name;
+        this.protocol = model.protocol;
+        this.protocolMapper = model.protocolMapper;
+        this.consentRequired = model.consentRequired;
+        this.consentText = model.consentText;
+        if (model.config != null) {
+            this.config = new HashMap<>(model.config);
+        }
+    }
 
     public String getId() {
         return id;

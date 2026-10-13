@@ -21,18 +21,8 @@ package org.keycloak.representations.idm.authorization;
  */
 public class ScopePermissionRepresentation extends AbstractPolicyRepresentation {
 
-    private String resourceType;
-
     @Override
     public String getType() {
         return "scope";
-    }
-
-    public void setResourceType(String resourceType) {
-        this.resourceType = resourceType;
-    }
-
-    public String getResourceType() {
-        return resourceType;
     }
 }

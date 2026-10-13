@@ -16,11 +16,12 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.protocol;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 /**
  * Base Class for all Response Type parsing for SAML2

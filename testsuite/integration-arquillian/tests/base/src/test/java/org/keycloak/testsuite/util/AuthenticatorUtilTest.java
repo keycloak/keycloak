@@ -17,8 +17,8 @@
 
 package org.keycloak.testsuite.util;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Set;
+
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -27,7 +27,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 
-import java.util.Set;
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

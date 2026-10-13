@@ -17,6 +17,12 @@
 
 package org.keycloak.testsuite.model.infinispan;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.commons.logging.Log;
 import org.infinispan.commons.logging.LogFactory;
 import org.infinispan.commons.time.TimeService;
@@ -28,12 +34,6 @@ import org.infinispan.tasks.ServerTask;
 import org.infinispan.tasks.TaskContext;
 import org.infinispan.tasks.TaskExecutionMode;
 import org.infinispan.util.EmbeddedTimeService;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class InfinispanTimeServiceTask implements ServerTask<String> {
 
@@ -48,14 +48,14 @@ public class InfinispanTimeServiceTask implements ServerTask<String> {
     @Override
     public String call() {
         EmbeddedCacheManager cacheManager = context.getCacheManager();
-        Map<String, Object> params = new HashMap();
+        Map<String, Object> params = new HashMap<>();
         if (this.context.getParameters().isPresent())
             params = this.context.getParameters().get();
         if (params.containsKey("timeService")) {
             offset = (int) params.get("timeService");
 
             // rewire the Time service
-            GlobalComponentRegistry cr = cacheManager.getGlobalComponentRegistry();
+            GlobalComponentRegistry cr = GlobalComponentRegistry.of(cacheManager);
             BasicComponentRegistry bcr = cr.getComponent(BasicComponentRegistry.class);
             bcr.replaceComponent(TimeService.class.getName(), KEYCLOAK_TIME_SERVICE, true);
             cr.rewire();

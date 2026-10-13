@@ -16,6 +16,13 @@
  */
 package org.keycloak.storage.adapter;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -28,12 +35,7 @@ import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
+import org.keycloak.storage.StorageId;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -235,7 +237,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public String getFederationLink() {
-        return federationLink;
+        return Optional.ofNullable(federationLink).orElse(StorageId.providerId(getId()));
     }
 
     @Override

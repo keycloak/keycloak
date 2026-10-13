@@ -16,30 +16,38 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
-import io.agroal.api.AgroalDataSource;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
+import io.smallrye.context.api.ManagedExecutorConfig;
+import io.smallrye.health.api.AsyncHealthCheck;
+import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicReference;
-
 /**
  * Keycloak Healthcheck Readiness Probe.
- *
- * Performs a hybrid between the passive and the active mode. If there are no healthy connections in the pool,
- * it invokes the standard <code>DataSourceHealthCheck</code> that creates a new connection and checks if its valid.
+ * <p>
+ * Converts the standard <code>DataSourceHealthCheck</code> that waits for a connection and checks if it's valid, to an async check with a
+ * dedicated pool to control load shedding.
+ * <p>
  *
  * @see <a href="https://github.com/keycloak/keycloak-community/pull/55">Healthcheck API Design</a>
  */
 @Readiness
 @ApplicationScoped
-public class KeycloakReadyHealthCheck extends DataSourceHealthCheck {
+public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
+
+    public static final String FAILING_SINCE = "Failing since";
 
     /**
      * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
@@ -48,32 +56,34 @@ public class KeycloakReadyHealthCheck extends DataSourceHealthCheck {
     static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
 
     @Inject
-    AgroalDataSource agroalDataSource;
+    DataSourceHealthCheck dataSourceHealthCheck;
 
-    AtomicReference<Instant> failingSince = new AtomicReference<>();
+    @Inject
+    @ManagedExecutorConfig(maxAsync = 1, maxQueued = 20)
+    ManagedExecutor executor;
+
+    private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
-    public HealthCheckResponse call() {
-        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections health check").up();
-        long activeCount = agroalDataSource.getMetrics().activeCount();
-        long invalidCount = agroalDataSource.getMetrics().invalidCount();
-        if (activeCount < 1 || invalidCount > 0) {
-            HealthCheckResponse activeCheckResult = super.call();
-            if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
-                builder.down();
-                Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
-                builder.withData("Failing since", DATE_FORMATTER.format(failingTime));
-            }
+    public Uni<HealthCheckResponse> call() {
+        Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
+        return uni.runSubscriptionOn(executor);
+    }
+
+    private HealthCheckResponse syncCheck() {
+        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
+        HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
+        if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
+            builder.down();
+            Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
+            builder.withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime));
         } else {
             failingSince.set(null);
         }
         return builder.build();
     }
 
-    Instant createInstanceIfNeeded(Instant instant) {
-        if (instant == null) {
-            return Instant.now();
-        }
-        return instant;
+    static Instant createInstanceIfNeeded(Instant instant) {
+        return Objects.requireNonNullElseGet(instant, Instant::now);
     }
 }

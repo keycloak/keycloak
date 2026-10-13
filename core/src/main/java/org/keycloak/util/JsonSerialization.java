@@ -17,6 +17,10 @@
 
 package org.keycloak.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,10 +28,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Utility class to handle simple JSON serializable for Keycloak.
@@ -36,16 +38,48 @@ import java.io.OutputStream;
  * @version $Revision: 1 $
  */
 public class JsonSerialization {
-    public static final ObjectMapper mapper = new ObjectMapper();
-    public static final ObjectMapper prettyMapper = new ObjectMapper();
-    public static final ObjectMapper sysPropertiesAwareMapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
+    public static final ObjectMapper mapper = createObjectMapperWithDefaults();
+    public static final ObjectMapper prettyMapper = createPrettyObjectMapperWithDefaults();
 
-    static {
+    public static ObjectMapper createObjectMapperWithDefaults() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+        return mapper;
+    }
+
+    public static ObjectMapper createPrettyObjectMapperWithDefaults() {
+        ObjectMapper prettyMapper = new ObjectMapper();
         prettyMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        prettyMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        prettyMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+        return prettyMapper;
+    }
+
+    public static String valueAsString(Object obj) {
+        try {
+            return mapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static String valueAsPrettyString(Object obj) {
+        try {
+            return prettyMapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static <T> T valueFromString(String string, Class<T> type) {
+        try {
+            return mapper.readValue(string, type);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static void writeValueToStream(OutputStream os, Object obj) throws IOException {
@@ -67,6 +101,10 @@ public class JsonSerialization {
         return mapper.writeValueAsBytes(obj);
     }
 
+    public static JsonNode writeValueAsNode(Object obj) {
+        return mapper.valueToTree(obj);
+    }
+
     public static <T> T readValue(byte[] bytes, Class<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }
@@ -76,7 +114,11 @@ public class JsonSerialization {
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
-        return readValue(bytes, type, false);
+        return mapper.readValue(bytes, type);
+    }
+
+    public static <T> T readValue(byte[] bytes, TypeReference<T> type) throws IOException {
+        return mapper.readValue(bytes, type);
     }
 
     public static <T> T readValue(String string, TypeReference<T> type) throws IOException {
@@ -85,14 +127,6 @@ public class JsonSerialization {
 
     public static <T> T readValue(InputStream bytes, TypeReference<T> type) throws IOException {
         return mapper.readValue(bytes, type);
-    }
-
-    public static <T> T readValue(InputStream bytes, Class<T> type, boolean replaceSystemProperties) throws IOException {
-        if (replaceSystemProperties) {
-            return sysPropertiesAwareMapper.readValue(bytes, type);
-        } else {
-            return mapper.readValue(bytes, type);
-        }
     }
 
     /**
@@ -108,8 +142,10 @@ public class JsonSerialization {
         }
 
         ObjectNode objectNode = createObjectNode();
-        JsonParser jsonParser = mapper.getFactory().createParser(writeValueAsBytes(pojo));
-        JsonNode jsonNode = jsonParser.readValueAsTree();
+        JsonNode jsonNode;
+        try (JsonParser jsonParser = mapper.getFactory().createParser(writeValueAsBytes(pojo))) {
+            jsonNode = jsonParser.readValueAsTree();
+        }
 
         if (!jsonNode.isObject()) {
             throw new RuntimeException("JsonNode [" + jsonNode + "] is not a object.");

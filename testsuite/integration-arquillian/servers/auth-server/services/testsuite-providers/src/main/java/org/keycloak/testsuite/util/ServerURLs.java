@@ -21,7 +21,9 @@ import static java.lang.Integer.parseInt;
 
 public class ServerURLs {
     public static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "true"));
-    public static final String AUTH_SERVER_PORT = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port", "8543") : System.getProperty("auth.server.http.port", "8180");
+    public static final String AUTH_SERVER_PORT_HTTP = System.getProperty("auth.server.http.port", "8180");
+    public static final String AUTH_SERVER_PORT_HTTPS = System.getProperty("auth.server.https.port", "8543");
+    public static final String AUTH_SERVER_PORT = AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT_HTTPS : AUTH_SERVER_PORT_HTTP;
     public static final String AUTH_SERVER_SCHEME = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
     public static final String AUTH_SERVER_HOST = System.getProperty("auth.server.host", "localhost");
     public static final String AUTH_SERVER_HOST2 = System.getProperty("auth.server.host2", AUTH_SERVER_HOST);

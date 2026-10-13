@@ -16,13 +16,17 @@ Host: localhost:8080
 
 In this case, your realm must have an identity provider with a `facebook` alias. If this provider does not exist,  the login form is displayed.
 
-If you are using the `keycloak.js` adapter, you can also achieve the same behavior as follows:
+If you are using the JavaScript adapter, you can also achieve the same behavior as follows:
 
 [source,javascript]
 ----
-const keycloak = new Keycloak('keycloak.json');
+const keycloak = new Keycloak({
+	url: "http://keycloak-server",
+	realm: "my-realm",
+	clientId: "my-app"
+);
 
-keycloak.createLoginUrl({
+await keycloak.createLoginUrl({
 	idpHint: 'facebook'
 });
 ----

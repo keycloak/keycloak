@@ -17,26 +17,36 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import java.util.List;
-
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.freemarker.LoginFormsUtil;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.services.messages.Messages;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
 public final class UsernameForm extends UsernamePasswordForm {
+
+    public UsernameForm() {
+        super();
+    }
+
+    public UsernameForm(KeycloakSession session) {
+        super(session);
+    }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         if (context.getUser() != null) {
             // We can skip the form when user is re-authenticating. Unless current user has some IDP set, so he can re-authenticate with that IDP
-            List<IdentityProviderModel> identityProviders = LoginFormsUtil
-                    .filterIdentityProviders(context.getRealm().getIdentityProvidersStream(), context.getSession(), context);
-            if (identityProviders.isEmpty()) {
+            if (!this.hasLinkedBrokers(context)) {
                 context.success();
                 return;
             }
@@ -68,5 +78,29 @@ public final class UsernameForm extends UsernamePasswordForm {
         if (context.getRealm().isLoginWithEmailAllowed())
             return Messages.INVALID_USERNAME_OR_EMAIL;
         return Messages.INVALID_USERNAME;
+    }
+
+    /**
+     * Checks if the context user, if it has been set, is currently linked to any IDPs they could use to authenticate.
+     * If the auth session has an existing IDP in the brokered context, it is filtered out.
+     *
+     * @param context a reference to the {@link AuthenticationFlowContext}
+     * @return {@code true} if the context user has federated IDPs that can be used for authentication; {@code false} otherwise.
+     */
+    private boolean hasLinkedBrokers(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+        UserModel user = context.getUser();
+        if (user == null) {
+            return false;
+        }
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
+        final IdentityProviderModel existingIdp = (serializedCtx == null) ? null : serializedCtx.deserialize(session, authSession).getIdpConfig();
+
+        return session.users().getFederatedIdentitiesStream(session.getContext().getRealm(), user)
+                .map(fedIdentity -> session.identityProviders().getByAlias(fedIdentity.getIdentityProvider()))
+                .filter(Objects::nonNull)
+                .anyMatch(idpModel -> existingIdp == null || !Objects.equals(existingIdp.getAlias(), idpModel.getAlias()));
+
     }
 }

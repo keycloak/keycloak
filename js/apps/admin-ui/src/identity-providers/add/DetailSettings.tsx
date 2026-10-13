@@ -1,16 +1,28 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import IdentityProviderRepresentation, {
+  IdentityProviderType,
+} from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import {
+  Action,
+  KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
+  ScrollForm,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   Divider,
   DropdownItem,
-  DropdownSeparator,
   Form,
   PageSection,
   Tab,
   TabTitleText,
+  Tabs,
+  Text,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
@@ -23,30 +35,26 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { ScrollForm } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../../util";
-import { useFetch } from "../../utils/useFetch";
+import {
+  beerify,
+  convertAttributeNameToForm,
+  convertFormValuesToObject,
+  toUpperCase,
+} from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -61,11 +69,23 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { DescriptorSettings } from "./DescriptorSettings";
 import { DiscoverySettings } from "./DiscoverySettings";
 import { ExtendedNonDiscoverySettings } from "./ExtendedNonDiscoverySettings";
+import { ExtendedOAuth2Settings } from "./ExtendedOAuth2Settings";
 import { GeneralSettings } from "./GeneralSettings";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { SpiffeSettings } from "./SpiffeSettings";
+import { AdminEvents } from "../../events/AdminEvents";
+import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
+import { KubernetesSettings } from "./KubernetesSettings";
+import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
+import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
+import DefaultTrustSettings from "./DefaultTrustSettings";
+import { IdpDomainsTab } from "./IdpDomainsTab";
+import { IdpOrganizationsTab } from "./IdpOrganizationsTab";
+import Oid4VpSettings from "./Oid4VpSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -83,6 +103,8 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
@@ -135,7 +157,9 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         fromUrl: metadataDescriptorUrl,
       });
       if (result.signingCertificate) {
-        setValue(`config.signingCertificate`, result.signingCertificate);
+        setValue(`config.signingCertificate`, result.signingCertificate, {
+          shouldDirty: true,
+        });
         addAlert(t("importKeysSuccess"), AlertVariant.success);
       } else {
         addError("importKeysError", t("importKeysErrorNoSigningCertificate"));
@@ -206,7 +230,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
           </DropdownItem>,
@@ -248,12 +272,36 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset } = form;
+  const {
+    handleSubmit,
+    getValues,
+    reset,
+    control,
+    formState: { isDirty },
+  } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+
+  const toFormValues = (
+    p: IdentityProviderRepresentation,
+  ): IdentityProviderRepresentation =>
+    p.config
+      ? {
+          ...p,
+          config: Object.fromEntries(
+            Object.entries(p.config).map(([key, value]) => [
+              beerify(key),
+              value,
+            ]),
+          ),
+        }
+      : p;
+
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
   const serverInfo = useServerInfo();
@@ -276,9 +324,11 @@ export default function DetailSettings() {
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const [orgSubTab, setOrgSubTab] = useState("org-list");
+  const { hasAccess } = useAccess();
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -287,7 +337,7 @@ export default function DetailSettings() {
         throw new Error(t("notFound"));
       }
 
-      reset(fetchedProvider);
+      reset(toFormValues(fetchedProvider));
       setProvider(fetchedProvider);
 
       if (fetchedProvider.config!.authnContextClassRefs) {
@@ -304,7 +354,7 @@ export default function DetailSettings() {
         );
       }
     },
-    [],
+    [key],
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -319,14 +369,20 @@ export default function DetailSettings() {
 
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
+  const organizationsTab = useTab("organizations");
   const permissionsTab = useTab("permissions");
+  const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
-    const p = savedProvider || getValues();
+    const p = convertFormValuesToObject<IdentityProviderRepresentation>(
+      savedProvider || getValues(),
+    );
+    const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
         p.config.authnContextClassRefs,
       );
+    const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
         p.config.authnContextDeclRefs,
@@ -334,15 +390,44 @@ export default function DetailSettings() {
 
     try {
       await adminClient.identityProviders.update(
-        { alias },
+        { alias: provider?.alias || alias },
         {
           ...p,
           config: { ...provider?.config, ...p.config },
-          alias,
+          alias: provider?.alias || alias,
           providerId,
         },
       );
-      reset(p);
+      if (origAuthnContextClassRefs) {
+        p.config!.authnContextClassRefs = origAuthnContextClassRefs;
+      }
+      if (origAuthnContextDeclRefs) {
+        p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
+      }
+      const updatedProvider = await adminClient.identityProviders.findOne({
+        alias: provider?.alias || alias,
+      });
+
+      if (updatedProvider) {
+        setProvider(updatedProvider);
+        reset(toFormValues(updatedProvider));
+
+        if (updatedProvider.config?.authnContextClassRefs) {
+          form.setValue(
+            "config.authnContextClassRefs",
+            JSON.parse(updatedProvider.config.authnContextClassRefs),
+          );
+        }
+
+        if (updatedProvider.config?.authnContextDeclRefs) {
+          form.setValue(
+            "config.authnContextDeclRefs",
+            JSON.parse(updatedProvider.config.authnContextDeclRefs),
+          );
+        }
+      } else {
+        reset(toFormValues(p));
+      }
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
@@ -358,7 +443,7 @@ export default function DetailSettings() {
       try {
         await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
-        navigate(toIdentityProviders({ realm }));
+        void navigate(toIdentityProviders({ realm }));
       } catch (error) {
         addError("deleteErrorIdentityProvider", error);
       }
@@ -380,13 +465,17 @@ export default function DetailSettings() {
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
-        navigate(
+        void navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
         addError("deleteErrorIdentityProvider", error);
       }
     },
+  });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
   });
 
   if (!provider) {
@@ -395,6 +484,19 @@ export default function DetailSettings() {
 
   const isOIDC = provider.providerId!.includes("oidc");
   const isSAML = provider.providerId!.includes("saml");
+  const isOAuth2 = provider.providerId!.includes("oauth2");
+  const isSPIFFE = provider.providerId!.includes("spiffe");
+  const isKubernetes = provider.providerId!.includes("kubernetes");
+  const isJWTAuthorizationGrant = provider.providerId!.includes(
+    "jwt-authorization-grant",
+  );
+  const isDefaultTrust = provider.providerId === "default-trust";
+  const isOid4vp = provider.providerId === "oid4vp";
+  const isSocial = !isOIDC && !isSAML && !isOAuth2;
+  const isJWTAuthorizationGrantSupported =
+    (isOAuth2 || isOIDC) &&
+    !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
+    isFeatureEnabled(Feature.JWTAuthorizationGrant);
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -424,14 +526,20 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
+      isHidden:
+        isSPIFFE ||
+        isKubernetes ||
+        isJWTAuthorizationGrant ||
+        isDefaultTrust ||
+        isOid4vp,
       panel: (
         <FormAccess
           role="manage-identity-providers"
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
-          {isOIDC && <OIDCGeneralSettings />}
+          {isSocial && <GeneralSettings create={false} id={providerId} />}
+          {(isOIDC || isOAuth2) && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
           {providerInfo && (
             <DynamicComponents stringify properties={providerInfo.properties} />
@@ -440,17 +548,148 @@ export default function DetailSettings() {
       ),
     },
     {
+      title: t("generalSettings"),
+      isHidden: !isOid4vp,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <Oid4VpSettings />
+        </FormAccess>
+      ),
+    },
+    {
       title: t("oidcSettings"),
       isHidden: !isOIDC,
       panel: (
         <>
-          <DiscoverySettings readOnly={false} />
-          <Form isHorizontal className="pf-u-py-lg">
+          <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
+          <Form isHorizontal className="pf-v5-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
           <ExtendedNonDiscoverySettings />
         </>
+      ),
+    },
+    {
+      title: t("oAuthSettings"),
+      isHidden: !isOAuth2,
+      panel: (
+        <>
+          <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
+          <Form isHorizontal className="pf-v5-u-py-lg">
+            <Divider />
+            <OIDCAuthentication create={false} />
+          </Form>
+          <UserProfileClaimsSettings />
+          <ExtendedOAuth2Settings />
+        </>
+      ),
+    },
+    {
+      title: t("authorizationGrantSettings"),
+      isHidden: !isJWTAuthorizationGrantSupported,
+      panel: (
+        <>
+          <Text className="pf-v5-u-pb-lg">
+            {t("authorizationGrantSettingsHelp")}
+          </Text>
+          <Form
+            isHorizontal
+            className="pf-v5-u-py-lg"
+            onSubmit={handleSubmit(save)}
+          >
+            <DefaultSwitchControl
+              name="config.jwtAuthorizationGrantEnabled"
+              label={t("jwtAuthorizationGrantIdpEnabled")}
+              labelIcon={t("jwtAuthorizationGrantIdpEnabledHelp")}
+              stringify
+            />
+
+            {jwtAuthorizationGrantEnabled === "true" && (
+              <JWTAuthorizationGrantAssertionSettings />
+            )}
+          </Form>
+        </>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isSPIFFE,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <SpiffeSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isJWTAuthorizationGrant,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <JWTAuthorizationGrantSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isKubernetes,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <KubernetesSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isDefaultTrust,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <DefaultTrustSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
       ),
     },
     {
@@ -473,15 +712,60 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
+      isHidden:
+        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isDefaultTrust,
       panel: (
         <FormAccess
           role="manage-identity-providers"
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
+          <AdvancedSettings
+            isOIDC={isOIDC!}
+            isSAML={isSAML!}
+            isOAuth2={isOAuth2!}
+          />
 
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </FormAccess>
+      ),
+    },
+    {
+      title: t("organizationSettings"),
+      isHidden: (provider.organizationLinks?.length ?? 0) === 0,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.show-when-linked-elsewhere",
+            )}
+            label={t("showOnLoginForUnlinkedMembers")}
+            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
+            stringify
+          />
+          <FixedButtonsGroup
+            name="idp-org-settings"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
         </FormAccess>
       ),
     },
@@ -505,7 +789,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
@@ -514,12 +798,18 @@ export default function DetailSettings() {
           >
             <ScrollForm
               label={t("jumpToSection")}
-              className="pf-u-px-lg"
+              className="pf-v5-u-px-lg"
               sections={sections}
             />
           </Tab>
           <Tab
             id="mappers"
+            isHidden={
+              isSPIFFE ||
+              isKubernetes ||
+              isJWTAuthorizationGrant ||
+              isDefaultTrust
+            }
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
@@ -531,7 +821,7 @@ export default function DetailSettings() {
                   instructions={t("noMappersInstructions")}
                   primaryActionText={t("addMapper")}
                   onPrimaryAction={() =>
-                    navigate(
+                    void navigate(
                       toIdentityProviderAddMapper({
                         realm,
                         alias: alias!,
@@ -595,6 +885,35 @@ export default function DetailSettings() {
               ]}
             />
           </Tab>
+          {(provider.organizationLinks?.length ?? 0) > 0 && (
+            <Tab
+              id="organizations"
+              data-testid="organizationsTab"
+              title={<TabTitleText>{t("organizations")}</TabTitleText>}
+              {...organizationsTab}
+            >
+              <Tabs
+                activeKey={orgSubTab}
+                onSelect={(_, key) => setOrgSubTab(key as string)}
+                mountOnEnter
+              >
+                <Tab
+                  id="org-list"
+                  eventKey="org-list"
+                  title={<TabTitleText>{t("organizations")}</TabTitleText>}
+                >
+                  <IdpOrganizationsTab alias={alias} onLinksChange={refresh} />
+                </Tab>
+                <Tab
+                  id="org-domains"
+                  eventKey="org-domains"
+                  title={<TabTitleText>{t("domains")}</TabTitleText>}
+                >
+                  <IdpDomainsTab alias={alias} />
+                </Tab>
+              </Tabs>
+            </Tab>
+          )}
           {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               id="permissions"
@@ -605,6 +924,18 @@ export default function DetailSettings() {
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           )}
+          {realmRepresentation.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents
+                  resourcePath={`identity-provider/instances/${alias}`}
+                />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </FormProvider>

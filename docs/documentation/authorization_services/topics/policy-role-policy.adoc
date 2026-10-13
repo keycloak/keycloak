@@ -31,6 +31,10 @@ Specifies which *realm* roles are permitted by this policy.
 +
 Specifies which *client* roles are permitted by this policy. To enable this field must first select a `Client`.
 +
+* *Fetch Roles*
++
+By default, only the roles available from the token sent with the authorization requests are used to check if the user is granted with a role. If this setting is enabled, the policy will ignore roles from the token and check any role associated with the user instead.
++
 * *Logic*
 +
 The logic of this policy to apply after the other conditions have been evaluated.

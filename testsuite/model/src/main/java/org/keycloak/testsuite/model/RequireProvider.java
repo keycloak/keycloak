@@ -16,12 +16,13 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.keycloak.provider.Provider;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Identifies a requirement for a given provider to be present in the session factory.

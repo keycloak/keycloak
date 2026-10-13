@@ -16,9 +16,9 @@
  */
 package org.keycloak.dom.saml.v2.protocol;
 
-import org.keycloak.dom.saml.v2.assertion.SubjectType;
-
 import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 
 /**
  * <p>

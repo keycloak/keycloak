@@ -18,6 +18,7 @@
 package org.keycloak.migration.migrators;
 
 import java.util.stream.Collectors;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -38,6 +39,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class MigrationUtils {
+
+    public static final String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
+    public static final String ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE = "kc.org.excluded.domains";
+    public static final String ORGANIZATION_REDIRECT_MODE_ATTRIBUTE = "kc.org.broker.redirect.mode.email-matches";
 
     public static void addAdminRole(RealmModel realm, String roleName) {
         ClientModel client = realm.getMasterAdminClient();

@@ -16,17 +16,12 @@
  */
 package org.keycloak.testsuite.sssd;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -38,6 +33,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.logging.Logger;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -154,14 +157,14 @@ public class SSSDTest extends AbstractBaseSSSDTest {
 
         RealmResource realm = adminClient.realm(REALM_NAME);
         List<UserRepresentation> users = realm.users().search(username, true);
-        Assert.assertEquals(1, users.size());
+        Assertions.assertEquals(1, users.size());
         UserRepresentation user = users.iterator().next();
         user.setLastName("changed");
 
-        BadRequestException e = Assert.assertThrows(BadRequestException.class,
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class,
                 () -> realm.users().get(users.iterator().next().getId()).update(user));
         ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("error-user-attribute-read-only", error.getErrorMessage());
+        Assertions.assertEquals(error.getErrorMessage(), "error-user-attribute-read-only");
     }
 
     @Test
@@ -172,16 +175,16 @@ public class SSSDTest extends AbstractBaseSSSDTest {
 
         RealmResource realm = adminClient.realm(REALM_NAME);
         List<UserRepresentation> users = realm.users().search(username, true);
-        Assert.assertEquals(1, users.size());
+        Assertions.assertEquals(1, users.size());
         CredentialRepresentation newPassword = new CredentialRepresentation();
         newPassword.setType(CredentialRepresentation.PASSWORD);
         newPassword.setValue("new-password-123!");
         newPassword.setTemporary(false);
 
-        BadRequestException e = Assert.assertThrows(BadRequestException.class,
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class,
                 () -> realm.users().get(users.iterator().next().getId()).resetPassword(newPassword));
         OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("Can't reset password as account is read only", error.getError());
+        Assertions.assertEquals(error.getError(), "Can't reset password as account is read only");
     }
 
     private void verifyUserGroups(String username, List<String> groups) {

@@ -9,8 +9,8 @@ image:images/resource/view.png[alt="Resources"]
 The resource list provides information about the protected resources, such as:
 
 * Type
-* URIS
 * Owner
+* URIs
 * Associated scopes, if any
 * Associated permissions
 

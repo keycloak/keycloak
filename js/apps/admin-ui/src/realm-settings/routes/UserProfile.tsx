@@ -19,9 +19,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const UserProfileRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("userProfile"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("userProfile"),
   },
 };
 

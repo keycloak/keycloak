@@ -18,7 +18,7 @@ export const ForbiddenSection = ({
   return (
     <PageSection>
       {t("forbidden", { count: permissionNeededArray.length })}{" "}
-      {permissionNeededArray.map((p) => p.toString())}
+      {permissionNeededArray.map((p) => p.toString()).join(", ")}
     </PageSection>
   );
 };

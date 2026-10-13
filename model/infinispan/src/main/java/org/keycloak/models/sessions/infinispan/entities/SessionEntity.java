@@ -17,26 +17,30 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.Serializable;
-
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.protostream.annotations.ProtoField;
+
 /**
- * Represents an entity containing data about a session, i.e. an object that is stored in infinispan cache and can be
- * potentially shared across DCs. Due to conflict management in {@code RemoteCacheInvoker} and
- * {@code InfinispanChangelogBasedTransaction} that use Infinispan's {@code replace()} method, overriding {@link #hashCode()}
- * and {@link #equals(java.lang.Object)} is <b>mandatory</b> in descendants.
+ * Represents an entity containing data about a session, i.e. an object that is stored in infinispan cache.
+ * Due to conflict management in {@code InfinispanChangelogBasedTransaction} that use Infinispan's {@code replace()}
+ * method, overriding {@link #hashCode()} and {@link #equals(java.lang.Object)} is <b>mandatory</b> in descendants.
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class SessionEntity implements Serializable {
+public abstract class SessionEntity {
 
     private String realmId;
+    private boolean isOffline;
 
     /**
      * Returns realmId ID.
      * @return
      */
+    @ProtoField(1)
+    @Basic
     public String getRealmId() {
         return realmId;
     }
@@ -52,13 +56,15 @@ public abstract class SessionEntity implements Serializable {
         this.realmId = realmId;
     }
 
+    @Deprecated(since = "26.4", forRemoval = true)
+    //no longer used
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
         if (localEntityWrapper == null) {
             return new SessionEntityWrapper<>(this);
         } else {
             return new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
         }
-    };
+    }
 
     @Override
     public abstract boolean equals(Object obj);
@@ -66,4 +72,21 @@ public abstract class SessionEntity implements Serializable {
     @Override
     public abstract int hashCode();
 
+    public boolean isOffline() {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            throw new IllegalArgumentException("Offline flags are not supported in non-persistent-session environments.");
+        }
+        return isOffline;
+    }
+
+    public void setOffline(boolean offline) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            throw new IllegalArgumentException("Offline flags are not supported in non-persistent-session environments.");
+        }
+        isOffline = offline;
+    }
+
+    public boolean shouldEvaluateRemoval() {
+        return false;
+    }
 }

@@ -17,24 +17,22 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
 
 public class ClientScopeListQuery extends AbstractRevisioned implements ClientScopeQuery {
     private final Set<String> clientScopes;
     private final String realm;
-    private final String realmName;
     private String clientUuid;
 
-    public ClientScopeListQuery(Long revisioned, String id, RealmModel realm, Set<String> clientScopes) {
+    public ClientScopeListQuery(long revisioned, String id, RealmModel realm, Set<String> clientScopes) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.clientScopes = clientScopes;
     }
 
-    public ClientScopeListQuery(Long revisioned, String id, RealmModel realm, String clientUuid, Set<String> clientScopes) {
+    public ClientScopeListQuery(long revisioned, String id, RealmModel realm, String clientUuid, Set<String> clientScopes) {
         this(revisioned, id, realm, clientScopes);
         this.clientUuid = clientUuid;
     }
@@ -58,7 +56,7 @@ public class ClientScopeListQuery extends AbstractRevisioned implements ClientSc
     public String toString() {
         return "ClientScopeListQuery{" +
                 "id='" + getId() + "'" +
-                ", realmName='" + realmName + '\'' +
+                ", realm='" + realm + '\'' +
                 ", clientUuid='" + clientUuid + '\'' +
                 '}';
     }

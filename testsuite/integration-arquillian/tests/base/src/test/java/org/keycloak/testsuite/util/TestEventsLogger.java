@@ -16,16 +16,16 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.openqa.selenium.WebDriver;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
 
 /**
  *
@@ -76,7 +76,7 @@ public class TestEventsLogger extends RunListener {
             if (driver != null && driver.getPageSource() != null) {
                 String pageSourceLocation = System.getProperty("page.source.location", "target/failed-tests/page-source/");
                 FileUtils.writeStringToFile(new File(pageSourceLocation + d.getTestClass().getSimpleName() + "/" + d.getMethodName() + ".html"), 
-                        driver.getPageSource(), Charset.forName("UTF-8"));
+                        driver.getPageSource(), StandardCharsets.UTF_8);
             }
         } catch (IllegalStateException ex) {
             Logger.getLogger(TestEventsLogger.class).warn(ex.getMessage());

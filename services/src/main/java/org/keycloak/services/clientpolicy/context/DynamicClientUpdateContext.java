@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 
-public class DynamicClientUpdateContext extends AbstractDynamicClientCRUDContext {
+public class DynamicClientUpdateContext extends AbstractDynamicClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientModel clientToBeUpdated;
     private final ClientRepresentation proposedClientRepresentation;

@@ -1,10 +1,12 @@
 import type AuthenticatorConfigInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
+  Flex,
   Form,
   Modal,
   ModalVariant,
@@ -14,12 +16,9 @@ import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 
 type ExecutionConfigModalForm = {
@@ -34,6 +33,8 @@ type ExecutionConfigModalProps = {
 export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -43,7 +44,7 @@ export const ExecutionConfigModal = ({
     useState<AuthenticatorConfigInfoRepresentation>();
 
   const form = useForm<ExecutionConfigModalForm>();
-  const { setValue, handleSubmit } = form;
+  const { setValue, handleSubmit, reset } = form;
 
   // default config all executions should have
   const defaultConfigProperties = execution.authenticationFlow
@@ -161,7 +162,7 @@ export const ExecutionConfigModal = ({
                 name="alias"
                 label={t("alias")}
                 labelIcon={t("authenticationAliasHelp")}
-                rules={{ required: { value: true, message: t("required") } }}
+                rules={{ required: t("required") }}
                 isDisabled={!!config}
               />
               <DynamicComponents
@@ -170,34 +171,46 @@ export const ExecutionConfigModal = ({
               />
             </FormProvider>
             <ActionGroup>
-              <Button data-testid="save" variant="primary" type="submit">
-                {t("save")}
-              </Button>
-              <Button
-                data-testid="cancel"
-                variant={ButtonVariant.link}
-                onClick={() => {
-                  setShow(false);
-                }}
+              <Flex
+                className="pf-v5-u-flex-grow-1"
+                justifyContent={{ default: "justifyContentSpaceBetween" }}
               >
-                {t("cancel")}
-              </Button>
-              {config && (
-                <Button
-                  className="pf-u-ml-4xl"
-                  data-testid="clear"
-                  variant={ButtonVariant.link}
-                  onClick={async () => {
-                    await adminClient.authenticationManagement.delConfig({
-                      id: config.id!,
-                    });
-                    setConfig(undefined);
-                    setShow(false);
-                  }}
-                >
-                  {t("clear")} <TrashIcon />
-                </Button>
-              )}
+                <div>
+                  <Button
+                    className="pf-v5-u-mr-md"
+                    data-testid="save"
+                    variant="primary"
+                    type="submit"
+                  >
+                    {t("save")}
+                  </Button>
+                  <Button
+                    data-testid="cancel"
+                    variant={ButtonVariant.link}
+                    onClick={() => {
+                      setShow(false);
+                    }}
+                  >
+                    {t("cancel")}
+                  </Button>
+                </div>
+                {config && (
+                  <Button
+                    data-testid="clear"
+                    variant={ButtonVariant.link}
+                    onClick={async () => {
+                      await adminClient.authenticationManagement.delConfig({
+                        id: config.id!,
+                      });
+                      setConfig(undefined);
+                      reset();
+                      setShow(false);
+                    }}
+                  >
+                    {t("clear")} <TrashIcon />
+                  </Button>
+                )}
+              </Flex>
             </ActionGroup>
           </Form>
         </Modal>

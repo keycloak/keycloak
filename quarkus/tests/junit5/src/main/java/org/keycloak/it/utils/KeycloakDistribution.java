@@ -1,69 +1,50 @@
 package org.keycloak.it.utils;
 
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.quarkus.runtime.Environment;
 import java.nio.file.Path;
 import java.util.List;
+
+import org.keycloak.quarkus.runtime.Environment;
 
 public interface KeycloakDistribution {
 
     String SCRIPT_CMD = Environment.isWindows() ? "kc.bat" : "kc.sh";
-    String SCRIPT_CMD_INVOKABLE = Environment.isWindows() ? SCRIPT_CMD : "./"+SCRIPT_CMD;
 
-    CLIResult run(List<String> arguments);
-    default CLIResult run(String... arguments) {
-        return run(List.of(arguments));
+    String SCRIPT_KCADM_CMD = Environment.isWindows() ? "kcadm.bat" : "kcadm.sh";
+
+    /**
+     * Run the kc command and immediately return without waiting for the process
+     */
+    void runKc(List<String> arguments);
+    /**
+     * Run the kc command and immediately return without waiting for the process
+     */
+    default void runKc(String... arguments) {
+        runKc(List.of(arguments));
     }
-
+    
+    void waitFor(boolean ready, long timeoutMillis);
+    
     void stop();
+    
+    int getMappedPort(int port);
 
     List<String> getOutputStream();
 
     List<String> getErrorStream();
 
+    /**
+     * Available after the main process exits, which may require {@link #stop()} to be called
+     */
     int getExitCode();
+    
+    boolean supportsDebug();
 
-    boolean isDebug();
+    void setEnvVar(String name, String value);
 
-    boolean isManualStop();
+    void clearEnv();
+    
+    void copyProvider(String groupId, String artifactId);
 
-    void assertStopped();
+    void copyConfigFile(Path configFilePath);
 
-    default String[] getCliArgs(List<String> arguments) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setManualStop(boolean manualStop) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setQuarkusProperty(String key, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setProperty(String key, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void deleteQuarkusProperties() {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void copyOrReplaceFileFromClasspath(String file, Path distDir) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void removeProperty(String name) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setEnvVar(String name, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void copyOrReplaceFile(Path file, Path targetFile) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    <D extends KeycloakDistribution> D unwrap(Class<D> type);
 }

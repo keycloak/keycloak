@@ -26,29 +26,31 @@
     <artifactId>keycloak-distribution-maven-plugins-parent</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Distribution Maven Plugins Parent</name>
+    <description>Keycloak Distribution Maven Plugins Parent</description>
 
     <dependencies>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.4.12</version>
+            <version>3.0.25</version>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.3.9</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.3.9</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.4</version>
+            <version>${maven.plugins.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -63,7 +65,7 @@
                 <plugin>
                     <groupId>org.codehaus.gmavenplus</groupId>
                     <artifactId>gmavenplus-plugin</artifactId>
-                    <version>1.6</version>
+                    <version>3.0.2</version>
                     <executions>
                         <execution>
                             <id>compile-groovy</id>
@@ -72,7 +74,6 @@
                                 <goal>addTestSources</goal>
                                 <goal>generateStubs</goal>
                                 <goal>compile</goal>
-                                <goal>removeStubs</goal>
                                 <goal>generateTestStubs</goal>
                                 <goal>compileTests</goal>
                                 <goal>removeTestStubs</goal>

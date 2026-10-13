@@ -64,6 +64,7 @@ public final class OIDCConfigAttributes {
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
 
     public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";
+    public static final String TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP = "token.endpoint.auth.signing.max.exp";
 
     public static final String BACKCHANNEL_LOGOUT_URL = "backchannel.logout.url";
 
@@ -71,11 +72,15 @@ public final class OIDCConfigAttributes {
     
     public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
 
+    public static final String LOGOUT_CONFIRMATION_ENABLED = "logout.confirmation.enabled";
+
     public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
 
     public static final String USE_LOWER_CASE_IN_TOKEN_RESPONSE = "token.response.type.bearer.lower-case";
+
+    public static final String USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE = "access.token.header.type.rfc9068";
 
     public static final String ID_TOKEN_AS_DETACHED_SIGNATURE  = "id.token.as.detached.signature";
 
@@ -86,6 +91,27 @@ public final class OIDCConfigAttributes {
     public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
 
     public static final String POST_LOGOUT_REDIRECT_URIS = "post.logout.redirect.uris";
+    
+    public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
+    public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
+
+    public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
+    public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
+    public static final String JWT_AUTHORIZATION_GRANT_AUDIENCE = "oauth2.jwt.authorization.grant.audience";
+
+    public static final String EXTERNAL_TOKEN_ENABLED = "external.token.enabled";
+    public static final String EXTERNAL_TOKEN_IDP = "external.token.idp";
+
+    public static final String LOGO_URI = "logoUri";
+    public static final String TOS_URI = "tosUri";
+    public static final String POLICY_URI = "policyUri";
+    public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
+
+    public static final String ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow.token.introspection.without.audience.check";
+
+    public static final String ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow.userinfo.with.lightweight.access.token";
+
+    public static final String ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow.oidc.params.in.redirect.uris";
 
     private OIDCConfigAttributes() {
     }

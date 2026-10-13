@@ -23,6 +23,8 @@
  */
 package org.jvnet.libpam;
 
+import java.util.Set;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 import org.jboss.logging.Logger;
@@ -32,8 +34,6 @@ import org.jvnet.libpam.impl.PAMLibrary.pam_conv.PamCallback;
 import org.jvnet.libpam.impl.PAMLibrary.pam_handle_t;
 import org.jvnet.libpam.impl.PAMLibrary.pam_message;
 import org.jvnet.libpam.impl.PAMLibrary.pam_response;
-
-import java.util.Set;
 
 import static com.sun.jna.Native.POINTER_SIZE;
 import static org.jvnet.libpam.impl.CLibrary.libc;
@@ -47,7 +47,7 @@ import static org.jvnet.libpam.impl.PAMLibrary.libpam;
  * PAM authenticator.
  * <p>
  * <p>
- * Instances are thread unsafe and non reentrant. An instace cannot be reused
+ * Instances are thread unsafe and non reentrant. An instance cannot be reused
  * to authenticate multiple users.
  * <p>
  * <p>

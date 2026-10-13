@@ -17,9 +17,7 @@
  */
 package org.keycloak.testsuite.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -31,6 +29,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -40,27 +63,14 @@ import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.AuthorizationResponseToken;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.ServerURLs;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -76,13 +86,17 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     @Page
     protected OAuthGrantPage grantPage;
 
-    @Page
-    protected AppPage appPage;
+        protected PkceGenerator pkceGenerator;
 
     @BeforeClass
     public static void verifySSL() {
-        // FAPI requires SSL and does not makes sense to test it with disabled SSL
+        // FAPI requires SSL and does not make sense to test it with disabled SSL
         Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+    }
+
+    @After
+    public void resetPkce() {
+        pkceGenerator = null;
     }
 
     @Override
@@ -115,92 +129,90 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     public static void assertScopes(String expectedScope, String receivedScope) {
         Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
         Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+        Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes),
+                "Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope);
     }
 
-    protected String getParameterFromUrl(String paramName, boolean fragmentExpected) {
-        return fragmentExpected ? oauth.getCurrentFragment().get(paramName) : oauth.getCurrentQuery().get(paramName);
-    }
-
-    protected String loginUserAndGetCode(String clientId, boolean fragmentResponseModeExpected) {
-        oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+    protected String loginUserAndGetCode(String clientId, String nonce, boolean fragmentResponseModeExpected) {
+        oauth.client(clientId);
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        String code = getParameterFromUrl(OAuth2Constants.CODE, fragmentResponseModeExpected);
-        Assert.assertNotNull(code);
+        String code = oauth.parseLoginResponse().getCode();
+        Assertions.assertNotNull(code);
         return code;
     }
 
-    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId) {
-        oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId, String nonce) {
+        oauth.client(clientId);
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        System.out.println("KKKKK response = " + oauth.getCurrentQuery().get("response"));
-        AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.getCurrentQuery().get("response"));
+        AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.parseLoginResponse().getResponse());
         String code = (String)responseToken.getOtherClaims().get("code");
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
         return code;
     }
 
-    protected void assertSuccessfulTokenResponse(OAuthClient.AccessTokenResponse tokenResponse) {
+    protected void assertSuccessfulTokenResponse(AccessTokenResponse tokenResponse) {
         assertEquals(200, tokenResponse.getStatusCode());
         MatcherAssert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
         MatcherAssert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
 
         // Scope parameter must be present per FAPI
-        Assert.assertNotNull(tokenResponse.getScope());
+        Assertions.assertNotNull(tokenResponse.getScope());
         assertScopes("openid profile email", tokenResponse.getScope());
 
         // ID Token contains all the claims
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-        Assert.assertNotNull(idToken.getId());
-        Assert.assertEquals("foo", idToken.getIssuedFor());
-        Assert.assertEquals("john", idToken.getPreferredUsername());
-        Assert.assertEquals("john@keycloak.org", idToken.getEmail());
-        Assert.assertEquals("Johny", idToken.getGivenName());
-        Assert.assertEquals(idToken.getNonce(), "123456");
+        Assertions.assertNotNull(idToken.getId());
+        Assertions.assertEquals("foo", idToken.getIssuedFor());
+        Assertions.assertEquals("john", idToken.getPreferredUsername());
+        Assertions.assertEquals("john@keycloak.org", idToken.getEmail());
+        Assertions.assertEquals("Johny", idToken.getGivenName());
+        Assertions.assertEquals("123456", idToken.getNonce());
     }
 
     protected void logoutUserAndRevokeConsent(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
         user.logout();
         List<Map<String, Object>> consents = user.getConsents();
-        org.junit.Assert.assertEquals(1, consents.size());
+        Assertions.assertEquals(1, consents.size());
         user.revokeConsent(clientId);
     }
 
-    protected void assertRedirectedToClientWithError(String expectedError, boolean fragmentExpected, String expectedErrorDescription) {
-        appPage.assertCurrent();
-        assertEquals(expectedError, getParameterFromUrl(OAuth2Constants.ERROR, fragmentExpected));
-        assertEquals(expectedErrorDescription, getParameterFromUrl(OAuth2Constants.ERROR_DESCRIPTION, fragmentExpected));
+    protected void assertRedirectedToClientWithError(String expectedError, String expectedErrorDescription) {
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(expectedError, response.getError());
+        assertEquals(expectedErrorDescription, response.getErrorDescription());
     }
 
     protected void assertBrowserWithError(String expectedError) {
         errorPage.assertCurrent();
-        Assert.assertEquals(expectedError, errorPage.getError());
+        Assertions.assertEquals(expectedError, errorPage.getError());
     }
 
-    protected OAuthClient.AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, String codeVerifier, Supplier<CloseableHttpClient> httpClientSupplier) {
+    protected AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+            if (pkceGenerator != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, pkceGenerator.getCodeVerifier()));
+            }
             parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-            CloseableHttpResponse response = sendRequest(oauth.getAccessTokenUrl(), parameters, httpClientSupplier);
-            return new OAuthClient.AccessTokenResponse(response);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters, httpClientSupplier);
+            return new AccessTokenResponse(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -215,15 +227,44 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         return createSignedRequestToken(clientId, privateKey, publicKey, algorithm);
     }
 
+    protected String createSignedRequestToken(String clientId, String algorithm, String audUrl) throws Exception {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
+        KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        return createSignedRequestToken(clientId, privateKey, publicKey, algorithm, audUrl);
+    }
+
+    protected String createSignedRequestToken(String clientId, String algorithm, String[] audienceUrls) throws Exception {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.getKeysAsBase64();
+        KeyPair keyPair = getKeyPairFromGeneratedBase64(generatedKeys, algorithm);
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        return createSignedRequestToken(clientId, privateKey, publicKey, algorithm, audienceUrls);
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String audUrl) {
+        JsonWebToken jwt = createRequestToken(clientId, audUrl);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
+    }
+
+    private String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm, String[] audienceUrls) {
+        JsonWebToken jwt = createRequestToken(clientId, audienceUrls);
+        String kid = KeyUtils.createKeyId(publicKey);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
+        return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
+    }
+
     protected CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
-        CloseableHttpClient client = httpClientSupplier.get();
-        try {
+        try (CloseableHttpClient client = httpClientSupplier.get()) {
             HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
         }
     }
 }

@@ -29,11 +29,14 @@ public interface UserLoginFailureModel {
    void setFailedLoginNotBefore(int notBefore);
    int getNumFailures();
    void incrementFailures();
+   int getNumTemporaryLockouts();
+   void incrementTemporaryLockouts();
    void clearFailures();
    long getLastFailure();
    void setLastFailure(long lastFailure);
    String getLastIPFailure();
    void setLastIPFailure(String ip);
-
-
+   int getNumSecondaryAuthFailures();
+   void incrementSecondaryAuthFailures();
+   void clearPrimaryAndSecondaryAuthFailures();
 }

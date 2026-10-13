@@ -20,8 +20,11 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,8 +35,12 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.PropertiesConfigSource;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server
@@ -51,10 +58,10 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
      * to ignore this config source. Otherwise, default values are not resolved at runtime because the property will be
      * resolved from this config source, if persisted.
      */
-    private static final ThreadLocal<Boolean> ENABLED = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> ENABLED = ThreadLocal.withInitial(() -> true);
 
     private PersistedConfigSource() {
-        super(readProperties(), "", 200);
+        super(readProperties(), NAME, 200);
     }
 
     public static PersistedConfigSource getInstance() {
@@ -62,20 +69,9 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getValue(String propertyName) {
+    public ConfigValue getConfigValue(String propertyName) {
         if (isEnabled()) {
-            String value = super.getValue(propertyName);
-
-            if (value != null) {
-                return value;
-            }
-
-            return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
+            return super.getConfigValue(propertyName);
         }
 
         return null;
@@ -91,7 +87,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> readProperties() {
-        if (Environment.isRuntimeMode()) {
+        if (!Environment.isRebuild()) {
             InputStream fileStream = loadPersistedConfig();
 
             if (fileStream == null) {
@@ -119,7 +115,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static InputStream loadPersistedConfig() {
-        Path homePath = Environment.getHomePath();
+        Path homePath = Environment.getHomePath().orElse(null);
 
         if (homePath == null) {
             return null;
@@ -131,6 +127,12 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
             return null;
         }
 
+        if (!Environment.isWindows()) {
+            return PersistedConfigSource.class.getClassLoader().getResourceAsStream(PERSISTED_PROPERTIES);
+        }
+
+        // https://bugs.openjdk.org/browse/JDK-8338445 - prevents us from picking the properties directly up from the classloader
+        // instead we'll manually open the jar
         try (ZipInputStream is = new ZipInputStream(new FileInputStream(configFile))) {
             ZipEntry entry;
 
@@ -146,16 +148,52 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
         return null;
     }
 
-    public void enable(boolean enabled) {
-        if (enabled) {
-            ENABLED.remove();
-        } else {
-            ENABLED.set(enabled);
-        }
+    public void enable() {
+        ENABLED.set(true);
+    }
+
+    public void disable() {
+        ENABLED.set(false);
     }
 
     private boolean isEnabled() {
-        Boolean result = ENABLED.get();
-        return result == null ? true : result;
+        return Boolean.TRUE.equals(ENABLED.get());
+    }
+
+    public <T> T runWithDisabled(Supplier<T> execution) {
+        if (!isEnabled()) {
+            return execution.get();
+        }
+        try {
+            disable();
+            return execution.get();
+        } finally {
+            enable();
+        }
+    }
+
+    public void saveDryRunProperties() throws FileNotFoundException, IOException {
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("quarkus").resolve("dryRun.properties");
+        var properties = Picocli.getNonPersistedBuildTimeOptions();
+        try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
+            properties.store(fos, null);
+        }
+    }
+
+    public void useDryRunProperties() {
+        Path path = Environment.getHomePath().orElseThrow().resolve("lib").resolve("quarkus").resolve("dryRun.properties");
+        if (Files.exists(path)) {
+            Properties properties = new Properties();
+            try (FileInputStream fis = new FileInputStream(path.toFile())) {
+                properties.load(fis);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            var config = this.getConfigValueProperties();
+            config.clear();
+            properties.forEach((k, v) -> config.put((String) k,
+                    new ConfigValueBuilder().withName((String) k).withValue((String) v).withRawValue((String) v)
+                            .withConfigSourceName(this.getName()).withConfigSourceOrdinal(this.getOrdinal()).build()));
+        }
     }
 }

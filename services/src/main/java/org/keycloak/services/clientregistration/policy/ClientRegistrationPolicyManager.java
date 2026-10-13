@@ -17,9 +17,10 @@
 
 package org.keycloak.services.clientregistration.policy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientModel;
@@ -28,6 +29,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -94,6 +97,21 @@ public class ClientRegistrationPolicyManager {
     }
 
 
+
+    public static List<String> getAllowedOrigins(KeycloakSession session, RegistrationAuth authType) {
+        RealmModel realm = session.getContext().getRealm();
+        String policyTypeKey = getComponentTypeKey(authType);
+        List<String> origins = new ArrayList<>();
+        realm.getComponentsStream(realm.getId(), ClientRegistrationPolicy.class.getName())
+                .filter(componentModel -> Objects.equals(componentModel.getSubType(), policyTypeKey))
+                .forEach(policyModel -> {
+                    ClientRegistrationPolicy policy = session.getProvider(ClientRegistrationPolicy.class, policyModel);
+                    if (policy != null) {
+                        origins.addAll(policy.getAllowedOrigins());
+                    }
+                });
+        return origins;
+    }
 
     private static void triggerPolicies(KeycloakSession session, ClientRegistrationProvider provider, RegistrationAuth authType,
                                         String opDescription, ClientRegOperation op) throws ClientRegistrationPolicyException {

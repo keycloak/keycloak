@@ -16,15 +16,16 @@
  */
 package org.keycloak.testsuite.servlet;
 
-import org.keycloak.services.resources.RealmsResource;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.io.PrintWriter;
+
+import org.keycloak.services.resources.RealmsResource;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

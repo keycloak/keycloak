@@ -1,7 +1,11 @@
 package org.keycloak.testsuite.model.user;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -15,13 +19,10 @@ import org.keycloak.testsuite.federation.UserPropertyFileStorage;
 import org.keycloak.testsuite.federation.UserPropertyFileStorage.UserPropertyFileStorageCall;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
-
 import org.keycloak.testsuite.model.RequireProvider;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -43,6 +44,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -57,13 +59,15 @@ public class UserPaginationTest extends KeycloakModelTest {
             } else {
                 userFederationId2 = res.getId();
             }
-            
+
             log.infof("Added %s user federation provider: %s", fs.getName(), res.getId());
         }));
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -72,7 +76,7 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, Constants.DEFAULT_MAX_RESULTS) // Default values used in UsersResource
                         .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(8));
 
         expectedStorageCalls(
@@ -86,7 +90,7 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, 6)
                         .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(6));
 
 
@@ -127,12 +131,13 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 5, 6)
                 .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(3));
 
+        // https://github.com/keycloak/keycloak/issues/44860 brings an optimization where the count method is not invoked.
         expectedStorageCalls(
-                Collections.singletonList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
-                Arrays.asList(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null), new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.COUNT_SEARCH_METHOD, null, null)),
+                List.of(new UserPropertyFileStorageCall(UserPropertyFileStorage.SEARCH_METHOD, 1, 6))
         );
     }
 

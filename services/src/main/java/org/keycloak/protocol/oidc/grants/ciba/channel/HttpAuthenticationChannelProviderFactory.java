@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import java.util.List;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;

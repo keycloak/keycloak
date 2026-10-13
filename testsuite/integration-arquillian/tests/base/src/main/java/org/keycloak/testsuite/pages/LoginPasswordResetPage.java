@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -32,13 +33,13 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(id = "input-error-username")
     private WebElement usernameError;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-success")
+    @FindBy(css = "[class='pf-v5-c-success'], [class='alert-success']")
     private WebElement emailSuccessMessage;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement emailErrorMessage;
 
     @FindBy(partialLinkText = "Back to Login")
@@ -47,23 +48,23 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(id = "kc-info-wrapper")
     private WebElement infoWrapper;
 
+    @FindBy(id = "kc-reset-password-form")
+    private WebElement formResetPassword;
+
     public void changePassword() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void changePassword(String username) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
-    }
-
-    public void open() {
-        throw new UnsupportedOperationException();
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-reset-password";
     }
 
     public String getSuccessMessage() {
@@ -91,7 +92,7 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     }
 
     public void backToLogin() {
-        backToLogin.click();
+        UIUtils.clickLink(backToLogin);
     }
 
     public String getInfoMessage() {
@@ -100,5 +101,9 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         } catch (NoSuchElementException e) {
             return null;
         }
+    }
+
+    public String getFormUrl() {
+            return formResetPassword.getAttribute("action");
     }
 }

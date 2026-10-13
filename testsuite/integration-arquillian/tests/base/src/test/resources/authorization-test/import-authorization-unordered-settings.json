@@ -54,7 +54,7 @@
     {
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
-      "type": "script-scripts/only-owner-policy.js",
+      "type": "allow-resource-owner",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS"
     },
@@ -71,7 +71,7 @@
     {
       "name": "Only From a Specific Client Address",
       "description": "Defines that only clients from a specific address can do something",
-      "type": "script-scripts/only-from-specific-address-policy.js",
+      "type": "only-from-specific-address-policy",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS"
     },
@@ -143,7 +143,7 @@
     {
       "name": "Only From @keycloak.org or Admin",
       "description": "Defines that only users from @keycloak.org",
-      "type": "script-scripts/only-from-specific-domain-or-admin-policy.js",
+      "type": "only-from-specific-domain-or-admin-policy",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS"
     },

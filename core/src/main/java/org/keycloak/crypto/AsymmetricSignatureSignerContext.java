@@ -18,10 +18,13 @@ package org.keycloak.crypto;
 
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
 
 public class AsymmetricSignatureSignerContext implements SignatureSignerContext {
 
-    private final KeyWrapper key;
+    protected final KeyWrapper key;
 
     public AsymmetricSignatureSignerContext(KeyWrapper key) throws SignatureException {
         this.key = key;
@@ -39,19 +42,29 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
 
     @Override
     public String getHashAlgorithm() {
-        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithmOrDefault());
+        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithmOrDefault(), key.getCurve());
     }
 
     @Override
     public byte[] sign(byte[] data) throws SignatureException {
         try {
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault()));
+            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
             signature.initSign((PrivateKey) key.getPrivateKey());
             signature.update(data);
             return signature.sign();
         } catch (Exception e) {
             throw new SignatureException("Signing failed", e);
         }
+    }
+
+    @Override
+    public List<X509Certificate> getCertificateChain() {
+        if (key.getCertificateChain() != null && !key.getCertificateChain().isEmpty()) {
+            return key.getCertificateChain();
+        } else if (key.getCertificate() != null) {
+            return Collections.singletonList(key.getCertificate());
+        }
+        return null;
     }
 
 }

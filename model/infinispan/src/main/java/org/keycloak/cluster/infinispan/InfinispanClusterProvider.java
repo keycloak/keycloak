@@ -17,18 +17,36 @@
 
 package org.keycloak.cluster.infinispan;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.NodeInfo;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import org.infinispan.Cache;
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryModified;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
+import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryModifiedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -42,17 +60,17 @@ public class InfinispanClusterProvider implements ClusterProvider {
     public static final String TASK_KEY_PREFIX = "task::";
 
     private final int clusterStartupTime;
-    private final String myAddress;
-    private final CrossDCAwareCacheFactory crossDCAwareCacheFactory;
-    private final InfinispanNotificationsManager notificationsManager; // Just to extract notifications related stuff to separate class
+    private final NodeInfo nodeInfo;
+    private final Cache<String, Object> workCache;
+    private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
+    private final ConcurrentMap<String, TaskCallback> taskCallbacks = new ConcurrentHashMap<>();
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, CrossDCAwareCacheFactory crossDCAwareCacheFactory, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
-        this.myAddress = myAddress;
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache, ExecutorService localExecutor) {
+        this.nodeInfo = nodeInfo;
         this.clusterStartupTime = clusterStartupTime;
-        this.crossDCAwareCacheFactory = crossDCAwareCacheFactory;
-        this.notificationsManager = notificationsManager;
+        this.workCache = workCache;
         this.localExecutor = localExecutor;
     }
 
@@ -94,7 +112,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     @Override
     public Future<Boolean> executeIfNotExecutedAsync(String taskKey, int taskTimeoutInSeconds, Callable task) {
         TaskCallback newCallback = new TaskCallback();
-        TaskCallback callback = this.notificationsManager.registerTaskCallback(TASK_KEY_PREFIX + taskKey, newCallback);
+        TaskCallback callback = registerTaskCallback(TASK_KEY_PREFIX + taskKey, newCallback);
 
         // We successfully submitted our task
         if (newCallback == callback) {
@@ -118,49 +136,33 @@ public class InfinispanClusterProvider implements ClusterProvider {
         return callback.getFuture();
     }
 
-
-    @Override
-    public void registerListener(String taskKey, ClusterListener task) {
-        this.notificationsManager.registerListener(taskKey, task);
+    TaskCallback registerTaskCallback(String taskKey, TaskCallback callback) {
+        TaskCallback existing = taskCallbacks.putIfAbsent(taskKey, callback);
+        return existing == null ? callback : existing;
     }
-
-
-    @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        this.notificationsManager.notify(taskKey, event, ignoreSender, dcNotify);
-    }
-
-    private LockEntry createLockEntry() {
-        LockEntry lock = new LockEntry();
-        lock.setNode(myAddress);
-        lock.setTimestamp(Time.currentTime());
-        return lock;
-    }
-
 
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
-        LockEntry myLock = createLockEntry();
+        LockEntry myLock = new LockEntry(nodeInfo.nodeName());
 
-        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(crossDCAwareCacheFactory, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = (LockEntry) workCache.putIfAbsent(cacheKey, myLock, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
+                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
             }
             return false;
         } else {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.getNode());
+                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.node());
             }
             return true;
         }
     }
 
-
     private void removeFromCache(String cacheKey) {
         // More attempts to send the message (it may fail if some node fails in the meantime)
         Retry.executeWithBackoff((int iteration) -> {
 
-            crossDCAwareCacheFactory.getCache().remove(cacheKey);
+            CacheDecorators.ignoreReturnValues(workCache).remove(cacheKey);
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s removed from the cache", cacheKey);
             }
@@ -168,4 +170,94 @@ public class InfinispanClusterProvider implements ClusterProvider {
         }, 10, 10);
     }
 
+    @Override
+    public void registerListener(String taskKey, ClusterListener task) {
+        this.listeners.add(taskKey, task);
+    }
+
+    @Override
+    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
+        notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
+    }
+
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
+        notify(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
+    }
+
+    @Override
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
+
+        String eventKey = SecretGenerator.getInstance().generateSecureID();
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Sending event with key %s: %s", eventKey, events);
+        }
+
+        CacheDecorators.ignoreReturnValues(workCache)
+              .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+    }
+
+    @Listener(observation = Listener.Observation.POST)
+    public class CacheEntryListener {
+
+        @CacheEntryCreated
+        public void cacheEntryCreated(CacheEntryCreatedEvent<String, Object> event) {
+            eventReceived(event.getKey(), event.getValue());
+        }
+
+        @CacheEntryModified
+        public void cacheEntryModified(CacheEntryModifiedEvent<String, Object> event) {
+            eventReceived(event.getKey(), event.getNewValue());
+        }
+
+        @CacheEntryRemoved
+        public void cacheEntryRemoved(CacheEntryRemovedEvent<String, Object> event) {
+            taskFinished(event.getKey());
+        }
+    }
+
+    private void eventReceived(String key, Object obj) {
+        if (!(obj instanceof WrapperClusterEvent event)) {
+            // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
+            // It is still good to have the warning in case of real events return null because they have been, for example, expired
+            if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
+                logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
+            }
+            return;
+        }
+
+        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
+            return;
+        }
+
+        String eventKey = event.getEventKey();
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Received event: %s", event);
+        }
+
+        List<ClusterListener> myListeners = listeners.get(eventKey);
+        if (myListeners != null) {
+            for (var e : event.getDelegateEvents()) {
+                myListeners.forEach(e);
+            }
+        }
+    }
+
+
+    void taskFinished(String taskKey) {
+        TaskCallback callback = taskCallbacks.remove(taskKey);
+
+        if (callback != null) {
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Finished task '%s' with '%b'", taskKey, true);
+            }
+            callback.setSuccess(true);
+            callback.getTaskCompletedLatch().countDown();
+        }
+    }
 }

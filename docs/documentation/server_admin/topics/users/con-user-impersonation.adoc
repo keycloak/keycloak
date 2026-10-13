@@ -14,12 +14,12 @@ Any user with the `impersonation` role in the realm can impersonate a user.
 . Click a user to impersonate.
 . From the *Actions* list, select *Impersonate*.
 +
-image:images/user-details.png[]
+image:images/user-impersonate-action.png[]
 
 * If the administrator and the user are in the same realm, then the administrator will be logged out and automatically logged in as the user being impersonated.
 * If the administrator and user are in different realms, the administrator will remain logged in, and additionally will be logged in as the user in that user's realm.
 
-In both instances, the *User Account Management* page of the impersonated user is displayed.
+In both instances, the *Account Console* of the impersonated user is displayed.
 
 .Additional resources
 * For more information on assigning administration permissions, see the <<_admin_permissions,Admin Console Access Control>> chapter.

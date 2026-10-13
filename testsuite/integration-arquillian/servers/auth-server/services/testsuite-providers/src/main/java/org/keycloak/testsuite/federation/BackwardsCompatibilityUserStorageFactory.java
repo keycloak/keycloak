@@ -19,11 +19,11 @@
 package org.keycloak.testsuite.federation;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.UserStorageProviderFactory;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -50,4 +50,9 @@ public class BackwardsCompatibilityUserStorageFactory implements UserStorageProv
         return user.getOtp() != null;
     }
 
+    public boolean hasRecoveryCodes(String username) {
+        BackwardsCompatibilityUserStorage.MyUser user = userPasswords.get(username);
+        if (user == null) return false;
+        return user.getRecoveryCodes() != null;
+    }
 }

@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService
+org.keycloak.connections.jpa.updater.liquibase.conn.MySQLCustomChangeLogHistoryService

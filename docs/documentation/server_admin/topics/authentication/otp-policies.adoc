@@ -24,7 +24,7 @@ With Counter-Based One Time Passwords (HOTP), {project_name} uses a shared count
 
 TOTP is more secure than HOTP because the matchable OTP is valid for a short window of time, while the OTP for HOTP is valid for an indeterminate amount of time. HOTP is more user-friendly than TOTP because no time limit exists to enter the OTP.
 
-HOTP requires a database update every time the server increments the counter. This update is a performance drain on the authentication server during heavy load. To increase efficiency,  TOTP does not remember passwords used, so there is no need to perform database updates. The drawback is that it is possible to re-use TOTPs in the valid time interval. 
+HOTP requires a database update every time the server increments the counter. This update is a performance drain on the authentication server during heavy load. To increase efficiency,  TOTP does not remember passwords used, so there is no need to perform database updates. The drawback is that it is possible to reuse TOTPs in the valid time interval. 
 
 ==== TOTP configuration options
 
@@ -34,7 +34,7 @@ The default algorithm is SHA1. The other, more secure options are SHA256 and SHA
 
 ===== Number of digits
 
-The length of the OTP.  Short OTP's are user-friendly, easier to type, and easier to remember. Longer OTP's are more secure than shorter OTP's.
+The length of the OTP.  Short OTPs are user-friendly, easier to type, and easier to remember. Longer OTPs are more secure than shorter OTPs.
 
 ===== Look around window
 

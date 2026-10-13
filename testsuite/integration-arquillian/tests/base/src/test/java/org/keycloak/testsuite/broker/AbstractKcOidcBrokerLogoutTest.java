@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import org.junit.Before;
+
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 
 public abstract class AbstractKcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 

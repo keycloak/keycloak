@@ -1,12 +1,11 @@
-import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
-import { HelpItem } from "ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import type { ClientSettingsProps } from "../ClientSettings";
 import { LoginSettings } from "./LoginSettings";
@@ -17,10 +16,12 @@ export const AccessSettings = ({
   reset,
 }: ClientSettingsProps) => {
   const { t } = useTranslation();
-  const { register, watch } = useFormContext<FormFields>();
+  const { watch } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
+
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const protocol = watch("protocol");
 
@@ -32,26 +33,28 @@ export const AccessSettings = ({
     >
       {!client.bearerOnly && <LoginSettings protocol={protocol} />}
       {protocol !== "saml" && (
-        <FormGroup
+        <TextControl
+          type="url"
+          name="adminUrl"
           label={t("adminURL")}
-          fieldId="kc-admin-url"
-          labelIcon={
-            <HelpItem helpText={t("adminURLHelp")} fieldLabelId="adminURL" />
-          }
-        >
-          <KeycloakTextInput
-            id="kc-admin-url"
-            type="url"
-            {...register("adminUrl")}
-          />
-        </FormGroup>
+          labelIcon={t("adminURLHelp")}
+        />
       )}
+      {protocol === "openid-connect" &&
+        isFeatureEnabled(Feature.ResourceIndicators) && (
+          <TextControl
+            type="url"
+            name="attributes.resource_url"
+            label={t("resourceUrl")}
+            labelIcon={t("resourceUrlHelp")}
+          />
+        )}
       {client.bearerOnly && (
         <FixedButtonsGroup
           name="settings"
           save={save}
           reset={reset}
-          isActive={!isManager}
+          isDisabled={isManager}
         />
       )}
     </FormAccess>

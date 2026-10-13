@@ -19,26 +19,92 @@
         <module>apps/account-ui</module>
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
-        <module>libs/keycloak-js</module>
+        <module>libs/ui-shared</module>
+        <module>themes-vendor</module>
     </modules>
 
+    <dependencies>
+        <!-- Enforce build order: openapi.yaml must be generated before JS build -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-v2-services</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
     <properties>
-        <!-- The JavaScript projects use the non-standard 'src' folder for their sources, therefore, name it here explicitly -->
+        <node.version>v24.9.0</node.version>
+        <pnpm.version>11.1.1</pnpm.version>
+        <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
-        <!-- The child projects will package from the 'dist' folder, which is listed as a resource, but isn't a source folder -->
-        <maven.build.cache.exclude.value.1>${project.basedir}/dist</maven.build.cache.exclude.value.1>
+        <maven.build.cache.input.2>public</maven.build.cache.input.2>
+        <maven.build.cache.input.3>scripts</maven.build.cache.input.3>
     </properties>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${frontend.plugin.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                        <installDirectory>${maven.multiModuleProjectDirectory}/js</installDirectory>
+                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>theme-verifier-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify-theme</id>
+                        <goals>
+                            <goal>verify-theme</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Clean child modules from parent, as we trigger the build here for parallelization. -->
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>apps/account-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>apps/admin-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>themes-vendor/target</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <goals>
                             <goal>install-node-and-pnpm</goal>
                         </goals>
+                        <phase>initialize</phase>
                     </execution>
                     <execution>
                         <id>pnpm-install</id>
@@ -46,33 +112,36 @@
                             <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>${pnpm.args.install}</arguments>
+                            <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts --config.confirmModulesPurge=false</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pnpm-build</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>build</arguments>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+            <!-- newer versions of pnpm do not have an executable cjs file, see https://github.com/eirslett/frontend-maven-plugin/issues/1224 -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <followSymLinks>false</followSymLinks>
-                    <filesets>
-                        <fileset>
-                            <directory>${basedir}</directory>
-                            <includes>
-                                <include>**/.wireit/**</include>
-                                <include>**/node_modules/**</include>
-                            </includes>
-                        </fileset>
-                        <!-- include all non-maven projects here as well -->
-                        <fileset>
-                            <directory>apps/keycloak-server</directory>
-                            <includes>
-                                <include>server/**</include>
-                            </includes>
-                        </fileset>
-                    </filesets>
-                </configuration>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <target>
+                                <chmod file="${maven.multiModuleProjectDirectory}/js/node/node_modules/pnpm/bin/pnpm.cjs" perm="755"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

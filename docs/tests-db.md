@@ -53,10 +53,85 @@ Stop MySQl:
 
     docker rm -f mariadb
 
-Using built-in profiles to run database tests using docker containers
+TiDB
+-----
+
+The simplest way to test with TiDB is to use the official [TiDB docker image](https://hub.docker.com/r/pingcap/tidb).
+
+Start TiDB:
+
+    docker run --name tidb -p 4000:4000 -d pingcap/tidb:v8.5.2
+
+Run tests:
+
+    mvn install -Dkeycloak.connectionsJpa.url=jdbc:mysql://`docker inspect --format '{{ .NetworkSettings.IPAddress }}' tidb`:4000/test -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=root -Dkeycloak.connectionsJpa.password=    
+
+Stop TiDB:
+
+    docker rm -f tidb
+
+
+Enabling SSL
+============
+
+Generate certificate
 -------
 
-The project provides specific profiles to run database tests using containers. Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db- | grep -v allocator`):
+To enable TLS connection, a private key and certificate to be provided to the database.
+Let's create a directory named `certs` to store the files we need.
+
+```bash
+mkdir certs ; cd certs
+```
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout database-key.pem -out database-cert.pem -sha256 -days 3650 -nodes -subj "/CN=localhost
+```
+
+Private key permissions
+-------
+
+The primary key must belong to the user running in the container and only that user should be able to access.
+PostgreSQL, MariaDB, and MySQL both use user with id 999 (at the time of writing).
+
+```bash
+chmod 0600 database-key.pem
+chown 999:999 database-key.pem
+```
+
+Starting the database container
+-------
+
+Mount the `certs` directory in the container and configure the database as shown below.
+The file `database-cert.pem` can be added to Keycloak truststore to perform the hostname verification.
+By default, the JDBC drivers do not perform the hostname verification.
+
+**PostgreSQL**
+
+```bash
+docker run -d --name postgres --network host --volume '${PWD}:/mnt/certs:ro' -e POSTGRES_USER=keycloak -e POSTGRES_PASSWORD=keycloak -e POSTGRES_DB=keycloak postgres:17 postgres -c ssl=on -c ssl_cert_file=/mnt/certs/database-cert.pem -c ssl_key_file=/mnt/certs/database-key.pem
+```
+
+**MariaDB**
+
+```bash
+docker run -d --name maridb --network host --volume '${PWD}:/mnt/certs:ro' -e MARIADB_ROOT_PASSWORD=keycloak -e MARIADB_USER=keycloak -e MARIADB_PASSWORD=keycloak -e MARIADB_DATABASE=keycloak mariadb:11 --ssl-cert=/mnt/certs/database-cert.pem --ssl-key=/mnt/certs/database-key.pem --require-secure-transport
+```
+
+The option `--require-secure-transport` ensures only TLS connections are accepted by the server.
+
+**MySQL**
+
+```bash
+docker run -d --name mysql --network host --volume '${PWD}:/mnt/certs:ro' -e MYSQL_ROOT_PASSWORD=keycloak -e MYSQL_USER=keycloak -e MYSQL_PASSWORD=keycloak -e MYSQL_DATABASE=keycloak mysql:9 --ssl-cert=/mnt/certs/database-cert.pem --ssl-key=/mnt/certs/database-key.pem --require-secure-transport
+```
+
+The option `--require-secure-transport` ensures only TLS connections are accepted by the server.
+
+Using built-in profiles to run database tests using docker containers
+============
+
+The project provides specific profiles to run database tests using containers. Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-`):
 
 * `db-mysql`
 * `db-postgres`
@@ -84,35 +159,3 @@ name or tag for the image.
 Note that Docker containers may occupy some space even after termination, and
 especially with databases that might be easily a gigabyte. It is thus
 advisable to run `docker system prune` occasionally to reclaim that space.
-
-
-Using DB Allocator Service
--------
-
-The testsuite can use the DB Allocator Service to allocate and release desired database automatically.
-Since some of the database properties (such as JDBC URL, Username or Password) need to be used when building the Auth Server,
-the allocation and deallocation need to happen when building the `integration-arquillian` project (instead of `tests/base` as
-it happens in other cases).
-
-In order to use the DB Allocator Service, you must use the `jpa` profile with one of the `db-allocator-*`. Here's a full example to
-run JPA with Auth Server Quarkus and MSSQL 2016:
-
-```
-mvn -f testsuite/integration-arquillian/pom.xml clean verify \
-    -Pjpa,auth-server-quarkus,db-allocator-db-mssql2016 \
-    -Ddballocator.uri=<<db-allocator-servlet-url>> \
-    -Ddballocator.user=<<db-allocator-user>> \
-    -Dmaven.test.failure.ignore=true
-```
-
-Using `-Dmaven.test.failure.ignore=true` is not strictly required but highly recommended. After running the tests,
-the DB Allocator Plugin should release the allocated database.
-
-**NOTE**: If you killed the maven surefire test preliminary (for example with CTRL-C or `kill -9` command), it will be
-good to manually release the allocated database. Please check `dballocator.uri` and add `?operation=report` to the end of the URL.
-Find your DB in the GUI and release it manually.
-
-Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-allocator-db-`):
-
-* `db-allocator-db-postgres` - for testing with Postgres 9.6.x
-* `db-allocator-db-mysql` - for testing with MySQL 5.7

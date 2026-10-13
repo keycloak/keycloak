@@ -17,11 +17,11 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.ResolveRelative;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

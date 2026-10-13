@@ -12,7 +12,7 @@ the `build` command to be installed.
 When running the server in development mode using `start-dev`, themes are not cached so that you can easily work on them without a need to restart
 the server when making changes.
 
-See the theme section in the [Server Developer Guide](https://www.keycloak.org/docs/latest/server_development/#_themes) for more details about how to create custom themes.
+For more details about how to create custom themes, see the themes section in the **UI Customization Guide**.
 
 Overriding the built-in templates
 ---------------------------------

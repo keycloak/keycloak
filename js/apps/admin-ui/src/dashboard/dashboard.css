@@ -8,5 +8,5 @@
 
 .keycloak__dashboard_welcome_tab {
   max-width: 38%;
-  margin-top: var(--pf-global--spacer--md);
+  margin-top: var(--pf-v5-global--spacer--md);
 }

@@ -2,66 +2,59 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
-  AlertVariant,
+  Action,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Checkbox,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  Label,
+  MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { EllipsisVIcon, InfoCircleIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
-import { GroupPath } from "../components/group/GroupPath";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../admin-client";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emptyFormatter } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
+import { MembershipsModal } from "./MembershipsModal";
+import useToggle from "../utils/useToggle";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
-type MembersOf = UserRepresentation & {
-  membership: GroupRepresentation[];
-};
-
-const MemberOfRenderer = (member: MembersOf) => {
-  return (
-    <>
-      {member.membership.map((group, index) => (
-        <>
-          <GroupPath key={group.id + "-" + member.id} group={group} />
-          {member.membership[index + 1] ? ", " : ""}
-        </>
-      ))}
-    </>
-  );
-};
-
-const UserDetailLink = (user: MembersOf) => {
+const UserDetailLink = (user: UserRepresentation) => {
   const { realm } = useRealm();
+  const { t } = useTranslation();
   return (
     <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
-      {user.username}
+      {user.username}{" "}
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
     </Link>
   );
 };
 
 export const Members = () => {
+  const { adminClient } = useAdminClient();
+  const groups = useGroupResource();
   const { t } = useTranslation();
-
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
   const id = getLastId(location.pathname);
@@ -71,22 +64,21 @@ export const Members = () => {
   const [addMembers, setAddMembers] = useState(false);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserRepresentation>();
+  const [showMemberships, toggleShowMemberships] = useToggle();
   const { hasAccess } = useAccess();
 
   useFetch(
-    () => adminClient.groups.findOne({ id: group()!.id! }),
+    async () => (await groups.findOne({ id: group()!.id! })) ?? undefined,
     setCurrentGroup,
     [],
   );
 
   const isManager =
-    hasAccess("manage-users") || currentGroup?.access!.manageMembership;
+    hasAccess("manage-users") || currentGroup?.access?.manageMembership;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
-
-  const getMembership = async (id: string) =>
-    await adminClient.users.listGroups({ id: id! });
 
   // this queries the subgroups using the new search paradigm but doesn't
   // account for pagination and therefore isn't going to scale well
@@ -100,8 +92,7 @@ export const Members = () => {
       first: 0,
       max: count,
     };
-    const subGroups: GroupRepresentation[] =
-      await adminClient.groups.listSubGroups(args);
+    const subGroups: GroupRepresentation[] = await groups.listSubGroups(args);
     nestedGroups = nestedGroups.concat(subGroups);
 
     await Promise.all(
@@ -117,8 +108,9 @@ export const Members = () => {
       return [];
     }
 
-    let members = await adminClient.groups.listMembers({
+    let members = await groups.listMembers({
       id: id!,
+      briefRepresentation: true,
       first,
       max,
     });
@@ -129,19 +121,19 @@ export const Members = () => {
         currentGroup.subGroupCount,
       );
       await Promise.all(
-        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+        subGroups.map((g) =>
+          groups.listMembers({
+            id: g.id!,
+            briefRepresentation: true,
+          }),
+        ),
       ).then((values: UserRepresentation[][]) => {
         values.forEach((users) => (members = members.concat(users)));
       });
       members = uniqBy(members, (member) => member.username);
     }
 
-    const memberOfPromises = await Promise.all(
-      members.map((member) => getMembership(member.id!)),
-    );
-    return members.map((member: UserRepresentation, i) => {
-      return { ...member, membership: memberOfPromises[i] };
-    });
+    return members;
   };
 
   if (!currentGroup) {
@@ -152,11 +144,45 @@ export const Members = () => {
     <>
       {addMembers && (
         <MemberModal
-          groupId={id!}
+          membersQuery={(first, max) =>
+            groups.listMembers({ id: id!, first, max })
+          }
+          orgId={groups.getOrgId()}
+          onAdd={async (selectedRows) => {
+            try {
+              await Promise.all(
+                selectedRows.map(async (user) => {
+                  if (!groups.isOrgGroups()) {
+                    await adminClient.users.addToGroup({
+                      id: user.id!,
+                      groupId: id!,
+                    });
+                  } else {
+                    await groups.addMemberToOrgGroup({
+                      groupId: id!,
+                      userId: user.id!,
+                    });
+                  }
+                }),
+              );
+              addAlert(t("usersAdded", { count: selectedRows.length }));
+            } catch (error) {
+              addError("usersAddedError", error);
+            }
+          }}
           onClose={() => {
             setAddMembers(false);
             refresh();
           }}
+        />
+      )}
+      {showMemberships && (
+        <MembershipsModal
+          onClose={() => {
+            toggleShowMemberships();
+          }}
+          user={selectedUser!}
+          orgId={groups.getOrgId()}
         />
       )}
       <KeycloakDataTable
@@ -179,43 +205,60 @@ export const Members = () => {
                   {t("addMember")}
                 </Button>
               </ToolbarItem>
-              <ToolbarItem>
-                <Checkbox
-                  data-testid="includeSubGroupsCheck"
-                  label={t("includeSubGroups")}
-                  id="kc-include-sub-groups"
-                  isChecked={includeSubGroup}
-                  onChange={() => setIncludeSubGroup(!includeSubGroup)}
-                />
-              </ToolbarItem>
+              {!groups.isOrgGroups() && (
+                <ToolbarItem>
+                  <Checkbox
+                    data-testid="includeSubGroupsCheck"
+                    label={t("includeSubGroups")}
+                    id="kc-include-sub-groups"
+                    isChecked={includeSubGroup}
+                    onChange={() => setIncludeSubGroup(!includeSubGroup)}
+                  />
+                </ToolbarItem>
+              )}
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                  onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      data-testid="kebab"
+                      ref={ref}
+                      variant="plain"
+                      onClick={() => setIsKebabOpen(!isKebabOpen)}
+                      isExpanded={isKebabOpen}
                       isDisabled={selectedRows.length === 0}
-                    />
-                  }
+                      aria-label="Actions"
+                    >
+                      <EllipsisVIcon />
+                    </MenuToggle>
+                  )}
+                  shouldFocusToggleOnSelect
                   isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       key="action"
                       component="button"
                       onClick={async () => {
                         try {
                           await Promise.all(
-                            selectedRows.map((user) =>
-                              adminClient.users.delFromGroup({
-                                id: user.id!,
-                                groupId: id!,
-                              }),
-                            ),
+                            selectedRows.map(async (user) => {
+                              if (!groups.isOrgGroups()) {
+                                await adminClient.users.delFromGroup({
+                                  id: user.id!,
+                                  groupId: id!,
+                                });
+                              } else {
+                                await groups.removeMemberFromOrgGroup({
+                                  groupId: id!,
+                                  userId: user.id!,
+                                });
+                              }
+                            }),
                           );
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("usersLeftError", error);
@@ -225,38 +268,48 @@ export const Members = () => {
                       }}
                     >
                       {t("leave")}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           )
         }
-        actions={
-          isManager
+        actions={[
+          ...(isManager
             ? [
                 {
                   title: t("leave"),
                   onRowClick: async (user) => {
                     try {
-                      await adminClient.users.delFromGroup({
-                        id: user.id!,
-                        groupId: id!,
-                      });
-                      addAlert(
-                        t("usersLeft", { count: 1 }),
-                        AlertVariant.success,
-                      );
+                      if (!groups.isOrgGroups()) {
+                        await adminClient.users.delFromGroup({
+                          id: user.id!,
+                          groupId: id!,
+                        });
+                      } else {
+                        await groups.removeMemberFromOrgGroup({
+                          groupId: id!,
+                          userId: user.id!,
+                        });
+                      }
+                      addAlert(t("usersLeft", { count: 1 }));
                     } catch (error) {
                       addError("usersLeftError", error);
                     }
-
                     return true;
                   },
                 } as Action<UserRepresentation>,
               ]
-            : []
-        }
+            : []),
+          {
+            title: t("showMemberships"),
+            onRowClick: (user) => {
+              setSelectedUser(user);
+              toggleShowMemberships();
+            },
+          } as Action<UserRepresentation>,
+        ]}
         columns={[
           {
             name: "username",
@@ -278,11 +331,6 @@ export const Members = () => {
             displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
-          {
-            name: "membership",
-            displayKey: "membership",
-            cellRenderer: MemberOfRenderer,
-          },
         ]}
         emptyState={
           <ListEmptyState
@@ -290,12 +338,16 @@ export const Members = () => {
             instructions={isManager ? t("emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
-            secondaryActions={[
-              {
-                text: t("includeSubGroups"),
-                onClick: () => setIncludeSubGroup(true),
-              },
-            ]}
+            secondaryActions={
+              !groups.isOrgGroups()
+                ? [
+                    {
+                      text: t("includeSubGroups"),
+                      onClick: () => setIncludeSubGroup(true),
+                    },
+                  ]
+                : []
+            }
           />
         }
       />

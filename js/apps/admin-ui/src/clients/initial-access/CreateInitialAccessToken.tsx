@@ -4,31 +4,33 @@ import {
   AlertVariant,
   Button,
   FormGroup,
-  NumberInput,
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form/FormAccess";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { HelpItem } from "ui-shared";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { Link, useNavigate } from "react-router-dom";
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { NumberControl } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toClients } from "../routes/Clients";
 import { AccessTokenDialog } from "./AccessTokenDialog";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 export default function CreateInitialAccessToken() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
+  const form = useForm({ mode: "onChange" });
   const {
     handleSubmit,
-    control,
-    formState: { isValid, errors },
-  } = useForm({ mode: "onChange" });
+    formState: { isValid },
+  } = form;
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -49,14 +51,14 @@ export default function CreateInitialAccessToken() {
   };
 
   return (
-    <>
+    <FormProvider {...form}>
       {token && (
         <AccessTokenDialog
           token={token}
           toggleDialog={() => {
             setToken("");
             addAlert(t("tokenSaveSuccess"), AlertVariant.success);
-            navigate(toClients({ realm, tab: "initial-access-token" }));
+            void navigate(toClients({ realm, tab: "initial-access-token" }));
           }}
         />
       )}
@@ -67,62 +69,46 @@ export default function CreateInitialAccessToken() {
           role="create-client"
           onSubmit={handleSubmit(save)}
         >
-          <FormGroup
+          <TimeSelectorControl
+            name="expiration"
             label={t("expiration")}
-            fieldId="expiration"
+            labelIcon={t("tokenExpirationHelp")}
+            controller={{
+              defaultValue: 86400,
+              rules: {
+                min: {
+                  value: 1,
+                  message: t("expirationValueNotValid"),
+                },
+              },
+            }}
+          />
+          <NumberControl
+            name="count"
+            label={t("count")}
+            labelIcon={t("countHelp")}
+            controller={{
+              rules: {
+                min: 1,
+              },
+              defaultValue: 1,
+            }}
+          />
+          <FormGroup
+            label={t("webOrigins")}
+            fieldId="kc-web-origins"
             labelIcon={
               <HelpItem
-                helpText={t("expirationHelp")}
-                fieldLabelId="expiration"
+                helpText={t("webOriginsHelp")}
+                fieldLabelId="webOrigins"
               />
             }
-            helperTextInvalid={t("expirationValueNotValid")}
-            validated={errors.expiration ? "error" : "default"}
           >
-            <Controller
-              name="expiration"
-              defaultValue={86400}
-              control={control}
-              rules={{ min: 1 }}
-              render={({ field }) => (
-                <TimeSelector
-                  data-testid="expiration"
-                  value={field.value}
-                  onChange={field.onChange}
-                  min={1}
-                  validated={errors.expiration ? "error" : "default"}
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("count")}
-            fieldId="count"
-            labelIcon={
-              <HelpItem helpText={t("countHelp")} fieldLabelId="count" />
-            }
-          >
-            <Controller
-              name="count"
-              defaultValue={1}
-              control={control}
-              render={({ field }) => (
-                <NumberInput
-                  data-testid="count"
-                  inputName="count"
-                  inputAriaLabel={t("count")}
-                  min={1}
-                  value={field.value}
-                  onPlus={() => field.onChange(field.value + 1)}
-                  onMinus={() => field.onChange(field.value - 1)}
-                  onChange={(event) => {
-                    const value = Number(
-                      (event.target as HTMLInputElement).value,
-                    );
-                    field.onChange(value < 1 ? 1 : value);
-                  }}
-                />
-              )}
+            <MultiLineInput
+              id="kc-web-origins"
+              name="webOrigins"
+              aria-label={t("webOrigins")}
+              addButtonLabel="addWebOrigins"
             />
           </FormGroup>
           <ActionGroup>
@@ -149,6 +135,6 @@ export default function CreateInitialAccessToken() {
           </ActionGroup>
         </FormAccess>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }

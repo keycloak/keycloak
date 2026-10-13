@@ -17,22 +17,29 @@
 
 package org.keycloak.protocol.saml.clientregistration;
 
-import org.keycloak.exportimport.ClientDescriptionConverter;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
+import java.net.URI;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
+
+import org.keycloak.exportimport.ClientDescriptionConverter;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+/**
+ *  @deprecated This provider is deprecated for removal since Keycloak 26.8.
+ *  Use the Admin REST API to create SAML clients from an entity descriptor instead.
+ */
+@Deprecated(forRemoval = true, since = "26.8")
 public class EntityDescriptorClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public EntityDescriptorClientRegistrationProvider(KeycloakSession session) {

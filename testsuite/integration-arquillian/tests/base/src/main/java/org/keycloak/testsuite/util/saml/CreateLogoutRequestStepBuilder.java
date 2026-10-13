@@ -16,14 +16,17 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.net.URI;
+import java.util.function.Supplier;
+
+import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.testsuite.util.SamlClient.Binding;
-import java.net.URI;
-import java.util.function.Supplier;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -41,6 +44,7 @@ public class CreateLogoutRequestStepBuilder extends SamlDocumentStepBuilder<Logo
 
     private Supplier<String> sessionIndex = () -> null;
     private Supplier<NameIDType> nameId = () -> null;
+    private Supplier<BaseIDAbstractType> baseId = () -> null;
     private Supplier<String> relayState = () -> null;
     private String signingPublicKeyPem;  // TODO: should not be needed
     private String signingPrivateKeyPem;
@@ -95,6 +99,10 @@ public class CreateLogoutRequestStepBuilder extends SamlDocumentStepBuilder<Logo
         return nameId.get();
     }
 
+    public BaseIDAbstractType baseId() {
+        return baseId.get();
+    }
+
     public CreateLogoutRequestStepBuilder nameId(NameIDType nameId) {
         this.nameId = () -> nameId;
         return this;
@@ -102,6 +110,11 @@ public class CreateLogoutRequestStepBuilder extends SamlDocumentStepBuilder<Logo
 
     public CreateLogoutRequestStepBuilder nameId(Supplier<NameIDType> nameId) {
         this.nameId = nameId;
+        return this;
+    }
+
+    public CreateLogoutRequestStepBuilder baseId(Supplier<BaseIDAbstractType> baseId) {
+        this.baseId = baseId;
         return this;
     }
 

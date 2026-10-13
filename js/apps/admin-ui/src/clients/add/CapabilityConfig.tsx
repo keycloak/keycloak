@@ -1,20 +1,25 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Checkbox,
   FormGroup,
   Grid,
   GridItem,
   InputGroup,
+  InputGroupItem,
   Switch,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
-import { FormFields } from "../ClientDetails";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { FormFields } from "../ClientDetails";
+import { IdentityProviderSelect } from "../../components/identity-provider/IdentityProviderSelect";
+import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAccess } from "../../context/access/Access";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -30,8 +35,31 @@ export const CapabilityConfig = ({
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
+  const pkceCodeChallengeMethodField = convertAttributeNameToForm<FormFields>(
+    "attributes.pkce.code.challenge.method",
+  );
+  const pkceEnabled = watch(pkceCodeChallengeMethodField);
+  const jwtAuthorizationGrantEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.enabled",
+    ),
+    false,
+  );
+  const externalTokenEnabled = watch(
+    convertAttributeNameToForm<FormFields>("attributes.external.token.enabled"),
+    false,
+  );
   const isFeatureEnabled = useIsFeatureEnabled();
-
+  const { hasSomeAccess } = useAccess();
+  const { realmRepresentation } = useRealm();
+  const showIdentityProviders = hasSomeAccess("view-identity-providers");
+  // Mirror the gate in ClientDetails: only expose the SSF capability
+  // toggle when both the server feature is enabled and the realm has
+  // opted in. Otherwise enabling the toggle would just render a tab
+  // that crashes on its first API call.
+  const showSsfReceiverToggle =
+    isFeatureEnabled(Feature.Ssf) &&
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
   return (
     <FormAccess
       isHorizontal
@@ -60,11 +88,11 @@ export const CapabilityConfig = ({
               render={({ field }) => (
                 <Switch
                   data-testid="authentication"
-                  id="kc-authentication-switch"
+                  id="kc-authentication"
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={!field.value}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     field.onChange(!value);
                     if (!value) {
                       setValue("authorizationServicesEnabled", false);
@@ -72,6 +100,24 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.oidc.ciba.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.standard.token.exchange.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.oauth2.jwt.authorization.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.enabled",
                         ),
                         false,
                       );
@@ -104,7 +150,7 @@ export const CapabilityConfig = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value && !clientAuthentication}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     field.onChange(value);
                     if (value) {
                       setValue("serviceAccountsEnabled", true);
@@ -129,17 +175,21 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="standard"
-                        label={t("standardFlow")}
-                        id="kc-flow-standard"
-                        isChecked={field.value?.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("standardFlowHelp")}
-                        fieldLabelId="standardFlow"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="standard"
+                          label={t("standardFlow")}
+                          id="kc-flow-standard"
+                          isChecked={field.value?.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("standardFlowHelp")}
+                          fieldLabelId="standardFlow"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -147,21 +197,25 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name="directAccessGrantsEnabled"
-                  defaultValue={true}
+                  defaultValue={false}
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="direct"
-                        label={t("directAccess")}
-                        id="kc-flow-direct"
-                        isChecked={field.value}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("directAccessHelp")}
-                        fieldLabelId="directAccess"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="direct"
+                          label={t("directAccess")}
+                          id="kc-flow-direct"
+                          isChecked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("directAccessHelp")}
+                          fieldLabelId="directAccess"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -173,17 +227,21 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="implicit"
-                        label={t("implicitFlow")}
-                        id="kc-flow-implicit"
-                        isChecked={field.value?.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("implicitFlowHelp")}
-                        fieldLabelId="implicitFlow"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="implicit"
+                          label={t("implicitFlow")}
+                          id="kc-flow-implicit"
+                          isChecked={field.value?.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("implicitFlowHelp")}
+                          fieldLabelId="implicitFlow"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -195,28 +253,102 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="service-account"
-                        label={t("serviceAccount")}
-                        id="kc-flow-service-account"
-                        isChecked={
-                          field.value?.toString() === "true" ||
-                          (clientAuthentication && authorization)
-                        }
-                        onChange={field.onChange}
-                        isDisabled={
-                          (clientAuthentication && !authorization) ||
-                          (!clientAuthentication && authorization)
-                        }
-                      />
-                      <HelpItem
-                        helpText={t("serviceAccountHelp")}
-                        fieldLabelId="serviceAccount"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="service-account"
+                          label={t("serviceAccount")}
+                          id="kc-flow-service-account"
+                          isChecked={
+                            field.value?.toString() === "true" ||
+                            (clientAuthentication && authorization)
+                          }
+                          onChange={field.onChange}
+                          isDisabled={
+                            (clientAuthentication && !authorization) ||
+                            (!clientAuthentication && authorization)
+                          }
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("serviceAccountHelp")}
+                          fieldLabelId="serviceAccount"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
               </GridItem>
+              {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.standard.token.exchange.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="standard-token-exchange-enabled"
+                            label={t("standardTokenExchangeEnabled")}
+                            id="kc-standard-token-exchange-enabled"
+                            name="standard-token-exchange-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("standardTokenExchangeEnabledHelp")}
+                            fieldLabelId="standardTokenExchangeEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
+              {isFeatureEnabled(Feature.JWTAuthorizationGrant) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.oauth2.jwt.authorization.grant.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="jwt-authorization-grant-enabled"
+                            label={t("jwtAuthorizationGrantEnabled")}
+                            id="kc-jwt-authorization-grant-enabled"
+                            name="jwt-authorization-grant-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("jwtAuthorizationGrantEnabledHelp")}
+                            fieldLabelId="jwtAuthorizationGrantEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               {isFeatureEnabled(Feature.DeviceFlow) && (
                 <GridItem lg={8} sm={6}>
                   <Controller
@@ -227,18 +359,22 @@ export const CapabilityConfig = ({
                     control={control}
                     render={({ field }) => (
                       <InputGroup>
-                        <Checkbox
-                          data-testid="oauth-device-authorization-grant"
-                          label={t("oauthDeviceAuthorizationGrant")}
-                          id="kc-oauth-device-authorization-grant"
-                          name="oauth2.device.authorization.grant.enabled"
-                          isChecked={field.value.toString() === "true"}
-                          onChange={field.onChange}
-                        />
-                        <HelpItem
-                          helpText={t("oauthDeviceAuthorizationGrantHelp")}
-                          fieldLabelId="oauthDeviceAuthorizationGrant"
-                        />
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="oauth-device-authorization-grant"
+                            label={t("oauthDeviceAuthorizationGrant")}
+                            id="kc-oauth-device-authorization-grant"
+                            name="oauth2.device.authorization.grant.enabled"
+                            isChecked={field.value.toString() === "true"}
+                            onChange={field.onChange}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("oauthDeviceAuthorizationGrantHelp")}
+                            fieldLabelId="oauthDeviceAuthorizationGrant"
+                          />
+                        </InputGroupItem>
                       </InputGroup>
                     )}
                   />
@@ -253,89 +389,157 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="oidc-ciba-grant"
-                        label={t("oidcCibaGrant")}
-                        id="kc-oidc-ciba-grant"
-                        name="oidc.ciba.grant.enabled"
-                        isChecked={field.value.toString() === "true"}
-                        onChange={field.onChange}
-                        isDisabled={clientAuthentication}
-                      />
-                      <HelpItem
-                        helpText={t("oidcCibaGrantHelp")}
-                        fieldLabelId="oidcCibaGrant"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="oidc-ciba-grant"
+                          label={t("oidcCibaGrant")}
+                          id="kc-oidc-ciba-grant"
+                          name="oidc.ciba.grant.enabled"
+                          isChecked={field.value.toString() === "true"}
+                          onChange={field.onChange}
+                          isDisabled={clientAuthentication}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("oidcCibaGrantHelp")}
+                          fieldLabelId="oidcCibaGrant"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
               </GridItem>
             </Grid>
           </FormGroup>
+          <FormGroup
+            hasNoPaddingTop
+            label={t("pkceRequired")}
+            fieldId="kc-pkce-enabled"
+            labelIcon={
+              <HelpItem
+                helpText={t("clientPkceRequiredHelp")}
+                fieldLabelId="pkceRequired"
+                isRecommendation={
+                  clientAuthentication && (!pkceEnabled || pkceEnabled === "")
+                }
+              />
+            }
+          >
+            <Controller
+              name={pkceCodeChallengeMethodField}
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  data-testid="pkce-required"
+                  id="kc-pkce-required-switch"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={field.value !== "" && field.value !== undefined}
+                  onChange={(_event, checked) =>
+                    field.onChange(checked ? "S256" : "")
+                  }
+                  aria-label={t("pkceRequired")}
+                />
+              )}
+            />
+          </FormGroup>
+          {pkceEnabled && pkceEnabled !== "" && (
+            <SelectControl
+              id="keyForCodeExchange"
+              label={t("keyForCodeExchange")}
+              labelIcon={t("keyForCodeExchangeHelp")}
+              controller={{ control }}
+              name={pkceCodeChallengeMethodField}
+              options={[
+                { key: "S256", value: "S256" },
+                { key: "plain", value: "plain" },
+              ]}
+              isFullWidth={false}
+            />
+          )}
+          {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
+            showIdentityProviders &&
+            jwtAuthorizationGrantEnabled.toString() === "true" && (
+              <IdentityProviderSelect
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.oauth2.jwt.authorization.grant.idp",
+                )}
+                label={t("jwtAuthorizationGrantIdp")}
+                helpText={t("jwtAuthorizationGrantIdpHelp")}
+                convertToName={convertAttributeNameToForm}
+                identityProviderType={
+                  IdentityProviderType.JWT_AUTHORIZATION_GRANT
+                }
+                isDisabled={clientAuthentication}
+                stringify
+              />
+            )}
+          {isFeatureEnabled(Feature.DPoP) && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens",
+              )}
+              label={t("oAuthDPoP")}
+              labelIcon={t("oAuthDPoPHelp")}
+              stringify
+            />
+          )}
+          {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) &&
+            !clientAuthentication && (
+              <>
+                <DefaultSwitchControl
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.external.token.enabled",
+                  )}
+                  label={t("externalTokenEnabled")}
+                  labelIcon={t("externalTokenEnabledHelp")}
+                  stringify
+                />
+                {showIdentityProviders &&
+                  externalTokenEnabled?.toString() === "true" && (
+                    <IdentityProviderSelect
+                      name={convertAttributeNameToForm<FormFields>(
+                        "attributes.external.token.idp",
+                      )}
+                      label={t("externalTokenIdp")}
+                      helpText={t("externalTokenIdpHelp")}
+                      convertToName={convertAttributeNameToForm}
+                      identityProviderType={IdentityProviderType.ANY}
+                      realmOnly
+                      stringify
+                    />
+                  )}
+              </>
+            )}
+          {!clientAuthentication && showSsfReceiverToggle && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.enabled",
+              )}
+              label={t("ssfReceiverEnabled")}
+              labelIcon={t("ssfReceiverEnabledHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (
         <>
-          <FormGroup
-            labelIcon={
-              <HelpItem
-                helpText={t("encryptAssertionsHelp")}
-                fieldLabelId="encryptAssertions"
-              />
-            }
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.encrypt",
+            )}
             label={t("encryptAssertions")}
-            fieldId="kc-encrypt"
-            hasNoPaddingTop
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.encrypt",
-              )}
-              control={control}
-              defaultValue={false}
-              render={({ field }) => (
-                <Switch
-                  data-testid="encrypt"
-                  id="kc-encrypt"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("encryptAssertions")}
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            labelIcon={
-              <HelpItem
-                helpText={t("clientSignatureHelp")}
-                fieldLabelId="clientSignature"
-              />
-            }
+            labelIcon={t("encryptAssertionsHelp")}
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.client.signature",
+            )}
             label={t("clientSignature")}
-            fieldId="kc-client-signature"
-            hasNoPaddingTop
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.client.signature",
-              )}
-              control={control}
-              defaultValue={false}
-              render={({ field }) => (
-                <Switch
-                  data-testid="client-signature"
-                  id="kc-client-signature"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("clientSignature")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("clientSignatureHelp")}
+          />
         </>
       )}
     </FormAccess>

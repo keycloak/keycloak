@@ -17,53 +17,49 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.util.EnvUtil;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.truststore.TruststoreProvider;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.EnvUtil;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.truststore.TruststoreProvider;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
  * <p>
- * The constructed clients can be configured via Keycloaks SPI configuration, e.g. {@code standalone.xml, standalone-ha.xml, domain.xml}.
- * </p>
+ * Example for Quarkus configuration:
  * <p>
- * Examples for jboss-cli
- * </p>
- * <pre>
  * {@code
- *
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:add(enabled=true)
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.connection-pool-size,value=128)
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.proxy-mappings,value=[".*\\.(google|googleapis)\\.com;http://www-proxy.acme.corp.com:8080",".*\\.acme\\.corp\\.com;NO_PROXY",".*;http://fallback:8080"])
+ * spi-connections-http-client-default-connection-pool-size=10
  * }
- * </pre>
- * </p>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultHttpClientFactory implements HttpClientFactory {
+public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
     private static final String configScope = "keycloak.connectionsHttpClient.default.";
@@ -71,9 +67,29 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String HTTPS_PROXY = "https_proxy";
     private static final String HTTP_PROXY = "http_proxy";
     private static final String NO_PROXY = "no_proxy";
+    public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
+    public static final String ALLOW_REDIRECTS = "allow-redirects";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
+
+    private BasicResponseHandler stringResponseHandler;
+
+    private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
+    private long maxConsumedResponseSize;
+
+    private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
+
+        @Override
+        public InputStream handleEntity(HttpEntity entity) throws IOException {
+            return entity.getContent();
+        }
+
+        @Override
+        public InputStream handleResponse(HttpResponse response) throws IOException {
+            return super.handleResponse(response);
+        }
+    }
 
     @Override
     public HttpClientProvider create(KeycloakSession session) {
@@ -107,20 +123,31 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
-            public InputStream get(String uri) throws IOException {
+            public String getString(String uri) throws IOException {
+                HttpGet request = new HttpGet(uri);
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    String body = stringResponseHandler.handleResponse(response);
+                    if (body == null) {
+                        throw new IOException("No content returned from HTTP call");
+                    }
+                    return body;
+                }
+            }
+
+            @Override
+            public InputStream getInputStream(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
                 HttpResponse response = httpClient.execute(request);
-                int statusCode = response.getStatusLine().getStatusCode();
-                HttpEntity entity = response.getEntity();
-                if (statusCode < 200 || statusCode >= 300) {
-                    EntityUtils.consumeQuietly(entity);
-                    throw new IOException("Unexpected HTTP status code " + response.getStatusLine().getStatusCode() + " when expecting 2xx");
-                }
-                if (entity == null) {
+                InputStream body = inputStreamResponseHandler.handleResponse(response);
+                if (body == null) {
                     throw new IOException("No content returned from HTTP call");
                 }
-                return entity.getContent();
+                return body;
+            }
 
+            @Override
+            public long getMaxConsumedResponseSize() {
+                return maxConsumedResponseSize;
             }
         };
     }
@@ -131,7 +158,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             if (httpClient != null) {
                 httpClient.close();
             }
-        } catch (IOException e) {
+        } catch (IOException ignored) {
 
         }
     }
@@ -152,10 +179,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 if (httpClient == null) {
                     long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-                    boolean reuseConnections = config.getBoolean("reuse-connections", true);
                     long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
                     boolean disableCookies = config.getBoolean("disable-cookies", true);
                     String clientKeystore = config.get("client-keystore");
@@ -164,7 +191,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
 
                     boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
-                    boolean resuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+                    boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
 
                     // optionally configure proxy mappings
                     // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
@@ -182,19 +209,19 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                         proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
 
-                    HttpClientBuilder builder = new HttpClientBuilder();
+                    HttpClientBuilder builder = newHttpClientBuilder(session);
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
-                            .reuseConnections(reuseConnections)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)
                             .proxyMappings(proxyMappings)
                             .expectContinueEnabled(expectContinueEnabled)
-                            .reuseConnections(resuseConnections);
+                            .reuseConnections(reuseConnections);
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -215,6 +242,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     	builder.disableTrustManager();
                     }
 
+                    if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
+                        builder.disableRedirectHandling();
+                    }
+
                     if (clientKeystore != null) {
                         clientKeystore = EnvUtil.replace(clientKeystore);
                         try {
@@ -224,15 +255,77 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             throw new RuntimeException("Failed to load keystore", e);
                         }
                     }
+
+                    // Configure retry behavior
+                    configureRetries(builder);
+
                     httpClient = builder.build();
                 }
             }
         }
     }
 
+    /**
+     * Configures retry behavior for the HTTP client builder.
+     * Applies server-wide retry configuration if enabled.
+     *
+     * @param builder The HTTP client builder to configure
+     */
+    private void configureRetries(HttpClientBuilder builder) {
+        int maxRetries = config.getInt("max-retries", 0);
+        if (maxRetries <= 0) {
+            return; // Retries disabled
+        }
+        // Always enable request-sent retries for common requests (e.g., GET, POST)
+        long initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
+        String backoffMultiplierStr = config.get("backoff-multiplier", "2.0");
+        double backoffMultiplier = Double.parseDouble(backoffMultiplierStr);
+        boolean useJitter = config.getBoolean("use-jitter", true);
+        String jitterFactorStr = config.get("jitter-factor", "0.5");
+        double jitterFactor = Double.parseDouble(jitterFactorStr);
+
+        builder.getApacheHttpClientBuilder().setRetryHandler(
+                new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(maxRetries, true) {
+                    @Override
+                    public boolean retryRequest(IOException exception, int executionCount,
+                            org.apache.http.protocol.HttpContext context) {
+                        boolean shouldRetry = super.retryRequest(exception, executionCount, context);
+                        if (shouldRetry) {
+                            try {
+                                long baseDelay = initialBackoffMillis *
+                                        (long)Math.pow(backoffMultiplier, executionCount - 1);
+                                long delay = baseDelay;
+                                if (useJitter) {
+                                    double jitter = 1.0 - jitterFactor +
+                                            (Math.random() * jitterFactor * 2.0);
+                                    delay = (long)(baseDelay * jitter);
+                                }
+                                Thread.sleep(delay);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                        return shouldRetry;
+                    }
+                });
+    }
+
+    /**
+     * @deprecated use {@link #newHttpClientBuilder(KeycloakSession)}
+     */
+    @Deprecated(since = "26.6.0")
+    protected HttpClientBuilder newHttpClientBuilder() {
+        return new HttpClientBuilder();
+    }
+
+    protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
+        return newHttpClientBuilder();
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        maxConsumedResponseSize = config.getLong(MAX_CONSUMED_RESPONSE_SIZE, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
+        stringResponseHandler = new SafeBasicResponseHandler(maxConsumedResponseSize);
     }
 
     @Override
@@ -247,8 +340,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .property()
                 .name("establish-connection-timeout-millis")
                 .type("long")
-                .helpText("When trying to make an initial socket connection, what is the timeout?")
+                .helpText("Timeout when making an initial socket connection. Only effective if less than the connection-request-timeout-millis.")
                 .defaultValue(-1L)
+                .add()
+                .property()
+                .name("connection-request-timeout-millis")
+                .type("long")
+                .helpText("Timeout when trying to obtain any connection, new or pooled.")
+                .defaultValue(HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .add()
                 .property()
                 .name("max-pooled-per-route")
@@ -312,7 +411,57 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .type("string")
                 .helpText("Denotes the combination of a regex based hostname pattern and a proxy-uri in the form of hostnamePattern;proxyUri.")
                 .add()
+                .property()
+                .name(MAX_CONSUMED_RESPONSE_SIZE)
+                .type("long")
+                .helpText("Maximum size of a response consumed by the client (to prevent denial of service)")
+                .defaultValue(HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
+                .add()
+                .property()
+                .name(ALLOW_REDIRECTS)
+                .type("boolean")
+                .helpText("Whether to allow following HTTP redirects. Default: false. This option is deprecated, only provided for backwards compatibility, and will be removed in a future release.")
+                .defaultValue(false)
+                .add()
+                .property()
+                .name("max-retries")
+                .type("int")
+                .helpText("Maximum number of retry attempts for all outgoing HTTP requests. Set to 0 to disable retries (default).")
+                .defaultValue(0)
+                .add()
+                .property()
+                .name("initial-backoff-millis")
+                .type("long")
+                .helpText("Initial backoff time in milliseconds before the first retry attempt.")
+                .defaultValue(1000L)
+                .add()
+                .property()
+                .name("backoff-multiplier")
+                .type("string")
+                .helpText(
+                        "Multiplier for exponential backoff between retry attempts. For example, with an initial backoff of 1000ms and a multiplier of 2.0, the retry delays would be: 1000ms, 2000ms, 4000ms, etc.")
+                .defaultValue("2.0")
+                .add()
+                .property()
+                .name("use-jitter")
+                .type("boolean")
+                .helpText(
+                        "Whether to apply jitter to backoff times to prevent synchronized retry storms when multiple clients are retrying at the same time.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("jitter-factor")
+                .type("string")
+                .helpText(
+                        "Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time.")
+                .defaultValue("0.5")
+                .add()
                 .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT);
     }
 
     private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {
@@ -334,4 +483,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         return value;
     }
 
+    // For testing purposes
+    public Config.Scope getConfig() {
+        return config;
+    }
 }

@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -36,6 +35,7 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -101,7 +101,7 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<
                 break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
-                executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
+                executeOnAuthorizationRequest(authorizationRequestContext.getParsedResponseType(),
                     authorizationRequestContext.getAuthorizationEndpointRequest(),
                     authorizationRequestContext.getRedirectUri());
                 break;

@@ -17,8 +17,16 @@
 
 package org.keycloak.authentication;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,6 +40,25 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
             AuthenticationExecutionModel.Requirement.DISABLED};
 
     /**
+     * Config properties every authenticator execution supports, in addition to the ones returned by
+     * {@link #getConfigProperties()}.
+     */
+    List<ProviderConfigProperty> COMMON_CONFIG_PROPERTIES = List.copyOf(ProviderConfigurationBuilder.create()
+            .property()
+            .name(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE)
+            .label("authenticatorRefConfig.value.label")
+            .helpText("authenticatorRefConfig.value.help")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .add()
+            .property()
+            .name(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE)
+            .label("authenticatorRefConfig.maxAge.label")
+            .helpText("authenticatorRefConfig.maxAge.help")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .add()
+            .build());
+
+    /**
      * Friendly name for the authenticator
      *
      * @return
@@ -41,9 +68,19 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
     /**
      * General authenticator type, i.e. totp, password, cert.
      *
-     * @return null if not a referencable category
+     * @return null if not a referenceable category
      */
     String getReferenceCategory();
+
+    /**
+     * Optional categories that this authenticator can have (for example passkeys in username/form).
+     * Optional categories are not taken into account by LoA.
+     * @param session The current session in the request
+     * @return Set of extra optional categories, empty by default
+     */
+    default Set<String> getOptionalReferenceCategories(KeycloakSession session) {
+        return Collections.emptySet();
+    }
 
     /**
      * Is this authenticator configurable?

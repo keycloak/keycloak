@@ -1,13 +1,20 @@
-import { PropsWithChildren, useEffect, useMemo } from "react";
-import { useMatch } from "react-router-dom";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
-import environment from "../../environment";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import {
+  createNamedContext,
+  KeycloakSpinner,
+  useEnvironment,
+  useFetch,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useEffect, useState } from "react";
+import { useAdminClient } from "../../admin-client";
+import { useHash } from "./useHash";
+import { useTranslation } from "react-i18next";
 
 type RealmContextType = {
   realm: string;
+  realmRepresentation: RealmRepresentation;
+  refresh: () => void;
 };
 
 export const RealmContext = createNamedContext<RealmContextType | undefined>(
@@ -16,24 +23,42 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
 );
 
 export const RealmContextProvider = ({ children }: PropsWithChildren) => {
-  const routeMatch = useMatch({
-    path: DashboardRouteWithRealm.path,
-    end: false,
-  });
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+  const { i18n } = useTranslation();
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
+  const [realmRepresentation, setRealmRepresentation] =
+    useState<RealmRepresentation>();
 
-  const realmParam = routeMatch?.params.realm;
-  const realm = useMemo(
-    () => realmParam ?? environment.loginRealm,
-    [realmParam],
-  );
+  const locationRealm = useHash();
+  const realm = locationRealm.split("/")[1] ?? environment.realm;
 
   // Configure admin client to use selected realm when it changes.
-  useEffect(() => adminClient.setConfig({ realmName: realm }), [realm]);
+  useEffect(() => {
+    void (async () => {
+      adminClient.setConfig({ realmName: realm });
+      const namespace = encodeURIComponent(realm);
+      await i18n.loadNamespaces(namespace);
+      i18n.setDefaultNamespace(namespace);
+    })();
+  }, [realm, i18n, adminClient]);
+  useFetch(
+    async () => (await adminClient.realms.findOne({ realm })) ?? undefined,
+    setRealmRepresentation,
+    [realm, key],
+  );
 
-  const value = useMemo(() => ({ realm }), [realm]);
+  if (!realmRepresentation) {
+    return <KeycloakSpinner />;
+  }
 
   return (
-    <RealmContext.Provider value={value}>{children}</RealmContext.Provider>
+    <RealmContext.Provider
+      value={{ realm, realmRepresentation: realmRepresentation!, refresh }}
+    >
+      {children}
+    </RealmContext.Provider>
   );
 };
 

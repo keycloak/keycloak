@@ -3,6 +3,10 @@
 
 ==== Twitter
 
+IMPORTANT: The Twitter Identity Broker is deprecated for removal. It relies on Twitter's legacy OAuth 1.0a endpoints.
+Configure the generic *OAuth v2* identity provider against the X (formerly Twitter) OAuth 2.0 endpoints instead, as described in <<_twitter_oauth2_migration>>.
+The broker remains enabled by default, but is planned for removal in a future release.
+
 .Prerequisites
 . A Twitter developer account.
 
@@ -26,4 +30,72 @@ image:images/twitter-add-identity-provider.png[Add Identity Provider]
 . In {project_name}, paste the value of the `API Key Secret` into the *Client Secret* field.
 
 . Click *Add*.
+
+[[_twitter_oauth2_migration]]
+===== Using the generic OAuth v2 provider to connect to X/Twitter
+
+X (formerly Twitter) supports OAuth 2.0, so the built-in generic *OAuth v2* identity provider can be used as a replacement for the deprecated Twitter broker.
+See the https://docs.x.com/fundamentals/authentication/oauth-2-0/overview[X OAuth 2.0 documentation] for details.
+
+NOTE: As of 2026, you require a paid API V2 plan, for example pay-per-use. The original Free plan will not work, and you will see a `403 required_enrollment` error when {project_name} calls the user info endpoint.
+// https://devcommunity.x.com/t/an-appeal-to-x-consumer-apps-need-workable-api-pricing/266858
+In early 2026, using the `+https://api.x.com/2/users/me+` API with the pay-per-use plan is free.
+Check with X as pricing might change.
+
+.Procedure
+. In the https://developer.twitter.com/apps/[X developer portal], open your app and go to *User authentication settings*.
+.. Set the *Type of App* to a confidential client (for example *Web App*).
+.. Note the *OAuth 2.0 Client ID* and *Client Secret*.
+. Click *Identity Providers* in the {project_name} menu.
+. From the *Add provider* list, select *OAuth v2*.
+. Copy the value of *Redirect URI* and paste it into the *Callback URI / Redirect URL* field of your X app.
+. Configure the provider with the following values:
++
+[%autowidth]
+|===
+| Setting | Value
+
+| Use discovery endpoint | Off
+| Authorization URL | `+https://x.com/i/oauth2/authorize+`
+| Token URL | `+https://api.x.com/2/oauth2/token+`
+| User Info URL | `+https://api.x.com/2/users/me?user.fields=confirmed_email+`
+| Use PKCE | On
+| PKCE Method | S256
+| Client ID | The *OAuth 2.0 Client ID* of your X app
+| Client Secret | The *Client Secret* of your X app
+| Client authentication | *Client secret sent as basic auth*
+| User ID Claim | `data.id`
+| Username Claim | `data.username`
+| Email Claim | `data.confirmed_email`
+|===
+
+. Click *Add*.
+
+. Continue editing the provider to update the scopes:
++
+[%autowidth]
+|===
+| Setting | Value
+
+| Advanced -> Scopes | `users.read tweet.read`
+|===
+
+NOTE: Specifying the scope `tweet.read` is necessary, otherwise the user info endpoint will return a 403 error.
+
+NOTE: The X `/2/users/me` endpoint nests user attributes under a `data` object, so the claims above use the dotted path notation (for example `data.id`).
+
+===== Migrating existing users from the old provider to the new provider
+
+Users who have authenticated with the old Twitter provider will not be able to authenticate with the new OAuth 2.0 provider unless they enroll with it.
+If they enroll, they will need to link their existing account by authenticating with the new provider and with their existing account.
+Additionally, once you delete the old provider, all users will lose the identity provider link to Twitter and will not be able to log in with X anymore.
+
+To avoid this, migrate existing users as follows. As usual, verify the procedure in a test environment first.
+
+. Create the new OAuth 2.0 identity provider for X/Twitter and verify it is working.
+. Shut down {project_name} to prevent users from updating identity providers and to avoid stale caches (preferred).
+Alternatively, clear the user cache after the migration via the Admin REST API or Admin Console, or perform a rolling restart of all nodes.
+. Create a database backup so you can restore if the migration fails.
+. In the `FEDERATED_IDENTITY` table, update the `IDENTITY_PROVIDER` column to the alias of the new OAuth 2.0 identity provider for those entries pointing to the old alias for the affected `REALM_ID`.
+. Start {project_name} and verify that users who used the old provider can log in with the new provider.
 

@@ -17,13 +17,26 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -36,26 +49,15 @@ import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ScopeMappedUtil;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * Base class for managing the scope mappings of a specific client.
@@ -109,6 +111,7 @@ public class ScopeMappedResource {
 
         MappingsRepresentation all = new MappingsRepresentation();
         List<RoleRepresentation> realmRep = scopeContainer.getRealmScopeMappingsStream()
+                .filter(auth.roles()::canViewScopeMapping)
                 .map(ModelToRepresentation::toBriefRepresentation)
                 .collect(Collectors.toList());
         if (!realmRep.isEmpty()) {
@@ -117,7 +120,7 @@ public class ScopeMappedResource {
 
         Stream<ClientModel> clients = realm.getClientsStream();
         Map<String, ClientMappingsRepresentation> clientMappings = clients
-                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer))
+                .map(c -> ScopeMappedUtil.toClientMappingsRepresentation(c, scopeContainer, auth.roles()::canViewScopeMapping))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(ClientMappingsRepresentation::getClient, Function.identity()));
 
@@ -146,6 +149,7 @@ public class ScopeMappedResource {
         }
 
         return scopeContainer.getRealmScopeMappingsStream()
+                .filter(auth.roles()::canViewScopeMapping)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
@@ -180,7 +184,7 @@ public class ScopeMappedResource {
      * any composite roles associated with the client's scope and adds the roles to this lists.  The method is really
      * to show a comprehensive total view of realm-level roles associated with the client.
      *
-     * @param briefRepresentation if false, return roles with their attributes
+     * @param briefRepresentation if false, return roles with their attributes; attributes are only included for roles the caller is allowed to view
      * 
      * @return
      */
@@ -191,18 +195,17 @@ public class ScopeMappedResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
     @Operation(summary = "Get effective realm-level roles associated with the client’s scope What this does is recurse any composite roles associated with the client’s scope and adds the roles to this lists.",
         description = "The method is really to show a comprehensive total view of realm-level roles associated with the client.")
-    public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@Parameter(description = "if false, return roles with their attributes; attributes are only included for roles the caller is allowed to view") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         if (scopeContainer == null) {
             throw new NotFoundException("Could not find client");
         }
 
-        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
-                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
         return realm.getRolesStream()
                 .filter(scopeContainer::hasScope)
-                .map(toBriefRepresentation);
+                .filter(auth.roles()::canViewScopeMapping)
+                .map(toRepresentation(auth, briefRepresentation));
     }
 
     /**
@@ -228,6 +231,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
+            auth.roles().requireMapClientScope(roleModel);
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -253,6 +257,7 @@ public class ScopeMappedResource {
 
         if (roles == null) {
             roles = scopeContainer.getRealmScopeMappingsStream()
+                    .filter(auth.roles()::canMapClientScope)
                     .peek(scopeContainer::deleteScopeMapping)
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
@@ -262,6 +267,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
+                auth.roles().requireMapClientScope(roleModel);
                 scopeContainer.deleteScopeMapping(roleModel);
             }
         }
@@ -277,5 +283,18 @@ public class ScopeMappedResource {
             throw new NotFoundException("Could not find client");
         }
         return new ScopeMappedClientResource(realm, auth, this.scopeContainer, session, clientModel, adminEvent, managePermission, viewPermission);
+    }
+
+    /**
+     * Roles are returned with their attributes only to administrators that can view them. Administrators that can only
+     * map a role to client scopes get its brief representation, as when listing the available roles.
+     */
+    static Function<RoleModel, RoleRepresentation> toRepresentation(AdminPermissionEvaluator auth, boolean briefRepresentation) {
+        if (briefRepresentation) {
+            return ModelToRepresentation::toBriefRepresentation;
+        }
+        return role -> auth.roles().canView(role)
+                ? ModelToRepresentation.toRepresentation(role)
+                : ModelToRepresentation.toBriefRepresentation(role);
     }
 }

@@ -16,6 +16,19 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Source;
+import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -24,25 +37,14 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
+
 import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
-import javax.xml.XMLConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.stax.StAXSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
+
 import static org.keycloak.saml.common.util.DocumentUtil.feature_disallow_doctype_decl;
 import static org.keycloak.saml.common.util.DocumentUtil.feature_external_general_entities;
 import static org.keycloak.saml.common.util.DocumentUtil.feature_external_parameter_entities;
@@ -57,9 +59,7 @@ public class JAXPValidationUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    protected static Validator validator;
-
-    protected static SchemaFactory schemaFactory;
+    private static Schema schema;
 
     public static void validate(InputStream stream) throws SAXException, IOException {
         try {
@@ -89,25 +89,24 @@ public class JAXPValidationUtil {
     public static Validator validator() throws SAXException, IOException {
         SystemPropertiesUtil.ensure();
 
-        if (validator == null) {
-            Schema schema = getSchema();
-            if (schema == null)
-                throw logger.nullValueError("schema");
+        Schema schema = getSchema();
+        if (schema == null)
+            throw logger.nullValueError("schema");
 
-            validator = schema.newValidator();
-            // Do not optimize the following into setProperty(...) && setProperty(...).
-            // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
-            // which it would not due to short-circuiting in case of an && expression.
-            boolean successful1 = setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
-            successful1 &= setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
-            successful2 &= setFeature(validator, feature_external_general_entities, false);
-            successful2 &= setFeature(validator, feature_external_parameter_entities, false);
-            if (! successful1 && ! successful2) {
-                logger.warn("Cannot disable external access in XML validator");
-            }
-            validator.setErrorHandler(new CustomErrorHandler());
+        // Schema is thread-safe, but each validation needs its own Validator.
+        Validator validator = schema.newValidator();
+        // Do not optimize the following into setProperty(...) && setProperty(...).
+        // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
+        // which it would not due to short-circuiting in case of an && expression.
+        boolean successful1 = setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
+        successful1 &= setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
+        successful2 &= setFeature(validator, feature_external_general_entities, false);
+        successful2 &= setFeature(validator, feature_external_parameter_entities, false);
+        if (! successful1 && ! successful2) {
+            logger.warn("Cannot disable external access in XML validator");
         }
+        validator.setErrorHandler(new CustomErrorHandler());
         return validator;
     }
 
@@ -131,10 +130,15 @@ public class JAXPValidationUtil {
         return true;
     }
 
-    private static Schema getSchema() throws IOException {
+    private static synchronized Schema getSchema() throws IOException {
+        if (schema != null) {
+            return schema;
+        }
+
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false").equalsIgnoreCase("true");
 
         ClassLoader prevTCCL = SecurityActions.getTCCL();
+        SchemaFactory schemaFactory;
         try {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(JAXPValidationUtil.class.getClassLoader());
@@ -148,13 +152,12 @@ public class JAXPValidationUtil {
                 SecurityActions.setTCCL(prevTCCL);
             }
         }
-        Schema schemaGrammar = null;
         try {
-            schemaGrammar = schemaFactory.newSchema(sources());
+            schema = schemaFactory.newSchema(sources());
         } catch (SAXException e) {
             logger.xmlCouldNotGetSchema(e);
         }
-        return schemaGrammar;
+        return schema;
     }
 
     private static Source[] sources() throws IOException {

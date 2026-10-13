@@ -22,13 +22,14 @@ package org.keycloak.crypto.elytron.test;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,5 +47,15 @@ public class ElytronKeyStoreTypesTest {
                 KeystoreUtil.KeystoreFormat.JKS,
                 KeystoreUtil.KeystoreFormat.PKCS12
         ));
+    }
+
+    @Test
+    public void testTruststoreFormats() {
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        Assert.assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.JKS,
+                KeystoreUtil.TruststoreFormat.PKCS12
+        ));
+        Assert.assertEquals(KeystoreUtil.TruststoreFormat.PKCS12, CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType());
     }
 }

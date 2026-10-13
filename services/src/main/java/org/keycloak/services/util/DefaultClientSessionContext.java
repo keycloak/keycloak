@@ -17,26 +17,28 @@
 
 package org.keycloak.services.util;
 
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -46,6 +48,8 @@ import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
 
+import org.jboss.logging.Logger;
+
 /**
  * Not thread safe. It's per-request object
  *
@@ -53,13 +57,15 @@ import org.keycloak.util.TokenUtil;
  */
 public class DefaultClientSessionContext implements ClientSessionContext {
 
-    private static Logger logger = Logger.getLogger(DefaultClientSessionContext.class);
+    private static final Logger logger = Logger.getLogger(DefaultClientSessionContext.class);
+    public static final String ORIGINAL_REFRESH_TOKEN_SCOPE = "original_refresh_token_scope";
 
     private final AuthenticatedClientSessionModel clientSession;
-    private final Set<String> clientScopeIds;
+    private final Set<ClientScopeModel> requestedScopes;
     private final KeycloakSession session;
+    private final String requestedScopeString;
 
-    private Set<ClientScopeModel> clientScopes;
+    private Set<ClientScopeModel> allowedClientScopes;
 
     //
     private Set<RoleModel> roles;
@@ -68,12 +74,19 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     // All roles of user expanded. It doesn't yet take into account permitted clientScopes
     private Set<RoleModel> userRoles;
 
-    private Map<String, Object> attributes = new HashMap<>();
+    private final Map<String, Object> attributes = new HashMap<>();
+    private Set<String> clientScopeIds;
+    private String scopeString;
 
-    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
-        this.clientScopeIds = clientScopeIds;
+    private final Set<String> restrictedScopes;
+
+    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> requestedScopes, Set<String> restrictedScopes, String requestedScopeString, KeycloakSession session) {
+        this.requestedScopes = requestedScopes;
+        this.restrictedScopes = restrictedScopes;
         this.clientSession = clientSession;
+        this.requestedScopeString = requestedScopeString;
         this.session = session;
+        this.session.setAttribute(ClientSessionContext.class.getName(), this);
     }
 
 
@@ -86,32 +99,23 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
-        Stream<ClientScopeModel> requestedClientScopes;
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            session.getContext().setClient(clientSession.getClient());
-            requestedClientScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel user = Optional.ofNullable(userSession).map(UserSessionModel::getUser).orElse(null);
+        Set<ClientScopeModel> requestedScopes;
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, clientSession, scopeParam)
+                    .collect(Collectors.toSet());
         } else {
-            requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, clientSession.getClient());
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user).collect(Collectors.toSet());
         }
-        return fromClientSessionAndClientScopes(clientSession, requestedClientScopes, session);
+        return new DefaultClientSessionContext(clientSession, requestedScopes, null, scopeParam, session);
     }
 
 
-    public static DefaultClientSessionContext fromClientSessionAndClientScopeIds(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
-        return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
+    public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession,
+            Set<ClientScopeModel> requestedScopes, Set<String> restrictedScopes, KeycloakSession session) {
+        return new DefaultClientSessionContext(clientSession, requestedScopes, restrictedScopes, clientSession.getNote(OAuth2Constants.SCOPE), session);
     }
-
-
-    // in order to standardize the way we create this object and with that data, it's better to compute the client scopes internally instead of relying on external sources
-    // i.e: the TokenManager.getRequestedClientScopes was being called in many places to obtain the ClientScopeModel stream.
-    // by changing this method to private, we'll only call it in this class, while also having a single place to put the DYNAMIC_SCOPES feature flag condition
-    private static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession,
-                                                                               Stream<ClientScopeModel> clientScopes,
-                                                                               KeycloakSession session) {
-        Set<String> clientScopeIds = clientScopes.map(ClientScopeModel::getId).collect(Collectors.toSet());
-        return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
-    }
-
 
     @Override
     public AuthenticatedClientSessionModel getClientSession() {
@@ -121,6 +125,11 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public Set<String> getClientScopeIds() {
+        if (clientScopeIds == null) {
+            clientScopeIds = requestedScopes.stream()
+                    .map(ClientScopeModel::getId)
+                    .collect(Collectors.toSet());
+        }
         return clientScopeIds;
     }
 
@@ -128,12 +137,22 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         // Load client scopes if not yet present
-        if (clientScopes == null) {
-            clientScopes = loadClientScopes();
+        if (allowedClientScopes == null) {
+            allowedClientScopes = requestedScopes.stream().filter(this::isAllowed).collect(Collectors.toSet());
         }
-        return clientScopes.stream();
+        return allowedClientScopes.stream();
     }
 
+    @Override
+    public boolean isOfflineTokenRequested() {
+        Boolean offlineAccessRequested = getAttribute(OAuth2Constants.OFFLINE_ACCESS, Boolean.class);
+        if (offlineAccessRequested != null) return offlineAccessRequested;
+
+        ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(clientSession.getRealm(), OAuth2Constants.OFFLINE_ACCESS);
+        offlineAccessRequested = offlineAccessScope == null ? false : getClientScopeIds().contains(offlineAccessScope.getId());
+        setAttribute(OAuth2Constants.OFFLINE_ACCESS, offlineAccessRequested);
+        return offlineAccessRequested;
+    }
 
     @Override
     public Stream<RoleModel> getRolesStream() {
@@ -166,11 +185,18 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            String scopeParam = buildScopesStringFromAuthorizationRequest();
-            logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
-            String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
-            if (TokenUtil.isOIDCRequest(scopeSent)) {
+        if (scopeString == null) {
+            scopeString = getScopeString(false);
+        }
+        return scopeString;
+    }
+
+    @Override
+    public String getScopeString(boolean ignoreIncludeInTokenScope) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+            String scopeParam = buildScopesStringFromAuthorizationRequest(ignoreIncludeInTokenScope);
+            logger.tracef("Generated scope param with Parameterized Scopes enabled: %1s", scopeParam);
+            if (isOIDCRequest()) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
             }
             return scopeParam;
@@ -178,17 +204,26 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         // Add both default and optional scopes to scope parameter. Don't add client itself
         String scopeParam = getClientScopesStream()
                 .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
-                .filter(ClientScopeModel::isIncludeInTokenScope)
+                .filter(scope-> scope.isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .map(ClientScopeModel::getName)
                 .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
-        String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeSent)) {
+        if (isOIDCRequest()) {
             scopeParam = TokenUtil.attachOIDCScope(scopeParam);
         }
 
         return scopeParam;
+    }
+
+    private boolean isOIDCRequest() {
+        if (TokenUtil.isOIDCRequest(requestedScopeString)) {
+            return true;
+        }
+        if (OAuth2Constants.REFRESH_TOKEN.equals(getAttribute(Constants.GRANT_TYPE, String.class))) {
+            return TokenUtil.isOIDCRequest(getAttribute(ORIGINAL_REFRESH_TOKEN_SCOPE, String.class));
+        }
+        return false;
     }
 
     /**
@@ -196,12 +231,14 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * they should be included in tokens or not.
      * Then return the scope name from the data stored in the RAR object representation.
      *
+     * @param ignoreIncludeInTokenScope ignore include in token scope from client scope options
+     *
      * @return see description
      */
-    private String buildScopesStringFromAuthorizationRequest() {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE)).getAuthorizationDetailEntries().stream()
+    private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), clientSession, requestedScopeString).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
-                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope())
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
                 .map(authorizationDetails -> authorizationDetails.getAuthorizationDetails().getScopeNameFromCustomData())
                 .collect(Collectors.joining(" "));
@@ -222,32 +259,34 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public AuthorizationRequestContext getAuthorizationRequestContext() {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE));
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), clientSession.getUserSession().getUser(), requestedScopeString);
     }
 
     // Loading data
 
-    private Set<ClientScopeModel> loadClientScopes() {
-        Set<ClientScopeModel> clientScopes = new HashSet<>();
-        for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), getClientSession().getClient(), scopeId);
-            if (clientScope != null) {
-                if (isClientScopePermittedForUser(clientScope)) {
-                    clientScopes.add(clientScope);
-                } else {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("User '%s' not permitted to have client scope '%s'",
-                                clientSession.getUserSession().getUser().getUsername(), clientScope.getName());
-                    }
-                }
-            }
+    private boolean isAllowed(ClientScopeModel clientScope) {
+        if (restrictedScopes != null && !restrictedScopes.contains(clientScope.getName())) {
+            logger.tracef("Client scope '%s' is not among the restricted scopes list and will not be processed", clientScope.getName());
+            return false;
         }
-        return clientScopes;
-    }
 
+        if (!isClientScopePermittedForUser(clientScope)) {
+            if (logger.isTraceEnabled()) {
+                logger.tracef("User '%s' not permitted to have client scope '%s'",
+                        clientSession.getUserSession().getUser().getUsername(), clientScope.getName());
+            }
+            return false;
+        }
+
+        return true;
+    }
 
     // Return true if clientScope can be used by the user.
     private boolean isClientScopePermittedForUser(ClientScopeModel clientScope) {
+        if (clientScope == null) {
+            return false;
+        }
+
         if (clientScope instanceof ClientModel) {
             return true;
         }
@@ -261,6 +300,14 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
         // Expand (resolve composite roles)
         clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+
+        //remove roles that are not contained in requested audience
+        if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENTS) != null) {
+            final Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class))
+                    .map(ClientModel::getId)
+                    .collect(Collectors.toSet());
+            clientScopeRoles.removeIf(role-> role.isClientRole() && !requestedClientIdsFromAudience.contains(role.getContainerId()));
+        }
 
         // Check if expanded roles of clientScope has any intersection with expanded roles of user. If not, it is not permitted
         clientScopeRoles.retainAll(getUserRoles());

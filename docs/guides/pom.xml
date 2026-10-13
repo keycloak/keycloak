@@ -14,8 +14,9 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
@@ -28,7 +29,8 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
-    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class from an IDE for debugging -->
+    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class
+    from an IDE for debugging -->
     <packaging>jar</packaging>
 
     <dependencies>
@@ -37,13 +39,16 @@
             <artifactId>keycloak-guides-maven-plugin</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.0</version>
@@ -92,10 +97,9 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/</directory>
-                                    <includes>
-                                        <include>**/examples/**/*.*</include>
-                                        <include>**/partials/**/*.*</include>
-                                    </includes>
+                                    <excludes>
+                                        <exclude>**/templates/**</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -130,7 +134,7 @@
                         <toc>left</toc>
                         <icons>font</icons>
                         <sectanchors>true</sectanchors>
-                        <idprefix/>
+                        <idprefix />
                         <idseparator>-</idseparator>
                         <docinfo1>true</docinfo1>
                         <imagesdir>../images</imagesdir>
@@ -166,6 +170,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>observability-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/observability</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/observability</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>migration-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -184,7 +199,8 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/getting-started</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/generated-docs/getting-started</outputDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/getting-started</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -198,6 +214,44 @@
                             <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>securing-apps-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>admin-api-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/admin-api</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/admin-api</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ui-customization-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/ui-customization</sourceDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/generated-docs/ui-customization</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
             <plugin>

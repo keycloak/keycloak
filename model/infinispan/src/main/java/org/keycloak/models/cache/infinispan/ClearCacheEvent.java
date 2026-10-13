@@ -17,12 +17,26 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.marshalling.Marshalling;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClearCacheEvent implements ClusterEvent {
+@ProtoTypeId(Marshalling.CLEAR_CACHE_EVENT)
+public final class ClearCacheEvent implements ClusterEvent {
+
+    private static final ClearCacheEvent INSTANCE = new ClearCacheEvent();
+
+    private ClearCacheEvent() {}
+
+    @ProtoFactory
+    public static ClearCacheEvent getInstance() {
+        return INSTANCE;
+    }
 
     @Override
     public boolean equals(Object obj) {

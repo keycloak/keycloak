@@ -1,3 +1,4 @@
+import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type {
@@ -5,33 +6,36 @@ import type {
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import {
+  KeycloakSelect,
+  SelectVariant,
+  useFetch,
+  Variant,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   ButtonVariant,
   Chip,
   ChipGroup,
-  Select,
   SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import {
   Controller,
   ControllerRenderProps,
   useFormContext,
+  useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { Link, useNavigate } from "react-router-dom";
-import { adminClient } from "../../admin-client";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
-import { toPolicyDetails } from "../routes/PolicyDetails";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { toCreatePolicy } from "../routes/NewPolicy";
-import { NewPolicyDialog } from "./NewPolicyDialog";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
-import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { toCreatePolicy } from "../routes/NewPolicy";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 import { toResourceDetails } from "../routes/Resource";
+import { NewPolicyDialog } from "./NewPolicyDialog";
+import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
 
 type Type = "resources" | "policies";
 
@@ -39,7 +43,7 @@ type ResourcesPolicySelectProps = {
   name: Type;
   clientId: string;
   permissionId?: string;
-  variant?: SelectVariant;
+  variant?: Variant;
   preSelected?: string;
   isRequired?: boolean;
 };
@@ -79,6 +83,8 @@ export const ResourcesPolicySelect = ({
   preSelected,
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { realm } = useRealm();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -95,8 +101,16 @@ export const ResourcesPolicySelect = ({
     useState<PolicyProviderRepresentation[]>();
   const [onUnsavedChangesConfirm, setOnUnsavedChangesConfirm] =
     useState<() => void>();
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
+  const [selected, setSelected] = useState<Policies[]>([]);
 
   const functions = typeMapping[name];
+
+  const value = useWatch({
+    control,
+    name: name!,
+    defaultValue: preSelected ? [preSelected] : [],
+  });
 
   const convert = (
     p: PolicyRepresentation | ResourceRepresentation,
@@ -121,6 +135,12 @@ export const ResourcesPolicySelect = ({
               permissionId,
             })
           : Promise.resolve([]),
+        preSelected && name === "resources"
+          ? adminClient.clients.getResource({
+              id: clientId,
+              resourceId: preSelected,
+            })
+          : Promise.resolve([]),
       ]);
     },
     ([providers, ...policies]) => {
@@ -142,6 +162,28 @@ export const ResourcesPolicySelect = ({
       );
     },
     [search],
+  );
+
+  useFetch(
+    async () => {
+      if (name === "resources")
+        return await Promise.all(
+          (value || []).map((id) =>
+            adminClient.clients.getResource({ id: clientId, resourceId: id }),
+          ),
+        );
+      return await Promise.all(
+        (value || []).map(async (id) =>
+          adminClient.clients.findOnePolicy({
+            id: clientId,
+            policyId: id,
+          }),
+        ),
+      );
+    },
+    (result: any[]) =>
+      setSelected(result.filter((r) => r !== null).map((r) => convert(r))),
+    [value],
   );
 
   const [toggleUnsavedChangesDialog, UnsavedChangesConfirm] = useConfirmDialog({
@@ -178,36 +220,34 @@ export const ResourcesPolicySelect = ({
   ) => {
     return (
       <ChipGroup>
-        {field.value?.map((permissionId) => {
-          const item = items.find(
-            (permission) => permission.id === permissionId,
-          );
-
-          if (!item) return;
-
-          const route = to(item);
-          return (
-            <Chip
-              key={item.id}
-              onClick={() => {
-                field.onChange(field.value?.filter((id) => id !== item.id));
-              }}
-            >
+        {selected.map((item) => (
+          <Chip
+            key={item.id}
+            onClick={() => {
+              field.onChange(field.value?.filter((id) => id !== item.id) || []);
+              setSelected(selected.filter((p) => p.id !== item.id));
+            }}
+          >
+            {!isAdminPermissionsClient ? (
               <Link
-                to={route}
+                to={to(item)}
                 onClick={(event) => {
                   if (isDirty) {
                     event.preventDefault();
-                    setOnUnsavedChangesConfirm(() => () => navigate(route));
+                    setOnUnsavedChangesConfirm(
+                      () => () => void navigate(to(item)),
+                    );
                     toggleUnsavedChangesDialog();
                   }
                 }}
               >
                 {item.name}
               </Link>
-            </Chip>
-          );
-        })}
+            ) : (
+              item.name
+            )}
+          </Chip>
+        ))}
       </ChipGroup>
     );
   };
@@ -219,7 +259,7 @@ export const ResourcesPolicySelect = ({
         <NewPolicyDialog
           policyProviders={policyProviders}
           onSelect={(p) => {
-            navigate(
+            void navigate(
               toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
             );
           }}
@@ -232,11 +272,11 @@ export const ResourcesPolicySelect = ({
         control={control}
         rules={{ validate: (value) => !isRequired || value!.length > 0 }}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             variant={variant}
-            onToggle={setOpen}
-            onFilter={(_, filter) => {
+            onToggle={(val) => setOpen(val)}
+            onFilter={(filter) => {
               setSearch(filter);
               return toSelectOptions();
             }}
@@ -244,8 +284,12 @@ export const ResourcesPolicySelect = ({
               field.onChange([]);
               setSearch("");
             }}
-            selections={field.value}
-            onSelect={(_, selectedValue) => {
+            selections={
+              variant === SelectVariant.typeaheadMulti
+                ? field.value
+                : selected.find((i) => i.id === field.value?.[0])?.name
+            }
+            onSelect={(selectedValue) => {
               const option = selectedValue.toString();
               if (variant === SelectVariant.typeaheadMulti) {
                 const changedValue = field.value?.find(
@@ -256,18 +300,21 @@ export const ResourcesPolicySelect = ({
                 field.onChange(changedValue);
               } else {
                 field.onChange([option]);
+                const selectedItem = items.find((i) => i.id === option);
+                if (selectedItem) {
+                  setSelected([selectedItem]);
+                }
               }
 
               setSearch("");
             }}
             isOpen={open}
-            aria-labelledby={t(name)}
-            isDisabled={!!preSelected}
+            aria-label={t(name)}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}
             chipGroupComponent={toChipGroupItems(field)}
             footer={
-              name === "policies" ? (
+              name === "policies" && !isAdminPermissionsClient ? (
                 <Button
                   variant="link"
                   isInline
@@ -289,7 +336,7 @@ export const ResourcesPolicySelect = ({
             }
           >
             {toSelectOptions()}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </>

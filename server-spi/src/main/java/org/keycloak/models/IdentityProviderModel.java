@@ -16,11 +16,15 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 /**
  * <p>A model type representing the configuration for identity providers. It provides some common properties and also a {@link org.keycloak.models.IdentityProviderModel#config}
@@ -30,19 +34,37 @@ import java.util.Map;
  */
 public class IdentityProviderModel implements Serializable {
 
+    public static final String ALIAS = "alias";
+    public static final String ALIAS_NOT_IN = "aliasNotIn";
+    public static final String ISSUER = "issuer";
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
-    public static final String LOGIN_HINT = "loginHint";
-    public static final String PASS_MAX_AGE = "passMaxAge";
-
-    public static final String SYNC_MODE = "syncMode";
-    
-    public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
-
-    public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
+    public static final String AUTHENTICATE_BY_DEFAULT = "authenticateByDefault";
+    public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
+    public static final String DISPLAY_NAME = "displayName";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
+    public static final String ENABLED = "enabled";
+    public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
+    public static final String FIRST_BROKER_LOGIN_FLOW_ID = "firstBrokerLoginFlowId";
+    public static final String HIDE_ON_LOGIN = "hideOnLogin";
+    @Deprecated
+    public static final String LEGACY_HIDE_ON_LOGIN_ATTR = "hideOnLoginPage";
+    public static final String LINK_ONLY = "linkOnly";
+    public static final String LOGIN_HINT = "loginHint";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
+    public static final String ORGANIZATION_ID = "organizationId";
+    public static final String ORGANIZATION_ID_NOT_NULL = "organizationIdNotNull";
+    public static final String PASS_MAX_AGE = "passMaxAge";
+    public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
+    public static final String SEARCH = "search";
+    public static final String SYNC_MODE = "syncMode";
+    public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
+    public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
+    public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
+    public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
+    public static final String ALLOW_ADMIN_ROLE_MAPPING = "allowAdminRoleMapping";
+    public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
 
@@ -58,29 +80,31 @@ public class IdentityProviderModel implements Serializable {
     private String providerId;
 
     private boolean enabled;
-    
-    private boolean trustEmail;
 
-    private boolean storeToken;
+    private Boolean trustEmail;
 
-    protected boolean addReadTokenRoleOnCreate;
+    private Boolean storeToken;
 
-    protected boolean linkOnly;
+    protected Boolean addReadTokenRoleOnCreate;
+
+    protected Boolean linkOnly;
 
     /**
      * Specifies if particular provider should be used by default for authentication even before displaying login screen
      */
-    private boolean authenticateByDefault;
+    private Boolean authenticateByDefault;
 
     private String firstBrokerLoginFlowId;
 
     private String postBrokerLoginFlowId;
 
+    private Set<String> organizationIds = new LinkedHashSet<>();
+
     private String displayName;
 
     private String displayIconClasses;
 
-    private IdentityProviderSyncMode syncMode;
+    private Boolean hideOnLogin;
 
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
@@ -106,7 +130,9 @@ public class IdentityProviderModel implements Serializable {
             this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
             this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
             this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+            this.organizationIds = new LinkedHashSet<>(model.getOrganizationIds());
             this.displayIconClasses = model.getDisplayIconClasses();
+            this.hideOnLogin = model.isHideOnLogin();
         }
     }
 
@@ -142,29 +168,40 @@ public class IdentityProviderModel implements Serializable {
         this.enabled = enabled;
     }
 
-    public boolean isStoreToken() {
+    public Boolean isStoreToken() {
         return this.storeToken;
     }
 
-    public void setStoreToken(boolean storeToken) {
+    public boolean isStoreTokenInSession() {
+        String isStoreTokenInSession = getConfig().get(STORE_TOKEN_IN_SESSION);
+        return Profile.isFeatureEnabled(Feature.IDENTITY_BROKERING_API_V2) && isStoreTokenInSession != null
+                ? Boolean.parseBoolean(isStoreTokenInSession)
+                : true; // true by default for backwards compatibility
+    }
+
+    public void setStoreTokenInSession(boolean storeToken) {
+        setBooleanConfig(STORE_TOKEN_IN_SESSION, storeToken);
+    }
+
+    public void setStoreToken(Boolean storeToken) {
         this.storeToken = storeToken;
     }
 
-    public boolean isLinkOnly() {
+    public Boolean isLinkOnly() {
         return linkOnly;
     }
 
-    public void setLinkOnly(boolean linkOnly) {
+    public void setLinkOnly(Boolean linkOnly) {
         this.linkOnly = linkOnly;
     }
 
     @Deprecated
-    public boolean isAuthenticateByDefault() {
+    public Boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
     @Deprecated
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+    public void setAuthenticateByDefault(Boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
 
@@ -192,19 +229,19 @@ public class IdentityProviderModel implements Serializable {
         this.config = config;
     }
 
-    public boolean isAddReadTokenRoleOnCreate() {
+    public Boolean isAddReadTokenRoleOnCreate() {
         return addReadTokenRoleOnCreate;
     }
 
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+    public void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 
-    public boolean isTrustEmail() {
+    public Boolean isTrustEmail() {
         return trustEmail;
     }
 
-    public void setTrustEmail(boolean trustEmail) {
+    public void setTrustEmail(Boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
 
@@ -220,72 +257,117 @@ public class IdentityProviderModel implements Serializable {
         return displayIconClasses;
     }
 
+    public Set<String> getOrganizationIds() {
+        return this.organizationIds;
+    }
+
+    public void setOrganizationIds(Set<String> organizationIds) {
+        this.organizationIds = organizationIds != null ? organizationIds : new LinkedHashSet<>();
+    }
+
+    public boolean hasOrganization() {
+        return !organizationIds.isEmpty();
+    }
+
+    public boolean isLinkedToOrganization(String orgId) {
+        return organizationIds.contains(orgId);
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
+    public String getOrganizationId() {
+        return organizationIds.isEmpty() ? null : organizationIds.iterator().next();
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
+    public void setOrganizationId(String organizationId) {
+        this.organizationIds = new LinkedHashSet<>();
+        if (organizationId != null) {
+            this.organizationIds.add(organizationId);
+        }
+    }
+
     /**
      * <p>Validates this configuration.
-     * 
+     *
      * <p>Sub-classes can override this method in order to enforce provider specific validations.
-     * 
+     *
      * @param realm the realm
      */
     public void validate(RealmModel realm) {
     }
-        
+
+    /**
+     * Whether a masked {@code clientSecret} from an admin update may be replaced with the
+     * already-stored secret. Sub-classes (typically provider-specific configs from
+     * {@code IdentityProviderFactory#createConfig()}) override this to reject reuse when
+     * fields that determine where/how the secret is sent have changed.
+     * <p>
+     * Callers should invoke this on the typed model from {@code createConfig()} /
+     * {@code RepresentationToModel}, not on a cached plain {@link IdentityProviderModel}.
+     *
+     * @param other the other model to compare destination/auth fields against (usually the stored IdP)
+     * @return {@code true} if the stored secret may be reused; default allows reuse
+     */
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel other) {
+        return true;
+    }
+
     public IdentityProviderSyncMode getSyncMode() {
-        return IdentityProviderSyncMode.valueOf(getConfig().getOrDefault(SYNC_MODE, "LEGACY"));
+        String syncMode = getConfig().get(SYNC_MODE);
+        return syncMode != null ? IdentityProviderSyncMode.valueOf(syncMode) : null;
     }
 
     public void setSyncMode(IdentityProviderSyncMode syncMode) {
-        getConfig().put(SYNC_MODE, syncMode.toString());
+        getConfig().put(SYNC_MODE, syncMode != null ? syncMode.toString() : null);
     }
 
     public boolean isLoginHint() {
-        return Boolean.valueOf(getConfig().get(LOGIN_HINT));
+        return getBooleanConfig(LOGIN_HINT);
     }
 
-    public void setLoginHint(boolean loginHint) {
-        getConfig().put(LOGIN_HINT, String.valueOf(loginHint));
+    public void setLoginHint(Boolean loginHint) {
+        setBooleanConfig(LOGIN_HINT, loginHint);
     }
 
     public boolean isPassMaxAge() {
-        return Boolean.valueOf(getConfig().get(PASS_MAX_AGE));
+        return getBooleanConfig(PASS_MAX_AGE);
     }
 
-    public void setPassMaxAge(boolean passMaxAge) {
-        getConfig().put(PASS_MAX_AGE, String.valueOf(passMaxAge));
+    public void setPassMaxAge(Boolean passMaxAge) {
+        setBooleanConfig(PASS_MAX_AGE, passMaxAge);
     }
 
-     
-    public boolean isHideOnLogin() {
-        return Boolean.valueOf(getConfig().get(HIDE_ON_LOGIN));
+    public Boolean isHideOnLogin() {
+        return this.hideOnLogin;
     }
 
-    public void setHideOnLogin(boolean hideOnLogin) {
-        getConfig().put(HIDE_ON_LOGIN, String.valueOf(hideOnLogin));
+    public void setHideOnLogin(Boolean hideOnLogin) {
+        this.hideOnLogin = hideOnLogin;
     }
 
     /**
-     * Returns flag whether the users withing this IdP should be transient, ie. not stored in Keycloak database.
+     * Returns flag whether the users within this IdP should be transient, ie. not stored in Keycloak database.
      * Default value: {@code false}.
      * @return
      */
     public boolean isTransientUsers() {
-        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && Boolean.valueOf(getConfig().get(DO_NOT_STORE_USERS));
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && getBooleanConfig(DO_NOT_STORE_USERS);
     }
 
     /**
      * Configures the IdP to not store users in Keycloak database. Default value: {@code false}.
      * @return
      */
-    public void setTransientUsers(boolean transientUsers) {
-        getConfig().put(DO_NOT_STORE_USERS, String.valueOf(transientUsers));
+    public void setTransientUsers(Boolean transientUsers) {
+        setBooleanConfig(DO_NOT_STORE_USERS, transientUsers);
     }
 
     public boolean isFilteredByClaims() {
-        return Boolean.valueOf(getConfig().getOrDefault(FILTERED_BY_CLAIMS, Boolean.toString(false)));
+        return getBooleanConfig(FILTERED_BY_CLAIMS);
     }
 
-    public void setFilteredByClaims(boolean filteredByClaims) {
-        getConfig().put(FILTERED_BY_CLAIMS, String.valueOf(filteredByClaims));
+    public void setFilteredByClaims(Boolean filteredByClaims) {
+        setBooleanConfig(FILTERED_BY_CLAIMS, filteredByClaims);
     }
 
     public String getClaimFilterName() {
@@ -311,4 +393,85 @@ public class IdentityProviderModel implements Serializable {
     public void setMetadataDescriptorUrl(String metadataDescriptorUrl) {
         getConfig().put(METADATA_DESCRIPTOR_URL, metadataDescriptorUrl);
     }
+
+    public boolean isCaseSensitiveOriginalUsername() {
+        return getBooleanConfig(CASE_SENSITIVE_ORIGINAL_USERNAME);
+    }
+
+    public void setCaseSensitiveOriginalUsername(Boolean caseSensitive) {
+        setBooleanConfig(CASE_SENSITIVE_ORIGINAL_USERNAME, caseSensitive);
+    }
+
+    public void setMinValidityToken(int minValidityToken) {
+        getConfig().put(MIN_VALIDITY_TOKEN, Integer.toString(minValidityToken));
+    }
+
+	public IdentityProviderShowInAccountConsole getShowInAccountConsole() {
+		return IdentityProviderShowInAccountConsole.valueOf(getConfig().getOrDefault(SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name()));
+	}
+
+    public int getMinValidityToken() {
+        String minValidityTokenString = getConfig().get(MIN_VALIDITY_TOKEN);
+        if (minValidityTokenString != null) {
+            try {
+                int minValidityToken = Integer.parseInt(minValidityTokenString);
+                if (minValidityToken > 0) {
+                    return minValidityToken;
+                }
+            } catch (NumberFormatException e) {
+                // no-op return default
+            }
+        }
+        return DEFAULT_MIN_VALIDITY_TOKEN;
+    }
+
+    public int getFederatedClientAssertionMaxExpiration() {
+        String clientAssertionMaxExpirationTime = getConfig().get(FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION);
+        if (clientAssertionMaxExpirationTime == null || clientAssertionMaxExpirationTime.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(clientAssertionMaxExpirationTime);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    public void setFederatedClientAssertionMaxExpiration(int clientAssertionMaxExpiration) {
+        getConfig().put(FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION, String.valueOf(clientAssertionMaxExpiration));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 61 * hash + Objects.hashCode(this.internalId);
+        hash = 61 * hash + Objects.hashCode(this.alias);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof IdentityProviderModel)) return false;
+        return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
+               Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
+    }
+
+    public boolean isAllowAdminRoleMapping() {
+        return getBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING);
+    }
+
+    public void setAllowAdminRoleMapping(boolean allow) {
+        setBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING, allow);
+    }
+
+    private boolean getBooleanConfig(String key) {
+        String value = getConfig().get(key);
+        return value != null ? Boolean.parseBoolean(value) : Boolean.FALSE;
+    }
+
+    private void setBooleanConfig(String key, Boolean value) {
+        getConfig().put(key, value != null ? String.valueOf(value) : null);
+    }
+
 }

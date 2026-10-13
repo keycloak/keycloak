@@ -21,20 +21,37 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
+import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.common.constants.KerberosConstants.KERBEROS_PRINCIPAL;
 
 /**
  * Test for the LDAPStorageProvider with kerberos enabled (kerberos with LDAP integration)
@@ -46,7 +63,6 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
     @ClassRule
     public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION, KerberosEmbeddedServer.DEFAULT_KERBEROS_REALM);
-
 
     @Override
     protected KerberosRule getKerberosRule() {
@@ -73,32 +89,113 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
     }
 
     @Test
+    public void changeKerberosPrincipalWhenUserChangesInLDAPTest() throws Exception {
+        ContainerAssume.assumeNotAuthServerQuarkus();
+
+        try {
+            AccessTokenResponse accessTokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+
+            // Assert user was imported
+            assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);
+
+            oauth.doLogout(accessTokenResponse.getIdToken());
+
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel testRealm = ctx.getRealm();
+
+                ctx.getLdapModel().getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
+
+                renameUserInLDAP(ctx, testRealm, "hnelson", "hnelson2", "hnelson2@keycloak.org", "hnelson2@KEYCLOAK.ORG", "secret2");
+
+                // Assert still old users in local provider
+                LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), testRealm, "hnelson", "Horatio", "Nelson", "hnelson@keycloak.org", null);
+
+                // Trigger sync
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                SynchronizationResult syncResult = UserStoragePrivateUtil.runFullSync(sessionFactory, ctx.getLdapModel());
+                Assertions.assertEquals(0, syncResult.getFailed());
+            });
+
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel testRealm = ctx.getRealm();
+                UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
+                // Assert users updated in local provider
+                LDAPTestAsserts.assertUserImported(session.users(), testRealm, "hnelson2", "Horatio", "Nelson", "hnelson2@keycloak.org", null);
+                UserModel updatedLocalUser = userProvider.getUserByUsername(testRealm, "hnelson2");
+                LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, "hnelson2");
+                Assertions.assertNull(userProvider.getUserByUsername(testRealm, "hnelson"));
+                // Assert UUID didn't change
+                Assertions.assertEquals(updatedLocalUser.getAttributeStream(LDAPConstants.LDAP_ID).findFirst().get(), ldapUser.getUuid());
+                // Assert Kerberos principal was changed in Keycloak
+                Assertions.assertEquals(updatedLocalUser.getAttributeStream(KERBEROS_PRINCIPAL).findFirst().get(), ldapUser.getAttributeAsString(ctx.getLdapProvider().getKerberosConfig().getKerberosPrincipalAttribute()));
+            });
+
+            // login not possible with old user
+            oauth.openLoginForm();
+            loginPage.login("hnelson", "secret2");
+            Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+            // login after update successful
+            assertSuccessfulSpnegoLogin("hnelson2", "hnelson2", "secret2");
+        } finally {
+            // revert changes in LDAP
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel testRealm = ctx.getRealm();
+
+                renameUserInLDAP(ctx, testRealm, "hnelson2", "hnelson", "hnelson@keycloak.org", "hnelson@KEYCLOAK.ORG", "secret");
+            });
+        }
+    }
+
+    private static void renameUserInLDAP(LDAPTestContext ctx, RealmModel testRealm, String username, String newUsername, String newEmail, String newKr5Principal, String secret) {
+        // Update user in LDAP, change username, email, krb5Principal
+        LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, username);
+
+        if (ldapUser != null) {
+            ldapUser.removeReadOnlyAttributeName("uid");
+            ldapUser.removeReadOnlyAttributeName("mail");
+            ldapUser.removeReadOnlyAttributeName(ctx.getLdapProvider().getKerberosConfig().getKerberosPrincipalAttribute());
+            String userNameLdapAttributeName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            ldapUser.setSingleAttribute(userNameLdapAttributeName, newUsername);
+            ldapUser.setSingleAttribute(LDAPConstants.EMAIL, newEmail);
+            ldapUser.setSingleAttribute(ctx.getLdapProvider().getKerberosConfig().getKerberosPrincipalAttribute(), newKr5Principal);
+            ctx.getLdapProvider().getLdapIdentityStore().update(ldapUser);
+
+            // update also password in LDAP to force propagation into KDC
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), ldapUser, secret);
+        }
+    }
+
+    @Test
     public void validatePasswordPolicyTest() throws Exception{
          updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
 
-         loginPage.open();
+         oauth.openLoginForm();
          loginPage.login("jduke", "theduke");
 
          updateProviderValidatePasswordPolicy(true);
 
-         Assert.assertFalse(AccountHelper.updatePassword(testRealmResource(), "jduke", "jduke"));
+         Assertions.assertFalse(AccountHelper.updatePassword(testRealmResource(), "jduke", "jduke"));
 
          updateProviderValidatePasswordPolicy(false);
-         Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "jduke"));
+         Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "jduke"));
 
          // Change password back
-         Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "theduke"));
+         Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "theduke"));
     }
 
     @Test
     public void writableEditModeTest() throws Exception {
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
 
         // Change editMode to WRITABLE
         updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
 
         // Successfully change password now
-        Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
+        Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
 
         // Only needed if you are providing a click thru to bypass kerberos.  Currently there is a javascript
         // to forward the user if kerberos isn't enabled.
@@ -106,28 +203,28 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         //bypassPage.clickContinue();
 
         // Login with old password doesn't work, but with new password works
-
-        Assert.assertFalse(testAppHelper.login("jduke", "theduke"));
-        Assert.assertTrue(testAppHelper.login("jduke", "newPass"));
+        testAppHelper.login("jduke", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke", "newPass");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Assert SPNEGO login with the new password as mode is writable
         events.clear();
         Response spnegoResponse = spnegoLogin("jduke", "newPass");
-        org.keycloak.testsuite.Assert.assertEquals(302, spnegoResponse.getStatus());
-        org.keycloak.testsuite.Assert.assertEquals(302, spnegoResponse.getStatus());
+        Assertions.assertEquals(302, spnegoResponse.getStatus());
+        Assertions.assertEquals(302, spnegoResponse.getStatus());
         List<UserRepresentation> users = testRealmResource().users().search("jduke", 0, 1);
         String userId = users.get(0).getId();
-        events.expectLogin()
-                .client("kerberos-app")
-                .user(userId)
-                .detail(Details.USERNAME, "jduke")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("kerberos-app")
+                .userId(userId)
+                .details(Details.USERNAME, "jduke");
 
         String codeUrl = spnegoResponse.getLocation().toString();
 
         assertAuthenticationSuccess(codeUrl);
 
         // Change password back
-        Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "theduke"));
+        Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "theduke"));
     }
 }

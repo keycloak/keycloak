@@ -17,22 +17,17 @@
 
 package org.keycloak.testsuite.forms;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
@@ -43,22 +38,27 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UIUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for browser back/forward/refresh buttons
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
+public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest {
 
     private String userId;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Before
     public void setup() {
@@ -66,22 +66,20 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
                 .username("login-test")
                 .email("login@test.com")
                 .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password", true);
+        generatePasswords("login-test");
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, getPassword("login-test"), true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
-
-    @Page
-    protected AppPage appPage;
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -122,7 +120,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-4670 - Flow 1
     @Test
     public void invalidLoginAndBackButton() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("login-test2", "invalid");
         loginPage.assertCurrent();
@@ -143,51 +141,60 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-4670 - Flow 2
     @Test
     public void requiredActionsBackForwardTest() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
-
-        // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword("password", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updateProfilePage.assertCurrent();
+
+        // Update profile and assert on "updatePassword" page
+        updateProfile();
+        updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
         driver.navigate().back();
+        if (driver instanceof ChromeDriver) {
+            driver.navigate().refresh();
+        }
         loginExpiredPage.assertCurrent();
 
         // Click browser forward. Assert on "updateProfile" page again
         driver.navigate().forward();
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
+        // Successfully update password and assert user logged
+        updatePassword();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+    }
 
-        // Successfully update profile and assert user logged
+    private void updateProfile() {
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
-        appPage.assertCurrent();
+    }
+
+    private void updatePassword() {
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
     }
 
 
     // KEYCLOAK-4670 - Flow 3 extended
     @Test
     public void requiredActionsBackAndRefreshTest() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        loginPage.login("login-test", getPassword("login-test"));
+        updateProfilePage.assertCurrent();
 
         // Click browser refresh. Assert still on updatePassword page
         driver.navigate().refresh();
-        updatePasswordPage.assertCurrent();
-
-        // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword("password", "password");
         updateProfilePage.assertCurrent();
 
+        // Update profile and assert on "updatePassword" page
+        updateProfile();
+        updatePasswordPage.assertCurrent();
+
         // Click browser back. Assert on "Page expired" page
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click browser refresh. Assert still on "Page expired" page
         driver.navigate().refresh();
@@ -197,41 +204,39 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginExpiredPage.clickLoginRestartLink();
         loginPage.assertCurrent();
 
-        // Login again and assert on "updateProfile" page
-        loginPage.login("login-test", "password");
-        updateProfilePage.assertCurrent();
+        // Login again and assert on "updatePassword" page
+        loginPage.login("login-test", getPassword("login-test"));
+        updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
-        // Click "login continue" and assert on updateProfile page
+        // Click "login continue" and assert on updatePassword page
         loginExpiredPage.clickLoginContinueLink();
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
-        // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
-        appPage.assertCurrent();
+        // Successfully update password and assert user logged
+        updatePassword();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
     // KEYCLOAK-4670 - Flow 4
     @Test
     public void consentRefresh() {
-        oauth.clientId("third-party");
+        oauth.client("third-party");
 
         // Login and go through required actions
-        loginPage.open();
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        oauth.openLoginForm();
+        loginPage.login("login-test", getPassword("login-test"));
+        updateProfile();
+        updatePassword();
 
         // Assert on consent screen
         grantPage.assertCurrent();
 
         // Click browser back. Assert on "page expired"
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click continue login. Assert on consent screen again
         loginExpiredPage.clickLoginContinueLink();
@@ -243,14 +248,14 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
         // Confirm consent. Assert authenticated
         grantPage.accept();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
     // KEYCLOAK-4670 - Flow 5
     @Test
     public void clickBackButtonAfterReturnFromRegister() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -266,7 +271,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void clickBackButtonFromRegisterPage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -279,7 +284,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5136
     @Test
     public void clickRefreshButtonOnRegisterPage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -300,11 +305,11 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void backButtonToAuthorizationEndpoint() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        loginPage.login("login-test", getPassword("login-test"));
+        updateProfilePage.assertCurrent();
 
         // Click browser back. I should be on login page . URL corresponds to OIDC AuthorizationEndpoint
         driver.navigate().back();
@@ -315,8 +320,8 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
-        loginPage.open();
-        loginPage.login("login-test", "bad-username");
+        oauth.openLoginForm();
+        loginPage.login("login-test", getPassword("login-test") + "bad-username");
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -327,36 +332,34 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
         // Receive email
-        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+        MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
 
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on loginPage for "forked flow"
         driver.navigate().back();
         loginPage.assertCurrent();
 
-        // When clicking browser forward, back on updatePasswordPage
+        // When clicking browser forward, back on updateProfilePage
         driver.navigate().forward();
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
-        // Click browser back. And continue login. Should be on updatePasswordPage
+        // Click browser back. And continue login. Should be on updateProfilePage
         driver.navigate().back();
         loginPage.assertCurrent();
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        loginPage.login("login-test", getPassword("login-test"));
+        updateProfilePage.assertCurrent();
     }
 
 
     @Test
     public void appInitiatedRegistrationWithBackButton() throws Exception {
         // Send request from the application directly to 'registrations'
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations"); // Should be done better way...
-        driver.navigate().to(appInitiatedRegisterUrl);
+        oauth.openRegistrationForm();
         registerPage.assertCurrent();
 
 
@@ -365,16 +368,15 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         // Login
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        loginPage.login("login-test", getPassword("login-test"));
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
+        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click 'continue' should be on updatePasswordPage
         loginExpiredPage.clickLoginContinueLink();
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'
         driver.navigate().back();

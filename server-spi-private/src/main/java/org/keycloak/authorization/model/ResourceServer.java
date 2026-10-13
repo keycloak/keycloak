@@ -18,7 +18,6 @@
 
 package org.keycloak.authorization.model;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
@@ -85,11 +84,4 @@ public interface ResourceServer {
      * @return id of client
      */
     String getClientId();
-
-    /**
-     * Returns reference of a realm that this {@link ResourceServer} belongs to.
-     *
-     * @return reference of a realm
-     */
-    RealmModel getRealm();
 }

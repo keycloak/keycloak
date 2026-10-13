@@ -15,6 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase
 org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase
 org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase

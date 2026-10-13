@@ -19,36 +19,146 @@ package org.keycloak.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SearchQueryUtils {
-    public static final Pattern queryPattern = Pattern.compile("\\s*(?:(?<name>[^\"][^: ]+|.)|\"(?<nameEsc>(?:\\\\.|[^\\\\\"])+)\"):(?:(?<value>[^\"][^ ]*)|\"(?<valueEsc>(?:\\\\.|[^\\\\\"])+)\")\\s*");
-    public static final Pattern escapedCharsPattern = Pattern.compile("\\\\(.)");
+
+    public static final String SEARCH_ID_PREFIX = "id:";
+
+    public static final String SEARCH_USERNAME_PREFIX = "username:";
+
+    public static final String SEARCH_EMAIL_PREFIX = "email:";
+
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    public enum UserSearchPrefix {
+        ID(SEARCH_ID_PREFIX, UserProvider::getUserById),
+        USERNAME(SEARCH_USERNAME_PREFIX, UserProvider::getUserByUsername),
+        EMAIL(SEARCH_EMAIL_PREFIX, UserProvider::getUserByEmail);
+
+        private final String prefix;
+        private final UserLookup lookup;
+
+        UserSearchPrefix(String prefix, UserLookup lookup) {
+            this.prefix = prefix;
+            this.lookup = lookup;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+
+        public UserModel lookup(UserProvider users, RealmModel realm, String term) {
+            return lookup.apply(users, realm, term);
+        }
+
+        public String[] splitTerms(String search) {
+            return WHITESPACE.split(search.substring(prefix.length()).trim());
+        }
+
+        public static UserSearchPrefix matching(String search) {
+            for (UserSearchPrefix p : values()) {
+                if (search.startsWith(p.prefix)) {
+                    return p;
+                }
+            }
+            return null;
+        }
+
+        @FunctionalInterface
+        private interface UserLookup {
+            UserModel apply(UserProvider users, RealmModel realm, String term);
+        }
+    }
 
     public static Map<String, String> getFields(final String query) {
-        Matcher matcher = queryPattern.matcher(query);
         Map<String, String> ret = new HashMap<>();
-        while (matcher.find()) {
-            String name = matcher.group("name");
-            if (name == null) {
-                name = unescape(matcher.group("nameEsc"));
+        char[] chars = query.trim().toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            boolean inQuotes = false;
+            boolean internal = false;
+            String name = "";
+            while (i < chars.length && chars[i] != ':') {
+                if (chars[i] == '\\') {
+                    if (i + 1 >= chars.length) {
+                        throw new ModelValidationException("Invalid search query: unterminated escape sequence");
+                    }
+                    if (chars[i+1] == '\"') {
+                        i++;
+                    }
+                    else if (chars[i+1] == '\\') {
+                        i+=2;
+                        continue;
+                    }
+                }
+                else if (chars[i] == '\"') {
+                        if(!inQuotes && name.length() > 0) {
+                            internal = true;
+                        }
+                        else if(internal) {
+                            internal = false;
+                        }
+                        else {
+                            inQuotes = !inQuotes;
+                            i++;
+                            continue;
+                        }
+                }
+                else if(chars[i] == ' ' && !inQuotes) {
+                    break;
+                }
+                name += chars[i];
+                i++;
             }
-
-            String value = matcher.group("value");
-            if (value == null) {
-                value = unescape(matcher.group("valueEsc"));
+            if(i == chars.length || chars[i] == ' ') {
+                continue;
             }
-
+            i++;
+            inQuotes = false;
+            internal = false;
+            String value = "";
+            while (i < chars.length) {
+                if (chars[i] == '\\') {
+                    if (i + 1 >= chars.length) {
+                        throw new ModelValidationException("Invalid search query: unterminated escape sequence");
+                    }
+                    if (chars[i+1] == '\"') {
+                        i++;
+                    }
+                    else if (chars[i+1] == '\\') {
+                        i+=2;
+                        continue;
+                    }
+                }
+                else if (chars[i] == '\"') {
+                    if(!inQuotes && value.length() > 0) {
+                        internal = true;
+                    }
+                    else if(internal) {
+                        internal = false;
+                    }
+                    else {
+                        inQuotes = !inQuotes;
+                        i++;
+                        continue;
+                    }
+                }
+                else if(chars[i] == ' ' && !inQuotes) {
+                    break;
+                }
+                value += chars[i];
+                i++;
+            }
             ret.put(name, value);
         }
         return ret;
-    }
-
-    public static String unescape(final String escaped) {
-        return escapedCharsPattern.matcher(escaped).replaceAll("$1");
     }
 }

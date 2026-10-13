@@ -25,10 +25,38 @@ package org.keycloak.common;
  */
 public interface ClientConnection {
 
-    String getRemoteAddr();
-    String getRemoteHost();
-    int getRemotePort();
+    /**
+     * @return the IP address as a string if it is available, otherwise null
+     */
+    default String getRemoteAddr() {
+        return null;
+    }
+    /**
+     * @return the remote host, which will be an IP address or whatever is provided via proxy headers, if
+     * available, otherwise null
+     */
+    default String getRemoteHost() {
+        return null;
+    }
+    
+    /**
+     * @return the remote port if it is available, otherwise 0
+     */
+    default int getRemotePort() {
+        return 0;
+    }
 
-    String getLocalAddr();
-    int getLocalPort();
+    /**
+     * @return the local IP address as a string if it is available, otherwise null
+     */
+    default String getLocalAddr() {
+        return null;
+    }
+    
+    /**
+     * @return the local port if it is available, otherwise 0
+     */
+    default int getLocalPort() {
+        return 0;
+    }
 }

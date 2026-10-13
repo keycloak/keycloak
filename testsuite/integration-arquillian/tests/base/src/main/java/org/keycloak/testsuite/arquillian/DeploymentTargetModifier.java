@@ -18,18 +18,21 @@
 package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
+import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 
@@ -100,7 +103,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
                     String newAppServerQualifier = ContainerConstants.APP_SERVER_PREFIX  + AppServerTestEnricher.CURRENT_APP_SERVER + "-" + suffix;
                     updateServerQualifier(deployment, testClass, newAppServerQualifier);
                 } else {
-                    String newServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier);
+                    String newServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier, SystemEnvProperties.UNFILTERED::getProperty);
                     if (!newServerQualifier.equals(containerQualifier)) {
                         updateServerQualifier(deployment, testClass, newServerQualifier);
                     }

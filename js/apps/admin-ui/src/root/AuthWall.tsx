@@ -31,9 +31,9 @@ export const AuthWall = ({ children }: any) => {
     return [handle.access] as AccessType[];
   });
 
-  return hasAccess(...permissionNeeded) ? (
-    children
-  ) : (
-    <ForbiddenSection permissionNeeded={permissionNeeded} />
-  );
+  if (!hasAccess(...permissionNeeded)) {
+    return <ForbiddenSection permissionNeeded={permissionNeeded} />;
+  }
+
+  return children;
 };

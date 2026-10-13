@@ -17,6 +17,10 @@
 
 package org.keycloak.broker.provider;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
@@ -25,10 +29,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

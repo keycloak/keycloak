@@ -16,23 +16,17 @@
  */
 package org.keycloak.saml.common.util;
 
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.saml.common.ErrorCodes;
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-
-import org.keycloak.saml.processing.core.parsers.util.HasQName;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
+import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.XMLConstants;
 import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
@@ -51,14 +45,22 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Utility for the stax based parser
@@ -209,7 +211,7 @@ public class StaxParserUtil {
 
         final String value = attribute.getValue();
 
-        return value == null ? null : trim(StringPropertyReplacer.replaceProperties(value));
+        return value == null ? null : trim(StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty));
     }
 
     /**
@@ -249,7 +251,7 @@ public class StaxParserUtil {
      */
     public static String getAttributeValueRP(StartElement startElement, HasQName attrName) {
         final String value = getAttributeValue(startElement, attrName.getQName());
-        return value == null ? null : StringPropertyReplacer.replaceProperties(value);
+        return value == null ? null : StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
     /**
@@ -534,7 +536,7 @@ public class StaxParserUtil {
      */
     public static String getElementTextRP(XMLEventReader xmlEventReader) throws ParsingException {
         try {
-            return trim(StringPropertyReplacer.replaceProperties(xmlEventReader.getElementText()));
+            return trim(StringPropertyReplacer.replaceProperties(xmlEventReader.getElementText(), SystemEnvProperties.UNFILTERED::getProperty));
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
@@ -557,6 +559,16 @@ public class StaxParserUtil {
             throw new RuntimeException(ex);
         }
         return xmlEventReader;
+    }
+
+    public static XMLEventReader getXMLEventReader(String xml) {
+        XMLInputFactory xmlInputFactory;
+        xmlInputFactory = XML_INPUT_FACTORY.get();
+        try {
+            return xmlInputFactory.createXMLEventReader(new StringReader(xml));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private static AtomicBoolean XML_EVENT_READER_ON_SOURCE_SUPPORTED = new AtomicBoolean(true);
@@ -869,8 +881,10 @@ public class StaxParserUtil {
     @Deprecated
     public static void validate(StartElement startElement, String tag) {
         String foundElementTag = StaxParserUtil.getElementName(startElement);
-        if (!tag.equals(foundElementTag))
-            throw logger.parserExpectedTag(tag, foundElementTag);
+        if (!tag.equals(foundElementTag)) {
+            Location location = startElement.getLocation();
+            throw logger.parserExpectedTag(tag, foundElementTag, location.getLineNumber(), location.getColumnNumber());
+        }
     }
 
     /**
@@ -883,8 +897,10 @@ public class StaxParserUtil {
      */
     public static void validate(StartElement startElement, QName tag) {
         if (! Objects.equals(startElement.getName(), tag)) {
-            String foundElementTag = StaxParserUtil.getElementName(startElement);
-            throw logger.parserExpectedTag(tag.getLocalPart(), foundElementTag);
+            Location location = startElement.getLocation();
+            throw logger.parserExpectedTag(
+                    tag.toString(), startElement.getName().toString(),
+                    location.getLineNumber(), location.getColumnNumber());
         }
     }
 

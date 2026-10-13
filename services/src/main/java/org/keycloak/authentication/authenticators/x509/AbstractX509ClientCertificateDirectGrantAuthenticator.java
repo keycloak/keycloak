@@ -18,13 +18,14 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowContext;
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowContext;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -41,6 +42,10 @@ public abstract class AbstractX509ClientCertificateDirectGrantAuthenticator exte
             e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
         }
         return Response.status(status).entity(e).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    public AbstractX509ClientCertificateDirectGrantAuthenticator(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
     }
 
     @Override

@@ -20,14 +20,23 @@ import java.util.Collection;
 
 public class StringUtil {
 
+    /**
+     * Returns true if string is null or blank
+     */
     public static boolean isBlank(String str) {
         return !(isNotBlank(str));
     }
 
-    public static boolean  isNotBlank(String str) {
-        return str != null && !"".equals(str.trim());
+    /**
+     * Returns true if string is not null and not blank
+     */
+    public static boolean isNotBlank(String str) {
+        return str != null && !str.isBlank();
     }
 
+    /**
+     * Returns true if string is null or empty
+     */
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
     }
@@ -55,6 +64,33 @@ public class StringUtil {
         }
         return options.toString();
     }
+
+    /**
+     * Removes ANSI escape codes and control characters from a string to prevent log injection attacks.
+     * This method:
+     * 1. Removes URL-encoded ANSI escape sequences (e.g., %1B[31m)
+     * 2. Removes literal ANSI escape sequences (e.g., \u001b[31m)
+     * 3. Removes URL-encoded control characters (e.g., %0D, %0A, %7F)
+     * 4. Removes any remaining literal control characters
+     *
+     * Note: This method does NOT decode legitimate URL-encoded characters (e.g., %20, %2F)
+     * to preserve the original encoding for use cases like redirect URI validation.
+     *
+     * @param str The string to sanitize
+     * @return The sanitized string without ANSI codes and control characters
+     */
+    public static String removeControlCharacters(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        str = str.replaceAll("\u001B\\[([0-9;]*)[a-zA-Z]", "");
+        str = str.replaceAll("(?i)%1B\\[([0-9;]*)[a-zA-Z]", "");
+        str = str.replaceAll("(?i)%0[0-9A-F]|(?i)%1[0-9A-F]|(?i)%7F", "");
+        str = str.replaceAll("[\u0000-\u001F\u007F]+", "");
+        str = str.replaceAll("\\[([0-9;]*)m", "");
+        return str;
+    }
+
 
     /**
      * Utility method that substitutes any isWhitespace char to common space ' ' or character 20.
@@ -89,5 +125,13 @@ public class StringUtil {
             }
         }
         return sb == null? str : sb.toString();
+    }
+
+    public static String removeSuffix(String str, String suffix) {
+        int index = str.lastIndexOf(suffix);
+        if (str.endsWith(suffix) && index > 0) {
+            str = str.substring(0, index);
+        }
+        return str;
     }
 }

@@ -14,7 +14,7 @@ The token introspection is essentially a https://datatracker.ietf.org/doc/html/r
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm_name}/protocol/openid-connect/token/introspect
+http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token/introspect
 ----
 
 To introspect an RPT using this endpoint, you can send a request to the server as follows:
@@ -83,4 +83,3 @@ This is essentially what the policy enforcers do. Be sure to:
 [role="_additional-resources"]
 .Additional resources
 * https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)]
-* <<_enforcer_overview, policy enforcers>>

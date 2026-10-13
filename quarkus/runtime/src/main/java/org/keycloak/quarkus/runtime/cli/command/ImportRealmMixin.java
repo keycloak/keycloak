@@ -17,30 +17,25 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
-
 import java.io.File;
-import java.util.Optional;
+
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
+
+import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 public final class ImportRealmMixin {
 
     public static final String IMPORT_REALM = "--import-realm";
 
-    @CommandLine.Spec
-    private CommandLine.Model.CommandSpec spec;
-
     @CommandLine.Option(names = IMPORT_REALM,
             description = "Import realms during startup by reading any realm configuration file from the 'data/import' directory.",
             paramLabel = NO_PARAM_LABEL,
             arity = "0")
-    public void setImportRealm(String realmFiles) {
-        File importDir = Environment.getHomePath().resolve("data").resolve("import").toFile();
-
-        if (importDir.exists()) {
-            System.setProperty("keycloak.import", importDir.getAbsolutePath());
-        }
+    public void setImportRealm(boolean importRealm) {
+        Environment.getHomePath().map(p -> p.resolve("data").resolve("import").toFile()).filter(File::exists)
+                .map(File::getAbsolutePath).ifPresent(ExportImportConfig::setDir);
     }
 }

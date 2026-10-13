@@ -17,11 +17,7 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import java.net.URI;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -33,11 +29,23 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+/**
+ * @deprecated This provider is deprecated for removal since Keycloak 26.8.
+ * Use the Admin REST API or the OpenID Connect dynamic client registration endpoint
+ * ({@code /realms/<realm>/clients-registrations/openid-connect}) instead.
+ */
+@Deprecated(forRemoval = true, since = "26.8")
 public class DefaultClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public DefaultClientRegistrationProvider(KeycloakSession session) {
@@ -86,6 +94,14 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     private void updateAuthorizationSettings(ClientRepresentation rep, ResourceServerRepresentation authorizationSettings) {
         rep.setAuthorizationSettings(authorizationSettings);
         ClientModel client = session.getContext().getRealm().getClientByClientId(rep.getClientId());
+        boolean serviceAccountsEnabled = client.isServiceAccountsEnabled();
+
         RepresentationToModel.importAuthorizationSettings(rep, client, session);
+
+        // Restore service accounts state to prevent registration
+        // access tokens from re-enabling an admin-disabled flag during authorization settings import.
+        if (auth.isRegistrationAccessToken() && client.isServiceAccountsEnabled() != serviceAccountsEnabled) {
+            client.setServiceAccountsEnabled(serviceAccountsEnabled);
+        }
     }
 }

@@ -17,28 +17,47 @@
 
 package org.keycloak.it.storage.database.dist;
 
+import java.util.function.Consumer;
+
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.storage.database.PostgreSQLTest;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
-import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.storage.database.PostgreSQLTest;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-
-@DistributionTest(removeBuildOptionsAfterBuild = true)
+@DistributionTest
 @WithDatabase(alias = "postgres")
-@LegacyStore
+@Tag(DistributionTest.STORAGE)
 public class PostgreSQLDistTest extends PostgreSQLTest {
 
+    @BeforeStartDistribution(RemoveDB.class)
     @Test
     @Launch("show-config")
-    public void testDbOptionFromPersistedConfigSource(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getOutput(),containsString("postgres (PersistedConfigSource)"));
+    public void testDbOptionFromPersistedConfigSource(CLIResult cliResult) {
+        assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
+    }
+    
+    public static final class RemoveDB implements Consumer<RawKeycloakDistribution> {
+        @Override
+        public void accept(RawKeycloakDistribution distribution) {
+            distribution.removeProperty("db");
+        }
+    }
+
+    @Tag(DistributionTest.STORAGE)
+    @Test
+    @Launch({"start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--spi-connections-jpa-quarkus-migration-strategy=manual", "--spi-connections-jpa-quarkus-initialize-empty=false", "--http-enabled=true", "--hostname-strict=false",})
+    public void testKeycloakDbUpdateScript(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
+        assertManualDbInitialization(cliResult, rawDistRootPath);
     }
 }

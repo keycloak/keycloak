@@ -18,21 +18,22 @@
 
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
-import org.keycloak.models.cache.infinispan.LazyLoader;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -47,11 +48,12 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
     private final String resourceServerId;
     private final LazyLoader<Policy, Set<String>> associatedPoliciesIds;
     private final LazyLoader<Policy, Set<String>> resourcesIds;
+    private final LazyLoader<Policy, Set<String>> resourcesNames;
     private final LazyLoader<Policy, Set<String>> scopesIds;
     private final LazyLoader<Policy, Map<String, String>> config;
     private final String owner;
 
-    public CachedPolicy(Long revision, Policy policy) {
+    public CachedPolicy(long revision, Policy policy) {
         super(revision, policy.getId());
         this.type = policy.getType();
         this.decisionStrategy = policy.getDecisionStrategy();
@@ -63,6 +65,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         this.associatedPoliciesIds = new DefaultLazyLoader<>(source -> source.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet()), Collections::emptySet);
 
         this.resourcesIds = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.resourcesNames = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getName).collect(Collectors.toSet()), Collections::emptySet);
 
         this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
 
@@ -83,8 +86,8 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         return this.logic;
     }
 
-    public Map<String, String> getConfig(Supplier<Policy> policy) {
-        return this.config.get(policy);
+    public Map<String, String> getConfig(KeycloakSession session, Supplier<Policy> policy) {
+        return this.config.get(session, policy);
     }
 
     public String getName() {
@@ -95,16 +98,20 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         return this.description;
     }
 
-    public Set<String> getAssociatedPoliciesIds(Supplier<Policy> policy) {
-        return this.associatedPoliciesIds.get(policy);
+    public Set<String> getAssociatedPoliciesIds(KeycloakSession session, Supplier<Policy> policy) {
+        return this.associatedPoliciesIds.get(session, policy);
     }
 
-    public Set<String> getResourcesIds(Supplier<Policy> policy) {
-        return this.resourcesIds.get(policy);
+    public Set<String> getResourcesIds(KeycloakSession session, Supplier<Policy> policy) {
+        return this.resourcesIds.get(session, policy);
     }
 
-    public Set<String> getScopesIds(Supplier<Policy> policy) {
-        return this.scopesIds.get(policy);
+    public Set<String> getResourceNames(KeycloakSession session, Supplier<Policy> policy) {
+        return this.resourcesNames.get(session, policy);
+    }
+
+    public Set<String> getScopesIds(KeycloakSession session, Supplier<Policy> policy) {
+        return this.scopesIds.get(session, policy);
     }
 
     public String getResourceServerId() {

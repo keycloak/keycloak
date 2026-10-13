@@ -16,14 +16,16 @@
  */
 package org.keycloak.testsuite.updaters;
 
+import java.io.Closeable;
+import java.io.IOException;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.IdentityProvidersResource;
-import java.io.Closeable;
-import jakarta.ws.rs.NotFoundException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import java.io.IOException;
-import jakarta.ws.rs.core.Response;
 
 /**
  *  Creates a temporary realm and makes sure it is removed.

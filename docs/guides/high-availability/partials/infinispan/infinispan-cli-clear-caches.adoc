@@ -11,12 +11,8 @@ site take-offline --all-caches --site={keep-site-name}
 [source,bash,subs="+attributes"]
 ----
 {
-  "offlineClientSessions" : "ok",
   "authenticationSessions" : "ok",
-  "sessions" : "ok",
-  "clientSessions" : "ok",
   "work" : "ok",
-  "offlineSessions" : "ok",
   "loginFailures" : "ok",
   "actionTokens" : "ok"
 }
@@ -49,11 +45,7 @@ WARNING: Make sure the replication is `offline` otherwise the clear data will cl
 ----
 clearcache actionTokens
 clearcache authenticationSessions
-clearcache clientSessions
 clearcache loginFailures
-clearcache offlineClientSessions
-clearcache offlineSessions
-clearcache sessions
 clearcache work
 ----
 +
@@ -71,12 +63,8 @@ site bring-online --all-caches --site={keep-site-name}
 [source,bash,subs="+attributes"]
 ----
 {
-  "offlineClientSessions" : "ok",
   "authenticationSessions" : "ok",
-  "sessions" : "ok",
-  "clientSessions" : "ok",
   "work" : "ok",
-  "offlineSessions" : "ok",
   "loginFailures" : "ok",
   "actionTokens" : "ok"
 }

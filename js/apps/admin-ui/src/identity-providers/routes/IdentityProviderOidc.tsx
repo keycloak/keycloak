@@ -10,9 +10,9 @@ const AddOpenIdConnect = lazy(() => import("../add/AddOpenIdConnect"));
 export const IdentityProviderOidcRoute: AppRouteObject = {
   path: "/:realm/identity-providers/oidc/add",
   element: <AddOpenIdConnect />,
-  breadcrumb: (t) => t("addOpenIdProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addOpenIdProvider"),
   },
 };
 

@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.broker;
 
+import java.io.Closeable;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.common.util.DocumentUtil;
@@ -9,12 +11,12 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.io.Closeable;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
@@ -49,7 +51,7 @@ public final class KcSamlAttributeConsumingServiceIndexTest extends AbstractBrok
 
                         // Find the AuthnRequest AttributeConsumingServiceIndex attribute
                         Node attrNode = document.getDocumentElement().getAttributes().getNamedItem("AttributeConsumingServiceIndex");
-                        Assert.assertEquals("Unexpected AttributeConsumingServiceIndex attribute value", null, attrNode);
+                        Assertions.assertEquals(null, attrNode, "Unexpected AttributeConsumingServiceIndex attribute value");
                     }
                     catch (Exception ex)
                     {
@@ -84,7 +86,7 @@ public final class KcSamlAttributeConsumingServiceIndexTest extends AbstractBrok
 
                         // Find the AuthnRequest AttributeConsumingServiceIndex attribute
                         String attrValue = document.getDocumentElement().getAttributes().getNamedItem("AttributeConsumingServiceIndex").getNodeValue();
-                        Assert.assertEquals("Unexpected AttributeConsumingServiceIndex attribute value", "15", attrValue);
+                        Assertions.assertEquals("15", attrValue, "Unexpected AttributeConsumingServiceIndex attribute value");
                     }
                     catch (Exception ex)
                     {

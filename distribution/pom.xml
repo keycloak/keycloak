@@ -25,7 +25,7 @@
     </parent>
 
     <name>Distribution Parent</name>
-    <description/>
+    <description>Distribution Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-distribution-parent</artifactId>
@@ -41,9 +41,7 @@
     </properties>
 
     <modules>
-        <module>adapters</module>
         <module>saml-adapters</module>
-        <module>feature-packs</module>
         <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
@@ -82,6 +80,17 @@
             <modules>
                 <module>api-docs-dist</module>
                 <module>downloads</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>dist-api-docs</id>
+            <activation>
+                <property>
+                    <name>dist.api.docs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>api-docs-dist</module>
             </modules>
         </profile>
     </profiles>

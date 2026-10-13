@@ -35,4 +35,10 @@ public @interface SetDefaultProvider {
     boolean beforeEnableFeature() default true;
 
     String defaultProvider() default "";
+
+    /**
+     * Configuration for the provider in the form option1, value1, option2, value2
+     * @return The config options and values
+     */
+    String[] config() default {};
 }

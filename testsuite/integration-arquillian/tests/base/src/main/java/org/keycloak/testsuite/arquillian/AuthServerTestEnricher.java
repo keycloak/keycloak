@@ -16,11 +16,50 @@
  */
 package org.keycloak.testsuite.arquillian;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.Provider;
+import java.security.Security;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import jakarta.ws.rs.NotFoundException;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.HttpClientUtils;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
+import org.keycloak.testsuite.util.SqlUtils;
+import org.keycloak.testsuite.util.SystemInfoHelper;
+import org.keycloak.testsuite.util.TextFileChecker;
+import org.keycloak.testsuite.util.VaultUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
@@ -34,52 +73,15 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
+import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.error.KeycloakErrorHandler;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
-import org.keycloak.testsuite.util.SqlUtils;
-import org.keycloak.testsuite.util.SystemInfoHelper;
-import org.keycloak.testsuite.util.VaultUtils;
-import org.keycloak.testsuite.util.TextFileChecker;
-
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.Provider;
-import java.security.Security;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import jakarta.ws.rs.NotFoundException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import org.jboss.arquillian.test.spi.event.suite.After;
-import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -124,8 +126,6 @@ public class AuthServerTestEnricher {
 
     public static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
-    public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
-    public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
@@ -202,65 +202,7 @@ public class AuthServerTestEnricher {
 
         suiteContext = new SuiteContext(containers);
 
-        if (AUTH_SERVER_CROSS_DC) {
-            // if cross-dc mode enabled, load-balancer is the frontend of datacenter cluster
-            containers.stream()
-                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER + "-cross-dc"))
-                .forEach(c -> {
-                    String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                    String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                    updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                    suiteContext.addAuthServerInfo(Integer.valueOf(dcString), c);
-                });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new IllegalStateException("Not found frontend container (load balancer): " + AUTH_SERVER_BALANCER);
-            }
-            if (suiteContext.getDcAuthServerInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("auth-server-" + System.getProperty("node.name") + "-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(c -> {
-                        String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                        updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-
-                        String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                        suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
-                    });
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(containerInfo -> {
-                        
-                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
-                        
-                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
-                        
-                        suiteContext.addCacheServerInfo(dcIndex, containerInfo);
-                    });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
-                throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getCacheServersInfo().isEmpty() && !CACHE_SERVER_LIFECYCLE_SKIP) {
-                throw new IllegalStateException("Cache containers misconfiguration");
-            }
-
-            log.info("Using frontend containers: " + this.suiteContext.getDcAuthServerInfo().stream()
-              .map(ContainerInfo::getQualifier)
-              .collect(Collectors.joining(", ")));
-        } else if (AUTH_SERVER_CLUSTER) {
+        if (AUTH_SERVER_CLUSTER) {
             // if cluster mode enabled, load-balancer is the frontend
             ContainerInfo container = containers.stream()
               .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER))
@@ -294,6 +236,8 @@ public class AuthServerTestEnricher {
         }
 
         if (START_MIGRATION_CONTAINER) {
+            suiteContext.getMigrationContext().setRunningMigrationTest(true);
+
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
@@ -310,7 +254,6 @@ public class AuthServerTestEnricher {
         }
 
         suiteContextProducer.set(suiteContext);
-        CrossDCTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
         log.info("\n\n" + SystemInfoHelper.getSystemInfo());
 
@@ -375,7 +318,7 @@ public class AuthServerTestEnricher {
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         // this property can be used to skip start of auth-server before suite
-        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test
         if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
             log.debug("Skipping the start of auth server before suite");
             return;
@@ -433,10 +376,10 @@ public class AuthServerTestEnricher {
         }
 
         // Run manual migration with the ant task
-        log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
+        log.infof("Running SQL script '%s' created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
-        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"));
+        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);
         String dbUser = System.getProperty(prefix + "user");
         String dbPassword = System.getProperty(prefix + "password");
 
@@ -692,7 +635,7 @@ public class AuthServerTestEnricher {
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
-        OAuthClient oAuthClient = new OAuthClient();
+        OAuthClient oAuthClient = new OAuthClient(HttpClientUtils.createDefault(), null);
         oAuthClientProducer.set(oAuthClient);
     }
 
@@ -721,7 +664,7 @@ public class AuthServerTestEnricher {
         Optional<Matcher> anyUncaughtError = logStream.map(UNEXPECTED_UNCAUGHT_ERROR::matcher).filter(Matcher::find).findAny();
         if (anyUncaughtError.isPresent()) {
             Matcher m = anyUncaughtError.get();
-            Assert.fail("Uncaught server error detected: " + m.group(1));
+            Assertions.fail("Uncaught server error detected: " + m.group(1));
         }
     }
 

@@ -1,0 +1,603 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.organization.utils;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.EmailValidationUtil;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.utils.StringUtil.isBlank;
+
+public class Organizations {
+
+    /**
+     * Authentication session note holding the invitation token that started the flow, so the
+     * invitation survives the redirect to an identity provider and the flow reset that follows.
+     */
+    public static final String INVITATION_TOKEN_NOTE = "ORG_INVITATION_TOKEN";
+
+    private static final String WILDCARD_PREFIX = "*.";
+    private static final int MIN_DOMAIN_PARTS = 2;
+    private static final int MAX_DOMAIN_PARTS = 10;
+
+    public static boolean isOrganizationGroup(GroupModel group) {
+        return Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
+    }
+
+    /**
+     * Validates the organization recorded on an identity provider group mapper.
+     * <p />
+     * A mapper targeting organization groups applies to exactly one organization, which it must name through
+     * {@link ConfigConstants#ORGANIZATION_ID}. To map groups of several organizations of a shared identity provider,
+     * add one mapper per organization.
+     *
+     * @param session the Keycloak session
+     * @param idp the identity provider owning the mapper
+     * @param mapper the mapper to validate
+     */
+    public static void validateGroupMapperOrganization(KeycloakSession session, IdentityProviderModel idp, IdentityProviderMapperModel mapper) {
+        Map<String, String> config = mapper.getConfig();
+
+        if (config == null || !isEnabled(session)) {
+            return;
+        }
+
+        if (!Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            // the mapper no longer targets organization groups, do not leave a stale organization behind
+            config.remove(ConfigConstants.ORGANIZATION_ID);
+            return;
+        }
+
+        String organizationId = config.get(ConfigConstants.ORGANIZATION_ID);
+
+        if (isBlank(organizationId)) {
+            throw ErrorResponse.error("Mapper '" + mapper.getName() + "' must set '" + ConfigConstants.ORGANIZATION_ID
+                    + "' to the organization whose groups it maps to.", Response.Status.BAD_REQUEST);
+        }
+
+        if (!idp.isLinkedToOrganization(organizationId)) {
+            throw ErrorResponse.error("Identity provider '" + idp.getAlias() + "' is not linked to organization '"
+                    + organizationId + "' referenced by mapper '" + mapper.getName() + "'.", Response.Status.BAD_REQUEST);
+        }
+
+        if (getProvider(session).getById(organizationId) == null) {
+            throw ErrorResponse.error("Organization '" + organizationId + "' referenced by mapper '" + mapper.getName()
+                    + "' does not exist.", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    public static void checkGroupMapperOrgPermission(KeycloakSession session, IdentityProviderMapperModel mapper, AdminPermissionEvaluator auth) {
+        Map<String, String> config = mapper.getConfig();
+        if (config == null || !Type.ORGANIZATION.name().equals(config.get(ConfigConstants.GROUP_TYPE))) {
+            return;
+        }
+
+        OrganizationProvider orgProvider = getProvider(session);
+        checkEnabled(orgProvider, auth);
+
+        OrganizationModel org = orgProvider.getById(config.get(ConfigConstants.ORGANIZATION_ID));
+        auth.orgs().requireManage(org);
+    }
+
+    public static boolean canManageOrganizationGroup(KeycloakSession session, GroupModel group) {
+        //  if it's not an organization group OR organizations are disabled, we don't need further checks
+        if (!isOrganizationGroup(group) || !isEnabled(session)) {
+            return true;
+        }
+
+        // if an organization is in context, allow management
+        if (resolveOrganization(session) != null) {
+            return true;
+        }
+
+        // no organization in context, but the group is the internal org group
+        return getProvider(session).getById(group.getName()) == null;
+    }
+
+    public static List<IdentityProviderModel> resolveHomeBroker(KeycloakSession session, UserModel user) {
+        if (!isEnabled(session)) {
+            return List.of();
+        }
+        OrganizationProvider provider = getProvider(session);
+        RealmModel realm = session.getContext().getRealm();
+        List<OrganizationModel> organizations = Optional.ofNullable(user).stream().flatMap(provider::getByMember)
+                .filter(OrganizationModel::isEnabled)
+                .filter((org) -> org.isManaged(user))
+                .toList();
+
+        if (organizations.isEmpty()) {
+            return List.of();
+        }
+
+        List<IdentityProviderModel> brokers = new ArrayList<>();
+
+        for (OrganizationModel organization : organizations) {
+            // user is a managed member, try to resolve the origin broker and redirect automatically
+            List<IdentityProviderModel> organizationBrokers = organization.getIdentityProviders().toList();
+            session.users().getFederatedIdentitiesStream(realm, user)
+                    .map(f -> {
+                        IdentityProviderModel broker = session.identityProviders().getByAlias(f.getIdentityProvider());
+
+                        if (!organizationBrokers.contains(broker)) {
+                            return null;
+                        }
+
+                        FederatedIdentityModel identity = session.users().getFederatedIdentity(realm, user, broker.getAlias());
+
+                        if (identity != null) {
+                            return broker;
+                        }
+
+                        return null;
+                    }).filter(Objects::nonNull)
+                    .forEach(brokers::add);
+        }
+
+        return brokers;
+    }
+
+    public static void stripOrganizationId(IdentityProviderRepresentation representation) {
+        representation.setOrganizationLinks(null);
+        if (representation.getConfig() != null) {
+            representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
+    }
+
+    public static void filterOrganizationLinks(IdentityProviderRepresentation rep, KeycloakSession session, AdminPermissionEvaluator auth) {
+        List<OrganizationIdentityProviderLinkRepresentation> links = rep.getOrganizationLinks();
+        if (links == null || links.isEmpty()) {
+            return;
+        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        List<OrganizationIdentityProviderLinkRepresentation> filtered = links.stream()
+                .filter(link -> {
+                    OrganizationModel org = orgProvider.getById(link.getOrganizationId());
+                    return org != null && auth.orgs().canView(org);
+                })
+                .collect(Collectors.toList());
+        rep.setOrganizationLinks(filtered.isEmpty() ? null : filtered);
+    }
+
+    public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
+        return group -> {
+            if (!Type.ORGANIZATION.equals(group.getType())) {
+                realm.removeGroup(group);
+                return;
+            }
+
+            OrganizationModel current = resolveOrganization(session);
+
+            try {
+                OrganizationProvider provider = getProvider(session);
+
+                session.getContext().setOrganization(provider.getById(group.getName()));
+
+                realm.removeGroup(group);
+            } finally {
+                session.getContext().setOrganization(current);
+            }
+        };
+    }
+
+    public static boolean isEnabled(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+        OrganizationProvider provider = getProvider(session);
+        return provider != null && provider.isEnabled();
+    }
+
+    public static boolean isEnabledAndOrganizationsPresent(OrganizationProvider orgProvider) {
+        return orgProvider != null && orgProvider.isEnabled() && orgProvider.hasOrganizations();
+    }
+
+    public static boolean isEnabledAndOrganizationsPresent(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        OrganizationProvider provider = getProvider(session);
+
+        return isEnabledAndOrganizationsPresent(provider);
+    }
+
+    public static void checkEnabled(OrganizationProvider provider, AdminPermissionEvaluator auth) {
+        if (provider == null || !provider.isEnabled()) {
+            throw auth.orgs().canQuery() ?
+                    ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND) :
+                    new ForbiddenException();
+        }
+    }
+
+    /**
+     * Consumes an invitation token before membership is created, including in registration and broker flows that
+     * bypass the action token handler.
+     */
+    public static boolean useInvitationToken(KeycloakSession session, InviteOrgActionToken token) {
+        long lifespan = token.getExp() - Time.currentTimeSeconds();
+
+        if (lifespan < 0 || !session.revokedTokens().put(token.serializeKey(), lifespan + AuthenticationManager.CLOCK_SKEW_SECONDS)) {
+            // Discard any persisted revocation and user creation from the losing acceptance.
+            session.getTransactionManager().setRollbackOnly();
+            return false;
+        }
+
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession != null && token.serializeKey().equals(authSession.getAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN))) {
+            // The token is already consumed; required-action completion must not consume it again.
+            authSession.removeAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN);
+        }
+
+        return true;
+    }
+
+    public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, HttpRequest request) throws VerificationException {
+        MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
+
+        return parseInvitationToken(session, queryParameters.getFirst(Constants.TOKEN));
+    }
+
+    public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, String tokenString) throws VerificationException {
+        if (tokenString == null) {
+            return null;
+        }
+
+        KeycloakContext context = session.getContext();
+        RealmModel realm = session.getContext().getRealm();
+        TokenVerifier<InviteOrgActionToken> verifier = TokenVerifier.create(tokenString, InviteOrgActionToken.class)
+                .withChecks(TokenVerifier.IS_ACTIVE,
+                        new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName())));
+
+        SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+        verifier.verifierContext(verifierContext);
+
+        return verifier.verify().getToken();
+    }
+
+    public static int getDomainPartsSize(String domain) {
+        if (isBlank(domain)) {
+            return 0;
+        }
+        return Math.toIntExact(domain.chars().filter(c -> c == '.').count()) + 1;
+    }
+
+    private static int getEffectivePartsSize(String domainName) {
+        if (domainName != null && domainName.startsWith(WILDCARD_PREFIX)) {
+            return getDomainPartsSize(domainName.substring(WILDCARD_PREFIX.length()));
+        }
+        return getDomainPartsSize(domainName);
+    }
+
+    public static void validateDomain(String rawDomain) {
+        getDomainValidationError(rawDomain).ifPresent(error -> {
+            throw new ModelValidationException(error);
+        });
+    }
+
+    public static boolean isValidDomain(String rawDomain) {
+        return !isBlank(rawDomain) && getDomainValidationError(rawDomain).isEmpty();
+    }
+
+    private static Optional<String> getDomainValidationError(String rawDomain) {
+        if (isBlank(rawDomain)) {
+            return Optional.empty();
+        }
+
+        String domain = rawDomain;
+
+        if (rawDomain.contains(WILDCARD_PREFIX)) {
+            if (rawDomain.length() == WILDCARD_PREFIX.length()) {
+                return Optional.of("Wildcard domain must specify a base domain: " + rawDomain);
+            }
+
+            if (!rawDomain.startsWith(WILDCARD_PREFIX)) {
+                return Optional.of("Wildcard domain must start with the wildcard");
+            }
+
+            domain = rawDomain.substring(2);
+
+            if (domain.contains("*")) {
+                return Optional.of("Multiple wildcards are not allowed: " + rawDomain);
+            }
+
+            int parts = getDomainPartsSize(domain);
+
+            if (parts < MIN_DOMAIN_PARTS) {
+                return Optional.of("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
+            }
+
+            if (parts > MAX_DOMAIN_PARTS) {
+                return Optional.of("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
+            }
+        }
+
+        if (isBlank(domain) || !EmailValidationUtil.isValidEmail("user@" + domain)) {
+            return Optional.of("Invalid domain format: " + rawDomain);
+        }
+
+        return Optional.empty();
+    }
+
+
+    /**
+     * Returns the most specific matching organization domain for the given {@code domain} and
+     * {@code organization}. When several domains of the organization match (e.g. an exact domain
+     * and a parent wildcard, or nested wildcards), the one with the largest number of parts wins.
+     *
+     * @param domain the domain
+     * @param organization the organization
+     * @return the most specific matching organization domain, or {@code null} if no match is found
+     */
+    public static OrganizationDomainModel getMatchingDomain(String domain, OrganizationModel organization) {
+        if (domain == null || organization == null) {
+            return null;
+        }
+
+        List<OrganizationDomainModel> domains = organization.getDomains().filter(model -> isSameDomain(domain, model))
+                // sorted ascending by specificity: more domain parts = more specific;
+                // at equal part count, exact matches beat wildcards
+                .sorted(Comparator.comparingInt((OrganizationDomainModel o) -> getEffectivePartsSize(o.getName()))
+                        .thenComparing(o -> o.getName().startsWith(WILDCARD_PREFIX) ? 0 : 1))
+                .toList();
+
+        if (domains.isEmpty()) {
+            return null;
+        }
+
+        return domains.get(domains.size() - 1);
+    }
+
+    public static boolean isSameDomain(String domain, OrganizationDomainModel model) {
+        return isSameDomain(domain, ofNullable(model).map(OrganizationDomainModel::getName).orElse(null));
+    }
+
+    public static boolean isSameDomain(String domain, String expectedDomain) {
+        if (domain == null || expectedDomain == null) {
+            return false;
+        }
+
+        String canonicalDomain = domain.toLowerCase();
+        String pattern = expectedDomain.toLowerCase();
+
+        if (canonicalDomain.equals(pattern)) {
+            return true;
+        }
+
+        if (pattern.startsWith(WILDCARD_PREFIX)) {
+            String baseDomain = pattern.substring(2);
+            return canonicalDomain.equals(baseDomain) || canonicalDomain.endsWith("." + baseDomain);
+        }
+
+        return false;
+    }
+
+    public static String getEmailDomain(String email) {
+        if (email == null) {
+            return null;
+        }
+
+        int domainSeparator = email.indexOf('@');
+
+        if (domainSeparator == -1) {
+            return null;
+        }
+
+        return email.substring(domainSeparator + 1);
+    }
+
+    public static String getEmailDomain(UserModel user) {
+        if (user == null) {
+            return null;
+        }
+        return getEmailDomain(user.getEmail());
+    }
+
+    public static OrganizationModel resolveOrganization(KeycloakSession session) {
+        return resolveOrganization(session, null, null);
+    }
+
+    public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user) {
+        return resolveOrganization(session, user, null);
+    }
+
+    public static OrganizationModel resolveOrganization(KeycloakSession session, UserModel user, String domain) {
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+
+        if (!realm.isOrganizationsEnabled()) {
+            return null;
+        }
+
+        OrganizationModel current = context.getOrganization();
+
+        if (current != null) {
+            // resolved from current keycloak session
+            return current;
+        }
+
+        OrganizationProvider provider = getProvider(session);
+
+        if (!provider.hasOrganizations()) {
+            return null;
+        }
+
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String emailDomain = ofNullable(domain).orElseGet(() -> getEmailDomain(user));
+
+        if (authSession != null) {
+            OrganizationScope scope = OrganizationScope.valueOfScope(session);
+            List<OrganizationModel> organizations = ofNullable(authSession.getAuthNote(OrganizationModel.ORGANIZATION_ATTRIBUTE))
+                    .map(provider::getById)
+                    .map(List::of)
+                    .orElseGet(() -> scope == null ? List.of() : scope.resolveOrganizations(user, session).toList());
+
+            if (organizations.size() == 1) {
+                OrganizationModel organization = organizations.get(0);
+
+                if (user == null) {
+                    return organization;
+                }
+
+                // make sure the user still maps to the organization from the authentication session
+                if (organization.isMember(user)) {
+                    return organization;
+                }
+
+                return resolveByDomain(organizations, emailDomain);
+            } else if (scope != null && user != null) {
+                return resolveByDomain(organizations, emailDomain);
+            }
+        }
+
+        List<OrganizationModel> organizations = ofNullable(user).stream()
+                .flatMap(provider::getByMember)
+                .filter(OrganizationModel::isEnabled)
+                .toList();
+
+        if (organizations.size() == 1) {
+            // single membership found, return the org
+            return organizations.get(0);
+        }
+
+        if (organizations.isEmpty()) {
+            // no membership, any org that matches the domain
+            return resolveByDomain(ofNullable(emailDomain)
+                    .map(provider::getByDomainName)
+                    .map(List::of)
+                    .orElse(List.of()), emailDomain);
+        }
+
+        for (OrganizationModel organization : organizations) {
+            if (organization.isManaged(user)) {
+                return organization;
+            }
+        }
+
+        return resolveByDomain(organizations, emailDomain);
+    }
+
+    public static OrganizationProvider getProvider(KeycloakSession session) {
+        return session.getProvider(OrganizationProvider.class);
+    }
+
+    public static boolean isRegistrationAllowed(KeycloakSession session, RealmModel realm) {
+        if (session.getContext().getOrganization() != null) return true;
+        return realm.isRegistrationAllowed();
+    }
+
+    public static boolean isReadOnlyOrganizationMember(KeycloakSession session, UserModel delegate) {
+        if (delegate == null) {
+            return false;
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        var organizationProvider = getProvider(session);
+
+        if (!organizationProvider.hasOrganizations()) {
+            return false;
+        }
+
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
+    }
+
+    public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {
+        int bestParts = -1;
+        boolean bestIsExact = false;
+        OrganizationModel organization = null;
+
+        for (OrganizationModel model : organizations) {
+            OrganizationDomainModel bestMatch = getMatchingDomain(domain, model);
+
+            if (bestMatch == null) {
+                continue;
+            }
+
+            if (organizations.size() == 1) {
+                // only one organization, any domain match is enough
+                return model;
+            }
+
+            int mostSpecificParts = getEffectivePartsSize(bestMatch.getName());
+            boolean isExact = !bestMatch.getName().startsWith(WILDCARD_PREFIX);
+
+            if (mostSpecificParts > bestParts
+                    || (mostSpecificParts == bestParts && isExact && !bestIsExact)) {
+                bestParts = mostSpecificParts;
+                bestIsExact = isExact;
+                organization = model;
+            }
+        }
+
+        return organization;
+    }
+}

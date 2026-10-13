@@ -1,5 +1,13 @@
 package org.keycloak.protocol.oidc.utils;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -7,15 +15,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:martin.hardselius@gmail.com">Martin Hardselius</a>
@@ -90,21 +89,15 @@ public class PairwiseSubMapperValidator {
     }
 
     private static Set<String> getSectorRedirects(KeycloakSession session, String sectorIdentifierUri) throws ProtocolMapperConfigException {
-        InputStream is = null;
         try {
-            is = session.getProvider(HttpClientProvider.class).get(sectorIdentifierUri);
-            List<String> sectorRedirects = JsonSerialization.readValue(is, TypedList.class);
+            List<String> sectorRedirects = JsonSerialization.readValue(
+                    session.getProvider(HttpClientProvider.class).getString(sectorIdentifierUri),
+                    TypedList.class
+            );
             return new HashSet<>(sectorRedirects);
         } catch (IOException e) {
             throw new ProtocolMapperConfigException("Failed to get redirect URIs from the Sector Identifier URI.",
                     PAIRWISE_FAILED_TO_GET_REDIRECT_URIS, e);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
     }
 

@@ -17,11 +17,32 @@
 
 package org.keycloak.broker.provider.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
-import org.apache.http.HeaderIterator;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -41,32 +62,16 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.common.util.Base64;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
  * @author David Klassen (daviddd.kl@gmail.com)
+ *
+ * @deprecated An updated version of SimpleHttp is available in {@link org.keycloak.http.simple.SimpleHttp}. This
+ * version will be deleted in Keycloak 27.0
  */
+@Deprecated
 public class SimpleHttp {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -86,48 +91,69 @@ public class SimpleHttp {
 
     private int connectionRequestTimeoutMillis = UNDEFINED_TIMEOUT;
 
+    private long maxConsumedResponseSize;
+
     private RequestConfig.Builder requestConfigBuilder;
 
-    protected SimpleHttp(String url, String method, HttpClient client) {
+    protected SimpleHttp(String url, String method, HttpClient client, long maxConsumedResponseSize) {
         this.client = client;
         this.url = url;
         this.method = method;
+        this.maxConsumedResponseSize = maxConsumedResponseSize;
     }
 
     public static SimpleHttp doDelete(String url, KeycloakSession session) {
-        return doDelete(url, session.getProvider(HttpClientProvider.class).getHttpClient());
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doDelete(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    public static SimpleHttp doDelete(String url, HttpClient client) {
-        return new SimpleHttp(url, "DELETE", client);
+    protected static SimpleHttp doDelete(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "DELETE", client, maxConsumedResponseSize);
     }
 
     public static SimpleHttp doGet(String url, KeycloakSession session) {
-        return doGet(url, session.getProvider(HttpClientProvider.class).getHttpClient());
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doGet(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    public static SimpleHttp doGet(String url, HttpClient client) {
-        return new SimpleHttp(url, "GET", client);
+    protected static SimpleHttp doGet(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "GET", client, maxConsumedResponseSize);
     }
 
     public static SimpleHttp doPost(String url, KeycloakSession session) {
-        return doPost(url, session.getProvider(HttpClientProvider.class).getHttpClient());
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doPost(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    public static SimpleHttp doPost(String url, HttpClient client) {
-        return new SimpleHttp(url, "POST", client);
+    protected  static SimpleHttp doPost(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "POST", client, maxConsumedResponseSize);
     }
 
-    public static SimpleHttp doPut(String url, HttpClient client) {
-        return new SimpleHttp(url, "PUT", client);
+    public static SimpleHttp doPut(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doPut(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
-    public static SimpleHttp doHead(String url, HttpClient client) {
-        return new SimpleHttp(url, "HEAD", client);
+    protected static SimpleHttp doPut(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "PUT", client, maxConsumedResponseSize);
     }
 
-    public static SimpleHttp doPatch(String url, HttpClient client) {
-        return new SimpleHttp(url, "PATCH", client);
+    public static SimpleHttp doHead(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doHead(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
+    }
+
+    protected static SimpleHttp doHead(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "HEAD", client, maxConsumedResponseSize);
+    }
+
+    public static SimpleHttp doPatch(String url, KeycloakSession session) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return doPatch(url, provider.getHttpClient(), provider.getMaxConsumedResponseSize());
+    }
+
+    protected static SimpleHttp doPatch(String url, HttpClient client, long maxConsumedResponseSize) {
+        return new SimpleHttp(url, "PATCH", client, maxConsumedResponseSize);
     }
 
     public SimpleHttp header(String name, String value) {
@@ -145,6 +171,31 @@ public class SimpleHttp {
         return null;
     }
 
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(headers);
+    }
+
+    public String getParam(String name) {
+        if (params == null) {
+            return null;
+        }
+        return params.get(name);
+    }
+
+    public Map<String, String> getParams() {
+        if (params == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(params);
+    }
+
+    public Object getEntity() {
+        return entity;
+    }
+
     public SimpleHttp json(Object entity) {
         this.entity = entity;
         return this;
@@ -152,6 +203,11 @@ public class SimpleHttp {
 
     public SimpleHttp entity(HttpEntity entity) {
         this.entity = entity;
+        return this;
+    }
+
+    public SimpleHttp params(Map<String, String> params) {
+        this.params = params;
         return this;
     }
 
@@ -178,6 +234,11 @@ public class SimpleHttp {
         return this;
     }
 
+    public SimpleHttp setMaxConsumedResponseSize(long maxConsumedResponseSize) {
+        this.maxConsumedResponseSize = maxConsumedResponseSize;
+        return this;
+    }
+
     public SimpleHttp auth(String token) {
         header("Authorization", "Bearer " + token);
         return this;
@@ -185,7 +246,7 @@ public class SimpleHttp {
 
     public SimpleHttp authBasic(final String username, final String password) {
         final String basicCredentials = String.format("%s:%s", username, password);
-        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
+        header("Authorization", "Basic " + Base64.getEncoder().encodeToString(basicCredentials.getBytes()));
         return this;
     }
 
@@ -296,7 +357,7 @@ public class SimpleHttp {
             httpRequest.setConfig(requestConfigBuilder.build());
         }
 
-        return new Response(client.execute(httpRequest));
+        return new Response(client.execute(httpRequest), maxConsumedResponseSize);
     }
 
     private RequestConfig.Builder requestConfigBuilder() {
@@ -341,48 +402,35 @@ public class SimpleHttp {
     public static class Response implements AutoCloseable {
 
         private final HttpResponse response;
+        private final long maxConsumedResponseSize;
         private int statusCode = -1;
         private String responseString;
         private ContentType contentType;
 
-        public Response(HttpResponse response) {
+        public Response(HttpResponse response, long maxConsumedResponseSize) {
             this.response = response;
+            this.maxConsumedResponseSize = maxConsumedResponseSize;
         }
 
         private void readResponse() throws IOException {
             if (statusCode == -1) {
                 statusCode = response.getStatusLine().getStatusCode();
 
-                InputStream is;
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
-                    is = entity.getContent();
-                    contentType = ContentType.getOrDefault(entity);
-                    Charset charset = contentType.getCharset();
-                    try {
-                        HeaderIterator it = response.headerIterator();
-                        while (it.hasNext()) {
-                            Header header = it.nextHeader();
-                            if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
-                                is = new GZIPInputStream(is);
-                            }
-                        }
+                    try (InputStream entityStream = entity.getContent()) {
+                        contentType = ContentType.getOrDefault(entity);
+                        Charset charset = contentType.getCharset();
 
-                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
-                                new InputStreamReader(is, charset)) {
+                        // TODO: remove manual gzip handling — decompression is already performed by the underlying
+                        // HTTP client (Vert.x/Netty or Apache HttpClient) before the response reaches this code.
+                        Header contentEncoding = response.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
+                        boolean gzip = contentEncoding != null
+                                && ("gzip".equalsIgnoreCase(contentEncoding.getValue()) || "x-gzip".equalsIgnoreCase(contentEncoding.getValue()));
 
-                            StringWriter writer = new StringWriter();
-
-                            char[] buffer = new char[1024 * 4];
-                            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                                writer.write(buffer, 0, n);
-                            }
-
-                            responseString = writer.toString();
-                        }
-                    } finally {
-                        if (is != null) {
-                            is.close();
+                        InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
+                        try (SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize)) {
+                            responseString = StreamUtil.readString(safe, charset != null ? charset : StandardCharsets.UTF_8);
                         }
                     }
                 }

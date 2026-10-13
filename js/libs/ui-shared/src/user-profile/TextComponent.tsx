@@ -1,8 +1,8 @@
-import { TextInputTypes } from "@patternfly/react-core";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { TextInput, TextInputTypes } from "@patternfly/react-core";
+
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { fieldName, isRequiredAttribute } from "./utils";
+import { fieldName, isRequiredAttribute, label } from "./utils";
 
 export const TextComponent = (props: UserProfileFieldProps) => {
   const { form, inputType, attribute } = props;
@@ -13,13 +13,25 @@ export const TextComponent = (props: UserProfileFieldProps) => {
 
   return (
     <UserProfileGroup {...props}>
-      <KeycloakTextInput
+      <TextInput
         id={attribute.name}
         data-testid={attribute.name}
         type={type}
-        placeholder={attribute.annotations?.["inputTypePlaceholder"] as string}
-        readOnly={attribute.readOnly}
+        placeholder={
+          attribute.readOnly
+            ? ""
+            : label(
+                props.t,
+                attribute.annotations?.["inputTypePlaceholder"] as string,
+                "",
+                attribute.annotations?.[
+                  "inputOptionLabelsI18nPrefix"
+                ] as string,
+              )
+        }
+        isDisabled={attribute.readOnly}
         isRequired={isRequired}
+        defaultValue={attribute.defaultValue}
         {...form.register(fieldName(attribute.name))}
       />
     </UserProfileGroup>

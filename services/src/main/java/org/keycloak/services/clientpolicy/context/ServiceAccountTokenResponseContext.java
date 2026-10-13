@@ -20,26 +20,22 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ServiceAccountTokenResponseContext implements ClientPolicyContext {
+public class ServiceAccountTokenResponseContext extends AbstractClientSessionCtxTokenResponseContext {
 
     private final MultivaluedMap<String, String> params;
-    private final AuthenticatedClientSessionModel clientSession;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public ServiceAccountTokenResponseContext(MultivaluedMap<String, String> params,
-                                              AuthenticatedClientSessionModel clientSession,
+                                              ClientSessionContext clientSessionCtx,
                                               TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(clientSessionCtx, accessTokenResponseBuilder);
         this.params = params;
-        this.clientSession = clientSession;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -49,13 +45,5 @@ public class ServiceAccountTokenResponseContext implements ClientPolicyContext {
 
     public MultivaluedMap<String, String> getParams() {
         return params;
-    }
-
-    public AuthenticatedClientSessionModel getClientSession() {
-        return clientSession;
-    }
-
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
     }
 }

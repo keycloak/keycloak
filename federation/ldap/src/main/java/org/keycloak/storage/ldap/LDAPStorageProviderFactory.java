@@ -17,13 +17,26 @@
 
 package org.keycloak.storage.ldap;
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.naming.NamingException;
+import javax.naming.spi.NamingManager;
+
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -40,6 +53,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.resources.admin.ComponentResource;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -50,27 +64,28 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
+import org.keycloak.storage.ldap.mappers.KerberosPrincipalAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -82,8 +97,14 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     private static final Logger logger = Logger.getLogger(LDAPStorageProviderFactory.class);
     public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
+    private static final String LDAP_CONNECTION_POOL_PROTOCOL = "com.sun.jndi.ldap.connect.pool.protocol";
+    private static final String SECURE_REFERRAL = "secureReferral";
+    private static final boolean SECURE_REFERRAL_DEFAULT = true;
 
+    private static final String METRICS_ENABLED = "metricsEnabled";
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
+    private Meter.MeterProvider<Timer> ldapRequestTimer; // null when disabled
+    private boolean disableKerberosAuthenticationRoundTrip;
 
     protected static final List<ProviderConfigProperty> configProperties;
 
@@ -135,6 +156,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.USERS_DN)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
+                .property().name(LDAPConstants.RELATIVE_CREATE_DN)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
                 .property().name(LDAPConstants.AUTH_TYPE)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("simple")
@@ -171,27 +195,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.CONNECTION_POOLING)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_DEBUG)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_INITSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_MAXSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_PREFSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_PROTOCOL)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_TIMEOUT)
-                .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(LDAPConstants.CONNECTION_TIMEOUT)
                 .type(ProviderConfigProperty.STRING_TYPE)
@@ -230,6 +233,14 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
+                .property().name(LDAPConstants.CONNECTION_TRACE)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
                 .build();
     }
 
@@ -242,7 +253,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
         Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators);
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators, ldapRequestTimer);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
 
@@ -284,7 +295,26 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             }
         }
 
-        if(cfg.isStartTls() && cfg.getConnectionPooling() != null) {
+        String connectionUrl = cfg.getConnectionUrl();
+        if (connectionUrl != null) {
+            if (connectionUrl.contains(",")) {
+                throw new ComponentValidationException("ldapErrorConnectionUrlContainsComma");
+            }
+            for (String url : LDAPConstants.toLdapUrls(connectionUrl)) {
+                try {
+                    URI uri = URI.create(url);
+                    String scheme = uri.getScheme();
+                    if (scheme == null || !(scheme.equalsIgnoreCase("ldap") || scheme.equalsIgnoreCase("ldaps"))) {
+                        throw new ComponentValidationException("ldapErrorInvalidConnectionUrlScheme");
+                    }
+                } catch (IllegalArgumentException e) {
+                    throw new ComponentValidationException("ldapErrorInvalidConnectionUrl");
+                }
+            }
+        }
+
+        // This parses the configuration directly as cfg.getConnectionPooling() will take into account the current StartTLS setting
+        if(cfg.isStartTls() && Boolean.parseBoolean(config.getConfig().getFirst(LDAPConstants.CONNECTION_POOLING))) {
             throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
         }
 
@@ -303,11 +333,106 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
+
+        if (config.getId() == null) {
+            // the ldap component is being created, use short id for ldap components
+            config.setId(KeycloakModelUtils.generateShortId());
+        } else {
+            // Updating an existing LDAP provider - check if the connection URL changed while
+            // the bind credential was not re-entered (auto-preserved via SECRET_VALUE placeholder or omitted).
+            // This prevents credentials from being silently sent to a different server.
+            validateBindCredentialOnUrlChange(session, realm, config, cfg);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateBindCredentialOnUrlChange(KeycloakSession session, RealmModel realm,
+                                                   ComponentModel config, LDAPConfig cfg) {
+        ComponentModel oldComponent = realm.getComponent(config.getId());
+        if (oldComponent == null) {
+            return;
+        }
+
+        // Skip only when both sides use anonymous auth AND the old component has no stored credential.
+        // AUTH_TYPE_NONE alone is not enough: a component can carry a credential in its config even
+        // when auth type is none, which could be silently reused after a URL change + auth-type switch.
+        LDAPConfig oldCfg = new LDAPConfig(oldComponent.getConfig());
+        boolean bothAnonymous = LDAPConstants.AUTH_TYPE_NONE.equals(cfg.getAuthType())
+                && LDAPConstants.AUTH_TYPE_NONE.equals(oldCfg.getAuthType());
+        if (bothAnonymous && oldComponent.getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL) == null) {
+            return;
+        }
+
+        Set<String> secretPlaceholderFields = session.getAttribute(
+                ComponentResource.SECRET_PLACEHOLDER_FIELDS_ATTR, Set.class);
+        if (secretPlaceholderFields == null || !secretPlaceholderFields.contains(LDAPConstants.BIND_CREDENTIAL)) {
+            // Bind credential was explicitly provided (not a SECRET_VALUE placeholder), no risk.
+            return;
+        }
+
+        String oldUrl = oldComponent.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        String newUrl = config.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+        if (!LDAPUtil.checkLdapConnectionUrlsMatch(oldUrl, newUrl)) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
+        }
+
+        String oldBindDn = oldComponent.getConfig().getFirst(LDAPConstants.BIND_DN);
+        String newBindDn = config.getConfig().getFirst(LDAPConstants.BIND_DN);
+        if (!Objects.equals(oldBindDn == null ? null : oldBindDn.toLowerCase(Locale.ROOT),
+                            newBindDn == null ? null : newBindDn.toLowerCase(Locale.ROOT))) {
+            throw new ComponentValidationException("ldapErrorCredentialReentryRequiredOnUrlChange");
+        }
     }
 
     @Override
     public void init(Config.Scope config) {
+        if (config.getBoolean(SECURE_REFERRAL, SECURE_REFERRAL_DEFAULT)) {
+            setObjectFactoryBuilder();
+        } else {
+            logger.warnf("Insecure LDAP referrals are enabled. The option 'secure-referral' is deprecated and it will be removed in future releases.");
+        }
+
+        // set connection pooling for plain and tls protocols by default
+        if (System.getProperty(LDAP_CONNECTION_POOL_PROTOCOL) == null) {
+            System.setProperty(LDAP_CONNECTION_POOL_PROTOCOL, "plain ssl");
+        }
+
+        this.disableKerberosAuthenticationRoundTrip = config.getBoolean("disableKerberosAuthenticationRoundTrip", Boolean.FALSE);
         this.ldapStoreRegistry = new LDAPIdentityStoreRegistry();
+        boolean ldapMetricsFeature = Profile.isFeatureEnabled(Profile.Feature.LDAP_METRICS);
+        boolean metricsEnabledConfig = config.getBoolean(METRICS_ENABLED, true);
+        boolean globalMetricsEnabled = config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false);
+        boolean metricsEnabled = ldapMetricsFeature && metricsEnabledConfig && globalMetricsEnabled;
+
+        if (metricsEnabled) {
+            this.ldapRequestTimer = Timer.builder("keycloak.ldap.requests")
+                    .description("Time taken for LDAP requests")
+                    .withRegistry(Metrics.globalRegistry);
+        }
+
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        builder.property()
+                .name(SECURE_REFERRAL)
+                .type("boolean")
+                .helpText("Allow only secure LDAP referrals (deprecated)")
+                .defaultValue(SECURE_REFERRAL_DEFAULT)
+                .add()
+
+                .property()
+                .name("disableKerberosAuthenticationRoundTrip")
+                .type("boolean")
+                .helpText("Boolean to disable the local Kerberos service-ticket round trip in username/password authentication (deprecated).")
+                .defaultValue("false")
+                .add();
+
+        return builder.build();
+
     }
 
     @Override
@@ -434,7 +559,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         // MSAD specific mapper for account state propagation
         if (activeDirectory) {
-            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
+            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                    MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP, alwaysReadValueFromLDAP);
             realm.addComponentModel(mapperModel);
         }
 
@@ -448,6 +574,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             String defaultKerberosUserPrincipalAttr = LDAPUtils.getDefaultKerberosUserPrincipalAttribute(ldapConfig.getVendor());
             model.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, defaultKerberosUserPrincipalAttr);
             realm.updateComponent(model);
+        }
+
+        if (kerberosConfig.getKerberosPrincipalAttribute() != null) {
+            mapperModel = KeycloakModelUtils.createComponentModel("Kerberos principal attribute mapper", model.getId(), KerberosPrincipalAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName());
+            realm.addComponentModel(mapperModel);
         }
 
         // In case that "Sync Registration" is ON and the LDAP v3 Password-modify extension is ON, we will create hardcoded mapper to create
@@ -471,6 +602,19 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                     AuthenticationExecutionModel.Requirement.DISABLED, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         } // else: keep current settings
+
+        LDAPConfig oldConfig = new LDAPConfig(oldModel.getConfig());
+        LDAPConfig newConfig = new LDAPConfig(newModel.getConfig());
+        if (!oldConfig.getUsernameLdapAttribute().equals(newConfig.getUsernameLdapAttribute())) {
+            // propagate username LDAP attribute change to the username mapper.
+            ComponentModel usernameMapperModel = realm.getComponentsStream(oldModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(mapper -> "username".equals(mapper.getName()))
+                    .findFirst().orElse(null);
+            if (usernameMapperModel != null) {
+                usernameMapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, newConfig.getUsernameLdapAttribute());
+                realm.updateComponent(usernameMapperModel);
+            }
+        }
     }
 
     @Override
@@ -707,7 +851,18 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
-        return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+        return new KerberosUsernamePasswordAuthenticator(kerberosConfig, disableKerberosAuthenticationRoundTrip);
     }
 
- }
+    private void setObjectFactoryBuilder() {
+        try {
+            NamingManager.setObjectFactoryBuilder(new ObjectFactoryBuilder());
+        } catch (NamingException | IllegalStateException e) {
+            if (e instanceof IllegalStateException && ObjectFactoryBuilder.isSet()) {
+                return;
+            }
+
+            throw new RuntimeException("Failed to set the server JNDI ObjectFactoryBuilder", e);
+        }
+    }
+}

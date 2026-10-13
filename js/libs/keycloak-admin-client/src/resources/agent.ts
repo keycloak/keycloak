@@ -1,4 +1,3 @@
-import urlJoin from "url-join";
 import { parseTemplate } from "url-template";
 import type { KeycloakAdminClient } from "../client.js";
 import {
@@ -6,12 +5,13 @@ import {
   NetworkError,
   parseResponse,
 } from "../utils/fetchWithError.js";
+import { joinPath } from "../utils/joinPath.js";
 import { stringifyQueryParams } from "../utils/stringifyQueryParams.js";
 
 // constants
 const SLASH = "/";
 
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 // interface
 export interface RequestArgs {
@@ -36,7 +36,7 @@ export interface RequestArgs {
    * Keys to be ignored, meaning that they will not be filtered out of the request payload even if they are a part of `urlParamKeys` or `queryParamKeys`,
    */
   ignoredKeys?: string[];
-  headers?: HeadersInit;
+  headers?: [string, string][] | Record<string, string> | Headers;
 }
 
 const pick = (value: Record<string, unknown>, keys: string[]) =>
@@ -53,7 +53,7 @@ export class Agent {
   #client: KeycloakAdminClient;
   #basePath: string;
   #getBaseParams?: () => Record<string, any>;
-  #getBaseUrl?: () => string;
+  #getBaseUrl: () => string;
 
   constructor({
     client,
@@ -148,9 +148,10 @@ export class Agent {
       const baseParams = this.#getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
-      const queryParams = queryParamKeys
-        ? (pick(query, queryParamKeys) as any)
-        : undefined;
+      const queryParams =
+        queryParamKeys.length > 0
+          ? (pick(query, queryParamKeys) as any)
+          : undefined;
 
       // Add filtered query parameters to base parameters
       const allUrlParamKeys = [...Object.keys(baseParams), ...urlParamKeys];
@@ -197,14 +198,8 @@ export class Agent {
     catchNotFound: boolean;
     payloadKey?: string;
     returnResourceIdInLocationHeader?: { field: string };
-    headers?: HeadersInit;
+    headers?: [string, string][] | Record<string, string> | Headers;
   }) {
-    const newPath = urlJoin(this.#basePath, path);
-
-    // Parse template and replace with values from urlParams
-    const pathTemplate = parseTemplate(newPath);
-    const parsedPath = pathTemplate.expand(urlParams);
-    const url = new URL(`${this.#getBaseUrl?.() ?? ""}${parsedPath}`);
     const requestOptions = { ...this.#client.getRequestOptions() };
     const requestHeaders = new Headers([
       ...new Headers(requestOptions.headers).entries(),
@@ -225,12 +220,17 @@ export class Agent {
       requestOptions.body = payload;
     } else {
       // Otherwise assume it's JSON and stringify it.
-      requestOptions.body = JSON.stringify(
-        payloadKey ? payload[payloadKey] : payload,
-      );
+      requestOptions.body =
+        payloadKey && typeof payload[payloadKey] === "string"
+          ? payload[payloadKey]
+          : JSON.stringify(payloadKey ? payload[payloadKey] : payload);
     }
 
-    if (!requestHeaders.has("content-type") && !(payload instanceof FormData)) {
+    if (
+      requestOptions.body &&
+      !requestHeaders.has("content-type") &&
+      !(payload instanceof FormData)
+    ) {
       requestHeaders.set("content-type", "application/json");
     }
 
@@ -238,6 +238,10 @@ export class Agent {
       Object.assign(searchParams, queryParams);
     }
 
+    const url = new URL(this.#getBaseUrl());
+    const pathTemplate = parseTemplate(joinPath(this.#basePath, path));
+
+    url.pathname = joinPath(url.pathname, pathTemplate.expand(urlParams));
     url.search = stringifyQueryParams(searchParams);
 
     try {
@@ -245,6 +249,9 @@ export class Agent {
         ...requestOptions,
         headers: requestHeaders,
         method,
+        ...(this.#client.timeout
+          ? { signal: AbortSignal.timeout(this.#client.timeout) }
+          : {}),
       });
 
       // now we get the response of the http request
@@ -280,10 +287,10 @@ export class Agent {
             value === "application/octet-stream",
         )
       ) {
-        return res.arrayBuffer();
+        return await res.arrayBuffer();
       }
 
-      return parseResponse(res);
+      return await parseResponse(res);
     } catch (err) {
       if (
         err instanceof NetworkError &&
@@ -301,9 +308,9 @@ export class Agent {
       return;
     }
 
-    Object.keys(keyMapping).some((key) => {
+    Object.keys(keyMapping).forEach((key) => {
       if (typeof payload[key] === "undefined") {
-        return false;
+        return;
       }
       const newKey = keyMapping[key];
       payload[newKey] = payload[key];

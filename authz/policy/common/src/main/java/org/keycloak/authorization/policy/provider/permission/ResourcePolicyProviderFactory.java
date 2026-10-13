@@ -64,7 +64,7 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory<Reso
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override

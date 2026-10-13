@@ -1,10 +1,11 @@
 package org.keycloak.representations.docker;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.representations.JsonWebToken;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *  * {
@@ -42,14 +43,14 @@ public class DockerResponseToken extends JsonWebToken {
     }
 
     @Override
-    public DockerResponseToken expiration(final int expiration) {
-        super.expiration(expiration);
+    public DockerResponseToken exp(final Long expiration) {
+        super.exp(expiration);
         return this;
     }
 
     @Override
-    public DockerResponseToken notBefore(final int notBefore) {
-        super.notBefore(notBefore);
+    public DockerResponseToken nbf(final Long notBefore) {
+        super.nbf(notBefore);
         return this;
     }
 
@@ -60,8 +61,8 @@ public class DockerResponseToken extends JsonWebToken {
     }
 
     @Override
-    public DockerResponseToken issuedAt(final int issuedAt) {
-        super.issuedAt(issuedAt);
+    public DockerResponseToken iat(final Long issuedAt) {
+        super.iat(issuedAt);
         return this;
     }
 

@@ -17,6 +17,24 @@
 
 package org.keycloak.connections.jpa.updater.liquibase;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
+import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.MySQLCustomChangeLogHistoryService;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
+
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -42,24 +60,6 @@ import liquibase.structure.core.Column;
 import liquibase.structure.core.Table;
 import liquibase.util.StreamUtil;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.models.KeycloakSession;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -69,10 +69,14 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(LiquibaseJpaUpdaterProvider.class);
 
     public static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
+    private static final String MASTER_CHANGELOG_TABLE = "DATABASECHANGELOG";
 
     public static final String DEPLOYMENT_ID_COLUMN = "DEPLOYMENT_ID";
 
     private final KeycloakSession session;
+    // Did the master changelog table already exist when this server started, before validation created it?
+    // Only the master table is relevant: Liquibase still writes the DDL of custom provider changelog tables itself.
+    private Boolean masterChangelogTablePreExisted;
 
     public LiquibaseJpaUpdaterProvider(KeycloakSession session) {
         this.session = session;
@@ -101,7 +105,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         Writer exportWriter = null;
         try {
             // Run update with keycloak master changelog first
-            Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+            KeycloakLiquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
             if (file != null) {
                 exportWriter = new FileWriter(file);
             }
@@ -133,10 +137,15 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-    protected void updateChangeSet(Liquibase liquibase, Writer exportWriter) throws LiquibaseException, SQLException {
+    protected void updateChangeSet(KeycloakLiquibase liquibase, Writer exportWriter) throws LiquibaseException, SQLException {
         String changelog = liquibase.getChangeLogFile();
         Database database = liquibase.getDatabase();
         Table changelogTable = SnapshotGeneratorFactory.getInstance().getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
+        // Validation is not always run before an update, and nothing has touched the changelog table yet at this
+        // point, so record its state here as well.
+        if (masterChangelogTablePreExisted == null && isMasterChangelogTable(database)) {
+            masterChangelogTablePreExisted = changelogTable != null;
+        }
 
         if (changelogTable != null) {
             boolean hasDeploymentIdColumn = changelogTable.getColumn(DEPLOYMENT_ID_COLUMN) != null;
@@ -211,12 +220,29 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         loggingExecutor.comment("* Keycloak database creation script - apply this script to empty DB *");
         loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
-        loggingExecutor.execute(new CreateDatabaseChangeLogTableStatement());
+        // Liquibase adds the changelog table DDL to the script itself, but only while the table does not exist yet.
+        // Since Liquibase 4.33 parsing a changelog initializes the change log history service (DatabaseChangeLog
+        // creates the table on the live connection), so by the time the export is written the table is already
+        // there and Liquibase no longer emits it - leaving a script that inserts into a table it never creates,
+        // even though its header offers it as a creation script for an empty database. Emit the statement here
+        // instead, but only when the table was absent before this server started: an administrator may have
+        // pre-created it so that a user without DDL rights could produce the script at all, and in that case the
+        // target database already has the table and the DDL would fail the script with "already exists".
         // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
+        if (isMasterChangelogTable(database) && Boolean.FALSE.equals(masterChangelogTablePreExisted)) {
+            // Same comment Liquibase emits when it writes this statement itself
+            loggingExecutor.comment("Create Database Change Log Table");
+            loggingExecutor.execute(new CreateDatabaseChangeLogTableStatement());
+        }
 
-        loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
+        // For MySQL, add primary key to DATABASECHANGELOG table (handled by MySQLCustomChangeLogHistoryService at runtime)
+        ChangeLogHistoryService changeLogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+        if (changeLogHistoryService instanceof MySQLCustomChangeLogHistoryService customChangeLogHistoryService) {
+            loggingExecutor.comment("Add primary key to DATABASECHANGELOG table for MySQL");
+            loggingExecutor.execute(customChangeLogHistoryService.getAddDatabaseChangeLogPKStatement());
+        }
 
         executorService.setExecutor(LiquibaseConstants.JDBC_EXECUTOR, database, oldTemplate);
     }
@@ -235,7 +261,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
         try {
             // Validate with keycloak master changelog first
-            Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+            KeycloakLiquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
 
             Status status = validateChangeSet(liquibase, liquibase.getChangeLogFile());
             if (status != Status.VALID) {
@@ -257,13 +283,16 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
+        } finally {
+            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;
     }
 
-    protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
+    protected Status validateChangeSet(KeycloakLiquibase liquibase, String changelog) throws LiquibaseException {
         final Status result;
+        recordWhetherMasterChangelogTablePreExisted(liquibase.getDatabase());
         List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
 
         if (!changeSets.isEmpty()) {
@@ -285,23 +314,33 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         return result;
     }
 
-    private void resetLiquibaseServices(Liquibase liquibase) {
-        Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
-        Reflections.invokeMethod(true, resetServices, liquibase);
+    private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
+        liquibase.resetServices();
+        ChangeLogHistoryServiceFactory.getInstance().register(new MySQLCustomChangeLogHistoryService());
+    }
 
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+    private void recordWhetherMasterChangelogTablePreExisted(Database database) throws LiquibaseException {
+        if (masterChangelogTablePreExisted == null && isMasterChangelogTable(database)) {
+            Table table = SnapshotGeneratorFactory.getInstance()
+                    .getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
+            masterChangelogTablePreExisted = table != null;
+        }
+    }
+
+    private static boolean isMasterChangelogTable(Database database) {
+        return MASTER_CHANGELOG_TABLE.equalsIgnoreCase(database.getDatabaseChangeLogTableName());
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) throws LiquibaseException {
         return liquibase.listUnrunChangeSets(null, new LabelExpression(), false);
     }
 
-    private Liquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
+    private KeycloakLiquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibase(connection, defaultSchema);
     }
 
-    private Liquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    private KeycloakLiquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelogLocation, classloader, changelogTableName);
     }

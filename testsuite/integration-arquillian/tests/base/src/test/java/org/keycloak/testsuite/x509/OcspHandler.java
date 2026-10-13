@@ -29,7 +29,13 @@ import java.util.Date;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
-
+import io.undertow.io.Sender;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderMap;
+import io.undertow.util.Headers;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -59,12 +65,6 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
-
-import io.undertow.io.Sender;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
 
 final class OcspHandler implements HttpHandler {
 
@@ -105,6 +105,27 @@ final class OcspHandler implements HttpHandler {
         }
     }
 
+    private Extension checkNonce(Extension nonce) {
+        if (nonce == null) {
+            return null;
+        }
+        try {
+            // check the nonce value is an octet string that encapsulates another octet string
+            // see: https://github.com/pyca/cryptography/issues/6404
+            ASN1OctetString value = nonce.getExtnValue();
+            if (!(value instanceof DEROctetString)) {
+                return null;
+            }
+            int length = ASN1OctetString.getInstance(value.getOctets()).getOctetsLength();
+            if (length < 16 || length > 32) {
+                return null;
+            }
+            return nonce;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         if (exchange.isInIoThread()) {
@@ -120,7 +141,7 @@ final class OcspHandler implements HttpHandler {
         final OCSPReq request = new OCSPReq(buffy);
         final Req[] requested = request.getRequestList();
 
-        final Extension nonce = request.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
+        final Extension nonce = checkNonce(request.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce));
 
         final DigestCalculator sha1Calculator = new JcaDigestCalculatorProviderBuilder().build()
                 .get(AlgorithmIdentifier.getInstance(RespID.HASH_SHA1));
@@ -142,8 +163,11 @@ final class OcspHandler implements HttpHandler {
                 new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption),
                 new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).build(privateKey);
 
-        final OCSPResp response = new OCSPRespBuilder().build(OCSPResp.SUCCESSFUL,
-                responseBuilder.build(contentSigner, chain, new Date()));
+        // nonce is mandatory for testing that the nonce is properly set
+        final OCSPResp response = nonce != null
+                ? new OCSPRespBuilder().build(OCSPResp.SUCCESSFUL,
+                        responseBuilder.build(contentSigner, chain, new Date()))
+                : new OCSPRespBuilder().build(OCSPResp.MALFORMED_REQUEST, null);
 
         final byte[] responseBytes = response.getEncoded();
 

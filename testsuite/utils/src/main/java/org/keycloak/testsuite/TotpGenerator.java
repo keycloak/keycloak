@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite;
 
-import org.keycloak.models.utils.Base32;
-import org.keycloak.models.utils.TimeBasedOTP;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.models.utils.Base32;
+import org.keycloak.models.utils.TimeBasedOTP;
 
 
 public class TotpGenerator {

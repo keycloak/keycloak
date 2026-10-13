@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa.entityprovider;
 
-import org.keycloak.provider.Provider;
-
 import java.util.List;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
@@ -33,7 +33,9 @@ public interface JpaEntityProvider extends Provider {
      * Return the entities that should be added to the entity manager.
      * 
      * @return list of class objects
+     * @deprecated this method is ignored in production and will be removed together with legacy testsuite
      */
+    @Deprecated(forRemoval = true)
 	List<Class<?>> getEntities();
 	
 	/**

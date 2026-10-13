@@ -1,15 +1,5 @@
 {
 
-    "hostname": {
-        "provider": "${keycloak.hostname.provider:}",
-
-        "default": {
-            "frontendUrl": "${keycloak.frontendUrl:}",
-            "adminUrl": "${keycloak.adminUrl:}",
-            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:}"
-        }
-    },
-
     "eventsStore": {
         "provider": "${keycloak.eventsStore.provider:jpa}",
         "jpa": {
@@ -106,6 +96,12 @@
         }
     },
 
+    "datastore": {
+        "legacy": {
+            "allowMigrateExistingDatabaseToSnapshot": "${keycloak.datastore.allowMigrateExistingDatabaseToSnapshot:false}"
+        }
+    },
+
     "realmCache": {
         "default" : {
             "enabled": "${keycloak.realmCache.enabled:true}"
@@ -133,20 +129,10 @@
         }
     },
 
-    "connectionsInfinispan": {
+    "cacheEmbedded": {
         "default": {
-            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
-            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
-            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
-            "clustered": "${keycloak.connectionsInfinispan.clustered:}",
-            "async": "${keycloak.connectionsInfinispan.async:}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:}",
-            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:}",
-            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}",
+            "configFile": "${keycloak.cacheEmbedded.configFile:local-test-ispn.xml}"
         }
     },
 
@@ -158,9 +144,6 @@
     },
 
     "login-protocol": {
-        "openid-connect": {
-            "legacy-logout-redirect-uri": "${keycloak.oidc.legacyLogoutRedirectUri:false}"
-        },
         "saml": {
             "knownProtocols": [
                 "http=${auth.server.http.port}",
@@ -193,7 +176,18 @@
             "sslClientCert": "x-ssl-client-cert",
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
+        },
+        "rfc9440": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChain": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
+    },
+
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
         }
     }
-
 }

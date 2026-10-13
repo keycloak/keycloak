@@ -16,27 +16,21 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.util.JsonSerialization.readValue;
-
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -48,24 +42,21 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.email.EmailAuthenticator;
+import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -84,6 +75,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -91,11 +83,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.partialimport.ErrorResponseException;
+import org.keycloak.organization.admin.resource.OrganizationsResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
-import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -112,15 +102,33 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.util.DateUtil;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
-import org.keycloak.storage.LegacyStoreSyncEvent;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.storage.StoreSyncEvent;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.SMTPUtil;
+import org.keycloak.workflow.admin.resource.WorkflowsResource;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.util.JsonSerialization.readValue;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -132,6 +140,7 @@ import org.keycloak.utils.ReservedCharValidator;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
+
     protected final AdminPermissionEvaluator auth;
     protected final RealmModel realm;
     private final AdminEventBuilder adminEvent;
@@ -161,7 +170,12 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Base path for importing clients under this realm.")
+    @Operation(summary = "Base path for importing clients under this realm.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public ClientRepresentation convertClientDescription(String description) {
         auth.clients().requireManage();
 
@@ -236,7 +250,11 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-default-client-scopes")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get realm default client scopes.  Only name and ids are returned.")
+    @Operation(summary = "Get realm default client scopes. Only name and ids are returned.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
         return getDefaultClientScopes(true);
     }
@@ -253,12 +271,16 @@ public class RealmAdminResource {
         });
     }
 
-
     @PUT
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void addDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId,true);
     }
@@ -270,17 +292,30 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
+
+        // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
+        if (defaultScope && clientScope.isParameterizedScope()) {
+            throw ErrorResponse.error("Can't assign a Parameterized Scope as a Default Scope", Status.BAD_REQUEST);
+        }
+
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm, true);
+        
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
     }
-
 
     @DELETE
     @NoCache
     @Path("default-default-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         auth.clients().requireManageClientScopes();
 
@@ -293,7 +328,6 @@ public class RealmAdminResource {
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
     }
 
-
     /**
      * Get realm optional client scopes.  Only name and ids are returned.
      *
@@ -304,7 +338,11 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-optional-client-scopes")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get realm optional client scopes.  Only name and ids are returned.")
+    @Operation(summary = "Get realm optional client scopes. Only name and ids are returned.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
         return getDefaultClientScopes(false);
     }
@@ -314,6 +352,11 @@ public class RealmAdminResource {
     @Path("default-optional-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void addDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId, false);
     }
@@ -323,6 +366,11 @@ public class RealmAdminResource {
     @Path("default-optional-client-scopes/{clientScopeId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void removeDefaultOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         removeDefaultDefaultClientScope(clientScopeId);
     }
@@ -373,24 +421,34 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.")
+    @Operation(summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, false);
+            List<String> filteredDefaultGroups = realm.getDefaultGroupsStream()
+                    .filter(auth.groups()::canView)
+                    .map(ModelToRepresentation::buildGroupPath)
+                    .toList();
+            rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
+            return rep;
         } else {
             auth.realm().requireViewRealmNameList();
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
+            rep.setDefaultLocale(realm.getDefaultLocale());
+            rep.setDisplayName(realm.getDisplayName());
+            rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+            rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
+            rep.setBruteForceProtected(realm.isBruteForceProtected());
+            rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
-            }
-
-            if (auth.realm().canViewIdentityProviders()) {
-                RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
-                rep.setIdentityProviders(r.getIdentityProviders());
-                rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
             }
 
             return rep;
@@ -409,19 +467,40 @@ public class RealmAdminResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Update the top-level information of the realm Any user, roles or client information in the representation will be ignored.",
+    @Operation(summary = "Update the top-level information of the realm Any user, roles or client information in the representation will be ignored.",
             description = "This will only update top-level attributes of the realm.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response updateRealm(final RealmRepresentation rep) {
         auth.realm().requireManageRealm();
 
-        logger.debug("updating realm: " + realm.getName());
+        logger.debugf("updating realm: %s", realm.getName());
 
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
-        ReservedCharValidator.validate(rep.getRealm());
-        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+
+        try {
+            ReservedCharValidator.validate(rep.getRealm());
+            ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
+        } catch (ReservedCharValidator.ReservedCharException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        }
+
+        try {
+            SMTPUtil.checkSMTPConfiguration(session, rep.getSmtpServer());
+        } catch (EmailException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        }
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
@@ -443,26 +522,32 @@ public class RealmAdminResource {
                 }
             }
 
-            boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
+            if (rep.getAccessCodeLifespanLogin() != null && rep.getAccessCodeLifespanUserAction() != null) {
+                if (rep.getAccessCodeLifespanLogin() < 1 || rep.getAccessCodeLifespanUserAction() < 1) {
+                    throw ErrorResponse.error("AccessCodeLifespanLogin or AccessCodeLifespanUserAction cannot be 0", Status.BAD_REQUEST);
+                }
+            }
+
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            StoreSyncEvent.fire(session, realm, false);
 
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
 
-            adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
-            
-            if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
-                session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
-            }
-            
+            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        } catch (org.keycloak.services.ErrorResponseException e) {
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
@@ -475,9 +560,19 @@ public class RealmAdminResource {
      */
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Delete the realm")
+    @Operation(summary = "Delete the realm")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void deleteRealm() {
         auth.realm().requireManageRealm();
+
+        if (Config.getAdminRealm().equals(realm.getName())) {
+            throw ErrorResponse.error("Can't remove master realm", Status.BAD_REQUEST);
+        }
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
@@ -487,7 +582,7 @@ public class RealmAdminResource {
         // instead of the realm being deleted.
         AdminEventBuilder deleteAdminEvent = new AdminEventBuilder(auth.adminAuth().getRealm(), auth.adminAuth(), session, connection);
         deleteAdminEvent.operation(OperationType.DELETE).resource(ResourceType.REALM)
-                .realm(auth.adminAuth().getRealm().getId()).resourcePath(realm.getName()).success();
+                .realm(auth.adminAuth().getRealm()).resourcePath(realm.getName()).success();
     }
 
     /**
@@ -506,7 +601,12 @@ public class RealmAdminResource {
     @Path("users-management-permissions")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public ManagementPermissionReference getUserMgmtPermissions() {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.realm().requireViewRealm();
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -515,7 +615,6 @@ public class RealmAdminResource {
         } else {
             return new ManagementPermissionReference();
         }
-
     }
 
     @PUT
@@ -525,7 +624,12 @@ public class RealmAdminResource {
     @Path("users-management-permissions")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public ManagementPermissionReference setUsersManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.realm().requireManageRealm();
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -537,8 +641,7 @@ public class RealmAdminResource {
         }
     }
 
-
-    public static ManagementPermissionReference toUsersMgmtRef(AdminPermissionManagement permissions) {
+    private ManagementPermissionReference toUsersMgmtRef(AdminPermissionManagement permissions) {
         ManagementPermissionReference ref = new ManagementPermissionReference();
         ref.setEnabled(true);
         ref.setResource(permissions.users().resource().getId());
@@ -547,6 +650,15 @@ public class RealmAdminResource {
         return ref;
     }
 
+    @Path("organizations")
+    public OrganizationsResource organizations() {
+        return new OrganizationsResource(session, auth, adminEvent);
+    }
+
+    @Path("workflows")
+    public WorkflowsResource workflows() {
+        return new WorkflowsResource(session, auth, adminEvent);
+    }
 
     @Path("{extension}")
     public Object extension(@PathParam("extension") String extension) {
@@ -585,7 +697,11 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Push the realm's revocation policy to any client that has an admin url associated with it.")
+    @Operation(summary = "Push the realm's revocation policy to any client that has an admin url associated with it.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public GlobalRequestResult pushRevocation() {
         auth.realm().requireManageRealm();
 
@@ -595,7 +711,7 @@ public class RealmAdminResource {
     }
 
     /**
-     * Removes all user sessions.  Any client that has an admin url will also be told to invalidate any sessions
+     * Removes all user sessions. Any client that has an admin url will also be told to invalidate any sessions
      * they have.
      *
      */
@@ -603,7 +719,11 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Removes all user sessions.", description = "Any client that has an admin url will also be told to invalidate any sessions they have.")
+    @Operation(summary = "Removes all user sessions.", description = "Any client that has an admin url will also be told to invalidate any sessions they have.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
@@ -622,15 +742,25 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Remove a specific user session.", description = "Any client that has an admin url will also be told to invalidate this particular session.")
-    public void deleteSession(@PathParam("session") String sessionId) {
+    @Operation(summary = "Remove a specific user session.", description = "Any client that has an admin url will also be told to invalidate this particular session.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public void deleteSession(@PathParam("session") String sessionId, @DefaultValue("false") @QueryParam("isOffline") boolean offline) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-        if (userSession == null) throw new NotFoundException("Sesssion not found");
-        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+        UserSessionModel userSession = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) {
+            throw new NotFoundException("Sesssion not found");
+        }
 
+        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("offline", offline);
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).representation(eventRep).success();
     }
 
     /**
@@ -646,8 +776,12 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get client session stats Returns a JSON map.",
+    @Operation(summary = "Get client session stats Returns a JSON map.",
         description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
@@ -699,7 +833,11 @@ public class RealmAdminResource {
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get the events provider configuration Returns JSON object with events provider configuration")
+    @Operation(summary = "Get the events provider configuration Returns JSON object with events provider configuration")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmEventsConfigRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
         auth.realm().requireViewEvents();
 
@@ -726,10 +864,14 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( description = "Update the events provider Change the events provider and/or its configuration")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
         auth.realm().requireManageEvents();
 
-        logger.debug("updating realm events config: " + realm.getName());
+        logger.debugf("updating realm events config: %s", realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM)
                 .resourcePath(session.getContext().getUri()).representation(rep)
@@ -751,6 +893,7 @@ public class RealmAdminResource {
      * @param dateFrom From date
      * @param firstResult Paging offset
      * @param maxResults Maximum results size (defaults to 100)
+     * @param direction The direction to sort events by (asc or desc)
      * @return
      */
     @Path("events")
@@ -758,15 +901,21 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get events Returns all events, or filters them based on URL query parameters listed here")
+    @Operation(summary = "Get events Returns all events, or filters them based on URL query parameters listed here")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = EventRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<EventRepresentation> getEvents(@Parameter(description = "The types of events to return") @QueryParam("type") List<String> types,
                                                  @Parameter(description = "App or oauth client name") @QueryParam("client") String client,
                                                  @Parameter(description = "User id") @QueryParam("user") String user,
-                                                 @Parameter(description = "From date") @QueryParam("dateFrom") String dateFrom,
-                                                 @Parameter(description = "To date") @QueryParam("dateTo") String dateTo,
+                                                 @Parameter(description = "From (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateFrom") String dateFrom,
+                                                 @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateTo") String dateTo,
                                                  @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress,
                                                  @Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult,
-                                                 @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+                                                 @Parameter(description = "Maximum results size") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
+                                                 @Parameter(description = "The direction to sort events by (asc or desc)") @QueryParam("direction") String direction) {
         auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -789,30 +938,35 @@ public class RealmAdminResource {
         }
 
         if(dateFrom != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date from = null;
             try {
-                from = df.parse(dateFrom);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
+                query.fromDate(DateUtil.toStartOfDay(dateFrom));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateFrom', expected format is yyyy-MM-dd or an Epoch timestamp");
             }
-            query.fromDate(from);
         }
 
         if(dateTo != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date to = null;
             try {
-                to = df.parse(dateTo);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
+                query.toDate(DateUtil.toEndOfDay(dateTo));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateTo', expected format is yyyy-MM-dd or an Epoch timestamp");
             }
-            query.toDate(to);
         }
 
         if (ipAddress != null) {
             query.ipAddress(ipAddress);
         }
+
+        if (direction != null) {
+            if ("asc".equals(direction)) {
+                query.orderByAscTime();
+            } else if ("desc".equals(direction)) {
+                query.orderByDescTime();
+            } else {
+                throw new BadRequestException("Invalid value for sortDirection, expected value is asc or desc");
+            }
+        }
+
         if (firstResult != null) {
             query.firstResult(firstResult);
         }
@@ -840,6 +994,8 @@ public class RealmAdminResource {
      * @param dateFrom
      * @param firstResult
      * @param maxResults Maximum results size (defaults to 100)
+     * @param resourceTypes
+     * @param direction The direction to sort events by (asc or desc)
      * @return
      */
     @Path("admin-events")
@@ -847,13 +1003,21 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
+    @Operation(summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AdminEventRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
                                                     @Parameter(description = "user id") @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-                                                    @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-                                                    @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("resourcePath") String resourcePath,
+                                                    @Parameter(description = "From (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateFrom") String dateFrom,
+                                                    @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateTo") String dateTo,
+                                                    @QueryParam("first") Integer firstResult,
                                                     @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
-                                                    @QueryParam("resourceTypes") List<String> resourceTypes) {
+                                                    @QueryParam("resourceTypes") List<String> resourceTypes,
+                                                    @Parameter(description = "The direction to sort events by (asc or desc)") @QueryParam("direction") String direction) {
         auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -895,28 +1059,30 @@ public class RealmAdminResource {
             query.resourceType(t);
         }
 
-
-
         if(dateFrom != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date from = null;
             try {
-                from = df.parse(dateFrom);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
+                query.fromTime(DateUtil.toStartOfDay(dateFrom));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateFrom', expected format is yyyy-MM-dd or an Epoch timestamp");
             }
-            query.fromTime(from);
         }
 
         if(dateTo != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date to = null;
             try {
-                to = df.parse(dateTo);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
+                query.toTime(DateUtil.toEndOfDay(dateTo));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateTo', expected format is yyyy-MM-dd or an Epoch timestamp");
             }
-            query.toTime(to);
+        }
+
+        if (direction != null) {
+            if ("asc".equals(direction)) {
+                query.orderByAscTime();
+            } else if ("desc".equals(direction)) {
+                query.orderByDescTime();
+            } else {
+                throw new BadRequestException("Invalid value for sortDirection, expected value is asc or desc");
+            }
         }
 
         if (firstResult != null) {
@@ -938,7 +1104,11 @@ public class RealmAdminResource {
     @Path("events")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Delete all events")
+    @Operation(summary = "Delete all events")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public void clearEvents() {
         auth.realm().requireManageEvents();
 
@@ -953,7 +1123,11 @@ public class RealmAdminResource {
     @Path("admin-events")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Delete all admin events")
+    @Operation(summary = "Delete all admin events")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public void clearAdminEvents() {
         auth.realm().requireManageEvents();
 
@@ -974,7 +1148,11 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Deprecated
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Test SMTP connection with current logged in user")
+    @Operation(summary = "Test SMTP connection with current logged in user")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response testSMTPConnection(final @Parameter(description = "SMTP server configuration") @FormParam("config") String config) throws Exception {
         Map<String, String> settings = readValue(config, new TypeReference<Map<String, String>>() {
         });
@@ -987,23 +1165,57 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response testSMTPConnection(Map<String, String> settings) throws Exception {
+        auth.realm().requireManageRealm();
         try {
             UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
                 throw ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
-            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))
+                    && reuseConfiguredAuthenticationForSmtp(settings, EmailAuthenticator.AuthenticatorType.BASIC)) {
                 settings.put("password", realm.getSmtpConfig().get("password"));
             }
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("authTokenClientSecret"))
+                    && reuseConfiguredAuthenticationForSmtp(settings, EmailAuthenticator.AuthenticatorType.TOKEN)) {
+                settings.put("authTokenClientSecret", realm.getSmtpConfig().get("authTokenClientSecret"));
+            }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
+        } catch (EmailException e) {
+            if ("Email sender provider is disabled or not configured".equals(e.getMessage())) {
+                logger.error(e.getMessage(), e);
+                throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+            logger.errorf(e, "Failed to send email \n %s", e.getCause());
+            throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            e.printStackTrace();
-            logger.errorf("Failed to send email \n %s", e.getCause());
+            logger.errorf(e, "Failed to send email \n %s", e.getCause());
             throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.noContent().build();
+    }
+
+    private boolean reuseConfiguredAuthenticationForSmtp(Map<String, String> settings, EmailAuthenticator.AuthenticatorType type) {
+        // just reuse the configured authentication if the same authenticator, host, port and user are passed
+        return Boolean.parseBoolean(settings.get("auth")) && Boolean.parseBoolean(realm.getSmtpConfig().get("auth"))
+                && Optional.ofNullable(settings.get("authType")).orElse(EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
+                && realm.getSmtpConfig().getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
+                && Objects.equals(Optional.ofNullable(settings.get("host")).orElse(""), realm.getSmtpConfig().getOrDefault("host", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("port")).orElse("25"), realm.getSmtpConfig().getOrDefault("port", "25"))
+                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("ssl")).orElse("false"), realm.getSmtpConfig().getOrDefault("ssl", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("starttls")).orElse("false"), realm.getSmtpConfig().getOrDefault("starttls", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("from")).orElse(""), realm.getSmtpConfig().getOrDefault("from", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("replyTo")).orElse(""), realm.getSmtpConfig().getOrDefault("replyTo", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("envelopeFrom")).orElse(""), realm.getSmtpConfig().getOrDefault("envelopeFrom", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenUrl")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenUrl", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenClientId")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenClientId", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenScope")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenScope", ""));
     }
 
     @Path("identity-provider")
@@ -1021,17 +1233,29 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.")
+    @Operation(summary = "Get group hierarchy.  Only name and ids are returned.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream()
+                .filter(auth.groups()::canView)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
+
     @PUT
     @NoCache
     @Path("default-groups/{groupId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void addDefaultGroup(@PathParam("groupId") String groupId) {
         auth.realm().requireManageRealm();
 
@@ -1039,6 +1263,7 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.addDefaultGroup(group);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
@@ -1049,6 +1274,11 @@ public class RealmAdminResource {
     @Path("default-groups/{groupId}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void removeDefaultGroup(@PathParam("groupId") String groupId) {
         auth.realm().requireManageRealm();
 
@@ -1056,17 +1286,16 @@ public class RealmAdminResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+
         realm.removeDefaultGroup(group);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(session.getContext().getUri()).success();
     }
 
-
     @Path("groups")
     public GroupsResource getGroups() {
-        return   new GroupsResource(realm, session, this.auth, adminEvent);
+        return  new GroupsResource(realm, session, this.auth, adminEvent);
     }
-
 
     @GET
     @Path("group-by-path/{path: .*}")
@@ -1074,15 +1303,20 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
-    public GroupRepresentation getGroupByPath(@PathParam("path") List<PathSegment> pathSegments) {
-        String[] path = pathSegments.stream().map(PathSegment::getPath).toArray(String[]::new);
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
 
         }
         auth.groups().requireView(found);
-        return ModelToRepresentation.toRepresentation(found, true);
+        GroupRepresentation groupRep = ModelToRepresentation.toRepresentation(found, true);
+        return GroupUtils.populateSubGroupCount(found, groupRep);
     }
 
     /**
@@ -1094,24 +1328,25 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Partial import from a JSON file to an existing realm.")
+    @Operation(summary = "Partial import from a JSON file to an existing realm.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PartialImportResults.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response partialImport(InputStream requestBody) {
         auth.realm().requireManageRealm();
         try {
             return Response.ok(
-                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
+                    KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), kcSession -> {
                         RealmModel realmClone = kcSession.realms().getRealm(realm.getId());
                         AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
                         // calling a static method to avoid using the wrong instances
                         return getPartialImportResults(requestBody, kcSession, realmClone, adminEventClone);
-                    })
+                    }, "Partial import in realm " + realm.getName())
             ).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists(e.getLocalizedMessage());
-        } catch (ErrorResponseException error) {
-            return error.getResponse();
-        } catch (Exception e) {
-            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1152,9 +1387,13 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation( summary = "Partial export of existing realm into a JSON file.")
+    @Operation(summary = "Partial export of existing realm into a JSON file.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
-                                                     @QueryParam("exportClients") Boolean exportClients) {
+                                  @QueryParam("exportClients") Boolean exportClients) {
         auth.realm().requireManageRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
@@ -1170,7 +1409,7 @@ public class RealmAdminResource {
         // service accounts are exported if the clients are exported
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported, true);
 
         ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
 
@@ -1200,6 +1439,10 @@ public class RealmAdminResource {
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
         return session.getContext().getRealm().getRequiredActionProvidersStream()
@@ -1219,4 +1462,11 @@ public class RealmAdminResource {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
         return new ClientProfilesResource(session, auth);
     }
+
+    @Path("client-types")
+    public ClientTypesResource getClientTypesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_TYPES);
+        return new ClientTypesResource(session.getProvider(ClientTypeManager.class), realm, auth);
+    }
+
 }

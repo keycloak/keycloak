@@ -17,14 +17,14 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.MediaType;
-
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.MediaType;
 
 import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 

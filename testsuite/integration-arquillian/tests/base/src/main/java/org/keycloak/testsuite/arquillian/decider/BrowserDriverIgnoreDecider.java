@@ -17,19 +17,20 @@
 
 package org.keycloak.testsuite.arquillian.decider;
 
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
-import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
-import org.keycloak.testsuite.arquillian.TestContext;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDrivers;
-import org.openqa.selenium.WebDriver;
-
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.function.Predicate;
+
+import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDrivers;
+
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
+import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
 
@@ -68,7 +69,7 @@ public class BrowserDriverIgnoreDecider implements TestExecutionDecider {
         final WebDriver webDriver = driver.get();
 
         Predicate<IgnoreBrowserDriver> shouldBeIgnored = (item) -> {
-            return webDriver != null && (isDriverInstanceOf(webDriver, item.value()) ^ item.negate());
+            return webDriver != null && (isPresent(webDriver, item.value()) ^ item.negate());
         };
 
         return Arrays.stream(element.getAnnotationsByType(IgnoreBrowserDriver.class))
@@ -76,6 +77,13 @@ public class BrowserDriverIgnoreDecider implements TestExecutionDecider {
                 .findAny()
                 .map(f -> ExecutionDecision.dontExecute("This test should not be executed with this browser."))
                 .orElse(ExecutionDecision.execute());
+    }
+
+    private boolean isPresent(WebDriver webDriver, Class<? extends WebDriver>[] items) {
+        if (items == null) {
+            return false;
+        }
+        return Arrays.stream(items).filter(item -> isDriverInstanceOf(webDriver, item)).findAny().isPresent();
     }
 
     @Override

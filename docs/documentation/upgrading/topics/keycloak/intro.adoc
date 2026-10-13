@@ -1,9 +1,0 @@
-[[intro]]
-
-== Upgrading Keycloak
-
-This guide describes how to upgrade {project_name}. It is recommended that you start by upgrading the {project_name}
-server first and {project_name} adapters second.
-
-Before upgrading make sure to read the instructions carefully and carefully review the changes listed in
-<<migration-changes,Migration Changes>>.

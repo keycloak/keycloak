@@ -17,26 +17,31 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.QuarkusTest;
-
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
-import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-
 import java.time.Duration;
 import java.util.Map;
 
+import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
+import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @QuarkusTest
 public class KeycloakServicesTest extends BaseOperatorTest {
     @Test
     public void testMainServiceDurability() {
         var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().getHttpSpec().setLabels(Map.of("foo","bar"));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
         var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
@@ -61,9 +66,6 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         currentService.getSpec().setSessionAffinity("ClientIP");
         var origSpecs = new ServiceSpecBuilder(currentService.getSpec()).build(); // deep copy
 
-        // a managed change
-        currentService.getSpec().getPorts().get(0).setName(null);
-
         currentService.getMetadata().getLabels().putAll(labels);
 
         currentService.getMetadata().setResourceVersion(null);
@@ -74,11 +76,66 @@ public class KeycloakServicesTest extends BaseOperatorTest {
                 .untilAsserted(() -> {
                     var s = serviceSelector.get();
                     assertThat(s.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
+                    assertEquals("bar", s.getMetadata().getLabels().get("foo"));
                     // ignoring assigned IP/s and generated config
                     s.getSpec().setClusterIP(null);
                     s.getSpec().setClusterIPs(null);
                     s.getSpec().setSessionAffinityConfig(null);
                     assertThat(s.getSpec()).isEqualTo(origSpecs); // managed spec fields should be reconciled back to original values
+                });
+    }
+
+    @Test
+    public void testCustomServiceAnnotations() {
+        var kc = getTestKeycloakDeployment(true);
+
+        // set 'a'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("a", "b"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertEquals("b", s.getMetadata().getAnnotations().get("a"));
+                });
+
+        // update 'a'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("a", "bb"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertEquals("bb", s.getMetadata().getAnnotations().get("a"));
+                });
+
+        // remove 'a' and add 'c'
+        kc.getSpec().getHttpSpec().setAnnotations(Map.of("c", "d"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("a"));
+                    assertEquals("d", s.getMetadata().getAnnotations().get("c"));
+                });
+
+        // remove all
+        kc.getSpec().getHttpSpec().setAnnotations(null);
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var s = serviceSelector.get();
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("a"));
+                    assertFalse(s.getMetadata().getAnnotations().containsKey("c"));
                 });
     }
 
@@ -128,5 +185,31 @@ public class KeycloakServicesTest extends BaseOperatorTest {
                     ds.getSpec().setSessionAffinityConfig(null);
                     assertThat(ds.getSpec()).isEqualTo(origDiscoverySpecs); // specs should be reconciled back to original values
                 });
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testCustomServiceNameAndPort() {
+        var kc = getTestKeycloakDeployment(true);
+        var containerHttpsPort = K8sUtils.configureHttps(kc, true);
+        var serviceHttpsPort = 443;
+
+        kc.getSpec().getHttpSpec().setServiceHttpsPort(serviceHttpsPort);
+        String serviceName = "custom-kc";
+        kc.getSpec().getHttpSpec().setServiceName(serviceName);
+
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        assertEquals(serviceName, KeycloakServiceDependentResource.getServiceName(kc));
+
+        var service = k8sclient.services().inNamespace(namespace).withName(serviceName).get();
+        assertThat(service).isNotNull();
+        var httpsPort = service.getSpec().getPorts().stream()
+                .filter(p -> "https".equals(p.getName()))
+                .findFirst().orElseThrow();
+        assertEquals(serviceHttpsPort, httpsPort.getPort());
+        assertEquals(containerHttpsPort, httpsPort.getTargetPort().getIntVal());
+
+        CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, true, serviceHttpsPort);
     }
 }

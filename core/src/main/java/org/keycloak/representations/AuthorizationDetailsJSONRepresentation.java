@@ -16,28 +16,37 @@
  */
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.keycloak.util.AuthorizationDetailsParser;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * The JSON representation of a Rich Authorization Request's "authorization_details" object.
+ * The "authorization_details" parameter is array of objects and this class represents single entry of that array. It is used as a base
+ * for "authorization_details" for both requests and responses.
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
- * @see {@link <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-rar#section-2">Request parameter "authorization_details"</a>}
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc9396#section-2">Request parameter "authorization_details"</a>
  */
 public class AuthorizationDetailsJSONRepresentation implements Serializable {
 
     // The internal Keycloak's type for static scopes as a RAR request object
     public static final String STATIC_SCOPE_RAR_TYPE = "https://keycloak.org/auth-type/static-oauth2-scope";
 
-    // The internal Keycloak's type for dynamic scopes as a RAR request object
+    // The internal Keycloak's type for parameterized scopes as a RAR request object
+    public static final String PARAMETERIZED_SCOPE_RAR_TYPE = "https://keycloak.org/auth-type/parameterized-oauth2-scope";
+
+    /** @deprecated Use {@link #PARAMETERIZED_SCOPE_RAR_TYPE} instead. Kept for backward compatibility with existing data. */
+    @Deprecated
     public static final String DYNAMIC_SCOPE_RAR_TYPE = "https://keycloak.org/auth-type/dynamic-oauth2-scope";
 
     @JsonProperty("type")
@@ -126,8 +135,18 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
                 '}';
     }
 
+    /**
+     * @param clazz Subtype of {@link AuthorizationDetailsJSONRepresentation}, which will be returned by calling this method
+     * @return this authorizationDetails content cast to the class specified by clazz parameter as long as parser corresponding to the type returned by {@link #getType}
+     * is able to parse this authorizationDetails and convert it to that subtype
+     */
+    public <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(Class<T> clazz) {
+        return AuthorizationDetailsParser.parseToSubtype(this, clazz);
+    }
+
+    @JsonIgnore
     public String getScopeNameFromCustomData() {
-        if (this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE) || this.getType().equalsIgnoreCase(STATIC_SCOPE_RAR_TYPE)) {
+        if (isParameterizedScopeRarType(this.getType()) || this.getType().equalsIgnoreCase(STATIC_SCOPE_RAR_TYPE)) {
             List<String> accessList = (List<String>) this.customData.get("access");
             if (accessList.isEmpty()) {
                 throw new RuntimeException("A RAR Scope representation should never have an empty access property");
@@ -137,11 +156,16 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
         return null;
     }
 
-    public String getDynamicScopeParamFromCustomData() {
-        if(this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE)) {
+    @JsonIgnore
+    public String getParameterizedScopeParamFromCustomData() {
+        if(isParameterizedScopeRarType(this.getType())) {
             return (String) this.customData.get("scope_parameter");
         }
         return null;
+    }
+
+    private static boolean isParameterizedScopeRarType(String type) {
+        return type.equalsIgnoreCase(PARAMETERIZED_SCOPE_RAR_TYPE) || type.equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE);
     }
 
     @Override
@@ -156,4 +180,6 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
     public int hashCode() {
         return Objects.hash(type, locations, actions, datatypes, identifier, privileges, customData);
     }
+
+
 }

@@ -7,9 +7,8 @@ export const FORMAT_DATE_AND_TIME: Intl.DateTimeFormatOptions = {
 
 export default function useFormatDate() {
   const { whoAmI } = useWhoAmI();
-  const locale = whoAmI.getLocale();
 
   return function formatDate(date: Date, options?: Intl.DateTimeFormatOptions) {
-    return date.toLocaleString(locale, options);
+    return date.toLocaleString(whoAmI.locale, options);
   };
 }

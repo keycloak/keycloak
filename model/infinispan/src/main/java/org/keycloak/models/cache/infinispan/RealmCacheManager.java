@@ -17,11 +17,14 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
+
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
@@ -29,9 +32,8 @@ import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -40,7 +42,7 @@ public class RealmCacheManager extends CacheManager {
 
     private static final Logger logger = Logger.getLogger(RealmCacheManager.class);
 
-    private final ConcurrentHashMap<String, String> cacheInteractions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ReentrantLock> cacheInteractions = new ConcurrentHashMap<>();
 
     @Override
     protected Logger getLogger() {
@@ -63,8 +65,9 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InRealmPredicate.create().realm(id), invalidations);
     }
 
-    public void roleAdded(String roleContainerId, Set<String> invalidations) {
+    public void roleAdded(String roleContainerId, String roleName, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getRolesCacheKey(roleContainerId));
+        invalidations.add(RealmCacheSession.getRoleByNameCacheKey(roleContainerId, roleName));
     }
 
     public void roleUpdated(String roleContainerId, String roleName, Set<String> invalidations) {
@@ -93,7 +96,6 @@ public class RealmCacheManager extends CacheManager {
 
     public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
-        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
         addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
     }
 
@@ -101,7 +103,7 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InGroupPredicate.create().group(groupId), invalidations);
     }
 
-    public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {
+    public void clientAdded(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getRealmClientsQueryCacheKey(realmId));
     }
 
@@ -136,13 +138,19 @@ public class RealmCacheManager extends CacheManager {
     public <T> T computeSerialized(KeycloakSession session, String id, BiFunction<String, KeycloakSession, T> compute) {
         // this locking is only to ensure that if there is a computation for the same id in the "synchronized" block below,
         // it will have the same object instance to lock the current execution until the other is finished.
-        Object lock = cacheInteractions.computeIfAbsent(id, s -> id);
+        ReentrantLock lock = cacheInteractions.computeIfAbsent(id, s -> new ReentrantLock());
         try {
-            synchronized (lock) {
-                return compute.apply(id, session);
+            lock.lock();
+            // in case the previous thread has removed the entry in the finally block
+            ReentrantLock existingLock = cacheInteractions.putIfAbsent(id, lock);
+            if (existingLock != lock) {
+                logger.debugf("Concurrent execution detected for realm '%s'.", id);
             }
+
+            return compute.apply(id, session);
         } finally {
-            cacheInteractions.remove(lock);
+            lock.unlock();
+            cacheInteractions.remove(id, lock);
         }
     }
 }

@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,18 +16,11 @@
  */
 package org.keycloak.testsuite.model.infinispan;
 
-import org.infinispan.Cache;
-import org.junit.Assume;
-import org.junit.Test;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
-import org.keycloak.testsuite.model.KeycloakModelTest;
-import org.keycloak.testsuite.model.RequireProvider;
-
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
@@ -35,6 +28,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
+
+import org.infinispan.Cache;
+import org.junit.Assume;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -55,6 +58,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
     @Test
     public void testCacheExpiration() throws Exception {
+        assumeFalse("Embedded caches not available for testing.", InfinispanUtils.isRemoteInfinispan());
 
         log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class));
 
@@ -66,8 +70,8 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
         });
         Instant expiryInstant = Instant.now().plusSeconds(30);
 
@@ -140,12 +144,26 @@ public class CacheExpirationTest extends KeycloakModelTest {
     // This is synchronized as it doesn't make sense to run this in parallel with multiple threads
     // as each invocation will run a garbage collection anyway.
     public synchronized Integer getNumberOfInstancesOfClass(Class<?> c, String pid) {
-        Process proc;
+        log.debug("PID: " + pid);
+
+        Path tempFile = null;
         try {
             // running jmap command will also trigger a garbage collection on the VM, but that might be VM specific
             // a test run with adding "-verbose:gc" showed the message "GC(23) Pause Full (Heap Inspection Initiated GC)" that
             // indicates a full GC run
-            proc = Runtime.getRuntime().exec("jmap -histo:live " + pid);
+
+            tempFile = Files.createTempFile("jmap-output", ".txt"); // not consuming the output directly to avoid potential deadlock
+
+            Process proc = new ProcessBuilder("jmap", "-histo:live", pid)
+                    .redirectOutput(tempFile.toFile())
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .start();
+
+            boolean finished = proc.waitFor(30, TimeUnit.SECONDS);
+            if (!finished) {
+                proc.destroyForcibly();
+                throw new RuntimeException("jmap timed out!");
+            }
 
             try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
                 AtomicInteger matchingLines = new AtomicInteger();
@@ -162,10 +180,18 @@ public class CacheExpirationTest extends KeycloakModelTest {
                   .map(m -> Integer.valueOf(m.group(1)))
                     .orElseGet(() -> matchingLines.get() == 0 ? null : 0);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.debug(ex);
-            Assume.assumeTrue("jmap not found or unsupported", false);
+            Assume.assumeTrue("jmap not found, unsupported or failed", false);
             return null;
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (Exception ex) {
+                    log.debug(ex);
+                }
+            }
         }
     }
 }

@@ -17,13 +17,22 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -35,22 +44,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @resource Scope Mappings
@@ -97,6 +98,7 @@ public class ScopeMappedClientResource {
         viewPermission.require();
 
         return KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
+                .filter(auth.roles()::canViewScopeMapping)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
@@ -127,7 +129,7 @@ public class ScopeMappedClientResource {
      *
      * Returns the roles for the client that are associated with the client's scope.
      *
-     * @param briefRepresentation if false, return roles with their attributes
+     * @param briefRepresentation if false, return roles with their attributes; attributes are only included for roles the caller is allowed to view
      * 
      * @return
      */
@@ -137,14 +139,13 @@ public class ScopeMappedClientResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
     @Operation(summary = "Get effective client roles Returns the roles for the client that are associated with the client's scope.")
-    public Stream<RoleRepresentation> getCompositeClientScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    public Stream<RoleRepresentation> getCompositeClientScopeMappings(@Parameter(description = "if false, return roles with their attributes; attributes are only included for roles the caller is allowed to view") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
-        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
-                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
         return scopedClient.getRolesStream()
                 .filter(scopeContainer::hasScope)
-                .map(toBriefRepresentation);
+                .filter(auth.roles()::canViewScopeMapping)
+                .map(ScopeMappedResource.toRepresentation(auth, briefRepresentation));
     }
 
     /**
@@ -165,6 +166,7 @@ public class ScopeMappedClientResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
+            auth.roles().requireMapClientScope(roleModel);
             scopeContainer.addScopeMapping(roleModel);
         }
 
@@ -185,6 +187,7 @@ public class ScopeMappedClientResource {
 
         if (roles == null) {
             roles = KeycloakModelUtils.getClientScopeMappingsStream(scopedClient, scopeContainer)
+                    .filter(auth.roles()::canMapClientScope)
                     .peek(scopeContainer::deleteScopeMapping)
                     .map(ModelToRepresentation::toBriefRepresentation)
                     .collect(Collectors.toList());
@@ -194,6 +197,7 @@ public class ScopeMappedClientResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
+                auth.roles().requireMapClientScope(roleModel);
                 scopeContainer.deleteScopeMapping(roleModel);
             }
         }

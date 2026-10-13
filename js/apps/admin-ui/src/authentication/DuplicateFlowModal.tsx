@@ -7,13 +7,11 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { NameDescription } from "./form/NameDescription";
 import { toFlow } from "./routes/Flow";
@@ -31,17 +29,20 @@ export const DuplicateFlowModal = ({
   toggleDialog,
   onComplete,
 }: DuplicateFlowModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
-  const { setValue, getValues, handleSubmit } = form;
+  const form = useForm<AuthenticationFlowRepresentation>({
+    mode: "onChange",
+    defaultValues: {
+      alias: t("copyOf", { name }),
+      description: description,
+    },
+  });
+  const { getValues, handleSubmit } = form;
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
-
-  useEffect(() => {
-    setValue("alias", t("copyOf", { name }));
-    setValue("description", description);
-  }, [name, description]);
 
   const onSubmit = async () => {
     const form = getValues();
@@ -62,7 +63,7 @@ export const DuplicateFlowModal = ({
         );
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toFlow({
           realm,
           id: newFlow.id!,

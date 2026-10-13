@@ -5,8 +5,8 @@ import { KeycloakAdminClient } from "../src/client.js";
 import type ClientRepresentation from "../src/defs/clientRepresentation.js";
 import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
+import type { SubGroupQuery } from "../src/resources/groups.js";
 import { credentials } from "./constants.js";
-import { SubGroupQuery } from "../src/resources/groups.js";
 
 const expect = chai.expect;
 
@@ -39,6 +39,17 @@ describe("Groups", () => {
     expect(group).to.be.null;
   });
 
+  it("create group with attributes", async () => {
+    const group = await kcAdminClient.groups.create({
+      name: "basic-group",
+      attributes: {
+        accessLevel: ["internal"],
+        project: ["alpha"],
+      },
+    });
+    expect(group.id).to.be.ok;
+  });
+
   it("list groups", async () => {
     const groups = await kcAdminClient.groups.find();
     expect(groups).to.be.ok;
@@ -46,7 +57,7 @@ describe("Groups", () => {
 
   it("count groups", async () => {
     const result = await kcAdminClient.groups.count();
-    expect(result.count).to.eq(1);
+    expect(result.count).to.eq(2);
   });
 
   it("count groups with filter", async () => {
@@ -70,7 +81,7 @@ describe("Groups", () => {
     const groupId = currentGroup.id;
     await kcAdminClient.groups.update(
       { id: groupId! },
-      { name: "another-group-name" },
+      { name: "another-group-name", description: "another-group-description" },
     );
 
     const group = await kcAdminClient.groups.findOne({
@@ -81,20 +92,15 @@ describe("Groups", () => {
     });
   });
 
-  it("set or create child", async () => {
-    const groupName = "child-group";
-    const groupId = currentGroup.id;
-    const childGroup = await kcAdminClient.groups.setOrCreateChild(
-      { id: groupId! },
-      { name: groupName },
+  it("crete sub-group", async () => {
+    const subGroupId = await kcAdminClient.groups.createChildGroup(
+      { id: currentGroup.id! },
+      {
+        name: "child-group",
+        description: "child-group",
+      },
     );
-
-    expect(childGroup.id).to.be.ok;
-
-    const group = (await kcAdminClient.groups.findOne({
-      id: groupId!,
-    }))!;
-    expect(group).to.be.ok;
+    expect(subGroupId).to.be.ok;
   });
 
   it("list subgroups", async () => {
@@ -116,7 +122,7 @@ describe("Groups", () => {
   describe("role-mappings", () => {
     before(async () => {
       // create new role
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       const { roleName: createdRoleName } = await kcAdminClient.roles.create({
         name: roleName,
       });
@@ -205,7 +211,7 @@ describe("Groups", () => {
   describe("client role-mappings", () => {
     before(async () => {
       // create new client
-      const clientId = faker.internet.userName();
+      const clientId = faker.internet.username();
       await kcAdminClient.clients.create({
         clientId,
       });
@@ -215,7 +221,7 @@ describe("Groups", () => {
       currentClient = clients[0];
 
       // create new client role
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       await kcAdminClient.clients.createRole({
         id: currentClient.id,
         name: roleName,
@@ -281,7 +287,7 @@ describe("Groups", () => {
     });
 
     it("del client role-mappings from group", async () => {
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       await kcAdminClient.clients.createRole({
         id: currentClient.id,
         name: roleName,

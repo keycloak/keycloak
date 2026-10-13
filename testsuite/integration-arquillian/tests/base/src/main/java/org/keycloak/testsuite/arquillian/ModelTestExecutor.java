@@ -20,15 +20,16 @@ package org.keycloak.testsuite.arquillian;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+
 import org.jboss.arquillian.container.test.impl.execution.LocalTestExecuter;
 import org.jboss.arquillian.container.test.impl.execution.event.LocalExecutionEvent;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestResult;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,7 +54,8 @@ public class ModelTestExecutor extends LocalTestExecuter {
                 // Model test - wrap the call inside the
                 TestContext ctx = testContext.get();
                 KeycloakTestingClient testingClient = ctx.getTestingClient();
-                testingClient.server().runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
+                String realmName = annotation.realmName();
+                testingClient.server(realmName).runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
 
                 result.setStatus(TestResult.Status.PASSED);
             } catch (Throwable e) {

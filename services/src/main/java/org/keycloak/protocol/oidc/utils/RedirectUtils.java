@@ -17,42 +17,56 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Encode;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
-import java.net.URI;
-import java.util.Collection;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RedirectUtils {
 
-    private static final Logger logger = Logger.getLogger(RedirectUtils.class);
+    public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
 
-    /**
-     * This method is deprecated for performance and security reasons and it is available just for the
-     * backwards compatibility. It is recommended to use some other methods of this class where the client is given as an argument
-     * to the method, so we know the client, which redirect-uri we are trying to resolve.
-     */
-    @Deprecated
-    public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
-        Set<String> validRedirects = getValidateRedirectUris(session);
-        return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
-    }
+    static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
+                                                                     OAuth2Constants.CODE,
+                                                                     OAuth2Constants.ID_TOKEN,
+                                                                     OAuth2Constants.ACCESS_TOKEN,
+                                                                     OAuth2Constants.TOKEN_TYPE,
+                                                                     OAuth2Constants.EXPIRES_IN,
+                                                                     OAuth2Constants.STATE,
+                                                                     OAuth2Constants.ISSUER,
+                                                                     OAuth2Constants.ERROR,
+                                                                     OAuth2Constants.ERROR_DESCRIPTION,
+                                                                     OAuth2Constants.SESSION_STATE,
+                                                                     OAuth2Constants.RESPONSE,
+                                                                     Constants.KC_ACTION,
+                                                                     Constants.KC_ACTION_STATUS
+                                                                   );
+
+    private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client) {
         return verifyRedirectUri(session, redirectUri, client, true);
@@ -78,17 +92,11 @@ public class RedirectUtils {
         return resolveValidRedirects;
     }
 
-    @Deprecated
-    private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        return session.clients().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
-          .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
-          .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
-          .flatMap(Collection::stream)
-          .collect(Collectors.toSet());
+    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+        return verifyRedirectUri(session, rootUrl, redirectUri, validRedirects, requireRedirectUri, FORBIDDEN_OIDC_PARAMS);
     }
 
-    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri, Set<String> forbiddenParams) {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
@@ -111,39 +119,29 @@ public class RedirectUtils {
                 return null;
             }
 
-            // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
-            String decodedRedirectUri = decodeRedirectUri(redirectUri);
-            URI decodedRedirect = toUri(decodedRedirectUri);
-            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect);
-            if (decodedRedirectUri == null) return null;
-
-            String r = decodedRedirectUri;
-            Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
-
-            String valid = matchesRedirects(resolveValidRedirects, r, true);
-
-            if (valid == null && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
-                int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
-
-                StringBuilder sb = new StringBuilder();
-                sb.append(r.substring(0, i));
-
-                i = r.indexOf('/', i);
-                if (i >= 0) {
-                    sb.append(r.substring(i));
-                }
-
-                r = sb.toString();
-
-                valid = matchesRedirects(resolveValidRedirects, r, true);
+            // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
+            if (containsForbiddenOidcParameters(originalRedirect, forbiddenParams)) {
+                return null;
             }
 
-            // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
-            redirectUri = getNormalizedRedirectUri(originalRedirect);
+            // check if the passed URI allows wildcards
+            boolean allowWildcards = areWildcardsAllowed(originalRedirect);
 
-            // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
-            if (valid == null) {
-                valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
+            String r = redirectUri;
+            Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
+
+            String valid = matchesRedirects(resolveValidRedirects, r, allowWildcards);
+
+            String redirectHost = originalRedirect.getHost();
+            if (valid == null && "http".equalsIgnoreCase(originalRedirect.getScheme())
+                    && redirectHost != null
+                    && LOOPBACK_INTERFACES.contains(redirectHost.toLowerCase(Locale.ROOT))) {
+                // Normalize scheme so default port 80 is omitted by KeycloakUriBuilder.
+                String redirectWithDefaultPort = KeycloakUriBuilder.fromUri(originalRedirect)
+                        .scheme(originalRedirect.getScheme().toLowerCase(Locale.ROOT))
+                        .port(80)
+                        .buildAsString();
+                valid = matchesRedirects(resolveValidRedirects, redirectWithDefaultPort, allowWildcards);
             }
 
             if (valid != null && !originalRedirect.isAbsolute()) {
@@ -154,10 +152,10 @@ public class RedirectUtils {
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
 
-            String scheme = decodedRedirect.getScheme();
+            String scheme = originalRedirect.getScheme();
             if (valid != null && scheme != null) {
                 // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
-                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                if (!schemeEqualsPrefix(valid, scheme) && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
                     logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
                     valid = null;
                 }
@@ -173,57 +171,63 @@ public class RedirectUtils {
         }
     }
 
+    private static boolean containsForbiddenOidcParameters(URI originalRedirect, Set<String> forbiddenParams) {
+        if (forbiddenParams == null || forbiddenParams.isEmpty()) {
+            return false;
+        }
+        //Check query string
+        String query = originalRedirect.getRawQuery();
+        if (hasForbiddenParams(query, forbiddenParams, "query", originalRedirect)) {
+            return true;
+        }
+
+        // Check fragment (response_mode=fragment puts OIDC params here)
+        String fragment = originalRedirect.getRawFragment();
+        return hasForbiddenParams(fragment, forbiddenParams, "fragment", originalRedirect);
+    }
+
+    private static boolean hasForbiddenParams(String paramString, Set<String> forbiddenParams, String component, URI originalRedirect) {
+        if (paramString == null || paramString.isEmpty()) {
+            return false;
+        }
+        MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(paramString);
+        for (String paramName : params.keySet()) {
+            if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
+                    .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
+                logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in %s: scheme=%s, host=%s, path=%s",
+                        paramName, component, originalRedirect.getScheme(), originalRedirect.getHost(), originalRedirect.getPath());
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static URI toUri(String redirectUri) {
         URI uri = null;
         if (redirectUri != null) {
             try {
                 uri = URI.create(redirectUri);
             } catch (IllegalArgumentException cause) {
-                logger.debug("Invalid redirect uri", cause);
+                logger.debugf(cause, "Invalid redirect uri %s", redirectUri);
             } catch (Exception cause) {
-                logger.debug("Unexpected error when parsing redirect uri", cause);
+                logger.debugf(cause, "Unexpected error when parsing redirect uri %s", redirectUri);
             }
         }
         return uri;
     }
 
-    private static String getNormalizedRedirectUri(URI uri) {
-        String redirectUri = null;
-        if (uri != null) {
-            redirectUri = uri.normalize().toString();
-        }
-        return redirectUri;
-    }
+    // any access to parent folder /../ is unsafe with or without encoding
+    //   <sep>             = / | %2F | %5C | \
+    //   <dots>            = "..", including %2E and %252E (double-encoded) variants
+    //   <terminator>      = / | %2F | %5C | \ | ; | %3B | %09 | %0A | %0D | %00 | end-of-input
+    private final static Pattern UNSAFE_PATH_PATTERN = Pattern.compile(
+            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|%252[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;|%3[bB]|%09|%0[aAdD]|%00|$)");
 
-    // Decode redirectUri. Only path is decoded as other elements can be encoded in the original URL or cannot be encoded at all.
-    // URL can be decoded multiple times (in case it was encoded multiple times, or some of it's parts were encoded multiple times)
-    private static String decodeRedirectUri(String redirectUri) {
-        if (redirectUri == null) return null;
-        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
-
-        try {
-            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
-            if (uriBuilder.getPath() == null) {
-                return redirectUri;
-            }
-            String encodedPath = uriBuilder.getPath();
-            String decodedPath;
-
-            for (int i = 0; i < MAX_DECODING_COUNT; i++) {
-                decodedPath = Encode.decode(encodedPath);
-                if (decodedPath.equals(encodedPath)) {
-                    // URL path is decoded. We can return it in the original redirect URI
-                    return uriBuilder.replacePath(decodedPath, false).buildAsString();
-                } else {
-                    // Next attempt
-                    encodedPath = decodedPath;
-                }
-            }
-        } catch (IllegalArgumentException iae) {
-            logger.debugf("Illegal redirect URI used: %s, Details: %s", redirectUri, iae.getMessage());
-        }
-        logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
-        return null;
+    private static boolean areWildcardsAllowed(URI redirectUri) {
+        // wildcards are only allowed if the authority is safely parseable (including
+        // registry-names Java leaves with getHost() null) and no unsafe pattern in path
+        return UriUtils.isAuthoritySafeForWildcards(redirectUri)
+                && (redirectUri.getRawPath() == null || !UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find());
     }
 
     private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {
@@ -240,33 +244,187 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    // removes the queryString, fragment and userInfo from the redirect
-    // to avoid comparing this when wildcards are used
-    private static String stripOffRedirectForWildcard(String redirect) {
-        return KeycloakUriBuilder.fromUri(redirect, false)
-                .preserveDefaultPort()
-                .userInfo(null)
-                .replaceQuery(null)
-                .fragment(null)
-                .buildAsString();
-    }
-
     // return the String that matched the redirect or null if not matched
     private static String matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
         logger.tracef("matchesRedirects: redirect URL to check: %s, allow wildcards: %b, Configured valid redirect URLs: %s", redirect, allowWildcards, validRedirects);
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
-                // strip off the userInfo, query or fragment components - we don't check them when wildcards are effective
-                String r = stripOffRedirectForWildcard(redirect);
-                // strip off *
-                int length = validRedirect.length() - 1;
-                validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return validRedirect;
-                // strip off trailing '/'
-                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
-                validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return validRedirect;
-            } else if (validRedirect.equals(redirect)) return validRedirect;
+            if ("*".equals(validRedirect)) {
+                // the valid redirect * is a full wildcard for http(s) even if the redirect URI does not allow wildcards
+                return validRedirect;
+            } else {
+                String validRedirectWildcard = allowWildcards ? checkValidRedirectWildcard(validRedirect) : null;
+                if (validRedirectWildcard != null) {
+                    // strip off the query or fragment components - we don't check them when wildcards are effective
+                    int idx = redirect.indexOf('?');
+                    if (idx == -1) {
+                        idx = redirect.indexOf('#');
+                    }
+                    String r = idx == -1 ? redirect : redirect.substring(0, idx);
+                    // Detect port wildcards before stripping '*'. The configured string must itself
+                    // end in :* (not a later path/SSP wildcard after an authority that contains :*),
+                    // and path wildcards with an empty port (e.g. https://example.com:/*) must still
+                    // compare ports normally rather than as a port wildcard.
+                    boolean portWildcard = isPortWildcard(validRedirectWildcard);
+                    // strip off *
+                    int length = validRedirectWildcard.length() - 1;
+                    validRedirectWildcard = validRedirectWildcard.substring(0, length);
+                    if (redirectUriStartsWith(r, validRedirectWildcard, portWildcard)) {
+                        return validRedirectWildcard;
+                    }
+                    // Port wildcards must not fall back to exact equality against the stripped prefix
+                    // (it would undo the explicit-port requirement).
+                    if (portWildcard) {
+                        continue;
+                    }
+                    // strip off trailing '/'
+                    if (length - 1 > 0 && validRedirectWildcard.charAt(length - 1) == '/') {
+                        length--;
+                    }
+                    validRedirectWildcard = validRedirectWildcard.substring(0, length);
+                    if (redirectUriEquals(validRedirectWildcard, r)) {
+                        return validRedirectWildcard;
+                    }
+                } else if (redirectUriEquals(validRedirect, redirect)) {
+                    return validRedirect;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean schemeEqualsPrefix(String uri, String scheme) {
+        String prefix = scheme + ":";
+        return uri.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
+    private static boolean redirectUriEquals(String configured, String redirect) {
+        if (configured.equals(redirect)) {
+            return true;
+        }
+        URI configuredUri = toUri(configured);
+        URI redirectUri = toUri(redirect);
+        if (configuredUri == null || redirectUri == null) {
+            return false;
+        }
+        if (!UriUtils.schemeHostAndPortEqual(configuredUri, redirectUri)) {
+            return false;
+        }
+        if (configuredUri.isOpaque() || redirectUri.isOpaque()) {
+            if (configuredUri.isOpaque() != redirectUri.isOpaque()) {
+                return false;
+            }
+            return Objects.equals(configuredUri.getRawSchemeSpecificPart(), redirectUri.getRawSchemeSpecificPart())
+                    && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
+        }
+        return UriUtils.rawUserInfoEqual(configuredUri, redirectUri)
+                && Objects.equals(configuredUri.getRawPath(), redirectUri.getRawPath())
+                && Objects.equals(configuredUri.getRawQuery(), redirectUri.getRawQuery())
+                && Objects.equals(configuredUri.getRawFragment(), redirectUri.getRawFragment());
+    }
+
+    private static boolean isPortWildcard(String validRedirectWildcard) {
+        // Trailing wildcard must be the port wildcard (string ends with :*). An embedded
+        // :* in the authority with a later path wildcard (e.g. https://example.com:*/callback*)
+        // is not a port wildcard. Authority must also end with :* so path patterns that
+        // merely end in ":*" (e.g. https://example.com:8443/foo:*) stay path wildcards.
+        if (!validRedirectWildcard.endsWith(":*")) {
+            return false;
+        }
+        URI uri = toUri(validRedirectWildcard);
+        String authority = uri != null ? uri.getRawAuthority() : null;
+        return authority != null && authority.endsWith(":*");
+    }
+
+    private static boolean redirectUriStartsWith(String redirect, String prefix, boolean portWildcard) {
+        if (redirect.startsWith(prefix)) {
+            return true;
+        }
+        URI redirectUri = toUri(redirect);
+        if (redirectUri == null) {
+            return false;
+        }
+        URI prefixUri = toUri(prefix);
+        if (prefixUri == null) {
+            return redirectUriStartsWithUnparseablePrefix(redirect, redirectUri, prefix);
+        }
+        String prefixAuthority = prefixUri.getRawAuthority();
+        if (portWildcard) {
+            if (!UriUtils.schemeAndHostEqual(redirectUri, prefixUri)) {
+                return false;
+            }
+            // Port wildcard requires an explicit port in the redirect (reject host-only URIs).
+            if (!UriUtils.hasExplicitPort(redirectUri)) {
+                return false;
+            }
+        } else if (prefixAuthority == null && redirectUri.getRawAuthority() == null) {
+            // Authority-less (opaque or path-only): compare schemes case-insensitively here;
+            // schemeHostAndPortEqual would compare the full SSP and reject valid prefixes.
+            String redirectScheme = redirectUri.getScheme();
+            String prefixScheme = prefixUri.getScheme();
+            if (redirectScheme == null || prefixScheme == null
+                    || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
+                return false;
+            }
+        } else if (!UriUtils.schemeHostAndPortEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        if (!UriUtils.rawUserInfoEqual(redirectUri, prefixUri)) {
+            return false;
+        }
+        if (redirectUri.isOpaque() || prefixUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            String prefixSsp = prefixUri.getRawSchemeSpecificPart() != null ? prefixUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
+        }
+        String redirectPath = redirectUri.getRawPath() != null ? redirectUri.getRawPath() : "";
+        String prefixPath = prefixUri.getRawPath() != null ? prefixUri.getRawPath() : "";
+        return redirectPath.startsWith(prefixPath);
+    }
+
+    private static boolean redirectUriStartsWithUnparseablePrefix(String redirect, URI redirectUri, String prefix) {
+        int colonIdx = prefix.indexOf(':');
+        if (colonIdx < 0) {
+            return false;
+        }
+        String prefixScheme = prefix.substring(0, colonIdx);
+        String prefixSsp = prefix.substring(colonIdx + 1);
+        String redirectScheme = redirectUri.getScheme();
+        if (redirectScheme == null || !redirectScheme.equalsIgnoreCase(prefixScheme)) {
+            return false;
+        }
+        if (redirectUri.isOpaque()) {
+            String redirectSsp = redirectUri.getRawSchemeSpecificPart() != null ? redirectUri.getRawSchemeSpecificPart() : "";
+            return redirectSsp.startsWith(prefixSsp);
+        }
+        if (prefixSsp.isEmpty()) {
+            return true;
+        }
+        if (!redirect.regionMatches(true, 0, prefix, 0, colonIdx + 1)) {
+            return false;
+        }
+        return redirect.substring(colonIdx + 1).startsWith(prefixSsp);
+    }
+
+    private static String checkValidRedirectWildcard(String validRedirect) {
+        if (!validRedirect.endsWith("*") || validRedirect.contains("?") || validRedirect.contains("#")) {
+            return null; // no wildcard as before
+        }
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(validRedirect, false);
+        if (uriBuilder.getPath() != null) {
+            return validRedirect; // wildcard valid on path
+        }
+        if (uriBuilder.getAuthority() != null) {
+            if (uriBuilder.getAuthority().equals("*") || uriBuilder.getAuthority().endsWith(":*")) {
+                return validRedirect; // on authority just full wildcard or on port
+            } else {
+                // treat the wildcard after the authority
+                validRedirect = validRedirect.substring(0, validRedirect.length() - 1);
+                validRedirect = validRedirect + "/*";
+                return validRedirect;
+            }
+        }
+        if (uriBuilder.getSsp() != null) {
+            return validRedirect; // wildcard valid on SSP
         }
         return null;
     }
@@ -288,12 +446,30 @@ public class RedirectUtils {
         return redirectUri;
     }
 
-    private static String getFirstValidRedirectUri(Collection<String> validRedirects) {
-        final String redirectUri = validRedirects.stream().findFirst().orElse(null);
-        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri) : null;
+    public static Set<String> resolveUrlsWithRedirects(KeycloakSession session, List<String> origUrls,
+                                                       String rootUrl, List<String> redirectUris, boolean returnAsOrigins) {
+
+        Set<String> refactoredUrls = (origUrls != null) ? new HashSet<>(origUrls) : new HashSet<>();
+        if (refactoredUrls.contains(Constants.INCLUDE_REDIRECTS)) {
+            refactoredUrls.remove(Constants.INCLUDE_REDIRECTS);
+
+            Set<String> redirectsToProcess = (redirectUris != null) ? new HashSet<>(redirectUris) : Collections.emptySet();
+            for (String redirectUri : resolveValidRedirects(session, rootUrl, redirectsToProcess)) {
+                if (isValidScheme(redirectUri)) {
+                    if (returnAsOrigins) {
+                        refactoredUrls.add(UriUtils.getOrigin(redirectUri));
+                    } else {
+                        refactoredUrls.add(redirectUri);
+                    }
+                }
+            }
+        }
+        return refactoredUrls;
     }
 
-    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
-        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects));
+    private static boolean isValidScheme(String url) {
+        return url != null
+                && (url.regionMatches(true, 0, "http://", 0, 7)
+                || url.regionMatches(true, 0, "https://", 0, 8));
     }
 }

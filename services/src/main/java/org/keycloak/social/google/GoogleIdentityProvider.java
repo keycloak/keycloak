@@ -16,6 +16,11 @@
  */
 package org.keycloak.social.google;
 
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -29,18 +34,21 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.Arrays;
+import com.fasterxml.jackson.databind.JsonNode;
+
+
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
+    public static final String ISSUER_URL = "https://accounts.google.com";
     public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     public static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     public static final String PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
+    public static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+    public static final String JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
@@ -52,6 +60,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
+        getConfig().setUseJwksUrl(true);
+        getConfig().setJwksUrl(JWKS_URL);
+        getConfig().setIssuer(ISSUER_URL);
+        getConfig().setAllowClientIdAsAudience(true);
     }
 
     @Override
@@ -64,7 +76,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         String uri = super.getUserInfoUrl();
         if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
             ClientConnection connection = session.getContext().getConnection();
-            if (connection != null) {
+            if (connection != null && connection.getRemoteAddr() != null) {
                 uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
             }
 
@@ -88,7 +100,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
     @Override
     protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
-        return exchangeExternalUserInfoValidationOnly(event, params);
+        BrokeredIdentityContext context = exchangeExternalUserInfoValidationOnly(event, params);
+        JsonNode profile = (JsonNode) context.getContextData().get(USER_INFO);
+        validateHostedDomain(getJsonProperty(profile, OIDC_PARAMETER_HOSTED_DOMAINS));
+        return context;
     }
 
     @Override
@@ -111,23 +126,24 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected JsonWebToken validateToken(final String encodedToken, final boolean ignoreAudience) {
         JsonWebToken token = super.validateToken(encodedToken, ignoreAudience);
-        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
-
-        if (hostedDomain == null) {
-            return token;
-        }
-
         Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
+        validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
+        return token;
+    }
 
-        if (receivedHdParam == null) {
-            throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
+    private void validateHostedDomain(String receivedHd) {
+        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+        if (hostedDomain == null || "*".equals(hostedDomain)) {
+            return;
         }
-
-        if (hostedDomain.equals("*") || Arrays.asList(hostedDomain.split(",")).contains(receivedHdParam))  {
-            return token;
+        if (receivedHd != null && List.of(hostedDomain.split(",")).contains(receivedHd)) {
+            return;
         }
-
         throw new IdentityBrokerException("Hosted domain does not match.");
     }
 
+    @Override
+    public boolean isAssertionReuseAllowed() {
+        return true;
+    }
 }

@@ -1,28 +1,37 @@
 ## Building from source
 
-Ensure you have JDK 17 (or newer) and Git installed
+Ensure you have **JDK 17**, **JDK 21** or **JDK 25** and Git installed
 
     java -version
     git --version
 
+Newer versions of the JDK are not supported. If you have multiple JDK versions
+installed, you can specify which one to use during the build by setting the `JAVA_HOME`
+environment variable (this should be the directory containing `/bin/` or `/jre/`).
+
+    JAVA_HOME=/path/to/jdk-25/ ./mvnw clean install
+
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
 
----    
+---                                                                      
+
 First clone the Keycloak repository:
     
     git clone https://github.com/keycloak/keycloak.git
     cd keycloak
-    
-To build Keycloak run:
+
+To build Keycloak without running the tests:
+
+    ./mvnw clean install -DskipTests
+
+To build Keycloak and run the tests (note that this might take several hours):
 
     ./mvnw clean install
-    
-This will build all modules and run the testsuite.
 
 To build Keycloak with adapters run:
 
-    ./mvnw clean install -Pdistribution
+    ./mvnw clean install -DskipTests -Pdistribution
 
 To build only the server run:
 
@@ -47,15 +56,19 @@ To enable it by default, add it to the `MAVEN_OPTS` environment variable:
 
     export MAVEN_OPTS="-Dmaven.build.cache.enabled=true"
 
+---
+**NOTE**
+
+To ensure that development in a branch does not break compatibility with existing releases, proto-schema-compatibility-maven-plugin checks may be run, which can cause builds to fail in proxy environments.
+To avoid this, you can skip this check by adding the following property:
+
+    -DskipProtoLock=true
+
+---
+
 ### Starting Keycloak
 
-To start Keycloak during development first build as specified above, then run:
-
-    java -jar quarkus/server/target/lib/quarkus-run.jar start-dev
-
-To stop the server press `Ctrl + C`.
-
-For more details, follow the [`quarkus` module documentation](../quarkus/README.md).
+Follow the [`quarkus` module documentation](../quarkus/README.md#running-in-keycloak-development-mode) for instructions how to run Keycloak in dev environment.
 
 ## Working with the codebase
 

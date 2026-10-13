@@ -3,13 +3,14 @@ package org.keycloak.crypto.def.test;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.rule.CryptoInitRule;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -28,6 +29,16 @@ public class DefaultKeyStoreTypesTest {
                 KeystoreUtil.KeystoreFormat.JKS,
                 KeystoreUtil.KeystoreFormat.PKCS12,
                 KeystoreUtil.KeystoreFormat.BCFKS));
+    }
+
+    @Test
+    public void testTruststoreFormats() {
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.JKS,
+                KeystoreUtil.TruststoreFormat.PKCS12,
+                KeystoreUtil.TruststoreFormat.BCFKS));
+        Assert.assertEquals(KeystoreUtil.TruststoreFormat.PKCS12, CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType());
     }
 
     @Test

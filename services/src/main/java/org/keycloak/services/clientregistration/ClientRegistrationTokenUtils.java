@@ -17,20 +17,27 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
-import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -50,39 +57,37 @@ public class ClientRegistrationTokenUtils {
 
         if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();
-        } else {
-            RegistrationAccessToken regToken = new RegistrationAccessToken();
-            regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
-
-            regToken.type(auth.getJwt().getType());
-            regToken.id(auth.getJwt().getId());
-            regToken.issuedAt(Time.currentTime());
-            regToken.expiration(0);
-            regToken.issuer(auth.getJwt().getIssuer());
-            regToken.audience(auth.getJwt().getIssuer());
-
-            String token = new JWSBuilder().jsonContent(regToken).sign(signer);
-            return token;
         }
+
+        RegistrationAccessToken regToken = new RegistrationAccessToken();
+        regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
+
+        regToken.type(auth.getJwt().getType());
+        regToken.id(auth.getJwt().getId());
+        regToken.issuedNow();
+        regToken.issuer(auth.getJwt().getIssuer());
+        regToken.audience(auth.getJwt().getIssuer());
+
+        return new JWSBuilder().jsonContent(regToken).sign(signer);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth);
+    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth) {
-        String id = KeycloakModelUtils.generateId();
+    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
+        String id = SecretGenerator.getInstance().generateSecureID();
         client.setRegistrationToken(id);
 
         RegistrationAccessToken regToken = new RegistrationAccessToken();
         regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
 
-        return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
+        return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0, webOrigins);
     }
 
-    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model) {
+    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model, List<String> webOrigins) {
         InitialAccessToken initialToken = new InitialAccessToken();
-        return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
+        return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0, webOrigins);
     }
 
     public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token) {
@@ -91,12 +96,17 @@ public class ClientRegistrationTokenUtils {
         }
 
         String kid;
-        JsonWebToken jwt;
+        AccessToken jwt;
         try {
-            TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
                     .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            if (TokenUtil.TOKEN_TYPE_BEARER.equals(verifier.getToken().getType())) {
+                TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier, session, realm, session.getContext().getUri());
+                new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+            }
+
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             kid = verifierContext.getKid();
@@ -117,15 +127,22 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration, List<String> webOrigins) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
-        jwt.issuedAt(Time.currentTime());
-        jwt.expiration(expiration);
+        jwt.issuedNow();
+        jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
+
+        Set<String> webOriginsSet = webOrigins != null ? new HashSet<>(webOrigins) : null;
+        if (jwt instanceof InitialAccessToken) {
+            ((InitialAccessToken) jwt).setAllowedOrigins(webOriginsSet);
+        } else if (jwt instanceof RegistrationAccessToken) {
+            ((RegistrationAccessToken) jwt).setAllowedOrigins(webOriginsSet);
+        }
 
         return session.tokens().encode(jwt);
     }
@@ -137,10 +154,10 @@ public class ClientRegistrationTokenUtils {
     protected static class TokenVerification {
 
         private final String kid;
-        private final JsonWebToken jwt;
+        private final AccessToken jwt;
         private final RuntimeException error;
 
-        public static TokenVerification success(String kid, JsonWebToken jwt) {
+        public static TokenVerification success(String kid, AccessToken jwt) {
             return new TokenVerification(kid, jwt, null);
         }
 
@@ -148,7 +165,7 @@ public class ClientRegistrationTokenUtils {
             return new TokenVerification(null,null, error);
         }
 
-        private TokenVerification(String kid, JsonWebToken jwt, RuntimeException error) {
+        private TokenVerification(String kid, AccessToken jwt, RuntimeException error) {
             this.kid = kid;
             this.jwt = jwt;
             this.error = error;
@@ -158,7 +175,7 @@ public class ClientRegistrationTokenUtils {
             return kid;
         }
 
-        public JsonWebToken getJwt() {
+        public AccessToken getJwt() {
             return jwt;
         }
 

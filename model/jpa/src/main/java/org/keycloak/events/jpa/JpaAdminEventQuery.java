@@ -17,10 +17,11 @@
 
 package org.keycloak.events.jpa;
 
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -29,11 +30,13 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Stream;
+
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+
+import org.hibernate.jpa.AvailableHints;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -121,14 +124,26 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
+    @Deprecated
     public AdminEventQuery fromTime(Date fromTime) {
-        predicates.add(cb.greaterThanOrEqualTo(root.<Long>get("time"), fromTime.getTime()));
+        return fromTime(fromTime.getTime());
+    }
+
+    @Override
+    public AdminEventQuery fromTime(long fromTime) {
+        predicates.add(cb.greaterThanOrEqualTo(root.get("time"), fromTime));
         return this;
     }
 
     @Override
+    @Deprecated
     public AdminEventQuery toTime(Date toTime) {
-        predicates.add(cb.lessThanOrEqualTo(root.<Long>get("time"), toTime.getTime()));
+        return toTime(toTime.getTime());
+    }
+
+    @Override
+    public AdminEventQuery toTime(long toTime) {
+        predicates.add(cb.lessThanOrEqualTo(root.get("time"), toTime));
         return this;
     }
 
@@ -169,6 +184,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
         }
 
         TypedQuery<AdminEventEntity> query = em.createQuery(cq);
+        query.setHint(AvailableHints.HINT_READ_ONLY, true);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
     }

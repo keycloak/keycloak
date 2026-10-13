@@ -17,10 +17,25 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
+import javax.naming.directory.SearchControls;
+import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.storage.StorageUnavailableException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -30,14 +45,11 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 
-import javax.naming.NamingException;
-import javax.naming.directory.SearchControls;
-import javax.naming.ldap.LdapContext;
-import javax.naming.ldap.LdapName;
-
-import java.util.*;
+import org.jboss.logging.Logger;
 
 import static java.util.Collections.unmodifiableSet;
+
+import static org.keycloak.common.util.Throwables.isCausedBy;
 
 /**
  * Default IdentityQuery implementation.
@@ -71,8 +83,21 @@ public class LDAPQuery implements AutoCloseable {
 
     private int searchScope = SearchControls.SUBTREE_SCOPE;
 
+    // When true, the custom User LDAP filter from federation settings will be applied
+    // to lookupById queries. Should only be true for user searches, not group/role searches.
+    private boolean userQuery = false;
+
     public LDAPQuery(LDAPStorageProvider ldapProvider) {
         this.ldapFedProvider = ldapProvider;
+    }
+
+    public boolean isUserQuery() {
+        return userQuery;
+    }
+
+    public LDAPQuery setUserQuery(boolean userQuery) {
+        this.userQuery = userQuery;
+        return this;
     }
 
     public LDAPQuery addWhereCondition(Condition... condition) {
@@ -175,7 +200,10 @@ public class LDAPQuery implements AutoCloseable {
                 result.add(ldapObject);
             }
         } catch (Exception e) {
-            throw new ModelException("LDAP Query failed", e);
+            if (isCausedBy(e, NameNotFoundException.class, CommunicationException.class, AuthenticationException.class)) {
+                throw new StorageUnavailableException("LDAP server is unavailable for provider [" + ldapFedProvider.getModel().getName() + "]", e);
+            }
+            throw new ModelException("Failed to fetch results from the LDAP [" + ldapFedProvider.getModel().getName() + "] provider", e);
         }
 
         return result;
@@ -204,7 +232,8 @@ public class LDAPQuery implements AutoCloseable {
 
     public LDAPQuery initPagination() throws NamingException {
         this.ldapContextManager = LDAPContextManager.create(ldapFedProvider.getSession(),
-                ldapFedProvider.getLdapIdentityStore().getConfig());
+                ldapFedProvider.getLdapIdentityStore().getConfig(),
+                ldapFedProvider.getLdapIdentityStore().getRequestTimer());
         this.paginationContext = new PaginationContext(ldapContextManager.getLdapContext());
         return this;
     }

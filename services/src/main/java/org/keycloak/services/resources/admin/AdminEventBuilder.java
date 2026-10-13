@@ -16,10 +16,18 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -29,34 +37,31 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Predicate;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 public class AdminEventBuilder {
 
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
-    private final AdminAuth auth;
-    private final String ipAddress;
-    private final RealmModel realm;
-    private final AdminEvent adminEvent;
-    private final Map<String, EventListenerProvider> listeners;
+    protected final AdminAuth auth;
+    protected final String ipAddress;
+    protected final RealmModel realm;
+    protected final AdminEvent adminEvent;
+    protected final Map<String, EventListenerProvider> listeners;
+    protected final KeycloakSession session;
 
-    private EventStoreProvider store;
+    protected EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
+        this(realm, auth, session, clientConnection.getRemoteHost(), null);
     }
 
-    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
+    protected AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
         this.realm = realm;
         this.listeners = new HashMap<>();
         updateStore(session);
@@ -74,6 +79,7 @@ public class AdminEventBuilder {
             authUser(auth.getUser());
             authIpAddress(ipAddress);
         }
+        this.session = session;
     }
 
     /**
@@ -99,11 +105,7 @@ public class AdminEventBuilder {
 
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
-        return this;
-    }
-
-    public AdminEventBuilder realm(String realmId) {
-        adminEvent.setRealmId(realmId);
+        adminEvent.setRealmName(realm.getName());
         return this;
     }
 
@@ -119,7 +121,7 @@ public class AdminEventBuilder {
         return this.updateStore(session).addListeners(session);
     }
 
-    private AdminEventBuilder updateStore(KeycloakSession session) {
+    protected AdminEventBuilder updateStore(KeycloakSession session) {
         if (realm.isAdminEventsEnabled() && store == null) {
             this.store = session.getProvider(EventStoreProvider.class);
             if (store == null) {
@@ -129,17 +131,17 @@ public class AdminEventBuilder {
         return this;
     }
 
-    private AdminEventBuilder addListeners(KeycloakSession session) {
-        realm.getEventsListenersStream()
-                .filter(((Predicate<String>) listeners::containsKey).negate())
-                .forEach(id -> {
-                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                    if (listener != null) {
-                        listeners.put(id, listener);
-                    } else {
-                        ServicesLogger.LOGGER.providerNotFound(id);
+    protected AdminEventBuilder addListeners(KeycloakSession session) {
+        HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
+        session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                .filter(providerFactory -> realmListeners.contains(providerFactory.getId()) || ((EventListenerProviderFactory) providerFactory).isGlobal())
+                .forEach(providerFactory -> {
+                    realmListeners.remove(providerFactory.getId());
+                    if (!listeners.containsKey(providerFactory.getId())) {
+                        listeners.put(providerFactory.getId(), ((EventListenerProviderFactory) providerFactory).create(session));
                     }
                 });
+        realmListeners.forEach(ServicesLogger.LOGGER::providerNotFound);
         return this;
     }
 
@@ -169,6 +171,7 @@ public class AdminEventBuilder {
         } else {
             authDetails.setRealmId(realm.getId());
         }
+        authDetails.setRealmName(realm.getName());
         adminEvent.setAuthDetails(authDetails);
         return this;
     }
@@ -230,13 +233,15 @@ public class AdminEventBuilder {
     public AdminEventBuilder resourcePath(UriInfo uriInfo, String id) {
         StringBuilder sb = new StringBuilder();
         sb.append(getResourcePath(uriInfo));
-        sb.append("/");
+        if (!sb.toString().endsWith("/")) {
+            sb.append("/");
+        }
         sb.append(id);
         adminEvent.setResourcePath(sb.toString());
         return this;
     }
 
-    private String getResourcePath(UriInfo uriInfo) {
+    protected String getResourcePath(UriInfo uriInfo) {
         String path = uriInfo.getPath();
 
         StringBuilder sb = new StringBuilder();
@@ -253,15 +258,31 @@ public class AdminEventBuilder {
             return this;
         }
 
-        if (value instanceof UserRepresentation) {
-            StripSecretsUtils.strip((UserRepresentation) value);
-        }
+        stripSecretsFromRepresentation(value);
 
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return this;
+    }
+
+    protected void stripSecretsFromRepresentation(Object value){
+        stripSecrets(session, value);
+    }
+
+    public AdminEventBuilder detail(String key, String value) {
+        if (StringUtil.isBlank(value)) {
+            return this;
+        }
+
+        if (adminEvent.getDetails() == null) {
+            adminEvent.setDetails(new HashMap<>());
+        }
+
+        adminEvent.getDetails().put(key, value);
+
         return this;
     }
 
@@ -273,7 +294,7 @@ public class AdminEventBuilder {
         send();
     }
 
-    private void send() {
+    protected void send() {
         boolean includeRepresentation = realm.isAdminEventsDetailsEnabled();
 
         // Event needs to be copied because the same builder can be used with another event

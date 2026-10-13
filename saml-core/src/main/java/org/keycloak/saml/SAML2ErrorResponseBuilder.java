@@ -19,10 +19,12 @@ package org.keycloak.saml;
 
 import java.util.LinkedList;
 import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -30,6 +32,7 @@ import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.factories.JBossSAMLAuthnResponseFactory;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
 import org.w3c.dom.Document;
 
 /**
@@ -39,12 +42,19 @@ import org.w3c.dom.Document;
 public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2ErrorResponseBuilder> {
 
     protected String status;
+    protected String statusMessage;
     protected String destination;
     protected NameIDType issuer;
+    protected String inResponseTo;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2ErrorResponseBuilder status(String status) {
         this.status = status;
+        return this;
+    }
+
+    public SAML2ErrorResponseBuilder statusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
         return this;
     }
 
@@ -62,6 +72,11 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
         return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
+    public SAML2ErrorResponseBuilder inResponseTo(String inResponseTo) {
+        this.inResponseTo = inResponseTo;
+        return this;
+    }
+
     @Override
     public SAML2ErrorResponseBuilder addExtension(NodeGenerator extension) {
         this.extensions.add(extension);
@@ -72,8 +87,11 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
 
         try {
             StatusResponseType statusResponse = new ResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
+            statusResponse.setInResponseTo(inResponseTo);
 
-            statusResponse.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
+            StatusType statusType = JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status);
+            statusType.setStatusMessage(statusMessage);
+            statusResponse.setStatus(statusType);
             statusResponse.setIssuer(issuer);
             statusResponse.setDestination(destination);
 

@@ -17,24 +17,25 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.openqa.selenium.WebDriver;
+import java.time.Duration;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractPage {
-
-    @ArquillianResource
-    protected SuiteContext suiteContext;
 
     @ArquillianResource
     protected WebDriver driver;
@@ -43,30 +44,30 @@ public abstract class AbstractPage {
     protected OAuthClient oauth;
 
     public void assertCurrent() {
-        String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent());
+        waitForPage(this);
     }
 
-    protected URI getAuthServerRoot() {
-        try {
-            return KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getBrowserContextRoot().toURI()).path("/auth/").build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    abstract public boolean isCurrent();
-
-    abstract public void open() throws Exception;
-
-    public WebDriver getDriver() {
-        return driver;
-    }
+    public abstract String getExpectedPageId();
 
     public void setDriver(WebDriver driver) {
         this.driver = driver ;
         oauth.setDriver(driver);
     }
 
+    private void waitForPage(AbstractPage page) {
+        String expectedPageId = page.getExpectedPageId();
+        try {
+            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(getCurrentPageId()));
+        } catch (TimeoutException e) {
+            Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + getCurrentPageId() + "' after timeout");
+        }
+    }
+
+    private WebDriverWait createDefaultWait() {
+        return new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(50));
+    }
+
+    private String getCurrentPageId() {
+        return driver.findElement(By.xpath("//body")).getAttribute("data-page-id");
+    }
 }

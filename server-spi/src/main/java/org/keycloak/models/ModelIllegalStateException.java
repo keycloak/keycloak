@@ -16,8 +16,6 @@
  */
 package org.keycloak.models;
 
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Thrown when data can't be retrieved for the model.
@@ -41,9 +39,5 @@ public class ModelIllegalStateException extends ModelException {
 
     public ModelIllegalStateException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public ModelIllegalStateException(Throwable cause) {
-        super(cause);
     }
 }

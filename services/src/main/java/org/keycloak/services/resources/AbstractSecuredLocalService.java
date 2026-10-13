@@ -16,24 +16,11 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.AbstractOAuthClient;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.Auth;
-import org.keycloak.services.messages.Messages;
-import org.keycloak.util.TokenUtil;
+import java.net.URI;
+import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
@@ -42,8 +29,23 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.Set;
+
+import org.keycloak.AbstractOAuthClient;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.services.managers.Auth;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * Helper class for securing local services.  Provides login basics as well as CSRF check basics
@@ -183,8 +185,8 @@ public abstract class AbstractSecuredLocalService {
             URI url = uriBuilder.build();
 
             NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
-            logger.debug("NewCookie: " + cookie.toString());
-            logger.debug("Oauth Redirect to: " + url);
+            logger.debugf("NewCookie: %s", cookie);
+            logger.debugf("Oauth Redirect to: %s", url);
             return Response.status(302)
                     .location(url)
                     .cookie(cookie).build();

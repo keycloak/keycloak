@@ -16,7 +16,10 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
@@ -28,9 +31,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +41,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @RequireProvider(RealmProvider.class)
 public class RealmModelTest extends KeycloakModelTest {
@@ -51,15 +53,22 @@ public class RealmModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        this.removeRealm(s, realmId);
+        if (realm1Id != null) this.removeRealm(s, realm1Id);
+        if (realm2Id != null) this.removeRealm(s, realm2Id);
+    }
+
+    private void removeRealm(KeycloakSession s, String realmId) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
-        if (realm1Id != null) s.realms().removeRealm(realm1Id);
-        if (realm2Id != null) s.realms().removeRealm(realm2Id);
     }
 
     @Test
@@ -134,8 +143,7 @@ public class RealmModelTest extends KeycloakModelTest {
         });
 
         // Remove realm 2
-        inComittedTransaction( (Consumer<KeycloakSession>)  keycloakSession -> keycloakSession.realms().removeRealm(realm2Id));
-
+        inComittedTransaction( (Consumer<KeycloakSession>)  keycloakSession -> this.removeRealm(keycloakSession, realm2Id));
 
         // ResourceServer in realm1 must still exist
         ResourceServer resourceServer = withRealm(realm1Id, (keycloakSession, realmModel) -> {
@@ -144,6 +152,52 @@ public class RealmModelTest extends KeycloakModelTest {
         });
 
         assertThat(resourceServer, notNullValue());
+    }
+
+    @Test
+    public void testRealmAttributeUpdateEvents() {
+        ProviderEventListener providerEventListener = null;
+        try {
+            List<RealmModel.RealmAttributeUpdateEvent> attributeUpdateEvents = new ArrayList<>();
+            providerEventListener = event -> {
+                if (event instanceof RealmModel.RealmAttributeUpdateEvent attributeUpdateEvent
+                        && "attr-a".equals(attributeUpdateEvent.getAttributeName())) {
+                    attributeUpdateEvents.add(attributeUpdateEvent);
+                }
+            };
+            getFactory().register(providerEventListener);
+
+            withRealm(realmId, (session, realm) -> {
+                // creating an attribute publishes an event
+                realm.setAttribute("attr-a", "value-1");
+                assertThat(attributeUpdateEvents, hasSize(1));
+                assertThat(attributeUpdateEvents.get(0).getAttributeValue(), equalTo("value-1"));
+
+                // setting the same value again is a no-op and publishes nothing
+                realm.setAttribute("attr-a", "value-1");
+                assertThat(attributeUpdateEvents, hasSize(1));
+
+                // changing the value publishes an event
+                realm.setAttribute("attr-a", "value-2");
+                assertThat(attributeUpdateEvents, hasSize(2));
+                assertThat(attributeUpdateEvents.get(1).getAttributeValue(), equalTo("value-2"));
+
+                // removing the attribute publishes an event with a null value
+                realm.removeAttribute("attr-a");
+                assertThat(attributeUpdateEvents, hasSize(3));
+                assertThat(attributeUpdateEvents.get(2).getAttributeValue(), nullValue());
+
+                // removing an absent attribute publishes nothing
+                realm.removeAttribute("attr-a");
+                assertThat(attributeUpdateEvents, hasSize(3));
+
+                return null;
+            });
+        } finally {
+            if (providerEventListener != null) {
+                getFactory().unregister(providerEventListener);
+            }
+        }
     }
 
     @Test

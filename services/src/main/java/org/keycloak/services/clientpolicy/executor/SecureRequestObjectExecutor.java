@@ -17,15 +17,12 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +36,9 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -47,7 +47,8 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
     private static final Logger logger = Logger.getLogger(SecureRequestObjectExecutor.class);
 
-    public static final Integer DEFAULT_AVAILABLE_PERIOD = Integer.valueOf(3600); // (sec) from FAPI 1.0 Advanced requirement
+    public static final Integer DEFAULT_AVAILABLE_PERIOD = 3600; // (sec) from FAPI 1.0 Advanced requirement
+    public static final Integer DEFAULT_ALLOWED_CLOCK_SKEW = 15; // (sec) from FAPI 2.0 requirement
 
     private final KeycloakSession session;
     private Configuration configuration;
@@ -63,6 +64,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             configuration.setVerifyNbf(Boolean.TRUE);
             configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
             configuration.setEncryptionRequired(Boolean.FALSE);
+            configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
         } else {
             configuration = config;
             if (config.isVerifyNbf() == null) {
@@ -74,6 +76,9 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             if (config.isEncryptionRequired() == null) {
                 configuration.setEncryptionRequired(Boolean.FALSE);
             }
+            if (config.getAllowedClockSkew() == null) {
+                configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
+            }
         }
     }
 
@@ -83,12 +88,14 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
     }
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
-        @JsonProperty("available-period")
+        @JsonProperty(SecureRequestObjectExecutorFactory.AVAILABLE_PERIOD)
         protected Integer availablePeriod;
-        @JsonProperty("verify-nbf")
+        @JsonProperty(SecureRequestObjectExecutorFactory.VERIFY_NBF)
         protected Boolean verifyNbf;
         @JsonProperty(SecureRequestObjectExecutorFactory.ENCRYPTION_REQUIRED)
         private Boolean encryptionRequired;
+        @JsonProperty(SecureRequestObjectExecutorFactory.ALLOWED_CLOCK_SKEW)
+        protected Integer allowedClockSkew;
 
         public Integer getAvailablePeriod() {
             return availablePeriod;
@@ -112,6 +119,14 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         public Boolean isEncryptionRequired() {
             return encryptionRequired;
+        }
+    
+        public Integer getAllowedClockSkew() {
+            return allowedClockSkew;
+        }
+
+        public void setAllowedClockSkew(Integer allowedClockSkew) {
+            this.allowedClockSkew = allowedClockSkew;
         }
     }
 
@@ -183,6 +198,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         // "nbf" check is not needed for FAPI-RW ID2 security profile
         // while needed for FAPI 1.0 Advanced security profile
+        // "nbf" check with clock skew is needed for FAPI 2.0
         if (Optional.ofNullable(configuration.isVerifyNbf()).orElse(Boolean.FALSE).booleanValue()) {
             // check whether "nbf" claim exists
             if (requestObject.get("nbf") == null) {
@@ -192,7 +208,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
             // check whether request object not yet being processed
             long nbf = requestObject.get("nbf").asLong();
-            if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
+            if (Time.currentTime() < nbf - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
                 logger.trace("request object not yet being processed.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed", context);
             }
@@ -202,6 +218,15 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             if (exp - nbf > availablePeriod) {
                 logger.trace("request object's available period is long.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long", context);
+            }
+        }
+
+        // check "iat" with clock skew
+        if (requestObject.get("iat") != null) {
+            long iat = requestObject.get("iat").asLong();
+            if (Time.currentTime() < iat - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
+                logger.trace("request object issed in the future.");
+                throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request issued in the future", context);
             }
         }
 

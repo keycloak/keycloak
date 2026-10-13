@@ -1,15 +1,15 @@
 package org.keycloak.testsuite.utils.tls;
 
+import java.io.FileInputStream;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.FileInputStream;
-import java.nio.file.Paths;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 
 public class TLSUtils {
 

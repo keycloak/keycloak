@@ -1,11 +1,11 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import javax.xml.namespace.QName;
+
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
 import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
-
-import javax.xml.namespace.QName;
 
 
 /**

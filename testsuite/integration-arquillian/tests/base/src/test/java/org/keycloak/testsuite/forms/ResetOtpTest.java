@@ -1,26 +1,29 @@
 package org.keycloak.testsuite.forms;
 
-import static org.wildfly.common.Assert.assertTrue;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.ResetOtpPage;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Test;
+
+import static org.wildfly.common.Assert.assertTrue;
 
 public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
@@ -37,6 +40,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
     private static String resetOtpExecutionId;
     private static String resetOtpConfigId;
     private static String flowId;
+    private static String origResetCredentialsFlowId;
 
     private static final String FLOW_ALIAS = "otpResetTestFlow";
     private static final String RESET_OTP_TEST_USER_REMOVE_NONE = "reset-otp-test-user-remove-none";
@@ -89,21 +93,32 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         var userRemoveNone = UserBuilder.create();
         userRemoveNone.username("reset-otp-test-user-remove-none");
-        userRemoveNone.secret(removeNoneCredential);
+        userRemoveNone.credential(removeNoneCredential);
 
         var userRemoveOne = UserBuilder.create();
         userRemoveOne.username("reset-otp-test-user-remove-one");
-        userRemoveOne.secret(removeOneCredential1);
-        userRemoveOne.secret(removeOneCredential2);
+        userRemoveOne.credential(removeOneCredential1);
+        userRemoveOne.credential(removeOneCredential2);
 
         var userRemoveAll = UserBuilder.create();
         userRemoveAll.username("reset-otp-test-user-remove-all");
-        userRemoveAll.secret(removeAllCredential1);
-        userRemoveAll.secret(removeAllCredential2);
+        userRemoveAll.credential(removeAllCredential1);
+        userRemoveAll.credential(removeAllCredential2);
 
-        RealmBuilder.edit(testRealm).user(userRemoveNone.build()).user(userRemoveOne.build()).user(userRemoveAll.build());
+        RealmBuilder.update(testRealm).users(userRemoveNone.build()).users(userRemoveOne.build()).users(userRemoveAll.build());
 
         realmResource = adminClient.realm(testRealm.getRealm());
+    }
+
+    @After
+    public void afterTest() {
+        var realmRep = realmResource.toRepresentation();
+        realmRep.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
+        realmResource.update(realmRep);
+
+        flowId = null;
+        resetOtpExecutionId = null;
+        resetOtpConfigId = null;
     }
 
     @Test
@@ -117,7 +132,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 1);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_NONE);
 
@@ -139,7 +154,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 1);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_NONE);
 
@@ -161,7 +176,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 2);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ONE);
         resetOtpPage.selectOtp(1);
@@ -175,11 +190,11 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         // Since we selected to remove the second OTP, the first one should still be there.
         assertTrue("Otp1-RemoveOne".equals(otpCredentials.get(0).getId()));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ONE);
         // Here the last remaining OTP is selected automatically.
-        resetOtpPage.isCurrent();
+        resetOtpPage.assertCurrent();
         resetOtpPage.submitOtpReset();
 
         credentials = realmResource.users().get(userRep.getId()).credentials();
@@ -200,7 +215,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 2);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ALL);
 
@@ -273,5 +288,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         else {
             realmResource.flows().updateAuthenticatorConfig(resetOtpConfigId, resetOtpAuthConfigRep);
         }
+
+        getCleanup().addAuthenticationFlowId(flowId);
     }
 }

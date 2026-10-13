@@ -32,6 +32,7 @@ public class Event {
     private EventType type;
 
     private String realmId;
+    private String realmName;
 
     private String clientId;
 
@@ -77,6 +78,14 @@ public class Event {
         this.realmId = maxLength(realmId, 255);
     }
 
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
+    }
+
     public String getClientId() {
         return clientId;
     }
@@ -98,9 +107,14 @@ public class Event {
     }
 
     public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+        this.sessionId = maxLength(sessionId, 255);
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
@@ -125,12 +139,14 @@ public class Event {
         this.details = details;
     }
 
+    @Override
     public Event clone() {
         Event clone = new Event();
         clone.id = id;
         clone.time = time;
         clone.type = type;
         clone.realmId = realmId;
+        clone.realmName = realmName;
         clone.clientId = clientId;
         clone.userId = userId;
         clone.sessionId = sessionId;

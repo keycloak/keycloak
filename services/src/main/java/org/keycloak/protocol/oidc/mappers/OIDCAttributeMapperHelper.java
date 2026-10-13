@@ -17,20 +17,6 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import static org.keycloak.utils.JsonUtils.splitClaimPath;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.IDToken;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.util.JsonSerialization;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +26,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
 
 /**
@@ -109,6 +113,13 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put(IDToken.ACR, (claim, mapperName, token, value) -> {
             token.setAcr(value.toString());
         });
+        tmpToken.put(IDToken.AUTH_TIME, (claim, mapperName, token, value) -> {
+            try {
+                token.setAuth_time(Long.parseLong(value.toString()));
+            } catch (NumberFormatException ignored){
+
+            }
+        });
         tmpToken.put("aud", (claim, mapperName, token, value) -> {
             if (value instanceof Collection) {
                 String[] audiences = ((Collection<?>) value).stream().map(Object::toString).toArray(String[]::new);
@@ -128,7 +139,6 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put("iss", notAllowedInToken);
         tmpToken.put("scope", notAllowedInToken);
         tmpToken.put(IDToken.NONCE, notAllowedInToken);
-        tmpToken.put(IDToken.AUTH_TIME, notAllowedInToken);
         tmpToken.put(IDToken.SESSION_STATE, notAllowedInToken);
         tokenPropertySetters = Collections.unmodifiableMap(tmpToken);
 
@@ -172,8 +182,7 @@ public class OIDCAttributeMapperHelper {
         }
 
         String type = mappingModel.getConfig().get(JSON_TYPE);
-        Object converted = convertToType(type, attributeValue);
-        return converted != null ? converted : attributeValue;
+        return convertToType(type, attributeValue);
     }
 
     private static <X, T> List<T> transform(List<X> attributeValue, Function<X, T> mapper) {
@@ -192,7 +201,7 @@ public class OIDCAttributeMapperHelper {
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getBoolean);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                return null;
             case "String":
                 if (attributeValue instanceof String) return attributeValue;
                 if (attributeValue instanceof List) {
@@ -205,23 +214,23 @@ public class OIDCAttributeMapperHelper {
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getLong);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                return null;
             case "int":
                 Integer intObject = getInteger(attributeValue);
                 if (intObject != null) return intObject;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                return null;
             case "JSON":
                 JsonNode jsonNodeObject = getJsonNode(attributeValue);
                 if (jsonNodeObject != null) return jsonNodeObject;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getJsonNode);
                 }
-                throw new RuntimeException("cannot map type for token claim");
-            default:
                 return null;
+            default:
+                return attributeValue;
         }
     }
 
@@ -232,13 +241,25 @@ public class OIDCAttributeMapperHelper {
 
     private static Long getLong(Object attributeValue) {
         if (attributeValue instanceof Long) return (Long) attributeValue;
-        if (attributeValue instanceof String) return Long.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            try {
+                return Long.valueOf((String) attributeValue);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
         return null;
     }
 
     private static Integer getInteger(Object attributeValue) {
         if (attributeValue instanceof Integer) return (Integer) attributeValue;
-        if (attributeValue instanceof String) return Integer.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            try {
+                return Integer.valueOf((String) attributeValue);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
         return null;
     }
 
@@ -265,6 +286,55 @@ public class OIDCAttributeMapperHelper {
             }
         }
         return null;
+    }
+
+    /**
+     * Get or initialize the organization claim as a mutable Map for composition between organization mappers.
+     * Handles conversion from OrganizationMembershipMapper output to Map structure that
+     * OrganizationGroupMembershipMapper can add to. Supports ObjectNode (JSON type), Collection or String
+     * (String type), existing Map, or creates empty Map if null.
+     *
+     * @param token the token
+     * @param effectiveModel the effective model of the protocol mapper to retrieve the name of the organization claim
+     * @return a mutable Map that can be manipulated; changes will be reflected in the token
+     */
+    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, ProtocolMapperModel effectiveModel) {
+        List<String> claimPath = splitClaimPath(effectiveModel.getConfig().get(TOKEN_CLAIM_NAME));
+        Object existingClaim = getNestedClaimValue(token.getOtherClaims(), claimPath);
+        Map<String, Object> result;
+
+        if (existingClaim instanceof ObjectNode) {
+            // OrganizationMembershipMapper with JSON_TYPE="JSON"
+            result = JsonSerialization.mapper.convertValue(existingClaim, Map.class);
+        } else if (existingClaim instanceof Collection || existingClaim instanceof String) {
+            // OrganizationMembershipMapper with String type - single alias or Collection of aliases
+            result = new HashMap<>();
+            Stream<?> items = existingClaim instanceof Collection ? ((Collection<?>) existingClaim).stream() : Stream.of(existingClaim);
+            items.filter(Objects::nonNull).forEach(item -> result.put(item.toString(), new HashMap<>()));
+        } else if (existingClaim instanceof Map) {
+            // Already a Map, use as-is
+            result = (Map<String, Object>) existingClaim;
+        } else {
+            result = new HashMap<>();
+        }
+
+        OIDCAttributeMapperHelper.mapClaim(token, effectiveModel, result);
+        return result;
+    }
+
+    private static Object getNestedClaimValue(Map<String, Object> claims, List<String> path) {
+        if (path.isEmpty()) return null;
+        Map<String, Object> current = claims;
+        for (int i = 0; i < path.size() - 1; i++) {
+            Object next = current.get(path.get(i));
+            if (!(next instanceof Map)) {
+                return null;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> nested = (Map<String, Object>) next;
+            current = nested;
+        }
+        return current.get(path.get(path.size() - 1));
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
@@ -307,28 +377,7 @@ public class OIDCAttributeMapperHelper {
         }
 
         // map value to the other claims map
-        mapClaim(split, attributeValue, jsonObject);
-    }
-
-    private static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject) {
-        final int length = split.size();
-        int i = 0;
-        for (String component : split) {
-            i++;
-            if (i == length) {
-                jsonObject.put(component, attributeValue);
-            } else {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);
-
-                if (nested == null) {
-                    nested = new HashMap<>();
-                    jsonObject.put(component, nested);
-                }
-
-                jsonObject = nested;
-            }
-        }
+        JsonUtils.mapClaim(split, attributeValue, jsonObject, isMultivalued(mappingModel));
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
@@ -415,22 +464,22 @@ public class OIDCAttributeMapperHelper {
         property.setLabel(TOKEN_CLAIM_NAME_LABEL);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText(TOKEN_CLAIM_NAME_TOOLTIP);
+        property.setRequired(true);
         configProperties.add(property);
     }
 
     public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties) {
+        addJsonTypeConfig(configProperties, List.of("String", "long", "int", "boolean", "JSON"), null);
+    }
+
+    public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties, List<String> supportedTypes, String defaultValue) {
         ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
-        List<String> types = new ArrayList<>(5);
-        types.add("String");
-        types.add("long");
-        types.add("int");
-        types.add("boolean");
-        types.add("JSON");
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setOptions(types);
+        property.setOptions(supportedTypes);
         property.setHelpText(JSON_TYPE_TOOLTIP);
+        property.setDefaultValue(defaultValue);
         configProperties.add(property);
     }
 

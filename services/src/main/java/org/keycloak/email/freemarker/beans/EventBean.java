@@ -17,12 +17,12 @@
 
 package org.keycloak.email.freemarker.beans;
 
-import org.keycloak.events.Event;
-
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.events.Event;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,6 +46,11 @@ public class EventBean {
         return event.getClientId();
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return event.getIpAddress();
     }
@@ -56,6 +61,12 @@ public class EventBean {
             details.add(new DetailBean(e));
         }
         return details;
+    }
+
+    public String getDetail(String name) {
+        return event.getDetails() != null
+                ? event.getDetails().get(name)
+                : null;
     }
 
     public static class DetailBean {

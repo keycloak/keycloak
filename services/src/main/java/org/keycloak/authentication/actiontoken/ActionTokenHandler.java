@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.keycloak.authentication.actiontoken;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
@@ -24,7 +26,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import jakarta.ws.rs.core.Response;
 
 /**
  *  Handler of the action token.
@@ -34,6 +35,16 @@ import jakarta.ws.rs.core.Response;
  *  @author hmlnarik
  */
 public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
+
+    /**
+     * This method allows to parse the token and extract information from it after initial verification.
+     * @param token Token.
+     * @param tokenContext Token context.
+     * @return Error response if the initial verification fails, {@code null} otherwise.
+     */
+    default Response preHandleToken(T token, ActionTokenContext<T> tokenContext) {
+        return null;
+    }
 
     /**
      * Performs the action as per the token details. This method is only called if all verifiers

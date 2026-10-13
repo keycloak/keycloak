@@ -17,10 +17,7 @@
 
 package org.keycloak.federation.kerberos.impl;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.KerberosJdkProvider;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
-
+import java.io.IOException;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -28,7 +25,11 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
+
+import org.keycloak.common.util.KerberosJdkProvider;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,7 +47,7 @@ public class KerberosServerSubjectAuthenticator {
     };
 
 
-    private final CommonKerberosConfig config;
+    protected final CommonKerberosConfig config;
     private LoginContext loginContext;
 
 
@@ -56,7 +57,7 @@ public class KerberosServerSubjectAuthenticator {
 
 
     public Subject authenticateServerSubject() throws LoginException {
-        Configuration config = createJaasConfiguration();
+        Configuration config = createServerJaasConfiguration();
         loginContext = new LoginContext("does-not-matter", null, NO_CALLBACK_HANDLER, config);
         loginContext.login();
         return loginContext.getSubject();
@@ -74,7 +75,7 @@ public class KerberosServerSubjectAuthenticator {
     }
 
 
-    protected Configuration createJaasConfiguration() {
+    protected Configuration createServerJaasConfiguration() {
         return KerberosJdkProvider.getProvider().createJaasConfigurationForServer(config.getKeyTab(), config.getServerPrincipal(), config.isDebug());
     }
 

@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.pages;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
+import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -34,25 +34,12 @@ public class EnterRecoveryAuthnCodePage extends LanguageComboboxAwarePage {
     }
 
     public void clickSignInButton() {
-        signInButton.click();
+        UIUtils.clickLink(signInButton);
     }
 
     @Override
-    public boolean isCurrent() {
-
-        // Check the backup code text box and label available
-        try {
-            driver.findElement(By.id("recoveryCodeInput"));
-            driver.findElement(By.xpath("//label[@for='recoveryCodeInput']"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
+    public String getExpectedPageId() {
+        return "login-login-recovery-authn-code-input";
     }
 
     public String getFeedbackText() {

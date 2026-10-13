@@ -1,19 +1,26 @@
 import {
+  IconMapper,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   DataListAction,
   DataListCell,
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  Icon,
   Label,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
 import { LinkIcon, UnlinkIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { IconMapper, useAlerts } from "ui-shared";
-import { linkAccount, unLinkAccount } from "../api/methods";
+
+import { unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 
 type AccountRowProps = {
   account: LinkedAccountRepresentation;
@@ -21,25 +28,23 @@ type AccountRowProps = {
   refresh: () => void;
 };
 
-export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
+export const AccountRow = ({
+  account,
+  isLinked = false,
+  refresh,
+}: AccountRowProps) => {
   const { t } = useTranslation();
-  const { addAlert, addError } = useAlerts();
+  const context = useEnvironment();
+  const { login } = context.keycloak;
+  const { addAlert, addError } = useAccountAlerts();
 
   const unLink = async (account: LinkedAccountRepresentation) => {
     try {
-      await unLinkAccount(account);
+      await unLinkAccount(context, account);
       addAlert(t("unLinkSuccess"));
+      refresh();
     } catch (error) {
-      addError(t("unLinkError", { error }).toString());
-    }
-  };
-
-  const link = async (account: LinkedAccountRepresentation) => {
-    try {
-      const { accountLinkUri } = await linkAccount(account);
-      location.href = accountLinkUri;
-    } catch (error) {
-      addError(t("linkError", { error }).toString());
+      addError("unLinkError", error);
     }
   };
 
@@ -49,24 +54,27 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
       key={account.providerName}
       aria-label={t("linkedAccounts")}
     >
-      <DataListItemRow key={account.providerName}>
+      <DataListItemRow
+        key={account.providerName}
+        data-testid={`linked-accounts/${account.providerName}`}
+      >
         <DataListItemCells
           dataListCells={[
             <DataListCell key="idp">
               <Split>
-                <SplitItem className="pf-u-mr-sm">
+                <SplitItem className="pf-v5-u-mr-sm">
                   <IconMapper icon={account.providerName} />
                 </SplitItem>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-name`}>
-                    {account.displayName}
+                    {label(t, account.displayName)}
                   </span>
                 </SplitItem>
               </Split>
             </DataListCell>,
             <DataListCell key="label">
               <Split>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-label`}>
                     <Label color={account.social ? "blue" : "green"}>
                       {t(account.social ? "socialLogin" : "systemDefined")}
@@ -77,7 +85,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
             </DataListCell>,
             <DataListCell key="username" width={5}>
               <Split>
-                <SplitItem className="pf-u-my-xs" isFilled>
+                <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-username`}>
                     {account.linkedUsername}
                   </span>
@@ -97,16 +105,26 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
               variant="link"
               onClick={() => unLink(account)}
             >
-              <UnlinkIcon size="sm" /> {t("unLink")}
+              <Icon size="sm">
+                <UnlinkIcon />
+              </Icon>{" "}
+              {t("unLink")}
             </Button>
           )}
           {!isLinked && (
             <Button
               id={`${account.providerAlias}-idp-link`}
               variant="link"
-              onClick={() => link(account)}
+              onClick={async () => {
+                await login({
+                  action: "idp_link:" + account.providerAlias,
+                });
+              }}
             >
-              <LinkIcon size="sm" /> {t("link")}
+              <Icon size="sm">
+                <LinkIcon />
+              </Icon>{" "}
+              {t("link")}
             </Button>
           )}
         </DataListAction>

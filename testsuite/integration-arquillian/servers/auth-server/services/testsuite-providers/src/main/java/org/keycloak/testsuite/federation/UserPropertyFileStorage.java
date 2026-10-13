@@ -16,10 +16,21 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,17 +45,6 @@ import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -61,7 +61,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean federatedStorageEnabled;
-    
+
     public static Map<String, List<UserPropertyFileStorageCall>> storageCalls = new HashMap<>();
 
     public static class UserPropertyFileStorageCall implements Serializable {
@@ -87,7 +87,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return max;
         }
     }
-    
+
     public UserPropertyFileStorage(KeycloakSession session, ComponentModel model, Properties userPasswords) {
         this.session = session;
         this.model = model;
@@ -109,14 +109,18 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public int getUsersCount(RealmModel realm, Map<String, String> params) {
         addCall(COUNT_SEARCH_METHOD);
-        
-        return (int) searchForUser(realm, params.get(UserModel.SEARCH), null, null, username -> username.contains(params.get(UserModel.SEARCH))).count();
+
+        String search = params.get(UserModel.SEARCH);
+        return (int) searchForUser(realm, search, null, null, username -> search == null || username.contains(search)).count();
     }
 
     @Override
     public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
-        final String username = storageId.getExternalId();
+        String username = storageId.getExternalId();
+        if ("uppercase".equalsIgnoreCase(username)) {
+            username = username.toLowerCase();
+        }
         if (!userPasswords.containsKey(username)) return null;
 
         return createUser(realm, username);
@@ -127,6 +131,9 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return new AbstractUserAdapterFederatedStorage.Streams(session, realm,  model) {
                 @Override
                 public String getUsername() {
+                    if ("uppercase".equalsIgnoreCase(username)) {
+                        return username.toUpperCase();
+                    }
                     return username;
                 }
 
@@ -139,12 +146,15 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
             return new AbstractUserAdapter.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
+                    if ("uppercase".equalsIgnoreCase(username)) {
+                        return username.toUpperCase();
+                    }
                     return username;
                 }
 
                 @Override
                 public SubjectCredentialManager credentialManager() {
-                    return new LegacyUserCredentialManager(session, realm, this);
+                    return session.users().getUserCredentialManager(this);
                 }
             };
         }
@@ -191,7 +201,11 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
-            String pw = (String)userPasswords.get(user.getUsername());
+            String username = user.getUsername();
+            if ("uppercase".equalsIgnoreCase(username)) {
+                username = user.getUsername().toLowerCase();
+            }
+            String pw = (String)userPasswords.get(username);
             return pw != null && pw.equals(input.getChallengeResponse());
         } else {
             return false;
@@ -201,6 +215,11 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public int getUsersCount(RealmModel realm) {
         return userPasswords.size();
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        return 0;
     }
 
 //    @Override

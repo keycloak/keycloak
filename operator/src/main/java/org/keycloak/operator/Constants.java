@@ -16,8 +16,7 @@
  */
 package org.keycloak.operator;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +24,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
-    public static final String CRDS_VERSION = "v2alpha1";
+    public static final String CRDS_VERSION = "v2beta1";
+    public static final String CRDS_VERSION_ALPHA = "v2alpha1";
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";
@@ -35,13 +37,21 @@ public final class Constants {
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
-    public static final String KEYCLOAK_COMPONENT_LABEL = "operator.keycloak.org/component";
-    public static final String KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION = "operator.keycloak.org/watched-secret-hash";
-    public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
-    public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
+    public static final String KEYCLOAK_KIND_ANNOTATION = "operator.keycloak.org/kind";
+    public static final String KEYCLOAK_PAUSE_ANNOTATION = "operator.keycloak.org/pause";
+    public static final String KEYCLOAK_PAUSED_ANNOTATION = "operator.keycloak.org/paused";
     public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";
+    public static final String KEYCLOAK_RECREATE_UPDATE_ANNOTATION = "operator.keycloak.org/recreate-update";
+    public static final String KEYCLOAK_UPDATE_REASON_ANNOTATION = "operator.keycloak.org/update-reason";
+    public static final String KEYCLOAK_UPDATE_REVISION_ANNOTATION = "operator.keycloak.org/update-revision";
+    public static final String KEYCLOAK_UPDATE_HASH_ANNOTATION = "operator.keycloak.org/update-hash";
+    public static final String APP_LABEL = "app";
+    public static final String CLIENT_ID_KEY = "client-id";
+    public static final String CLIENT_SECRET_KEY = "client-secret";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
 
     public static final Map<String, String> DEFAULT_LABELS = Collections
             .unmodifiableMap(Stream.of(DEFAULT_LABELS_AS_STRING.split(",")).map(s -> s.split("="))
@@ -49,9 +59,7 @@ public final class Constants {
 
     public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
             new ValueOrSecret("health-enabled", "true"),
-            new ValueOrSecret("cache", "ispn"),
-            new ValueOrSecret("cache-stack", "kubernetes"),
-            new ValueOrSecret("proxy", "passthrough")
+            new ValueOrSecret("cache", "ispn")
     );
 
 
@@ -62,14 +70,28 @@ public final class Constants {
     public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
     public static final String KEYCLOAK_SERVICE_SUFFIX = "-service";
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
+    public static final String KEYCLOAK_DISCOVERY_TCP_PORT_NAME = "tcp";
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+    public static final Integer KEYCLOAK_JGROUPS_DATA_PORT = 7800;
+    public static final Integer KEYCLOAK_JGROUPS_FD_PORT = 57800;
+    public static final String KEYCLOAK_JGROUPS_PROTOCOL = "TCP";
+    public static final Integer KEYCLOAK_MANAGEMENT_PORT = 9000;
+    public static final String KEYCLOAK_MANAGEMENT_PORT_NAME = "management";
 
     public static final String KEYCLOAK_INGRESS_SUFFIX = "-ingress";
 
     public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
     public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
 
-    public static final String TRUSTSTORES_FOLDER = "/opt/keycloak/conf/truststores";
+    public static final String CONFIG_FOLDER = "/opt/keycloak/conf";
+    public static final String TRUSTSTORES_FOLDER = CONFIG_FOLDER + "/truststores";
+    public static final String CACHE_CONFIG_SUBFOLDER = "cache";
+    public static final String CACHE_CONFIG_FOLDER = CONFIG_FOLDER + "/" + CACHE_CONFIG_SUBFOLDER;
 
-    public static String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
+    public static final String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
+    public static final String KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY = "http-management-relative-path";
+
+    public static final String KEYCLOAK_NETWORK_POLICY_SUFFIX = "-network-policy";
+
+    public static final Duration RETRY_DURATION = Duration.ofSeconds(10);
 }

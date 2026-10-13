@@ -16,25 +16,36 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.jboss.logging.Logger;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.KeyManagementException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPBody;
+import jakarta.xml.soap.SOAPEnvelope;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPHeader;
+import jakarta.xml.soap.SOAPHeaderElement;
+import jakarta.xml.soap.SOAPMessage;
+import jakarta.xml.ws.soap.SOAPFaultException;
+
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
@@ -62,46 +73,37 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.testsuite.util.saml.StepWithCheckers;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.xml.soap.MessageFactory;
-import jakarta.xml.soap.SOAPBody;
-import jakarta.xml.soap.SOAPEnvelope;
-import jakarta.xml.soap.SOAPException;
-import jakarta.xml.soap.SOAPHeader;
-import jakarta.xml.soap.SOAPHeaderElement;
-import jakarta.xml.soap.SOAPMessage;
-import jakarta.xml.ws.soap.SOAPFaultException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyManagementException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlUtils.getSamlDeploymentForClient;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmlnarik
@@ -148,7 +150,7 @@ public class SamlClient {
             @Override
             public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlResponseFromForm(responsePage);
             }
@@ -176,7 +178,7 @@ public class SamlClient {
             @Override
             public String extractRelayState(CloseableHttpResponse response) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlRelayStateFromForm(responsePage);
             }
@@ -200,10 +202,13 @@ public class SamlClient {
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
 
-                    if (privateKeyStr != null && publicKeyStr != null) {
+                    if (privateKeyStr != null && (publicKeyStr != null || certificateStr != null)) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
-                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        PublicKey publicKey = publicKeyStr != null? org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr) : null;
                         X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                        if (publicKey == null) {
+                            publicKey = cert.getPublicKey();
+                        }
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                                 .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
@@ -224,14 +229,7 @@ public class SamlClient {
                     parameters.add(new BasicNameValuePair(RELAY_STATE, relayState));
                 }
 
-                UrlEncodedFormEntity formEntity;
-
-                try {
-                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
-
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
                 post.setEntity(formEntity);
 
                 return post;
@@ -329,10 +327,13 @@ public class SamlClient {
             public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr, String certificateStr) {
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
-                    if (privateKeyStr != null && publicKeyStr != null) {
+                    if (privateKeyStr != null && (publicKeyStr != null || certificateStr != null)) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
-                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        PublicKey publicKey = publicKeyStr != null? org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr) : null;
                         X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                        if (publicKey == null) {
+                            publicKey = cert.getPublicKey();
+                        }
                         binding.signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                                 .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
@@ -712,8 +713,8 @@ public class SamlClient {
 
         String samlResponse = encodedParams.getFirst(GeneralConstants.SAML_RESPONSE_KEY);
         String samlRequest = encodedParams.getFirst(GeneralConstants.SAML_REQUEST_KEY);
-        assertTrue("Only one SAMLRequest/SAMLResponse check", (samlResponse != null && samlRequest == null)
-                || (samlResponse == null && samlRequest != null));
+        assertTrue((samlResponse != null && samlRequest == null)
+                || (samlResponse == null && samlRequest != null), "Only one SAMLRequest/SAMLResponse check");
 
         String samlDoc = RedirectBindingUtil.urlDecode(samlResponse != null? samlResponse : samlRequest);
         SAMLDocumentHolder documentHolder = SAMLRequestParser.parseResponseRedirectBinding(samlDoc);

@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.saml.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,9 +28,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.
@@ -44,6 +44,8 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_PROPERTY_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
+        property.setRequired(Boolean.TRUE);
         configProperties.add(property);
         AttributeStatementHelper.setConfigProperties(configProperties);
 

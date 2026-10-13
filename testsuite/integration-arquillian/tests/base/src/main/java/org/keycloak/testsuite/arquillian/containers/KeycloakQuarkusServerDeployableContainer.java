@@ -1,9 +1,11 @@
 package org.keycloak.testsuite.arquillian.containers;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
@@ -23,16 +25,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.apache.commons.exec.StreamPumper;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.logging.Logger;
 import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.logging.Logger;
 
 /**
  * @author mhajas
  */
-public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDeployableContainer {
+public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDeployableContainer implements RemoteContainer {
 
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
@@ -40,15 +42,32 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
 
     private Process container;
     private Thread stdoutForwarderThread;
+    private LogProcessor logProcessor;
 
     @Override
     public void start() throws LifecycleException {
         try {
             importRealm();
             container = startContainer();
-            stdoutForwarderThread = new Thread(new StreamPumper(container.getInputStream(), System.out));
+            logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
+            stdoutForwarderThread = new Thread(logProcessor);
             stdoutForwarderThread.start();
-            waitForReadiness();
+
+            try {
+                waitForReadiness();
+            } catch (Exception e) {
+                if (logProcessor.containsBuildTimeOptionsError()) {
+                    log.warn("The build time options have values that differ from what is persisted. Restarting container...");
+                    container.destroy();
+                    container = startContainer();
+                    logProcessor = new LogProcessor(new BufferedReader(new InputStreamReader(container.getInputStream())));
+                    stdoutForwarderThread = new Thread(logProcessor);
+                    stdoutForwarderThread.start();
+                    waitForReadiness();
+                } else {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -77,11 +96,12 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         if (args != null) {
             commands.addAll(Arrays.asList(args));
         }
+        log.debugf("Non-server process arguments: %s", commands);
         ProcessBuilder pb = new ProcessBuilder(commands);
         Process p = pb.directory(wrkDir).inheritIO().start();
         try {
-            if (!p.waitFor(60, TimeUnit.SECONDS)) {
-                throw new IOException("Command " + command + " did not finished in 60 seconds");
+            if (!p.waitFor(300, TimeUnit.SECONDS)) {
+                throw new IOException("Command " + command + " did not finished in 300 seconds");
             }
             if (p.exitValue() != 0) {
                 throw new IOException("Command " + command + " was executed with exit status " + p.exitValue());
@@ -98,7 +118,9 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
             log.infof("Importing realm from file '%s'", importFileName);
 
             final URL url = getClass().getResource("/migration-test/" + importFileName);
-            if (url == null) throw new IllegalArgumentException("Cannot find migration import file");
+            if (url == null) {
+                throw new IllegalArgumentException("Cannot find migration import file");
+            }
 
             final Path path = Paths.get(url.toURI());
             final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
@@ -147,11 +169,6 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        if (!StoreProvider.JPA.equals(StoreProvider.getCurrentProvider())) {
-            builder.environment().put("KEYCLOAK_ADMIN", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-        }
-
         if (restart.compareAndSet(false, true)) {
             deleteDirectory(configuration.getProvidersPath().resolve("data"));
         }
@@ -164,9 +181,6 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         List<String> commands = new ArrayList<>(args);
 
         commands.add(0, getCommand());
-        commands.add("--optimized");
-
-        log.debugf("Quarkus parameters: %s", commands);
 
         return commands;
     }
@@ -174,15 +188,8 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     private ProcessBuilder getProcessBuilder() {
         Map<String, String> env = new HashMap<>();
         String[] processCommands = getArgs(env).toArray(new String[0]);
-        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
-            for (int i = 0; i < processCommands.length; i++) {
-                if (processCommands[i].startsWith("--db-url=")) {
-                    processCommands[i]= "--db-url=\"" + processCommands[i].substring(9) + "\"";
-                }
-            }
-        }
+        log.debugf("Quarkus process arguments: %s", Arrays.asList(processCommands));
         ProcessBuilder pb = new ProcessBuilder(processCommands);
-
         pb.environment().putAll(env);
 
         return pb;
@@ -236,6 +243,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     public static void deleteDirectory(final Path directory) throws IOException {
         if (Files.isDirectory(directory, new LinkOption[0])) {
             Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
                         Files.delete(file);
@@ -245,6 +253,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
                     return FileVisitResult.CONTINUE;
                 }
 
+                @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                     try {
                         Files.delete(dir);
@@ -254,6 +263,57 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
                     return FileVisitResult.CONTINUE;
                 }
             });
+        }
+    }
+
+    @Override
+    protected void checkLiveness() {
+        if (!container.isAlive()) {
+            throw new IllegalStateException("Keycloak unexpectedly died :(");
+        }
+    }
+
+    @Override
+    public String getRemoteLog() {
+        return logProcessor.getBufferedLog();
+    }
+
+    private static class LogProcessor implements Runnable {
+        public static final int MAX_LOGGED_LINES = 512;
+        private List<String> loggedLines = new ArrayList<>();
+        private BufferedReader inputReader;
+
+        public LogProcessor(BufferedReader inputReader) {
+            this.inputReader = inputReader;
+        }
+
+        @Override
+        public void run() {
+            String line;
+            try {
+                while ((line = inputReader.readLine()) != null) {
+                    System.out.println(line);
+
+                    loggedLines.add(line);
+                    if (loggedLines.size() > MAX_LOGGED_LINES) {
+                        loggedLines.remove(0);
+                    }
+                }
+            } catch (IOException e) {
+                if ("Stream closed".equals(e.getMessage())) {
+                    System.out.println("Log has ended");
+                } else {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        public String getBufferedLog() {
+            return String.join("\n", loggedLines);
+        }
+
+        public boolean containsBuildTimeOptionsError() {
+            return loggedLines.stream().anyMatch(line -> line.contains("The following build time options have values that differ from what is persisted"));
         }
     }
 }

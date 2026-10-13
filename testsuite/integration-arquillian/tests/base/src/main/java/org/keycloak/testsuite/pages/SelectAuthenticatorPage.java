@@ -3,9 +3,7 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -29,11 +27,11 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
 
     // Corresponds to the WebAuthn authenticators
-    public static final String SECURITY_KEY = "Security Key";
+    public static final String SECURITY_KEY = "Passkey";
 
     public static final String RECOVERY_AUTHN_CODES = "Recovery Authentication Code";
     /**
-     * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]
+     * Return list of names like for example [ "Password", "Authenticator Application", "Passkey" ]
      */
     public List<String> getAvailableLoginMethods() {
         List<WebElement> rows = getLoginMethodsRows();
@@ -80,22 +78,8 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
-            return false;
-        }
-        // Check the authenticators-choice available
-        try {
-            driver.findElement(By.id("kc-select-credential-form"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-        return true;
+    public String getExpectedPageId() {
+        return "login-select-authenticator";
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

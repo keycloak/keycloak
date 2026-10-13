@@ -16,28 +16,33 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.common.util.Base64;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.net.URI;
+import java.util.Base64;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.util.SamlClient.Binding;
-import java.net.URI;
-import java.util.UUID;
-import java.util.function.Supplier;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.w3c.dom.Document;
-
-import jakarta.ws.rs.core.HttpHeaders;
 
 
 public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<AuthnRequestType, CreateAuthnRequestStepBuilder> {
@@ -51,6 +56,8 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
     private String signingCertificate;
     private URI protocolBinding;
     private String authorizationHeader;
+    private List<String> authnContextClassRef = new LinkedList<>();
+    private AuthnContextComparisonType comparison;
 
     private final Document forceLoginRequestDocument;
 
@@ -92,6 +99,18 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         return this;
     }
 
+    public CreateAuthnRequestStepBuilder setComparison(AuthnContextComparisonType comparison) {
+        this.comparison = comparison;
+        return this;
+    }
+
+    public CreateAuthnRequestStepBuilder addAuthnContextClassRef(String... authnContextClassRef) {
+        if (authnContextClassRef != null) {
+            this.authnContextClassRef.addAll(List.of(authnContextClassRef));
+        }
+        return this;
+    }
+
     public URI getProtocolBinding() {
         return protocolBinding;
     }
@@ -111,7 +130,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         String username = user.getUsername();
         String password = Users.getPasswordOf(user);
         String pair = username + ":" + password;
-        this.authorizationHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        this.authorizationHeader = "Basic " + Base64.getEncoder().encodeToString(pair.getBytes());
         return this;
     }
 
@@ -150,6 +169,12 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
             AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL, this.authServerSamlUrl.toString(), issuer, requestBinding.getBindingUri());
             if (protocolBinding != null) {
                 loginReq.setProtocolBinding(protocolBinding);
+            }
+            if (!authnContextClassRef.isEmpty()) {
+                RequestedAuthnContextType requestAuthContext = new RequestedAuthnContextType();
+                requestAuthContext.setComparison(comparison);
+                authnContextClassRef.stream().forEach(ref -> requestAuthContext.addAuthnContextClassRef(ref));
+                loginReq.setRequestedAuthnContext(requestAuthContext);
             }
             return SAML2Request.convert(loginReq);
         } catch (ConfigurationException | ParsingException | ProcessingException ex) {

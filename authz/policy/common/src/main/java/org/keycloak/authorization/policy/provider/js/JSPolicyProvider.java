@@ -18,16 +18,16 @@
 package org.keycloak.authorization.policy.provider.js;
 
 import java.util.function.BiFunction;
-
 import javax.script.ScriptContext;
 import javax.script.SimpleScriptContext;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,7 +54,7 @@ class JSPolicyProvider implements PolicyProvider {
             context.setAttribute("$evaluation", evaluation, ScriptContext.ENGINE_SCOPE);
 
             adapter.eval(context);
-            logger.debugv("JS Policy {} evaluated to status {}", policy.getName(), evaluation.getEffect());
+            logger.debugf("JS Policy %s evaluated to status %s", policy.getName(), evaluation.getEffect());
         }
         catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);

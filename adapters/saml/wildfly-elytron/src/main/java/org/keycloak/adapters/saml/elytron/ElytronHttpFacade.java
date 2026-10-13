@@ -22,22 +22,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
-
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSession;
@@ -50,6 +48,8 @@ import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;
@@ -226,11 +226,7 @@ class ElytronHttpFacade implements HttpFacade {
             @Override
             public String getURI() {
                 if (elyweb163Workaround) {
-                    try {
-                        return URLDecoder.decode(request.getRequestURI().toString(), "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException("Failed to decode request URI", e);
-                    }
+                    return URLDecoder.decode(request.getRequestURI().toString(), StandardCharsets.UTF_8);
                 } else {
                     return request.getRequestURI().toString();
                 }
@@ -261,11 +257,7 @@ class ElytronHttpFacade implements HttpFacade {
                         for (String parameter : parameters) {
                             String[] keyValue = parameter.split("=", 2);
                             if (keyValue[0].equals(param)) {
-                                try {
-                                    return URLDecoder.decode(keyValue[1], "UTF-8");
-                                } catch (IOException e) {
-                                    throw new RuntimeException("Failed to decode request URI", e);
-                                }
+                                return URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
                             }
                         }
                     }

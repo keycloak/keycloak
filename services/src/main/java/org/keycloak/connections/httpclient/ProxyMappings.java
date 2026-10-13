@@ -16,10 +16,6 @@
  */
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.jboss.logging.Logger;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +26,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.http.HttpHost;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 
@@ -115,8 +115,14 @@ public class ProxyMappings {
       // noProxy must be first as it's more specific than .*
       if (!isBlank(noProxy)) {
         for (String host : noProxy.split(NO_PROXY_DELIMITER)) {
-          // do not support regex in no_proxy
-          proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
+          host = host.trim();
+          if (host.startsWith(".")) {
+            host = host.substring(1);
+          }
+          if (!host.isEmpty()) {
+            // do not support regex in no_proxy
+            proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
+          }
         }
       }
 

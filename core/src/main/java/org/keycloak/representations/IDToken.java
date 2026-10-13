@@ -17,10 +17,13 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import java.util.Map;
+
+import org.keycloak.TokenCategory;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenCategory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -59,6 +62,10 @@ public class IDToken extends JsonWebToken {
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     public static final String S_HASH = "s_hash";
 
+    // RFC 8693 - OAuth 2.0 Token Exchange
+    public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
+
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
     @JsonProperty(NONCE)
@@ -66,10 +73,8 @@ public class IDToken extends JsonWebToken {
 
     protected Long auth_time;
 
-    // session_state is deprecated, sid should be used instead
-    @JsonProperty(SESSION_STATE)
-    @JsonAlias(SESSION_ID)
-    protected String sessionState;
+    @JsonProperty(SESSION_ID)
+    protected String sessionId;
 
     @JsonProperty(AT_HASH)
     protected String accessTokenHash;
@@ -128,9 +133,6 @@ public class IDToken extends JsonWebToken {
     @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
 
-    @JsonProperty(ADDRESS)
-    protected AddressClaimSet address;
-
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
 
@@ -143,7 +145,7 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     @JsonProperty(S_HASH)
-    protected String stateHash; 
+    protected String stateHash;
 
     public String getNonce() {
         return nonce;
@@ -157,37 +159,25 @@ public class IDToken extends JsonWebToken {
         return auth_time;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #getAuth_time()} instead.
-     */
-    @Deprecated
-    @JsonIgnore
-    public int getAuthTime() {
-        return auth_time != null ? auth_time.intValue() : 0;
-    }
-
     public void setAuth_time(Long auth_time) {
         this.auth_time = auth_time;
     }
 
-    /**
-     * @deprecated int will overflow with values after 2038. Use {@link #setAuth_time(Long)} ()} instead.
-     */
-    public void setAuthTime(int authTime) {
-        this.auth_time = Long.valueOf(authTime);
-    }
-
-    @JsonProperty(SESSION_ID)
     public String getSessionId() {
-        return sessionState;
+        return sessionId;
     }
 
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    /**
+     * @deprecated Use {@link #getSessionId()} instead.
+     */
+    @Deprecated
+    @JsonIgnore
     public String getSessionState() {
-        return sessionState;
-    }
-
-    public void setSessionState(String sessionState) {
-        this.sessionState = sessionState;
+        return getSessionId();
     }
 
     public String getAccessTokenHash() {
@@ -342,12 +332,30 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    public AddressClaimSet getAddress() {
-        return address;
+    @JsonIgnore
+    public Map<String, Object> getAddressClaimsMap() {
+        Object value = getOtherClaims().get(ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
+    @JsonIgnore
+    public AddressClaimSet getAddress() {
+        Object value = getOtherClaims().get(ADDRESS);
+        if (value == null) {
+            return null;
+        }
+
+        return KeycloakJsonMapperFactory.mapper().convertValue(value, AddressClaimSet.class);
+    }
+
+    @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = address;
+        getOtherClaims().put(ADDRESS, KeycloakJsonMapperFactory.mapper().convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(ADDRESS, address);
     }
 
     public Long getUpdatedAt() {

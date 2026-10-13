@@ -1,12 +1,5 @@
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.cache.infinispan.entities.Revisioned;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,6 +7,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -74,7 +76,7 @@ public abstract class CacheManager {
         return counter.current();
     }
 
-    public Long getCurrentRevision(String id) {
+    public long getCurrentRevision(String id) {
         Long revision = revisions.get(id);
         if (revision == null) {
             revision = counter.current();
@@ -92,7 +94,7 @@ public abstract class CacheManager {
     }
 
     public <T extends Revisioned> T get(String id, Class<T> type) {
-        Revisioned o = (Revisioned)cache.get(id);
+        Revisioned o = cache.get(id);
         if (o == null) {
             return null;
         }
@@ -109,20 +111,20 @@ public abstract class CacheManager {
             cache.remove(id);
             return null;
         }
-        long oRev = o.getRevision() == null ? -1L : o.getRevision().longValue();
+        long oRev = o.getRevision();
         if (rev > oRev) {
             if (getLogger().isTraceEnabled()) {
-                getLogger().tracev("get() rev: {0} o.rev: {1}", rev.longValue(), oRev);
+                getLogger().tracev("get() rev: {0} o.rev: {1}", rev, oRev);
             }
             // the object in this.cache is outdated => remove it
             cache.remove(id);
             return null;
         }
-        return o != null && type.isInstance(o) ? type.cast(o) : null;
+        return type.isInstance(o) ? type.cast(o) : null;
     }
 
     public Object invalidateObject(String id) {
-        Revisioned removed = (Revisioned)cache.remove(id);
+        Revisioned removed = cache.remove(id);
 
         if (getLogger().isTraceEnabled()) {
             getLogger().tracef("Removed key='%s', value='%s' from cache", id, removed);
@@ -134,7 +136,7 @@ public abstract class CacheManager {
 
     protected void bumpVersion(String id) {
         long next = counter.next();
-        Object rev = revisions.put(id, next);
+        revisions.put(id, next);
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {
@@ -169,7 +171,7 @@ public abstract class CacheManager {
                 return;
             }
             if (rev.equals(object.getRevision())) {
-                cache.putForExternalRead(id, object);
+                put(id, object, lifespan);
                 return;
             }
             if (rev > object.getRevision()) { // revision is ahead, don't cache
@@ -178,8 +180,7 @@ public abstract class CacheManager {
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             revisions.put(id, object.getRevision());
-            if (lifespan < 0) cache.putForExternalRead(id, object);
-            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+            put(id, object, lifespan);
         } finally {
             endRevisionBatch();
         }
@@ -198,6 +199,14 @@ public abstract class CacheManager {
         }
     }
 
+    private void put(String id, Revisioned object, long lifespan) {
+        if (lifespan < 0) {
+            cache.putForExternalRead(id, object);
+        } else if (lifespan > 0) {
+            cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+        }
+    }
+
     private Iterator<Map.Entry<String, Revisioned>> getEntryIterator(Predicate<Map.Entry<String, Revisioned>> predicate) {
         return cache
                 .entrySet()
@@ -207,12 +216,8 @@ public abstract class CacheManager {
 
 
     public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
-        ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
-
-        // Maybe add InvalidationEvent, which will be collection of all invalidationEvents? That will reduce cluster traffic even more.
-        for (InvalidationEvent event : invalidationEvents) {
-            clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
-        }
+        session.getProvider(ClusterProvider.class)
+                .notify(eventKey, invalidationEvents, true);
     }
 
 
@@ -230,4 +235,26 @@ public abstract class CacheManager {
 
     protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations);
 
+    public void invalidateCacheKey(String key, Set<String> invalidations) {
+        invalidations.add(key);
+    }
+
+    /**
+     * Handles a cluster-wide cache clear event by clearing all entries from this cache manager.
+     *
+     * @param ignored The cluster event (unused).
+     */
+    public void onClearEvent(ClusterEvent ignored) {
+        clear();
+    }
+
+    /**
+     * Handles a cluster-wide invalidation event by delegating to {@link #invalidationEventReceived(InvalidationEvent)}.
+     *
+     * @param event The cluster event, which must be an {@link InvalidationEvent}.
+     */
+    public void onInvalidateEvent(ClusterEvent event) {
+        assert event instanceof InvalidationEvent;
+        invalidationEventReceived((InvalidationEvent) event);
+    }
 }

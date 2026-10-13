@@ -17,27 +17,37 @@
 
 package org.keycloak.connections.jpa.util;
 
-import jakarta.persistence.ValidationMode;
-import org.jboss.logging.Logger;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.jpa.boot.spi.Bootstrap;
-import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.utils.ProxyClassLoader;
-import org.keycloak.models.KeycloakSession;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnitTransactionType;
+import jakarta.persistence.ValidationMode;
+
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.models.KeycloakSession;
+
+import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.spi.Bootstrap;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,16 +59,44 @@ public class JpaUtils {
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
-    public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
-        String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
-        return (schema==null) ? tableName : "\"" + schema + "\"." + tableName;
+    /**
+     * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
+     * return 1 for rows that were matched but not changed. Hibernate translates the HQL
+     * {@code on conflict ... do update ... where} clause into a CASE self-assignment, so a
+     * no-op update on an active row is indistinguishable from a successful insert (both return 1).
+     */
+    public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
+                .getJdbcServices().getDialect() instanceof MySQLDialect;
     }
 
+    public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
+        final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
+        IdentifierHelper identifierHelper = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
+        String schema = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getSessionFactoryOptions().getDefaultSchema();
+        return (schema==null) ? tableName : identifierHelper.toIdentifier(schema).render(dialect) + "." + tableName;
+    }
+
+    private static List<ParsedPersistenceXmlDescriptor> transformPersistenceUnits(Collection<PersistenceUnitDescriptor> descriptors) {
+        return descriptors.stream().map(descriptor -> (ParsedPersistenceXmlDescriptor) descriptor).collect(Collectors.toList());
+    }
+
+    /**
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
+     */
+    @Deprecated(forRemoval = true)
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
         PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
-        List<ParsedPersistenceXmlDescriptor> persistenceUnits = new ArrayList<>(PersistenceXmlParser.locatePersistenceUnits(properties));
+        PersistenceXmlParser parser = PersistenceXmlParser.create(properties);
+        List<URL> urls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
 
-        persistenceUnits.add(PersistenceXmlParser.locateIndividualPersistenceUnit(JpaUtils.class.getClassLoader().getResource("default-persistence.xml")));
+        List<ParsedPersistenceXmlDescriptor> persistenceUnits = urls.isEmpty() ? new ArrayList<>() : transformPersistenceUnits(parser.parse(urls).values());
+        ParsedPersistenceXmlDescriptor defaultPersistenceUnit = transformPersistenceUnits(parser.parse(Collections.singletonList(JpaUtils.class.getClassLoader().getResource("default-persistence.xml")), txType)
+                .values())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Cannot find the file 'default-persistence.xml'"));
+        persistenceUnits.add(defaultPersistenceUnit);
 
         for (ParsedPersistenceXmlDescriptor persistenceUnit : persistenceUnits) {
             if (persistenceUnit.getName().equals(unitName)) {
@@ -71,8 +109,7 @@ public class JpaUtils {
                 // to find and load the extra provided entities.
                 persistenceUnit.setTransactionType(txType);
                 persistenceUnit.setValidationMode(ValidationMode.NONE.name());
-                return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties,
-                        new ProxyClassLoader(providedEntities)).build();
+                return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties).build();
             }
         }
         throw new RuntimeException("Persistence unit '" + unitName + "' not found");
@@ -80,10 +117,12 @@ public class JpaUtils {
 
     /**
      * Get a list of all provided entities by looping over all configured entity providers.
-     * 
+     *
      * @param session the keycloak session
      * @return a list of all provided entities (can be an empty list)
+     * @deprecated this method should not be used in production and will be removed together with legacy testsuite
      */
+    @Deprecated(forRemoval = true)
     public static List<Class<?>> getProvidedEntities(KeycloakSession session) {
         List<Class<?>> providedEntityClasses = new ArrayList<>();
         // Get all configured entity providers.
@@ -179,18 +218,15 @@ public class JpaUtils {
      */
     public static Properties loadSpecificNamedQueries(String databaseType) {
         URL specificUrl = JpaUtils.class.getClassLoader().getResource("META-INF/queries-" + databaseType + ".properties");
-        URL defaultUrl = JpaUtils.class.getClassLoader().getResource("META-INF/queries-default.properties");
-
-        if (defaultUrl == null) {
-            throw new IllegalStateException("META-INF/queries-default.properties was not found in the classpath");
-        }
 
         Properties specificQueries = loadSqlProperties(specificUrl);
-        Properties defaultQueries = loadSqlProperties(defaultUrl);
         Properties queries = new Properties();
+        if (specificQueries == null) {
+            return queries;
+        }
 
-        for (String queryNameFull : defaultQueries.stringPropertyNames()) {
-            String querySql = defaultQueries.getProperty(queryNameFull);
+        for (String queryNameFull : specificQueries.stringPropertyNames()) {
+            String querySql = specificQueries.getProperty(queryNameFull);
             String queryName = getQueryShortName(queryNameFull);
             String specificQueryNameFull = getQueryFromProperties(queryName, specificQueries);
 

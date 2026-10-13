@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
@@ -34,10 +38,6 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,6 +50,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     public static String email = "billb@nowhere.com";
     public static String first = "Bill";
     public static String last = "Burke";
+    public static String groupName;
     public static MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
 
     public static boolean fail;
@@ -57,11 +58,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean componentFail;
+    private boolean failOnValidation;
 
-    public FailableHardcodedStorageProvider(ComponentModel model, KeycloakSession session) {
+    public FailableHardcodedStorageProvider(ComponentModel model, KeycloakSession session, boolean failOnValidation) {
         this.model = model;
         this.session = session;
         componentFail = isInFailMode(model);
+        this.failOnValidation = failOnValidation;
     }
 
     public static boolean isInFailMode(ComponentModel model) {
@@ -119,8 +122,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     private static class Delegate extends UserModelDelegate {
-        public Delegate(UserModel delegate) {
+        private final KeycloakSession session;
+        private final RealmModel realm;
+
+        public Delegate(UserModel delegate, KeycloakSession session, RealmModel realm) {
             super(delegate);
+            this.session = session;
+            this.realm = realm;
         }
 
         @Override
@@ -164,12 +172,25 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
             super.setEmail(em);
             email = em;
         }
+
+        @Override
+        public Stream<GroupModel> getGroupsStream() {
+            if (groupName == null) {
+                return super.getGroupsStream();
+            }
+
+            GroupModel group = session.groups().getGroupByName(realm, null, groupName);
+            return group == null ? Stream.empty() : Stream.of(group);
+        }
     }
 
     @Override
     public UserModel validate(RealmModel realm, UserModel user) {
         checkForceFail();
-        return new Delegate(user);
+        if (failOnValidation) {
+            throw new RuntimeException("Forcing validation failure");
+        }
+        return new Delegate(user, session, realm);
     }
 
     @Override
@@ -186,19 +207,19 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         if (local != null && !model.getId().equals(local.getFederationLink())) {
             throw new RuntimeException("local storage has wrong federation link");
         }
-        if (local != null) return new Delegate(local);
+        if (local != null) return new Delegate(local, session, realm);
         local = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, uname);
         local.setEnabled(true);
         local.setFirstName(first);
         local.setLastName(last);
         local.setEmail(email);
         local.setFederationLink(model.getId());
-        for (String key : attributes.keySet()) {
-            List<String> values = attributes.get(key);
+        for (var entry : attributes.entrySet()) {
+            List<String> values = entry.getValue();
             if (values == null) continue;
-            local.setAttribute(key, values);
+            local.setAttribute(entry.getKey(), values);
         }
-        return new Delegate(local);
+        return new Delegate(local, session, realm);
     }
 
     @Override

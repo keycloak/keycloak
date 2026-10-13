@@ -1,7 +1,16 @@
 package org.keycloak.protocol.docker;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.events.Errors;
@@ -13,12 +22,8 @@ import org.keycloak.representations.docker.DockerAccess;
 import org.keycloak.representations.docker.DockerError;
 import org.keycloak.representations.docker.DockerErrorResponseToken;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Optional;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 
 public class DockerAuthenticator extends HttpBasicAuthenticator {
     private static final Logger logger = Logger.getLogger(DockerAuthenticator.class);
@@ -40,8 +45,7 @@ public class DockerAuthenticator extends HttpBasicAuthenticator {
     protected void userDisabledAction(AuthenticationFlowContext context, RealmModel realm, UserModel user, String eventError) {
         context.getEvent().user(user);
         context.getEvent().error(eventError);
-        final DockerError error = new DockerError("UNAUTHORIZED","Invalid username or password.",
-                Collections.singletonList(new DockerAccess(context.getAuthenticationSession().getClientNote(DockerAuthV2Protocol.SCOPE_PARAM))));
+        final DockerError error = new DockerError("UNAUTHORIZED","Invalid username or password.", requestedAccessItems(context));
         context.failure(AuthenticationFlowError.USER_DISABLED, new ResponseBuilderImpl()
                 .status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -57,8 +61,7 @@ public class DockerAuthenticator extends HttpBasicAuthenticator {
         context.getEvent().user(userId);
         context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
 
-        final DockerError error = new DockerError("UNAUTHORIZED","Invalid username or password.",
-                Collections.singletonList(new DockerAccess(context.getAuthenticationSession().getClientNote(DockerAuthV2Protocol.SCOPE_PARAM))));
+        final DockerError error = new DockerError("UNAUTHORIZED","Invalid username or password.", requestedAccessItems(context));
 
         context.failure(AuthenticationFlowError.INVALID_USER, new ResponseBuilderImpl()
                 .status(Response.Status.UNAUTHORIZED)
@@ -70,5 +73,17 @@ public class DockerAuthenticator extends HttpBasicAuthenticator {
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return true;
+    }
+
+    private static List<DockerAccess> requestedAccessItems(final AuthenticationFlowContext context) {
+        final String requestedScopes = context.getAuthenticationSession().getClientNote(DockerAuthV2Protocol.SCOPE_PARAM);
+        if (requestedScopes == null || requestedScopes.isBlank()) {
+            return Collections.singletonList(new DockerAccess(null));
+        }
+
+        return Arrays.stream(requestedScopes.split(" "))
+                .filter(scope -> !scope.isBlank())
+                .map(DockerAccess::new)
+                .collect(Collectors.toList());
     }
 }

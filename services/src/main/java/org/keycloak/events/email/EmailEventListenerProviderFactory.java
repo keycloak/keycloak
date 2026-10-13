@@ -17,8 +17,14 @@
 
 package org.keycloak.events.email;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.Config;
-import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;
@@ -26,13 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,7 +43,7 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
     public static final String ID = "email";
 
     static {
-        Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP);
+        Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP, EventType.UPDATE_CREDENTIAL, EventType.REMOVE_CREDENTIAL);
     }
 
     private Set<EventType> includedEvents = new HashSet<>();
@@ -52,6 +51,14 @@ public class EmailEventListenerProviderFactory implements EventListenerProviderF
     @Override
     public EventListenerProvider create(KeycloakSession session) {
         return new EmailEventListenerProvider(session, includedEvents);
+    }
+
+    public void addIncludedEvents(EventType... types) {
+        includedEvents.addAll(Arrays.asList(types));
+    }
+
+    public void removeIncludedEvents(EventType... types) {
+        includedEvents.removeAll(Arrays.asList(types));
     }
 
     @Override

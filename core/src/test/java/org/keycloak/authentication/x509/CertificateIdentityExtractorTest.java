@@ -25,14 +25,15 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.function.Function;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.UserIdentityExtractor;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.rule.CryptoInitRule;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

@@ -19,10 +19,12 @@ package org.keycloak.quarkus.runtime.transaction;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.transaction.TransactionManager;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+
+import org.jboss.logging.Logger;
 
 public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
 

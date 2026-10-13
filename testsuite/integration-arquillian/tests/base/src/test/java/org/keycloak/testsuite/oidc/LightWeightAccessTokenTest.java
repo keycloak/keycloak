@@ -17,18 +17,31 @@
 
 package org.keycloak.testsuite.oidc;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.NotFoundException;
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -36,30 +49,47 @@ import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
+import org.keycloak.protocol.oidc.mappers.SessionStateMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.logging.Logger;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.USER_SESSION_NOTE;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocolFactory.ACR;
@@ -87,19 +117,48 @@ import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLU
 import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWISE_SUB_ALGORITHM_SALT;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+import static org.junit.Assert.assertEquals;
+
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
+
+    protected ManagedRealm managedRealm = new ManagedRealm(this, REALM_NAME);
+
     private static String RESOURCE_SERVER_CLIENT_ID = "resource-server";
     private static String RESOURCE_SERVER_CLIENT_PASSWORD = "password";
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).directAccessGrant(true).setServiceAccountsEnabled(true);
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).directAccessGrant(true);
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(RESOURCE_SERVER_CLIENT_ID).updateAttribute(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED, "true");
+
+        // Assign resource-server role to both users and service account
+        // This allows the audience-resolve mapper to add resource-server to the audience
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        String resourceServerId = realm.clients().findByClientId(RESOURCE_SERVER_CLIENT_ID).get(0).getId();
+
+        // Create rs-role on resource-server if it doesn't exist
+        try {
+            realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+        } catch (NotFoundException e) {
+            RoleRepresentation newRole = new RoleRepresentation();
+            newRole.setName("rs-role");
+            realm.clients().get(resourceServerId).roles().create(newRole);
+        }
+
+        RoleRepresentation role = realm.clients().get(resourceServerId).roles().get("rs-role").toRepresentation();
+
+        // Assign the role to TEST_CLIENT service account
+        String testClientId = realm.clients().findByClientId(TEST_CLIENT).get(0).getId();
+        UserRepresentation serviceAccount = realm.clients().get(testClientId).getServiceAccountUser();
+        realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
+
+        // Assign the role to test-user@localhost for user flows
+        UserRepresentation testUser = realm.users().search("test-user@localhost").get(0);
+        realm.users().get(testUser.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
     }
 
     @Override
@@ -131,16 +190,15 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenFalseIntrospectionTrueTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -152,16 +210,15 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenTrueIntrospectionFalseTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, false, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             // Most of the claims should not be included in introspectionResponse as introspectionMapper was disabled
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, false, false);
@@ -174,18 +231,41 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenTrueIntrospectionTrueTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
-            oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void accessTokenTrueIntrospectionReturnedAsJwt() throws IOException {
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
+        try {
+            oauth.scope("address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+
+            String tokenResponse = oauth.introspectionRequest(accessToken).tokenTypeHint("access_token").jwtResponse().send().getRaw();
+            logger.debug("tokenResponse:" + tokenResponse);
+            AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
+            assertTokenIntrospectionResponse(introspectionResult, true, true, false);
+
+            Assertions.assertNotNull(introspectionResult.getOtherClaims().get("jwt"));
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -195,20 +275,19 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void offlineTokenTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("openid address offline_access");
 
-            oauth.clientId(TEST_CLIENT);
-            TokenResponseContext ctx = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse response = ctx.tokenResponse;
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            TokenResponseContext ctx = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse response = ctx.tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             logger.debug("idtoken:" + response.getIdToken());
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
             removeSession(ctx.userSessionId);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -220,44 +299,43 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void clientCredentialTest() throws Exception {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), false, false);
+            assertAccessToken(oauth.verifyToken(accessToken), false, false, false);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
-            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
     }
 
     @Test
+    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void exchangeTest() throws Exception {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
-            response = oauth.doTokenExchange(TEST, accessToken, null, TEST_CLIENT, TEST_CLIENT_SECRET);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
+            response = oauth.doTokenExchange(accessToken);
             String exchangedTokenString = response.getAccessToken();
             logger.debug("exchangedTokenString:" + exchangedTokenString);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, exchangedTokenString);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
-            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, true);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -266,33 +344,32 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     @Test
     public void testPolicyLightWeightFalseTest() throws Exception {
         setUseLightweightAccessTokenExecutor();
-        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId(TEST_CLIENT);
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
-            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
             logger.debug("lightweight access token:" + accessToken);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
             logger.debug("tokenResponse:" + introspectResponse);
 
-            oauth.clientId(TEST_CLIENT);
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             deletePolicy(POLICY_NAME);
-            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            oauth.doLogout(tokenResponse.getRefreshToken());
 
             authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
         } finally {
             deleteProtocolMappers(protocolMappers);
         }
@@ -301,21 +378,26 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     @Test
     public void testPolicyLightWeightTrueTest() throws Exception {
         setUseLightweightAccessTokenExecutor();
-        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
-            oauth.clientId(TEST_CLIENT);
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+            AccessToken token = oauth.verifyToken(accessToken);
+            assertAccessToken(token, true, true, true);
 
-            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
-            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
+            Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
+            Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
+            Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + introspectResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
 
@@ -324,11 +406,291 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         }
     }
 
-    private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired(REALM_NAME);
+    @Test
+    public void testAlwaysUseLightWeightFalseTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
         try {
-            testingClient.testing().removeUserSession(REALM_NAME, sessionId);
-        } catch (NotFoundException nfe) {
+            oauth.scope("address");
+
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+            String accessToken = tokenResponse.getAccessToken();
+            assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
+            logger.debug("lightweight access token:" + accessToken);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+            logger.debug("tokenResponse:" + introspectResponse);
+
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            alwaysUseLightWeightAccessToken(false);
+            oauth.doLogout(tokenResponse.getRefreshToken());
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testAlwaysUseLightWeightTrueTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
+        try {
+            oauth.scope("address");
+
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testWithoutBasicClaim() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        removeDefaultBasicClientScope();
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
+        try {
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            oauth.scope("address");
+
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true,  false,true);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
+
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            alwaysUseLightWeightAccessToken(false);
+            oauth.doLogout(tokenResponse.getRefreshToken());
+
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true,  true);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            addDefaultBasicClientScope();
+        }
+    }
+
+    @Test
+    public void clientCredentialWithoutBasicClaims() throws Exception {
+        removeDefaultBasicClientScope();
+        alwaysUseLightWeightAccessToken(true);
+        try {
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), false,  false,false);
+
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
+            logger.debug("tokenResponse:" + tokenResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
+        } finally {
+            addDefaultBasicClientScope();
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testAdminConsoleClientWithLightweightAccessToken() {
+
+        oauth.getDriver().manage().deleteAllCookies();
+        oauth.realm("master");
+        oauth.client(Constants.ADMIN_CONSOLE_CLIENT_ID, TEST_CLIENT_SECRET);
+        oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
+        PkceGenerator pkce = PkceGenerator.s256();
+
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().codeChallenge(pkce).doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authsEndpointResponse.getCode()).codeVerifier(pkce).send();
+        String accessToken = tokenResponse.getAccessToken();
+        logger.debug("access token:" + accessToken);
+        assertBasicClaims(oauth.verifyToken(accessToken), true, true);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
+            get.setHeader("Authorization", "Bearer " + accessToken);
+            try (CloseableHttpResponse response = client.execute(get)) {
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+                RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
+                Assertions.assertEquals("master", realmRepresentation.getRealm());
+            }
+        } catch (Exception e) {
+            Assertions.fail(e.getMessage());
+        }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
+    public void testAdminConsoleClientWithLightweightAccessTokenTransientSessionParameterizedScopes() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), TEST_CLIENT)
+                .setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
+            String accessToken = response.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertBasicClaims(oauth.verifyToken(accessToken), false, false);
+
+            try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                HttpPost post = new HttpPost(OAuthClient.SERVER_ROOT + "/auth/admin/realms");
+                post.setHeader("Authorization", "Bearer " + accessToken);
+                post.setEntity(new StringEntity("{\"realm\":\"invalid\",\"enabled\":true}", ContentType.APPLICATION_JSON));
+                try (CloseableHttpResponse resp = client.execute(post)) {
+                    Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), resp.getStatusLine().getStatusCode());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testAdminApiWithLightweightAccessTokenAndTransientSession() {
+        RealmResource masterRealm = realmsResouce().realm("master");
+        ClientRepresentation transientClient = KeycloakModelUtils.createClient(realmsResouce().realm("master").toRepresentation(), "transient_client");
+        transientClient.setServiceAccountsEnabled(Boolean.TRUE);
+        transientClient.setAttributes(new HashMap<>());
+        transientClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        masterRealm.clients().create(transientClient);
+        transientClient = masterRealm.clients().findByClientId(transientClient.getClientId()).get(0);
+
+        UserRepresentation userRep = masterRealm.clients().get(transientClient.getId()).getServiceAccountUser();
+        masterRealm.users().get(userRep.getId()).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get(AdminRoles.ADMIN).toRepresentation()));
+        try {
+            oauth.realm("master");
+            oauth.client(transientClient.getClientId(), transientClient.getSecret());
+            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
+            String accessTokenString = tokenResponse.getAccessToken();
+            Assertions.assertNull(tokenResponse.getRefreshToken());
+            AccessToken accessToken = oauth.verifyToken(accessTokenString);
+            Assertions.assertNotNull(accessToken.getSubject());
+            Assertions.assertNull(accessToken.getSessionId());
+
+            CloseableHttpClient client = HttpClientBuilder.create().build();
+            HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
+            get.setHeader("Authorization", "Bearer " + accessTokenString);
+            CloseableHttpResponse response = client.execute(get);
+            Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+            RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
+            Assertions.assertEquals("master", realmRepresentation.getRealm());
+
+        } catch (Exception e) {
+            Assertions.fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testAdminApiWithLightweightAccessAndSubClaim() {
+        setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, true);
+
+        oauth.getDriver().manage().deleteAllCookies();
+        oauth.realm("master");
+        oauth.client(Constants.ADMIN_CONSOLE_CLIENT_ID, TEST_CLIENT_SECRET);
+        oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
+        PkceGenerator pkce = PkceGenerator.s256();
+
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().codeChallenge(pkce).doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authsEndpointResponse.getCode()).codeVerifier(pkce).send();
+        String accessToken = tokenResponse.getAccessToken();
+        logger.debug("access token:" + accessToken);
+        assertBasicClaims(oauth.verifyToken(accessToken), false, false);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(OAuthClient.SERVER_ROOT + "/auth/admin/realms/master");
+            get.setHeader("Authorization", "Bearer " + accessToken);
+            try (CloseableHttpResponse response = client.execute(get)) {
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+                RealmRepresentation realmRepresentation = JsonSerialization.readValue(response.getEntity().getContent(), RealmRepresentation.class);
+                Assertions.assertEquals("master", realmRepresentation.getRealm());
+            }
+        } catch (Exception e) {
+            Assertions.fail(e.getMessage());
+        }
+
+        setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, false);
+    }
+
+    @Test
+    public void testPublicClientWithLightweightAccessTokenViaDirectGrant() throws Exception {
+        // Setup client policy with client-access-type=public + lightweight token executor
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Lightweight Token for Public Clients")
+                        .addExecutor(UseLightweightAccessTokenExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Public Client Policy", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                ClientPoliciesUtil.createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_PUBLIC)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Create public client with direct access grants
+        String publicClientId = generateSuffixedName("public-direct-grant-client");
+        createClientByAdmin(publicClientId, (ClientRepresentation clientRep) -> {
+            clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+        });
+
+        // Perform direct access grant (POST with username/password)
+        oauth.client(publicClientId);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        // Verify lightweight token
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(token.getId()));
+        Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
+        Assertions.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
+    }
+
+    private void removeSession(final String sessionId) {
+        runOnServer.run(RunHelpers.removeExpired());
+        try {
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
     }
@@ -336,93 +698,112 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private void assertMapperClaims(AccessToken token, boolean isAddMapperResponseFlag, boolean isAuthCodeFlow) {
         if (isAddMapperResponseFlag) {
             if (isAuthCodeFlow) {
-                Assert.assertNotNull(token.getName());
-                Assert.assertNotNull(token.getGivenName());
-                Assert.assertNotNull(token.getFamilyName());
-                Assert.assertNotNull(token.getAddress());
-                Assert.assertNotNull(token.getEmail());
-                Assert.assertNotNull(token.getOtherClaims().get("user-session-note"));
-                Assert.assertNotNull(token.getOtherClaims().get("test-claim"));
-                Assert.assertNotNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNotNull(token.getName());
+                Assertions.assertNotNull(token.getGivenName());
+                Assertions.assertNotNull(token.getFamilyName());
+                Assertions.assertNotNull(token.getAddress());
+                Assertions.assertNotNull(token.getEmail());
+                Assertions.assertNotNull(token.getOtherClaims().get("user-session-note"));
+                Assertions.assertNotNull(token.getOtherClaims().get("test-claim"));
+                Assertions.assertNotNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNotNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
-            Assert.assertNotNull(token.getAudience());
-            Assert.assertNotNull(token.getAcr());
-            Assert.assertNotNull(token.getAllowedOrigins());
-            Assert.assertNotNull(token.getRealmAccess());
-            Assert.assertNotNull(token.getResourceAccess());
-            Assert.assertNotNull(token.getEmailVerified());
-            Assert.assertNotNull(token.getPreferredUsername());
+            Assertions.assertNotNull(token.getAudience());
+            Assertions.assertNotNull(token.getAcr());
+            Assertions.assertNotNull(token.getAllowedOrigins());
+            Assertions.assertNotNull(token.getRealmAccess());
+            Assertions.assertNotNull(token.getResourceAccess());
+            Assertions.assertNotNull(token.getEmailVerified());
+            Assertions.assertNotNull(token.getPreferredUsername());
         } else {
             if (isAuthCodeFlow) {
-                Assert.assertNull(token.getName());
-                Assert.assertNull(token.getGivenName());
-                Assert.assertNull(token.getFamilyName());
-                Assert.assertNull(token.getAddress());
-                Assert.assertNull(token.getEmail());
-                Assert.assertNull(token.getOtherClaims().get("user-session-note"));
-                Assert.assertNull(token.getOtherClaims().get("test-claim"));
-                Assert.assertNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNull(token.getName());
+                Assertions.assertNull(token.getGivenName());
+                Assertions.assertNull(token.getFamilyName());
+                Assertions.assertNull(token.getAddress());
+                Assertions.assertNull(token.getEmail());
+                Assertions.assertNull(token.getOtherClaims().get("user-session-note"));
+                Assertions.assertNull(token.getOtherClaims().get("test-claim"));
+                Assertions.assertNull(token.getOtherClaims().get("group-name"));
+                Assertions.assertNull(token.getOtherClaims().get(IDToken.SESSION_STATE));
             }
-            Assert.assertNull(token.getAcr());
-            Assert.assertNull(token.getAllowedOrigins());
-            Assert.assertNull(token.getRealmAccess());
-            Assert.assertTrue(token.getResourceAccess().isEmpty());
-            Assert.assertNull(token.getEmailVerified());
-            Assert.assertNull(token.getPreferredUsername());
+            Assertions.assertNull(token.getAcr());
+            Assertions.assertNull(token.getAllowedOrigins());
+            Assertions.assertNull(token.getRealmAccess());
+            Assertions.assertTrue(token.getResourceAccess().isEmpty());
+            Assertions.assertNull(token.getEmailVerified());
+            Assertions.assertNull(token.getPreferredUsername());
         }
     }
 
     private void assertInitClaims(AccessToken token, boolean isAuthCodeFlow) {
-        Assert.assertNotNull(token.getExp());
-        Assert.assertNotNull(token.getIat());
-        Assert.assertNotNull(token.getId());
-        Assert.assertNotNull(token.getType());
+        Assertions.assertNotNull(token.getExp());
+        Assertions.assertNotNull(token.getIat());
+        Assertions.assertNotNull(token.getId());
+        Assertions.assertNotNull(token.getType());
+        Assertions.assertNotNull(token.getIssuedFor());
+        Assertions.assertNotNull(token.getScope());
+        Assertions.assertNotNull(token.getIssuer());
         if (isAuthCodeFlow) {
-            Assert.assertNotNull(token.getSessionId());
-            Assert.assertNotNull(token.getAuth_time());
+            Assertions.assertNotNull(token.getSessionId());
         } else {
-            Assert.assertNull(token.getSessionId());
-            Assert.assertNull(token.getAuth_time());
+            Assertions.assertNull(token.getSessionId());
         }
-        Assert.assertNotNull(token.getIssuedFor());
-        Assert.assertNotNull(token.getScope());
-        Assert.assertNotNull(token.getIssuer());
-        Assert.assertNotNull(token.getSubject());
+    }
+
+    private void assertBasicClaims(AccessToken token, boolean isAuthCodeFlow, boolean missing) {
+        if (missing) {
+            Assertions.assertNull(token.getAuth_time());
+            Assertions.assertNull(token.getSubject());
+        } else {
+            Assertions.assertNotNull(token.getSubject());
+            if (isAuthCodeFlow) {
+                Assertions.assertNotNull(token.getAuth_time());
+            } else {
+                Assertions.assertNull(token.getAuth_time());
+            }
+        }
     }
 
     private void assertIntrospectClaims(AccessToken token) {
-        Assert.assertNotNull(token.getOtherClaims().get("client_id"));
-        Assert.assertNotNull(token.getOtherClaims().get("active"));
-        Assert.assertNotNull(token.getOtherClaims().get("token_type"));
+        Assertions.assertNotNull(token.getOtherClaims().get("client_id"));
+        Assertions.assertNotNull(token.getOtherClaims().get("active"));
+        Assertions.assertNotNull(token.getOtherClaims().get("token_type"));
     }
 
-    private void assertNonce(AccessToken token, boolean isAuthCodeFlow, boolean exchangeToken) {
-        if (isAuthCodeFlow && !exchangeToken) {
-            Assert.assertNotNull(token.getNonce());
-        } else {
-            Assert.assertNull(token.getNonce());
-        }
-    }
-
-    private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken) {
-        assertNonce(token, isAuthCodeFlow, false);
+    private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken, boolean missingBasicClaims) {
+        Assertions.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToAccessToken, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
+        assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
-    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow) {
-        assertTokenIntrospectionResponse(token, isAuthCodeFlow, true, false);
-    }
-
-    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean exchangeToken) {
-        assertNonce(token, isAuthCodeFlow, exchangeToken);
+    private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean missingBasicClaims) {
+        Assertions.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToIntrospect, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
         assertIntrospectClaims(token);
+        assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
-    protected RealmResource testRealm() {
-        return adminClient.realm(REALM_NAME);
+    public void addDefaultBasicClientScope() {
+        managedRealm.admin().getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).addDefaultClientScope(scope.getId());
+                });
+    }
+
+    public void removeDefaultBasicClientScope() {
+        managedRealm.admin().getDefaultDefaultClientScopes()
+                .stream()
+                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
+                .findFirst()
+                .ifPresent(scope-> {
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).removeDefaultClientScope(scope.getId());
+                });
     }
 
     private void setScopeProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
@@ -440,9 +821,9 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setScopeProtocolMapper(ADDRESS, ADDRESS, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
     }
 
-    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
-        ClientScopeResource scope = ApiUtil.findClientScopeByName(testRealm(), scopeName);
-        ProtocolMapperRepresentation protocolMapper = ApiUtil.findProtocolMapperByName(scope, mapperName);
+    private void setScopeProtocolMapper(String realmName, String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
+        ClientScopeResource scope = AdminApiUtil.findClientScopeByName(realmsResouce().realm(realmName), scopeName);
+        ProtocolMapperRepresentation protocolMapper = AdminApiUtil.findProtocolMapperByName(scope, mapperName);
         Map<String, String> config = protocolMapper.getConfig();
         if (isIncludeAccessToken) {
             config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
@@ -462,11 +843,15 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         scope.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
     }
 
+    private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
+        setScopeProtocolMapper(managedRealm.admin().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+    }
+
     private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {
         setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, false);
         List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
         setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, false, setPairWise);
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
         protocolMappers.createMapper(protocolMapperList);
         return protocolMappers;
     }
@@ -475,7 +860,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
         List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
         setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken, setPairWise);
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
         protocolMappers.createMapper(protocolMapperList);
         return protocolMappers;
     }
@@ -502,6 +887,14 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             put(INCLUDED_CLIENT_AUDIENCE, "account-console");
         }});
         protocolMapperList.add(audienceProtocolMapper);
+        // Always include resource-server in audience for introspection validation
+        ProtocolMapperRepresentation resourceServerAudienceMapper = createClaimMapper("audience-resource-server", AudienceProtocolMapper.PROVIDER_ID, new HashMap<>() {{
+            put(INCLUDE_IN_ACCESS_TOKEN, "true");
+            put(INCLUDE_IN_INTROSPECTION, "true");
+            put(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(isIncludeLightweightAccessToken));
+            put(INCLUDED_CLIENT_AUDIENCE, RESOURCE_SERVER_CLIENT_ID);
+        }});
+        protocolMapperList.add(resourceServerAudienceMapper);
         ProtocolMapperRepresentation roleNameMapper = createClaimMapper("role-name", RoleNameMapper.PROVIDER_ID, new HashMap<>(config) {{
             put(ROLE_CONFIG, "user");
             put(NEW_ROLE_NAME, "new-role");
@@ -531,6 +924,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             }});
             protocolMapperList.add(pairwiseSubMapper);
         }
+        ProtocolMapperRepresentation sessionStateMapper = createClaimMapper("session-state-mapper", SessionStateMapper.PROVIDER_ID, config);
+        protocolMapperList.add(sessionStateMapper);
     }
 
     private static ProtocolMapperRepresentation createClaimMapper(String name, String providerId, Map<String, String> config) {
@@ -543,7 +938,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void deleteProtocolMappers(ProtocolMappersResource protocolMappers) {
-        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper"));
+        List<String> mapperNames = new ArrayList<>(Arrays.asList("reference", "audience", "audience-resource-server", "role-name", "group-member", "hardcoded-claim", "hardcoded-role", "user-session-note", "pairwise-sub-mapper", "session-state-mapper"));
         List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
         for (String mapperName : mapperNames) {
             mappers.add(ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, mapperName));
@@ -556,19 +951,19 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         }
     }
 
-    private TokenResponseContext browserLogin(String clientSecret, String username, String password) {
-        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(username, password);
+    private TokenResponseContext browserLogin(String username, String password) {
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(username, password);
         String userSessionId = authsEndpointResponse.getSessionState();
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), clientSecret);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
         return new TokenResponseContext(userSessionId, tokenResponse);
     }
 
     private class TokenResponseContext {
 
         private final String userSessionId;
-        private final OAuthClient.AccessTokenResponse tokenResponse;
+        private final AccessTokenResponse tokenResponse;
 
-        public TokenResponseContext(String userSessionId, OAuthClient.AccessTokenResponse tokenResponse) {
+        public TokenResponseContext(String userSessionId, AccessTokenResponse tokenResponse) {
             this.userSessionId = userSessionId;
             this.tokenResponse = tokenResponse;
         }
@@ -592,5 +987,173 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                         .toRepresentation()
         ).toString();
         updatePolicies(json);
+    }
+
+    private void alwaysUseLightWeightAccessToken(boolean enable){
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(enable);
+    }
+
+    private void allowUserinfoWithLightweightAccessToken(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-userinfo-with-lightweight-access-token", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(org.keycloak.protocol.LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenRejected() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(401, userInfoResponse.getStatusCode());
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedPerClient() {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "true");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with per-client option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenAllowedServerWide() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // UserInfo request should succeed with server-wide option enabled
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            // Disable server-wide option
+            allowUserinfoWithLightweightAccessToken(false);
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testUserInfoWithLightweightTokenServerWideOverridesClient() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
+        try {
+            // Enable server-wide option
+            allowUserinfoWithLightweightAccessToken(true);
+
+            // Explicitly disable per-client option
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+
+            oauth.scope("openid address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            String accessToken = response.getAccessToken();
+            logger.debug("accessToken:" + accessToken);
+
+            // Should succeed - server-wide overrides per-client false
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+            // Remove per-client option (not set)
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, null);
+
+            // Reuse same token - server-wide should still allow
+            userInfoResponse = oauth.userInfoRequest(accessToken).send();
+            assertEquals(200, userInfoResponse.getStatusCode());
+            assertEquals("test-user@localhost", userInfoResponse.getUserInfo().getPreferredUsername());
+
+        } finally {
+            allowUserinfoWithLightweightAccessToken(false);
+            ClientManager.realm(adminClient.realm(REALM_NAME))
+                    .clientId(TEST_CLIENT)
+                    .updateAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
+    @Test
+    public void testPolicyLightWeightTokenExchangeTest() throws Exception {
+        setUseLightweightAccessTokenExecutor();
+
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
+        try {
+            ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(false);
+            ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            if (clientRep.getAttributes() == null) clientRep.setAttributes(new java.util.HashMap<>());
+            clientRep.getAttributes().put("standard.token.exchange.enabled", "true");
+            clientResource.update(clientRep);
+            oauth.scope("address");
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            assertAccessToken(oauth.verifyToken(response.getAccessToken()), true, true, true);
+            AccessTokenResponse exchangeResponse = oauth.tokenExchangeRequest(response.getAccessToken()).send();
+            String exchangedTokenString = exchangeResponse.getAccessToken();
+            org.junit.Assert.assertNotNull("Token exchange response should contain access token", exchangedTokenString);
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(oauth.verifyToken(exchangedTokenString).getId()));
+            Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
+            oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).getRaw();
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
+        } finally {
+            try {
+                ClientResource cr = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT);
+                ClientRepresentation crRep = cr.toRepresentation();
+                if (crRep.getAttributes() != null) {
+                    crRep.getAttributes().remove("standard.token.exchange.enabled");
+                    cr.update(crRep);
+                }
+            } catch (Exception ignored) {
+            }
+            deleteProtocolMappers(protocolMappers);
+        }
     }
 }

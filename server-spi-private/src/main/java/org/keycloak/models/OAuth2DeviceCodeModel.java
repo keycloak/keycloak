@@ -16,12 +16,13 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.util.Time;
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>

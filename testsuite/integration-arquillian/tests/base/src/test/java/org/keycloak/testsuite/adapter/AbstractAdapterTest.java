@@ -17,28 +17,23 @@
 
 package org.keycloak.testsuite.adapter;
 
-import org.apache.commons.io.IOUtils;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
-import org.keycloak.testsuite.util.ServerURLs;
-
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.admin.client.resource.UserProfileResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.AfterClass;
+import org.junit.Before;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.CURRENT_APP_SERVER;
@@ -55,18 +50,12 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 @AppServerContainer("")
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
-    @Page
-    protected AppServerContextRoot appServerContextRootPage;
-
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
     public static final String UNDERTOW_HANDLERS_CONF = "undertow-handlers.conf";
     public static final URL undertowHandlersConf = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/samesite/undertow-handlers.conf");
-    public static final String TOMCAT_CONTEXT_XML = "context.xml";
-    public static final URL tomcatContext = AbstractServletsAdapterTest.class
-            .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
     protected static boolean sslConfigured = false;
 
@@ -126,7 +115,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     public void enableUnmanagedAttributes() {
         for (RealmRepresentation realm : adminClient.realms().findAll()) {
             UserProfileResource upResource = adminClient.realm(realm.getRealm()).users().userProfile();
-            VerifyProfileTest.enableUnmanagedAttributes(upResource);
+            UserProfileUtil.enableUnmanagedAttributes(upResource);
         }
     }
 
@@ -259,16 +248,6 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                     client.setRedirectUris(newRedirectUris);
                 }
             }
-        }
-    }
-
-    public static void addContextXml(Archive archive, String contextPath) {
-        try {
-            String contextXmlContent = IOUtils.toString(tomcatContext.openStream(), "UTF-8")
-                    .replace("%CONTEXT_PATH%", contextPath);
-            archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
     }
 

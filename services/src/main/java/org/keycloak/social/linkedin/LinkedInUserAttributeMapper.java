@@ -25,7 +25,7 @@ import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
  */
 public class LinkedInUserAttributeMapper extends AbstractJsonUserAttributeMapper {
 
-	private static final String[] cp = new String[] { LinkedInIdentityProviderFactory.PROVIDER_ID, LinkedInOIDCIdentityProviderFactory.PROVIDER_ID };
+	private static final String[] cp = new String[] { LinkedInOIDCIdentityProviderFactory.PROVIDER_ID };
 
 	@Override
 	public String[] getCompatibleProviders() {

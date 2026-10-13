@@ -1,26 +1,48 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
 import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
+  Button,
+  Chip,
+  ChipGroup,
   FormGroup,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
+  Spinner,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from "@patternfly/react-core";
+import { TimesIcon } from "@patternfly/react-icons";
 import { debounce } from "lodash-es";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
+import { useAdminClient } from "../../admin-client";
 import useToggle from "../../utils/useToggle";
 import type { ComponentProps } from "../dynamic/components";
 
-type UserSelectProps = ComponentProps & {
-  variant?: SelectVariant;
+type UserSelectVariant = "typeaheadMulti" | "typeahead";
+
+type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
+  variant?: UserSelectVariant;
   isRequired?: boolean;
 };
+
+const USER_SEARCH_LIMIT = 20;
+const SHOW_MORE = "show-more";
+
+// The search also matches email and first/last name, so show them alongside
+// the username to explain why a user was matched.
+const describeUser = ({ firstName, lastName, email }: UserRepresentation) =>
+  [[firstName, lastName].filter(Boolean).join(" "), email]
+    .filter(Boolean)
+    .join(" · ") || undefined;
 
 export const UserSelect = ({
   name,
@@ -28,8 +50,10 @@ export const UserSelect = ({
   helpText,
   defaultValue,
   isRequired,
-  variant = SelectVariant.typeaheadMulti,
+  variant = "typeaheadMulti",
 }: UserSelectProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const {
     control,
@@ -38,81 +62,248 @@ export const UserSelect = ({
   } = useFormContext();
   const values: string[] | undefined = getValues(name!);
 
-  const [open, toggleOpen] = useToggle();
-  const [users, setUsers] = useState<(UserRepresentation | undefined)[]>([]);
+  const [open, toggleOpen, setOpen] = useToggle();
+  const [selectedUsers, setSelectedUsers] = useState<UserRepresentation[]>([]);
+  const [pageUsers, setPageUsers] = useState<UserRepresentation[]>([]);
+  const [exactMatch, setExactMatch] = useState<UserRepresentation>();
+  const [first, setFirst] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
+  const textInputRef = useRef<HTMLInputElement>();
 
-  const debounceFn = useCallback(debounce(setSearch, 1000), []);
+  const debounceFn = useCallback(
+    debounce((value: string) => {
+      setFirst(0);
+      setHasMore(false);
+      setLoadingMore(false);
+      setPageUsers([]);
+      setExactMatch(undefined);
+      setSearch(value);
+    }, 500),
+    [],
+  );
 
   useFetch(
-    () => {
-      const params: UserQuery = {
-        max: 20,
-      };
-      if (search) {
-        params.username = search;
+    async () => {
+      if (!values) {
+        return [];
       }
 
-      if (values?.length && !search) {
-        return Promise.all(
-          values.map((id: string) => adminClient.users.findOne({ id })),
-        );
-      }
-      return adminClient.users.find(params);
+      const foundUsers = await Promise.all(
+        values.map((id) => adminClient.users.findOne({ id })),
+      );
+
+      return foundUsers.filter((user) => user !== null);
     },
-    setUsers,
+    (users) => {
+      setSelectedUsers(users);
+      if (variant !== "typeaheadMulti") {
+        setInputValue(users[0]?.username || "");
+      }
+    },
+    [values],
+  );
+
+  useFetch(
+    () =>
+      adminClient.users.find({
+        search,
+        first,
+        max: USER_SEARCH_LIMIT + 1,
+      }),
+    (page) => {
+      const more = page.length > USER_SEARCH_LIMIT;
+      const nextUsers = more ? page.slice(0, USER_SEARCH_LIMIT) : page;
+      setPageUsers((current) =>
+        first === 0 ? nextUsers : [...current, ...nextUsers],
+      );
+      setHasMore(more);
+      setLoadingMore(false);
+    },
+    [search, first],
+  );
+
+  useFetch(
+    () =>
+      search
+        ? adminClient.users.find({ username: search, exact: true, max: 1 })
+        : Promise.resolve<UserRepresentation[]>([]),
+    (matches) => setExactMatch(matches.at(0)),
     [search],
   );
 
-  const convert = (clients: (UserRepresentation | undefined)[]) =>
-    clients
-      .filter((c) => c !== undefined)
-      .map((option) => (
-        <SelectOption
-          key={option!.id}
-          value={option!.id}
-          selected={values?.includes(option!.id!)}
-        >
-          {option!.username}
-        </SelectOption>
-      ));
+  useEffect(() => {
+    if (!values || values.length === 0) {
+      setSelectedUsers([]);
+      setInputValue("");
+    }
+  }, [values]);
+
+  const searchedUsers = useMemo(() => {
+    if (!exactMatch) {
+      return pageUsers;
+    }
+    return [
+      exactMatch,
+      ...pageUsers.filter((user) => user.id !== exactMatch.id),
+    ];
+  }, [exactMatch, pageUsers]);
+
+  const users = useMemo(
+    () => [...selectedUsers, ...searchedUsers],
+    [selectedUsers, searchedUsers],
+  );
+
+  const convert = (users: UserRepresentation[]) =>
+    users.map((option) => (
+      <SelectOption
+        key={option.id}
+        value={option.id}
+        selected={values?.includes(option.id!)}
+        description={describeUser(option)}
+      >
+        {option.username}
+      </SelectOption>
+    ));
 
   return (
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
+      labelIcon={
+        <HelpItem
+          helpText={
+            <>
+              <p>{helpText}</p>
+              <p className="pf-v5-u-mt-sm">{t("userSelectSearchHelp")}</p>
+            </>
+          }
+          fieldLabelId={t(label!)}
+        />
+      }
       fieldId={name!}
-      validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
     >
       <Controller
         name={name!}
         defaultValue={defaultValue}
         control={control}
         rules={
-          isRequired && variant === SelectVariant.typeaheadMulti
+          isRequired && variant === "typeaheadMulti"
             ? { validate: (value) => value.length > 0 }
             : { required: isRequired }
         }
         render={({ field }) => (
           <Select
-            toggleId={name!}
-            variant={variant}
-            placeholderText={t("selectAUser")}
-            onToggle={toggleOpen}
+            id={name!}
+            isScrollable
+            maxMenuHeight="300px"
+            onOpenChange={toggleOpen}
+            toggle={(ref) => (
+              <MenuToggle
+                data-testid={name!}
+                ref={ref}
+                variant="typeahead"
+                onClick={toggleOpen}
+                isExpanded={open}
+                isFullWidth
+                status={errors[name!] ? "danger" : undefined}
+              >
+                <TextInputGroup isPlain>
+                  <TextInputGroupMain
+                    value={inputValue}
+                    onClick={toggleOpen}
+                    onChange={(_, value) => {
+                      setOpen(true);
+                      setInputValue(value);
+                      debounceFn(value);
+                    }}
+                    autoComplete="off"
+                    innerRef={textInputRef}
+                    placeholderText={t("selectAUser")}
+                    {...(field.value && {
+                      "aria-activedescendant": field.value,
+                    })}
+                    role="combobox"
+                    isExpanded={open}
+                    aria-controls="select-create-typeahead-listbox"
+                  >
+                    {variant === "typeaheadMulti" &&
+                      Array.isArray(field.value) && (
+                        <ChipGroup aria-label="Current selections">
+                          {field.value.map(
+                            (selection: string, index: number) => (
+                              <Chip
+                                key={index}
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  field.onChange(
+                                    field.value.filter(
+                                      (item: string) => item !== selection,
+                                    ),
+                                  );
+                                }}
+                              >
+                                {
+                                  users.find((u) => u.id === selection)
+                                    ?.username
+                                }
+                              </Chip>
+                            ),
+                          )}
+                        </ChipGroup>
+                      )}
+                  </TextInputGroupMain>
+                  <TextInputGroupUtilities>
+                    {!!search && (
+                      <Button
+                        variant="plain"
+                        onClick={() => {
+                          debounceFn.cancel();
+                          setInputValue("");
+                          setFirst(0);
+                          setHasMore(false);
+                          setLoadingMore(false);
+                          setPageUsers([]);
+                          setExactMatch(undefined);
+                          setSearch("");
+                          field.onChange([]);
+                          textInputRef.current?.focus();
+                        }}
+                        aria-label="Clear input value"
+                      >
+                        <TimesIcon aria-hidden />
+                      </Button>
+                    )}
+                  </TextInputGroupUtilities>
+                </TextInputGroup>
+              </MenuToggle>
+            )}
             isOpen={open}
-            selections={field.value}
-            onFilter={(_, value) => {
-              debounceFn(value);
-              return convert(users);
-            }}
+            selected={field.value}
             onSelect={(_, v) => {
-              const option = v.toString();
-              if (variant !== SelectVariant.typeaheadMulti) {
-                field.value.includes(option)
-                  ? field.onChange([])
-                  : field.onChange([option]);
+              const option = v?.toString();
+              if (option === SHOW_MORE) {
+                setLoadingMore(true);
+                setFirst((f) => f + USER_SEARCH_LIMIT);
+                return;
+              }
+              if (variant !== "typeaheadMulti") {
+                const removed = field.value.includes(option);
+
+                if (removed) {
+                  field.onChange([]);
+                } else {
+                  field.onChange([option]);
+                }
+
+                setInputValue(
+                  removed
+                    ? ""
+                    : users.find((u) => u.id === option)?.username || "",
+                );
+                setOpen(false);
               } else {
                 const changedValue = field.value.find(
                   (v: string) => v === option,
@@ -121,14 +312,34 @@ export const UserSelect = ({
                   : [...field.value, option];
                 field.onChange(changedValue);
               }
-              toggleOpen();
             }}
             aria-label={t(name!)}
           >
-            {convert(users)}
+            <SelectList>
+              {convert(searchedUsers)}
+              {hasMore && (
+                <SelectOption
+                  key={SHOW_MORE}
+                  value={SHOW_MORE}
+                  isDisabled={loadingMore}
+                  aria-label={
+                    loadingMore ? t("spinnerLoading") : t("showMoreUsers")
+                  }
+                >
+                  {loadingMore ? (
+                    <>
+                      <Spinner size="sm" /> {t("spinnerLoading")}
+                    </>
+                  ) : (
+                    t("showMore")
+                  )}
+                </SelectOption>
+              )}
+            </SelectList>
           </Select>
         )}
       />
+      {errors[name!] && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

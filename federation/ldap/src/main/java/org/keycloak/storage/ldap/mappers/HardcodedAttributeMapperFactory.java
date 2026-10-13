@@ -39,7 +39,7 @@ public class HardcodedAttributeMapperFactory extends AbstractLDAPStorageMapperFa
         ProviderConfigProperty attrName = createConfigProperty(HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE,
                 "User Model Attribute Name",
                 "Name of the model attribute, which will be added when importing user from ldap",
-                ProviderConfigProperty.STRING_TYPE,
+                ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE,
                 null,
                 true);
 

@@ -17,14 +17,87 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.util.UserSessionUtil;
+import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionProvider {
+public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionProvider<RefreshToken> {
+
+    private static final Logger logger = Logger.getLogger(RefreshTokenIntrospectionProvider.class);
 
     public RefreshTokenIntrospectionProvider(KeycloakSession session) {
         super(session);
     }
+
+    @Override
+    protected Class<RefreshToken> getTokenClass() {
+        return RefreshToken.class;
+    }
+
+    @Override
+    protected UserSessionUtil.UserSessionValidationResult verifyUserSession() {
+        return UserSessionUtil.findValidSessionForRefreshToken(session, realm, token, client, (invalidUserSession -> {}));
+    }
+
+    @Override
+    protected boolean verifyTokenReuse() {
+
+        String tokenType = token.getType();
+        if (realm.isRevokeRefreshToken()
+                && (tokenType.equals(TokenUtil.TOKEN_TYPE_REFRESH) || tokenType.equals(TokenUtil.TOKEN_TYPE_OFFLINE))
+                && !validateTokenReuse()) {
+            logger.debugf("Introspection access token for %s client: failed to validate Token reuse for introspection", token.getIssuedFor());
+            eventBuilder.detail(Details.REASON, "Realm revoke refresh token, token type is "+tokenType+ " and token is not eligible for introspection");
+            eventBuilder.error(Errors.INVALID_TOKEN);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateTokenReuse() {
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+
+        try {
+            tokenManager.validateTokenReuse(session, realm, token, clientSession, false);
+            return true;
+        } catch (
+                OAuthErrorException e) {
+            logger.debug("validateTokenReuseForIntrospection is false", e);
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean verifyAudience() {
+        ClientModel authenticatedClient = session.getContext().getClient();
+
+        if (authenticatedClient.getClientId().equals(token.getIssuedFor())) {
+            return true;
+        }
+
+        logger.debugf("Introspection denied: client '%s' is not the client the %s token was issued for '%s'",
+                authenticatedClient.getClientId(), token.getType(), token.getIssuedFor());
+        eventBuilder.detail(Details.REASON, String.format("Client '%s' is not the client the token was issued for", authenticatedClient.getClientId()));
+        eventBuilder.error(Errors.INVALID_TOKEN);
+        return false;
+    }
+
+    @Override
+    protected void addAdditionalVerifications(TokenVerifier<RefreshToken> verifier) {
+        // Skip additional verifications for refresh token. Audience is always KC server as issuer for refresh tokens
+    }
+
 }

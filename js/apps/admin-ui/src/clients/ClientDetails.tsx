@@ -1,4 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -7,6 +8,7 @@ import {
   Label,
   PageSection,
   Tab,
+  Tabs,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
@@ -16,16 +18,14 @@ import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { RolesList } from "../components/roles-list/RolesList";
 import {
@@ -44,13 +44,13 @@ import {
   convertToFormValues,
   exportClient,
 } from "../util";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSessions } from "./ClientSessions";
 import { ClientSettings } from "./ClientSettings";
+import { SsfTab } from "./ssf/SsfTab";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -68,12 +68,16 @@ import {
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClientRole } from "./routes/ClientRole";
 import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
+import { SsfClientTab, toSsfClientTab } from "./routes/ClientSsfTab";
 import { toClients } from "./routes/Clients";
 import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { getProtocolName, isRealmClient } from "./utils";
+import { UserEvents } from "../events/UserEvents";
+import { useIsAdminPermissionsClient } from "../utils/useIsAdminPermissionsClient";
+import { AdminEvents } from "../events/AdminEvents";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -188,9 +192,11 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -211,12 +217,40 @@ export default function ClientDetails() {
   const form = useForm<FormFields>();
   const { clientId } = useParams<ClientParams>();
   const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
+
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
   const clientAuthenticatorType = useWatch({
     control: form.control,
     name: "clientAuthenticatorType",
     defaultValue: "client-secret",
   });
+
+  const ssfEnabled = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>("attributes.ssf.enabled"),
+  });
+
+  const ssfAllowEmitEvents = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.ssf.allowEmitEvents",
+    ),
+  });
+  const showSsfEmitEventsTab = ssfAllowEmitEvents?.toString() === "true";
+
+  // Gate every SSF surface on three conditions: server feature flag,
+  // realm-level transmitter toggle, and per-client opt-in. Missing any
+  // one means SSF endpoints aren't available — surfacing the tab would
+  // crash on the first API call (the original bug from the review).
+  const isSsfFeatureEnabled = isFeatureEnabled(Feature.Ssf);
+  const isSsfRealmEnabled =
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
+  const showSsfTab =
+    isSsfFeatureEnabled &&
+    isSsfRealmEnabled &&
+    ssfEnabled?.toString() === "true";
 
   const [client, setClient] = useState<ClientRepresentation>();
 
@@ -225,54 +259,80 @@ export default function ClientDetails() {
     return sortBy(roles, (role) => role.name?.toUpperCase());
   };
 
-  const useTab = (tab: ClientTab) =>
-    useRoutableTab(
-      toClient({
-        realm,
-        clientId,
-        tab,
-      }),
-    );
+  const tab = (tab: ClientTab) =>
+    toClient({
+      realm,
+      clientId,
+      tab,
+    });
 
-  const settingsTab = useTab("settings");
-  const keysTab = useTab("keys");
-  const credentialsTab = useTab("credentials");
-  const rolesTab = useTab("roles");
-  const clientScopesTab = useTab("clientScopes");
-  const authorizationTab = useTab("authorization");
-  const serviceAccountTab = useTab("serviceAccount");
-  const sessionsTab = useTab("sessions");
-  const permissionsTab = useTab("permissions");
-  const advancedTab = useTab("advanced");
+  const settingsTab = useRoutableTab(tab("settings"));
+  const keysTab = useRoutableTab(tab("keys"));
+  const credentialsTab = useRoutableTab(tab("credentials"));
+  const rolesTab = useRoutableTab(tab("roles"));
+  const clientScopesTab = useRoutableTab(tab("clientScopes"));
+  const authorizationTab = useRoutableTab(tab("authorization"));
+  const serviceAccountTab = useRoutableTab(tab("serviceAccount"));
+  const sessionsTab = useRoutableTab(tab("sessions"));
+  const permissionsTab = useRoutableTab(tab("permissions"));
+  const advancedTab = useRoutableTab(tab("advanced"));
+  const ssfTab = useRoutableTab(tab("ssf"));
+  const eventsTab = useRoutableTab(tab("events"));
 
-  const useClientScopesTab = (tab: ClientScopesTab) =>
-    useRoutableTab(
-      toClientScopesTab({
-        realm,
-        clientId,
-        tab,
-      }),
-    );
+  const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
 
-  const clientScopesSetupTab = useClientScopesTab("setup");
-  const clientScopesEvaluateTab = useClientScopesTab("evaluate");
+  const clientScopesTabRoute = (tab: ClientScopesTab) =>
+    toClientScopesTab({
+      realm,
+      clientId,
+      tab,
+    });
 
-  const useAuthorizationTab = (tab: AuthorizationTab) =>
-    useRoutableTab(
-      toAuthorizationTab({
-        realm,
-        clientId,
-        tab,
-      }),
-    );
+  const clientScopesSetupTab = useRoutableTab(clientScopesTabRoute("setup"));
+  const clientScopesEvaluateTab = useRoutableTab(
+    clientScopesTabRoute("evaluate"),
+  );
 
-  const authorizationSettingsTab = useAuthorizationTab("settings");
-  const authorizationResourcesTab = useAuthorizationTab("resources");
-  const authorizationScopesTab = useAuthorizationTab("scopes");
-  const authorizationPoliciesTab = useAuthorizationTab("policies");
-  const authorizationPermissionsTab = useAuthorizationTab("permissions");
-  const authorizationEvaluateTab = useAuthorizationTab("evaluate");
-  const authorizationExportTab = useAuthorizationTab("export");
+  const ssfTabRoute = (tab: SsfClientTab) =>
+    toSsfClientTab({
+      realm,
+      clientId,
+      tab,
+    });
+  const ssfReceiverTab = useRoutableTab(ssfTabRoute("receiver"));
+  const ssfStreamTab = useRoutableTab(ssfTabRoute("stream"));
+  const ssfSubjectsTab = useRoutableTab(ssfTabRoute("subjects"));
+  const ssfEventSearchTab = useRoutableTab(ssfTabRoute("event-search"));
+  const ssfEmitEventsTab = useRoutableTab(ssfTabRoute("emit-events"));
+
+  const authorizationTabRoute = (tab: AuthorizationTab) =>
+    toAuthorizationTab({
+      realm,
+      clientId,
+      tab,
+    });
+
+  const authorizationSettingsTab = useRoutableTab(
+    authorizationTabRoute("settings"),
+  );
+  const authorizationResourcesTab = useRoutableTab(
+    authorizationTabRoute("resources"),
+  );
+  const authorizationScopesTab = useRoutableTab(
+    authorizationTabRoute("scopes"),
+  );
+  const authorizationPoliciesTab = useRoutableTab(
+    authorizationTabRoute("policies"),
+  );
+  const authorizationPermissionsTab = useRoutableTab(
+    authorizationTabRoute("permissions"),
+  );
+  const authorizationEvaluateTab = useRoutableTab(
+    authorizationTabRoute("evaluate"),
+  );
+  const authorizationExportTab = useRoutableTab(
+    authorizationTabRoute("export"),
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clientDeleteConfirmTitle",
@@ -283,7 +343,7 @@ export default function ClientDetails() {
       try {
         await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-        navigate(toClients({ realm }));
+        void navigate(toClients({ realm }));
       } catch (error) {
         addError("clientDeleteError", error);
       }
@@ -291,7 +351,6 @@ export default function ClientDetails() {
   });
 
   const setupForm = (client: ClientRepresentation) => {
-    form.reset({ ...client });
     convertToFormValues(client, form.setValue);
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
@@ -302,6 +361,8 @@ export default function ClientDetails() {
         ),
       );
     }
+    // reset dirty as for reason it is not resetting
+    form.reset(form.getValues(), { keepDirty: false });
   };
 
   useFetch(
@@ -413,7 +474,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"
@@ -445,6 +506,7 @@ export default function ClientDetails() {
                   <Keys
                     clientId={clientId}
                     save={save}
+                    refresh={refresh}
                     hasConfigureAccess={client.access?.configure}
                   />
                 )}
@@ -467,7 +529,7 @@ export default function ClientDetails() {
                     key={key}
                     client={client}
                     save={save}
-                    refresh={() => setKey(key + 1)}
+                    refresh={refresh}
                   />
                 </Tab>
               )}
@@ -506,6 +568,8 @@ export default function ClientDetails() {
                     clientId,
                     tab: "setup",
                   })}
+                  mountOnEnter
+                  unmountOnExit
                 >
                   <Tab
                     id="setup"
@@ -535,6 +599,7 @@ export default function ClientDetails() {
               </Tab>
             )}
             {client!.authorizationServicesEnabled &&
+              !isAdminPermissionsClient &&
               (hasManageAuthorization || hasViewAuthorization) && (
                 <Tab
                   id="authorization"
@@ -663,6 +728,110 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
+            {client.protocol === "openid-connect" &&
+              !client.publicClient &&
+              showSsfTab && (
+                <Tab
+                  id="ssf"
+                  data-testid="ssfTab"
+                  title={<TabTitleText>{t("ssf")}</TabTitleText>}
+                  {...ssfTab}
+                >
+                  <RoutableTabs
+                    defaultLocation={ssfTabRoute("receiver")}
+                    mountOnEnter
+                    unmountOnExit
+                  >
+                    <Tab
+                      id="ssfReceiverTab"
+                      data-testid="ssfReceiverTab"
+                      title={<TabTitleText>{t("ssfTabReceiver")}</TabTitleText>}
+                      {...ssfReceiverTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="receiver"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfStreamTab"
+                      data-testid="ssfStreamTab"
+                      title={<TabTitleText>{t("ssfTabStream")}</TabTitleText>}
+                      {...ssfStreamTab}
+                    >
+                      <SsfTab save={save} client={client} activeTab="stream" />
+                    </Tab>
+                    <Tab
+                      id="ssfSubjectsTab"
+                      data-testid="ssfSubjectsTab"
+                      title={<TabTitleText>{t("ssfTabSubjects")}</TabTitleText>}
+                      {...ssfSubjectsTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="subjects"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfEventSearchTab"
+                      data-testid="ssfEventSearchTab"
+                      title={
+                        <TabTitleText>{t("ssfTabEventSearch")}</TabTitleText>
+                      }
+                      {...ssfEventSearchTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="event-search"
+                      />
+                    </Tab>
+                    {showSsfEmitEventsTab && (
+                      <Tab
+                        id="ssfEmitEventsTab"
+                        data-testid="ssfEmitEventsTab"
+                        title={
+                          <TabTitleText>{t("ssfTabEmitEvents")}</TabTitleText>
+                        }
+                        {...ssfEmitEventsTab}
+                      >
+                        <SsfTab
+                          save={save}
+                          client={client}
+                          activeTab="emit-events"
+                        />
+                      </Tab>
+                    )}
+                  </RoutableTabs>
+                </Tab>
+              )}
+            {hasAccess("view-events") && (
+              <Tab
+                data-testid="events-tab"
+                title={<TabTitleText>{t("events")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <Tabs
+                  activeKey={activeEventsTab}
+                  onSelect={(_, key) => setActiveEventsTab(key as string)}
+                >
+                  <Tab
+                    eventKey="userEvents"
+                    title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+                  >
+                    <UserEvents client={client.clientId} />
+                  </Tab>
+                  <Tab
+                    eventKey="adminEvents"
+                    title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                  >
+                    <AdminEvents resourcePath={`clients/${client.id}`} />
+                  </Tab>
+                </Tabs>
+              </Tab>
+            )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>

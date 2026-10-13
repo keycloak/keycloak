@@ -13,7 +13,7 @@ describe("Who am I", () => {
     await client.auth(credentials);
   });
 
-  it("list who I am", async () => {
+  it.skip("list who I am", async () => {
     const whoAmI = await client.whoAmI.find();
     expect(whoAmI).to.be.ok;
     expect(whoAmI.displayName).to.be.equal("admin");

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright 2022 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
@@ -31,40 +32,72 @@ if [ "$1" == "--revert" ]; then
   exit
 fi
 
-DEFAULT_QUARKUS_VERSION="999.0.0-SNAPSHOT"
+SCRIPT_DIR=$(dirname "$0")
+DEFAULT_QUARKUS_VERSION="999-SNAPSHOT"
 QUARKUS_VERSION=${1:-"$DEFAULT_QUARKUS_VERSION"}
-QUARKUS_BRANCH="$QUARKUS_VERSION"
+QUARKUS_BRANCH="${QUARKUS_BRANCH:-$QUARKUS_VERSION}"
+
+EXCLUDED_DEPENDENCIES=(
+    "infinispan"
+    "jakarta.mail"
+    "webauthn4j" # https://github.com/keycloak/keycloak/issues/36385
+)
 
 if [ "$QUARKUS_BRANCH" == "$DEFAULT_QUARKUS_VERSION" ]; then
     QUARKUS_BRANCH="main"
 fi
 
 QUARKUS_BOM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/bom/application/pom.xml"
+QUARKUS_PARENT_POM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/independent-projects/parent/pom.xml"
+
+VERSIONS_FROM_QUARKUS_PARENT=(
+    "version.surefire.plugin"
+)
 
 if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_BOM_URL"); then
     echo "Failed to resolve version from Quarkus BOM at '$QUARKUS_BOM_URL'"
     exit 1
 fi
 
-QUARKUS_BOM=$(curl -s "$QUARKUS_BOM_URL")
+if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_PARENT_POM_URL"); then
+    echo "Failed to resolve version from Quarkus Parent pom.xml at '$QUARKUS_PARENT_POM_URL'"
+    exit 1
+fi
+
+QUARKUS_BOM=$(curl -f -s "$QUARKUS_BOM_URL")
+QUARKUS_PARENT_POM=$(curl -f -s "$QUARKUS_PARENT_POM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
-$(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version,quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
 
-DEPENDENCIES_LIST="resteasy jackson-bom hibernate-orm mysql-jdbc postgresql-jdbc microprofile-metrics-api wildfly-common wildfly-elytron"
+$SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
+$SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
+
+for dependency in "${VERSIONS_FROM_QUARKUS_PARENT[@]}"; do
+    VERSION=$(grep -oP "(?<=<$dependency>)[^<]*(?=</$dependency>)" <<< "$QUARKUS_PARENT_POM")
+    echo "Setting $dependency to $VERSION based on the Quarkus Parent pom.xml"
+    $SCRIPT_DIR/../mvnw versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty="$dependency" -DnewVersion="$VERSION" 1> /dev/null
+done
+
+DEPENDENCIES_LIST=$(grep -oP '(?<=\</).*(?=\.version\>)' "$SCRIPT_DIR/../pom.xml")
 
 echo "Changing dependencies: $DEPENDENCIES_LIST"
-$(mvn -f ./pom.xml versions:revert 1> /dev/null)
+$SCRIPT_DIR/../mvnw -f $SCRIPT_DIR/pom.xml versions:revert 1> /dev/null
 
 for dependency in $DEPENDENCIES_LIST; do
+    for excluded in "${EXCLUDED_DEPENDENCIES[@]}"; do
+        if [[ $dependency =~ $excluded ]]; then
+            echo "Skipping $dependency because it is listed as an excluded dependency"
+            continue 2
+        fi
+    done
     VERSION=$(grep -oP "(?<=<$dependency.version>).*(?=</$dependency.version)" <<< "$QUARKUS_BOM")
     if [ "$VERSION" == "" ]; then
         echo "Failed to resolve version for dependency '$dependency'"
-        exit 1
+        continue
     fi
-    echo "Setting $VERSION to $dependency"
-    mvn versions:set-property -f ../pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
-    mvn versions:set-property -f ./pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
+    echo "Setting $dependency to $VERSION"
+        $SCRIPT_DIR/../mvnw versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
+        $SCRIPT_DIR/../mvnw versions:set-property -f $SCRIPT_DIR/pom.xml -Dproperty="$dependency".version -DnewVersion="$VERSION" 1> /dev/null
 done
 
 echo ""

@@ -3,17 +3,18 @@ package org.keycloak.common.crypto;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.BouncyIntegration;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,6 +43,10 @@ public class CryptoIntegration {
         }
     }
 
+    public static boolean isInitialised() {
+        return cryptoProvider != null;
+    }
+
     public static CryptoProvider getProvider() {
         if (cryptoProvider == null) {
             throw new IllegalStateException("Illegal state. Please init first before obtaining provider");
@@ -53,15 +58,20 @@ public class CryptoIntegration {
     // Try to auto-detect provider
     private static CryptoProvider detectProvider(ClassLoader classLoader) {
         List<CryptoProvider> foundProviders = StreamSupport.stream(ServiceLoader.load(CryptoProvider.class, classLoader).spliterator(), false)
+                .sorted(Comparator.comparingInt(CryptoProvider::order).reversed())
                 .collect(Collectors.toList());
 
         if (foundProviders.isEmpty()) {
             throw new IllegalStateException("Not able to load any cryptoProvider with the classLoader: " + classLoader);
-        } else if (foundProviders.size() > 1) {
-            throw new IllegalStateException("Multiple crypto providers loaded with the classLoader: " + classLoader +
-                    ". Make sure only one cryptoProvider available on the classpath. Available providers: " +foundProviders);
         } else {
             logger.debugf("Detected crypto provider: %s", foundProviders.get(0).getClass().getName());
+            if (foundProviders.size() > 1) {
+                StringBuilder builder = new StringBuilder("Ignored crypto providers: ");
+                for (int i = 1 ; i < foundProviders.size() ; i++) {
+                    builder.append(foundProviders.get(i).getClass().getName() + ", ");
+                }
+                logger.debugf(builder.toString());
+            }
             return foundProviders.get(0);
         }
     }
@@ -88,7 +98,7 @@ public class CryptoIntegration {
     }
 
     public static void setProvider(CryptoProvider provider) {
-        logger.debugf("Using the crypto provider: %s", provider.getClass().getName());
+        logger.debugf("Using the crypto provider: %s", provider != null ? provider.getClass().getName() : "null");
         cryptoProvider = provider;
     }
 }

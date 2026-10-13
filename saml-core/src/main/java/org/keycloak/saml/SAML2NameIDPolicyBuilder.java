@@ -16,9 +16,9 @@
  */
 package org.keycloak.saml;
 
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-
 import java.net.URI;
+
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 
 /**
  * @author pedroigor

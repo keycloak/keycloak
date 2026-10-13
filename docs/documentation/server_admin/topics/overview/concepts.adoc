@@ -64,7 +64,7 @@ protocol mappers::
   protocol mappers.
 session::
   When a user logs in, a session is created to manage the login session.  A session contains information like when the user logged in and what
-  applications have participated within single-sign on during that session.  Both admins and users can view session information.
+  applications have participated within single sign-on during that session.  Both admins and users can view session information.
 user federation provider::
   {project_name} can store and manage users.  Often, companies already have LDAP or Active Directory services that store user and credential
   information.  You can point {project_name} to validate credentials from those external stores and pull in identity information.
@@ -72,7 +72,7 @@ identity provider::
   An identity provider (IDP) is a service that can authenticate a user.  {project_name} is an IDP.
 identity provider federation::
   {project_name} can be configured to delegate authentication to one or more IDPs.  Social login via
-  Facebook or Google+ is an example of identity provider federation.  You can also hook {project_name} to delegate
+  Facebook or Google is an example of identity provider federation.  You can also hook {project_name} to delegate
   authentication to any other OpenID Connect or SAML 2.0 IDP.
 identity provider mappers::
   When doing IDP federation you can map incoming tokens and assertions to user and session attributes.  This helps you propagate identity information from the external IDP

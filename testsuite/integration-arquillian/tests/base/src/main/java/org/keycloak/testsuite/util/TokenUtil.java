@@ -16,11 +16,14 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
-import org.keycloak.common.util.Time;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Created by st on 22/03/17.
@@ -42,9 +45,8 @@ public class TokenUtil implements TestRule {
     public TokenUtil(String username, String password) {
         this.username = username;
         this.password = password;
-        this.oauth = new OAuthClient();
-        this.oauth.init(null);
-        this.oauth.clientId("direct-grant");
+        this.oauth = new OAuthClient(HttpClientUtils.createDefault(), null);
+        this.oauth.client("direct-grant", "password");
     }
 
     @Override
@@ -68,7 +70,7 @@ public class TokenUtil implements TestRule {
 
     private void load() {
         try {
-            OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest("password", username, password);
+            AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(username, password);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }
@@ -84,7 +86,7 @@ public class TokenUtil implements TestRule {
 
     private void refresh() {
         try {
-            OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken, "password");
+            AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }

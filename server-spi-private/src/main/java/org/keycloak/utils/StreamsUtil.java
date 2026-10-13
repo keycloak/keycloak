@@ -142,4 +142,19 @@ public class StreamsUtil {
             }
         }, false);
     }
+
+    /**
+     * This works around a bug in JDK 21 (but no longer in JDK 24) where a sorted stream has all its elements processed
+     * when used inside of a flatmap and a terminal operation like limit() is used outside of it.
+     * See StreamUtilTests.testSortedInsideOfFlatMapShouldRespectTerminalOperation for an example.
+     * Possible <a href="https://bugs.openjdk.org/browse/JDK-8196106">JDK-8196106</a> as the reference to the bug.
+     *
+     * @param <T> The type of the stream
+     * @param originalStream The original stream
+     * @return The stream that is lazily evaluating
+     */
+    public static <T> Stream<T> prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations(Stream<T> originalStream) {
+        return StreamSupport.stream(originalStream.spliterator(), false);
+    }
+
 }

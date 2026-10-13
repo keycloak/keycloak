@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.client.policies;
 
-import org.junit.After;
-import org.junit.Test;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
@@ -27,12 +29,12 @@ import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import org.junit.After;
+import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * This test class is for testing client policies that are applied when importing and exporting a realm setting file.
@@ -59,14 +61,14 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
 
     @After
     public void afterImportExport() {
-        testingClient.testing().exportImport().clear();
+        runOnServerMaster.run(ExportImportHelper.clear());
     }
 
     @Test
     public void testSingleFileRealmExportImport() throws Throwable {
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "client-policies-exported-realm.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        String targetFilePath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "client-policies-exported-realm.json";
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
 
         setupValidProfilesAndPolicies();
 
@@ -74,10 +76,10 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
     }
 
     private void testRealmExportImport() throws Exception {
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName("test");
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName("test"));
 
-        testingClient.testing().exportImport().runExport();
+        runOnServerMaster.run(ExportImportHelper.runExport());
 
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
@@ -85,9 +87,9 @@ public class ClientPoliciesImportExportTest extends AbstractClientPoliciesTest {
         Assert.assertNames(adminClient.realms().findAll(), "master");
 
         // Configure import
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-        testingClient.testing().exportImport().runImport();
+        runOnServerMaster.run(ExportImportHelper.runImport());
 
         // Ensure data are imported back, but just for "test" realm
         Assert.assertNames(adminClient.realms().findAll(), "master", "test");

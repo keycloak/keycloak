@@ -17,26 +17,22 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel.ExecutionStatus;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(AuthenticationSessionEntity.ExternalizerImpl.class)
-public class AuthenticationSessionEntity implements Serializable {
+@ProtoTypeId(Marshalling.AUTHENTICATION_SESSION_ENTITY)
+public class AuthenticationSessionEntity {
 
     private String clientUUID;
 
@@ -60,12 +56,12 @@ public class AuthenticationSessionEntity implements Serializable {
     }
 
     public AuthenticationSessionEntity(
-      String clientUUID,
-      String authUserId,
-      int timestamp,
-      String redirectUri, String action, Set<String> clientScopes,
-      Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
-      Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
+            String clientUUID,
+            String authUserId,
+            int timestamp,
+            String redirectUri, String action, Set<String> clientScopes,
+            Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
+            Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
         this(clientUUID, authUserId, redirectUri, action, clientScopes, executionStatus, protocol, clientNotes, authNotes, requiredActions, userSessionNotes);
         this.timestamp = timestamp;
     }
@@ -93,6 +89,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.userSessionNotes = userSessionNotes;
     }
 
+    @ProtoField(1)
     public String getClientUUID() {
         return clientUUID;
     }
@@ -101,6 +98,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.clientUUID = clientUUID;
     }
 
+    @ProtoField(2)
     public String getAuthUserId() {
         return authUserId;
     }
@@ -109,6 +107,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.authUserId = authUserId;
     }
 
+    @ProtoField(3)
     public int getTimestamp() {
         return timestamp;
     }
@@ -117,6 +116,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.timestamp = timestamp;
     }
 
+    @ProtoField(4)
     public String getRedirectUri() {
         return redirectUri;
     }
@@ -125,6 +125,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.redirectUri = redirectUri;
     }
 
+    @ProtoField(5)
     public String getAction() {
         return action;
     }
@@ -133,6 +134,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.action = action;
     }
 
+    @ProtoField(value = 6, collectionImplementation = HashSet.class)
     public Set<String> getClientScopes() {
         return clientScopes;
     }
@@ -141,6 +143,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.clientScopes = clientScopes;
     }
 
+    @ProtoField(value = 7, mapImplementation = ConcurrentHashMap.class)
     public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
         return executionStatus;
     }
@@ -149,6 +152,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.executionStatus = executionStatus;
     }
 
+    @ProtoField(8)
     public String getProtocol() {
         return protocol;
     }
@@ -157,6 +161,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.protocol = protocol;
     }
 
+    @ProtoField(value = 9, mapImplementation = ConcurrentHashMap.class)
     public Map<String, String> getClientNotes() {
         return clientNotes;
     }
@@ -165,6 +170,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.clientNotes = clientNotes;
     }
 
+    @ProtoField(value = 10, collectionImplementation = HashSet.class)
     public Set<String> getRequiredActions() {
         return requiredActions;
     }
@@ -173,6 +179,7 @@ public class AuthenticationSessionEntity implements Serializable {
         this.requiredActions = requiredActions;
     }
 
+    @ProtoField(value = 11, mapImplementation = ConcurrentHashMap.class)
     public Map<String, String> getUserSessionNotes() {
         return userSessionNotes;
     }
@@ -181,116 +188,12 @@ public class AuthenticationSessionEntity implements Serializable {
         this.userSessionNotes = userSessionNotes;
     }
 
+    @ProtoField(value = 12, mapImplementation = ConcurrentHashMap.class)
     public Map<String, String> getAuthNotes() {
         return authNotes;
     }
 
     public void setAuthNotes(Map<String, String> authNotes) {
         this.authNotes = authNotes;
-    }
-
-    public static class ExternalizerImpl implements Externalizer<AuthenticationSessionEntity> {
-
-        private static final int VERSION_1 = 1;
-        private static final int VERSION_2 = 2;
-
-        public static final ExternalizerImpl INSTANCE = new ExternalizerImpl();
-
-        private static AuthenticationSessionModel.ExecutionStatus fromOrdinal(int ordinal) {
-            ExecutionStatus[] values = AuthenticationSessionModel.ExecutionStatus.values();
-            return (ordinal < 0 || ordinal >= values.length)
-              ? null
-              : values[ordinal];
-        }
-
-        public static final Externalizer<AuthenticationSessionModel.ExecutionStatus> EXECUTION_STATUS_EXT = new Externalizer<AuthenticationSessionModel.ExecutionStatus>() {
-
-            @Override
-            public void writeObject(ObjectOutput output, AuthenticationSessionModel.ExecutionStatus e) throws IOException {
-                MarshallUtil.marshallEnum(e, output);
-            }
-
-            @Override
-            public AuthenticationSessionModel.ExecutionStatus readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-                return MarshallUtil.unmarshallEnum(input, ExternalizerImpl::fromOrdinal);
-            }
-        };
-
-        @Override
-        public void writeObject(ObjectOutput output, AuthenticationSessionEntity value) throws IOException {
-            output.writeByte(VERSION_2);
-
-            MarshallUtil.marshallString(value.clientUUID, output);
-
-            MarshallUtil.marshallString(value.authUserId, output);
-
-            output.writeInt(value.timestamp);
-
-            MarshallUtil.marshallString(value.redirectUri, output);
-            MarshallUtil.marshallString(value.action, output);
-            KeycloakMarshallUtil.writeCollection(value.clientScopes, KeycloakMarshallUtil.STRING_EXT, output);
-
-            KeycloakMarshallUtil.writeMap(value.executionStatus, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, output);
-            MarshallUtil.marshallString(value.protocol, output);
-
-            KeycloakMarshallUtil.writeMap(value.clientNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-            KeycloakMarshallUtil.writeMap(value.authNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-            KeycloakMarshallUtil.writeCollection(value.requiredActions, KeycloakMarshallUtil.STRING_EXT, output);
-            KeycloakMarshallUtil.writeMap(value.userSessionNotes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
-        }
-
-        @Override
-        public AuthenticationSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                case VERSION_2:
-                    return readObjectVersion2(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public AuthenticationSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            return new AuthenticationSessionEntity(
-              MarshallUtil.unmarshallString(input),     // clientUUID
-
-              MarshallUtil.unmarshallString(input),     // authUserId
-
-              MarshallUtil.unmarshallString(input),     // redirectUri
-              MarshallUtil.unmarshallString(input),     // action
-              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // clientScopes
-
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
-              MarshallUtil.unmarshallString(input),     // protocol
-
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
-              KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
-              KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
-            );
-        }
-
-        public AuthenticationSessionEntity readObjectVersion2(ObjectInput input) throws IOException, ClassNotFoundException {
-            return new AuthenticationSessionEntity(
-                    MarshallUtil.unmarshallString(input),     // clientUUID
-
-                    MarshallUtil.unmarshallString(input),     // authUserId
-
-                    input.readInt(),                          // timestamp
-
-                    MarshallUtil.unmarshallString(input),     // redirectUri
-                    MarshallUtil.unmarshallString(input),     // action
-                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // clientScopes
-
-                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
-                    MarshallUtil.unmarshallString(input),     // protocol
-
-                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
-                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
-                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
-                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
-            );
-        }
     }
 }

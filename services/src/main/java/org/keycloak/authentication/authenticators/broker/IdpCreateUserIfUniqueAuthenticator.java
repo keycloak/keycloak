@@ -17,25 +17,32 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
-import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler.runIfUserVerified;
+import static org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -61,25 +68,33 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         }
 
         String username = getUsername(context, serializedCtx, brokerContext);
-        if (username == null) {
+        if (username == null || username.trim().isEmpty()) {
             ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
             context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
         }
 
-        ExistingUserInfo duplication = brokerContext.getIdpConfig().isTransientUsers() ? null : checkExistingUser(context, username, serializedCtx, brokerContext);
+        if (AuthenticatorUtils.isUsernameTooLong(username)) {
+            ServicesLogger.LOGGER.resetFlow("Username exceeds maximum length");
+            context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.resetFlow();
+            return;
+        }
+
+        IdentityProviderModel broker = brokerContext.getIdpConfig();
+        ExistingUserInfo duplication = broker.isTransientUsers() ? null : checkExistingUser(context, username, serializedCtx, brokerContext);
 
         UserModel federatedUser = null;
-        if (brokerContext.getIdpConfig().isTransientUsers()) {
+        if (broker.isTransientUsers()) {
             logger.debugf("Transient brokering requested. Recording user details for account '%s' and from identity provider '%s' .",
-                    username, brokerContext.getIdpConfig().getAlias());
+                    username, broker.getAlias());
 
             federatedUser = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             federatedUser.setUsername(username);
         } else if (duplication == null) {
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
-                    username, brokerContext.getIdpConfig().getAlias());
+                    username, broker.getAlias());
 
             federatedUser = session.users().addUser(realm, username);
         }
@@ -87,7 +102,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         if (federatedUser != null) {
             federatedUser.setEnabled(true);
 
-            for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
+            for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
                     federatedUser.setAttribute(attr.getKey(), attr.getValue());
                 }
@@ -104,7 +119,17 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             context.setUser(federatedUser);
             context.getAuthenticationSession().setAuthNote(BROKER_REGISTERED_NEW_USER, "true");
             context.success();
-        } else {
+        } else if (duplication != null) {
+            UserModel user = session.users().getUserById(realm, duplication.getExistingUserId());
+
+            if (runIfUserVerified(session, user, broker, brokerContext.getId(),
+                    () -> {
+                        context.setUser(user);
+                        context.success();
+                    })) {
+                return;
+            }
+
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
 
@@ -122,25 +147,48 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                         .removeDetail(Details.AUTH_METHOD)
                         .removeDetail(Details.AUTH_TYPE)
                         .error(Errors.FEDERATED_IDENTITY_EXISTS);
-            } else {
-                context.attempted();
+                return;
             }
+
+            context.attempted();
         }
     }
 
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
-        if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
-            UserModel existingUser = context.getSession().users().getUserByEmail(context.getRealm(), brokerContext.getEmail());
+        RealmModel realm = context.getRealm();
+        UserProvider users = context.getSession().users();
+        String email = brokerContext.getEmail();
+
+        if (email != null && !realm.isDuplicateEmailsAllowed()) {
+            UserModel existingUser = users.getUserByEmail(realm, email);
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
             }
+
+            // When login with email is allowed an e-mail address also identifies a user at login time, so a brokered
+            // e-mail that matches the username of an existing account has to be treated as a duplication as well.
+            // Otherwise the new account would shadow the existing one and lock it out of every username based login.
+            if (realm.isLoginWithEmailAllowed()) {
+                existingUser = users.getUserByUsername(realm, email);
+                if (existingUser != null) {
+                    return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
+                }
+            }
         }
 
-        UserModel existingUser = context.getSession().users().getUserByUsername(context.getRealm(), username);
+        UserModel existingUser = users.getUserByUsername(realm, username);
         if (existingUser != null) {
             return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
+        }
+
+        // Same reasoning as above, for a brokered username that matches the e-mail of an existing account
+        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') > 0) {
+            existingUser = users.getUserByEmail(realm, username);
+            if (existingUser != null) {
+                return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
+            }
         }
 
         return null;

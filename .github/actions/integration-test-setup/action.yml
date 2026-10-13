@@ -9,11 +9,15 @@ inputs:
   jdk-version:
     description: JDK version
     required: false
-    default: "17"
+    default: "25"
 
 runs:
   using: composite
   steps:
+    - id: update-hosts
+      name: Update /etc/hosts
+      uses: ./.github/actions/update-hosts
+
     - id: setup-java
       name: Setup Java
       uses: ./.github/actions/java-setup
@@ -25,17 +29,18 @@ runs:
       name: Maven cache
       uses: ./.github/actions/maven-cache
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
 
-    - id: frontend-plugin-cache
-      name: Frontend Plugin Cache
-      uses: ./.github/actions/frontend-plugin-cache
+    - id: pnpm-store-cache
+      name: PNPM store cache
+      uses: ./.github/actions/pnpm-store-cache
 
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         name: m2-keycloak.tzts
 
@@ -44,6 +49,7 @@ runs:
       shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          choco install zstandard
+          # zstd binary might be missing in older versions, install only when necessary
+          which zstd > /dev/null || choco install zstandard
         fi
         tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts

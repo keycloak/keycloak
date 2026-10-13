@@ -1,76 +1,70 @@
 # Keycloak Admin UI
 
-This project is the next generation of the Keycloak Administration UI. It is written with React and [PatternFly 4](https://www.patternfly.org/v4/) and uses [Vite](https://vitejs.dev/guide/) and [Cypress](https://docs.cypress.io/guides/overview/why-cypress).
+This project is the next generation of the Keycloak Admin UI. It is written with React and [PatternFly 4](https://www.patternfly.org/v4/) and uses [Vite](https://vitejs.dev/guide/).
 
-## Development
+## Features
 
-### Prerequisites
+Contains all the "pages" from the admin-ui as re-usable components, all the functions to save and the side menu to use in your own build of the admin-ui
 
-Make sure that you have Node.js version 18 (or later) installed on your system. If you do not have Node.js installed we recommend using [Node Version Manager](https://github.com/nvm-sh/nvm) to install it.
-
-You can find out which version of Node.js you are using by running the following command:
+## Install
 
 ```bash
-node --version
+npm i @keycloak/keycloak-admin-ui
 ```
 
-In order to run the Keycloak server you will also have to install the Java Development Kit (JDK). We recommend that you use the same version of the JDK as [required by the Keycloak server](https://github.com/keycloak/keycloak/blob/main/docs/building.md#building-from-source).
+## Usage
 
-### Running the Keycloak server
+Wrap your app with `KeycloakProvider` from `@keycloak/keycloak-ui-shared` so the realm, client, and server URLs are available. Any subtree that calls `useAdminClient()` (or otherwise needs the Keycloak Admin Client) must also be wrapped with `AdminClientProvider` from this package, **inside** `KeycloakProvider`. `AdminClientProvider` initializes the admin client from the authenticated Keycloak instance and exposes it through `AdminClientContext`.
 
-See the instructions in the [Keycloak server app](../keycloak-server/README.md).
+```jsx
+import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+import { AdminClientProvider } from "@keycloak/keycloak-admin-ui";
 
-### Running the development server
+//...
 
-Now that the Keycloak sever is running it's time to run the development server for the Admin UI. This server is used to build the Admin UI in a manner that it can be iterated on quickly in a browser, using features such as [Hot Module Replacement (HMR)](https://vitejs.dev/guide/features.html#hot-module-replacement) and [Fast Refresh](https://www.npmjs.com/package/react-refresh).
+<KeycloakProvider environment={environment}>
+  <AdminClientProvider>
+    {/* components that use useAdminClient() */}
+  </AdminClientProvider>
+</KeycloakProvider>
+```
 
-To start the development server run the following command:
+The `environment` object must include the admin console fields expected by this library (see `AdminEnvironment` in the package), not only `BaseEnvironment`.
+
+### Translation
+
+For the translation we use `react-i18next` you can [set it up](https://react.i18next.com/) as described on their website.
+If you want to use the translations that are provided then you need to add `i18next-fetch-backend` to your project and add:
+
+```ts
+
+backend: {
+  loadPath: `http://localhost:8180/resources/master/admin/{{lng}}`,
+  parse: (data: string) => {
+    const messages = JSON.parse(data);
+
+    return Object.fromEntries(
+      messages.map(({ key, value }) => [key, value])
+    );
+  },
+},
+```
+to the `i18next` config object.
+
+## Playwright Test Environment
+
+The Playwright tests under `js/apps/admin-ui/test` accept these environment variables:
+
+- `KEYCLOAK_SERVER_URL` (default: `http://localhost:8080`)
+- `KEYCLOAK_ADMIN_USER` and `KEYCLOAK_ADMIN_PASSWORD` (default: `admin` / `admin`)
+- `KEYCLOAK_REQUIRE_OID4VCI=true` to fail OID4VCI tests when the server feature is missing instead of skipping them
+
+These test-only variables are different from server bootstrap variables such as `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
+
+## Building
+
+To build a library instead of an app you need to add the `LIB=true` environment variable.
 
 ```bash
-pnpm run dev
+LIB=true pnpm run build
 ```
-
-Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default username and password (`admin`).
-
-You can now start making changes to the source code, and they will be reflected in your browser.
-
-## Building as a Keycloak theme
-
-If you want to build the application using Maven and produce a JAR that can be installed directly into Keycloak, check out the [Keycloak theme documentation](../../keycloak-theme/README.md).
-
-## Linting
-
-Every time you create a commit it should be automatically linted and formatted for you. It is also possible to trigger the linting manually:
-
-```bash
-pnpm run lint
-```
-
-## Integration testing with Cypress
-
-This repository contains integration tests developed with the [Cypress framework](https://www.cypress.io/).
-
-### Prerequisites
-
-Ensure the Keycloak and development server are running as [outlined previously](#running-the-keycloak-server) in this document.
-
-### Running the tests
-
-You can run the tests using the interactive graphical user interface using the following command:
-
-```bash
-pnpm run cy:open
-```
-
-Alternatively the tests can also run headless as follows:
-
-```
-pnpm run cy:run
-```
-
-For more information about the Cypress command-line interface consult [the documentation](https://docs.cypress.io/guides/guides/command-line).
-
-### Project Structure
-
-You can find information about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests#Folder-structure).
-Read more about [how to write tests](./cypress/WRITING_TESTS.md)

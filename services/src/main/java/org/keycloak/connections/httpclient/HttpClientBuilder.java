@@ -17,26 +17,6 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.impl.NoConnectionReuseStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -46,6 +26,24 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
+import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -76,11 +74,13 @@ public class HttpClientBuilder {
         }
     }
 
+    public static long DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS = 5000L;
+
     protected KeyStore truststore;
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
-    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
+    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
     protected SSLContext sslContext;
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;
@@ -89,14 +89,24 @@ public class HttpClientBuilder {
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
     protected long maxConnectionIdleTime = 900000;
     protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
-    protected HostnameVerifier verifier = null;
     protected long socketTimeout = -1;
     protected TimeUnit socketTimeoutUnits = TimeUnit.MILLISECONDS;
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
+    protected long connectionRequestTimeout = DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS;
+    protected TimeUnit connectionRequestTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
+    protected final org.apache.http.impl.client.HttpClientBuilder apacheBuilder;
+
+    public HttpClientBuilder() {
+        this(HttpClients.custom());
+    }
+
+    public HttpClientBuilder(org.apache.http.impl.client.HttpClientBuilder apacheBuilder) {
+        this.apacheBuilder = apacheBuilder;
+    }
 
     /**
      * Socket inactivity timeout
@@ -123,6 +133,20 @@ public class HttpClientBuilder {
     {
         this.establishConnectionTimeout = timeout;
         this.establishConnectionTimeoutUnits = unit;
+        return this;
+    }
+
+    /**
+     * When trying to obtain a connection, what is the timeout?
+     *
+     * @param timeout
+     * @param unit
+     * @return
+     */
+    public HttpClientBuilder connectionRequestTimeout(long timeout, TimeUnit unit)
+    {
+        this.connectionRequestTimeout = timeout;
+        this.connectionRequestTimeoutUnits = unit;
         return this;
     }
 
@@ -160,6 +184,15 @@ public class HttpClientBuilder {
      */
     public HttpClientBuilder disableTrustManager() {
         this.disableTrustManager = true;
+        return this;
+    }
+
+    /**
+     * Disables automatic redirect handling.
+     * @return
+     */
+    public HttpClientBuilder disableRedirectHandling() {
+        apacheBuilder.disableRedirectHandling();
         return this;
     }
 
@@ -215,49 +248,21 @@ public class HttpClientBuilder {
         return this;
     }
 
-    static class VerifierWrapper implements X509HostnameVerifier {
-        protected HostnameVerifier verifier;
-
-        VerifierWrapper(HostnameVerifier verifier) {
-            this.verifier = verifier;
-        }
-
-        @Override
-        public void verify(String host, SSLSocket ssl) throws IOException {
-            if (!verifier.verify(host, ssl.getSession())) throw new SSLException("Hostname verification failure");
-        }
-
-        @Override
-        public void verify(String host, X509Certificate cert) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public boolean verify(String s, SSLSession sslSession) {
-            return verifier.verify(s, sslSession);
-        }
-    }
-
     public CloseableHttpClient build() {
-        X509HostnameVerifier verifier = null;
-        if (this.verifier != null) verifier = new VerifierWrapper(this.verifier);
-        else {
-            switch (policy) {
-                case ANY:
-                    verifier = new AllowAllHostnameVerifier();
-                    break;
-                case WILDCARD:
-                    verifier = new BrowserCompatHostnameVerifier();
-                    break;
-                case STRICT:
-                    verifier = new StrictHostnameVerifier();
-                    break;
-            }
+        HostnameVerifier verifier = null;
+        switch (policy) {
+            case ANY:
+                verifier = new NoopHostnameVerifier();
+                break;
+            case WILDCARD:
+                verifier = new BrowserCompatHostnameVerifier();
+                break;
+            case STRICT:
+                verifier = new StrictHostnameVerifier();
+                break;
+            case DEFAULT:
+                verifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
+                break;
         }
         try {
             SSLConnectionSocketFactory sslsf = null;
@@ -266,7 +271,7 @@ public class HttpClientBuilder {
                 theContext = SSLContext.getInstance("TLS");
                 theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
                         new SecureRandom());
-                verifier = new AllowAllHostnameVerifier();
+                verifier = new NoopHostnameVerifier();
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (theContext != null) {
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
@@ -280,11 +285,12 @@ public class HttpClientBuilder {
             }
 
             RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout)
+                    .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
+                    .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
+                    .setConnectionRequestTimeout((int) TimeUnit.MILLISECONDS.convert(connectionRequestTimeout, connectionRequestTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
-            org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
+            org.apache.http.impl.client.HttpClientBuilder builder = getApacheHttpClientBuilder()
                     .setDefaultRequestConfig(requestConfig)
                     .setSSLSocketFactory(sslsf)
                     .setMaxConnTotal(connectionPoolSize)
@@ -306,14 +312,14 @@ public class HttpClientBuilder {
 
             if (disableCookies) builder.disableCookieManagement();
 
-            if (!reuseConnections) {
-                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
-            }
-
             return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
+        return apacheBuilder;
     }
 
     private SSLContext createSslContext(
@@ -324,10 +330,10 @@ public class HttpClientBuilder {
             final SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
         return SSLContexts.custom()
-                        .useProtocol(algorithm)
+                        .setProtocol(algorithm)
                         .setSecureRandom(random)
                         .loadKeyMaterial(keystore, keyPassword != null ? keyPassword.toCharArray() : null)
-                        .loadTrustMaterial(truststore)
+                        .loadTrustMaterial(truststore, null)
                         .build();
     }
 

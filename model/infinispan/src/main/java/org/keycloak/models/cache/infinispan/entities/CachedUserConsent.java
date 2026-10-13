@@ -17,11 +17,13 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserConsentModel;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -30,6 +32,7 @@ public class CachedUserConsent {
 
     private final String clientDbId;
     private final Set<String> clientScopeIds = new HashSet<>();
+    private final MultivaluedHashMap<String,String> parameters = new MultivaluedHashMap<>();
     private final Long createdDate;
     private final Long lastUpdatedDate;
     private boolean notExistent;
@@ -38,6 +41,9 @@ public class CachedUserConsent {
         this.clientDbId = consentModel.getClient().getId();
         for (ClientScopeModel clientScope : consentModel.getGrantedClientScopes()) {
             this.clientScopeIds.add(clientScope.getId());
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                this.parameters.addAll(clientScope.getId(), consentModel.getParameters(clientScope));
+            }
         }
         this.createdDate = consentModel.getCreatedDate();
         this.lastUpdatedDate = consentModel.getLastUpdatedDate();
@@ -56,6 +62,10 @@ public class CachedUserConsent {
 
     public Set<String> getClientScopeIds() {
         return clientScopeIds;
+    }
+
+    public List<String> getParameters(String scopeId) {
+        return parameters.getList(scopeId);
     }
 
     public Long getCreatedDate() {

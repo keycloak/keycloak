@@ -3,6 +3,7 @@ import type IdentityProviderMapperRepresentation from "../defs/identityProviderM
 import type { IdentityProviderMapperTypeRepresentation } from "../defs/identityProviderMapperTypeRepresentation.js";
 import type IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
+import type CertificateRepresentation from "../defs/certificateRepresentation.js";
 import Resource from "./resource.js";
 
 export interface PaginatedQuery {
@@ -12,6 +13,9 @@ export interface PaginatedQuery {
 
 export interface IdentityProvidersQuery extends PaginatedQuery {
   search?: string;
+  realmOnly?: boolean;
+  type?: string;
+  capability?: string;
 }
 
 export class IdentityProviders extends Resource<{ realm?: string }> {
@@ -39,12 +43,21 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { alias: string },
-    IdentityProviderRepresentation | undefined
+    IdentityProviderRepresentation | null
   >({
     method: "GET",
     path: "/instances/{alias}",
     urlParamKeys: ["alias"],
     catchNotFound: true,
+  });
+
+  public uploadCertificate = this.makeUpdateRequest<
+    {},
+    FormData,
+    CertificateRepresentation
+  >({
+    method: "POST",
+    path: "/upload-certificate",
   });
 
   public update = this.makeUpdateRequest<
@@ -80,7 +93,7 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
 
   public findOneMapper = this.makeRequest<
     { alias: string; id: string },
-    IdentityProviderMapperRepresentation | undefined
+    IdentityProviderMapperRepresentation | null
   >({
     method: "GET",
     path: "/instances/{alias}/mappers/{id}",

@@ -17,10 +17,10 @@
 
 package org.keycloak.common.util;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-
 import java.security.Provider;
 import java.security.Security;
+
+import org.keycloak.common.crypto.CryptoIntegration;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

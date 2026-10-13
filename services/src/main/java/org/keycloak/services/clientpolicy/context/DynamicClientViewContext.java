@@ -23,7 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-public class DynamicClientViewContext extends AbstractDynamicClientCRUDContext {
+public class DynamicClientViewContext extends AbstractDynamicClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientModel targetClient;
 

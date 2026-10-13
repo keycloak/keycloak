@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,92 +16,58 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.BasicCache;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
-import org.infinispan.context.Flag;
-import org.keycloak.models.KeycloakTransaction;
-
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
 import org.infinispan.Cache;
+import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfinispanKeycloakTransaction implements KeycloakTransaction {
+public class InfinispanKeycloakTransaction implements NonBlockingTransaction {
 
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
-    public enum CacheOperation {
-        ADD, ADD_WITH_LIFESPAN, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
-    }
-
-    private boolean active;
-    private boolean rollback;
-    private final Map<Object, CacheTask> tasks = new LinkedHashMap<>();
-
-    @Override
-    public void begin() {
-        active = true;
-    }
-
-    @Override
-    public void commit() {
-        if (rollback) {
-            throw new RuntimeException("Rollback only!");
+    /**
+     * Tombstone to mark an entry as already removed for the current session.
+     */
+    private static final CacheTask TOMBSTONE = new CacheTask() {
+        @Override
+        public void execute(AggregateCompletionStage<Void> stage) {
+            // noop
         }
 
-        tasks.values().forEach(CacheTask::execute);
+        @Override
+        public String toString() {
+            return "Tombstone after removal";
+        }
+    };
+
+    private final Map<Object, CacheTask> tasks = new HashMap<>();
+
+    private enum CacheOperation {
+        ADD_WITH_LIFESPAN, REMOVE, REPLACE
     }
 
     @Override
-    public void rollback() {
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        for (var task : tasks.values()) {
+            task.execute(stage);
+        }
+    }
+
+    @Override
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
         tasks.clear();
-    }
-
-    @Override
-    public void setRollbackOnly() {
-        rollback = true;
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return rollback;
-    }
-
-    @Override
-    public boolean isActive() {
-        return active;
-    }
-
-    public <K, V> void put(Cache<K, V> cache, K key, V value) {
-        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD, key);
-
-        Object taskKey = getTaskKey(cache, key);
-        if (tasks.containsKey(taskKey)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
-        } else {
-            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
-                @Override
-                public void execute() {
-                    decorateCache(cache).put(key, value);
-                }
-
-                @Override
-                public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'put' for key %s", key);
-                }
-
-                @Override
-                public Operation getOperation() {
-                    return Operation.PUT;
-                }
-            });
-        }
     }
 
     public <K, V> void put(BasicCache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
@@ -113,42 +79,13 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         } else {
             tasks.put(taskKey, new CacheTaskWithValue<V>(value, lifespan, lifespanUnit) {
                 @Override
-                public void execute() {
-                    decorateCache(cache).put(key, value, lifespan, lifespanUnit);
+                public void execute(AggregateCompletionStage<Void> stage) {
+                    stage.dependsOn(decorateCache(cache).putAsync(key, value, lifespan, lifespanUnit));
                 }
 
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
-                }
-
-                @Override
-                public Operation getOperation() {
-                    return Operation.PUT;
-                }
-            });
-        }
-    }
-
-    public <K, V> void putIfAbsent(Cache<K, V> cache, K key, V value) {
-        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_IF_ABSENT, key);
-
-        Object taskKey = getTaskKey(cache, key);
-        if (tasks.containsKey(taskKey)) {
-            throw new IllegalStateException("Can't add session: task in progress for session");
-        } else {
-            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
-                @Override
-                public void execute() {
-                    V existing = cache.putIfAbsent(key, value);
-                    if (existing != null) {
-                        throw new IllegalStateException("There is already existing value in cache for key " + key);
-                    }
-                }
-
-                @Override
-                public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'putIfAbsent' for key %s", key);
                 }
 
                 @Override
@@ -168,12 +105,15 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
             if (current instanceof CacheTaskWithValue) {
                 ((CacheTaskWithValue<V>) current).setValue(value);
                 ((CacheTaskWithValue<V>) current).updateLifespan(lifespan, lifespanUnit);
+            } else if (current != TOMBSTONE && current.getOperation() != Operation.REMOVE) {
+                // A previous delete operation will take precedence over any new replace
+                throw new IllegalStateException("Can't replace entry: task " + current + " in progress for session");
             }
         } else {
             tasks.put(taskKey, new CacheTaskWithValue<V>(value, lifespan, lifespanUnit) {
                 @Override
-                public void execute() {
-                    decorateCache(cache).replace(key, value, lifespan, lifespanUnit);
+                public void execute(AggregateCompletionStage<Void> stage) {
+                    stage.dependsOn(decorateCache(cache).replaceAsync(key, value, lifespan, lifespanUnit));
                 }
 
                 @Override
@@ -185,18 +125,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    public <K, V> void notify(ClusterProvider clusterProvider, String taskKey, ClusterEvent event, boolean ignoreSender) {
-        log.tracev("Adding cache operation SEND_EVENT: {0}", event);
-
-        String theTaskKey = taskKey;
-        int i = 1;
-        while (tasks.containsKey(theTaskKey)) {
-            theTaskKey = taskKey + "-" + (i++);
-        }
-
-        tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender, ClusterProvider.DCNotify.ALL_DCS));
-    }
-
     public <K, V> void remove(BasicCache<K, V> cache, K key) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
@@ -204,8 +132,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
-            if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
-                tasks.remove(taskKey);
+            if (current instanceof CacheTaskWithValue && current.getOperation() == Operation.PUT) {
+                tasks.put(taskKey, TOMBSTONE);
+                return;
+            }
+            if (current == TOMBSTONE) {
                 return;
             }
         }
@@ -213,8 +144,8 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         tasks.put(taskKey, new CacheTask() {
 
             @Override
-            public void execute() {
-                decorateCache(cache).remove(key);
+            public void execute(AggregateCompletionStage<Void> stage) {
+                stage.dependsOn(decorateCache(cache).removeAsync(key));
             }
 
             @Override
@@ -222,6 +153,10 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 return String.format("CacheTask: Operation 'remove' for key %s", key);
             }
 
+            @Override
+            public Operation getOperation() {
+                return Operation.REMOVE;
+            }
         });
     }
 
@@ -240,29 +175,23 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     }
 
     private static <K, V> Object getTaskKey(BasicCache<K, V> cache, K key) {
-        if (key instanceof String) {
-            return new StringBuilder(cache.getName())
-                    .append("::")
-                    .append(key).toString();
-        } else {
-            return key;
+        return key instanceof String ? cache.getName() + "::" + key : key;
+    }
+
+    private interface CacheTask {
+        void execute(AggregateCompletionStage<Void> stage);
+
+        default Operation getOperation() {
+            return Operation.OTHER;
         }
     }
 
-    public interface CacheTask {
-        void execute();
-    }
+    private enum Operation { PUT, REMOVE, OTHER }
 
-    public enum Operation { PUT, OTHER }
-
-    public static abstract class CacheTaskWithValue<V> implements CacheTask {
+    private static abstract class CacheTaskWithValue<V> implements CacheTask {
         protected V value;
         protected long lifespan;
         protected TimeUnit lifespanUnit;
-
-        public CacheTaskWithValue(V value) {
-            this(value, -1, TimeUnit.SECONDS);
-        }
 
         public CacheTaskWithValue(V value, long lifespan, TimeUnit lifespanUnit) {
             this.value = value;
@@ -282,17 +211,12 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
             this.lifespan = lifespan;
             this.lifespanUnit = lifespanUnit;
         }
-
-        public Operation getOperation() {
-            return Operation.OTHER;
-        }
     }
 
-    // Ignore return values. Should have better performance within cluster / cross-dc env
+    // Ignore return values. Should have better performance within cluster
     private static <K, V> BasicCache<K, V> decorateCache(BasicCache<K, V> cache) {
-        if (cache instanceof RemoteCache)
-            return cache;
-        return ((Cache) cache).getAdvancedCache()
-                .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
+        return cache instanceof Cache<K, V> c ?
+                c.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP) :
+                cache;
     }
 }

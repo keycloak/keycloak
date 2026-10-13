@@ -4,16 +4,16 @@ import { Td } from "@patternfly/react-table";
 import {
   Button,
   Dropdown,
-  DropdownPosition,
-  KebabToggle,
   DropdownItem,
+  DropdownList,
+  MenuToggle,
 } from "@patternfly/react-core";
-
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import useToggle from "../../utils/useToggle";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { CredentialDataDialog } from "./CredentialDataDialog";
 import useFormatDate from "../../utils/useFormatDate";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 
 type CredentialRowProps = {
   credential: CredentialRepresentation;
@@ -57,6 +57,7 @@ export const CredentialRow = ({
     <>
       {showData && Object.keys(credential).length !== 0 && (
         <CredentialDataDialog
+          title={credential.userLabel || t("passwordDataTitle")}
           credentialData={rows}
           onClose={() => {
             toggleShow();
@@ -91,11 +92,24 @@ export const CredentialRow = ({
       )}
       <Td isActionCell>
         <Dropdown
-          isPlain
-          position={DropdownPosition.right}
-          toggle={<KebabToggle onToggle={toggleKebab} />}
+          popperProps={{
+            position: "right",
+          }}
+          onOpenChange={toggleKebab}
+          toggle={(ref) => (
+            <MenuToggle
+              ref={ref}
+              isExpanded={kebabOpen}
+              onClick={toggleKebab}
+              variant="plain"
+              aria-label="Kebab toggle"
+            >
+              <EllipsisVIcon />
+            </MenuToggle>
+          )}
           isOpen={kebabOpen}
-          dropdownItems={[
+        >
+          <DropdownList>
             <DropdownItem
               key={credential.id}
               data-testid="deleteDropdownItem"
@@ -106,9 +120,9 @@ export const CredentialRow = ({
               }}
             >
               {t("deleteBtn")}
-            </DropdownItem>,
-          ]}
-        />
+            </DropdownItem>
+          </DropdownList>
+        </Dropdown>
       </Td>
     </>
   );

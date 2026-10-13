@@ -1,24 +1,24 @@
 package org.keycloak.social.openshift;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * Identity provider for Openshift V4.
@@ -44,30 +44,18 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     }
 
     Map<String, Object> getAuthJson(KeycloakSession session, String baseUrl) {
-        try {
-            InputStream response = getOauthMetadataInputStream(session, baseUrl);
-            Map<String, Object> map = mapMetadata(response);
-            return map;
-        } catch (Exception e) {
-            throw new IdentityBrokerException("Could not initialize oAuth metadata", e);
-        }
-    }
-
-    InputStream getOauthMetadataInputStream(KeycloakSession session, String baseUrl) throws IOException {
-        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         HttpGet getRequest = new HttpGet(baseUrl + OPENSHIFT_OAUTH_METADATA_ENDPOINT);
         getRequest.addHeader("accept", "application/json");
 
-        HttpResponse response = httpClient.execute(getRequest);
-
-        if (response.getStatusLine().getStatusCode() != 200) {
-            throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode());
+        try (CloseableHttpResponse response = httpClient.execute(getRequest)) {
+            if (response.getStatusLine().getStatusCode() != 200) {
+                throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode());
+            }
+            return new ObjectMapper().readValue(response.getEntity().getContent(), Map.class);
+        } catch (Exception e) {
+            throw new IdentityBrokerException("Could not initialize oAuth metadata", e);
         }
-        return response.getEntity().getContent();
-    }
-
-    Map mapMetadata(InputStream response) throws IOException {
-        return new ObjectMapper().readValue(response, Map.class);
     }
 
     @Override
@@ -94,10 +82,9 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
                 getJsonProperty(metadata, "uid") != null
                         ? getJsonProperty(metadata, "uid")
                         : tryGetKubeAdmin(metadata)
-        );
+        , getConfig());
         user.setUsername(getJsonProperty(metadata, "name"));
         user.setName(getJsonProperty(profile, "fullName"));
-        user.setIdpConfig(getConfig());
         user.setIdp(this);
         return user;
     }
@@ -111,7 +98,7 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
     }
 
     private JsonNode fetchProfile(String accessToken) throws IOException {
-        return SimpleHttp.doGet(getConfig().getUserInfoUrl(), this.session)
+        return SimpleHttp.create(session).doGet(getConfig().getUserInfoUrl())
                 .header("Authorization", "Bearer " + accessToken)
                 .asJson();
     }

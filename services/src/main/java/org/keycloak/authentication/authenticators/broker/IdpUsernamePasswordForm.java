@@ -17,7 +17,12 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -25,15 +30,15 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
-import java.util.Optional;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 
 /**
  * Same like classic username+password form, but for use in IdP linking.
@@ -44,6 +49,12 @@ import jakarta.ws.rs.core.Response;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpUsernamePasswordForm extends UsernamePasswordForm {
+
+    private final static Logger log = Logger.getLogger(IdpUsernamePasswordForm.class);
+
+    public IdpUsernamePasswordForm(KeycloakSession session) {
+        super(session);
+    }
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
@@ -71,12 +82,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         Optional<UserModel> existingUser = getExistingUser(context);
         existingUser.ifPresent(context::setUser);
 
-        boolean result = validateUserAndPassword(context, formData);
-
-        // Restore formData for the case of error
-        setupForm(context, formData, existingUser);
-
-        return result;
+        return validateUserAndPassword(context, formData);
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, Optional<UserModel> existingUser) {
@@ -85,12 +91,18 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
+        IdentityProviderModel idpModel = context.getSession().identityProviders().getByAlias(serializedCtx.getIdentityProviderId());
+
         existingUser.ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
+
+        if (isConditionalPasskeysEnabled(existingUser.orElse(null))) {
+            webauthnAuth.fillContextForm(context);
+        }
 
         LoginFormsProvider form = context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true)
-                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, serializedCtx.getIdentityProviderId());
+                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, Validation.isBlank(idpModel.getDisplayName()) ? idpModel.getAlias() : idpModel.getDisplayName());
 
         SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
         if (serializedCtx0 != null) {

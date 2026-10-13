@@ -16,11 +16,26 @@
  */
 package org.keycloak.authorization.admin.representation;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
-import org.keycloak.authorization.admin.PolicyEvaluationService;
+import org.keycloak.authorization.admin.PolicyEvaluationService.EvaluationDecisionCollector;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.PermissionTicket.FilterOption;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -31,31 +46,23 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse.PolicyResultRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class PolicyEvaluationResponseBuilder {
-    public static PolicyEvaluationResponse build(PolicyEvaluationService.EvaluationDecisionCollector decision, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
+    public static PolicyEvaluationResponse build(EvaluationDecisionCollector decision, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity, PolicyEvaluationRequest request) {
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
+            return FGAPPolicyEvaluationResponseBuilder.build(decision, resourceServer, authorization, request);
+        }
+
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
         List<PolicyEvaluationResponse.EvaluationResultRepresentation> resultsRep = new ArrayList<>();
         AccessToken accessToken = identity.getAccessToken();
@@ -115,7 +122,7 @@ public class PolicyEvaluationResponseBuilder {
                 return representation;
             }).collect(Collectors.toList()));
 
-            List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new ArrayList<>();
+            Set<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new HashSet<>();
 
             for (Result.PolicyResult policy : result.getResults()) {
                 PolicyResultRepresentation policyRep = toRepresentation(policy, authorization);
@@ -150,29 +157,23 @@ public class PolicyEvaluationResponseBuilder {
             List<ScopeRepresentation> scopes = result.getScopes();
 
             if (DecisionEffect.PERMIT.equals(result.getStatus())) {
-                result.setAllowedScopes(scopes);
+                result.setAllowedScopes(new HashSet<>(scopes));
             }
 
             if (resource.getId() != null) {
                 if (!scopes.isEmpty()) {
-                    result.getResource().setName(evaluationResultRepresentation.getResource().getName() + " with scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
+                    result.getResource().setName(evaluationResultRepresentation.getResource().getName() + " with scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Stream.of(scopeRepresentation.getName())).toList());
                 } else {
                     result.getResource().setName(evaluationResultRepresentation.getResource().getName());
                 }
             } else {
-                result.getResource().setName("Any Resource with Scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
+                result.getResource().setName("Any Resource with Scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Stream.of(scopeRepresentation.getName())).toList());
             }
 
-            List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = result.getPolicies();
-
-            for (PolicyEvaluationResponse.PolicyResultRepresentation policy : new ArrayList<>(evaluationResultRepresentation.getPolicies())) {
-                if (!policies.contains(policy)) {
-                    policies.add(policy);
-                }
-            }
+            result.getPolicies().addAll(evaluationResultRepresentation.getPolicies());
         });
 
-        response.setResults(groupedResults.values().stream().collect(Collectors.toList()));
+        response.setResults(new ArrayList<>(groupedResults.values()));
 
         return response;
     }
@@ -194,8 +195,9 @@ public class PolicyEvaluationResponseBuilder {
             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
+            filters.put(FilterOption.IS_ADMIN, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filters, -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

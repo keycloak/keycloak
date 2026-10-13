@@ -16,9 +16,10 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.Map;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * @author vramik

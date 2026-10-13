@@ -28,20 +28,23 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
  */
 public class TestRealmResourceFactory implements RealmResourceProviderFactory {
     public static final String ID = "test-resources";
+    private boolean fail;
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestRealmResource();
+        return new TestRealmResource(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-
+        fail = Boolean.parseBoolean(config.get("fail", null));
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        if (fail) {
+            throw new RuntimeException("I've failed");
+        }
     }
 
     @Override

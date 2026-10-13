@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.common;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -24,20 +25,27 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.AccessToken;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ClientModelIdentity implements Identity {
-    protected RealmModel realm;
-    protected ClientModel client;
-    protected UserModel serviceAccount;
+    protected final RealmModel realm;
+    protected final ClientModel client;
+    protected final UserModel serviceAccount;
+    protected final AccessToken token;
 
     public ClientModelIdentity(KeycloakSession session, ClientModel client) {
-        this.realm = client.getRealm();
+        this(session, client, null);
+    }
+
+    public ClientModelIdentity(KeycloakSession session, ClientModel client, AccessToken token) {
+        this.realm = session.getContext().getRealm();
         this.client = client;
         this.serviceAccount = session.users().getServiceAccount(client);
+        this.token = token;
     }
 
     @Override
@@ -49,6 +57,9 @@ public class ClientModelIdentity implements Identity {
     public Attributes getAttributes() {
         MultivaluedHashMap map = new MultivaluedHashMap<String, String>();
         if (serviceAccount != null) map.addAll(serviceAccount.getAttributes());
+        if (token != null) {
+            map.add(OAuth2Constants.SCOPE, token.getScope());
+        }
         return Attributes.from(map);
     }
 

@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.TokenIdGenerator;
-import org.keycloak.json.StringListMapDeserializer;
+import org.keycloak.json.StringListMap;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+
+
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -33,7 +34,7 @@ public class PermissionTicketToken extends JsonWebToken {
 
     private final List<Permission> permissions;
 
-    @JsonDeserialize(using = StringListMapDeserializer.class)
+    @StringListMap
     private Map<String, List<String>> claims;
 
     public PermissionTicketToken() {
@@ -44,9 +45,9 @@ public class PermissionTicketToken extends JsonWebToken {
         if (accessToken != null) {
             id(TokenIdGenerator.generateId());
             subject(accessToken.getSubject());
-            expiration(accessToken.getExpiration());
-            notBefore(accessToken.getNotBefore());
-            issuedAt(accessToken.getIssuedAt());
+            this.exp(accessToken.getExp());
+            this.nbf(accessToken.getNbf());
+            iat(accessToken.getIat());
             issuedFor(accessToken.getIssuedFor());
         }
         if (audience != null) {

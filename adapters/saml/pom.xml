@@ -24,7 +24,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Client Adapter Modules</name>
-    <description/>
+    <description>Keycloak SAML Client Adapter Wildfly Modules</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-saml-client-adapter-pom</artifactId>
@@ -33,14 +33,7 @@
     <modules>
         <module>core-public</module>
         <module>core</module>
-        <module>core-jakarta</module>
-        <module>jetty</module>
-        <module>undertow</module>
-        <module>tomcat</module>
         <module>wildfly</module>
-        <module>servlet-filter</module>
-        <module>jakarta-servlet-filter</module>
         <module>wildfly-elytron</module>
-        <module>wildfly-elytron-jakarta</module>
     </modules>
 </project>

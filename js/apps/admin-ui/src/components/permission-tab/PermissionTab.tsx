@@ -1,5 +1,10 @@
 import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
 import {
+  HelpItem,
+  useEnvironment,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Card,
   CardBody,
   CardTitle,
@@ -10,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ActionsColumn,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -20,13 +25,11 @@ import {
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
+import type { Environment } from "../../environment-types";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
@@ -45,9 +48,16 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
+  const { environment } = useEnvironment<Environment>();
+  const realmManagementClientId =
+    realm === environment.masterRealm
+      ? `${environment.masterRealm}-realm`
+      : "realm-management";
   const [realmId, setRealmId] = useState("");
   const [permission, setPermission] = useState<ManagementPermissionReference>();
   const localeSort = useLocaleSort();
@@ -81,7 +91,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       Promise.all([
         adminClient.clients.find({
           search: true,
-          clientId: realm === "master" ? "master-realm" : "realm-management",
+          clientId: realmManagementClientId,
         }),
         (() => {
           switch (type) {
@@ -106,7 +116,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       setRealmId(clients[0]?.id!);
       setPermission(permission);
     },
-    [id],
+    [id, realm, realmManagementClientId, type],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -130,7 +140,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
         <CardTitle>{t("permissions")}</CardTitle>
         <CardBody>
           {t(`${type}PermissionsHint`)}
-          <Form isHorizontal className="pf-u-pt-md">
+          <Form isHorizontal className="pf-v5-u-pt-md">
             <FormGroup
               hasNoPaddingTop
               className="permission-label"
@@ -149,7 +159,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={permission.enabled}
-                onChange={async (enabled) => {
+                onChange={async (_event, enabled) => {
                   if (enabled) {
                     const permission = await togglePermissionEnabled(enabled);
                     setPermission(permission);
@@ -165,27 +175,18 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       </Card>
       {permission.enabled && (
         <>
-          <Card isFlat className="pf-u-mt-lg">
+          <Card isFlat className="pf-v5-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
               <Trans i18nKey="permissionsListIntro">
                 {" "}
-                <strong>
-                  {{
-                    realm:
-                      realm === "master" ? "master-realm" : "realm-management",
-                  }}
-                </strong>
-                .
+                <strong>{{ realm: realmManagementClientId }}</strong>.
               </Trans>
             </CardBody>
           </Card>
           <Card isFlat className="keycloak__permission__permission-table">
-            <CardBody className="pf-u-p-0">
-              <TableComposable
-                aria-label={t("permissionsList")}
-                variant="compact"
-              >
+            <CardBody className="pf-v5-u-p-0">
+              <Table aria-label={t("permissionsList")} variant="compact">
                 <Thead>
                   <Tr>
                     <Th id="permissionsScopeName">
@@ -221,7 +222,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                             {
                               title: t("edit"),
                               onClick() {
-                                navigate(
+                                void navigate(
                                   toPermissionDetails({
                                     realm,
                                     id: realmId,
@@ -237,7 +238,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                     </Tr>
                   ))}
                 </Tbody>
-              </TableComposable>
+              </Table>
             </CardBody>
           </Card>
         </>

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-saml">
+    <dependencies>
+        <layer name="ee"/>
+        <layer name="elytron"/>
+        <layer name="undertow"/>
+    </dependencies>
+    <feature spec="subsystem.keycloak-saml"/>
+    <packages>
+        <package name="docs.licenses" optional="true"/>
+    </packages>
+</layer-spec>

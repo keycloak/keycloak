@@ -1,5 +1,5 @@
-.keycloak__discovery-settings__metadata .pf-c-expandable-section__toggle {
-  margin-left: var(--pf-c-form--m-horizontal__group-label--md--GridColumnWidth);
+.keycloak__discovery-settings__metadata .pf-v5-c-expandable-section__toggle {
+  margin-left: var(--pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth);
 }
 
 input#kc-role {
@@ -8,5 +8,5 @@ input#kc-role {
 }
 
 h1.kc-add-mapper-title {
-  margin-left: calc(-1 * var(--pf-global--spacer--md));
+  margin-left: calc(-1 * var(--pf-v5-global--spacer--md));
 }

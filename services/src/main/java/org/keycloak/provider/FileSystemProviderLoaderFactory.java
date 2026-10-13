@@ -16,14 +16,14 @@
  */
 package org.keycloak.provider;
 
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -59,7 +59,7 @@ public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
                 }
             }
 
-            logger.debug("Loading providers from " + urls.toString());
+            logger.debugf("Loading providers from %s", urls);
 
             return new URLClassLoader(urls.toArray(new URL[urls.size()]), parent);
         } catch (Exception e) {

@@ -18,6 +18,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.InsertStatement;
 import liquibase.structure.core.Table;

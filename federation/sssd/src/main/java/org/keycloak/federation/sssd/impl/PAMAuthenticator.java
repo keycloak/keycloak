@@ -55,7 +55,9 @@ public class PAMAuthenticator {
             logger.error("Authentication failed", e);
             e.printStackTrace();
         } finally {
-            pam.dispose();
+            if (pam != null) {
+                pam.dispose();
+            }
         }
         return user;
     }

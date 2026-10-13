@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
@@ -52,10 +53,16 @@ public final class DerUtils {
         dis.readFully(keyBytes);
         dis.close();
 
-        PKCS8EncodedKeySpec spec =
-                new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf =CryptoIntegration.getProvider().getKeyFactory("RSA");
-        return kf.generatePrivate(spec);
+        return decodePrivateKey(keyBytes);
+    }
+
+    public static PublicKey decodePublicKey(String encoded) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+        return decodePublicKey(encoded, "RSA");
+    }
+
+    public static PublicKey decodePublicKey(String encoded, String type) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
+        byte[] der = Base64.getDecoder().decode(encoded);
+        return decodePublicKey(der, type);
     }
 
     public static PublicKey decodePublicKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
@@ -79,7 +86,14 @@ public final class DerUtils {
     public static PrivateKey decodePrivateKey(byte[] der) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(der);
-        KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory("RSA");
-        return kf.generatePrivate(spec);
-    }
+        String[] algorithms = { "RSA", "EC" };
+        for (String algorithm : algorithms) {
+            try {
+                return CryptoIntegration.getProvider().getKeyFactory(algorithm).generatePrivate(spec);
+            } catch (InvalidKeySpecException e) {
+                // Ignore and try the next algorithm.
+            }
+        }
+        throw new InvalidKeySpecException("Unable to decode the private key with supported algorithms: " + String.join(", ", algorithms));
+   }
 }

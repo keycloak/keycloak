@@ -29,7 +29,7 @@
     <artifactId>keycloak-testsuite-pom</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak TestSuite</name>
-    <description />
+    <description>Keycloak TestSuite</description>
 
     <build>
         <plugins>
@@ -50,7 +50,6 @@
         </plugins>
     </build>
     <modules>
-        <module>db-allocator-plugin</module>
         <module>integration-arquillian</module>
         <module>model</module>
         <module>utils</module>

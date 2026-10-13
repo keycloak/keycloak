@@ -6,13 +6,11 @@ import {
   PageSection,
   Switch,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
-import { convertToFormValues } from "../util";
 
 import "./realm-settings-section.css";
 
@@ -27,19 +25,13 @@ export const RealmSettingsSessionsTab = ({
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation();
 
-  const { setValue, control, handleSubmit, formState } =
-    useForm<RealmRepresentation>();
+  const { control, handleSubmit, formState, reset } =
+    useFormContext<RealmRepresentation>();
 
   const offlineSessionMaxEnabled = useWatch({
     control,
     name: "offlineSessionMaxLifespanEnabled",
   });
-
-  const setupForm = () => {
-    convertToFormValues(realm, setValue);
-  };
-
-  useEffect(setupForm, []);
 
   return (
     <PageSection variant="light">
@@ -102,56 +94,59 @@ export const RealmSettingsSessionsTab = ({
               )}
             />
           </FormGroup>
-
-          <FormGroup
-            label={t("SSOSessionIdleRememberMe")}
-            fieldId="SSOSessionIdleRememberMe"
-            labelIcon={
-              <HelpItem
-                helpText={t("ssoSessionIdleRememberMe")}
-                fieldLabelId="SSOSessionIdleRememberMe"
-              />
-            }
-          >
-            <Controller
-              name="ssoSessionIdleTimeoutRememberMe"
-              control={control}
-              render={({ field }) => (
-                <TimeSelector
-                  className="kc-sso-session-idle-remember-me"
-                  data-testid="sso-session-idle-remember-me-input"
-                  value={field.value!}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+          {realm.rememberMe && (
+            <>
+              <FormGroup
+                label={t("SSOSessionIdleRememberMe")}
+                fieldId="SSOSessionIdleRememberMe"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssoSessionIdleRememberMe")}
+                    fieldLabelId="SSOSessionIdleRememberMe"
+                  />
+                }
+              >
+                <Controller
+                  name="ssoSessionIdleTimeoutRememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      className="kc-sso-session-idle-remember-me"
+                      data-testid="sso-session-idle-remember-me-input"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
+              </FormGroup>
 
-          <FormGroup
-            label={t("SSOSessionMaxRememberMe")}
-            fieldId="SSOSessionMaxRememberMe"
-            labelIcon={
-              <HelpItem
-                helpText={t("ssoSessionMaxRememberMe")}
-                fieldLabelId="SSOSessionMaxRememberMe"
-              />
-            }
-          >
-            <Controller
-              name="ssoSessionMaxLifespanRememberMe"
-              control={control}
-              render={({ field }) => (
-                <TimeSelector
-                  className="kc-sso-session-max-remember-me"
-                  data-testid="sso-session-max-remember-me-input"
-                  value={field.value!}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+              <FormGroup
+                label={t("SSOSessionMaxRememberMe")}
+                fieldId="SSOSessionMaxRememberMe"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssoSessionMaxRememberMe")}
+                    fieldLabelId="SSOSessionMaxRememberMe"
+                  />
+                }
+              >
+                <Controller
+                  name="ssoSessionMaxLifespanRememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      className="kc-sso-session-max-remember-me"
+                      data-testid="sso-session-max-remember-me-input"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
+              </FormGroup>
+            </>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel
@@ -161,7 +156,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -222,7 +217,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -243,6 +238,32 @@ export const RealmSettingsSessionsTab = ({
                   className="kc-offline-session-idle"
                   data-testid="offline-session-idle-input"
                   aria-label="offline-session-idle-input"
+                  value={field.value!}
+                  onChange={field.onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroup>
+
+          <FormGroup
+            label={t("clientOfflineSessionIdle")}
+            fieldId="clientOfflineSessionIdle"
+            labelIcon={
+              <HelpItem
+                helpText={t("clientOfflineSessionIdleHelp")}
+                fieldLabelId="clientOfflineSessionIdle"
+              />
+            }
+          >
+            <Controller
+              name="clientOfflineSessionIdleTimeout"
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  className="kc-client-offline-session-idle"
+                  data-testid="client-offline-session-idle-input"
+                  aria-label="client-offline-session-idle-input"
                   value={field.value!}
                   onChange={field.onChange}
                   units={["minute", "hour", "day"]}
@@ -306,6 +327,33 @@ export const RealmSettingsSessionsTab = ({
               />
             </FormGroup>
           )}
+          {offlineSessionMaxEnabled && (
+            <FormGroup
+              label={t("clientOfflineSessionMax")}
+              fieldId="clientOfflineSessionMax"
+              id="client-offline-session-max-label"
+              labelIcon={
+                <HelpItem
+                  helpText={t("clientOfflineSessionMaxHelp")}
+                  fieldLabelId="clientOfflineSessionMax"
+                />
+              }
+            >
+              <Controller
+                name="clientOfflineSessionMaxLifespan"
+                control={control}
+                render={({ field }) => (
+                  <TimeSelector
+                    className="kc-client-offline-session-max"
+                    data-testid="client-offline-session-max-input"
+                    value={field.value!}
+                    onChange={field.onChange}
+                    units={["minute", "hour", "day"]}
+                  />
+                )}
+              />
+            </FormGroup>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel
@@ -315,7 +363,7 @@ export const RealmSettingsSessionsTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg"
+          className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -378,7 +426,7 @@ export const RealmSettingsSessionsTab = ({
             >
               {t("save")}
             </Button>
-            <Button variant="link" onClick={setupForm}>
+            <Button variant="link" onClick={() => reset(realm)}>
               {t("revert")}
             </Button>
           </ActionGroup>

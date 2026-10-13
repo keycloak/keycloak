@@ -1,3 +1,8 @@
+Creating new database connections is expensive as it takes time.
+Creating them when a request arrives will delay the response, so it is good to have them created before the request arrives.
+It can also contribute to a https://en.wikipedia.org/wiki/Cache_stampede[stampede effect] where creating a lot of connections in a short time makes things worse as it slows down the system and blocks threads.
+Closing a connection also invalidates all server side statements caching for that connection.
+
 For the best performance, the values for the initial, minimal and maximum database connection pool size should all be equal.
 This avoids creating new database connections when a new request comes in which is costly.
 

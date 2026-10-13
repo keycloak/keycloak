@@ -1,3 +1,18 @@
+import styles from "@patternfly/react-styles/css/components/DataList/data-list";
+import {
+  ActionsColumn,
+  IAction,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  type TableProps,
+  ThProps,
+} from "@patternfly/react-table";
+import type { ThInfoType } from "@patternfly/react-table/dist/esm/components/Table/base/types";
+import { get } from "lodash-es";
 import {
   DragEvent as ReactDragEvent,
   ReactNode,
@@ -6,22 +21,8 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash-es";
-import {
-  ActionsColumn,
-  IAction,
-  TableComposable,
-  TableComposableProps,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
-import { ThInfoType } from "@patternfly/react-table/components/Table/base/types";
-import styles from "@patternfly/react-styles/css/components/DataList/data-list";
 
-export type Field<T> = {
+export type Field<T> = Pick<ThProps, "width"> & {
   name: string;
   displayKey?: string;
   cellRenderer?: (row: T) => ReactNode;
@@ -30,7 +31,7 @@ export type Field<T> = {
 
 export type Action<T> = IAction & { isActionable?: (item: T) => boolean };
 
-type DraggableTableProps<T> = Omit<TableComposableProps, "data" | "ref"> & {
+type DraggableTableProps<T> = Omit<TableProps, "data" | "ref"> & {
   keyField: string;
   columns: Field<T>[];
   data: T[];
@@ -67,7 +68,7 @@ export function DraggableTable<T>({
     const draggedItemId = evt.currentTarget.id;
 
     evt.currentTarget.classList.add(styles.modifiers.ghostRow);
-    evt.currentTarget.setAttribute("aria-pressed", "true");
+    evt.currentTarget.setAttribute("aria-grabbed", "true");
     setState({ ...state, draggedItemId, dragging: true });
   };
 
@@ -101,7 +102,7 @@ export function DraggableTable<T>({
   const onDragCancel = () => {
     Array.from(bodyRef.current?.children || []).forEach((el) => {
       el.classList.remove(styles.modifiers.ghostRow);
-      el.setAttribute("aria-pressed", "false");
+      el.setAttribute("aria-grabbed", "false");
     });
     setState({
       ...state,
@@ -172,7 +173,7 @@ export function DraggableTable<T>({
   const onDragEnd = (evt: ReactDragEvent) => {
     const tr = evt.target as HTMLTableRowElement;
     tr.classList.remove(styles.modifiers.ghostRow);
-    tr.setAttribute("aria-pressed", "false");
+    tr.setAttribute("aria-grabbed", "false");
     setState({
       ...state,
       draggedItemId: "",
@@ -190,7 +191,7 @@ export function DraggableTable<T>({
   };
 
   return (
-    <TableComposable
+    <Table
       aria-label="Draggable table"
       className={state.dragging ? styles.modifiers.dragOver : ""}
       {...props}
@@ -199,7 +200,12 @@ export function DraggableTable<T>({
         <Tr>
           <Th aria-hidden="true" />
           {columns.map((column) => (
-            <Th key={column.name} info={thInfo(column)}>
+            <Th
+              key={column.name}
+              info={thInfo(column)}
+              width={column.width}
+              modifier="fitContent"
+            >
               {t(column.displayKey || column.name)}
             </Th>
           ))}
@@ -250,6 +256,6 @@ export function DraggableTable<T>({
           </Tr>
         ))}
       </Tbody>
-    </TableComposable>
+    </Table>
   );
 }

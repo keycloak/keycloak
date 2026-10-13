@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Configuration of the User Profile for one realm.
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */

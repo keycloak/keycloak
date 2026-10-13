@@ -16,8 +16,12 @@
  */
 package org.keycloak.testsuite.client;
 
-import org.junit.After;
-import org.junit.Before;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -29,14 +33,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
-import jakarta.ws.rs.NotFoundException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import org.junit.After;
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTest {
 
     static final String REALM_NAME = "test";
@@ -134,7 +137,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
     protected String getToken(String clientId, String clientSecret, String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, clientId, clientSecret).getAccessToken();
+            return oauth.client(clientId, clientSecret).doPasswordGrantRequest(username, password).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -18,8 +18,13 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Objects;
+
+import org.keycloak.json.RawJsonValue;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -30,7 +35,10 @@ public class ClientPolicyConditionRepresentation {
     private String conditionProviderId;
 
     @JsonProperty("configuration")
-    private JsonNode configuration;
+    @Schema(type= SchemaType.OBJECT,
+            description = "Configuration settings as a JSON object",
+            additionalProperties = Schema.True.class)
+    private RawJsonValue configuration;
 
     public String getConditionProviderId() {
         return conditionProviderId;
@@ -40,11 +48,24 @@ public class ClientPolicyConditionRepresentation {
         this.conditionProviderId = conditionProviderId;
     }
 
-    public JsonNode getConfiguration() {
+    public RawJsonValue getConfiguration() {
         return configuration;
     }
 
-    public void setConfiguration(JsonNode configuration) {
+    public void setConfiguration(RawJsonValue configuration) {
         this.configuration = configuration;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientPolicyConditionRepresentation that = (ClientPolicyConditionRepresentation) o;
+        return Objects.equals(conditionProviderId, that.conditionProviderId) && Objects.equals(configuration, that.configuration);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(conditionProviderId, configuration);
     }
 }

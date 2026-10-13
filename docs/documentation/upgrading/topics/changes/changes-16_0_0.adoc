@@ -1,0 +1,31 @@
+= WildFly 25 upgrade
+
+WildFly 25 deprecates the legacy security subsystem that among other things was used to configure TLS. Due to the amount of changes we are not able to provide migration scripts as we have done in the past.
+
+We recommend that rather than copying configuration files from previous versions of Keycloak that you start with the default configuration files provided in Keycloak 16 and apply the relevant changes.
+
+Configuration for the Keycloak subsystem can be copied directly.
+
+For more information around the Elytron subsystem refer to the https://docs.wildfly.org/25/WildFly_Elytron_Security.html[WildFly documentation].
+
+We are really sorry for this inconvenience and understand this will make it significantly harder for everyone to upgrade to Keycloak 16, but we simply have not been able to find an alternative approach.
+
+One thing worth pointing out is the switch to Quarkus distribution, which we plan to make fully supported in Keycloak 17, will make it significantly easier to configure and upgrade Keycloak.
+
+For more information on WildFly 25 refer to the https://www.wildfly.org/news/2021/10/05/WildFly-25-is-released/[WildFly 25 release notes].
+
+= Proxy environment variables
+
+{project_name} now respects the standard `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables for outgoing
+HTTP requests. This change could lead to unexpected use of a proxy server if you have for example the `HTTP_PROXY` variable defined but have no
+explicit proxy mappings specified in your SPI configuration. To prevent {project_name} from using those environment variables,
+you can explicitly create a no proxy route for all requests as `.*;NO_PROXY`.
+
+= Deprecated features in the {project_operator}
+
+With this release, we have deprecated and/or marked as unsupported some features in the {project_operator}. This
+concerns the Backup CRD and the operator managed Postgres Database.
+
+= Keycloak Operator examples including unsupported Metrics extension
+
+Previously, an unsupported metrics extension was added in the example for the creation of the Keycloak CR by the {project_operator}. This has been removed.

@@ -75,7 +75,7 @@ public class HashIterationsPasswordPolicyProviderFactory implements PasswordPoli
 
     @Override
     public String getDefaultConfigValue() {
-        return String.valueOf(PasswordPolicy.HASH_ITERATIONS_DEFAULT);
+        return "-1";
     }
 
     @Override

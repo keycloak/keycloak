@@ -1,3 +1,4 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
-mvn help:evaluate -Dexpression=project.version -q -DforceStdout -pl .
+./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout -pl .

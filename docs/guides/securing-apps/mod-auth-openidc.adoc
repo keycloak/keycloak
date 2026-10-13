@@ -1,0 +1,60 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring the mod_auth_openidc Apache HTTPD Module"
+priority=50
+summary="Configure the mod_auth_openidc Apache module with {project_name}.">
+
+
+WARNING: {project_name} does not provide any official support to mod_auth_openidc. The instructions below are best-effort and may not be up-to-date.
+We recommend that you stick to official mod_auth_openidc documentation for more details.
+
+The https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc] is an Apache HTTP plugin for OpenID Connect. If your language/environment supports using Apache HTTPD
+as a proxy, then you can use _mod_auth_openidc_ to secure your web application with OpenID Connect.  Configuration of this module
+is beyond the scope of this document.  Please see the _mod_auth_openidc_ GitHub repo for more details on configuration.
+
+To configure _mod_auth_openidc_ you'll need
+
+* The client_id.
+* The client_secret.
+* The redirect_uri to your application.
+* The {project_name} openid-configuration url
+* _mod_auth_openidc_ specific Apache HTTPD module config.
+
+An example configuration would look like the following.
+
+[source,subs="attributes+"]
+----
+LoadModule auth_openidc_module modules/mod_auth_openidc.so
+
+ServerName ${r"${HOSTIP}"}
+
+<VirtualHost *:80>
+
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    #this is required by mod_auth_openidc
+    OIDCCryptoPassphrase a-random-secret-used-by-apache-oidc-and-balancer
+
+    OIDCProviderMetadataURL ${r"${KC_ADDR}"}{kc_realms_path}/${r"${KC_REALM}"}/.well-known/openid-configuration
+
+    OIDCClientID ${r"${CLIENT_ID}"}
+    OIDCClientSecret ${r"${CLIENT_SECRET}"}
+    OIDCRedirectURI http://${r"${HOSTIP}"}/${r"${CLIENT_APP_NAME}"}/redirect_uri
+
+    # maps the preferred_username claim to the REMOTE_USER environment variable
+    OIDCRemoteUserClaim preferred_username
+
+    <Location /${r"${CLIENT_APP_NAME}"}/>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+</VirtualHost>
+----
+
+Further information on how to configure mod_auth_openidc can be found on the https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc]
+project page.
+
+</@tmpl.guide>

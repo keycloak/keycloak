@@ -18,25 +18,34 @@
 
 package org.keycloak.services.util;
 
-import org.keycloak.locale.LocaleSelectorProvider;
-import org.keycloak.locale.LocaleUpdaterProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+
+import org.keycloak.locale.DefaultLocaleSelectorProvider;
+import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleUpdaterProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:daniel.fesenmeyer@bosch.com">Daniel Fesenmeyer</a>
  */
 public class LocaleUtil {
+
+    private static final Logger logger = Logger.getLogger(LocaleUtil.class);
 
     private LocaleUtil() {
         // noop
@@ -60,13 +69,85 @@ public class LocaleUtil {
     }
 
     /**
+     * Resolves a language tag received from a client to a locale the server is prepared to serve messages for.
+     * <p>
+     * The requested tag is matched against the locales declared by the theme, the locales supported by the realm and
+     * the realm default locale. Only a locale from that bounded, server-controlled set is ever returned, so a client
+     * cannot introduce arbitrary locales into the caches which are keyed by locale. A tag without a match resolves to
+     * the realm default locale, or to {@link Locale#ENGLISH}, rather than being rejected, so that clients still
+     * requesting a locale which has meanwhile been removed from the realm keep receiving usable content.
+     *
+     * @param realm the realm
+     * @param theme the theme whose messages are looked up, may be {@code null}
+     * @param localeString the requested language tag, may be {@code null}
+     * @return a supported locale, never {@code null}
+     */
+    public static Locale resolveSupportedLocale(RealmModel realm, Theme theme, String localeString) {
+        Locale match = DefaultLocaleSelectorProvider.findBestMatchingLocale(getSupportedLocales(realm, theme),
+                localeString);
+
+        return match != null ? match : getFallbackLocale(realm);
+    }
+
+    /**
+     * Returns the locales which may be used to look up messages, which is the union of the locales declared by the
+     * theme, the locales supported by the realm and the fallback locale.
+     */
+    private static List<Locale> getSupportedLocales(RealmModel realm, Theme theme) {
+        Set<Locale> supportedLocales = new LinkedHashSet<>();
+
+        if (theme != null) {
+            try {
+                for (String themeLocale : theme.getProperties().getProperty("locales", "").split(",")) {
+                    themeLocale = themeLocale.trim();
+                    if (!themeLocale.isEmpty()) {
+                        supportedLocales.add(Locale.forLanguageTag(themeLocale));
+                    }
+                }
+            } catch (IOException e) {
+                logger.warn("Failed to read the locales supported by the theme", e);
+            }
+        }
+
+        realm.getSupportedLocalesStream().map(Locale::forLanguageTag).forEach(supportedLocales::add);
+        supportedLocales.add(getFallbackLocale(realm));
+
+        return new ArrayList<>(supportedLocales);
+    }
+
+    private static Locale getFallbackLocale(RealmModel realm) {
+        if (realm.isInternationalizationEnabled() && realm.getDefaultLocale() != null) {
+            return Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+
+        return Locale.ENGLISH;
+    }
+
+    /**
      * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
      * returns the fallback locale "en". For "en" no parent exists, {@code null} is returned.
-     * 
+     *
      * @param locale the locale
      * @return the parent locale, may be {@code null}
+     * @deprecated use {@link LocaleUtil#getParentLocale(Locale, RealmModel)} instead.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     public static Locale getParentLocale(Locale locale) {
+        return getParentLocale(locale, null);
+    }
+
+    /**
+     * Returns the parent locale of the given {@code locale}. If the locale just contains a language (e.g. "de"),
+     * returns the fallback default locale of the realm or if that does not exist "en".
+     * For "en" no parent exists, {@code null} is returned.
+     *
+     * @return the parent locale, may be {@code null}
+     */
+    public static Locale getParentLocale(Locale locale, RealmModel realm) {
+        if (Locale.ENGLISH.equals(locale)) {
+            return null;
+        }
+
         if (locale.getVariant() != null && !locale.getVariant().isEmpty()) {
             return new Locale(locale.getLanguage(), locale.getCountry());
         }
@@ -75,11 +156,20 @@ public class LocaleUtil {
             return new Locale(locale.getLanguage());
         }
 
-        if (!Locale.ENGLISH.equals(locale)) {
+        if (realm != null
+                && realm.isInternationalizationEnabled()
+                && realm.getDefaultLocale() != null
+                && Locale.forLanguageTag(realm.getDefaultLocale()).getLanguage().equals(locale.getLanguage())) {
             return Locale.ENGLISH;
         }
 
-        return null;
+        if (realm != null
+                && realm.isInternationalizationEnabled()
+                && realm.getDefaultLocale() != null) {
+            return Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+
+        return Locale.ENGLISH;
     }
 
     /**
@@ -90,10 +180,10 @@ public class LocaleUtil {
      * @param locale the locale
      * @return the applicable locales
      */
-    static List<Locale> getApplicableLocales(Locale locale) {
+    static List<Locale> getApplicableLocales(Locale locale, RealmModel realm) {
         List<Locale> applicableLocales = new ArrayList<>();
 
-        for (Locale currentLocale = locale; currentLocale != null; currentLocale = getParentLocale(currentLocale)) {
+        for (Locale currentLocale = locale; currentLocale != null; currentLocale = getParentLocale(currentLocale, realm)) {
             applicableLocales.add(currentLocale);
         }
 
@@ -107,10 +197,10 @@ public class LocaleUtil {
      * @param locale the locale
      * @param messages the (locale-)grouped messages
      * @return the merged properties
-     * @see #mergeGroupedMessages(Locale, Map, Map)
+     * @see #mergeGroupedMessages(RealmModel, Locale, Map, Map)
      */
-    public static Properties mergeGroupedMessages(Locale locale, Map<Locale, Properties> messages) {
-        return mergeGroupedMessages(locale, messages, null);
+    public static Properties mergeGroupedMessages(RealmModel realm, Locale locale, Map<Locale, Properties> messages) {
+        return mergeGroupedMessages(realm, locale, messages, null);
     }
 
     /**
@@ -147,11 +237,11 @@ public class LocaleUtil {
      * @param secondMessages may be {@code null}, the second (locale-)grouped messages, having lower priority (per
      *        locale) than {@code firstMessages}
      * @return the merged properties
-     * @see #mergeGroupedMessages(Locale, Map)
+     * @see #mergeGroupedMessages(RealmModel, Locale, Map)
      */
-    public static Properties mergeGroupedMessages(Locale locale, Map<Locale, Properties> firstMessages,
+    public static Properties mergeGroupedMessages(RealmModel realm, Locale locale, Map<Locale, Properties> firstMessages,
             Map<Locale, Properties> secondMessages) {
-        List<Locale> applicableLocales = getApplicableLocales(locale);
+        List<Locale> applicableLocales = getApplicableLocales(locale, realm);
 
         Properties mergedProperties = new Properties();
 
@@ -186,7 +276,7 @@ public class LocaleUtil {
      * the theme properties, but only when defined for the same locale. In general, texts for a more specific locale
      * take precedence over texts for a less specific locale.
      * <p>
-     * For implementation details, see {@link #mergeGroupedMessages(Locale, Map, Map)}.
+     * For implementation details, see {@link #mergeGroupedMessages(RealmModel, Locale, Map, Map)}.
      * 
      * @param realm the realm from which the localization texts should be used
      * @param locale the locale for which the relevant texts should be retrieved
@@ -197,13 +287,13 @@ public class LocaleUtil {
             Map<Locale, Properties> themeMessages) {
         Map<Locale, Properties> realmLocalizationMessages = getRealmLocalizationTexts(realm, locale);
 
-        return mergeGroupedMessages(locale, realmLocalizationMessages, themeMessages);
+        return mergeGroupedMessages(realm, locale, realmLocalizationMessages, themeMessages);
     }
 
     public static Map<Locale, Properties> getRealmLocalizationTexts(RealmModel realm, Locale locale) {
         LinkedHashMap<Locale, Properties> groupedMessages = new LinkedHashMap<>();
 
-        List<Locale> applicableLocales = getApplicableLocales(locale);
+        List<Locale> applicableLocales = getApplicableLocales(locale, realm);
         for (Locale applicableLocale : applicableLocales) {
             Map<String, String> currentRealmLocalizationTexts =
                     realm.getRealmLocalizationTextsByLocale(applicableLocale.toLanguageTag());

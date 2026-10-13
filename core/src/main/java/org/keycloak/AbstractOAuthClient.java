@@ -17,12 +17,12 @@
 
 package org.keycloak;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.util.KeycloakUriBuilder;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
+import org.keycloak.common.util.SecretGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,7 +43,7 @@ public class AbstractOAuthClient {
     protected boolean isSecure;
     protected boolean publicClient;
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
+        return counter.getAndIncrement() + "/" + SecretGenerator.getInstance().generateSecureID();
     }
 
     public String getClientId() {

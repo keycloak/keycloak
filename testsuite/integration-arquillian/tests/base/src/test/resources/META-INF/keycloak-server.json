@@ -1,19 +1,11 @@
 {
 
     "hostname": {
-        "provider": "${keycloak.hostname.provider:default}",
-
-        "fixed": {
-            "hostname": "${keycloak.hostname.fixed.hostname:localhost}",
-            "httpPort": "${keycloak.hostname.fixed.httpPort:-1}",
-            "httpsPort": "${keycloak.hostname.fixed.httpsPort:-1}",
-            "alwaysHttps": "${keycloak.hostname.fixed.alwaysHttps:false}"
-        },
-
-        "default": {
-            "frontendUrl": "${keycloak.frontendUrl:}",
-            "adminUrl": "${keycloak.adminUrl:}",
-            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:false}"
+        "v2": {
+            "hostname": "${keycloak.hostname:}",
+            "hostname-admin": "${keycloak.hostname-admin:}",
+            "hostname-backchannel-dynamic": "${keycloak.hostname-backchannel-dynamic:}",
+            "hostname-strict": "${keycloak.hostname-strict:}"
         }
     },
 
@@ -80,7 +72,7 @@
     },
 
     "loginFailure": {
-        "provider": "${keycloak.loginFailure.provider:infinispan}"
+        "provider": "${keycloak.loginFailure.provider:jpa}"
     },
 
     "singleUseObject": {
@@ -175,26 +167,29 @@
         }
     },
 
+    "datastore": {
+        "legacy": {
+            "allowMigrateExistingDatabaseToSnapshot": "${keycloak.datastore.allowMigrateExistingDatabaseToSnapshot:false}"
+        }
+    },
+
     "realmCache": {
         "default" : {
             "enabled": "${keycloak.realmCache.enabled:true}"
         }
     },
 
-    "connectionsInfinispan": {
+    "cacheEmbedded": {
         "default": {
-            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
-            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
-            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
-            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:false}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
-            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
-            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+            "nodeName": "${keycloak.cacheEmbedded.nodeName,jboss.node.name:}",
+            "configFile": "${keycloak.cacheEmbedded.configFile:local-test-ispn.xml}"
+        }
+    },
+
+    "cacheRemote": {
+        "default": {
+            "hostname": "${keycloak.cacheRemote.hostname:localhost}",
+            "port": "${keycloak.cacheRemote.port:11222}"
         }
     },
 
@@ -202,7 +197,7 @@
         "file": {
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
-            "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "hostname-verification-policy": "${keycloak.truststore.policy:DEFAULT}",
             "type": "${keycloak.truststore.type:}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
@@ -255,6 +250,11 @@
             "sslClientCert": "x-ssl-client-cert",
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
+        },
+        "rfc9440": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChain": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
         }
     },
 
@@ -273,5 +273,12 @@
 
     "saml-artifact-resolver": {
         "provider": "${keycloak.saml-artifact-resolver.provider:default}"
+    },
+
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
     }
 }

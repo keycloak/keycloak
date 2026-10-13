@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.federation;
 
 import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;

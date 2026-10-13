@@ -1,0 +1,2 @@
+org.keycloak.protocol.oidc.refresh.DefaultRefreshTokenProviderFactory
+org.keycloak.protocol.oid4vc.refresh.OID4VCIRefreshTokenProviderFactory

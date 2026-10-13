@@ -2,6 +2,7 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
+  InputGroupItem,
   TextInput,
   TextInputProps,
 } from "@patternfly/react-core";
@@ -9,9 +10,10 @@ import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormErrorText } from "@keycloak/keycloak-ui-shared";
 
 function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" ? value.split("##") : [];
+  return typeof value === "string" ? value.split("##") : [""];
 }
 
 function toStringValue(formValue: string[]): string {
@@ -24,6 +26,7 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   isDisabled?: boolean;
   defaultValue?: string[];
   stringify?: boolean;
+  isRequired?: boolean;
 };
 
 export const MultiLineInput = ({
@@ -32,11 +35,18 @@ export const MultiLineInput = ({
   isDisabled = false,
   defaultValue,
   stringify = false,
+  isRequired = false,
   id,
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, setValue, control } = useFormContext();
+  const {
+    register,
+    getValues,
+    setValue,
+    control,
+    formState: { errors },
+  } = useFormContext();
   const value = useWatch({
     name,
     control,
@@ -48,14 +58,15 @@ export const MultiLineInput = ({
       ? stringToMultiline(
           Array.isArray(value) && value.length === 1 ? value[0] : value,
         )
-      : value;
+      : Array.isArray(value)
+        ? value
+        : [value];
 
-    values =
-      Array.isArray(values) && values.length !== 0
-        ? values
-        : (stringify
-            ? stringToMultiline(defaultValue as string)
-            : defaultValue) || [""];
+    if (!Array.isArray(values) || values.length === 0) {
+      values = (stringify
+        ? stringToMultiline(defaultValue as string)
+        : defaultValue) || [""];
+    }
 
     return values;
   }, [value]);
@@ -76,48 +87,72 @@ export const MultiLineInput = ({
     const fieldValue = values.flatMap((field) => field);
     setValue(name, stringify ? toStringValue(fieldValue) : fieldValue, {
       shouldDirty: true,
+      shouldValidate: true,
     });
   };
 
+  if (typeof getValues(name) === "undefined") {
+    update(fields); // set initial default values
+  }
+
   useEffect(() => {
-    register(name);
+    register(name, {
+      validate: (value) =>
+        isRequired &&
+        (stringify ? stringToMultiline(value) : value || []).filter(
+          (s: string) => s.trim(),
+        ).length === 0
+          ? t("required")
+          : undefined,
+    });
   }, [register]);
+
+  const getError = () => {
+    return name.split(".").reduce((record: any, key) => record?.[key], errors);
+  };
 
   return (
     <div id={id}>
       {fields.map((value, index) => (
         <Fragment key={index}>
           <InputGroup>
-            <TextInput
-              data-testid={name + index}
-              onChange={(value) => updateValue(index, value)}
-              name={`${name}.${index}.value`}
-              value={value}
-              isDisabled={isDisabled}
-              {...rest}
-            />
-            <Button
-              data-testid={"remove" + index}
-              variant={ButtonVariant.link}
-              onClick={() => remove(index)}
-              tabIndex={-1}
-              aria-label={t("remove")}
-              isDisabled={fields.length === 1 || isDisabled}
-            >
-              <MinusCircleIcon />
-            </Button>
+            <InputGroupItem isFill>
+              <TextInput
+                data-testid={name + index}
+                onChange={(_event, value) => updateValue(index, value)}
+                name={`${name}.${index}.value`}
+                value={value}
+                isDisabled={isDisabled}
+                {...rest}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                data-testid={"remove" + index}
+                variant={ButtonVariant.link}
+                onClick={() => remove(index)}
+                tabIndex={-1}
+                aria-label={t("remove")}
+                isDisabled={fields.length === 1 || isDisabled}
+              >
+                <MinusCircleIcon />
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {index === fields.length - 1 && (
-            <Button
-              variant={ButtonVariant.link}
-              onClick={append}
-              tabIndex={-1}
-              aria-label={t("add")}
-              data-testid="addValue"
-              isDisabled={!value || isDisabled}
-            >
-              <PlusCircleIcon /> {t(addButtonLabel || "add")}
-            </Button>
+            <>
+              {getError() && <FormErrorText message={t("required")} />}
+              <Button
+                variant={ButtonVariant.link}
+                onClick={append}
+                tabIndex={-1}
+                aria-label={t("add")}
+                data-testid={`${name}-addValue`}
+                isDisabled={!value || isDisabled}
+              >
+                <PlusCircleIcon /> {t(addButtonLabel || "add")}
+              </Button>
+            </>
           )}
         </Fragment>
       ))}

@@ -17,32 +17,14 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.http.FormPartValue;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.utils.ReservedCharValidator;
-import org.keycloak.utils.StringUtil;
+import java.io.IOException;
+import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -55,14 +37,50 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.FormPartValue;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.IdentityProviderCapability;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
+
+import org.apache.http.client.HttpResponseException;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
@@ -72,6 +90,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
+
+    protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -108,9 +128,6 @@ public class IdentityProvidersResource {
 
     /**
      * Import identity provider from uploaded JSON file
-     *
-     * @return
-     * @throws IOException
      */
     @POST
     @Path("import-config")
@@ -125,10 +142,36 @@ public class IdentityProvidersResource {
             throw new BadRequestException();
         }
         String providerId = formDataMap.getFirst("providerId").asString();
-        InputStream inputStream = formDataMap.getFirst("file").asInputStream();
-        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, inputStream);
-        return config;
+        String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
+        IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
+        return providerFactory.parseConfig(session, config);
+    }
+
+    @POST
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
+    @Operation( summary = "Uploads a certificate, prepares the jwks or public key associated, and returns the certificate representation.")
+    @Path("upload-certificate")
+    public CertificateRepresentation uploadCertificate() throws IOException {
+        auth.realm().requireManageIdentityProviders();
+        try {
+            CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
+            if (info.getJwks() != null || info.getPublicKey() != null) {
+                // uploaded a jwks or a publick key
+                return info;
+            } else if (info.getCertificate() != null) {
+                // get the key from the certificate file
+                X509Certificate certificate = KeycloakModelUtils.getCertificate(info.getCertificate());
+                String pubKeyPem = PemUtils.encodeKey(certificate.getPublicKey());
+                info.setPublicKey(pubKeyPem);
+                return info;
+            } else {
+                throw new ErrorResponseException("certificate-not-found", "Invalid certificate/key in file", Response.Status.BAD_REQUEST);
+            }
+        } catch (IllegalStateException ise) {
+            throw new ErrorResponseException("certificate-not-found", "Certificate or key error loding from uploaded file", Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
@@ -149,25 +192,46 @@ public class IdentityProvidersResource {
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
-        
-        ReservedCharValidator.validate((String)data.get("alias"));
-        
+
+        ReservedCharValidator.validateNoSpace((String)data.get("alias"));
+
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
+
+        String file;
         try {
-            IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-            Map<String, String> config;
-            config = providerFactory.parseConfig(session, inputStream);
-            // add the URL just if needed by the identity provider
-            config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
-            return config;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
+            file = session.getProvider(HttpClientProvider.class).getString(from);
+        } catch (IOException | IllegalArgumentException e) {
+            // Only report the response status, transport errors can reveal internal addresses
+            logger.debug("Failed to fetch identity provider metadata", e);
+            String message = "Cannot fetch identity provider metadata";
+            if (e instanceof HttpResponseException responseException) {
+                message += ": HTTP " + responseException.getStatusCode();
             }
+            throw ErrorResponse.error(message, BAD_REQUEST);
         }
+
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
+
+        Map<String, String> config;
+        try {
+            config = providerFactory.parseConfig(session, file);
+        } catch (RuntimeException e) {
+            // The factories report an unusable document by the cause they wrap, except for a SAML
+            // document that parses into something other than an entity descriptor
+            if (!(e instanceof ClassCastException
+                    || e.getCause() instanceof IOException
+                    || e.getCause() instanceof ParsingException
+                    || e.getCause() instanceof XMLStreamException)) {
+                throw e;
+            }
+            logger.debug("Failed to parse identity provider metadata", e);
+            throw ErrorResponse.error("Cannot parse identity provider metadata", BAD_REQUEST);
+        }
+
+        // add the URL just if needed by the identity provider
+        config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
+        return config;
     }
 
     /**
@@ -186,43 +250,46 @@ public class IdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation(summary = "List identity providers")
     public Stream<IdentityProviderRepresentation> getIdentityProviders(
+            @Parameter(description = "Filter by identity providers type") @QueryParam("type") String type,
+            @Parameter(description = "Filter by identity providers capability") @QueryParam("capability") String capability,
             @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
-            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+            @Parameter(description = "Boolean which defines if only realm-level IDPs (not associated with orgs) should be returned (default: false)") @QueryParam("realmOnly") Boolean realmOnly) {
         this.auth.realm().requireViewIdentityProviders();
 
         if (maxResults == null) {
-            maxResults = 100; // always set a maximum of 100
+            maxResults = 100; // always set a maximum of 100 by default
         }
 
-        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
+        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
-                : m -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, m));
+                : m -> {
+                    IdentityProviderRepresentation rep = StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, m));
+                    Organizations.filterOrganizationLinks(rep, session, auth);
+                    return rep;
+                };
 
-        Stream<IdentityProviderModel> stream = realm.getIdentityProvidersStream().sorted(new IdPComparator());
-        if (!StringUtil.isBlank(search)) {
-            stream = stream.filter(predicateByName(search));
-        }
-        if (firstResult != null) {
-            stream = stream.skip(firstResult);
-        }
-        return stream.limit(maxResults).map(toRepresentation);
-    }
+        boolean searchRealmOnlyIDPs = Optional.ofNullable(realmOnly).orElse(false);
 
-    private Predicate<IdentityProviderModel> predicateByName(final String search) {
-        if (search.startsWith("\"") && search.endsWith("\"")) {
-            final String name = search.substring(1, search.length() - 1);
-            return (m) -> m.getAlias().equals(name);
-        } else if (search.startsWith("*") && search.endsWith("*")) {
-            final String name = search.substring(1, search.length() - 1);
-            return (m) -> m.getAlias().contains(name);
-        } else if (search.endsWith("*")) {
-            final String name = search.substring(0, search.length() - 1);
-            return (m) -> m.getAlias().startsWith(name);
+        IdentityProviderQuery query;
+        if (type != null) {
+            query = IdentityProviderQuery.type(IdentityProviderType.valueOf(type));
+        } else if (capability != null) {
+            query = IdentityProviderQuery.capability(IdentityProviderCapability.valueOf(capability));
         } else {
-            return (m) -> m.getAlias().startsWith(search);
+            query = IdentityProviderQuery.any();
         }
+
+        if (StringUtil.isNotBlank(search)) {
+            query.with(IdentityProviderModel.SEARCH, search);
+        }
+        if (searchRealmOnlyIDPs) {
+            query.with(IdentityProviderModel.ORGANIZATION_ID, null);
+        }
+
+        return session.identityProviders().getAllStream(query, firstResult, maxResults).map(toRepresentation);
     }
 
     /**
@@ -236,27 +303,45 @@ public class IdentityProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation( summary = "Create a new identity provider")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
-        ReservedCharValidator.validate(representation.getAlias());
-        
+        ReservedCharValidator.validateNoSpace(representation.getAlias());
+
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(representation);
+
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
-            this.realm.addIdentityProvider(identityProvider);
+            if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM) && identityProvider.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                        + "' role can enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
+                        Response.Status.FORBIDDEN);
+            }
+            session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
+            representation.setHideOnLogin(identityProvider.isHideOnLogin()); // update in case of legacy hide on login attr was used.
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
-                    .representation(StripSecretsUtils.strip(representation)).success();
-            
+                    .representation(StripSecretsUtils.stripSecrets(session, representation)).success();
+
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
-            
+
             if (message == null) {
                 message = "Invalid request";
             }
-            
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
+            }
+
             throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
@@ -266,14 +351,12 @@ public class IdentityProvidersResource {
     @Path("instances/{alias}")
     public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderModel identityProviderModel =  this.realm.getIdentityProvidersStream()
-                .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
-                .findFirst().orElse(null);
+        IdentityProviderModel identityProviderModel = session.identityProviders().getByIdOrAlias(alias);
 
         return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
-    private IdentityProviderFactory getProviderFactoryById(String providerId) {
+    private IdentityProviderFactory<?> getProviderFactoryById(String providerId) {
         return getProviderFactories()
                 .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
                 .map(IdentityProviderFactory.class::cast)
@@ -286,12 +369,4 @@ public class IdentityProvidersResource {
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
     }
 
-    // TODO: for the moment just sort the identity provider list. But the
-    // idea is modifying the Model API to get the result already ordered.
-    private static class IdPComparator implements Comparator<IdentityProviderModel> {
-        @Override
-        public int compare(IdentityProviderModel idp1, IdentityProviderModel idp2) {
-            return idp1.getAlias().compareTo(idp2.getAlias());
-        }
-    }
 }

@@ -17,37 +17,6 @@
 
 package org.keycloak.protocol.oidc;
 
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
-import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
-import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
-import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
-import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
-import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
-import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
-import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
-import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.resources.Cors;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.util.CacheControlUtil;
-
-import java.util.Objects;
-
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
@@ -61,6 +30,33 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
+import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
+import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
+import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
+import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
+import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.CacheControlUtil;
+
+import org.jboss.resteasy.reactive.NoCache;
+
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
+
 /**
  * Resource class for the oauth/openid connect token service
  *
@@ -72,7 +68,6 @@ public class OIDCLoginProtocolService {
     private final RealmModel realm;
     private final TokenManager tokenManager;
     private final EventBuilder event;
-    private final OIDCProviderConfig providerConfig;
 
     private final KeycloakSession session;
 
@@ -82,13 +77,12 @@ public class OIDCLoginProtocolService {
 
     private final ClientConnection clientConnection;
 
-    public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event, OIDCProviderConfig providerConfig) {
+    public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.tokenManager = new TokenManager();
         this.event = event;
-        this.providerConfig = providerConfig;
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
@@ -163,9 +157,9 @@ public class OIDCLoginProtocolService {
      * Registration endpoint
      */
     @Path("registrations")
-    public Object registrations() {
+    public Object registrations(@QueryParam(Constants.TOKEN) String tokenString) {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(session, event);
-        return endpoint.register();
+        return endpoint.register(tokenString);
     }
 
     /**
@@ -199,38 +193,28 @@ public class OIDCLoginProtocolService {
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersionPreflight() {
-        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+        return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
 
     @GET
     @Path("certs")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWKS})
     @NoCache
     public Response certs() {
         checkSsl();
 
-        JWK[] jwks = session.keys().getKeysStream(realm)
-                .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
-                .map(k -> {
-                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
-                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
-                        .filter(certs -> !certs.isEmpty())
-                        .orElseGet(() -> Collections.singletonList(k.getCertificate()));
-                    if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
-                    } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey(), k.getUse());
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .toArray(JWK[]::new);
-
-        JSONWebKeySet keySet = new JSONWebKeySet();
-        keySet.setKeys(jwks);
+        JSONWebKeySet keySet = JWKSServerUtils.getRealmJwks(session, realm);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+
+        boolean isJwksRequest = org.keycloak.utils.MediaType.APPLICATION_JWKS.equals(this.headers.getHeaderString(HttpHeaders.ACCEPT));
+        if (isJwksRequest) {
+            responseBuilder.header(CONTENT_TYPE, org.keycloak.utils.MediaType.APPLICATION_JWKS);
+        } else {
+            responseBuilder.header(CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        }
+
+        return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
     }
 
     @Path("userinfo")
@@ -238,11 +222,9 @@ public class OIDCLoginProtocolService {
         return new UserInfoEndpoint(session, tokenManager);
     }
 
-    /* old deprecated logout endpoint needs to be removed in the future
-    * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        return new LogoutEndpoint(session, tokenManager, event, providerConfig);
+        return new LogoutEndpoint(session, tokenManager, event);
     }
 
     @Path("revoke")
@@ -274,7 +256,7 @@ public class OIDCLoginProtocolService {
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(clientConnection)) {
-            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            Cors cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);
         }

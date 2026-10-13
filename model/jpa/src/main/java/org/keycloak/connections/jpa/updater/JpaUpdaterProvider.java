@@ -17,10 +17,10 @@
 
 package org.keycloak.connections.jpa.updater;
 
-import org.keycloak.provider.Provider;
-
 import java.io.File;
 import java.sql.Connection;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

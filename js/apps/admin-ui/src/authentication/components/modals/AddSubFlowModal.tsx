@@ -1,5 +1,10 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
+  SelectControl,
+  TextControl,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   ButtonVariant,
   Form,
@@ -9,9 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "ui-shared";
-import { adminClient } from "../../../admin-client";
-import { useFetch } from "../../../utils/useFetch";
+import { useAdminClient } from "../../../admin-client";
 
 type AddSubFlowProps = {
   name: string;
@@ -33,6 +36,8 @@ export const AddSubFlowModal = ({
   onConfirm,
   onCancel,
 }: AddSubFlowProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<Flow>();
   const [formProviders, setFormProviders] =
@@ -53,7 +58,7 @@ export const AddSubFlowModal = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("addStepTo", { name })}
+      title={t("addSubFlowTo", { name })}
       onClose={onCancel}
       actions={[
         <Button
@@ -85,7 +90,7 @@ export const AddSubFlowModal = ({
             name="name"
             label={t("name")}
             labelIcon={t("clientIdHelp")}
-            rules={{ required: { value: true, message: t("required") } }}
+            rules={{ required: t("required") }}
           />
           <TextControl
             name="description"
@@ -94,12 +99,13 @@ export const AddSubFlowModal = ({
           />
           <SelectControl
             name="type"
+            menuAppendTo="parent"
             label={t("flowType")}
             options={types.map((type) => ({
               key: type,
               value: t(`flow-type.${type}`),
             }))}
-            controller={{ defaultValue: "" }}
+            controller={{ defaultValue: types[0] }}
           />
           {formProviders && formProviders.length > 1 && (
             <SelectControl

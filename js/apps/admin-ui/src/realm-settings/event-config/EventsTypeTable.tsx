@@ -1,11 +1,12 @@
-import { useTranslation } from "react-i18next";
-import { Button, ToolbarItem } from "@patternfly/react-core";
-
 import {
   Action,
   KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+  ListEmptyState,
+} from "@keycloak/keycloak-ui-shared";
+import { Button, ToolbarItem } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { translationFormatter } from "../../utils/translationFormatter";
 
 export type EventType = {
   id: string;
@@ -17,6 +18,7 @@ type EventsTypeTableProps = {
   addTypes?: () => void;
   onSelect?: (value: EventType[]) => void;
   onDelete?: (value: EventType) => void;
+  onDeleteAll?: (value: EventType[]) => void;
 };
 
 export function EventsTypeTable({
@@ -25,8 +27,10 @@ export function EventsTypeTable({
   addTypes,
   onSelect,
   onDelete,
+  onDeleteAll,
 }: EventsTypeTableProps) {
   const { t } = useTranslation();
+  const [selectedTypes, setSelectedTypes] = useState<EventType[]>([]);
 
   const data = eventTypes.map((type) => ({
     id: type,
@@ -38,16 +42,30 @@ export function EventsTypeTable({
       ariaLabelKey={ariaLabelKey}
       searchPlaceholderKey="searchEventType"
       loader={data}
-      onSelect={onSelect ? onSelect : undefined}
-      canSelectAll={!!onSelect}
+      onSelect={onSelect ? onSelect : setSelectedTypes}
+      canSelectAll
       toolbarItem={
-        addTypes && (
-          <ToolbarItem>
-            <Button id="addTypes" onClick={addTypes} data-testid="addTypes">
-              {t("addSavedTypes")}
-            </Button>
-          </ToolbarItem>
-        )
+        <>
+          {addTypes && (
+            <ToolbarItem>
+              <Button id="addTypes" onClick={addTypes} data-testid="addTypes">
+                {t("addSavedTypes")}
+              </Button>
+            </ToolbarItem>
+          )}
+          {onDeleteAll && (
+            <ToolbarItem>
+              <Button
+                onClick={() => onDeleteAll(selectedTypes)}
+                data-testid="removeAll"
+                variant="secondary"
+                isDisabled={selectedTypes.length === 0}
+              >
+                {t("remove")}
+              </Button>
+            </ToolbarItem>
+          )}
+        </>
       }
       actions={
         !onDelete
@@ -66,7 +84,7 @@ export function EventsTypeTable({
         },
         {
           name: "description",
-          displayKey: "description",
+          cellFormatters: [translationFormatter(t)],
         },
       ]}
       emptyState={

@@ -17,7 +17,8 @@
 
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.storage.jpa.KeyUtils;
+import java.io.Serializable;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,8 +27,8 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.io.Serializable;
-import java.util.Objects;
+
+import org.keycloak.storage.jpa.KeyUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

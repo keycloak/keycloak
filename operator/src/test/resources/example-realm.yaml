@@ -4,6 +4,8 @@ metadata:
   name: example-count0-kc
 spec:
   keycloakCRName: example-kc
+  labels:
+    example: "test"
   realm:
     id: count0
     realm: count0
@@ -49,6 +51,7 @@ spec:
     quickLoginCheckMilliSeconds: 1000
     maxDeltaTimeSeconds: 43200
     failureFactor: 30
+    maxSecondaryAuthFailures: 100
     roles:
       realm:
       - id: c118f6c0-db44-4b29-a439-573b0d828e61
@@ -1193,7 +1196,6 @@ spec:
       xRobotsTag: none
       xFrameOptions: SAMEORIGIN
       contentSecurityPolicy: frame-src 'self'; frame-ancestors 'self'; object-src 'none';
-      xXSSProtection: 1; mode=block
       strictTransportSecurity: max-age=31536000; includeSubDomains
     smtpServer: {}
     eventsEnabled: false

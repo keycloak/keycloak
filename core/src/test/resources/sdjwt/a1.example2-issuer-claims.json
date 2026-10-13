@@ -1,0 +1,4 @@
+{
+  "iss": "https://issuer.example.com",
+  "aud": "https://api.example.com"
+}

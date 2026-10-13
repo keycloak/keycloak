@@ -1,13 +1,15 @@
 package org.keycloak.adapters.saml.descriptor.parsers;
 
+import java.io.InputStream;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.saml.common.exceptions.ParsingException;
+
+import org.junit.Test;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.InputStream;
-import org.junit.Test;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.saml.common.exceptions.ParsingException;
 
 public class SamlDescriptorIDPKeysExtractorTest {
 

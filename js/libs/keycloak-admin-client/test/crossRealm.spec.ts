@@ -14,7 +14,7 @@ describe("Realms", () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
-    const realmId = faker.internet.userName();
+    const realmId = faker.internet.username();
     const realm = await kcAdminClient.realms.create({
       id: realmId,
       realm: realmId,
@@ -28,7 +28,7 @@ describe("Realms", () => {
   });
 
   it("add a user to another realm", async () => {
-    const username = faker.internet.userName().toLowerCase();
+    const username = faker.internet.username().toLowerCase();
     const user = await kcAdminClient.users.create({
       realm: currentRealmId,
       username,

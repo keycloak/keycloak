@@ -37,10 +37,10 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -108,7 +108,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -140,7 +140,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
                         try {
                             if (clients.isEmpty()) {
-                                policyStore.delete(removedClient.getRealm(), policy.getId());
+                                policyStore.delete(policy.getId());
                             } else {
                                 policy.putConfig("clients", JsonSerialization.writeValueAsString(clients));
                             }

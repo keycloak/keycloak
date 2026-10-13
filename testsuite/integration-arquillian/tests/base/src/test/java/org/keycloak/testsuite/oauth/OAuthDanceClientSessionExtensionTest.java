@@ -17,19 +17,22 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
+import java.util.List;
+
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
-import java.util.List;
+import org.junit.Rule;
+import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author Sebastian Rose, AOE on 02.06.15.
@@ -54,34 +57,31 @@ public class OAuthDanceClientSessionExtensionTest extends AbstractKeycloakTest {
     public void doOauthDanceWithClientSessionStateAndHost() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        String clientSessionState = "1234";
-        String clientSessionHost = "test-client-host";
-
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.clientSessionState(clientSessionState)
-                .clientSessionHost(clientSessionHost)
-                .doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         String refreshTokenString = tokenResponse.getRefreshToken();
 
-        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId)
-                .assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .getEvent();
 
+        oauth.doRefreshTokenRequest(refreshTokenString);
 
-        String updatedClientSessionState = "5678";
-
-        oauth.clientSessionState(updatedClientSessionState)
-                .clientSessionHost(clientSessionHost)
-                .doRefreshTokenRequest(refreshTokenString, "password");
-
-        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId)
-                .assertEvent();
-
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
     }
 }

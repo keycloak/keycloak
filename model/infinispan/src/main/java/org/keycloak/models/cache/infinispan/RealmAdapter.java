@@ -17,21 +17,59 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.Config;
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
-import org.keycloak.models.cache.CachedRealmModel;
-import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.cache.infinispan.entities.CachedRealm;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageUtil;
-import org.keycloak.storage.client.ClientStorageProvider;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AbstractKeycloakTransaction;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OAuth2DeviceConfig;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserLoginFailureProvider;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.cache.CachedRealmModel;
+import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
+import org.keycloak.storage.client.ClientStorageProvider;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,7 +86,7 @@ public class RealmAdapter implements CachedRealmModel {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
-        this.modelSupplier = this::getRealm;
+        this.modelSupplier = new LazyModel<>(this::getRealm);
     }
 
     @Override
@@ -149,7 +187,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isUserManagedAccessAllowed() {
-        if (isUpdated()) return updated.isEnabled();
+        if (isUpdated()) return updated.isUserManagedAccessAllowed();
         return cached.isAllowUserManagedAccess();
     }
 
@@ -228,7 +266,42 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setBruteForceProtected(boolean value) {
         getDelegateForUpdate();
+        if (updated.isBruteForceProtected() != value) {
+            updateBruteForceSettings();
+        }
         updated.setBruteForceProtected(value);
+    }
+
+    boolean updateBruteForceSettings = false;
+
+    private void updateBruteForceSettings() {
+        // TODO: This should really be an event where the recipient could figure out what has changed and can react accordingly
+        if (!updateBruteForceSettings) {
+            updateBruteForceSettings = true;
+            KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    runUpdateOfLoginFailureProvider(sf, cached.getId());
+                    // Should not be necessary, as the cache entry of the realm will be discarded
+                    updateBruteForceSettings = false;
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    updateBruteForceSettings = false;
+                }
+            });
+        }
+    }
+
+    private static void runUpdateOfLoginFailureProvider(KeycloakSessionFactory keycloakSessionFactory, String realmId) {
+        KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory,
+                s -> {
+                    UserLoginFailureProvider provider = s.getProvider(UserLoginFailureProvider.class);
+                    RealmModel realm = s.realms().getRealm(realmId);
+                    provider.updateWithLatestRealmSettings(realm);
+                });
     }
 
     @Override
@@ -240,7 +313,37 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setPermanentLockout(final boolean val) {
         getDelegateForUpdate();
+        if (updated.isPermanentLockout() != val) {
+            updateBruteForceSettings();
+        }
         updated.setPermanentLockout(val);
+    }
+
+    @Override
+    public int getMaxTemporaryLockouts() {
+        if(isUpdated()) return updated.getMaxTemporaryLockouts();
+        return cached.getMaxTemporaryLockouts();
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        getDelegateForUpdate();
+        if (updated.getMaxTemporaryLockouts() != val) {
+            updateBruteForceSettings();
+        }
+        updated.setMaxTemporaryLockouts(val);
+    }
+
+    @Override
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        if(isUpdated()) return updated.getBruteForceStrategy();
+        return cached.getBruteForceStrategy();
+    }
+
+    @Override
+    public void setBruteForceStrategy(final RealmRepresentation.BruteForceStrategy val) {
+        getDelegateForUpdate();
+        updated.setBruteForceStrategy(val);
     }
 
     @Override
@@ -300,6 +403,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setMaxDeltaTimeSeconds(int val) {
         getDelegateForUpdate();
+        if (updated.getMaxDeltaTimeSeconds() != val) {
+            updateBruteForceSettings();
+        }
         updated.setMaxDeltaTimeSeconds(val);
     }
 
@@ -313,6 +419,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setFailureFactor(int failureFactor) {
         getDelegateForUpdate();
         updated.setFailureFactor(failureFactor);
+    }
+
+    @Override
+    public int getMaxSecondaryAuthFailures() {
+        if (isUpdated()) return updated.getMaxSecondaryAuthFailures();
+        return cached.getMaxSecondaryAuthFailures();
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        getDelegateForUpdate();
+        updated.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
     }
 
     @Override
@@ -348,6 +466,22 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
         getDelegateForUpdate();
+        if (updated.isDuplicateEmailsAllowed() != duplicateEmailsAllowed) {
+            // If the flag changed, we need to clear all entries from the user cache as there are entries with the key of the email address which need to be re-evaluated.
+            // Still, this must only happen after all changes have been written to the database, therefore we enlist this to run after the completion of the transaction.
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+
+                }
+            });
+        }
         updated.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
     }
 
@@ -651,7 +785,7 @@ public class RealmAdapter implements CachedRealmModel {
     public OAuth2DeviceConfig getOAuth2DeviceConfig() {
         if (isUpdated())
             return updated.getOAuth2DeviceConfig();
-        return cached.getOAuth2DeviceConfig(modelSupplier);
+        return cached.getOAuth2DeviceConfig(session, modelSupplier);
     }
 
     @Override
@@ -848,35 +982,30 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        if (isUpdated()) return updated.getIdentityProvidersStream();
-        return cached.getIdentityProviders().stream();
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication()));
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        if (isUpdated()) return updated.getIdentityProviderByAlias(alias);
-        return getIdentityProvidersStream()
-                .filter(model -> Objects.equals(model.getAlias(), alias))
-                .findFirst()
-                .orElse(null);
+        return runOnRealm(session, this, (session) -> session.identityProviders().getByAlias(alias));
     }
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.addIdentityProvider(identityProvider);
+        runOnRealm(session, this, (session) -> session.identityProviders().create(identityProvider));
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        getDelegateForUpdate();
-        updated.updateIdentityProvider(identityProvider);
+        runOnRealm(session, this, (session) -> {
+            session.identityProviders().update(identityProvider);
+            return null;
+        });
     }
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        getDelegateForUpdate();
-        updated.removeIdentityProviderByAlias(alias);
+        runOnRealm(session, this, (session) -> session.identityProviders().remove(alias));
     }
 
     @Override
@@ -1035,6 +1164,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public void setAdminPermissionsClient(ClientModel client) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsClient(client);
+    }
+
+    @Override
+    public ClientModel getAdminPermissionsClient() {
+        if (isUpdated()) return updated.getAdminPermissionsClient();
+        return cached.getAdminPermissionsClientId() == null ? null : cacheSession.getClientById(this, cached.getAdminPermissionsClientId());
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         return cacheSession.getRealmRole(this, name);
     }
@@ -1043,7 +1184,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> getRolesStream() {
         return cacheSession.getRealmRolesStream(this);
     }
-    
+
     @Override
     public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
         return cacheSession.getRealmRolesStream(this, first, max);
@@ -1053,7 +1194,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return cacheSession.searchForRolesStream(this, search, first, max);
     }
-    
+
     @Override
     public RoleModel addRole(String name) {
         return cacheSession.addRealmRole(this, name);
@@ -1072,8 +1213,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isIdentityFederationEnabled() {
-        if (isUpdated()) return updated.isIdentityFederationEnabled();
-        return cached.isIdentityFederationEnabled();
+        return session.identityProviders().isIdentityFederationEnabled();
     }
 
 
@@ -1128,55 +1268,37 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream() {
-        if (isUpdated()) return updated.getIdentityProviderMappersStream();
-        return cached.getIdentityProviderMapperSet().stream();
+        return session.identityProviders().getMappersStream();
     }
 
     @Override
     public Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias) {
-        if (isUpdated()) return updated.getIdentityProviderMappersByAliasStream(brokerAlias);
-        Set<IdentityProviderMapperModel> mappings = new HashSet<>(cached.getIdentityProviderMappers().getList(brokerAlias));
-        return mappings.stream();
+        return session.identityProviders().getMappersByAliasStream(brokerAlias);
     }
 
     @Override
     public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
-        getDelegateForUpdate();
-        return updated.addIdentityProviderMapper(model);
+        return session.identityProviders().createMapper(model);
     }
 
     @Override
     public void removeIdentityProviderMapper(IdentityProviderMapperModel mapping) {
-        getDelegateForUpdate();
-        updated.removeIdentityProviderMapper(mapping);
+        session.identityProviders().removeMapper(mapping);
     }
 
     @Override
     public void updateIdentityProviderMapper(IdentityProviderMapperModel mapping) {
-        getDelegateForUpdate();
-        updated.updateIdentityProviderMapper(mapping);
+        session.identityProviders().updateMapper(mapping);
     }
 
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
-        if (isUpdated()) return updated.getIdentityProviderMapperById(id);
-        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
-            for (IdentityProviderMapperModel model : models) {
-                if (model.getId().equals(id)) return model;
-            }
-        }
-        return null;
+        return session.identityProviders().getMapperById(id);
     }
 
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
-        if (isUpdated()) return updated.getIdentityProviderMapperByName(alias, name);
-        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
-        if (models == null) return null;
-        for (IdentityProviderMapperModel model : models) {
-            if (model.getName().equals(name)) return model;
-        }
-        return null;
+        return session.identityProviders().getMapperByName(alias, name);
     }
 
     @Override
@@ -1255,6 +1377,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        if (isUpdated()) return updated.getFirstBrokerLoginFlow();
+        return cached.getFirstBrokerLoginFlow();
+    }
+
+    @Override
+    public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setFirstBrokerLoginFlow(flow);
+    }
+
+    @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         if (isUpdated()) return updated.getAuthenticationFlowsStream();
         return cached.getAuthenticationFlowList().stream();
@@ -1306,7 +1440,11 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutionsStream(flowId);
-        return cached.getAuthenticationExecutions().get(flowId).stream();
+        List<AuthenticationExecutionModel> executions = cached.getAuthenticationExecutions().get(flowId);
+        if (executions == null) {
+            return Stream.empty();
+        }
+        return executions.stream();
     }
 
     @Override
@@ -1371,6 +1509,36 @@ public class RealmAdapter implements CachedRealmModel {
     public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
         if (isUpdated()) return updated.getAuthenticatorConfigById(id);
         return cached.getAuthenticatorConfigs().get(id);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+        if (isUpdated()) return updated.getRequiredActionConfigById(id);
+        return cached.getRequiredActionProviderConfigs().get(id);
+    }
+
+    @Override
+    public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+        if (isUpdated()) return updated.getRequiredActionConfigByAlias(alias);
+        return cached.getRequiredActionProviderConfigsByAlias().get(alias);
+    }
+
+    @Override
+    public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.updateRequiredActionConfig(model);
+    }
+
+    @Override
+    public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+        getDelegateForUpdate();
+        updated.removeRequiredActionProviderConfig(model);
+    }
+
+    @Override
+    public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+        if (isUpdated()) return updated.getRequiredActionConfigsStream();
+        return cached.getRequiredActionProviderConfigsByAlias().values().stream();
     }
 
     @Override
@@ -1506,7 +1674,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(session, modelSupplier) : cached.getOptionalDefaultClientScopes(session, modelSupplier);
         return clientScopeIds.stream()
                 .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
@@ -1528,10 +1696,10 @@ public class RealmAdapter implements CachedRealmModel {
 
     public void executeEvictions(ComponentModel model) {
         if (model == null) return;
-        
+
         // if user cache is disabled this is null
         UserCache userCache = UserStorageUtil.userCache(session);
-        if (userCache != null) {        
+        if (userCache != null) {
           // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
           if (model.getParentId() != null && !model.getParentId().equals(getId())) {
               ComponentModel parent = getComponent(model.getParentId());
@@ -1540,13 +1708,13 @@ public class RealmAdapter implements CachedRealmModel {
               }
               return;
           }
-  
+
           // invalidate entire user cache if we're dealing with user storage SPI
           if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
             userCache.evict(this);
           }
         }
-        
+
         // invalidate entire realm if we're dealing with client storage SPI
         // entire realm because of client roles, client lists, and clients
         if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
@@ -1557,9 +1725,72 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
-        executeEvictions(component);
+        if (!isLastSyncOnlyUpdate(component)) {
+            executeEvictions(component);
+        }
         updated.updateComponent(component);
 
+    }
+
+    /**
+     * A user-storage sync ends by persisting the {@code lastSync} timestamp on the provider's
+     * component (see {@code UserStorageSyncTask#updateLastSyncInterval}). That update reloads the
+     * provider from the store and changes nothing but the {@code lastSync_*} config entries, yet it
+     * routes through {@link #updateComponent(ComponentModel)} which unconditionally evicts the whole
+     * realm's user cache via {@link #executeEvictions(ComponentModel)}. The {@code lastSync}
+     * timestamp is runtime bookkeeping and has no bearing on the staleness of cached users, so that
+     * eviction makes a long cache policy (e.g. {@code EVICT_DAILY}) ineffective in any realm that
+     * runs federation syncs.
+     * <p>
+     * Detect the case where a user-storage provider update only touches the {@code lastSync_*} keys
+     * so the eviction can be skipped; any user-affecting config change still evicts as before.
+     */
+    private boolean isLastSyncOnlyUpdate(ComponentModel updatedComponent) {
+        if (!UserStorageProvider.class.getName().equals(updatedComponent.getProviderType())) {
+            return false;
+        }
+
+        ComponentModel existing = getComponent(updatedComponent.getId());
+        if (existing == null) {
+            return false;
+        }
+
+        return onlyLastSyncChanged(existing.getConfig(), updatedComponent.getConfig());
+    }
+
+    /**
+     * Returns {@code true} only when every non-{@code lastSync} config entry is unchanged between the
+     * two configs and at least one {@code lastSync_*} entry actually differs — i.e. the update changes
+     * nothing but the {@code lastSync} bookkeeping. Returns {@code false} for any other config change,
+     * including a genuine no-op where the {@code lastSync} entries are identical.
+     */
+    private static boolean onlyLastSyncChanged(MultivaluedHashMap<String, String> existingConfig,
+                                               MultivaluedHashMap<String, String> updatedConfig) {
+        Set<String> keys = new HashSet<>(existingConfig.keySet());
+        keys.addAll(updatedConfig.keySet());
+
+        for (String key : keys) {
+            if (isLastSyncKey(key)) {
+                continue;
+            }
+            if (!Objects.equals(existingConfig.get(key), updatedConfig.get(key))) {
+                return false;
+            }
+        }
+
+        // The lastSync entries must actually differ, otherwise this is a genuine no-op update and we
+        // gain nothing by treating it specially.
+        for (String key : keys) {
+            if (isLastSyncKey(key) && !Objects.equals(existingConfig.get(key), updatedConfig.get(key))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isLastSyncKey(String key) {
+        return key != null && key.startsWith(UserStorageProviderModel.LAST_SYNC + "_");
     }
 
     @Override
@@ -1696,32 +1927,89 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count) {
-        getDelegateForUpdate();
-        return updated.createClientInitialAccessModel(expiration, count);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().createClientInitialAccessModel(expiration, count);
     }
 
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(String id) {
-        return getDelegateForUpdate().getClientInitialAccessModel(id);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().getClientInitialAccessModel(id);
     }
 
     @Override
     public void removeClientInitialAccessModel(String id) {
-        getDelegateForUpdate().removeClientInitialAccessModel(id);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        modelSupplier.get().removeClientInitialAccessModel(id);
     }
 
     @Override
     public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
-        return getDelegateForUpdate().getClientInitialAccesses();
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().getClientInitialAccesses();
     }
 
     @Override
     public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
-        getDelegateForUpdate().decreaseRemainingCount(clientInitialAccess);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        modelSupplier.get().decreaseRemainingCount(clientInitialAccess);
     }
 
     @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
+    }
+
+    @Override
+    public boolean isOrganizationsEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, updated.isOrganizationsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, cached.isOrganizationsEnabled());
+    }
+
+    @Override
+    public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        getDelegateForUpdate();
+        updated.setOrganizationsEnabled(organizationsEnabled);
+    }
+
+    @Override
+    public boolean isAdminPermissionsEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, updated.isAdminPermissionsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, cached.isAdminPermissionsEnabled());
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsEnabled(adminPermissionsEnabled);
+    }
+
+    @Override
+    public boolean isVerifiableCredentialsEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, updated.isVerifiableCredentialsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, cached.isVerifiableCredentialsEnabled());
+    }
+
+    @Override
+    public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        getDelegateForUpdate();
+        updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimApiEnabled());
+        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimApiEnabled());
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setScimApiEnabled(enabled);
+    }
+
+    private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {
+        if (!Profile.isFeatureEnabled(feature)) return false;
+        return isEnabled;
     }
 }

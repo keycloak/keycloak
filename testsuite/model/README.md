@@ -6,8 +6,7 @@ initialized only with those providers that are explicitly enabled
 in a used profile via `keycloak.model.parameters` system property.
 
 This allows writing tests and running those in different
-configurations quickly, e.g. once with legacy JPA storage,
-second time with purely new Hot Rod implementation.
+configurations quickly.
 
 The valid parameters are names of classes in `org.keycloak.testsuite.model.parameters`
 package, and it is possible to combine those by providing multiple class names

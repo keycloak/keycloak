@@ -16,14 +16,26 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,22 +52,17 @@ import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAu
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-
-import java.util.Collections;
-import java.util.Optional;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ID_TOKEN_HINT;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
@@ -79,6 +86,8 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response processGrantRequest() {
+        ContentTypeValidationUtil.requireValidContentType(session.getContext().getHttpRequest().getHttpHeaders(), MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+
         HttpRequest httpRequest = session.getContext().getHttpRequest();
         CIBAAuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
 
@@ -178,8 +187,9 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
                     Response.Status.BAD_REQUEST);
         }
-        if (!TokenManager.isValidScope(scope, client)) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + scope,
+        // User is only identified (login_hint), not authenticated yet — validate without user to prevent username enumeration via scope parameters
+        if (!TokenManager.isValidScope(session, scope, client)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }
         request.setScope(scope);
@@ -189,7 +199,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             validateBindingMessage(endpointRequest.getBindingMessage());
             request.setBindingMessage(endpointRequest.getBindingMessage());
         }
-        if (endpointRequest.getAcr() != null) request.setAcrValues(endpointRequest.getAcr());
+        List<String> acrValues = AcrUtils.getAcrValues(null, endpointRequest.getAcr(), client);
+        if (!acrValues.isEmpty()) {
+            request.setAcrValues(String.join(" ", acrValues));
+        }
 
         CibaConfig policy = realm.getCibaPolicy();
 
@@ -232,6 +245,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new BackchannelAuthenticationRequestContext(endpointRequest, request, params));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
@@ -284,8 +301,16 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
                     "invalid user hint", Response.Status.BAD_REQUEST);
         }
 
-        if (user == null || !user.isEnabled())
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid user", Response.Status.BAD_REQUEST);
+
+        BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
+        boolean isInvalidUser = (user == null || !user.isEnabled());
+        if (!isInvalidUser && AuthenticatorUtils.getDisabledByBruteForceEventError(protector, session, realm, user) != null) {
+            isInvalidUser = true;
+        }
+
+        if (isInvalidUser) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_user", Response.Status.BAD_REQUEST);
+        }
 
         return user;
     }

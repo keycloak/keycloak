@@ -21,12 +21,17 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Objects;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlConfigResolver;
@@ -39,12 +44,8 @@ import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Objects;
+
+import org.jboss.logging.Logger;
 
 /**
  * <p>A {@link ServletContextListener} that parses the keycloak adapter configuration and set the same configuration
@@ -156,13 +157,13 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
     public void addTokenStoreUpdaters(ServletContext servletContext) {
         SessionIdMapperUpdater updater = this.idMapperUpdater;
 
+        servletContext.addListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
+
         try {
             String idMapperSessionUpdaterClasses = servletContext.getInitParameter("keycloak.sessionIdMapperUpdater.classes");
             if (idMapperSessionUpdaterClasses == null) {
                 return;
             }
-
-            servletContext.addListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
 
             updater = SessionIdMapperUpdater.DIRECT;
 

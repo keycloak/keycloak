@@ -16,7 +16,7 @@ An _authentication flow_ is a container of authentications, screens, and actions
 image:images/browser-flow.png[Browser Flow]
 
 ===== Auth type
-The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent. 
+The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent.
 
 . Cookie
 +
@@ -36,36 +36,36 @@ Since this sub-flow is marked as _alternative_, it will not be executed if the *
 
 The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
 
-The second execution is the *Browser - Conditional OTP* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+The second execution is the *Browser - Conditional 2FA* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* and *Condition - credential* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
 
-The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional OTP* sub-flow executes only when the user has a configured OTP credential.
+The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional 2FA* sub-flow executes only when the user has a configured OTP credential.
 
-The final execution is the *OTP Form*. {project_name} marks this execution as _required_ but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If not, the user does not see an OTP form.
+The next execution is the *Condition - credential* authentication. The step checks if the authentication process has already authenticated the user with a passwordless WebAuthn credential (passkey), avoiding 2FA in that case.
 
-===== Requirement
-A set of radio buttons that control the execution of an action executes.
+The final execution is the *OTP Form*. {project_name} marks this execution as _alternative_, but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If the OTP credential is not set up, the user does not see an OTP form.
+
+The default *browser* flow contains two more executions inside the *Browser - Conditional 2FA*, *WebAuthn Authenticator* and *Recovery Authentication Code Form*. These executions are _Disabled_ by default and they are the other 2FA methods that can be added to the flow. Change the requirement from _Disabled_ to _Alternative_ to make them available if the respective credential has been configured for the user. If the user has configured all alternative credential types, the credential with the highest priority is displayed by default. However, the *Try Another Way* option will appear so that the user has the alternative methods to log in.
 
 [[_execution-requirements]]
-====== Required
+===== Requirement
+A drop-down menu that controls the execution of an action.
 
+Required::
 All _Required_ elements in the flow must be successfully sequentially executed. The flow terminates if a required element fails.
 
-====== Alternative
-
+Alternative::
 Only a single element must successfully execute for the flow to evaluate as successful. Because the _Required_ flow elements are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow containing _Required_ flow elements will not execute.
 
-====== Disabled
-
+Disabled::
 The element does not count to mark a flow as successful.
 
-====== Conditional
-
-This requirement type is only set on sub-flows. 
-
-* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements. 
-* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_. 
+Conditional::
+This requirement type is only set on sub-flows.
++
+* A _Conditional_ sub-flow contains executions. These executions must evaluate to logical statements.
+* If all executions evaluate as _true_, the _Conditional_ sub-flow acts as _Required_.
 * If any executions evaluate as _false_, the _Conditional_ sub-flow acts as _Disabled_.
-* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_. 
+* If you do not set an execution, the _Conditional_ sub-flow acts as _Disabled_.
 * If a flow contains executions and the flow is not set to _Conditional_, {project_name} does not evaluate the executions, and the executions are considered functionally _Disabled_.
 
 ==== Creating flows
@@ -118,7 +118,7 @@ AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the 
 image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
 
 Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
-perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
+perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_.
 
 You can add sub-flows to top-level flows with the *Add sub-flow* button. The *Add sub-flow* button displays the *Create Execution Flow* page. This page is similar to the *Create Top Level Form* page. The difference is that the *Flow Type* can be *basic* (default) or *form*. The *form* type constructs a sub-flow that generates a form for the user, similar to the built-in *Registration* flow.
 Sub-flows success depends on how their executions evaluate, including their contained sub-flows. See the <<_execution-requirements, execution requirements section>> for an in-depth explanation of how sub-flows work.
@@ -219,7 +219,7 @@ After entering the username, the flow works as follows:
 
 If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
 
-If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Security Key` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Passkey` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
 
 [NOTE]
 ====
@@ -234,6 +234,17 @@ Creating an advanced flow such as this can have side effects. For example, if yo
 * Click *Delete* (trash icon) of the *Choose user* step.
 * In the *Action* menu, select *Bind flow* and select *Reset credentials flow* from the dropdown and click *Save*
 ====
+
+[[_client-policy-auth-flow]]
+==== Using Client Policies to Select an Authentication Flow
+<<_client_policies, Client Policies>> can be used to dynamically select an Authentication Flow based on specific conditions, such as requesting a particular scope or an ACR (Authentication Context Class Reference) using the `AuthenticationFlowSelectorExecutor` in combination with the condition you prefer.
+
+The `AuthenticationFlowSelectorExecutor` allows you to select an appropriate authentication flow and set the level of authentication to be applied once the selected flow is completed.
+
+A possible configuration involves using the `ACRCondition` in combination with the `AuthenticationFlowSelectorExecutor`. This setup enables you to select an authentication flow based on the requested ACR and have the ACR value included in the token using <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
+
+For more details, see <<_client_policies, Client Policies>>.
+
 
 [[_step-up-flow]]
 ==== Creating a browser login flow with step-up mechanism
@@ -271,7 +282,7 @@ Now you configure the flow for the first authentication level.
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
 . Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
-  As a result, when a user authenticates with this level, subsequent SSO logins can re-use this level and the user does not need to authenticate
+  As a result, when a user authenticates with this level, subsequent SSO logins can reuse this level and the user does not need to authenticate
   with this level until the end of the user session, which is 10 hours by default.
 . Click *Save*
 +
@@ -321,7 +332,7 @@ Finally, change the bindings.
 .Browser login with step-up mechanism
 image:images/authentication-step-up-flow.png[Authentication step up flow]
 
-.Request a certain authentication level
+.Request a certain authentication level with OpenID Connect
 To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
 
 [source,subs=+attributes]
@@ -343,7 +354,7 @@ claims= {
 ----
 
 The {project_name} javascript adapter has support for easy construct of this JSON and sending it in the login request.
-See link:{adapterguide_link_js_adapter}[Javascript adapter documentation] for more details.
+See *Keycloak JavaScript adapter* in the link:{securing_apps_link}[securing apps] section for more details.
 
 You can also use simpler parameter `acr_values` instead of `claims` parameter to request particular levels as non-essential. This is mentioned
 in the OIDC specification.
@@ -360,7 +371,7 @@ For more details see the https://openid.net/specs/openid-connect-core-1_0.html#a
 
 The logic for the previous configured authentication flow is as follows: +
 If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
-However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
+However, if a user already has a session in {project_name}, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
 
 The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This setting helps to decide
 whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
@@ -381,7 +392,19 @@ condition found in the authentication flow, such as the Username/Password in the
 and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
 based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
 
+NOTE: During the first authentication of the user, the first configured subflow with the *Conditional - Level Of Authentication* is always executed (regardless of the requested level) as
+the user does not yet have any level. Therefore, we recommend that the first level subflow contains the minimal required authenticators for user authentication. In addition, ensure that the subflows with different values of *Conditional - Level Of Authentication* are ordered starting with the lowest as shown
+in the example above. For example, if you configure a subflow with level 2 and then add another subflow with level 1, the level 2 subflow will be always asked during the first authentication, which may
+not be the desired behavior.
+
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
+
+NOTE: Step-up authentication with Level of Authentication conditions is intended for use cases where each level
+requires all authentication methods from the preceding levels.
+For instance, level X must always include all authentication methods required by level X-1.
+For use cases where a specific level, such as level 3, requires a different authentication method from the previous levels,
+it may be more appropriate to use mapping of ACR to a specific flow.
+For more details, see <<_client-policy-auth-flow, Using Client Policies to Select an Authentication Flow>>.
 
 *Example scenario*
 
@@ -402,6 +425,104 @@ In case you do not want `acr` claim inside tokens or you need some custom logic 
 Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
 one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
 in the authentication flow), then {project_name} will throw an error.
+
+[[_step-up-authentication-saml]]
+==== Step-up authentication for SAML
+
+For the SAML protocol, the step-up authentication uses the `<AuthnContextClassRef>` element (Authentication Context Class Reference or ACR) to map the Level of Authentication (LoA). This element is a URI reference that identifies an authentication context declaration. The LoA is requested by the client in the SAML request via the `<RequestedAuthnContext>` element.
+
+[source,xml,subs=+attributes]
+----
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/" Destination="https://localhost:8543/realms/demo/protocol/saml" ForceAuthn="false" ID="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" IssueInstant="2025-12-10T16:29:41.177Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Version="2.0">
+  <saml:Issuer>https://sp.example.com/</saml:Issuer>
+  <samlp:NameIDPolicy Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+  <samlp:RequestedAuthnContext>
+    <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</saml:AuthnContextClassRef>
+    <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef>
+  </samlp:RequestedAuthnContext>
+</samlp:AuthnRequest>
+----
+
+The request asks for a set of authentication contexts that will be evaluated in order by {project_name} until one of them can be satisfied. This means that {project_name} knows that URI declaration and there is a level defined in the mapping that is sufficient for the request. If none of the specified contexts can be satisfied, then {project_name} returns a `<Response>` message with a second-level `<StatusCode>` of `urn:oasis:names:tc:SAML:2.0:status:NoAuthnContext`.
+
+[source,xml,subs=+attributes]
+----
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="https://sp.example.com/" ID="ID_70625c64-004a-44cc-b338-74802f0cc37d" InResponseTo="b935f66a-8185-40b6-990c-bd5f4971773e" IssueInstant="2025-12-10T17:00:46.894Z" Version="2.0">
+  <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Responder">
+      <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:NoAuthnContext"/>
+    </samlp:StatusCode>
+  </samlp:Status>
+</samlp:Response>
+----
+
+If {project_name} can satisfy the request, the step-up authentication flow is called to authenticate the user with the mapped level. The SAML response, using the `<AuthnStatement>` element inside the successful response, will contain again the `<AuthnContextClassRef>` with the context finally applied.
+
+[source,xml,subs=+attributes]
+----
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="https://sp.example.com/" ID="ID_079be770-ace4-4a0b-bdad-2042267a9bb9" InResponseTo="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" IssueInstant="2025-12-10T16:29:41.228Z" Version="2.0">
+  <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+  </samlp:Status>
+  <saml:Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="ID_0278d50c-03c2-4ae0-accd-16161577faa5" IssueInstant="2025-12-10T16:29:41.228Z" Version="2.0">
+    <saml:Issuer>https://localhost:8543/auth/realms/demo</saml:Issuer>
+    <saml:Subject>
+      <saml:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">G-b1e11e8a-c002-47bc-8060-64f6f11fe267</saml:NameID>
+      <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+        <saml:SubjectConfirmationData InResponseTo="1cc6ba19-b34d-48d5-ac44-3c4b2598b6c3" NotOnOrAfter="2025-12-10T16:34:39.228Z" Recipient="https://sp.example.com/"/>
+      </saml:SubjectConfirmation>
+    </saml:Subject>
+    <saml:Conditions NotBefore="2025-12-10T16:29:39.228Z" NotOnOrAfter="2025-12-10T16:30:39.228Z">
+      <saml:AudienceRestriction>
+        <saml:Audience>https://sp.example.com/</saml:Audience>
+      </saml:AudienceRestriction>
+    </saml:Conditions>
+    <saml:AuthnStatement AuthnInstant="2025-12-10T16:29:41.229Z" SessionIndex="pZJ1Scsa1MyQ2KkesFEbedPq::56687d60-82d9-49bd-8609-dbc38153e55f" SessionNotOnOrAfter="2025-12-11T02:29:41.229Z">
+      <saml:AuthnContext>
+        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</saml:AuthnContextClassRef>
+      </saml:AuthnContext>
+    </saml:AuthnStatement>
+  </saml:Assertion>
+</samlp:Response>
+----
+
+For more information about the processing rules defined in the SAML standard for the `<RequestedAuthnContext>` element, see Section 3.3.2.2.1 Element `<RequestedAuthnContext>` of the *Assertions and Protocols for the OASIS Security Assertion Markup Language (SAML) V2.0* (`saml-core-2.0-os.pdf` document). The complete SAML v2.0 OASIS Standard set (PDF format) and schema files are available in the link:https://www.oasis-open.org/standard/saml/[Security Assertion Markup Language (SAML) v2.0] page. Note that the spec also defines a comparison (exact, minimum, better and maximum), that complicates what Level of Authentication will be finally selected in {project_name}.
+
+When the `step-up-authentication-saml` feature is enabled, the <<_mapping-acr-to-loa-realm,ACR to Level of Authentication (LoA) Mapping>> is a table with three values: the OpenID Connect ACR, the SAML URI context and the Level of Authentication (LoA). The mapping can be defined for both client types. It can also be overridden at client level, but, in this case, only the URI and the LoA are present. The minimum ACR value which is allowed for the client can also be defined in the configuration. The step-up authentication options for SAML clients are placed in the **Advanced** tab, section **Advanced Settings**. See chapter <<_client-saml-configuration,Creating a SAML client>> for details.
+
+In summary, when the step-up authentication is configured for SAML, {project_name} will process the specified context level in the SAML request and the minimum ACR allowed for the client (if they are present) to obtain the LoA (integer level) that should be reached in the authentication. If there is no available level that satisfies the request, the error is returned per specification. If the URI/LoA mapping returns a level that satisfies the request, the authentication flow is started, enforcing that Level of Authentication to be reached.
+
+In order to maintain backwards compatibility, {project_name} does not return an error and continues adding the previous ACR `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified` to the response in the following situations:
+
+* The feature `step-up-authentication-saml` is not enabled in {project_name}.
+* The SAML client does not define any mapping between context URI and LoA. Use the client mapping instead of the general realm mapping when you just need to apply the step-up for some specific SAML clients.
+* The `AuthnContextClassRef mapper` is not executed. This mapper is provided by a new default client scope `AuthnContextClassRef` which is now added to SAML clients by default. It is in charge of adding the resulting `<AuthnContextClassRef>` to the response.
++
+NOTE: The mapper and the client scope `AuthnContextClassRef` are automatically created and assigned to SAML clients when the `step-up-authentication-saml` feature is enabled (for new and migrated realms). If the feature was disabled at creation or migration time and want to be used afterwards, the client scope with the mapper should be created and assigned to the client manually.
++
+* The LoA calculated at request time is not achieved by the authentication flow. For example, if the authentication flow used for authentication is not a step-up flow, or there is a misconfiguration between the URI/LoA mapping and the final level reached in the step-up authentication flow.
+
+[[_registration-rc-client-flows]]
+==== Registration or Reset credentials requested by client
+
+Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
+click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
+
+Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the
+user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
+
+* When the client wants the user to be redirected directly to the registration, the OIDC client should add parameter `prompt=create` to the login request. As a deprecated alternative, clients can replace the very last
+snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`.
+The `prompt=create` is recommended as it is https://openid.net/specs/openid-connect-prompt-create-1_0.html[a specification standard].
+
+* When the client wants a user to be redirected directly to the `Reset credentials` flow, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/forgot-credentials` .
+
+WARNING: The preceding steps are the only supported method for a client to directly request a registration or reset-credentials flow. For security
+purposes, it is not supported and recommended for client applications to bypass OIDC/SAML flows and directly redirect to other {project_name} endpoints (such as for instance endpoints under
+`/realms/realm_name/login-actions` or `/realms/realm_name/broker`).
 
 [[_user_session_limits]]
 === User session limits
@@ -443,7 +564,7 @@ with password and OTP:
 
 image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
 
-Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that 
+Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that
 the authentication with Identity providers also participates in the session limits.
 
 NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same the configuration

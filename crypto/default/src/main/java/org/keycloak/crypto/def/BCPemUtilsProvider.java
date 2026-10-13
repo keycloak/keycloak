@@ -17,13 +17,17 @@
 
 package org.keycloak.crypto.def;
 
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.keycloak.common.util.DerUtils;
-import org.keycloak.common.util.PemException;
-import org.keycloak.common.crypto.PemUtilsProvider;
-
 import java.io.StringWriter;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.common.util.PemException;
+
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 /**
  * Encodes Key or Certificates to PEM format string
@@ -57,6 +61,22 @@ public class BCPemUtilsProvider extends PemUtilsProvider {
         } catch (Exception e) {
             throw new PemException(e);
         }
+    }
+
+    @Override
+    public PublicKey decodePublicKey(String pem) {
+        try {
+            // try to decode using SubjectPublicKeyInfo which allows to know the key type
+            SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(pemToDer(pem));
+            if (publicKeyInfo != null && publicKeyInfo.getAlgorithm() != null) {
+                return new JcaPEMKeyConverter().getPublicKey(publicKeyInfo);
+            }
+        } catch (Exception e) {
+            // error reading PEM object just go to previous RSA forced key
+        }
+
+        // assume RSA if it cannot be decoded from BC knowing the key
+        return decodePublicKey(pem, "RSA");
     }
 
     @Override

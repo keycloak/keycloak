@@ -22,17 +22,24 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.*;
+import static java.util.Arrays.asList;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CANONICAL_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_CA_SUBJECT_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ALL;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CONFIRMATION_PAGE_DISALLOWED;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_ABORT_IF_NON_UPDATED;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_RELATIVE_PATH;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CUSTOM_ATTRIBUTE_NAME;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.DEFAULT_ATTRIBUTE_NAME;
@@ -40,8 +47,11 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRLDP;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_OCSP;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_CERTIFICATE_PEM;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER_ISSUERDN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SHA256_THUMBPRINT;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN;
@@ -50,7 +60,10 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_SELECTION;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_CERTIFICATE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_URI;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSP_FAIL_OPEN;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REGULAR_EXPRESSION;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.SERIALNUMBER_HEX;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USERNAME_EMAIL_MAPPER;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_ATTRIBUTE_MAPPER;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_MAPPER_SELECTION;
@@ -66,8 +79,6 @@ import static org.keycloak.provider.ProviderConfigProperty.TEXT_TYPE;
  */
 
 public abstract class AbstractX509ClientCertificateAuthenticatorFactory implements AuthenticatorFactory {
-
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
     private static final String[] mappingSources = {
             MAPPING_SOURCE_CERT_SUBJECTDN,
@@ -92,6 +103,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             CERTIFICATE_POLICY_MODE_ANY
     };
 
+    private boolean legacyCriticalBehavior;
+
     protected static final List<ProviderConfigProperty> configProperties;
     static {
         List<String> mappingSourceTypes = new LinkedList<>();
@@ -109,7 +122,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         canonicalDn.setName(CANONICAL_DN);
         canonicalDn.setLabel("Canonical DN representation enabled");
         canonicalDn.setDefaultValue(Boolean.toString(false));
-        canonicalDn.setHelpText("Use the canonical format to determine the distinguished name. This option is relevant for authenticators using a distinguished name.");
+        canonicalDn.setHelpText("Use the canonical format (as defined in the Java Platform) to determine the distinguished name. When enabled, the RFC 2253 conformant string representation is returned, but with some additional normalization rules that alter the original DN in the certificate. This option is relevant for authenticators using a distinguished name.");
 
         ProviderConfigProperty serialnumberHex = new ProviderConfigProperty();
         serialnumberHex.setType(BOOLEAN_TYPE);
@@ -118,7 +131,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
-        
+
         ProviderConfigProperty regExp = new ProviderConfigProperty();
         regExp.setType(STRING_TYPE);
         regExp.setName(REGULAR_EXPRESSION);
@@ -172,8 +185,18 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         cRLRelativePath.setDefaultValue("crl.pem");
         cRLRelativePath.setLabel("CRL Path");
         cRLRelativePath.setHelpText("Applied just if CRL checking is ON and CRL Distribution point is OFF. It contains the URL (typically 'http' or 'ldap') " +
-                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. Paths are assumed to be relative to $jboss.server.config.dir. " +
+                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. File paths are relative to the 'conf' directory of the server, and paths that resolve outside that directory are rejected. " +
                 "Multiple CRLs can be included, however it can affect performance as the certificate will be checked against all listed CRLs."
+        );
+
+        ProviderConfigProperty cRLAbortIfNonUpdated = new ProviderConfigProperty();
+        cRLAbortIfNonUpdated.setType(BOOLEAN_TYPE);
+        cRLAbortIfNonUpdated.setName(CRL_ABORT_IF_NON_UPDATED);
+        cRLAbortIfNonUpdated.setDefaultValue(Boolean.TRUE.toString());
+        cRLAbortIfNonUpdated.setLabel("CRL abort if non updated");
+        cRLAbortIfNonUpdated.setHelpText("A CRL conforming RFC 5280 must include a next update time that marks when the CRL will be updated. " +
+                "If this option is true, the authentication fails when the CRL is outdated and cannot be updated. " +
+                "If false, the authentication continues when the CRL cannot be updated after the next update time."
         );
 
         ProviderConfigProperty oCspCheckingEnabled = new ProviderConfigProperty();
@@ -235,11 +258,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         identityConfirmationPageDisallowed.setLabel("Bypass identity confirmation");
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
 
-        ProviderConfigProperty revalidateCertificateEnabled = new ProviderConfigProperty();
-        revalidateCertificateEnabled.setType(BOOLEAN_TYPE);
-        revalidateCertificateEnabled.setName(REVALIDATE_CERTIFICATE);
-        revalidateCertificateEnabled.setLabel("Revalidate Client Certificate");
-        revalidateCertificateEnabled.setHelpText("Forces revalidation of the client certificate according to the certificates defined in the truststore. This is useful when behind a non-validating proxy or when the number of allowed certificate chains would be too large for mutual SSL negotiation.");
+        // revalidate certificate is removed at configuration although accepted for backwards compatibility
+        ProviderConfigProperty caSubjectDn = new ProviderConfigProperty();
+        caSubjectDn.setType(MULTIVALUED_STRING_TYPE);
+        caSubjectDn.setName(CERTIFICATE_CA_SUBJECT_DN);
+        caSubjectDn.setRequired(true);
+        caSubjectDn.setLabel("Certificate Authority subject DN");
+        caSubjectDn.setHelpText("Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format.");
 
         configProperties = asList(mappingMethodList,
                 canonicalDn,
@@ -251,6 +276,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 crlCheckingEnabled,
                 crlDPEnabled,
                 cRLRelativePath,
+                cRLAbortIfNonUpdated,
                 oCspCheckingEnabled,
                 ocspFailOpen,
                 ocspResponderUri,
@@ -258,7 +284,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 keyUsage,
                 extendedKeyUsage,
                 identityConfirmationPageDisallowed,
-                revalidateCertificateEnabled,
+                caSubjectDn,
                 certificatePolicy,
                 certificatePolicyMode);
     }
@@ -285,6 +311,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
 
     @Override
     public void init(Config.Scope config) {
+        this.legacyCriticalBehavior = config.getBoolean("legacyCriticalBehavior", Boolean.FALSE);
     }
 
     @Override
@@ -295,4 +322,19 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     public void close() {
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("legacyCriticalBehavior")
+                .type("boolean")
+                .helpText("Boolean to enable legacy critical behavior in the Key Usage and Extended Key Usage validations. This option is deprecated.")
+                .defaultValue("false")
+                .add()
+                .build();
+    }
+
+    public boolean isLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
+    }
 }

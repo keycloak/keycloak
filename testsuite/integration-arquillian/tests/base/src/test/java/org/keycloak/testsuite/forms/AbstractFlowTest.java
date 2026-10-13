@@ -19,15 +19,15 @@ package org.keycloak.testsuite.forms;
 
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractFlowTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected AuthenticationFlowRepresentation findFlowByAlias(String alias) {
-        for (AuthenticationFlowRepresentation rep : testRealm().flows().getFlows()) {
+        for (AuthenticationFlowRepresentation rep : managedRealm.admin().flows().getFlows()) {
             if (rep.getAlias().equals(alias)) return rep;
         }
 
@@ -35,8 +35,8 @@ public abstract class AbstractFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     protected void setRegistrationFlow(AuthenticationFlowRepresentation flow) {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setRegistrationFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
     }
 }

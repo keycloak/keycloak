@@ -35,6 +35,7 @@ public class ResourceServerRepresentation {
     private List<PolicyRepresentation> policies = emptyList();
     private List<ScopeRepresentation> scopes = emptyList();
     private DecisionStrategy decisionStrategy;
+    private AuthorizationSchema authorizationSchema;
 
     public void setId(String id) {
         this.id = id;
@@ -106,5 +107,13 @@ public class ResourceServerRepresentation {
 
     public DecisionStrategy getDecisionStrategy() {
         return decisionStrategy;
+    }
+
+    public void setAuthorizationSchema(AuthorizationSchema authorizationSchema) {
+        this.authorizationSchema = authorizationSchema;
+    }
+
+    public AuthorizationSchema getAuthorizationSchema() {
+        return authorizationSchema;
     }
 }

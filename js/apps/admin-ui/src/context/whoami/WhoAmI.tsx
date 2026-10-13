@@ -1,64 +1,36 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { PropsWithChildren, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import environment from "../../environment";
-import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
-import { useFetch } from "../../utils/useFetch";
+import {
+  createNamedContext,
+  KeycloakSpinner,
+  useEnvironment,
+  useFetch,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../../admin-client";
+import { DEFAULT_LOCALE } from "../../i18n/constants";
 import { useRealm } from "../realm-context/RealmContext";
 
-export class WhoAmI {
-  #me?: WhoAmIRepresentation;
-
-  constructor(me?: WhoAmIRepresentation) {
-    this.#me = me;
-    if (this.#me?.locale) {
-      i18n.changeLanguage(this.#me.locale, (error) => {
-        if (error) {
-          console.warn("Error(s) loading locale", this.#me?.locale, error);
-        }
-      });
-    }
-  }
-
-  public getDisplayName(): string {
-    if (this.#me === undefined) return "";
-
-    return this.#me.displayName;
-  }
-
-  public getLocale() {
-    return this.#me?.locale ?? DEFAULT_LOCALE;
-  }
-
-  public getRealm() {
-    return this.#me?.realm ?? "";
-  }
-
-  public getUserId(): string {
-    if (this.#me === undefined) return "";
-
-    return this.#me.userId;
-  }
-
-  public canCreateRealm(): boolean {
-    return !!this.#me?.createRealm;
-  }
-
-  public getRealmAccess(): Readonly<{
-    [key: string]: ReadonlyArray<AccessType>;
-  }> {
-    if (this.#me === undefined) return {};
-
-    return this.#me.realm_access;
-  }
-}
+// can be replaced with https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
+const RTL_LOCALES = [
+  "ar",
+  "dv",
+  "fa",
+  "ha",
+  "he",
+  "iw",
+  "ji",
+  "ps",
+  "sd",
+  "ug",
+  "ur",
+  "yi",
+];
 
 type WhoAmIProps = {
   refresh: () => void;
-  whoAmI: WhoAmI;
+  whoAmI: WhoAmIRepresentation;
 };
 
 export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
@@ -69,22 +41,64 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
-  const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
+  const { i18n } = useTranslation();
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+
+  const [whoAmI, setWhoAmI] = useState<WhoAmIRepresentation>();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
 
   useFetch(
-    () =>
-      adminClient.whoAmI.find({
-        realm: environment.loginRealm,
-        currentRealm: realm!,
-      }),
-    (me) => {
-      const whoAmI = new WhoAmI(me);
-      setWhoAmI(whoAmI);
+    async () => {
+      try {
+        return await adminClient.whoAmI.find({
+          realm: environment.realm,
+          currentRealm: realm,
+        });
+      } catch (error) {
+        console.warn(
+          "Unable to fetch whoami, falling back to empty defaults.",
+          error,
+        );
+
+        return {
+          realm: "",
+          userId: "",
+          displayName: "",
+          locale: DEFAULT_LOCALE,
+          createRealm: false,
+          realm_access: {},
+          temporary: false,
+        };
+      }
     },
-    [key, realm],
+    setWhoAmI,
+    [key, environment.realm, realm],
   );
+
+  useFetch(
+    async () => {
+      if (whoAmI?.locale) {
+        await i18n.changeLanguage(whoAmI.locale);
+      }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    () => {}, // noop
+    [whoAmI?.locale],
+  );
+
+  useEffect(() => {
+    if (whoAmI?.locale && RTL_LOCALES.includes(whoAmI.locale)) {
+      document.documentElement.setAttribute("dir", "rtl");
+    } else {
+      document.documentElement.removeAttribute("dir");
+    }
+  }, [whoAmI?.locale]);
+
+  if (!whoAmI) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <WhoAmIContext.Provider value={{ refresh: () => setKey(key + 1), whoAmI }}>

@@ -17,6 +17,7 @@
 
 package org.keycloak.it.utils;
 
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -44,26 +45,31 @@ import org.eclipse.aether.resolution.DependencyResolutionException;
 
 public final class Maven {
 
+    private static BootstrapMavenContext context;
+
     public static Path resolveArtifact(String groupId, String artifactId) {
+        return getArtifact(groupId, artifactId).getFile().toPath();
+    }
+
+    public static Artifact getArtifact(String groupId, String artifactId) {
         try {
-            Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
-            Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
-            BootstrapMavenContext ctx = new BootstrapMavenContext(
-                    BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
-                            .setCurrentProject(projectDir.toString()));
+            BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
             LocalProject project = ctx.getCurrentProject();
             RepositorySystem repositorySystem = ctx.getRepositorySystem();
             List<RemoteRepository> remoteRepositories = ctx.getRemoteRepositories();
             ArtifactDescriptorResult projectDescriptor = repositorySystem.readArtifactDescriptor(
                     ctx.getRepositorySystemSession(),
                     new ArtifactDescriptorRequest()
-                            .setArtifact(new DefaultArtifact(project.getGroupId(), project.getArtifactId(),                                    "pom", project.getVersion()))
+                            .setArtifact(new DefaultArtifact(project.getGroupId(), project.getArtifactId(), "pom", project.getVersion()))
                             .setRepositories(remoteRepositories));
-            Artifact artifact = resolveArtifact(groupId, artifactId, projectDescriptor.getDependencies());
+            List<Dependency> dependencies = new ArrayList<>(projectDescriptor.getDependencies());
+            dependencies.addAll(projectDescriptor.getManagedDependencies());
 
-            if (artifact == null) {
-                resolveArtifact(groupId, artifactId, projectDescriptor.getManagedDependencies());
+            if (groupId.equals(project.getGroupId()) &&  artifactId.equals(project.getArtifactId())) {
+                return projectDescriptor.getArtifact();
             }
+
+            Artifact artifact = resolveArtifact(groupId, artifactId, dependencies);
 
             if (artifact == null) {
                 artifact = resolveArtifactRecursively(ctx, projectDescriptor, groupId, artifactId);
@@ -77,7 +83,7 @@ public final class Maven {
                             ctx.getRepositorySystemSession(),
                             new ArtifactRequest().setArtifact(artifact)
                                     .setRepositories(remoteRepositories))
-                    .getArtifact().getFile().toPath();
+                    .getArtifact();
         } catch (Exception cause) {
             throw new RuntimeException("Failed to resolve artifact: " + groupId + ":" + artifactId, cause);
         }
@@ -129,5 +135,33 @@ public final class Maven {
         }
 
         return artifactResults.get(0).getArtifact();
+    }
+
+    public static Path getKeycloakQuarkusModulePath() {
+        // Find keycloak-parent module first
+        BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
+        for (LocalProject m = ctx.getCurrentProject(); m != null; m = m.getLocalParent()) {
+            if ("keycloak-parent".equals(m.getArtifactId())) {
+                // When found, advance to quarkus module
+                return m.getDir().resolve("quarkus");
+            }
+        }
+
+        throw new RuntimeException("Failed to find keycloak-parent module.");
+    }
+
+    public static BootstrapMavenContext bootstrapCurrentMavenContext() {
+        try {
+            if (context == null) {
+                Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+                Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
+                context = new BootstrapMavenContext(
+                        BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
+                                .setCurrentProject(projectDir.toString()));
+            }
+            return context;
+        } catch (BootstrapMavenException | URISyntaxException e) {
+            throw new RuntimeException("Failed bootstrap maven context", e);
+        }
     }
 }

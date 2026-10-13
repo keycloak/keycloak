@@ -18,6 +18,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Client Profile's external representation class
@@ -52,5 +53,18 @@ public class ClientProfileRepresentation {
 
     public void setExecutors(List<ClientPolicyExecutorRepresentation> executors) {
         this.executors = executors;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientProfileRepresentation that = (ClientProfileRepresentation) o;
+        return Objects.equals(name, that.name) && Objects.equals(description, that.description) && Objects.equals(executors, that.executors);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, executors);
     }
 }

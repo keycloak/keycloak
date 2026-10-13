@@ -17,21 +17,23 @@
 
 package org.keycloak.authentication.actiontoken;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.SingleUseObjectValueModel;
-import org.keycloak.models.DefaultActionTokenKey;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.Urls;
-
-import jakarta.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.services.Urls;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Part of action token that is intended to be used e.g. in link sent in password-reset email.
@@ -43,6 +45,9 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
 
     public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
     public static final String JSON_FIELD_EMAIL = "eml";
+
+    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
+    private String compoundAuthenticationSessionId;
 
     @JsonProperty(value = JSON_FIELD_EMAIL)
     private String email;
@@ -85,14 +90,12 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
         setCompoundAuthenticationSessionId(compoundAuthenticationSessionId);
     }
 
-    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
     public String getCompoundAuthenticationSessionId() {
-        return (String) getOtherClaims().get(JSON_FIELD_AUTHENTICATION_SESSION_ID);
+        return compoundAuthenticationSessionId;
     }
 
-    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
-    public final void setCompoundAuthenticationSessionId(String authenticationSessionId) {
-        setOtherClaims(JSON_FIELD_AUTHENTICATION_SESSION_ID, authenticationSessionId);
+    public void setCompoundAuthenticationSessionId(String compoundAuthenticationSessionId) {
+        this.compoundAuthenticationSessionId = compoundAuthenticationSessionId;
     }
 
     @JsonIgnore
@@ -147,26 +150,37 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      * <li>{@code issuer}: URI of the given realm</li>
      * <li>{@code audience}: URI of the given realm (same as issuer)</li>
      * </ul>
-     *
-     * @param session
-     * @param realm
-     * @param uri
-     * @return
      */
     public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
-        String issuerUri = getIssuer(realm, uri);
+        return serialize(session, realm, uri.getBaseUri());
+    }
+
+    /**
+     * Variant of {@link #serialize(KeycloakSession, RealmModel, UriInfo)} that accepts the
+     * Keycloak base URI directly. Useful for callers that do not have access to a
+     * {@link UriInfo} (e.g. code that runs outside of an HTTP request, such as scheduled
+     * tasks or workflow executors).
+     *
+     * @param session the Keycloak session
+     * @param realm the realm the issuer URI is derived from
+     * @param baseUri the Keycloak base URI (e.g. {@code https://auth.example.com/})
+     * @return the signed JWT representation of this token
+     */
+    public String serialize(KeycloakSession session, RealmModel realm, URI baseUri) {
+        String issuerUri = Urls.realmIssuer(baseUri, realm.getName());
+        String id = getId();
+
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
 
         this
-          .issuedAt(Time.currentTime())
-          .id(getActionVerificationNonce().toString())
+          .issuedNow()
+          .id(id)
           .issuer(issuerUri)
           .audience(issuerUri);
 
         return session.tokens().encode(this);
-    }
-
-    private static String getIssuer(RealmModel realm, UriInfo uri) {
-        return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
     }
 
 }

@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import org.infinispan.AdvancedCache;
-import org.infinispan.Cache;
-import org.infinispan.context.Flag;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
@@ -33,9 +34,9 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UserSessionManager;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.TreeSet;
+import org.infinispan.AdvancedCache;
+import org.infinispan.Cache;
+import org.infinispan.context.Flag;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -83,7 +84,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
     }
 
     protected String toString(UserSessionEntity userSession) {
-        int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
+        int clientSessionsSize = userSession.getClientSessions().size();
         return "ID: " + userSession.getId() + ", realm: " + userSession.getRealmId()+ ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }
@@ -107,14 +108,11 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
-            UserSessionEntity userSession = new UserSessionEntity();
-            String id = getArg(1);
-
-            userSession.setId(id);
+            UserSessionEntity userSession = new UserSessionEntity(getArg(1));
             userSession.setRealmId(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
-            cache.put(id, new SessionEntityWrapper(userSession));
+            cache.put(userSession.getId(), new SessionEntityWrapper(userSession));
         }
 
         @Override
@@ -230,13 +228,13 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
-            for (String id : cache.keySet()) {
-                SessionEntity entity = cache.get(id).getEntity();
+            for (var entry : cache.entrySet()) {
+                SessionEntity entity = entry.getValue().getEntity();
                 if (!(entity instanceof UserSessionEntity)) {
                     continue;
                 }
-                UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
-                log.info("list: key=" + id + ", value=" + toString(userSession));
+                UserSessionEntity userSession = (UserSessionEntity) entry.getValue().getEntity();
+                log.info("list: key=" + entry.getKey() + ", value=" + toString(userSession));
             }
         }
     }
@@ -294,14 +292,11 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
             BatchTaskRunner.runInBatches(0, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession batchSession, int firstInIteration, int countInIteration) -> {
                 for (int i=0 ; i<countInIteration ; i++) {
-                    UserSessionEntity userSession = new UserSessionEntity();
-                    String id = KeycloakModelUtils.generateId();
-
-                    userSession.setId(id);
+                    UserSessionEntity userSession = new UserSessionEntity(KeycloakModelUtils.generateId());
                     userSession.setRealmId(realmName);
 
                     userSession.setLastSessionRefresh(Time.currentTime());
-                    cache.put(id, new SessionEntityWrapper(userSession));
+                    cache.put(userSession.getId(), new SessionEntityWrapper(userSession));
                 }
 
                 log.infof("Created '%d' sessions started from offset '%d'", countInIteration, firstInIteration);

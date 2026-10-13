@@ -18,9 +18,9 @@
  */
 package org.keycloak.validate;
 
-import org.keycloak.provider.Provider;
-
 import java.util.Map;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Validates given input in a {@link ValidationContext}.

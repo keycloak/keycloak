@@ -21,7 +21,7 @@ describe("Group user integration", () => {
   let currentPolicy: PolicyRepresentation;
 
   before(async () => {
-    const groupName = faker.internet.userName();
+    const groupName = faker.internet.username();
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
     // create group
@@ -31,7 +31,7 @@ describe("Group user integration", () => {
     currentGroup = (await kcAdminClient.groups.findOne({ id: group.id }))!;
 
     // create user
-    const username = faker.internet.userName();
+    const username = faker.internet.username();
     const user = await kcAdminClient.users.create({
       username,
       email: "test@keycloak.org",
@@ -66,7 +66,9 @@ describe("Group user integration", () => {
       id: currentUser.id!,
     });
     // expect id,name,path to be the same
-    expect(groups[0]).to.be.eql(pick(currentGroup, ["id", "name", "path"]));
+    expect(pick(groups[0], ["id", "name", "path"])).to.be.eql(
+      pick(currentGroup, ["id", "name", "path"]),
+    );
   });
 
   it("should list members using group api", async () => {

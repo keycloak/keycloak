@@ -22,10 +22,11 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>

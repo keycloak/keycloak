@@ -1,57 +1,67 @@
 package org.keycloak.config;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import io.smallrye.common.constraint.Assert;
+
+@SuppressWarnings({"unchecked", "OptionalUsedAsFieldOrParameterType", "rawtypes"})
 public class OptionBuilder<T> {
 
-    private  static final Supplier<List<String>> EMPTY_VALUES_SUPPLIER = List::of;
-    private  static final Supplier<List<String>> BOOLEAN_TYPE_VALUES = new Supplier<List<String>>() {
-        List<String> values = List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString());
-
-        @Override 
-        public List<String> get() {
-            return values;
-        }
-    };
+    private static final List<String> BOOLEAN_TYPE_VALUES = List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString());
 
     private final Class<T> type;
-    private final Class<T> auxiliaryType;
-    private final String key;
+    private final Class<?> auxiliaryType;
+    private final Set<String> connectedOptions = new HashSet<>();
+
+    private String key;
     private OptionCategory category;
     private boolean hidden;
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
-    private Supplier<List<String>> expectedValues;
+    private List<String> expectedValues;
+    private boolean transformEnumValues;
+    // Denotes whether a custom value can be provided among the expected values
+    private boolean strictExpectedValues;
+    private boolean caseInsensitiveExpectedValues;
     private DeprecatedMetadata deprecatedMetadata;
+    private String wildcardKey;
+
+    private boolean synthetic;
+
+    public static <A> OptionBuilder<List<A>> listOptionBuilder(String key, Class<A> type) {
+        return new OptionBuilder(key, List.class, type);
+    }
 
     public OptionBuilder(String key, Class<T> type) {
         this(key, type, null);
     }
 
-    public OptionBuilder(String key, Class<T> type, Class<T> auxiliaryType) {
+    private OptionBuilder(String key, Class<T> type, Class<?> auxiliaryType) {
         this.type = type;
         this.auxiliaryType = auxiliaryType;
+        if (type.isArray() || ((Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) && type != java.util.List.class)) {
+            throw new IllegalArgumentException("Non-List multi-valued options are not yet supported");
+        }
         this.key = key;
         category = OptionCategory.GENERAL;
         hidden = false;
         build = false;
         description = null;
-        defaultValue = Boolean.class.equals(type) ? Optional.of((T) Boolean.FALSE) : Optional.empty();
-        expectedValues = EMPTY_VALUES_SUPPLIER;
-        if (Boolean.class.equals(type)) {
-            expectedValues(BOOLEAN_TYPE_VALUES);
-        }
-        if (Enum.class.isAssignableFrom(type)) {
-            expectedValues((Class<? extends Enum>) type);
-        }
-        if (auxiliaryType != null && Enum.class.isAssignableFrom(auxiliaryType)) {
-            expectedValues((Class<? extends Enum>) auxiliaryType);
-        }
+        strictExpectedValues = true;
+    }
+
+    OptionBuilder<T> key(String key) {
+        this.key = key;
+        return this;
     }
 
     public OptionBuilder<T> category(OptionCategory category) {
@@ -84,62 +94,114 @@ public class OptionBuilder<T> {
         return this;
     }
 
-    public OptionBuilder<T> expectedValues(Supplier<List<String>> expected) {
+    public OptionBuilder<T> expectedValues(List<String> expected) {
+        Assert.assertNotNull(expected);
         this.expectedValues = expected;
         return this;
     }
 
     public OptionBuilder<T> expectedValues(Class<? extends Enum> expected) {
-        this.expectedValues = new Supplier<>() {
-            List<String> values = List.of(expected.getEnumConstants()).stream().map(Object::toString).collect(Collectors.toList());
-
-            @Override
-            public List<String> get() {
-                return values;
-            }
-        };
-        return this;
+        return expectedValues(Stream.of(expected.getEnumConstants()).map(Object::toString).collect(Collectors.toList()));
     }
 
     public OptionBuilder<T> expectedValues(T ... expected) {
-        this.expectedValues = new Supplier<>() {
-            List<String> values = List.of(expected).stream().map(v -> v.toString()).collect(Collectors.toList());
+        return expectedValues(Stream.of(expected).map(Object::toString).collect(Collectors.toList()));
+    }
 
-            @Override
-            public List<String> get() {
-                return values;
-            }
-        };
+    /**
+     * For more details, see the {@link Option#transformEnumValue(String)}
+     */
+    public OptionBuilder<T> transformEnumValues(boolean transform) {
+        this.transformEnumValues = transform;
+        return this;
+    }
+
+    public OptionBuilder<T> strictExpectedValues(boolean strictExpectedValues) {
+        this.strictExpectedValues = strictExpectedValues;
+        return this;
+    }
+
+    public OptionBuilder<T> caseInsensitiveExpectedValues(boolean caseInsensitiveExpectedValues) {
+        this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         return this;
     }
 
     public OptionBuilder<T> deprecated() {
-        this.deprecatedMetadata = new DeprecatedMetadata();
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateOption(null);
         return this;
     }
 
-    public OptionBuilder<T> deprecated(String note) {
-        this.deprecatedMetadata = new DeprecatedMetadata(null, note);
+    public OptionBuilder<T> deprecatedMetadata(DeprecatedMetadata deprecatedMetadata) {
+        this.deprecatedMetadata = deprecatedMetadata;
         return this;
     }
 
-    public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, null);
+    public OptionBuilder<T> deprecatedValues(String note, T... values) {
+        this.deprecatedMetadata = DeprecatedMetadata.deprecateValues(note, Stream.of(values).map(Object::toString).toArray(String[]::new));
         return this;
     }
 
-    public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, note);
+    /**
+     * For more details, see the {@link Option#getConnectedOptions()}
+     */
+    public OptionBuilder<T> connectedOptions(Option<?>... connectedOptions) {
+        this.connectedOptions.addAll(Arrays.stream(connectedOptions).map(Option::getKey).collect(Collectors.toSet()));
         return this;
     }
 
+    /**
+     * For more details, see the {@link Option#getWildcardKey()}
+     */
+    public OptionBuilder<T> wildcardKey(String wildcardKey) {
+        this.wildcardKey = wildcardKey;
+        return this;
+    }
 
     public Option<T> build() {
-        if (auxiliaryType != null) {
-            return new MultiOption<T>(type, auxiliaryType, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
-        } else {
-            return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
+        if (deprecatedMetadata == null && category.getSupportLevel() == ConfigSupportLevel.DEPRECATED) {
+            deprecated();
         }
+
+        Class<?> expected = type;
+        if (auxiliaryType != null) {
+            expected = auxiliaryType;
+        }
+
+        boolean isEnumType = Enum.class.isAssignableFrom(expected);
+
+        if (expectedValues == null) {
+            if (Boolean.class.equals(expected)) {
+                expectedValues(BOOLEAN_TYPE_VALUES);
+            } else if (isEnumType) {
+                expectedValues((Class<? extends Enum>) expected);
+            } else {
+                expectedValues = List.of();
+            }
+        }
+
+        if (defaultValue == null) {
+            if (Boolean.class.equals(expected)) {
+                defaultValue = Optional.of((T) Boolean.FALSE);
+            } else {
+                defaultValue = Optional.empty();
+            }
+        }
+
+        if (transformEnumValues) {
+            if (isEnumType) {
+                expectedValues(expectedValues.stream().map(Option::transformEnumValue).toList());
+                defaultValue.ifPresent(t -> defaultValue(Optional.of((T) Option.transformEnumValue(t.toString()))));
+            } else {
+                throw new IllegalArgumentException("You can use 'transformEnumValues' only for Enum types");
+            }
+        }
+
+        return new Option<T>(type, key, category, hidden || synthetic, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected, synthetic);
+    }
+
+    public OptionBuilder<T> synthetic() {
+        this.synthetic = true;
+        return this;
     }
 
 }

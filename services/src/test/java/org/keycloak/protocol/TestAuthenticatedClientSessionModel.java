@@ -1,12 +1,12 @@
 package org.keycloak.protocol;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class TestAuthenticatedClientSessionModel implements AuthenticatedClientSessionModel {
 
@@ -35,26 +35,6 @@ public class TestAuthenticatedClientSessionModel implements AuthenticatedClientS
     @Override
     public UserSessionModel getUserSession() {
         return null;
-    }
-
-    @Override
-    public String getCurrentRefreshToken() {
-        return null;
-    }
-
-    @Override
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-
-    }
-
-    @Override
-    public int getCurrentRefreshTokenUseCount() {
-        return 0;
-    }
-
-    @Override
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-
     }
 
     @Override

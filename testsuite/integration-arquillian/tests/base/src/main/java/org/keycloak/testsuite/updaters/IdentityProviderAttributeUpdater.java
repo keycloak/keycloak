@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  *
@@ -41,6 +42,11 @@ public class IdentityProviderAttributeUpdater {
         } else {
             this.rep.getConfig().put(name, null);
         }
+        return this;
+    }
+
+    public IdentityProviderAttributeUpdater setStoreToken(boolean storeToken) {
+        rep.setStoreToken(storeToken);
         return this;
     }
 

@@ -16,28 +16,41 @@
  */
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.SingleUseObjectValueModel;
 
-import java.io.*;
-import java.util.*;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author hmlnarik
  */
-@SerializeWith(SingleUseObjectValueEntity.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.SINGLE_USE_OBJECT_VALUE_ENTITY)
 public class SingleUseObjectValueEntity implements SingleUseObjectValueModel {
 
     private final Map<String, String> notes;
 
+    @ProtoFactory
     public SingleUseObjectValueEntity(Map<String, String> notes) {
-        this.notes = notes == null ? Collections.EMPTY_MAP : new HashMap<>(notes);
+        if (notes == null || notes.isEmpty()) {
+            this.notes = Map.of();
+            return;
+        }
+        var copy = new HashMap<>(notes);
+        // protostream does not support null values for primitive types as string
+        copy.values().removeIf(Objects::isNull);
+        this.notes = Map.copyOf(copy);
     }
 
+    @ProtoField(value = 1, mapImplementation = HashMap.class)
     @Override
     public Map<String, String> getNotes() {
-        return Collections.unmodifiableMap(notes);
+        return notes;
     }
 
     @Override
@@ -50,32 +63,16 @@ public class SingleUseObjectValueEntity implements SingleUseObjectValueModel {
         return String.format("SingleUseObjectValueEntity [ notes=%s ]", notes.toString());
     }
 
-    public static class ExternalizerImpl implements Externalizer<SingleUseObjectValueEntity> {
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
 
-        private static final int VERSION_1 = 1;
+        SingleUseObjectValueEntity that = (SingleUseObjectValueEntity) o;
+        return notes.equals(that.notes);
+    }
 
-        @Override
-        public void writeObject(ObjectOutput output, SingleUseObjectValueEntity t) throws IOException {
-            output.writeByte(VERSION_1);
-
-            output.writeBoolean(t.notes.isEmpty());
-            if (! t.notes.isEmpty()) {
-                output.writeObject(t.notes);
-            }
-        }
-
-        @Override
-        public SingleUseObjectValueEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            byte version = input.readByte();
-            
-            if (version != VERSION_1) {
-                throw new IOException("Invalid version: " + version);
-            }
-            boolean notesEmpty = input.readBoolean();
-
-            Map<String, String> notes = notesEmpty ? Collections.EMPTY_MAP : (Map<String, String>) input.readObject();
-            
-            return new SingleUseObjectValueEntity(notes);
-        }
+    @Override
+    public int hashCode() {
+        return notes.hashCode();
     }
 }

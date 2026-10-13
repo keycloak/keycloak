@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -26,15 +27,14 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TokenRefreshResponseContext implements ClientPolicyContext {
+public class TokenRefreshResponseContext extends AbstractTokenResponseContext implements ClientPolicyContext, ClientPolicyClientSessionContext {
 
     private final MultivaluedMap<String, String> params;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public TokenRefreshResponseContext(MultivaluedMap<String, String> params,
             TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(accessTokenResponseBuilder);
         this.params = params;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -46,8 +46,8 @@ public class TokenRefreshResponseContext implements ClientPolicyContext {
         return params;
     }
 
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
+    @Override
+    public AuthenticatedClientSessionModel getClientSession() {
+        return getAccessTokenResponseBuilder().getClientSessionCtx().getClientSession();
     }
-
 }

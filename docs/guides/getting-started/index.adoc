@@ -8,5 +8,5 @@ include::../attributes.adoc[]
 </#list>
 
 <#list ctx.guides as guide>
-include::${guide.template}[leveloffset=+1]
+include::${guide.template}[leveloffset=+${guide.levelOffset}]
 </#list>

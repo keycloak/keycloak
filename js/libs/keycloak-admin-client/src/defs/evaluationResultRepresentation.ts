@@ -9,4 +9,5 @@ export default interface EvaluationResultRepresentation {
   policies?: PolicyResultRepresentation[];
   status?: DecisionEffect;
   allowedScopes?: ScopeRepresentation[];
+  deniedScopes?: ScopeRepresentation[];
 }

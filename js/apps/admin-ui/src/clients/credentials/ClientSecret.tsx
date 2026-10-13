@@ -4,30 +4,31 @@ import {
   Button,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { PasswordInput, HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { useAccess } from "../../context/access/Access";
 import useFormatDate from "../../utils/useFormatDate";
-import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
+import { CopyToClipboardButton } from "../../components/copy-to-clipboard-button/CopyToClipboardButton";
 
 export type ClientSecretProps = {
   client: ClientRepresentation;
   secret: string;
   toggle: () => void;
+  refresh: () => void;
 };
 
 type SecretInputProps = ClientSecretProps & {
   id: string;
   buttonLabel: string;
+  isReadOnly?: boolean;
 };
 
 const SecretInput = ({
@@ -36,6 +37,7 @@ const SecretInput = ({
   client,
   secret,
   toggle,
+  isReadOnly = false,
 }: SecretInputProps) => {
   const { t } = useTranslation();
   const form = useFormContext<ClientRepresentation>();
@@ -46,13 +48,27 @@ const SecretInput = ({
     <Split hasGutter>
       <SplitItem isFilled>
         <InputGroup>
-          <PasswordInput id={id} value={secret} isReadOnly />
-          <CopyToClipboardButton
-            id={id}
-            text={secret}
-            label="clientSecret"
-            variant="control"
-          />
+          <InputGroupItem isFill>
+            {isReadOnly ? (
+              <PasswordInput id={id} value={secret} isDisabled />
+            ) : (
+              <Controller
+                name="secret"
+                control={form.control}
+                render={({ field }) => (
+                  <PasswordInput id={id} {...field} isDisabled={!isManager} />
+                )}
+              />
+            )}
+          </InputGroupItem>
+          <InputGroupItem>
+            <CopyToClipboardButton
+              id={id}
+              text={secret}
+              label="clientSecret"
+              variant="control"
+            />
+          </InputGroupItem>
         </InputGroup>
       </SplitItem>
       <SplitItem>
@@ -81,16 +97,21 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
         })
       : undefined;
 
-  return <div className="pf-u-my-md">{unixTimeToString(time)}</div>;
+  return <div className="pf-v5-u-my-md">{unixTimeToString(time)}</div>;
 };
 
-export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
+export const ClientSecret = ({
+  client,
+  secret,
+  toggle,
+  refresh,
+}: ClientSecretProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const [secretRotated, setSecretRotated] = useState<string | undefined>(
-    client.attributes?.["client.secret.rotated"],
-  );
+  const secretRotated = client.attributes?.["client.secret.rotated"];
   const secretExpirationTime: number =
     client.attributes?.["client.secret.expiration.time"];
   const secretRotatedExpirationTime: number =
@@ -107,8 +128,8 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
         await adminClient.clients.invalidateSecret({
           id: client.id!,
         });
-        setSecretRotated(undefined);
         addAlert(t("invalidateRotatedSuccess"));
+        refresh();
       } catch (error) {
         addError("invalidateRotatedError", error);
       }
@@ -121,13 +142,20 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
       <FormGroup
         label={t("clientSecret")}
         fieldId="kc-client-secret"
-        className="pf-u-my-md"
+        className="pf-v5-u-my-md"
+        labelIcon={
+          <HelpItem
+            helpText={t("oidcClientSecretHelp")}
+            fieldLabelId="kc-client-secret"
+          />
+        }
       >
         <SecretInput
           id="kc-client-secret"
           client={client}
           secret={secret}
           toggle={toggle}
+          refresh={refresh}
           buttonLabel="regenerate"
         />
         <ExpireDateFormatter time={secretExpirationTime} />
@@ -142,7 +170,9 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
             client={client}
             secret={secretRotated}
             toggle={toggleInvalidateConfirm}
+            refresh={refresh}
             buttonLabel="invalidateSecret"
+            isReadOnly
           />
           <ExpireDateFormatter time={secretRotatedExpirationTime} />
         </FormGroup>

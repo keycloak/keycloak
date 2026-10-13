@@ -35,11 +35,11 @@ export function DetailDescriptionLink<T>({
           const value =
             typeof element === "string" ? element : convert!(element);
           return link ? (
-            <Link key={value} to={link(element as T)} className="pf-u-pr-sm">
+            <Link key={value} to={link(element as T)} className="pf-v5-u-pr-sm">
               {value}
             </Link>
           ) : (
-            <span key={value} className="pf-u-pr-sm">
+            <span key={value} className="pf-v5-u-pr-sm">
               {value}
             </span>
           );

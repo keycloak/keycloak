@@ -16,27 +16,8 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.TokenVerifier;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.models.CibaConfig;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OAuth2DeviceCodeModel;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status;
-import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
-import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.Urls;
-import org.keycloak.services.managers.AppAuthManager;
+import java.io.IOException;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -46,8 +27,31 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.io.IOException;
-import java.util.Map;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuth2DeviceCodeModel;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
+import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AppAuthManager;
+
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
 
@@ -69,7 +73,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
     @Produces(MediaType.APPLICATION_JSON)
     public Response processAuthenticationChannelResult(AuthenticationChannelResponse response) {
         event.event(EventType.LOGIN);
-        BackchannelAuthCallbackContext ctx = verifyAuthenticationRequest(httpRequest.getHttpHeaders());
+        BackchannelAuthCallbackContext ctx = verifyAuthenticationRequest(getRawBearerToken(httpRequest.getHttpHeaders(), response));
         AccessToken bearerToken = ctx.bearerToken;
         OAuth2DeviceCodeModel deviceModel = ctx.deviceModel;
 
@@ -81,13 +85,15 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
                     Response.Status.BAD_REQUEST);
         }
 
+        status = preApprove(response);
+        
         switch (status) {
             case SUCCEED:
-                approveRequest(bearerToken, response.getAdditionalParams());
+                approveRequest(bearerToken.getId(), response.getAdditionalParams());
                 break;
             case CANCELLED:
             case UNAUTHORIZED:
-                denyRequest(bearerToken, status);
+                denyRequest(bearerToken.getId(), status);
                 break;
         }
 
@@ -101,8 +107,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         return Response.ok(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-    private BackchannelAuthCallbackContext verifyAuthenticationRequest(HttpHeaders headers) {
-        String rawBearerToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+    protected BackchannelAuthCallbackContext verifyAuthenticationRequest(String rawBearerToken) {
 
         if (rawBearerToken == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.UNAUTHORIZED);
@@ -111,12 +116,16 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         AccessToken bearerToken;
 
         try {
-            bearerToken = TokenVerifier.createWithoutSignature(session.tokens().decode(rawBearerToken, AccessToken.class))
+            TokenVerifier<AccessToken> tokenVerifier = TokenVerifier.createWithoutSignature(session.tokens().decode(rawBearerToken, AccessToken.class))
                     .withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
                     .checkActive(true)
-                    .audience(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
-                    .verify().getToken();
+                    .audience(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+
+            TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(tokenVerifier, session, realm, session.getContext().getUri());
+            new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+
+            bearerToken =  tokenVerifier.verify().getToken();
         } catch (Exception e) {
             event.error(Errors.INVALID_TOKEN);
             // authentication channel id format is invalid or it has already been used
@@ -152,24 +161,59 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         return new BackchannelAuthCallbackContext(bearerToken, deviceCode);
     }
 
-    private void cancelRequest(String authResultId) {
+    /**
+     * Handels the cancellation of an authentication request.
+     * 
+     * @param authResultId The id to identify the request.
+     */
+    protected void cancelRequest(String authResultId) {
         OAuth2DeviceCodeModel userCode = DeviceEndpoint.getDeviceByUserCode(session, realm, authResultId);
         DeviceGrantType.removeDeviceByDeviceCode(session, userCode.getDeviceCode());
         DeviceGrantType.removeDeviceByUserCode(session, realm, authResultId);
     }
 
-    private void approveRequest(AccessToken authReqId, Map<String, String> additionalParams) {
-        DeviceGrantType.approveUserCode(session, realm, authReqId.getId(), "fake", additionalParams);
+    /**
+     * Is called before the request approving, allows additional validation of other factors.
+     * 
+     * @param response The {@link AuthenticationChannelResponse} to work with.
+     *                 
+     * @return The {@link Status} of the response, after pre-approving.
+     */
+    protected Status preApprove(AuthenticationChannelResponse response) {
+        return response.getStatus();
     }
 
-    private void denyRequest(AccessToken authReqId, Status status) {
+    /**
+     * Approves the request respectively the code.
+     * 
+     * @param authReqId The id to identify the request.
+     * @param additionalParams Additional parameters.
+     */
+    protected void approveRequest(String authReqId, Map<String, String> additionalParams) {
+        DeviceGrantType.approveUserCode(session, realm, authReqId, "fake", additionalParams);
+    }
+
+    protected void denyRequest(String authReqId, Status status) {
         if (CANCELLED.equals(status)) {
             event.error(Errors.NOT_ALLOWED);
         } else {
             event.error(Errors.CONSENT_DENIED);
         }
 
-        DeviceGrantType.denyUserCode(session, realm, authReqId.getId());
+        DeviceGrantType.denyUserCode(session, realm, authReqId);
+    }
+
+    /**
+     * Extracts the raw bearer token from the request.
+     * 
+     * @param httpHeaders The request headers.
+     * @param response The {@link AuthenticationChannelResponse}
+     *                 
+     * @return The raw bearer token.
+     */
+    protected String getRawBearerToken(HttpHeaders httpHeaders, AuthenticationChannelResponse response) {
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(httpHeaders);
+        return authHeader == null ? null : authHeader.getToken();
     }
 
     protected void sendClientNotificationRequest(ClientModel client, CibaConfig cibaConfig, OAuth2DeviceCodeModel deviceModel) {
@@ -185,7 +229,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         ClientNotificationEndpointRequest clientNotificationRequest = new ClientNotificationEndpointRequest();
         clientNotificationRequest.setAuthReqId(deviceModel.getAuthReqId());
 
-        SimpleHttp simpleHttp = SimpleHttp.doPost(clientNotificationEndpoint, session)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(clientNotificationEndpoint)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .json(clientNotificationRequest)
                 .auth(deviceModel.getClientNotificationToken());
@@ -208,7 +252,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         }
     }
 
-    private class BackchannelAuthCallbackContext {
+    protected static class BackchannelAuthCallbackContext {
 
         private final AccessToken bearerToken;
         private final OAuth2DeviceCodeModel deviceModel;

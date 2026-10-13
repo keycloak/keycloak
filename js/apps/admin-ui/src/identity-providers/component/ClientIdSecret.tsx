@@ -1,11 +1,21 @@
-import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
+import { useEffect, useRef } from "react";
+import { get, isEqual } from "lodash-es";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { PasswordControl, TextControl } from "@keycloak/keycloak-ui-shared";
 
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
+/** Config fields that determine where/how the client secret is sent. */
+const CLIENT_SECRET_DESTINATION_FIELDS = [
+  "config.tokenUrl",
+  "config.tokenIntrospectionUrl",
+  "config.clientId",
+  "config.baseUrl",
+  "config.tenantId",
+  "config.sandbox",
+  "config.clientAuthMethod",
+] as const;
+
+const SECRET_MASK = "**********";
 
 export const ClientIdSecret = ({
   secretRequired = true,
@@ -15,69 +25,60 @@ export const ClientIdSecret = ({
   create?: boolean;
 }) => {
   const { t } = useTranslation();
+  const form = useFormContext();
 
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext<IdentityProviderRepresentation>();
+  const destinationValues = useWatch({
+    control: form.control,
+    name: [...CLIENT_SECRET_DESTINATION_FIELDS],
+  });
+  const previousDestinationValues = useRef(destinationValues);
+
+  const { dirtyFields } = useFormState({
+    control: form.control,
+    name: [...CLIENT_SECRET_DESTINATION_FIELDS],
+  });
+
+  // When destination/auth fields change in edit mode, clear the client secret so the
+  // masked placeholder is not submitted and the admin must re-enter credentials.
+  // Only clear when the destination values themselves change; otherwise a re-render
+  // (or typing the new secret) would wipe the value the admin just entered.
+  useEffect(() => {
+    if (create) return;
+
+    const destinationDirty = CLIENT_SECRET_DESTINATION_FIELDS.some((field) =>
+      Boolean(get(dirtyFields, field)),
+    );
+    const destinationChanged = !isEqual(
+      previousDestinationValues.current,
+      destinationValues,
+    );
+    previousDestinationValues.current = destinationValues;
+
+    if (destinationDirty && destinationChanged) {
+      const currentSecret = form.getValues("config.clientSecret");
+      if (!currentSecret || currentSecret === SECRET_MASK) {
+        form.setValue("config.clientSecret", "");
+      }
+    }
+  }, [destinationValues, dirtyFields, create, form]);
 
   return (
     <>
-      <FormGroup
+      <TextControl
+        name="config.clientId"
         label={t("clientId")}
-        labelIcon={
-          <HelpItem helpText={t("clientIdHelp")} fieldLabelId="clientId" />
-        }
-        fieldId="kc-client-id"
-        isRequired
-        validated={
-          errors.config?.clientId
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          isRequired
-          id="kc-client-id"
-          data-testid="clientId"
-          {...register("config.clientId", { required: true })}
-        />
-      </FormGroup>
-      <FormGroup
+        labelIcon={t("clientIdHelp")}
+        rules={{
+          required: t("required"),
+        }}
+      />
+      <PasswordControl
+        name="config.clientSecret"
         label={t("clientSecret")}
-        labelIcon={
-          <HelpItem
-            helpText={t("clientSecretHelp")}
-            fieldLabelId="clientSecret"
-          />
-        }
-        fieldId="kc-client-secret"
-        isRequired={secretRequired}
-        validated={
-          errors.config?.clientSecret
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        {create ? (
-          <PasswordInput
-            isRequired={secretRequired}
-            id="kc-client-secret"
-            data-testid="clientSecret"
-            {...register("config.clientSecret", { required: secretRequired })}
-          />
-        ) : (
-          <KeycloakTextInput
-            isRequired={secretRequired}
-            type="password"
-            id="kc-client-secret"
-            data-testid="clientSecret"
-            {...register("config.clientSecret", { required: secretRequired })}
-          />
-        )}
-      </FormGroup>
+        labelIcon={t("clientSecretHelp")}
+        hasReveal={create}
+        rules={{ required: { value: secretRequired, message: t("required") } }}
+      />
     </>
   );
 };

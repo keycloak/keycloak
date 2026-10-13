@@ -1,0 +1,162 @@
+package org.keycloak.email;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.mail.AuthenticationFailedException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Transport;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.vault.VaultStringSecret;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
+
+    private static final Logger logger = Logger.getLogger(TokenAuthEmailAuthenticator.class);
+    public static final int FALLBACK_EXPIRES_AT_IN_SECONDS = 60;
+    private static final long REFRESH_BEFORE_EXPIRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
+
+    private final Map<String, TokenAuthEmailAuthenticator.TokenStoreEntry> tokenStore = new ConcurrentHashMap<>();
+    private final Map<String, Object> tokenLocks = new ConcurrentHashMap<>();
+
+    @Override
+    public void connect(KeycloakSession session, Map<String, String> config, Transport transport) throws EmailException {
+        String token = gatherValidToken(session, config);
+        try {
+            transport.connect(config.get("user"), token);
+
+        } catch (AuthenticationFailedException e) {
+
+            // only drop the rejected token: a concurrent request may already have cached a new one
+            this.tokenStore.computeIfPresent(session.getContext().getRealm().getId(),
+                    (realmId, entry) -> entry.token.equals(token) ? null : entry);
+            logger.debugf("AuthenticationFailed-Exception for SMTP in realm %s failed response was %s, will try again", KeycloakSessionUtil.getRealmNameFromContext(session), e.getMessage());
+
+            String retryToken = gatherValidToken(session, config);
+
+            try {
+                transport.connect(config.get("user"), retryToken);
+            } catch (MessagingException ex) {
+                logger.warnf("Retry after AuthenticationFailed-Exception for SMTP in realm %s failed response was %s", KeycloakSessionUtil.getRealmNameFromContext(session), ex);
+                throw new EmailException("Retry after AuthenticationFailed-Exception for SMTP failed.", ex);
+            }
+
+        } catch (MessagingException e) {
+            throw new EmailException("Connect failed for SMTP " + KeycloakSessionUtil.getRealmNameFromContext(session), e);
+        }
+    }
+
+    private String gatherValidToken(KeycloakSession session, Map<String, String> config) throws EmailException {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(config.get("authTokenClientSecret"))) {
+            String authTokenClientSecret = vaultStringSecret.get().orElse(config.get("authTokenClientSecret"));
+            String authTokenUrl = config.get("authTokenUrl");
+            String authTokenClientId = config.get("authTokenClientId");
+            String authTokenScope = config.get("authTokenScope");
+            int authTokenClientSecretHash = authTokenClientSecret.hashCode();
+            String realmId = session.getContext().getRealm().getId();
+
+            TokenStoreEntry tokenStoreEntry = this.tokenStore.get(realmId);
+            if (isValidAuthToken(authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecretHash, tokenStoreEntry)) {
+                return tokenStoreEntry.token;
+            }
+
+            Object lock = this.tokenLocks.computeIfAbsent(realmId, id -> new Object());
+            synchronized (lock) {
+                // the previous holder may have removed the lock already: register it again so that later requests wait for this one
+                this.tokenLocks.putIfAbsent(realmId, lock);
+                try {
+                    tokenStoreEntry = this.tokenStore.get(realmId);
+                    if (isValidAuthToken(authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecretHash, tokenStoreEntry)) {
+                        return tokenStoreEntry.token;
+                    }
+
+                    JsonNode response = fetchTokenViaHTTP(session, authTokenUrl, authTokenScope, authTokenClientId, authTokenClientSecret);
+
+                    Optional<String> maybeToken = getAccessToken(session, response);
+                    long expiresIn = getExpiresIn(session, response);
+
+                    if (maybeToken.isPresent()) {
+                        String token = maybeToken.get();
+                        this.tokenStore.put(realmId,
+                                new TokenStoreEntry(
+                                        refreshTime(expiresIn),
+                                        authTokenUrl,
+                                        authTokenScope,
+                                        authTokenClientId,
+                                        authTokenClientSecretHash,
+                                        token));
+                        return token;
+                    } else {
+                        throw new EmailException("No access token found in token-response for SMTP");
+                    }
+                } finally {
+                    // only keep the locks of realms with a token request in progress
+                    this.tokenLocks.remove(realmId, lock);
+                }
+            }
+        } catch (IOException e) {
+            throw new EmailException("Failed to gather valid token for SMTP", e);
+        }
+    }
+
+    private static boolean isValidAuthToken(String authTokenUrl, String authTokenScope, String authTokenClientId, int authTokenHash, TokenStoreEntry tokenStoreEntry) {
+        return tokenStoreEntry != null
+                && authTokenUrl != null && authTokenUrl.equals(tokenStoreEntry.url)
+                && authTokenScope != null && authTokenScope.equals(tokenStoreEntry.scope)
+                && authTokenClientId != null && authTokenClientId.equals(tokenStoreEntry.clientId)
+                && authTokenHash == tokenStoreEntry.clientSecretHash
+                && Time.currentTimeMillis() < tokenStoreEntry.refreshAt;
+    }
+
+    // Refresh a bit before the token expires, but keep short-lived tokens usable for at least half of their lifetime.
+    private static long refreshTime(long expiresInSeconds) {
+        long lifetime = TimeUnit.SECONDS.toMillis(expiresInSeconds);
+        long margin = Math.min(REFRESH_BEFORE_EXPIRY_MILLIS, lifetime / 2);
+        return Time.currentTimeMillis() + lifetime - margin;
+    }
+
+    private Optional<String> getAccessToken(KeycloakSession session, JsonNode response) {
+        if (response.has("access_token")) {
+            return Optional.of(response.get("access_token").asText());
+        } else {
+            logger.warnf("Got no access_token from response for SMTP auth in realm %s, response was %s", KeycloakSessionUtil.getRealmNameFromContext(session), response);
+            return Optional.empty();
+        }
+    }
+
+    private long getExpiresIn(KeycloakSession session, JsonNode response) {
+        //token-lifetime, must be given beside the token because token can be opaque (must not be a jwt token)
+        if (response.has("expires_in")) {
+            return Long.parseLong(response.get("expires_in").asText());
+        } else {
+            logger.warnf("Got no expires_in from response for SMTP auth in realm %s, response was %s", KeycloakSessionUtil.getRealmNameFromContext(session), response.asText());
+            return FALLBACK_EXPIRES_AT_IN_SECONDS;
+        }
+    }
+
+    private JsonNode fetchTokenViaHTTP(KeycloakSession session, String authTokenUrl, String authTokenScope, String authTokenClientId, String authTokenClientSecret) throws IOException {
+        return SimpleHttp.create(session).doPost(authTokenUrl)
+                .param("client_id", authTokenClientId)
+                .param("client_secret", authTokenClientSecret)
+                .param("scope", authTokenScope)
+                .param("grant_type", "client_credentials").asJson();
+    }
+
+    record TokenStoreEntry(
+            long refreshAt,
+            String url,
+            String scope,
+            String clientId,
+            int clientSecretHash,
+            String token) {
+    }
+}

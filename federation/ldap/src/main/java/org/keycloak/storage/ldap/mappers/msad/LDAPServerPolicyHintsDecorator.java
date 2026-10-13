@@ -21,9 +21,10 @@ import javax.naming.NamingException;
 import javax.naming.ldap.BasicControl;
 import javax.naming.ldap.LdapContext;
 
-import org.jboss.logging.Logger;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

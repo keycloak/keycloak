@@ -20,6 +20,5 @@
     <modules>
         <module>policy</module>
         <module>client</module>
-        <module>policy-enforcer</module>
     </modules>
 </project>

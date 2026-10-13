@@ -18,20 +18,23 @@
 package org.keycloak.storage.ldap;
 
 import java.lang.reflect.Method;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.naming.directory.SearchControls;
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -51,6 +54,8 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+
+import org.jboss.logging.Logger;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.
@@ -79,7 +84,7 @@ public class LDAPUtils {
     }
 
     /**
-     * Method to crate a user in the LDAP. The user will be created when all
+     * Method to create a user in the LDAP. The user will be created when all
      * mandatory attributes specified by the mappers are set. The method
      * onRegisterUserToLDAP is first called in each mapper to set any default or
      * initial value.
@@ -127,6 +132,12 @@ public class LDAPUtils {
                 .collect(Collectors.toSet());
         mandatoryAttrs.add(ldapConfig.getRdnLdapAttribute());
 
+        String passwordModifiedTimeAttributeName = ldapStore.getPasswordModificationTimeAttributeName();
+        String passwordModifiedTime = user.getFirstAttribute(passwordModifiedTimeAttributeName);
+        if (passwordModifiedTime != null) {
+            ldapUser.setSingleAttribute(passwordModifiedTimeAttributeName, passwordModifiedTime);
+        }
+
         ldapUser.executeOnMandatoryAttributesComplete(mandatoryAttrs, ldapObject -> {
             LDAPUtils.computeAndSetDn(ldapConfig, ldapObject);
             ldapStore.add(ldapObject);
@@ -143,6 +154,7 @@ public class LDAPUtils {
         ldapQuery.setSearchScope(config.getSearchScope());
         ldapQuery.setSearchDn(config.getUsersDn());
         ldapQuery.addObjectClasses(config.getUserObjectClasses());
+        ldapQuery.setUserQuery(true);
 
         String customFilter = config.getCustomUserSearchFilter();
         if (customFilter != null) {
@@ -161,6 +173,12 @@ public class LDAPUtils {
             ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
         }
 
+        // Mark the password modification time attribute as read-only so it is not sent back on updates — it is an
+        // operational attribute managed by the LDAP server. Mappers that need to write it (e.g. the MSAD mapper writes
+        // pwdLastSet to force password expiration) can call removeReadOnlyAttributeName to override this default.
+        ldapQuery.addReturningLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
+        ldapQuery.addReturningReadOnlyLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
+
         return ldapQuery;
     }
 
@@ -172,7 +190,7 @@ public class LDAPUtils {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
 
-        LDAPDn dn = LDAPDn.fromString(config.getUsersDn());
+        LDAPDn dn = LDAPDn.fromString(config.getRelativeCreateDn() + config.getUsersDn());
         dn.addFirst(rdnLdapAttrName, rdnLdapAttrValue);
         ldapUser.setDn(dn);
     }
@@ -202,7 +220,11 @@ public class LDAPUtils {
             ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
         }
 
-        return ldapUsername;
+        if (config.isImportEnabled()) {
+            return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
+        }
+
+        return  ldapUsername;
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {
@@ -321,8 +343,20 @@ public class LDAPUtils {
      */
     public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPStorageProvider ldapProvider) {
         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-        boolean pagination = ldapConfig.isPagination();
-        if (pagination) {
+        return loadAllLDAPObjects(ldapQuery, ldapConfig);
+    }
+
+    /**
+     * Load all LDAP objects corresponding to given query. We will load them paginated, so we allow to bypass the limitation of 1000
+     * maximum loaded objects in single query in MSAD
+     *
+     * @param ldapQuery LDAP query to be used. The caller should close it after calling this method
+     * @param ldapConfig
+     * @return
+     */
+    public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPConfig ldapConfig) {
+
+        if (ldapConfig.isPagination() && ldapConfig.getBatchSizeForSync() > 0) {
             // For now reuse globally configured batch size in LDAP provider page
             int pageSize = ldapConfig.getBatchSizeForSync();
 
@@ -393,7 +427,7 @@ public class LDAPUtils {
      * Map key are the attributes names in lower case
      */
     public static Map<String, Property<Object>> getUserModelProperties(){
-        
+
         Map<String, Property<Object>> userModelProps = PropertyQueries.createQuery(UserModel.class)
                 .addCriteria(new PropertyCriteria() {
 
@@ -429,5 +463,50 @@ public class LDAPUtils {
         }
 
         return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME;
+    }
+
+    /**
+     * Convert Generalized Time as defined in RFC4517 to the Date
+     */
+    static Date generalizedTimeToDate(String generalized) {
+
+        String[] parts = generalized.split("[Z+-]");
+        String[] timeFraction = parts[0].split("[.,]");
+        String time = timeFraction[0];
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(0);
+        calendar.setLenient(false);
+
+        calendar.set(Calendar.YEAR, Integer.parseInt(time.substring(0, 4)));
+        calendar.set(Calendar.MONTH, Integer.parseInt(time.substring(4, 6)) - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(time.substring(6, 8)));
+        calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(time.substring(8, 10)));
+        if (time.length() >= 12) calendar.set(Calendar.MINUTE, Integer.parseInt(time.substring(10, 12)));
+        if (time.length() >= 14) calendar.set(Calendar.SECOND, Integer.parseInt(time.substring(12, 14)));
+
+        // fraction
+        if (timeFraction.length >= 2) {
+            double fraction = Double.parseDouble("0." + timeFraction[1]);
+            if (time.length() >= 14) { // fraction of second
+                calendar.set(Calendar.MILLISECOND, (int) Math.round(fraction * 1000));
+            } else if (time.length() >= 12) { // fraction of minute
+                calendar.set(Calendar.SECOND, (int) Math.round(fraction * 60));
+            } else { // fraction of hour
+                calendar.set(Calendar.MINUTE, (int) Math.round(fraction * 60));
+            }
+        }
+
+        // timezone
+        if (generalized.length() > parts[0].length()) {
+            char delimiter = generalized.charAt(parts[0].length());
+            if (delimiter == 'Z') {
+                calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
+            } else {
+                calendar.setTimeZone(TimeZone.getTimeZone("GMT" + delimiter + parts[1]));
+            }
+        }
+
+        return calendar.getTime();
     }
 }

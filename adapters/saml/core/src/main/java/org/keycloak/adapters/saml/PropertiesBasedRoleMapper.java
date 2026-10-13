@@ -20,13 +20,13 @@ package org.keycloak.adapters.saml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+
+import org.jboss.logging.Logger;
 
 /**
  * A {@link RoleMappingsProvider} implementation that uses a {@code properties} file to determine the mappings that should be applied
@@ -60,7 +60,7 @@ import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
  * The {@code properties} file can contain both roles and principals as keys, and a list of zero or more roles separated by comma
  * as values. When the {@code {@link #map(String, Set)}} method is called, the implementation iterates through the set of roles
  * that were extracted from the assertion and checks, for eache role, if a mapping exists. If the role maps to an empty role,
- * it is discarded. If it maps to a set of one ore more different roles, then these roles are set in the result set. If no
+ * it is discarded. If it maps to a set of one or more different roles, then these roles are set in the result set. If no
  * mapping is found for the role then it is included as is in the result set.
  *
  * Once the roles have been processed, the implementation checks if the principal extracted from the assertion contains an entry
@@ -117,7 +117,7 @@ public class PropertiesBasedRoleMapper implements RoleMappingsProvider {
                     this.roleMappings.load(is);
                     logger.debugf("Successfully loaded role mappings from %s", path);
                 } catch (Exception e) {
-                    logger.debugv(e, "Unable to load role mappings from %s", path);
+                    logger.debugv(e, "Unable to load role mappings from {0}", path);
                 }
             } else {
                 throw new RuntimeException("Unable to load role mappings from " + path + ": file does not exist in filesystem");
@@ -131,7 +131,7 @@ public class PropertiesBasedRoleMapper implements RoleMappingsProvider {
                     this.roleMappings.load(is);
                     logger.debugf("Resource loader successfully loaded role mappings from %s", path);
                 } catch (Exception e) {
-                    logger.debugv(e, "Resource loader unable to load role mappings from %s", path);
+                    logger.debugv(e, "Resource loader unable to load role mappings from {0}", path);
                 }
             } else {
                 throw new RuntimeException("Unable to load role mappings from " + path + ": file does not exist in the resource");

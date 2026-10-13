@@ -17,10 +17,10 @@
 
 package org.keycloak.utils;
 
-import org.keycloak.common.Profile;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.Profile;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

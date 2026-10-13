@@ -1,5 +1,8 @@
 package org.keycloak.authentication.authenticators.sessionlimits;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -7,9 +10,6 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFactory {
     public static final String USER_REALM_LIMIT = "userRealmLimit";
@@ -32,7 +32,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return USER_SESSION_LIMITS;
     }
 
     @Override

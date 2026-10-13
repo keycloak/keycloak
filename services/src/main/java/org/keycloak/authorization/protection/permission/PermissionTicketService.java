@@ -16,6 +16,21 @@
  */
 package org.keycloak.authorization.protection.permission;
 
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -35,20 +50,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.services.ErrorResponseException;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -82,11 +83,11 @@ public class PermissionTicketService {
             throw new ErrorResponseException("invalid_permission", "created permissions should have requester or requesterName", Response.Status.BAD_REQUEST);
          
         ResourceStore rstore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = rstore.findById(resourceServer.getRealm(), resourceServer, representation.getResource());
+        Resource resource = rstore.findById(resourceServer, representation.getResource());
         if (resource == null ) throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not exists in this server.", Response.Status.BAD_REQUEST);
         
-        if (!resource.getOwner().equals(this.identity.getId()))
-            throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner", Response.Status.FORBIDDEN);
+        if (!identity.isResourceServer() && !resource.getOwner().equals(this.identity.getId()))
+            throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner or by the resource server itself", Response.Status.FORBIDDEN);
         if (!resource.isOwnerManagedAccess())
             throw new ErrorResponseException("invalid_permission", "permission can only be created for resources with user-managed access enabled", Response.Status.BAD_REQUEST);
         
@@ -105,7 +106,7 @@ public class PermissionTicketService {
         if(representation.getScopeName() != null)
             scope = sstore.findByName(resourceServer, representation.getScopeName());
         else
-            scope = sstore.findById(resourceServer.getRealm(), resourceServer, representation.getScope());
+            scope = sstore.findById(resourceServer, representation.getScope());
 
         if (scope == null && representation.getScope() !=null )
             throw new ErrorResponseException("invalid_scope", "Scope [" + representation.getScope() + "] is invalid", Response.Status.BAD_REQUEST);
@@ -122,7 +123,7 @@ public class PermissionTicketService {
         attributes.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
         attributes.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         
-        if (!ticketStore.find(resourceServer.getRealm(), resourceServer, attributes, null, null).isEmpty())
+        if (!ticketStore.find(resourceServer, attributes, null, null).isEmpty())
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
         
         PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());
@@ -139,13 +140,8 @@ public class PermissionTicketService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
 
-        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getRealm(), resourceServer, representation.getId());
+        PermissionTicket ticket = getPermissionTicket(representation.getId());
 
-        if (ticket == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
-        }
-        
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer())
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be updated only by the owner or by the resource server", Response.Status.FORBIDDEN);
 
@@ -163,19 +159,27 @@ public class PermissionTicketService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
         }
 
-        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getRealm(), resourceServer, id);
+        PermissionTicket ticket = getPermissionTicket(id);
 
-        if (ticket == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
-        }
-        
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer() && !ticket.getRequester().equals(this.identity.getId()))
             throw new ErrorResponseException("not_authorised", "permissions for [" + ticket.getResource() + "] can be deleted only by the owner, the requester, or the resource server", Response.Status.FORBIDDEN);
 
-        ticketStore.delete(resourceServer.getRealm(), id);
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+
+        ticketStore.delete(id);
 
         return Response.noContent().build();
+    }
+
+    private PermissionTicket getPermissionTicket(String id) {
+        PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        PermissionTicket ticket = ticketStore.findById(resourceServer, id);
+
+        if (ticket == null || !ticket.getResourceServer().equals(resourceServer)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
+        }
+
+        return ticket;
     }
 
     @GET
@@ -193,7 +197,7 @@ public class PermissionTicketService {
 
         Map<PermissionTicket.FilterOption, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
 
-        return Response.ok().entity(permissionTicketStore.find(resourceServer.getRealm(), resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
+        return Response.ok().entity(permissionTicketStore.find(resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
                     .stream()
                         .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
                         .collect(Collectors.toList()))
@@ -231,7 +235,7 @@ public class PermissionTicketService {
 
         if (scopeId != null) {
             ScopeStore scopeStore = storeFactory.getScopeStore();
-            Scope scope = scopeStore.findById(resourceServer.getRealm(), resourceServer, scopeId);
+            Scope scope = scopeStore.findById(resourceServer, scopeId);
 
             if (scope == null) {
                 scope = scopeStore.findByName(resourceServer, scopeId);

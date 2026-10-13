@@ -17,14 +17,25 @@
 
 package org.keycloak.federation.sssd;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.api.Sssd.User;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
-import org.keycloak.models.*;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserManager;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.ReadOnlyException;
@@ -33,17 +44,12 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileUtil;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * SPI provider implementation to retrieve data from SSSD and authenticate
@@ -221,38 +227,29 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
-        // selector by sssd
-        Predicate<AttributeContext> sssdUsersSelector = attributeContext ->
-                attributeContext.getUser() != null && model.getId().equals(attributeContext.getUser().getFederationLink());
-
-        // condition to view only by admin
-        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext().isAdminContext();
-
+    public List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata) {
         // guiOrder if new attributes are needed
         int guiOrder = (int) metadata.getAttributes().stream()
                 .map(AttributeMetadata::getName)
                 .distinct()
                 .count();
 
+        List<AttributeMetadata> metadatas = new ArrayList<>();
+
         // firstName, lastName, username and email should be read-only
         for (String attrName : List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME)) {
             List<AttributeMetadata> attrMetadatas = metadata.getAttribute(attrName);
             if (attrMetadatas.isEmpty()) {
                 logger.debugf("Adding user profile attribute '%s' for sssd provider and context '%s'.", attrName, metadata.getContext());
-                AttributeMetadata sssdAttrMetadata = metadata.addAttribute(attrName, guiOrder++, Collections.emptyList())
-                        .addWriteCondition(AttributeMetadata.ALWAYS_FALSE)
-                        .addReadCondition(onlyAdminCondition)
-                        .setRequired(AttributeMetadata.ALWAYS_FALSE);
-                sssdAttrMetadata.setSelector(sssdUsersSelector);
+                metadatas.add(UserProfileUtil.createAttributeMetadata(attrName, metadata, null, guiOrder++, model.getName()));
             } else {
                 for (AttributeMetadata attrMetadata : attrMetadatas) {
                     logger.debugf("Cloning attribute '%s' as read-only for sssd provider and context '%s'.", attrName, metadata.getContext());
-                    AttributeMetadata sssdAttrMetadata = metadata.addAttribute(attrMetadata.clone())
-                            .addWriteCondition(AttributeMetadata.ALWAYS_FALSE);
-                    sssdAttrMetadata.setSelector(sssdUsersSelector);
+                    metadatas.add(attrMetadata.clone().addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
                 }
             }
         }
+
+        return metadatas;
     }
 }

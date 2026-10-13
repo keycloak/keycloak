@@ -20,6 +20,7 @@ package org.keycloak.models;
 
 import java.util.Map;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.sessions.CommonClientSessionModel;
 
 /**
@@ -30,13 +31,21 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     final String STARTED_AT_NOTE = "startedAt";
     final String USER_SESSION_STARTED_AT_NOTE = "userSessionStartedAt";
     final String USER_SESSION_REMEMBER_ME_NOTE = "userSessionRememberMe";
+    final String REFRESH_TOKEN_PREFIX = "refreshTokenPrefix";
+    final String REFRESH_TOKEN_USE_PREFIX = "refreshTokenUsePrefix";
+    final String REFRESH_TOKEN_LAST_REFRESH_PREFIX = "refreshTokenLastRefreshPrefix";
+    final String REFRESH_TOKEN_LATEST_GENERATED_PREFIX = "refreshTokenLatestGeneratedPrefix";
 
     String getId();
 
     default int getStarted() {
         String started = getNote(STARTED_AT_NOTE);
-        // Fallback to 0 if "started" note is not available. This can happen for the offline sessions migrated from old version where "startedAt" note was not yet available
-        return started == null ? 0 : Integer.parseInt(started);
+        if (started == null) {
+            // Note can be null for offline sessions migrated from old version where "startedAt" note was not yet available
+            // Fallback to user session started for offline or 0
+            return getUserSession().isOffline() ? getUserSessionStarted() : 0;
+        }
+        return Integer.parseInt(started);
     }
 
     default int getUserSessionStarted() {
@@ -48,7 +57,20 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
         return Boolean.parseBoolean(getNote(USER_SESSION_REMEMBER_ME_NOTE));
     }
 
+    /**
+     * @deprecated for removed, without replacement.
+     */
+    @Deprecated(since = "26.4", forRemoval = true)
+    // This data may not be required as we can check the expiry time in the refresh token. 
+    // If so, this method can be removed; otherwise we keep the method and remove the deprecation notice.
     int getTimestamp();
+
+    /**
+     * Set the timestamp for the client session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     * @deprecated for removed, without replacement.
+     */
+    @Deprecated(since = "26.4", forRemoval = true)
     void setTimestamp(int timestamp);
 
     /**
@@ -57,14 +79,92 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     void detachFromUserSession();
     UserSessionModel getUserSession();
 
-    String getCurrentRefreshToken();
-    void setCurrentRefreshToken(String currentRefreshToken);
+    /**
+     * @deprecated use {@link #getRefreshToken(String)}
+     */
+    @Deprecated
+    default String getCurrentRefreshToken() {
+        return null;
+    }
 
-    int getCurrentRefreshTokenUseCount();
-    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
+    /**
+     *  @deprecated use {@link #setRefreshToken(String, String)}}
+     */
+    @Deprecated
+    default void setCurrentRefreshToken(String currentRefreshToken) {
+    }
+
+    /**
+     * @deprecated use {@link #getRefreshTokenUseCount(String)}
+     */
+    @Deprecated
+    default int getCurrentRefreshTokenUseCount() {
+        return 0;
+    }
+
+    /**
+     * @deprecated  use {@link #setRefreshTokenUseCount(String, int)}
+     */
+    @Deprecated
+    default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+    }
+
+    /**
+     * Returns the last refresh token that was successfully used for a token refresh.
+     */
+    default String getRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_PREFIX + reuseId);
+    }
+    /**
+     * Sets the last refresh token that was successfully used for a token refresh.
+     */
+    default void setRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_PREFIX + reuseId, refreshTokenId);
+    }
+    default int getRefreshTokenUseCount(String reuseId) {
+        String count = getNote(REFRESH_TOKEN_USE_PREFIX + reuseId);
+        return count == null ? 0 : Integer.parseInt(count);
+    }
+    default void setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount) {
+        setNote(REFRESH_TOKEN_USE_PREFIX + reuseId, String.valueOf(refreshTokenUseCount));
+    }
+    default int getRefreshTokenLastRefresh(String reuseId) {
+        String timestamp = getNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId);
+        return timestamp == null ? 0 : Integer.parseInt(timestamp);
+    }
+    default void setRefreshTokenLastRefresh(String reuseId, int refreshTokenLastRefresh) {
+        setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId, String.valueOf(refreshTokenLastRefresh));
+    }
+    /**
+     * Returns the latest generated refresh token, i.e. the newest token issued as a result of a token refresh.
+     */
+    default String getLatestGeneratedRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_LATEST_GENERATED_PREFIX + reuseId);
+    }
+
+    /**
+     * Sets the latest generated refresh token, i.e. the newest token issued as a result of a token refresh.
+     */
+    default void setLatestGeneratedRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_LATEST_GENERATED_PREFIX + reuseId, refreshTokenId);
+    }
 
     String getNote(String name);
     void setNote(String name, String value);
     void removeNote(String name);
     Map<String, String> getNotes();
+
+    default void restartClientSession() {
+        setAction(null);
+        setRedirectUri(null);
+        setTimestamp(Time.currentTime());
+        for (String note : getNotes().keySet()) {
+            if (!AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE.equals(note)
+                    && !AuthenticatedClientSessionModel.STARTED_AT_NOTE.equals(note)
+                    && !AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE.equals(note)) {
+                removeNote(note);
+            }
+        }
+        setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(getTimestamp()));
+    }
 }

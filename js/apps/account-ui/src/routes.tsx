@@ -1,8 +1,6 @@
 import { lazy } from "react";
 import type { IndexRouteObject, RouteObject } from "react-router-dom";
-
-import { ErrorPage } from "./root/ErrorPage";
-import { Root } from "./root/Root";
+import { Organizations } from "./organizations/Organizations";
 
 const DeviceActivity = lazy(() => import("./account-security/DeviceActivity"));
 const LinkedAccounts = lazy(() => import("./account-security/LinkedAccounts"));
@@ -11,6 +9,9 @@ const Applications = lazy(() => import("./applications/Applications"));
 const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
+const VerifiableCredentials = lazy(
+  () => import("./verifiable-credentials/VerifiableCredentials"),
+);
 const ContentComponent = lazy(() => import("./content/ContentComponent"));
 
 export const DeviceActivityRoute: RouteObject = {
@@ -26,6 +27,11 @@ export const LinkedAccountsRoute: RouteObject = {
 export const SigningInRoute: RouteObject = {
   path: "account-security/signing-in",
   element: <SigningIn />,
+};
+
+export const VerifiableCredentialsRoute: RouteObject = {
+  path: "verifiable-credentials",
+  element: <VerifiableCredentials />,
 };
 
 export const ApplicationsRoute: RouteObject = {
@@ -48,30 +54,30 @@ export type ContentComponentParams = {
 };
 
 export const ContentRoute: RouteObject = {
-  path: "/content/:componentId",
+  path: "content/:componentId",
   element: <ContentComponent />,
 };
 
 export const PersonalInfoRoute: IndexRouteObject = {
   index: true,
   element: <PersonalInfo />,
+  path: "",
 };
 
-export const RootRoute: RouteObject = {
-  path: "/",
-  element: <Root />,
-  errorElement: <ErrorPage />,
-  children: [
-    PersonalInfoRoute,
-    DeviceActivityRoute,
-    LinkedAccountsRoute,
-    SigningInRoute,
-    ApplicationsRoute,
-    GroupsRoute,
-    PersonalInfoRoute,
-    ResourcesRoute,
-    ContentRoute,
-  ],
+export const OrganizationsRoute: RouteObject = {
+  path: "organizations",
+  element: <Organizations />,
 };
 
-export const routes: RouteObject[] = [RootRoute];
+export const routes: RouteObject[] = [
+  PersonalInfoRoute,
+  DeviceActivityRoute,
+  LinkedAccountsRoute,
+  SigningInRoute,
+  VerifiableCredentialsRoute,
+  ApplicationsRoute,
+  GroupsRoute,
+  OrganizationsRoute,
+  ResourcesRoute,
+  ContentRoute,
+];

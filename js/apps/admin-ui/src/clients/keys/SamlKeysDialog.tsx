@@ -1,3 +1,4 @@
+import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
@@ -21,10 +22,9 @@ import { saveAs } from "file-saver";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { Certificate } from "./Certificate";
 import { KeyForm } from "./GenerateKeyDialog";
 import type { KeyTypes } from "./SamlKeys";
@@ -32,6 +32,7 @@ import type { KeyTypes } from "./SamlKeys";
 type SamlKeysDialogProps = {
   id: string;
   attr: KeyTypes;
+  localeKey: string;
   onClose: () => void;
   onCancel: () => void;
 };
@@ -41,6 +42,7 @@ export type SamlKeysDialogForm = KeyStoreConfig & {
 };
 
 export const submitForm = async (
+  adminClient: KeycloakAdminClient,
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
@@ -57,7 +59,7 @@ export const submitForm = async (
     );
     formData.append("file", file);
 
-    await adminClient.clients.uploadKey({ id, attr }, formData);
+    await adminClient.clients.uploadCertificate({ id, attr }, formData);
     callback();
   } catch (error) {
     callback(error);
@@ -67,9 +69,12 @@ export const submitForm = async (
 export const SamlKeysDialog = ({
   id,
   attr,
+  localeKey,
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
@@ -81,8 +86,8 @@ export const SamlKeysDialog = ({
 
   const { addAlert, addError } = useAlerts();
 
-  const submit = (form: SamlKeysDialogForm) => {
-    submitForm(form, id, attr, (error) => {
+  const submit = async (form: SamlKeysDialogForm) => {
+    await submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
       } else {
@@ -93,17 +98,19 @@ export const SamlKeysDialog = ({
 
   const generate = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const key = await adminClient.clients.generateKey({
         id,
         attr,
       });
-      setKeys(key);
       saveAs(
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+      // Clear private key from display state — it is not stored on server
+      setKeys({ ...key, privateKey: undefined });
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -114,11 +121,19 @@ export const SamlKeysDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      aria-labelledby={t("enableClientSignatureRequired")}
+      aria-label={t("enableClientSignatureRequiredModal")}
       header={
         <TextContent>
-          <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
-          <Text>{t("enableClientSignatureRequiredExplain")}</Text>
+          <Title headingLevel="h1">
+            {t("enableClientSignatureRequired", {
+              key: t(localeKey),
+            })}
+          </Title>
+          <Text>
+            {t("enableClientSignatureRequiredExplain", {
+              key: t(localeKey),
+            })}
+          </Text>
         </TextContent>
       }
       isOpen={true}
@@ -130,9 +145,9 @@ export const SamlKeysDialog = ({
           data-testid="confirm"
           variant="primary"
           isDisabled={!isValid && !keys}
-          onClick={() => {
+          onClick={async () => {
             if (type) {
-              handleSubmit(submit)();
+              await handleSubmit(submit)();
             }
             onClose();
           }}
@@ -184,7 +199,7 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("certificateHelp")}
+                  helpText={t(`saml${localeKey}CertificateHelp`)}
                   fieldLabelId="certificate"
                 />
               }
@@ -206,7 +221,7 @@ export const SamlKeysDialog = ({
             </FormGroup>
           )}
         </Form>
-        {type && <KeyForm useFile />}
+        {type && <KeyForm useFile hasPem />}
       </FormProvider>
     </Modal>
   );

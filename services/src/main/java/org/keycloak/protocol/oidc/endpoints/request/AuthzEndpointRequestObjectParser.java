@@ -16,14 +16,12 @@
  */
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.JOSE;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -31,6 +29,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Parse the parameters from OIDC "request" object
@@ -42,7 +42,8 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
     private final JsonNode requestParams;
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) {
-        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class);
+        super(session);
+        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class, true);
 
         if (this.requestParams == null) {
             throw new RuntimeException("Failed to verify signature on 'request' object");

@@ -28,10 +28,12 @@
 
     <artifactId>keycloak-saml-adapter-api-public</artifactId>
     <name>Keycloak SAML Client Adapter Public API</name>
-    <description/>
+    <description>Keycloak SAML Client Adapter Public API</description>
 
 
     <properties>
+        <!-- We still need to support EAP 8, set the Java version to 11. -->
+        <maven.compiler.release>11</maven.compiler.release>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>

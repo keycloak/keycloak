@@ -17,10 +17,11 @@
 
 package org.keycloak.models;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

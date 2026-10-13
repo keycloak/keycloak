@@ -168,4 +168,3 @@ public class ClientTemplateRepresentation {
         this.attributes = attributes;
     }
 }
-

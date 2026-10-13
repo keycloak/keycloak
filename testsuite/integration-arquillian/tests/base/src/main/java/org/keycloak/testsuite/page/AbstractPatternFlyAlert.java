@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.page;
 
+import java.time.Duration;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
@@ -27,21 +29,23 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.UIUtils.doesElementClassContain;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  *
  * @author tkyjovsk
  */
+@Deprecated
 public abstract class AbstractPatternFlyAlert {
-    public static final String ALERT_CLASS_NAME = "alert";
+    public static final String ALERT_CLASS_NAME = "pf-v5-c-alert";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
@@ -66,7 +70,7 @@ public abstract class AbstractPatternFlyAlert {
     private static void waitUntilDisplayedOrHidden(boolean displayed) {
         ExpectedCondition condition = ExpectedConditions.visibilityOfElementLocated(By.className(ALERT_CLASS_NAME));
         condition = displayed ? condition : ExpectedConditions.not(condition);
-        new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000).until(condition);
+        new WebDriverWait(getCurrentDriver(), Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS)).until(condition);
     }
 
     public String getText() {
@@ -78,11 +82,11 @@ public abstract class AbstractPatternFlyAlert {
     }
 
     public void assertDisplayed() {
-        assertTrue("Alert should displayed", isDisplayed());
+        assertTrue(isDisplayed(), "Alert should displayed");
     }
 
     public void assertNotDisplayed() {
-        assertFalse("Alert shouldn't be displayed", isDisplayed());
+        assertFalse(isDisplayed(), "Alert shouldn't be displayed");
     }
 
     public void assertSuccess() {
@@ -91,7 +95,7 @@ public abstract class AbstractPatternFlyAlert {
 
     public void assertSuccess(String expectedText) {
         assertDisplayed();
-        assertTrue("Alert type should be success", isSuccess());
+        assertTrue(isSuccess(), "Alert type should be success");
         if (expectedText != null) assertEquals(expectedText, getText());
     }
 

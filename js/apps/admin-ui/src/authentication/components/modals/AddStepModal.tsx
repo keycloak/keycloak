@@ -1,4 +1,5 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { PaginatingTableToolbar, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -10,10 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../../admin-client";
-import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { useFetch } from "../../../utils/useFetch";
+import { useAdminClient } from "../../../admin-client";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { providerConditionFilter } from "../../FlowDetails";
 
@@ -27,7 +25,7 @@ const AuthenticationProviderList = ({
   setValue,
 }: AuthenticationProviderListProps) => {
   return (
-    <PageSection variant="light" className="pf-u-py-lg">
+    <PageSection variant="light" className="pf-v5-u-py-lg">
       <Form isHorizontal>
         {list?.map((provider) => (
           <Radio
@@ -56,6 +54,8 @@ type AddStepModalProps = {
 };
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();
@@ -105,7 +105,11 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
     <Modal
       variant={ModalVariant.medium}
       isOpen={true}
-      title={t("addStepTo", { name })}
+      title={
+        type == "condition"
+          ? t("addConditionTo", { name })
+          : t("addExecutionTo", { name })
+      }
       onClose={() => onSelect()}
       actions={[
         <Button

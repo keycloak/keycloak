@@ -30,12 +30,13 @@
 
     <artifactId>keycloak-federation-parent</artifactId>
     <name>Keycloak Federation</name>
-    <description />
+    <description>Keycloak Federation Parent</description>
 
     <modules>
         <module>kerberos</module>
         <module>ldap</module>
         <module>sssd</module>
+        <module>ipatuura</module>
     </modules>
 
 </project>

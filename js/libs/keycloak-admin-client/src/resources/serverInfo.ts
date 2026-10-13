@@ -29,8 +29,8 @@ export class ServerInfo extends Resource {
     EffectiveMessageBundleRepresentation[]
   >({
     method: "GET",
-    path: "/resources/{realm}/{theme}/{locale}",
-    urlParamKeys: ["realm", "theme", "locale"],
-    queryParamKeys: ["themeType", "source"],
+    path: "/resources/{realm}/{themeType}/{locale}",
+    urlParamKeys: ["realm", "themeType", "locale"],
+    queryParamKeys: ["theme", "source"],
   });
 }

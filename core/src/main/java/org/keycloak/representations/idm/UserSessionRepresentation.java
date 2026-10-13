@@ -33,6 +33,7 @@ public class UserSessionRepresentation {
     private long lastAccess;
     private boolean rememberMe;
     private Map<String, String> clients = new HashMap<>();
+    private boolean transientUser;
 
     public String getId() {
         return id;
@@ -58,6 +59,11 @@ public class UserSessionRepresentation {
         this.userId = userId;
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
@@ -96,5 +102,13 @@ public class UserSessionRepresentation {
 
     public void setClients(Map<String, String> clients) {
         this.clients = clients;
+    }
+
+    public boolean isTransientUser() {
+        return transientUser;
+    }
+
+    public void setTransientUser(boolean transientUser) {
+        this.transientUser = transientUser;
     }
 }

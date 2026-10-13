@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.pages;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import org.keycloak.testsuite.util.UIUtils;
+
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 
@@ -17,12 +18,36 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
     @FindBy(id = "saveRecoveryAuthnCodesBtn")
     private WebElement saveRecoveryAuthnCodesButton;
 
-    @FindBy(id="kcRecoveryCodesConfirmationCheck")
+    @FindBy(id = "kcRecoveryCodesConfirmationCheck")
     private WebElement kcRecoveryCodesConfirmationCheck;
 
+    @FindBy(name = "generatedRecoveryAuthnCodes")
+    private WebElement generatedRecoveryAuthnCodesHidden;
+
+    @FindBy(name = "generatedAt")
+    private WebElement generatedAtHidden;
+
     public void clickSaveRecoveryAuthnCodesButton() {
-        kcRecoveryCodesConfirmationCheck.click();
-        saveRecoveryAuthnCodesButton.click();
+        UIUtils.switchCheckbox(kcRecoveryCodesConfirmationCheck, true);
+        UIUtils.clickLink(saveRecoveryAuthnCodesButton);
+    }
+
+    public String getGeneratedRecoveryAuthnCodesHidden() {
+        return generatedRecoveryAuthnCodesHidden.getAttribute("value");
+    }
+
+    public void setGeneratedRecoveryAuthnCodesHidden(String codes) {
+        final JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("document.getElementsByName('generatedRecoveryAuthnCodes')[0].value='" + codes + "'");
+    }
+
+    public String getGeneratedAtHidden() {
+        return generatedAtHidden.getAttribute("value");
+    }
+
+    public void setGeneratedAtHidden(String at) {
+        final JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("document.getElementsByName('generatedAt')[0].value='" + at + "'");
     }
 
     public List<String> getRecoveryAuthnCodes() {
@@ -37,20 +62,8 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
     }
 
     @Override
-    public boolean isCurrent() {
-
-        // Check the backup code text box and label available
-        try {
-            driver.findElement(By.id("kc-recovery-codes-list"));
-            driver.findElement(By.id("saveRecoveryAuthnCodesBtn"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-        return true;
+    public String getExpectedPageId() {
+        return "login-login-recovery-authn-code-config";
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

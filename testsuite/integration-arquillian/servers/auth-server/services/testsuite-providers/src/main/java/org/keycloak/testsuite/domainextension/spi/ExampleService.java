@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.domainextension.spi;
 
+import java.util.List;
+
 import org.keycloak.provider.Provider;
 import org.keycloak.testsuite.domainextension.CompanyRepresentation;
-
-import java.util.List;
 
 public interface ExampleService extends Provider {
 

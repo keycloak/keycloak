@@ -17,17 +17,19 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.Collections;
-import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for response_type=code
@@ -40,7 +42,7 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     public void clientConfiguration() {
         clientManagerBuilder().standardFlow(true).implicitFlow(false);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE);
     }
 
@@ -51,23 +53,23 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     }
 
     @Override
-    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.CODE, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
+        Assertions.assertEquals(OIDCResponseType.CODE, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        Assert.assertNull(authzResponse.getAccessToken());
-        Assert.assertNull(authzResponse.getIdToken());
+        Assertions.assertNull(authzResponse.getAccessToken());
+        Assertions.assertNull(authzResponse.getIdToken());
 
-        OAuthClient.AccessTokenResponse authzResponse2 = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse authzResponse2 = sendTokenRequestAndGetResponse(loginEvent);
         IDToken idToken2 = oauth.verifyIDToken(authzResponse2.getIdToken());
 
         // Validate "at_hash"
         assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
 
         // Validate if token_type is null
-        Assert.assertNull(authzResponse.getTokenType());
+        Assertions.assertNull(authzResponse.getTokenType());
 
         // Validate if expires_in is null
-        Assert.assertNull(authzResponse.getExpiresIn());
+        Assertions.assertNull(authzResponse.getExpiresIn());
 
         return Collections.singletonList(idToken2);
     }
@@ -77,10 +79,10 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     public void nonceNotUsed() {
         EventRepresentation loginEvent = loginUser(null);
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, false);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
         for (IDToken idToken : idTokens) {
-            Assert.assertNull(idToken.getNonce());
+            Assertions.assertNull(idToken.getNonce());
         }
     }
 

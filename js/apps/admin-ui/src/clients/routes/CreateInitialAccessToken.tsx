@@ -12,9 +12,9 @@ const CreateInitialAccessToken = lazy(
 export const CreateInitialAccessTokenRoute: AppRouteObject = {
   path: "/:realm/clients/initialAccessToken/create",
   element: <CreateInitialAccessToken />,
-  breadcrumb: (t) => t("createToken"),
   handle: {
     access: "manage-clients",
+    breadcrumb: (t) => t("createToken"),
   },
 };
 

@@ -17,9 +17,12 @@
 
 package org.keycloak.testsuite.drone;
 
-import java.util.concurrent.TimeUnit;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.time.Duration;
 
-import io.appium.java_client.AppiumDriver;
+import org.keycloak.testsuite.util.WaitUtils;
+
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -31,7 +34,6 @@ import org.jboss.arquillian.graphene.proxy.Interceptor;
 import org.jboss.arquillian.graphene.proxy.InvocationContext;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -43,6 +45,9 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KeycloakDronePostSetup {
+    public static final String HTML_UNIT_SSL_KEYSTORE_PROP = "htmlunit-ssl-keystore";
+    public static final String HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP = "htmlunit-ssl-keystore-password";
+    public static final String HTML_UNIT_SSL_KEYSTORE_TYPE_PROP = "htmlunit-ssl-keystore-type";
 
     @Inject
     @ClassScoped // needed in BrowserDriverIgnoreDecider
@@ -54,22 +59,19 @@ public class KeycloakDronePostSetup {
         DronePoint<?> dronePoint = event.getDronePoint();
         Object drone = droneContext.get(dronePoint).getInstance();
 
-        if (drone instanceof RemoteWebDriver) {
-            RemoteWebDriver remoteWebDriver = (RemoteWebDriver) drone;
-            log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getVersion());
+        if (drone instanceof RemoteWebDriver remoteWebDriver) {
+            log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getBrowserVersion());
             webDriverProducer.set(remoteWebDriver);
         }
 
-        if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
-            WebDriver webDriver = (WebDriver) drone;
+        if (drone instanceof WebDriver webDriver) {
             configureDriverSettings(webDriver);
             webDriverProducer.set(webDriver);
         } else {
             log.warn("Drone is not instanceof WebDriver for a desktop browser! Drone is " + drone);
         }
 
-        if (drone instanceof GrapheneProxyInstance) {
-            GrapheneProxyInstance droneProxy = (GrapheneProxyInstance) drone;
+        if (drone instanceof GrapheneProxyInstance droneProxy) {
             if (drone instanceof HtmlUnitDriver) {
                 droneProxy.registerInterceptor(new HtmlUnitInterceptor());
             }
@@ -84,21 +86,51 @@ public class KeycloakDronePostSetup {
         long pageLoadTimeoutMillis = WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
         log.infof("Configuring driver settings. implicitWait=%d, pageLoadTimeout=%d", implicitWaitMillis, pageLoadTimeoutMillis);
 
-        driver.manage().timeouts().implicitlyWait(implicitWaitMillis, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().pageLoadTimeout(pageLoadTimeoutMillis, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(implicitWaitMillis));
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofMillis(pageLoadTimeoutMillis));
         driver.manage().window().maximize();
 
         configureFirefoxDriver(driver);
+        configureHtmlUnitDriver(driver);
     }
 
     private void configureFirefoxDriver(WebDriver driver) {
-        if (driver instanceof FirefoxDriver) {
-            FirefoxDriver firefoxDriver = (FirefoxDriver) driver;
+        if (driver instanceof FirefoxDriver firefoxDriver) {
             Capabilities capabilities = firefoxDriver.getCapabilities();
             FirefoxOptions options = new FirefoxOptions(capabilities);
             // disables extension automatic updates as we don't need it when running the test suite
             options.addPreference("extensions.update.enabled", "false");
             firefoxDriver.getCapabilities().merge(options);
+        }
+    }
+
+    private void configureHtmlUnitDriver(WebDriver driver) {
+        if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+            var options = htmlUnitDriver.getWebClient().getOptions();
+
+            // Configure timeout for better compatibility with slower CI environments (especially Windows)
+            // Default 60 seconds should be sufficient for most scenarios including broker flows with OTP
+            int timeoutMillis = Integer.parseInt(System.getProperty("htmlunit.timeout", "60000"));
+            log.infof("Setting HtmlUnit timeout: %d ms", timeoutMillis);
+            options.setTimeout(timeoutMillis);
+
+            // Configure TLS settings if provided
+            final var keystore = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PROP);
+            final var keystorePassword = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP);
+            final var keystoreType = System.getProperty(HTML_UNIT_SSL_KEYSTORE_TYPE_PROP);
+
+            log.info("Check HtmlUnit driver TLS settings");
+
+            if (keystore != null && keystorePassword != null && keystoreType != null) {
+                log.infof("Keystore '%s', password '%s', type '%s'", keystore, keystorePassword, keystoreType);
+
+                options.setUseInsecureSSL(true);
+                try {
+                    options.setSSLClientCertificateKeyStore(new File(keystore).toURI().toURL(), keystorePassword, keystoreType);
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 

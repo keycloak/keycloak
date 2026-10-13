@@ -17,41 +17,38 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticator;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticatorFactory;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.openqa.selenium.By;
+import org.keycloak.testsuite.pages.PushTheButtonPage;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:n1330@me.com">Tomohiro Nagai</a>
  */
-public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
+public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswordsTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -59,9 +56,8 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
     @Page
     protected ErrorPage errorPage;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
+    @Page
+    protected PushTheButtonPage pushTheButtonPage;
 
     @Before
     public void setupFlows() {
@@ -162,41 +158,34 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSubflow1() throws Exception {
         // Add foo=bar1. I am redirected to subflow1 - username+password form.
-        String loginFormUrl = oauth.getLoginFormUrl();
-        loginFormUrl = loginFormUrl + "&foo=bar1";
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.loginForm().param("foo", "bar1").open();
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am successfully authenticated.
-        oauth.fillLoginForm("test-user@localhost", "password");
-        appPage.assertCurrent();
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 
     @Test
     public void testSubflow2() throws Exception {
         // Don't add 'foo' parameter. I am redirected to subflow1 - username+password form, then move to subflow2.
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
 
         // Fill username+password. I am redirected push the button.
-        oauth.fillLoginForm("test-user@localhost", "password");
-        Assert.assertEquals("PushTheButton", driver.getTitle());
+        oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
+        pushTheButtonPage.assertCurrent();
 
         // Push the button. I am successfully authenticated.
-        driver.findElement(By.name("submit1")).click();
-        appPage.assertCurrent();
+        pushTheButtonPage.submit();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 }

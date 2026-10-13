@@ -1,13 +1,11 @@
 package org.keycloak.social.openshift;
 
+import java.util.List;
+
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * OpenShift 4 Identity Provider configuration class.

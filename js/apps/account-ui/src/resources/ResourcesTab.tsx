@@ -1,10 +1,15 @@
 import {
+  ContinueCancelModal,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   Chip,
   ChipGroup,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  MenuToggle,
   OverflowMenu,
   OverflowMenuContent,
   OverflowMenuControl,
@@ -15,13 +20,14 @@ import {
 } from "@patternfly/react-core";
 import {
   EditAltIcon,
+  EllipsisVIcon,
   ExternalLinkAltIcon,
   Remove2Icon,
   ShareAltIcon,
 } from "@patternfly/react-icons";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -35,13 +41,13 @@ import { fetchPermission, fetchResources, updatePermissions } from "../api";
 import { getPermissionRequests } from "../api/methods";
 import { Links } from "../api/parse-links";
 import { Permission, Resource } from "../api/representations";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 import { EditTheResource } from "./EditTheResource";
 import { PermissionRequest } from "./PermissionRequest";
 import { ResourceToolbar } from "./ResourceToolbar";
-import { SharedWith } from "./SharedWith";
 import { ShareTheResource } from "./ShareTheResource";
+import { SharedWith } from "./SharedWith";
 
 type PermissionDetail = {
   contextOpen?: boolean;
@@ -57,7 +63,8 @@ type ResourcesTabProps = {
 
 export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
   const { t } = useTranslation();
-  const { addAlert, addError } = useAlerts();
+  const context = useEnvironment();
+  const { addAlert, addError } = useAccountAlerts();
 
   const [params, setParams] = useState<Record<string, string>>({
     first: "0",
@@ -73,13 +80,18 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
 
   usePromise(
     async (signal) => {
-      const result = await fetchResources({ signal }, params, isShared);
+      const result = await fetchResources(
+        { signal, context },
+        params,
+        isShared,
+      );
       if (!isShared)
         await Promise.all(
           result.data.map(
             async (r) =>
               (r.shareRequests = await getPermissionRequests(r._id, {
                 signal,
+                context,
               })),
           ),
         );
@@ -99,7 +111,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
   const fetchPermissions = async (id: string) => {
     let permissions = details[id]?.permissions || [];
     if (!details[id]) {
-      permissions = await fetchPermission({}, id);
+      permissions = await fetchPermission({ context }, id);
     }
     return permissions;
   };
@@ -113,11 +125,11 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             scopes: [],
           }) as Permission,
       )!;
-      await updatePermissions(resource._id, permissions);
+      await updatePermissions(context, resource._id, permissions);
       setDetails({});
       addAlert(t("unShareSuccess"));
     } catch (error) {
-      addError(t("unShareError", { error }).toString());
+      addError("unShareError", error);
     }
   };
 
@@ -148,7 +160,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
         }
         hasNext={!!links?.next}
       />
-      <TableComposable aria-label={t("resources")}>
+      <Table aria-label={t("resources")}>
         <Thead>
           <Tr>
             <Th aria-hidden="true" />
@@ -246,19 +258,32 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                         </OverflowMenuItem>
                         <OverflowMenuItem>
                           <Dropdown
-                            position="right"
-                            toggle={
-                              <KebabToggle
-                                onToggle={(open) =>
-                                  toggleOpen(resource._id, "contextOpen", open)
-                                }
-                              />
+                            popperProps={{
+                              position: "right",
+                            }}
+                            onOpenChange={(isOpen) =>
+                              toggleOpen(resource._id, "contextOpen", isOpen)
                             }
-                            isOpen={details[resource._id]?.contextOpen}
-                            isPlain
-                            dropdownItems={[
+                            toggle={(ref) => (
+                              <MenuToggle
+                                variant="plain"
+                                ref={ref}
+                                onClick={() =>
+                                  toggleOpen(
+                                    resource._id,
+                                    "contextOpen",
+                                    !details[resource._id]?.contextOpen,
+                                  )
+                                }
+                                isExpanded={details[resource._id]?.contextOpen}
+                              >
+                                <EllipsisVIcon />
+                              </MenuToggle>
+                            )}
+                            isOpen={!!details[resource._id]?.contextOpen}
+                          >
+                            <DropdownList>
                               <DropdownItem
-                                key="edit"
                                 isDisabled={
                                   details[resource._id]?.permissions?.length ===
                                   0
@@ -272,9 +297,8 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                                 }
                               >
                                 <EditAltIcon /> {t("edit")}
-                              </DropdownItem>,
+                              </DropdownItem>
                               <ContinueCancelModal
-                                key="unShare"
                                 buttonTitle={
                                   <>
                                     <Remove2Icon /> {t("unShare")}
@@ -291,25 +315,39 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                                 }
                               >
                                 {t("unShareAllConfirm")}
-                              </ContinueCancelModal>,
-                            ]}
-                          />
+                              </ContinueCancelModal>
+                            </DropdownList>
+                          </Dropdown>
                         </OverflowMenuItem>
                       </OverflowMenuGroup>
                     </OverflowMenuContent>
                     <OverflowMenuControl>
                       <Dropdown
-                        position="right"
-                        toggle={
-                          <KebabToggle
-                            onToggle={(open) =>
-                              toggleOpen(resource._id, "contextOpen", open)
-                            }
-                          />
+                        popperProps={{
+                          position: "right",
+                        }}
+                        onOpenChange={(isOpen) =>
+                          toggleOpen(resource._id, "contextOpen", isOpen)
                         }
-                        isOpen={details[resource._id]?.contextOpen}
-                        isPlain
-                        dropdownItems={[
+                        toggle={(ref) => (
+                          <MenuToggle
+                            variant="plain"
+                            ref={ref}
+                            isExpanded={details[resource._id]?.contextOpen}
+                            onClick={() =>
+                              toggleOpen(
+                                resource._id,
+                                "contextOpen",
+                                !details[resource._id]?.contextOpen,
+                              )
+                            }
+                          >
+                            <EllipsisVIcon />
+                          </MenuToggle>
+                        )}
+                        isOpen={!!details[resource._id]?.contextOpen}
+                      >
+                        <DropdownList>
                           <OverflowMenuDropdownItem
                             key="share"
                             isShared
@@ -318,16 +356,19 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                             }
                           >
                             <ShareAltIcon /> {t("share")}
-                          </OverflowMenuDropdownItem>,
+                          </OverflowMenuDropdownItem>
                           <OverflowMenuDropdownItem
                             key="edit"
                             isShared
                             onClick={() =>
                               toggleOpen(resource._id, "editDialogOpen", true)
                             }
+                            isDisabled={
+                              details[resource._id]?.permissions?.length === 0
+                            }
                           >
                             <EditAltIcon /> {t("edit")}
-                          </OverflowMenuDropdownItem>,
+                          </OverflowMenuDropdownItem>
                           <ContinueCancelModal
                             key="unShare"
                             buttonTitle={
@@ -345,9 +386,9 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                             }
                           >
                             {t("unShareAllConfirm")}
-                          </ContinueCancelModal>,
-                        ]}
-                      />
+                          </ContinueCancelModal>
+                        </DropdownList>
+                      </Dropdown>
                     </OverflowMenuControl>
                   </OverflowMenu>
                 </Td>
@@ -364,7 +405,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             </Tr>
           </Tbody>
         ))}
-      </TableComposable>
+      </Table>
     </>
   );
 };

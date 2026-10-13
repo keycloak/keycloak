@@ -4,7 +4,7 @@
 
 After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.
 ifeval::[{project_community}==true]
-For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+For example, you can use the *Roles* or *Client scopes* tabs to configure client roles defined for the client or manage client scopes for the client. Also, see the remaining sections in this chapter for other capabilities.
 endif::[]
 
 == Advanced tab
@@ -64,7 +64,7 @@ The procedure to select the algorithm is:
 . Open *Fine Grain OpenID Connect Configuration*.
 . Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
-== Open ID Connect Compatibility Modes
+== OpenID Connect Compatibility Modes
 
 This section exists for backward compatibility.  Click the question mark icons for details on each field.
 
@@ -90,50 +90,19 @@ In the following cases, {project_name} will verify the client sending the access
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
 * A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
 
-See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+See https://datatracker.ietf.org/doc/rfc8705/[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
 
 [NOTE]
 ====
-Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+Sender-constrained tokens like X.509 certificate-bound tokens (mTLS tokens with the `x5t#S256` confirmation claim), cannot be used as the `subject_token` parameter in link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard Token Exchange].
 ====
 
-[[_dpop-bound-tokens]]
-*OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)*
-
-DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.
-
-This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
-
-If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the workflow is:
-
-. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
-. {project_name} requests a DPoP proof.
-. {project_name} receives the DPoP proof.
-. {project_name} successfully verifies the DPoP proof.
-
-If verification fails, {project_name} rejects the token.
-
-If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
-and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
-on if you want to make sure that particular client always uses DPoP binding.
-
-In the following cases, {project_name} will verify the client sending the access token or the refresh token:
-
-* A token refresh request is sent to the token endpoint with a holder-of-key refresh token. This verification is done only for public clients as described in the DPoP specification. For confidential clients, the verification is not done as client authentication with proper client credentials is in place to ensure that request comes from the legitimate client. For public clients, both access tokens and refresh tokens are DPoP bound. For confidential clients, only access tokens are DPoP bound.
-* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
-* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This verification is done only for public clients as described above.
-
-See https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP)] for more details.
 
 [NOTE]
 ====
-Currently, {project_name} client adapters do not support DPoP holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+{project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
 ====
 
-:tech_feature_name: DPoP
-:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
-:tech_feature_id: dpop
-include::../../templates/techpreview.adoc[]
 
 [[_client_advanced_settings_oidc]]
 *Advanced Settings for OIDC*
@@ -162,19 +131,6 @@ image:images/client-advanced-settings-oidc.png[Advanced Settings]
 
 |===
 
-[[_proof-key-for-code-exchange]]
-*Proof Key for Code Exchange Code Challenge Method*
-
-If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code.
-
-An administrator can select one of these options:
-
-*(blank)*:: {project_name} does not apply PKCE unless the client sends appropriate PKCE parameters to {project_name}s authorization endpoint.
-*S256*:: {project_name} applies to the client PKCE whose code challenge method is S256.
-*plain*:: {project_name} applies to the client PKCE whose code challenge method is plain.
-
-See https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
-
 [[_mapping-acr-to-loa-client]]
 *ACR to Level of Authentication (LoA) Mapping*
 
@@ -187,8 +143,11 @@ a `claims` parameter that has an `acr` claim attached. See https://openid.net/sp
 
 WARNING: Note that default ACR values are used as the default level, however it cannot be reliably used to enforce login with the particular level.
 For example, assume that you configure the `Default ACR Values` to level 2. Then by default, users will be required to authenticate with level 2.
-However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
+However, when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
 really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and double-check that it contains the requested level 2.
+To actually enforce the usage of a certain ACR on the {project_name} side, use the `Minimum ACR Value` setting.
+This allows administrators to enforce ACRs even on applications that are not able to validate the requested `acr` claim inside the token.
+
 
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 

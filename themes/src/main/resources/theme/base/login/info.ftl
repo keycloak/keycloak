@@ -2,9 +2,9 @@
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         <#if messageHeader??>
-        ${messageHeader}
+            ${kcSanitize(msg("${messageHeader}"))?no_esc}
         <#else>
-        ${message.summary}
+            ${message.summary}
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
@@ -12,11 +12,11 @@
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>
-                <p><a href="${pageRedirectUri}">${kcSanitize(msg("backToApplication"))?no_esc}</a></p>
+                <p><a href="${pageRedirectUri}">${msg("backToApplication")}</a></p>
             <#elseif actionUri?has_content>
-                <p><a href="${actionUri}">${kcSanitize(msg("proceedWithAction"))?no_esc}</a></p>
+                <p><a href="${actionUri}">${msg("proceedWithAction")}</a></p>
             <#elseif (client.baseUrl)?has_content>
-                <p><a href="${client.baseUrl}">${kcSanitize(msg("backToApplication"))?no_esc}</a></p>
+                <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
             </#if>
         </#if>
     </div>

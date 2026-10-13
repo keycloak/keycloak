@@ -1,7 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.io.Closeable;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -15,23 +17,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlMessageReceiver;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
-import java.io.Closeable;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
@@ -41,6 +40,10 @@ import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
 
@@ -60,7 +63,7 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                         .fullScopeEnabled(true)
                         .protocol(SamlProtocol.LOGIN_PROTOCOL)
                         .baseUrl(getProviderRoot() + "/sales-post")
-                        .addRedirectUri(getProviderRoot() + "/sales-post/*")
+                        .redirectUris(getProviderRoot() + "/sales-post/*")
                         .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
                         .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
                         .frontchannelLogout(true)
@@ -183,6 +186,74 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                 .update()
         ) {
             testProviderInitiatedLogoutCorrectlyLogsOutConsumerClients();
+        }
+    }
+
+    @Test
+    public void testProviderInitiatedLogoutWithoutSingleLogoutServiceUrlLogsOutConsumerSession() throws Exception {
+        try (SamlMessageReceiver logoutReceiver = new SamlMessageReceiver(8082);
+             ClientAttributeUpdater cauConsumer = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
+                .setFrontchannelLogout(false)
+                .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, logoutReceiver.getUrl())
+                .update();
+             ClientAttributeUpdater cauProvider = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setFrontchannelLogout(true)
+                .update();
+             Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .removeAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL)
+                .update()
+        ) {
+            Document doc = SAML2Request.convert(SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null));
+            final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
+            final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
+
+            new SamlClientBuilder()
+                    .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST).build()
+                    .login().idp(bc.getIDPAlias()).build()
+                    .processSamlResponse(SamlClient.Binding.POST)
+                    .targetAttributeSamlRequest().build()
+                    .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+                    .processSamlResponse(SamlClient.Binding.POST).build()
+                    .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
+                    .followOneRedirect()
+                    .processSamlResponse(SamlClient.Binding.POST)
+                        .transformObject(saml2Object -> {
+                            assertThat(saml2Object, Matchers.notNullValue());
+                            assertThat(saml2Object, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                            return null;
+                        }).build()
+                    .authnRequest(getProviderSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, PROVIDER_SAML_CLIENT_ID + "saml", POST).build()
+                    .followOneRedirect()
+                    .processSamlResponse(POST)
+                        .transformObject(saml2Object -> {
+                            assertThat(saml2Object, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                            ResponseType loginResp1 = (ResponseType) saml2Object;
+                            final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
+                            assertThat(firstAssertion, Matchers.notNullValue());
+                            assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
+                            NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
+                            AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
+                            nameIdRef.set(nameId);
+                            sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
+                            return null;
+                        }).build()
+                    .logoutRequest(getProviderSamlEndpoint(bc.providerRealmName()), PROVIDER_SAML_CLIENT_ID, POST)
+                        .nameId(nameIdRef::get)
+                        .sessionIndex(sessionIndexRef::get).build()
+                    .processSamlResponse(POST)
+                        .transformObject(saml2Object -> {
+                            assertThat(saml2Object, isSamlLogoutRequest(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"));
+                            return saml2Object;
+                        }).build()
+                    .executeAndTransform(response -> {
+                        assertThat(response.getStatusLine().getStatusCode(), is(200));
+                        return null;
+                    });
+
+            assertThat(AdminApiUtil.findUserByUsernameId(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin()).getUserSessions(), Matchers.empty());
+            assertThat(logoutReceiver.isMessageReceived(), is(true));
+            SAMLDocumentHolder message = logoutReceiver.getSamlDocumentHolder();
+            assertThat(message.getSamlObject(), isSamlLogoutRequest(logoutReceiver.getUrl()));
         }
     }
 }

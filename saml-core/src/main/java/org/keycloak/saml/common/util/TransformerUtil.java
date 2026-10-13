@@ -16,28 +16,15 @@
  */
 package org.keycloak.saml.common.util;
 
-import org.keycloak.saml.common.ErrorCodes;
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.core.util.FixXMLConstants;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Stack;
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.util.JAXBSource;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
-import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.Namespace;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -53,9 +40,23 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXSource;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Stack;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.util.JAXBSource;
+
+import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.util.FixXMLConstants;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Utility to deal with JAXP Transformer
@@ -67,7 +68,7 @@ public class TransformerUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private static TransformerFactory transformerFactory;
+    private static volatile TransformerFactory transformerFactory;
 
     /**
      * Get the Default Transformer
@@ -102,32 +103,38 @@ public class TransformerUtil {
      */
     public static TransformerFactory getTransformerFactory() throws TransformerFactoryConfigurationError {
         if (transformerFactory == null) {
-            boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                    .equalsIgnoreCase("true");
-            ClassLoader prevTCCL = SecurityActions.getTCCL();
-            try {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(TransformerUtil.class.getClassLoader());
-                }
-                transformerFactory = TransformerFactory.newInstance();
-                try {
-                    transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                } catch (TransformerConfigurationException ignored) {
-                    // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
-                    logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
-                }
-                try {
-                    transformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
+            synchronized (TransformerUtil.class) {
+                if (transformerFactory == null) {
+                    boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                            .equalsIgnoreCase("true");
+                    ClassLoader prevTCCL = SecurityActions.getTCCL();
+                    TransformerFactory localTransformerFactory;
+                    try {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(TransformerUtil.class.getClassLoader());
+                        }
+                        localTransformerFactory = TransformerFactory.newInstance();
+                        try {
+                            localTransformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                        } catch (TransformerConfigurationException ignored) {
+                            // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
+                            logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
+                        }
+                        try {
+                            localTransformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
 
-                    transformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-                } catch (Exception ignored) {
-                    // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
-                    logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
-                }
+                            localTransformerFactory.setAttribute(FixXMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                        } catch (Exception ignored) {
+                            // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
+                            logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
+                        }
 
-            } finally {
-                if (tccl_jaxp) {
-                    SecurityActions.setTCCL(prevTCCL);
+                    } finally {
+                        if (tccl_jaxp) {
+                            SecurityActions.setTCCL(prevTCCL);
+                        }
+                    }
+                    transformerFactory = localTransformerFactory;
                 }
             }
         }
@@ -380,7 +387,7 @@ public class TransformerUtil {
                 if (prefix != null && ! prefix.isEmpty())
                     qual = (localPart != null && ! localPart.isEmpty()) ? prefix + ":" + localPart : prefix;
 
-                if (qual.equals("xmlns"))
+                if ("xmlns".equals(qual))
                     continue;
                 if (logger.isTraceEnabled()) {
                     logger.trace("Set Attribute Namespace=" + name.getNamespaceURI() + "::Qual=:" + qual + "::Value="

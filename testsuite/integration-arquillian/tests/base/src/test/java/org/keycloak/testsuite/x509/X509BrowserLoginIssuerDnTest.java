@@ -21,15 +21,15 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
-
 
 /**
  * @author Sebastian Loesch
@@ -39,12 +39,12 @@ import org.openqa.selenium.WebDriver;
 public class X509BrowserLoginIssuerDnTest extends AbstractX509AuthenticationTest {
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @BeforeClass
@@ -59,8 +59,7 @@ public class X509BrowserLoginIssuerDnTest extends AbstractX509AuthenticationTest
 
     @BeforeClass
     public static void onBeforeTestClass() {
-        configurePhantomJS("/ca.crt", "/certs/clients/test-user-san@localhost.cert.pem",
-                           "/certs/clients/test-user@localhost.key.pem", "password");
+        configureHtmlUnit("/certs/clients/test-user-san-cert-test-user-key@localhost.p12");
     }
 
     private String setup(boolean canonicalDnEnabled) throws Exception {

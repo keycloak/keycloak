@@ -17,12 +17,13 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import java.util.Set;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.models.KeycloakSession;
+
 import org.jboss.logging.Logger;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * Parse the parameters from request queryString
@@ -39,7 +40,8 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private String invalidRequestMessage = null;
 
-    public AuthzEndpointQueryStringParser(MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired) {
+    public AuthzEndpointQueryStringParser(KeycloakSession keycloakSession, MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired) {
+        super(keycloakSession);
         this.requestParams = requestParams;
         this.isResponseTypeParameterRequired = isResponseTypeParameterRequired;
     }

@@ -8,10 +8,12 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { SelectControl } from "ui-shared";
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import {
+  FormSubmitButton,
+  SelectControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -22,12 +24,14 @@ import { NameDescription } from "./NameDescription";
 const TYPES = ["basic-flow", "client-flow"] as const;
 
 export default function CreateFlow() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>();
-  const { handleSubmit } = form;
+  const { handleSubmit, formState } = form;
 
   const onSubmit = async (formValues: AuthenticationFlowRepresentation) => {
     const flow = { ...formValues, builtIn: false, topLevel: true };
@@ -36,20 +40,15 @@ export default function CreateFlow() {
       const { id } =
         await adminClient.authenticationManagement.createFlow(flow);
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toFlow({
           realm,
           id: id!,
           usedBy: "notInUse",
         }),
       );
-    } catch (error: any) {
-      addAlert(
-        t("flowCreateError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger,
-      );
+    } catch (error) {
+      addError("flowCreateError", error);
     }
   };
 
@@ -60,7 +59,7 @@ export default function CreateFlow() {
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
-            role="manage-authorization"
+            role="manage-realm"
             onSubmit={handleSubmit(onSubmit)}
           >
             <NameDescription />
@@ -68,16 +67,22 @@ export default function CreateFlow() {
               name="providerId"
               label={t("flowType")}
               labelIcon={t("topLevelFlowTypeHelp")}
-              controller={{ defaultValue: "" }}
+              aria-label={t("selectFlowType")}
+              controller={{ defaultValue: TYPES[0] }}
               options={TYPES.map((type) => ({
                 key: type,
                 value: t(`top-level-flow-type.${type}`),
               }))}
             />
             <ActionGroup>
-              <Button data-testid="create" type="submit">
+              <FormSubmitButton
+                formState={formState}
+                data-testid="create"
+                allowInvalid
+                allowNonDirty
+              >
                 {t("create")}
-              </Button>
+              </FormSubmitButton>
               <Button
                 data-testid="cancel"
                 variant="link"

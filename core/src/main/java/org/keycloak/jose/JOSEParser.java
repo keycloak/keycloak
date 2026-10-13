@@ -2,12 +2,13 @@ package org.keycloak.jose;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -17,7 +17,12 @@
 
 package org.keycloak.authentication.forms;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -25,7 +30,9 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
+import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -34,22 +41,26 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationInvitationModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.InvitationManager;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.userprofile.UserProfile;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.List;
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -77,6 +88,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         UserProfile profile = getOrCreateUserProfile(context, formData);
         Attributes attributes = profile.getAttributes();
         String email = attributes.getFirst(UserModel.EMAIL);
+
+        if (!validateOrganizationInvitation(context, formData, email)) {
+            return;
+        }
+
         String username = attributes.getFirst(UserModel.USERNAME);
         String firstName = attributes.getFirst(UserModel.FIRST_NAME);
         String lastName = attributes.getFirst(UserModel.LAST_NAME);
@@ -137,6 +153,9 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+        context.getAuthenticationSession().setAuthNote(NEW_USER_REGISTERED, "true");
+
+        addOrganizationMember(context, user);
 
         user.setEnabled(true);
 
@@ -247,6 +266,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     private MultivaluedMap<String, String> normalizeFormParameters(MultivaluedMap<String, String> formParams) {
         MultivaluedHashMap<String, String> copy = new MultivaluedHashMap<>(formParams);
 
+        // Remove google recaptcha form property to avoid length errors
+        copy.remove(RegistrationPage.FIELD_RECAPTCHA_RESPONSE);
         // Remove "password" and "password-confirm" to avoid leaking them in the user-profile data
         copy.remove(RegistrationPage.FIELD_PASSWORD);
         copy.remove(RegistrationPage.FIELD_PASSWORD_CONFIRM);
@@ -268,5 +289,98 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             session.setAttribute("UP_REGISTER", profile);
         }
         return profile;
+    }
+
+    private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
+        if (Organizations.isEnabled(context.getSession())) {
+            Consumer<List<FormMessage>> error = messages -> {
+                context.error(Errors.INVALID_TOKEN);
+                context.validationError(formData, messages);
+            };
+
+            InviteOrgActionToken token;
+
+            try {
+                token = Organizations.parseInvitationToken(context.getSession(), context.getHttpRequest());
+            } catch (VerificationException e) {
+                error.accept(List.of(new FormMessage("Unexpected error parsing the invitation token")));
+                return false;
+            }
+
+            if (token == null) {
+                return true;
+            }
+
+            KeycloakSession session = context.getSession();
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel organization = provider.getById(token.getOrgId());
+
+            if (organization == null) {
+                error.accept(List.of(new FormMessage("The provided token contains an invalid organization id")));
+                return false;
+            }
+
+            if (!organization.isEnabled()) {
+                error.accept(List.of(new FormMessage("The organization is not available at this time.")));
+                return false;
+            }
+
+            // make sure the organization is set to the session so that UP org-related validators can run
+            session.getContext().setOrganization(organization);
+            session.setAttribute(InviteOrgActionToken.class.getName(), token);
+
+            if (token.isExpired() || !token.getActionId().equals(InviteOrgActionToken.TOKEN_TYPE)) {
+                error.accept(List.of(new FormMessage("The provided token is not valid or has expired.")));
+                return false;
+            }
+
+            // Validate that the invitation still exists in the database
+            InvitationManager invitationManager = provider.getInvitationManager();
+            OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
+
+            if (invitation == null || invitation.isExpired()) {
+                error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
+                return false;
+            }
+
+            if (!token.getEmail().equals(email)) {
+                error.accept(List.of(new FormMessage(UserModel.EMAIL, "Email does not match the invitation")));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void addOrganizationMember(FormContext context, UserModel user) {
+        if (Organizations.isEnabled(context.getSession())) {
+            InviteOrgActionToken token = (InviteOrgActionToken) context.getSession().getAttribute(InviteOrgActionToken.class.getName());
+
+            if (token != null) {
+                KeycloakSession session = context.getSession();
+
+                if (!Organizations.useInvitationToken(session, token)) {
+                    throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
+                            Errors.INVALID_TOKEN, Messages.STALE_INVITE_ORG_LINK);
+                }
+
+                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+                OrganizationModel orgModel = provider.getById(token.getOrgId());
+                provider.addManagedMember(orgModel, user);
+                context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
+
+                // Delete the invitation since it has been used
+                InvitationManager invitationManager = provider.getInvitationManager();
+                invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.ORG_ID, orgModel.getId())
+                    .success();
+            }
+        }
     }
 }

@@ -17,7 +17,6 @@
 
 package org.keycloak.representations.info;
 
-import org.keycloak.common.Version;
 
 import java.util.Date;
 import java.util.Locale;
@@ -27,7 +26,7 @@ public class SystemInfoRepresentation {
     private String version;
     private String serverTime;
     private String uptime;
-    private long uptimeMillis;
+    private Long uptimeMillis;
     private String javaVersion;
     private String javaVendor;
     private String javaVm;
@@ -43,9 +42,9 @@ public class SystemInfoRepresentation {
     private String userTimezone;
     private String userLocale;
 
-    public static SystemInfoRepresentation create(long serverStartupTime) {
+    public static SystemInfoRepresentation create(long serverStartupTime, String serverVersion) {
         SystemInfoRepresentation rep = new SystemInfoRepresentation();
-        rep.version = Version.VERSION;
+        rep.version = serverVersion;
         rep.serverTime = new Date().toString();
         rep.uptimeMillis = System.currentTimeMillis() - serverStartupTime;
         rep.uptime = formatUptime(rep.uptimeMillis);
@@ -63,7 +62,7 @@ public class SystemInfoRepresentation {
         rep.userDir = System.getProperty("user.dir");
         rep.userTimezone = System.getProperty("user.timezone");
         if (System.getProperty("user.country") != null && System.getProperty("user.language") != null) {
-            rep.userLocale = (new Locale(System.getProperty("user.country"), System.getProperty("user.language")).toString());
+            rep.userLocale = (new Locale(System.getProperty("user.language"), System.getProperty("user.country")).toString());
         }
         return rep;
     }
@@ -92,11 +91,11 @@ public class SystemInfoRepresentation {
         this.uptime = uptime;
     }
 
-    public long getUptimeMillis() {
+    public Long getUptimeMillis() {
         return uptimeMillis;
     }
 
-    public void setUptimeMillis(long uptimeMillis) {
+    public void setUptimeMillis(Long uptimeMillis) {
         this.uptimeMillis = uptimeMillis;
     }
 

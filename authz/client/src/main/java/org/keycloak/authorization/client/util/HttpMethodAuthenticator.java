@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.http.Header;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils;
@@ -32,6 +31,8 @@ import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+
+import org.apache.http.Header;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

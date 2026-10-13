@@ -16,15 +16,16 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
-import org.jboss.logging.Logger;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -35,7 +36,7 @@ public class ResourcePolicyProvider extends AbstractPermissionProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugv("Resource policy {} evaluating using parent class", evaluation.getPolicy().getName());
+        logger.debugf("Resource policy %s evaluating using parent class", evaluation.getPolicy().getName());
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
         Policy policy = defaultEvaluation.getParentPolicy();

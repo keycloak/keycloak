@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -99,6 +100,131 @@ public class StreamsUtilTest {
                 .limit(1).forEach(NOOP);
 
         Assert.assertEquals(1, numberOfFetchedElements.get());
+    }
+
+    @Test
+    public void testClosingStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("Stream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingStreamClosesOnExceptionDuringToList() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3)
+                    .map(i -> { if (i == 2) throw new RuntimeException("fail"); return i; })
+                    .onClose(() -> closed.set(true)))
+                    .toList();
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            // expected
+        }
+        Assert.assertTrue("Stream should be closed even when toList throws", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToInt(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("IntStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingLongStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToLong(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("LongStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingDoubleStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToDouble(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("DoubleStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamAsLongStreamPreservesClose() {
+        AtomicBoolean closed = new AtomicBoolean();
+        long sum = StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                .mapToInt(i -> i)
+                .asLongStream()
+                .sum();
+        Assert.assertEquals(6L, sum);
+        Assert.assertTrue("Stream should be closed after asLongStream() terminal operation", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamAsDoubleStreamPreservesClose() {
+        AtomicBoolean closed = new AtomicBoolean();
+        double sum = StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                .mapToInt(i -> i)
+                .asDoubleStream()
+                .sum();
+        Assert.assertEquals(6.0, sum, 0.001);
+        Assert.assertTrue("Stream should be closed after asDoubleStream() terminal operation", closed.get());
+    }
+
+    @Test
+    public void testSortedInsideOfFlatMapShouldRespectTerminalOperation() {
+        AtomicInteger numberOfFetchedElements = new AtomicInteger();
+
+        Stream.of(new Object())
+                .flatMap(
+                        o -> Stream.of(1, 2, 3).peek(integer -> numberOfFetchedElements.incrementAndGet()))
+                .limit(1).forEach(NOOP);
+
+        Assert.assertEquals(1, numberOfFetchedElements.get());
+
+        numberOfFetchedElements.set(0);
+
+        Stream.of(new Object())
+                .flatMap(
+                        o -> Stream.of(1, 2, 3).sorted().peek(integer -> numberOfFetchedElements.incrementAndGet()))
+                .limit(1).forEach(NOOP);
+
+        // Expect actually 1, but always delivery 3 on JDK 21, but will work on JDK 24
+        // Assert.assertEquals(1, numberOfFetchedElements.get());
+
+        numberOfFetchedElements.set(0);
+
+        Stream.of(new Object())
+                .flatMap(
+                        o -> StreamsUtil.prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations(Stream.of(1, 2, 3).sorted()).peek(integer -> numberOfFetchedElements.incrementAndGet()))
+                .limit(1).forEach(NOOP);
+
+        // With the workaround it is only 1 as expected
+        Assert.assertEquals(1, numberOfFetchedElements.get());
+
     }
 
 }

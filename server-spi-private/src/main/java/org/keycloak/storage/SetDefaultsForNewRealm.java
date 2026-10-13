@@ -48,4 +48,3 @@ public class SetDefaultsForNewRealm implements ProviderEvent {
         return realmModel;
     }
 }
-

@@ -1,5 +1,5 @@
 [
-  { "label": "personalInfo", "path": "/" },
+  { "label": "personalInfo", "path": "" },
   {
     "label": "accountSecurity",
     "children": [
@@ -12,11 +12,25 @@
       }
     ]
   },
-  { "label": "applications", "path": "applications" },
+  {
+    "label": "applications",
+    "path": "applications",
+    "isVisible": "isViewApplicationsEnabled"
+  },
+  {
+    "label": "verifiableCredentials",
+    "path": "verifiable-credentials",
+    "isVisible": "isOid4VciEnabled"
+  },
   {
     "label": "groups",
     "path": "groups",
     "isVisible": "isViewGroupsEnabled"
+  },
+  {
+    "label": "organizations",
+    "path": "organizations",
+    "isVisible": "isViewOrganizationsEnabled"
   },
   {
     "label": "resources",

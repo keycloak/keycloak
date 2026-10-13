@@ -16,11 +16,11 @@
  */
 package org.keycloak.transaction;
 
+import jakarta.transaction.TransactionManager;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-
-import jakarta.transaction.TransactionManager;
 
 /**
  * JTA TransactionManager lookup

@@ -16,7 +16,9 @@
  */
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.stream.Stream;
+
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.clientscope.ClientScopeLookupProvider;
 
@@ -34,7 +36,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
 
     /**
      * Creates new client scope with given {@code name} to the given realm.
-     * Spaces in {@code name} will be replaced by underscore so that scope name 
+     * Spaces in {@code name} will be replaced by underscore so that scope name
      * can be used as value of scope parameter. The internal ID will be created automatically.
      * @param realm Realm owning this client scope.
      * @param name String name of the client scope.
@@ -47,7 +49,7 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
 
     /**
      * Creates new client scope with given internal ID and {@code name} to the given realm.
-     * Spaces in {@code name} will be replaced by underscore so that scope name 
+     * Spaces in {@code name} will be replaced by underscore so that scope name
      * can be used as value of scope parameter.
      * @param realm Realm owning this client scope.
      * @param id Internal ID of the client scope or {@code null} if one is to be created by the underlying store
@@ -73,4 +75,36 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
      * @param realm Realm.
      */
     void removeClientScopes(RealmModel realm);
+
+    /**
+     * Must retrieve all client scopes of the given realm that are use the given protocol.
+     *
+     * @param realm    the realm to retrieve the client scopes from.
+     * @param protocol the protocol expected from the clientScope
+     */
+    Stream<ClientScopeModel> getClientScopesByProtocol(RealmModel realm, String protocol);
+
+    /**
+     * Retrieves all client scopes of the given realm that use the given protocol while holding a realm-scoped
+     * transactional lock. Concurrent callers for the same realm must be serialized until the current transaction
+     * completes, including when no matching client scopes exist.
+     * The default implementation performs an unlocked query for compatibility; transactional persistence providers
+     * must override it to provide the locking guarantee.
+     *
+     * @param realm the realm to retrieve the client scopes from
+     * @param protocol the protocol expected from the client scopes
+     * @return stream of client scopes reflecting the latest committed state
+     */
+    default Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        return getClientScopesByProtocol(realm, protocol);
+    }
+
+    /**
+     * Allows us to filter for scopes by specific attributes
+     *
+     * @param realm     Realm.
+     * @param searchMap a key-value map that holds the attribute names and values to search for.
+     * @param useOr     If the search-params should be combined with or-expressions or and-expressions
+     */
+    Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap, boolean useOr);
 }

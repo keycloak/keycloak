@@ -18,13 +18,6 @@
 
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
-import org.keycloak.models.cache.infinispan.LazyLoader;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +25,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -49,7 +50,7 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private LazyLoader<Resource, Set<String>> uris;
     private LazyLoader<Resource, MultivaluedHashMap<String, String>> attributes;
 
-    public CachedResource(Long revision, Resource resource) {
+    public CachedResource(long revision, Resource resource) {
         super(revision, resource.getId());
         this.name = resource.getName();
         this.displayName = resource.getDisplayName();
@@ -75,8 +76,8 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.displayName;
     }
 
-    public Set<String> getUris(Supplier<Resource> source) {
-        return this.uris.get(source);
+    public Set<String> getUris(KeycloakSession session, Supplier<Resource> source) {
+        return this.uris.get(session, source);
     }
 
     public String getType() {
@@ -99,11 +100,11 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.resourceServerId;
     }
 
-    public Set<String> getScopesIds(Supplier<Resource> source) {
-        return this.scopesIds.get(source);
+    public Set<String> getScopesIds(KeycloakSession session, Supplier<Resource> source) {
+        return this.scopesIds.get(session, source);
     }
 
-    public Map<String, List<String>> getAttributes(Supplier<Resource> source) {
-        return attributes.get(source);
+    public Map<String, List<String>> getAttributes(KeycloakSession session, Supplier<Resource> source) {
+        return attributes.get(session, source);
     }
 }

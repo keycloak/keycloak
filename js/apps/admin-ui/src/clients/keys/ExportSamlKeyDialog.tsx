@@ -3,9 +3,8 @@ import { Button, Form, Modal } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { KeyForm, getFileExtension } from "./GenerateKeyDialog";
 import { KeyTypes } from "./SamlKeys";
@@ -21,6 +20,8 @@ export const ExportSamlKeyDialog = ({
   close,
   keyType,
 }: ExportSamlKeyDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
 
@@ -32,6 +33,7 @@ export const ExportSamlKeyDialog = ({
 
   const download = async (config: KeyStoreConfig) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const keyStore = await adminClient.clients.downloadKey(
         {
           id: clientId,
@@ -81,7 +83,7 @@ export const ExportSamlKeyDialog = ({
     >
       <Form
         id="export-saml-key-form"
-        className="pf-u-pt-lg"
+        className="pf-v5-u-pt-lg"
         onSubmit={form.handleSubmit(download)}
       >
         <FormProvider {...form}>

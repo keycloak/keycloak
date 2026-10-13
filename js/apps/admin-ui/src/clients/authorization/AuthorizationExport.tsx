@@ -1,27 +1,28 @@
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
+  KeycloakSpinner,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
+import CodeEditor from "@uiw/react-textarea-code-editor";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { useFetch } from "../../utils/useFetch";
 import { prettyPrintJSON } from "../../util";
 import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
 
 export const AuthorizationExport = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
@@ -66,27 +67,16 @@ export const AuthorizationExport = () => {
       <FormAccess
         isHorizontal
         role="manage-authorization"
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
       >
-        <FormGroup
-          label={t("authDetails")}
-          labelIcon={
-            <HelpItem
-              helpText={t("authDetailsHelp")}
-              fieldLabelId="authDetails"
-            />
-          }
-          fieldId="client"
-        >
-          <KeycloakTextArea
-            id="authorizationDetails"
-            readOnly
-            resizeOrientation="vertical"
-            value={code}
-            aria-label={t("authDetails")}
-            rows={10}
-          />
-        </FormGroup>
+        <CodeEditor
+          data-testid="authorization-export-code-editor"
+          value={code!}
+          language="json"
+          readOnly
+          rows={10}
+          style={{ height: "30rem", overflow: "scroll" }}
+        />
         <ActionGroup>
           <Button
             data-testid="authorization-export-download"
@@ -102,7 +92,7 @@ export const AuthorizationExport = () => {
                 await navigator.clipboard.writeText(code!);
                 addAlert(t("copied"), AlertVariant.success);
               } catch (error) {
-                addError(t("copyError"), error);
+                addError("copyError", error);
               }
             }}
           >

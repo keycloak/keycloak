@@ -1,22 +1,27 @@
 package org.keycloak.testsuite.util;
 
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.logging.Logger;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlMatches;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -90,11 +95,23 @@ public final class URLUtils {
         WebDriver driver = getCurrentDriver();
 
         try {
-            (new WebDriverWait(driver, 5, 100)).until(condition);
+            (new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(100))).until(condition);
         } catch (TimeoutException e) {
             return false;
         }
         return true;
+    }
+
+    /**
+     * @return action-url from the HTML code of the current page. Assumption is, that page is one of the Keycloak login pages (login theme pages)
+     */
+    public static String getActionUrlFromCurrentPage(WebDriver driver) {
+        Matcher m = Pattern.compile("form action=\"([^\"]*)\"").matcher(driver.getPageSource());
+        if (m.find()) {
+            return m.group(1);
+        } else {
+            return null;
+        }
     }
 
     /**

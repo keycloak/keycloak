@@ -17,23 +17,75 @@
 
 package org.keycloak.it.resource.realm;
 
+import java.io.IOException;
+import java.util.Map;
+import jakarta.enterprise.inject.spi.CDI;
+
+import com.arjuna.ats.arjuna.coordinator.TxControl;
+import org.infinispan.Cache;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
+import org.keycloak.services.resource.RealmResourceProvider;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
-import org.keycloak.services.resource.RealmResourceProvider;
+
+import io.quarkus.tls.CertificateUpdatedEvent;
+import io.quarkus.tls.TlsConfiguration;
+import io.quarkus.tls.TlsConfigurationRegistry;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class TestRealmResource implements RealmResourceProvider {
     protected static final Logger logger = Logger.getLogger(TestRealmResource.class);
-    
+
+    final InfinispanConnectionProvider infinispanConnectionProvider;
+    final KeycloakSession session;
+
+    public TestRealmResource(KeycloakSession session) {
+        this.session = session;
+        this.infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
+    }
+
     @Override
     public Object getResource() {
         return this;
+    }
+
+    @Path("trusted")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response trustedResponse() throws Exception {
+        if (session.getContext().getHttpRequest().isProxyTrusted()) {
+            return Response.ok("{}", MediaType.APPLICATION_JSON).build();
+        }
+        return Response.noContent().build();
+    }
+
+    @Path("query-params")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response queryParams() throws IOException {
+        var uriInfo = session.getContext().getUri();
+        String result = JsonSerialization.writeValueAsString(Map.of(
+                "decoded", uriInfo.getQueryParameters(true),
+                "raw", uriInfo.getQueryParameters(false)));
+        return Response.ok(result, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Path("slow")
@@ -45,6 +97,63 @@ public class TestRealmResource implements RealmResourceProvider {
         Thread.sleep(sleep);
         logger.info("Waking up...");
         return Response.noContent().build();
+    }
+
+    @Path("cache/{cache}/config")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response cacheConfig(@PathParam("cache") String cacheName) {
+        Cache<?, ?> cache = infinispanConnectionProvider.getCache(cacheName, false);
+        if (cache == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        StringBuilderWriter out = new StringBuilderWriter();
+        try (ConfigurationWriter writer = ConfigurationWriter.to(out)
+              .withType(org.infinispan.commons.dataconversion.MediaType.APPLICATION_JSON)
+              .prettyPrint(true)
+              .build()) {
+            new ParserRegistry().serialize(writer, cacheName, cache.getCacheConfiguration());
+        }
+        return Response.ok(out.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @Path("transaction/timeouts")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response transactionTimeouts() throws IOException {
+        var jpaConnectionProvider = (QuarkusJpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var dbLockProvider = (LiquibaseDBLockProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(DBLockProvider.class);
+        var rsp = JsonSerialization.writeValueAsString(
+                Map.of(
+                        "default", TxControl.getDefaultTimeout(),
+                        "migration", jpaConnectionProvider.getMigrationTransactionTimeout(),
+                        "db-lock", dbLockProvider.getLockWaitTimeoutMillis()
+                )
+        );
+        return Response.ok(rsp, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    @Path("tls-reload")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response triggerTlsReload() {
+        try {
+            var registry = CDI.current().select(TlsConfigurationRegistry.class).get();
+            TlsConfiguration config = registry.get(HttpPropertyMappers.TLS_BUCKET).orElseThrow();
+            boolean reloaded = config.reload();
+            if (reloaded) {
+                CDI.current().getBeanManager().getEvent()
+                        .select(CertificateUpdatedEvent.class)
+                        .fire(new CertificateUpdatedEvent(HttpPropertyMappers.TLS_BUCKET, config));
+            }
+            record ReloadDto(boolean reloaded) {}
+            return Response.ok(new ReloadDto(reloaded), MediaType.APPLICATION_JSON).build();
+        } catch (Exception e) {
+            logger.error("TLS reload failed", e);
+            return Response.serverError().entity("{\"error\":\"" + e.getMessage() + "\"}").build();
+        }
     }
 
     @Override

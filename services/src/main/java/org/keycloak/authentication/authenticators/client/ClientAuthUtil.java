@@ -17,10 +17,10 @@
 
 package org.keycloak.authentication.authenticators.client;
 
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.auth.page.login;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
@@ -33,12 +33,19 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  */
 public class FeedbackMessage {
 
-    private final String SUCCESS = "success";
-    private final String WARNING = "warning";
-    private final String ERROR = "error";
-    private final String INFO = "info";
+    private final static String SUCCESS = "success";
+    private final static String WARNING = "warning";
+    private final static String ERROR = "danger";
+    private final static String INFO = "info";
 
-    @FindBy(css = "div[class^='alert']")
+    private static final Pattern ALERT_TYPE_CLASS_PATTERN = Pattern.compile("(pf-m|alert)-("
+      + SUCCESS + "|"
+      + WARNING + "|"
+      + ERROR + "|"
+      + INFO
+      + ")");
+
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert']")
     private WebElement alertRoot;
 
     @FindBy(css = "span[id^='input-error']")
@@ -68,12 +75,16 @@ public class FeedbackMessage {
         }
     }
 
-    public String getType() {
+    private String getType() {
         try {
             String cssClass = alertRoot.getAttribute("class");
-            Matcher classMatcher = Pattern.compile("alert-(.+)").matcher(cssClass);
+            Matcher classMatcher = ALERT_TYPE_CLASS_PATTERN.matcher(cssClass);
             if (!classMatcher.find()) {
-                throw new RuntimeException("Failed to identify feedback message type");
+                classMatcher = Pattern.compile("alert-(.+)").matcher(cssClass);
+                if (!classMatcher.find())
+                    throw new RuntimeException("Failed to identify feedback message type");
+
+                return classMatcher.group(1);
             }
             return classMatcher.group(1);
         } catch (NoSuchElementException e) {

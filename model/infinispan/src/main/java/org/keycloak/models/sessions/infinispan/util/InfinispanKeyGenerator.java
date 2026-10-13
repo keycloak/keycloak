@@ -22,18 +22,22 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
+import org.keycloak.sessions.StickySessionEncoderProvider;
+
 import org.infinispan.Cache;
 import org.infinispan.affinity.KeyAffinityService;
 import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.affinity.KeyGenerator;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated not supported and to be removed. Check {@link CacheHolder#keyGenerator()}
  */
+@Deprecated(since = "26.4", forRemoval = true)
 public class InfinispanKeyGenerator {
 
     private static final Logger log = Logger.getLogger(InfinispanKeyGenerator.class);
@@ -52,7 +56,7 @@ public class InfinispanKeyGenerator {
     }
 
 
-    private <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
+    protected <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
         String cacheName = cache.getName();
 
         // "wantsLocalKey" is true if route is not attached to the sticky session cookie. Without attached route, We want the key, which will be "owned" by this node.
@@ -88,7 +92,7 @@ public class InfinispanKeyGenerator {
 
         @Override
         public UUID getKey() {
-            return UUID.randomUUID();
+            return SecretGenerator.getInstance().generateSecureUUID();
         }
     }
 
@@ -97,7 +101,7 @@ public class InfinispanKeyGenerator {
 
         @Override
         public String getKey() {
-            return KeycloakModelUtils.generateId();
+            return SecretGenerator.getInstance().generateSecureID();
         }
     }
 }

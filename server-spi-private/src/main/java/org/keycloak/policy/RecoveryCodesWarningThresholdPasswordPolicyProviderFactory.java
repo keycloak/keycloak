@@ -19,7 +19,6 @@ package org.keycloak.policy;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;
@@ -29,7 +28,10 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * @deprecated Please use rather the recovery codes required action to configure warning threshold for recovery codes. This password policy may be removed in the future versions.
  */
+@Deprecated
 public class RecoveryCodesWarningThresholdPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider, EnvironmentDependentProviderFactory {
 
     private KeycloakSession session;
@@ -93,7 +95,7 @@ public class RecoveryCodesWarningThresholdPasswordPolicyProviderFactory implemen
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES);
     }
 }

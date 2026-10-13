@@ -18,10 +18,11 @@
 
 package org.keycloak.credential;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -90,7 +91,7 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
    /**
      * @return the label, which will be shown to the end user on various screens, like login screen with available authentication mechanisms.
      * This label will reference this particular authenticator type.
-     * It should be clear to end users. For example, implementations can return "Authenticator Application" for OTP or "Security Key" for WebAuthn.
+     * It should be clear to end users. For example, implementations can return "Authenticator Application" for OTP or "Passkey" for WebAuthn.
      *
      * Alternatively, this method can return a message key, so that it is possible to localize it for various languages.
      */
@@ -243,6 +244,9 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             // Assume credential can't have both createAction and updateAction.
             if (instance.createAction != null && instance.updateAction != null) {
                 throw new IllegalStateException("Both createAction and updateAction are not null when building CredentialTypeMetadata for the credential type '" + instance.type);
+            }
+            if (!verifyRequiredAction(session, "delete_credential")) {
+                instance.removeable = false;
             }
 
             return instance;

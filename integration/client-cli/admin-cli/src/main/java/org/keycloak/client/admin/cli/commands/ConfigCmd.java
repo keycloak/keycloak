@@ -16,80 +16,70 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.GroupCommandDefinition;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import picocli.CommandLine.Command;
+
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.admin.cli.KcAdmMain.V2_FLAG;
 
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@GroupCommandDefinition(name = "config", description = "COMMAND [ARGUMENTS]", groupCommands = {ConfigCredentialsCmd.class} )
+@Command(name = ConfigCmd.NAME, description = "COMMAND [ARGUMENTS]", subcommands = {
+        ConfigCredentialsCmd.class,
+        ConfigTruststoreCmd.class
+} )
 public class ConfigCmd extends AbstractAuthOptionsCmd {
 
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (args != null && args.size() > 0) {
-                String cmd = args.get(0);
-                switch (cmd) {
-                    case "credentials": {
-                        args.remove(0);
-                        ConfigCredentialsCmd command = new ConfigCredentialsCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    case "truststore": {
-                        args.remove(0);
-                        ConfigTruststoreCmd command = new ConfigTruststoreCmd();
-                        command.initFromParent(this);
-                        return command.execute(commandInvocation);
-                    }
-                    default: {
-                        if (printHelp()) {
-                            return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-                        }
-                        throw new IllegalArgumentException("Unknown sub-command: " + cmd + suggestHelp());
-                    }
-                }
-            }
+    public static final String NAME = "config";
 
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
+    private final boolean v2;
 
-            throw new IllegalArgumentException("Sub-command required by '" + CMD + " config' - one of: 'credentials', 'truststore'");
-
-        } finally {
-            commandInvocation.stop();
-        }
+    public ConfigCmd() {
+        this.v2 = false;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config' for more information";
+    public ConfigCmd(boolean v2) {
+        this.v2 = v2;
     }
 
-    protected String help() {
-        return usage();
+    @Override
+    protected void process() {
+
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return true;
+    }
+
+    @Override
+    public String help() {
+        return usage(v2);
     }
 
     public static String usage() {
+        return usage(false);
+    }
+
+    private static String usage(boolean v2) {
+        String cmd = v2 ? CMD + " " + V2_FLAG : CMD;
+        String subcommands = v2 ? "'credentials', 'truststore', 'openapi', 'editor'" : "'credentials', 'truststore'";
+        String helpHint = v2 ? cmd + " config SUB_COMMAND --help" : CMD + " help config SUB_COMMAND";
+
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]");
+        out.println("Usage: " + cmd + " config SUB_COMMAND [ARGUMENTS]");
         out.println();
-        out.println("Where SUB_COMMAND is one of: 'credentials', 'truststore'");
+        out.println("Where SUB_COMMAND is one of: " + subcommands);
         out.println();
         out.println();
-        out.println("Use '" + CMD + " help config SUB_COMMAND' for more info.");
-        out.println("Use '" + CMD + " help' for general information and a list of commands.");
+        out.println("Use '" + helpHint + "' for more info.");
+        out.println("Use '" + cmd + " help' for general information and a list of commands.");
         return sb.toString();
     }
 }

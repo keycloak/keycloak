@@ -17,10 +17,11 @@
 
 package org.keycloak.representations.adapters.action;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Posted to managed client from admin server.

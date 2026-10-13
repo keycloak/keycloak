@@ -16,17 +16,18 @@
  */
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.keycloak.saml.common.ErrorCodes;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.AbstractParser;
-import org.keycloak.saml.common.parsers.StaxParser;
-import org.keycloak.saml.common.util.StaxParserUtil;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+
+import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.AbstractParser;
+import org.keycloak.saml.common.parsers.StaxParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
 
 /**
  *

@@ -16,9 +16,9 @@
  */
 package org.keycloak.dom.saml.v1.protocol;
 
-import org.keycloak.dom.saml.common.CommonStatusDetailType;
-
 import java.io.Serializable;
+
+import org.keycloak.dom.saml.common.CommonStatusDetailType;
 
 /**
  * <complexType name="StatusType"> <sequence> <element ref="samlp:StatusCode"/> <element ref="samlp:StatusMessage"

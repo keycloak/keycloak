@@ -16,91 +16,63 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 public class TestAppHelper {
     private OAuthClient oauth;
     private LoginPage loginPage;
     private LoginTotpPage loginTotpPage;
-    private AppPage appPage;
+
     private String refreshToken;
 
-    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, AppPage appPage) {
+    public TestAppHelper(OAuthClient oauth, LoginPage loginPage) {
         this.oauth = oauth;
         this.loginPage = loginPage;
-        this.appPage = appPage;
     }
-    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, LoginTotpPage loginTotpPage, AppPage appPage) {
+    public TestAppHelper(OAuthClient oauth, LoginPage loginPage, LoginTotpPage loginTotpPage) {
         this.oauth = oauth;
         this.loginPage = loginPage;
         this.loginTotpPage = loginTotpPage;
-        this.appPage = appPage;
     }
 
-    public boolean login(String username, String password) {
+    public void login(String username, String password) {
         startLogin(username, password);
-
-        if (loginPage.isCurrent()) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
-    public boolean startLogin(String username, String password) {
-        loginPage.open();
+    public void startLogin(String username, String password) {
+        oauth.openLoginForm();
         loginPage.login(username, password);
-
-        return appPage.isCurrent();
     }
 
     public void completeLogin() {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         refreshToken = tokenResponse.getRefreshToken();
     }
 
-    public boolean login(String username, String password, String otp) {
+    public void login(String username, String password, String otp) {
         startLogin(username, password);
-
         loginTotpPage.login(otp);
-        if (loginTotpPage.isCurrent()) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
-    public boolean login(String username, String password, String realm, String clientId, String idp) {
-        oauth.clientId(clientId);
-        loginPage.open(realm);
+    public void login(String username, String password, String realm, String clientId, String idp) {
+        oauth.client(clientId);
+        oauth.realm(realm);
+        oauth.openLoginForm();
         loginPage.clickSocial(idp);
         loginPage.login(username, password);
-
-        if (loginPage.isCurrent(realm)) {
-            return false;
-        }
-
         completeLogin();
-
-        return appPage.isCurrent();
     }
 
     public boolean logout() {
-        try (CloseableHttpResponse response = oauth.doLogout(refreshToken, "password")) {
-            return response.getStatusLine().getStatusCode() == Response.Status.NO_CONTENT.getStatusCode();
-        } catch (IOException e) {
+        try {
+            return oauth.doLogout(refreshToken).isSuccess();
+        } catch (RuntimeException e) {
             return false;
         }
     }

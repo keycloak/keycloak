@@ -17,20 +17,24 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.entities.CachedGroup;
-import org.keycloak.models.utils.RoleUtils;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,7 +54,7 @@ public class GroupAdapter implements GroupModel {
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
-        modelSupplier = this::getGroupModel;
+        modelSupplier = new LazyModel<>(this::getGroupModel);
     }
 
     protected void getDelegateForUpdate() {
@@ -112,6 +116,48 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
+    public String getDescription() {
+        if (isUpdated()) return updated.getDescription();
+        return cached.getDescription();
+    }
+
+    @Override
+    public void setDescription(String description) {
+        getDelegateForUpdate();
+        updated.setDescription(description);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getCreatedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getLastModifiedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public void setSingleAttribute(String name, String value) {
         getDelegateForUpdate();
         updated.setSingleAttribute(name, value);
@@ -133,13 +179,13 @@ public class GroupAdapter implements GroupModel {
     @Override
     public String getFirstAttribute(String name) {
         if (isUpdated()) return updated.getFirstAttribute(name);
-        return cached.getAttributes(modelSupplier).getFirst(name);
+        return cached.getAttributes(keycloakSession, modelSupplier).getFirst(name);
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
         if (isUpdated()) return updated.getAttributeStream(name);
-        List<String> values = cached.getAttributes(modelSupplier).get(name);
+        List<String> values = cached.getAttributes(keycloakSession, modelSupplier).get(name);
         if (values == null) return Stream.empty();
         return values.stream();
     }
@@ -147,7 +193,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Map<String, List<String>> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        return cached.getAttributes(modelSupplier);
+        return cached.getAttributes(keycloakSession, modelSupplier);
     }
 
     @Override
@@ -166,13 +212,13 @@ public class GroupAdapter implements GroupModel {
     public boolean hasDirectRole(RoleModel role) {
         if (isUpdated()) return updated.hasDirectRole(role);
 
-        return cached.getRoleMappings(modelSupplier).contains(role.getId());
+        return cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId());
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
         if (isUpdated()) return updated.hasRole(role);
-        if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
+        if (cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) return true;
         if (getRoleMappingsStream().anyMatch(r -> r.hasRole(role))) return true;
         GroupModel parent = getParent();
         return parent != null && parent.hasRole(role);
@@ -188,7 +234,7 @@ public class GroupAdapter implements GroupModel {
     public Stream<RoleModel> getRoleMappingsStream() {
         if (isUpdated()) return updated.getRoleMappingsStream();
         Set<RoleModel> roles = new HashSet<>();
-        for (String id : cached.getRoleMappings(modelSupplier)) {
+        for (String id : cached.getRoleMappings(keycloakSession, modelSupplier)) {
             RoleModel roleById = keycloakSession.roles().getRoleById(realm, id);
             if (roleById == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -224,7 +270,7 @@ public class GroupAdapter implements GroupModel {
     public Stream<GroupModel> getSubGroupsStream() {
         if (isUpdated()) return updated.getSubGroupsStream();
         Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups(modelSupplier)) {
+        for (String id : cached.getSubGroups(keycloakSession, modelSupplier)) {
             GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -258,7 +304,8 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return modelSupplier.get().getSubGroupsCount();
+        GroupModel model = modelSupplier.get();
+        return model == null ? null : model.getSubGroupsCount();
     }
 
     @Override
@@ -283,5 +330,35 @@ public class GroupAdapter implements GroupModel {
 
     private GroupModel getGroupModel() {
         return cacheSession.getGroupDelegate().getGroupById(realm, cached.getId());
+    }
+
+    @Override
+    public boolean escapeSlashesInGroupPath() {
+        return KeycloakModelUtils.escapeSlashesInGroupPath(keycloakSession);
+    }
+
+    @Override
+    public Type getType() {
+        if (isUpdated()) return updated.getType();
+        return cached.getType();
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        if (isUpdated()) return updated.getOrganization();
+
+        // Use cached organization ID
+        String orgId = cached.getOrganizationId();
+        if (orgId == null) {
+            return null;
+        }
+
+        // Fetch organization from cached OrganizationProvider
+        OrganizationProvider orgProvider = keycloakSession.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) {
+            return null;
+        }
+
+        return orgProvider.getById(orgId);
     }
 }

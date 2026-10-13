@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.saml;
 
-import org.apache.http.util.EntityUtils;
-import org.junit.Test;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -9,6 +10,7 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -20,20 +22,27 @@ import org.keycloak.testsuite.util.ArtifactResolutionService;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.CreateArtifactMessageStepBuilder;
+
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.Matchers.bodyHC;
-import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 
 public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
 
@@ -55,8 +64,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder response = builder.artifactMessage(camb).build().login().user(bburkeUser).build().getSamlResponse(SamlClient.Binding.POST);
                 assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
@@ -90,8 +99,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder response = builder.artifactMessage(camb).build().login().user(bburkeUser).build().getSamlResponse(REDIRECT);
                 assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
@@ -104,6 +113,24 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
             ars.stop();
             arsThread.join();
         }
+    }
+
+    @Test
+    public void testResponseWithMalformedArtifact() {
+        new SamlClientBuilder()
+                .addStep((client, currentURI, currentResponse, context) -> {
+                    HttpPost post = new HttpPost(getAuthServerSamlEndpoint(REALM_NAME));
+                    post.setEntity(new UrlEncodedFormEntity(
+                            // submitting SAMLart=YQ== (valid Base64 decoding to a single byte)
+                            Collections.singletonList(new BasicNameValuePair(GeneralConstants.SAML_ARTIFACT_KEY, "YQ==")),
+                            StandardCharsets.UTF_8));
+                    return post;
+                })
+                .execute(r -> {
+                    // we should get a bad request back
+                    assertThat(r, statusCodeIsHC(400));
+                    assertThat(r, bodyHC(containsString("Invalid Request")));
+                });
     }
 
     @Test
@@ -124,8 +151,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setResponseDocument(doc);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 String response = builder.artifactMessage(camb).build().executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
                 assertThat(response, containsString("Invalid Request"));
@@ -151,8 +178,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/").setEmptyArtifactResponse(SAML_CLIENT_ID_SALES_POST);
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 builder.artifactMessage(camb).build().execute(r -> {
                     assertThat(r, statusCodeIsHC(400));
@@ -180,8 +207,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/");
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder samlResponse = builder.authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
                         .login().user(bburkeUser).build()
@@ -220,8 +247,8 @@ public class ArtifactBindingWithResolutionServiceTest extends AbstractSamlTest {
         ArtifactResolutionService ars = new ArtifactResolutionService("http://127.0.0.1:8082/");
         Thread arsThread = new Thread(ars);
         try {
-            arsThread.start();
             synchronized (ars) {
+                arsThread.start();
                 ars.wait();
                 SAMLDocumentHolder samlResponse = builder
                         .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST,

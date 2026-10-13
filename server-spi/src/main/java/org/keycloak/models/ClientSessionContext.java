@@ -17,11 +17,10 @@
 
 package org.keycloak.models;
 
-import org.keycloak.rar.AuthorizationRequestContext;
-
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.rar.AuthorizationRequestContext;
 
 /**
  * Request-scoped context object
@@ -41,6 +40,11 @@ public interface ClientSessionContext {
     Stream<ClientScopeModel> getClientScopesStream();
 
     /**
+     * @return true if offline token is requested
+     */
+    boolean isOfflineTokenRequested();
+
+    /**
      * Returns all roles including composite ones as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
@@ -53,6 +57,8 @@ public interface ClientSessionContext {
     Stream<ProtocolMapperModel> getProtocolMappersStream();
 
     String getScopeString();
+
+    String getScopeString(boolean ignoreIncludeInTokenScope);
 
     void setAttribute(String name, Object value);
 

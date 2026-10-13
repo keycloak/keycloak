@@ -17,14 +17,14 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
+
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.oidc.DescriptionConverter;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

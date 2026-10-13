@@ -1,14 +1,9 @@
-import {
-  AlertVariant,
-  DropdownItem,
-  DropdownSeparator,
-} from "@patternfly/react-core";
+import { AlertVariant, Divider, DropdownItem } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { Header } from "./Header";
 
@@ -25,6 +20,8 @@ export const ExtendedHeader = ({
   save,
   noDivider = false,
 }: ExtendedHeaderProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
@@ -48,12 +45,7 @@ export const ExtendedHeader = ({
     messageKey: t("removeImportedUsersMessage"),
     continueButtonLabel: "remove",
     onConfirm: async () => {
-      try {
-        removeImportedUsers();
-        addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
-      } catch (error) {
-        addError("removeImportedUsersError", error);
-      }
+      await removeImportedUsers();
     },
   });
 
@@ -61,8 +53,8 @@ export const ExtendedHeader = ({
     try {
       if (id) {
         await adminClient.userStorageProvider.removeImportedUsers({ id });
+        addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
       }
-      addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
     } catch (error) {
       addError("removeImportedUsersError", error);
     }
@@ -71,6 +63,7 @@ export const ExtendedHeader = ({
   const syncChangedUsers = async () => {
     try {
       if (id) {
+        addAlert(t("syncUsersStarted"), AlertVariant.info);
         const response = await adminClient.userStorageProvider.sync({
           id: id,
           action: "triggerChangedUsersSync",
@@ -93,6 +86,7 @@ export const ExtendedHeader = ({
   const syncAllUsers = async () => {
     try {
       if (id) {
+        addAlert(t("syncUsersStarted"), AlertVariant.info);
         const response = await adminClient.userStorageProvider.sync({
           id: id,
           action: "triggerFullSync",
@@ -156,7 +150,7 @@ export const ExtendedHeader = ({
           <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
             {t("removeImported")}
           </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
         ]}
       />
     </>

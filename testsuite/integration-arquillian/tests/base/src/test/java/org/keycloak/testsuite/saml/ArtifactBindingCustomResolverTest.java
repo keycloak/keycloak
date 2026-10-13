@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.saml;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.authentication.CustomTestingSamlArtifactResolver;
@@ -9,16 +10,16 @@ import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import java.io.ByteArrayInputStream;
-import java.util.Base64;
-import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Ignore;
+import org.junit.Test;
 
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @SetDefaultProvider(spi = "saml-artifact-resolver", providerId = "0005")
 public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
@@ -49,12 +50,13 @@ public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 
         String artifact = artifactReference.get();
         byte[] byteArray = Base64.getDecoder().decode(artifact);
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        bis.skip(2);
-        int index = bis.read();
-        
+
         assertThat(byteArray[0], is((byte)0));
         assertThat(byteArray[1], is((byte)5));
+        assertThat(byteArray[2], is((byte)0));
+        assertThat(byteArray[3], is((byte)0));
+
+        int index = byteArray[4];
 
         if (!suiteContext.getAuthServerInfo().isUndertow()) return;
 
@@ -84,12 +86,13 @@ public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 
         String artifact = artifactReference.get();
         byte[] byteArray = Base64.getDecoder().decode(artifact);
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        bis.skip(2);
-        int index = bis.read();
 
         assertThat(byteArray[0], is((byte)0));
         assertThat(byteArray[1], is((byte)5));
+        assertThat(byteArray[2], is((byte)0));
+        assertThat(byteArray[3], is((byte)0));
+
+        int index = byteArray[4];
 
         String storedResponse = CustomTestingSamlArtifactResolver.list.get(index);
 

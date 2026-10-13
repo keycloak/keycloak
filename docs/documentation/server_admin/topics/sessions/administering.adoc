@@ -19,18 +19,19 @@ Clicking *Sign out all active sessions* does not revoke outstanding access token
 
 .Procedure
 . Click *Clients* in the menu.
-. Click the *Sessions* tab.
 . Click a client to see that client's sessions.
+. Click the *Sessions* tab.
 +
 .Client sessions
 image:images/client-sessions.png[Client sessions]
 
+[#viewing-user-sessions]
 ==== Viewing user sessions
 
 .Procedure
 . Click *Users* in the menu.
-. Click the *Sessions* tab.
 . Click a user to see that user's sessions.
+. Click the *Sessions* tab.
 +
 .User sessions
 image:images/user-sessions.png[User sessions]

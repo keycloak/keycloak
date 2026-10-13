@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
@@ -31,7 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 public abstract class AbstractParEndpoint {
 
@@ -68,13 +69,15 @@ public abstract class AbstractParEndpoint {
 
             this.event.client(client);
 
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
 
             if (client == null) {
-                throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
+                throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Authentication failed.", Response.Status.UNAUTHORIZED);
+            throw errorResponseException(OAuthErrorException.INVALID_REQUEST, "Authentication failed.", Response.Status.UNAUTHORIZED);
         }
     }
 
@@ -90,7 +93,7 @@ public abstract class AbstractParEndpoint {
         return hash;
     }
 
-    protected CorsErrorResponseException throwErrorResponseException(String error, String detail, Response.Status status) {
+    protected CorsErrorResponseException errorResponseException(String error, String detail, Response.Status status) {
         this.event.detail("detail", detail).error(error);
         return new CorsErrorResponseException(cors, error, detail, status);
     }

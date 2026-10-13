@@ -16,10 +16,10 @@
  */
 package org.keycloak.saml.processing.core.saml.v1.writers;
 
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
-
-import javax.xml.stream.XMLStreamWriter;
 
 /**
  * @author Anil.Saldhana@redhat.com

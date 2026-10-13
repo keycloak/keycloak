@@ -17,34 +17,29 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import static jakarta.ws.rs.HttpMethod.PATCH;
-import static jakarta.ws.rs.HttpMethod.POST;
-import static jakarta.ws.rs.HttpMethod.PUT;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
+
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.handlers.FormBodyHandler;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
+import org.jboss.resteasy.reactive.server.spi.EndpointInvoker;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
+
+import static jakarta.ws.rs.HttpMethod.PATCH;
+import static jakarta.ws.rs.HttpMethod.POST;
+import static jakarta.ws.rs.HttpMethod.PUT;
 
 public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomizer {
 
-    private final CreateSessionHandler TRANSACTIONAL_SESSION_HANDLER = new CreateSessionHandler();
-
-    private final FormBodyHandler formBodyHandler = new FormBodyHandler(true, new Supplier<Executor>() {
-        @Override
-        public Executor get() {
-            // we always run in blocking mode and never run in an event loop thread
-            // we don't need to provide an executor to dispatch to a worker thread to parse the body
-            return null;
-        }
-    }, Set.of());
+    private final FormBodyHandler formBodyHandler = new FormBodyHandler(true, () -> Runnable::run, Set.of());
+    
+    @Override
+    public ServerRestHandler alternateInvocationHandler(EndpointInvoker invoker) {
+        return new TransactionalSessionHandler(invoker);
+    }
 
     @Override
     public List<ServerRestHandler> handlers(Phase phase, ResourceClass resourceClass,
@@ -53,13 +48,12 @@ public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomi
 
         switch (phase) {
             case BEFORE_METHOD_INVOKE:
-                if (!resourceMethod.isFormParamRequired() && 
+                if (!resourceMethod.isFormParamRequired() &&
                     (PATCH.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
                      POST.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
                      PUT.equalsIgnoreCase(resourceMethod.getHttpMethod()))) {
                     handlers.add(formBodyHandler);
                 }
-                handlers.add(TRANSACTIONAL_SESSION_HANDLER);
                 break;
             case AFTER_METHOD_INVOKE:
                 handlers.add(new SetResponseContentTypeHandler(resourceMethod.getProduces()));

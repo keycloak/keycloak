@@ -1,41 +1,83 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import {
-  AlertVariant,
-  Button,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
+import { Button, Modal, ModalVariant, Label } from "@patternfly/react-core";
+import { InfoCircleIcon } from "@patternfly/react-icons";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { emptyFormatter } from "../util";
 
 type MemberModalProps = {
-  groupId: string;
+  membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
+  onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+  onBack?: () => void;
+  orgId?: string;
+  titleKey?: string;
+  description?: string;
+  confirmLabelKey?: string;
+  filterEmptyEmail?: boolean;
 };
 
-export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
+const UserDetail = (user: UserRepresentation) => {
   const { t } = useTranslation();
-  const { addAlert, addError } = useAlerts();
+  return (
+    <>
+      {user.username}{" "}
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+    </>
+  );
+};
+
+export const MemberModal = ({
+  membersQuery,
+  onAdd,
+  onClose,
+  onBack,
+  orgId,
+  titleKey = "addMember",
+  description,
+  confirmLabelKey = "add",
+  filterEmptyEmail = false,
+}: MemberModalProps) => {
+  const { adminClient } = useAdminClient();
+
+  const { t } = useTranslation();
+  const { addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const members = await adminClient.groups.listMembers({ id: groupId });
+    const members = await membersQuery(first, max);
     const params: { [name: string]: string | number } = {
       first: first!,
       max: max! + members.length,
       search: search || "",
     };
 
+    const usersQuery = orgId
+      ? async (params: { [name: string]: string | number }) => {
+          return await adminClient.organizations.listMembers({
+            orgId,
+            ...params,
+          });
+        }
+      : async (params: { [name: string]: string | number }) => {
+          return await adminClient.users.find({ ...params });
+        };
+
     try {
-      const users = await adminClient.users.find({ ...params });
-      return differenceBy(users, members, "id").slice(0, max);
+      const users = await usersQuery(params);
+      const filtered = differenceBy(users, members, "id");
+      return (
+        filterEmptyEmail ? filtered.filter((u) => u.email) : filtered
+      ).slice(0, max);
     } catch (error) {
       addError("noUsersFoundError", error);
       return [];
@@ -45,32 +87,33 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("addMember")}
-      isOpen={true}
+      title={t(titleKey)}
+      description={description}
+      isOpen
       onClose={onClose}
       actions={[
+        ...(onBack
+          ? [
+              <Button
+                data-testid="back"
+                key="back"
+                variant="secondary"
+                onClick={onBack}
+              >
+                {t("back")}
+              </Button>,
+            ]
+          : []),
         <Button
           data-testid="add"
           key="confirm"
           variant="primary"
           onClick={async () => {
-            try {
-              await Promise.all(
-                selectedRows.map((user) =>
-                  adminClient.users.addToGroup({ id: user.id!, groupId }),
-                ),
-              );
-              onClose();
-              addAlert(
-                t("usersAdded", { count: selectedRows.length }),
-                AlertVariant.success,
-              );
-            } catch (error) {
-              addError("usersAddedError", error);
-            }
+            await onAdd(selectedRows);
+            onClose();
           }}
         >
-          {t("add")}
+          {t(confirmLabelKey)}
         </Button>,
         <Button
           data-testid="cancel"
@@ -99,10 +142,12 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
           {
             name: "username",
             displayKey: "username",
+            cellRenderer: UserDetail,
           },
           {
             name: "email",
             displayKey: "email",
+            cellFormatters: [emptyFormatter()],
           },
           {
             name: "lastName",

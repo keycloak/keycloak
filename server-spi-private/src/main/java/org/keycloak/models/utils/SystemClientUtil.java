@@ -17,10 +17,16 @@
 
 package org.keycloak.models.utils;
 
-import org.jboss.logging.Logger;
+import java.util.Optional;
+
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,7 +44,7 @@ public class SystemClientUtil {
     public static ClientModel getSystemClient(RealmModel realm) {
         // Try to return builtin "account" client first
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client != null) {
+        if (client != null && client.isEnabled()) {
             return client;
         }
 
@@ -57,4 +63,16 @@ public class SystemClientUtil {
 
     }
 
+    /**
+     * Cleanup system client URL to avoid links to account management
+     */
+    public static void checkSkipLink(KeycloakSession session, AuthenticationSessionModel authSession) {
+        String usedClientId = Optional.ofNullable(authSession)
+                .map(it -> it.getClient().getClientId())
+                .orElseGet(() -> session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_ID));
+
+        if (usedClientId != null && usedClientId.equals(getSystemClient(session.getContext().getRealm()).getClientId())) {
+            session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
+        }
+    }
 }

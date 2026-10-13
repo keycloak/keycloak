@@ -1,14 +1,17 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -17,18 +20,23 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -38,35 +46,38 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -138,8 +149,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInAsUserInIDPForFirstTime();
 
         UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
@@ -156,8 +168,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInAsUserInIDP();
 
@@ -192,8 +205,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             brokerApp.getAttributes().put("validateSignature", Boolean.TRUE.toString());
             clients.get(brokerApp.getId()).update(brokerApp);
 
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -203,8 +217,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             }
 
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on correct realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on correct realm right now");
 
             log.debug("Updating info on updateAccount page");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -212,7 +226,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
             int userCount = consumerUsers.count();
-            Assert.assertTrue("There must be at least one user", userCount > 0);
+            Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
             List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
@@ -224,8 +238,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
                 }
             }
 
-            Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                    isUserFound);
+            Assertions.assertTrue(isUserFound,
+                    "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
         } finally {
             brokerApp.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, null);
             brokerApp.getAttributes().put("validateSignature", Boolean.FALSE.toString());
@@ -258,176 +272,18 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginFetchingUserFromUserEndpoint();
 
         UserRepresentation user = getFederatedIdentity();
 
-        Assert.assertEquals(1, user.getAttributes().size());
-        Assert.assertEquals("hard-coded", user.getAttributes().get("hard-coded").get(0));
+        Assertions.assertEquals(1, user.getAttributes().size());
+        Assertions.assertEquals("hard-coded", user.getAttributes().get("hard-coded").get(0));
     }
 
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_samlBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationSamlBrokerWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-            logInWithBroker(samlBrokerConfig);
-
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-            setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "sign in to", true);
-            log.debug("Logging in");
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_oidcBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationOIDCBrokerWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(samlBrokerConfig);
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_bothBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationBothBrokersWithOTPRequired() throws Exception {
-        final RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-
-        try (RealmAttributeUpdater rauConsumer = new RealmAttributeUpdater(consumerRealm).setOtpPolicyCodeReusable(true).update();
-             RealmAttributeUpdater rauProvider = new RealmAttributeUpdater(providerRealm).setOtpPolicyCodeReusable(true).update()) {
-
-            KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-            ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-            IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-
-            try {
-                updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-                providerRealm.clients().create(samlClient);
-                consumerRealm.identityProviders().create(samlBroker);
-
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-                logInWithBroker(samlBrokerConfig);
-                totpPage.assertCurrent();
-                String totpSecret = totpPage.getTotpSecret();
-                totpPage.configure(totp.generateTOTP(totpSecret));
-                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                logInWithBroker(bc);
-
-                waitForPage(driver, "account already exists", false);
-                idpConfirmLinkPage.assertCurrent();
-                idpConfirmLinkPage.clickLinkAccount();
-                loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-
-                loginTotpPage.assertCurrent();
-                loginTotpPage.login(totp.generateTOTP(totpSecret));
-                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                logInWithBroker(bc);
-
-                loginTotpPage.assertCurrent();
-                loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-                assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-            } finally {
-                updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-                removeUserByUsername(consumerRealm, "consumer");
-            }
-        }
-    }
 
     @Test
     public void testInvalidIssuedFor() {
@@ -435,8 +291,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -454,13 +311,55 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Test
+    public void testIdpRemovedAfterLoginInvalidatesUserSession() {
+        loginUser();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        assertThat(loginPage.isSocialButtonPresent(bc.getIDPAlias()), is(true));
+        logInWithBroker(bc);
+
+        // remove the IDP while the user is logged in
+        adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).remove();
+
+        // user session should still be active, but checking if it is valid should fail as the associated IDP was removed
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
+            assertThat(userSessions, hasSize(1));
+            UserSessionModel userSession = userSessions.get(0);
+            assertThat(AuthenticationManager.isSessionValid(realm, userSession), is(false));
+        });
+
+        // logout should work even after the IDP was removed
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+
+        // session should have been removed now
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientByClientId(realm, "broker-app");
+            List<UserSessionModel> userSessions = session.sessions().readOnlyStreamUserSessions(realm, client, -1, -1).toList();
+            assertThat(userSessions, hasSize(0));
+        });
+
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        assertThat(loginPage.isSocialButtonPresent(bc.getIDPAlias()), is(false));
+    }
+
+    @Test
     public void testInvalidAudience() {
         loginUser();
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -490,7 +389,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttp.doGet(LINK, client).asResponse();
+            SimpleHttpResponse simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
@@ -498,7 +397,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(error, notNullValue());
             assertThat(error.getError(), is("Identity Provider [" + notExistingIdP + "] not found."));
         } catch (IOException ex) {
-            Assert.fail("Cannot create HTTP client. Details: " + ex.getMessage());
+            Assertions.fail("Cannot create HTTP client. Details: " + ex.getMessage());
         }
     }
 
@@ -523,6 +422,245 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Test
+    public void testTrustEmailBasedOnEmailVerifiedClaimSyncModeForce() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        List<UserRepresentation> users = providerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation providerUser = users.get(0);
+        assertThat(providerUser.isEmailVerified(), is(true));
+        // first broker login
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = consumerRealm.toRepresentation();
+        realmRep.setVerifyEmail(true);
+        consumerRealm.update(realmRep);
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        identityProviderResource.update(idpRep);
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        List<String> requiredActions = users.get(0).getRequiredActions();
+        assertEquals(0, requiredActions.size());
+        assertThat(users.get(0).isEmailVerified(), is(true));
+
+        // logout
+        AccountHelper.logout(consumerRealm, bc.getUserLogin());
+        AccountHelper.logout(providerRealm, bc.getUserLogin());
+
+        // set the email to not verified at the provider realm
+        providerUser.setEmailVerified(false);
+        providerRealm.users().get(providerUser.getId()).update(providerUser);
+
+        // user is forced to verify email because the account at the provider realm did not verify the email
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        users = consumerRealm.users().search(bc.getUserLogin());
+        assertThat(users.get(0).isEmailVerified(), is(false));
+        errorPage.assertCurrent();
+
+        // set the email to verified at the provider realm to trust the verification and update the account at the consumer realm
+        providerUser.setEmailVerified(true);
+        providerRealm.users().get(providerUser.getId()).update(providerUser);
+        AccountHelper.logout(consumerRealm, bc.getUserLogin());
+        AccountHelper.logout(providerRealm, bc.getUserLogin());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+    }
+
+    @Test
+    public void testVerifyEmailWhenUpdateProfileAndEmailVerifiedAtIdP() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        List<UserRepresentation> users = providerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation providerUser = users.get(0);
+        assertThat(providerUser.isEmailVerified(), is(true));
+        // first broker login
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = consumerRealm.toRepresentation();
+        realmRep.setVerifyEmail(true);
+        consumerRealm.update(realmRep);
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        identityProviderResource.update(idpRep);
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("updated@keycloak.org", "FirstName", "LastName");
+        users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        List<String> requiredActions = users.get(0).getRequiredActions();
+        assertEquals(1, requiredActions.size());
+        // email updated by the user, must verify the email
+        assertThat(users.get(0).getEmail(), is("updated@keycloak.org"));
+    }
+
+    @Test
+    public void testEmailVerifiedFromUserInfo() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        identityProviderResource.update(idpRep);
+
+        ClientScopeResource emailClientScope = AdminApiUtil.findClientScopeByName(providerRealm, "email");
+        List<ProtocolMapperRepresentation> originalMappers = emailClientScope.getProtocolMappers().getMappers();
+        originalMappers.forEach(protocolMapper -> emailClientScope.getProtocolMappers().delete(protocolMapper.getId()));
+
+        // Save and remove the "email" protocol mapper from the brokerapp client so that the email claim
+        // is not included in the ID token, allowing us to test that the email comes from userinfo only
+        ClientRepresentation brokerAppClient = providerRealm.clients().findByClientId("brokerapp").get(0);
+        ClientResource brokerAppResource = providerRealm.clients().get(brokerAppClient.getId());
+        ProtocolMapperRepresentation brokerAppEmailMapper = brokerAppResource.getProtocolMappers().getMappers().stream()
+                .filter(mapper -> "email".equals(mapper.getName()))
+                .findFirst()
+                .orElse(null);
+        brokerAppResource.getProtocolMappers().delete(brokerAppEmailMapper.getId());
+
+        ProtocolMapperRepresentation userinfoEmailVerifiedMapper = new ProtocolMapperRepresentation();
+        userinfoEmailVerifiedMapper.setName("userinfo-email-verified");
+        userinfoEmailVerifiedMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userinfoEmailVerifiedMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, IDToken.EMAIL_VERIFIED);
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+        userinfoEmailVerifiedMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        userinfoEmailVerifiedMapper.getConfig().put(HardcodedClaim.CLAIM_VALUE, "false");
+        emailClientScope.getProtocolMappers().createMapper(userinfoEmailVerifiedMapper).close();
+
+        ProtocolMapperRepresentation userinfoEmailMapper = new ProtocolMapperRepresentation();
+        userinfoEmailMapper.setName("userinfo-email");
+        userinfoEmailMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userinfoEmailMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, IDToken.EMAIL);
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+        userinfoEmailMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        userinfoEmailMapper.getConfig().put(HardcodedClaim.CLAIM_VALUE, "different-email@test.com");
+        emailClientScope.getProtocolMappers().createMapper(userinfoEmailMapper).close();
+
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+
+        // Verify user was created with email from ID token, not userinfo
+        List<UserRepresentation> users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation consumerUser = users.get(0);
+
+        assertEquals(consumerUser.getEmail(), "different-email@test.com");
+
+        // Email should be not verified because it came from ID token which has email_verified=false
+        assertFalse(consumerUser.isEmailVerified());
+
+        emailClientScope.getProtocolMappers().getMappers().forEach(protocolMapper -> emailClientScope.getProtocolMappers().delete(protocolMapper.getId()));
+        emailClientScope.getProtocolMappers().createMapper(originalMappers);
+
+        // Restore the "email" protocol mapper on the brokerapp client
+        if (brokerAppEmailMapper != null) {
+            brokerAppEmailMapper.setId(null);
+            brokerAppResource.getProtocolMappers().createMapper(brokerAppEmailMapper).close();
+        }
+
+    }
+
+    @Test
+    public void testVerifyEmailWhenUpdateProfileSameEmailAndEmailVerifiedAtIdP() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        List<UserRepresentation> users = providerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation providerUser = users.get(0);
+        assertThat(providerUser.isEmailVerified(), is(true));
+        // first broker login
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = consumerRealm.toRepresentation();
+        realmRep.setVerifyEmail(true);
+        consumerRealm.update(realmRep);
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        identityProviderResource.update(idpRep);
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "FirstName", "LastName");
+        users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        List<String> requiredActions = users.get(0).getRequiredActions();
+        assertEquals(0, requiredActions.size());
+        // email updated by the user, must verify the email
+        assertThat(users.get(0).getEmail(), is(bc.getUserEmail()));
+    }
+
+    @Test
+    public void testTrustEmailBasedOnEmailVerifiedClaimSyncModeImport() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        List<UserRepresentation> users = providerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        UserRepresentation providerUser = users.get(0);
+        assertThat(providerUser.isEmailVerified(), is(true));
+        // first broker login
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = consumerRealm.toRepresentation();
+        realmRep.setVerifyEmail(true);
+        consumerRealm.update(realmRep);
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.IMPORT.name());
+        identityProviderResource.update(idpRep);
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        users = consumerRealm.users().search(bc.getUserLogin());
+        assertEquals(1, users.size());
+        List<String> requiredActions = users.get(0).getRequiredActions();
+        assertEquals(0, requiredActions.size());
+        assertThat(users.get(0).isEmailVerified(), is(true));
+
+        // logout
+        AccountHelper.logout(consumerRealm, bc.getUserLogin());
+        AccountHelper.logout(providerRealm, bc.getUserLogin());
+
+        // set the email to not verified at the provider realm to make sure email is still verified at the consumer realm because of import sync mode
+        providerUser.setEmailVerified(false);
+        providerRealm.users().get(providerUser.getId()).update(providerUser);
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+        logInWithBroker(bc);
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+    }
+
+    @Test
     public void loginWithClaimFilter() {
         IdentityProviderResource identityProviderResource = getIdentityProviderResource();
 
@@ -535,7 +673,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         UserRepresentation user = getFederatedIdentity();
 
-        Assert.assertNotNull(user);
+        Assertions.assertNotNull(user);
     }
 
     @Test
@@ -551,7 +689,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         UserRepresentation user = getFederatedIdentity();
 
-        Assert.assertNotNull(user);
+        Assertions.assertNotNull(user);
     }
 
     @Test
@@ -563,7 +701,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         WaitUtils.waitForPageToLoad();
 
         loginFetchingUserFromUserEndpoint(true);
-        Assert.assertEquals("The ID token issued by the identity provider does not match the configured essential claim. Please contact your administrator.",
+        Assertions.assertEquals("The ID token issued by the identity provider does not match the configured essential claim. Please contact your administrator.",
                 loginPage.getInstruction());
 
 
@@ -634,8 +772,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
                     isForceSync ? IdentityProviderSyncMode.FORCE : IdentityProviderSyncMode.IMPORT, isTrustEmail);
 
             // login to create the user in the consumer realm
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             WaitUtils.waitForPageToLoad();
 
@@ -680,8 +819,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             providerUserResource.update(providerUser);
 
             // login again to force sync if force mode
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             WaitUtils.waitForPageToLoad();
 
@@ -702,7 +842,105 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             // the email verified should be reverted to false if force-sync and not trust-email
             assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(!isForceSync || isTrustEmail));
         } finally {
-            providerUsersResource.delete(providerUserID);
+            providerUsersResource.delete(providerUserID).close();
+        }
+    }
+
+    @Test
+    public void checkUpdatedEmailAttributeIdPSameValueDifferentCase() throws Exception {
+        final String IDP_NAME = getBrokerConfiguration().getIDPAlias();
+        final String USERNAME = "demo-user";
+        final String PASSWORD = "demo-pwd";
+
+        final String FIRST_NAME = "John";
+        final String LAST_NAME = "Doe";
+        final String EMAIL = "mail@example.com";
+
+        RealmResource providerRealmResource = realmsResouce().realm(bc.providerRealmName());
+        allowUserEdit(providerRealmResource);
+
+        UsersResource providerUsersResource = providerRealmResource.users();
+
+        String providerUserID = createUser(bc.providerRealmName(), USERNAME, PASSWORD, FIRST_NAME, LAST_NAME, EMAIL,
+                user -> user.setEmailVerified(true));
+
+        try {
+            IdentityProviderResource consumerIdentityResource = getIdentityProviderResource();
+            IdentityProviderRepresentation idProvider = consumerIdentityResource.toRepresentation();
+
+            updateIdPSyncMode(idProvider, consumerIdentityResource, IdentityProviderSyncMode.FORCE, false);
+
+            // login to create the user in the consumer realm
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
+
+            WaitUtils.waitForPageToLoad();
+
+            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
+            logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
+
+            UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.providerRealmName()), USERNAME);
+
+            assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
+            assertThat(userRepresentation.getEmail(), Matchers.equalTo(EMAIL));
+            assertThat(userRepresentation.getFirstName(), Matchers.equalTo(FIRST_NAME));
+            assertThat(userRepresentation.getLastName(), Matchers.equalTo(LAST_NAME));
+
+            RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
+            List<UserRepresentation> foundUsers = consumerRealmResource.users().searchByUsername(USERNAME, true);
+            assertThat(foundUsers, Matchers.hasSize(1));
+            UserRepresentation consumerUser = foundUsers.get(0);
+            assertThat(consumerUser, Matchers.notNullValue());
+            String consumerUserID = consumerUser.getId();
+            UserResource consumerUserResource = consumerRealmResource.users().get(consumerUserID);
+
+            checkFederatedIdentityLink(consumerUserResource, providerUserID, USERNAME);
+            Assertions.assertFalse(consumerUserResource.toRepresentation().isEmailVerified());
+
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), USERNAME);
+
+            // set email verified to true on the consumer resource
+            consumerUser = consumerUserResource.toRepresentation();
+            consumerUser.setEmailVerified(true);
+            consumerUserResource.update(consumerUser);
+            Assertions.assertTrue(consumerUserResource.toRepresentation().isEmailVerified());
+
+            // Change the client scope for email to set the hardcoded email in capitals
+            ProtocolMapperRepresentation hardcodedEmail = new ProtocolMapperRepresentation();
+            hardcodedEmail.setName("email");
+            hardcodedEmail.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            hardcodedEmail.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+            hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email");
+            hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+            hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+            hardcodedEmail.getConfig().put(HardcodedClaim.CLAIM_VALUE, EMAIL.toUpperCase());
+            ClientScopeResource emailClientScope = AdminApiUtil.findClientScopeByName(providerRealmResource, "email");
+            ProtocolMapperRepresentation emailMapper = AdminApiUtil.findProtocolMapperByName(emailClientScope, "email");
+            emailClientScope.getProtocolMappers().delete(emailMapper.getId());
+            emailClientScope.getProtocolMappers().createMapper(hardcodedEmail).close();
+
+            // login again to force sync
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
+
+            WaitUtils.waitForPageToLoad();
+
+            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
+            logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
+            assertThat(driver.getCurrentUrl(), Matchers.containsString("/app/auth?"));
+
+            consumerUserResource = consumerRealmResource.users().get(consumerUserID);
+            checkFederatedIdentityLink(consumerUserResource, providerUserID, USERNAME);
+
+            // the email should be verified as it's just a different case
+            Assertions.assertTrue(consumerUserResource.toRepresentation().isEmailVerified());
+        } finally {
+            providerUsersResource.delete(providerUserID).close();
         }
     }
 
@@ -722,13 +960,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
-                                   IdentityProviderSyncMode syncMode, boolean trustEmail) {
+                                   IdentityProviderSyncMode syncMode, Boolean trustEmail) {
         assertThat(idProvider, Matchers.notNullValue());
         assertThat(idProviderResource, Matchers.notNullValue());
         assertThat(syncMode, Matchers.notNullValue());
 
         if (idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE).equals(syncMode.name())
-                && idProvider.isTrustEmail() == trustEmail) {
+                && trustEmail.equals(idProvider.isTrustEmail())) {
             return;
         }
 
@@ -745,7 +983,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     private UserRepresentation getFederatedIdentity() {
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(bc.getUserLogin());
 
-        Assert.assertEquals(1, users.size());
+        Assertions.assertEquals(1, users.size());
 
         return users.get(0);
     }

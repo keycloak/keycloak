@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
     <name>Keycloak Wildfly SAML Adapter Subsystem</name>
-    <description/>
+    <description>Keycloak Wildfly SAML Adapter Subsystem</description>
     <packaging>jar</packaging>
 
     <build>

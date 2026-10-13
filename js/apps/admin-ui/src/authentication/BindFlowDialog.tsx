@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { SelectControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -8,11 +9,9 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { REALM_FLOWS } from "./AuthenticationSection";
+import { REALM_FLOWS } from "./constants";
 
 type BindingForm = {
   bindingType: keyof RealmRepresentation;
@@ -20,36 +19,39 @@ type BindingForm = {
 
 type BindFlowDialogProps = {
   flowAlias: string;
-  onClose: () => void;
+  onClose: (used?: boolean) => void;
 };
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<BindingForm>();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation: realmRep, refresh } = useRealm();
 
   const onSubmit = async ({ bindingType }: BindingForm) => {
-    const realmRep = await adminClient.realms.findOne({ realm });
-
     try {
       await adminClient.realms.update(
         { realm },
         { ...realmRep, [bindingType]: flowAlias },
       );
+      refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
       addError("updateFlowError", error);
     }
 
-    onClose();
+    onClose(true);
   };
+
+  const flowKeys = Array.from(REALM_FLOWS.keys());
 
   return (
     <Modal
       title={t("bindFlow")}
       variant="small"
-      onClose={onClose}
+      onClose={() => onClose()}
       actions={[
         <Button key="confirm" data-testid="save" type="submit" form="bind-form">
           {t("save")}
@@ -58,7 +60,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={onClose}
+          onClick={() => onClose()}
         >
           {t("cancel")}
         </Button>,
@@ -71,13 +73,15 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
             id="chooseBindingType"
             name="bindingType"
             label={t("chooseBindingType")}
-            options={[...REALM_FLOWS.keys()]
+            options={flowKeys
               .filter((f) => f !== "dockerAuthenticationFlow")
               .map((key) => ({
                 key,
                 value: t(`flow.${REALM_FLOWS.get(key)}`),
               }))}
-            controller={{ defaultValue: "" }}
+            controller={{ defaultValue: flowKeys[0] }}
+            menuAppendTo="parent"
+            aria-label={t("chooseBindingType")}
           />
         </FormProvider>
       </Form>

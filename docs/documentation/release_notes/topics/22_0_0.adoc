@@ -90,7 +90,7 @@ We still provide two separate Keycloak Admin clients, one with Jakarta EE and th
 
 == Support for count users based on custom attributes
 
-The User API now supports querying the number of users based on custom attributes. For that, a new `q` parameter was added to the `/{realm}/users/count` endpoint.
+The User API now supports querying the number of users based on custom attributes. For that, a new `q` parameter was added to the `/{realm-name}/users/count` endpoint.
 
 The `q` parameter expects the following format `q=<name>:<value> <name>:<value>`. Where `<name>` and `<value>` represent the attribute name and value, respectively.
 

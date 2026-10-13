@@ -18,6 +18,7 @@
 
 package org.keycloak.services.clientpolicy;
 
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -28,26 +29,32 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.logging.Logger;
-
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.JsonConfigComponentModel;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.securityprofile.SecurityProfileProvider;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
-import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.FileUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 /**
  * Utilities for treating client policies/profiles
@@ -57,6 +64,34 @@ import org.keycloak.util.JsonSerialization;
 public class ClientPoliciesUtil {
 
     private static final Logger logger = Logger.getLogger(ClientPoliciesUtil.class);
+
+    public static InputStream getJsonFileFromClasspathOrConfFolder(String name) throws IOException {
+        final String fileName = name + ".json";
+        return FileUtils.getJsonFileFromClasspathOrConfFolder(fileName);
+    }
+
+    public static List<ClientProfileRepresentation> readGlobalClientProfilesRepresentation(KeycloakSession session, String name) throws ClientPolicyException {
+        if (name == null) {
+            return Collections.emptyList();
+        }
+        try (InputStream is = getJsonFileFromClasspathOrConfFolder(name)) {
+            return getValidatedGlobalClientProfilesRepresentation(session, is);
+        } catch (IOException e) {
+            throw new ClientPolicyException("Error reading profiles from " + name, e.getMessage(), e);
+        }
+    }
+
+    public static List<ClientPolicyRepresentation> readGlobalClientPoliciesRepresentation(KeycloakSession session, String name,
+            List<ClientProfileRepresentation> profiles) throws ClientPolicyException {
+        if (name == null) {
+            return Collections.emptyList();
+        }
+        try (InputStream is = getJsonFileFromClasspathOrConfFolder(name)) {
+            return getValidatedGlobalClientPoliciesRepresentation(session, is, profiles);
+        } catch (IOException e) {
+            throw new ClientPolicyException("Error reading profiles from " + name, e.getMessage(), e);
+        }
+    }
 
     /**
      * gets existing client profiles in a realm as representation.
@@ -104,7 +139,8 @@ public class ClientPoliciesUtil {
         List<ClientPolicyExecutorProvider> executors = new ArrayList<>();
         if (profileRep.getExecutors() != null) {
             for (ClientPolicyExecutorRepresentation executorRep : profileRep.getExecutors()) {
-                ClientPolicyExecutorProvider provider = getExecutorProvider(session, realm, executorRep.getExecutorProviderId(), executorRep.getConfiguration());
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, realm, executorRep.getExecutorProviderId(),
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
                 executors.add(provider);
             }
         }
@@ -184,6 +220,24 @@ public class ClientPoliciesUtil {
     }
 
     /**
+     * get validated and modified global (built-in) client policies set on keycloak app as representation.
+     * it is loaded from json file enclosed in keycloak's binary.
+     * not return null.
+     */
+    static List<ClientPolicyRepresentation> getValidatedGlobalClientPoliciesRepresentation(KeycloakSession session, InputStream is, List<ClientProfileRepresentation> profiles) throws ClientPolicyException {
+        ClientPoliciesRepresentation proposedPoliciesRep = null;
+        try {
+            proposedPoliciesRep = JsonSerialization.readValue(is, ClientPoliciesRepresentation.class);
+        } catch (Exception e) {
+            throw new ClientPolicyException("failed to deserialize global proposed client profiles json string.", e.getMessage());
+        }
+        if (proposedPoliciesRep == null) {
+            return Collections.emptyList();
+        }
+        return validatePolicies(session, proposedPoliciesRep.getPolicies(), profiles, Collections.emptyList());
+    }
+
+    /**
      * convert client profiles as representation to json.
      * can return null.
      */
@@ -236,11 +290,16 @@ public class ClientPoliciesUtil {
             throw new ClientPolicyException("proposed client profile name duplicated.");
         }
 
+        // validate global profiles not changed
+        if (isGlobalProfilesUpdated(proposedProfilesRep.getGlobalProfiles(), globalClientProfiles)) {
+            throw new ClientPolicyException("Global profiles cannot be updated");
+        }
+
         // Conflict with any global profile is not allowed
         Set<String> globalProfileNames = globalClientProfiles.stream().map(ClientProfileRepresentation::getName).collect(Collectors.toSet());
         for (ClientProfileRepresentation clientProfile : proposedProfileRepList) {
             if (globalProfileNames.contains(clientProfile.getName())) {
-                throw new ClientPolicyException("Proposed profile name duplicated as the name of some global profile");
+                throw new ClientPolicyException("Proposed profile name '" + clientProfile.getName() + "' is duplicated as a global profile");
             }
         }
 
@@ -262,6 +321,18 @@ public class ClientPoliciesUtil {
         return proposedProfilesRep;
     }
 
+    private static boolean isGlobalProfilesUpdated(List<ClientProfileRepresentation> proposedGlobalProfiles, List<ClientProfileRepresentation> origGlobalProfiles) {
+        // if globalProfiles were not sent, we can skip this
+        if (proposedGlobalProfiles == null || proposedGlobalProfiles.isEmpty()) return false;
+        return !proposedGlobalProfiles.equals(origGlobalProfiles);
+    }
+
+    private static boolean isGlobalPoliciesUpdated(List<ClientPolicyRepresentation> proposedGlobalPolicies, List<ClientPolicyRepresentation> origGlobalPolicies) {
+        // if globalPolicies were not sent, we can skip this
+        if (proposedGlobalPolicies == null || proposedGlobalPolicies.isEmpty()) return false;
+        return !proposedGlobalPolicies.equals(origGlobalPolicies);
+    }
+
     /**
      * check whether the proposed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
      * not return null.
@@ -271,8 +342,10 @@ public class ClientPoliciesUtil {
         Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
         if (providerSet != null && providerSet.contains(executorProviderId)) {
             if (Objects.nonNull(session.getContext().getRealm())){
-                ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId, executorRep.getConfiguration());
-                ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId,
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
+                ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()), provider.getExecutorConfigurationClass());
                 return configuration.validateConfig();
             } else {
                 return true;
@@ -298,32 +371,42 @@ public class ClientPoliciesUtil {
         return convertClientPoliciesJsonToRepresentation(policiesJson);
     }
 
+    static List<ClientProfileRepresentation> getGlobalClientProfiles(KeycloakSession session) {
+        SecurityProfileProvider securityProfile = session.getProvider(SecurityProfileProvider.class);
+        return securityProfile.getDefaultClientProfiles();
+    }
+
+    static List<ClientPolicyRepresentation> getGlobalClientPolicies(KeycloakSession session) {
+        SecurityProfileProvider securityProfile = session.getProvider(SecurityProfileProvider.class);
+        return securityProfile.getDefaultClientPolicies();
+    }
+
     /**
      * Gets existing enabled client policies in a realm.
      * not return null.
      */
     static List<ClientPolicy> getEnabledClientPolicies(KeycloakSession session, RealmModel realm) {
+        // get the global policies defined in the security profile
+        List<ClientPolicyRepresentation> policiesRep = new ArrayList<>(getGlobalClientPolicies(session));
+
         // get existing profiles as json
         String policiesJson = getClientPoliciesJsonString(realm);
-        if (policiesJson == null) {
-            return Collections.emptyList();
+        if (policiesJson != null) {
+            // deserialize existing policies (json -> representation)
+            try {
+                policiesRep.addAll(convertClientPoliciesJsonToRepresentation(policiesJson).getPolicies());
+            } catch (ClientPolicyException e) {
+                logger.warnv("Failed to serialize client policies json string. err={0}, errDetail={1}", e.getError(), e.getErrorDetail());
+                return Collections.emptyList();
+            }
         }
-
-        // deserialize existing policies (json -> representation)
-        ClientPoliciesRepresentation policiesRep = null;
-        try {
-            policiesRep = convertClientPoliciesJsonToRepresentation(policiesJson);
-        } catch (ClientPolicyException e) {
-            logger.warnv("Failed to serialize client policies json string. err={0}, errDetail={1}", e.getError(), e.getErrorDetail());
-            return Collections.emptyList();
-        }
-        if (policiesRep == null || policiesRep.getPolicies() == null) {
+        if (policiesRep.isEmpty()) {
             return Collections.emptyList();
         }
 
         // constructing existing policies (representation -> model)
         List<ClientPolicy> policyList = new ArrayList<>();
-        for (ClientPolicyRepresentation policyRep: policiesRep.getPolicies()) {
+        for (ClientPolicyRepresentation policyRep: policiesRep) {
             // ignore policy without name
             if (policyRep.getName() == null) {
                 logger.warnf("Ignored client policy without name in the realm %s", realm.getName());
@@ -338,11 +421,16 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            ClientPolicyMode mode = policyRep.getMode() == null
+                    ? ClientPolicyMode.DEFAULT
+                    : Enum.valueOf(ClientPolicyMode.class, policyRep.getMode().toUpperCase());
+            policyModel.setMode(mode);
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
                 for (ClientPolicyConditionRepresentation conditionRep : policyRep.getConditions()) {
-                    ClientPolicyConditionProvider provider = getConditionProvider(session, realm, conditionRep.getConditionProviderId(), conditionRep.getConfiguration());
+                    ClientPolicyConditionProvider provider = getConditionProvider(session, realm, conditionRep.getConditionProviderId(),
+                            RawJsonValue.unwrap(JsonNode.class, conditionRep.getConfiguration()));
                     conditions.add(provider);
                 }
             }
@@ -396,6 +484,93 @@ public class ClientPoliciesUtil {
     }
 
     /**
+     * Validates the policies passed with the profiles.
+     * @param session The session
+     * @param proposedPoliciesRepList The policies to validate
+     * @param profiles The already validated profiles used by the policies
+     * @param globalPolicies The global policies defined already validated
+     * @return The validated policies
+     * @throws ClientPolicyException Some error in the policies
+     */
+    static private List<ClientPolicyRepresentation> validatePolicies(KeycloakSession session, List<ClientPolicyRepresentation> proposedPoliciesRepList,
+            List<ClientProfileRepresentation> profiles, List<ClientPolicyRepresentation> globalPolicies) throws ClientPolicyException {
+
+        // empty policies is valid
+        if (proposedPoliciesRepList == null || proposedPoliciesRepList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // check for duplicated names
+        if (proposedPoliciesRepList.size() != proposedPoliciesRepList.stream().map(i->i.getName()).distinct().count()) {
+            throw new ClientPolicyException("proposed client policy name duplicated");
+        }
+
+        // Conflict with any global policy is not allowed
+        Set<String> globalPolicyNames = globalPolicies.stream().map(ClientPolicyRepresentation::getName).collect(Collectors.toSet());
+        for (ClientPolicyRepresentation clientPolicy : proposedPoliciesRepList) {
+            if (globalPolicyNames.contains(clientPolicy.getName())) {
+                throw new ClientPolicyException("Proposed policy name '" + clientPolicy.getName() + "' is duplicated as a global policy");
+            }
+        }
+
+        // construct validated and modified profiles from builtin profiles in JSON file enclosed in keycloak binary.
+        List<ClientPolicyRepresentation> updatingPolicyList = new LinkedList<>();
+
+        Set<String> profileNames = profiles.stream().map(ClientProfileRepresentation::getName).collect(Collectors.toSet());
+
+        for (ClientPolicyRepresentation proposedPolicyRep : proposedPoliciesRepList) {
+            if (proposedPolicyRep.getName() == null) {
+                throw new ClientPolicyException("client policy without name not allowed");
+            }
+
+            ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
+            policyRep.setName(proposedPolicyRep.getName());
+            policyRep.setDescription(proposedPolicyRep.getDescription());
+            policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
+
+            // Check if mode is valid
+            try {
+                if (proposedPolicyRep.getMode() != null) {
+                    Enum.valueOf(ClientPolicyMode.class, proposedPolicyRep.getMode());
+                }
+                policyRep.setMode(proposedPolicyRep.getMode());
+            } catch (IllegalArgumentException iae) {
+                throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " has invalid mode");
+            }
+
+            policyRep.setConditions(new ArrayList<>());
+            if (proposedPolicyRep.getConditions() != null) {
+                for (ClientPolicyConditionRepresentation condition : proposedPolicyRep.getConditions()) {
+                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES) && !isValidCondition(session, condition.getConditionProviderId())) {
+                        throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " contains invalid condition " + condition.getConditionProviderId());
+                    }
+                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES)) {
+                        validateConditionConfig(session, condition);
+                    }
+                    policyRep.getConditions().add(condition);
+                }
+            }
+
+            policyRep.setProfiles(new ArrayList<>());
+            if (proposedPolicyRep.getProfiles() != null) {
+                if (proposedPolicyRep.getProfiles().size() != proposedPolicyRep.getProfiles().stream().distinct().count()) {
+                    throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " contains duplicated profiles");
+                }
+                for (String profile : proposedPolicyRep.getProfiles()) {
+                    if (!profileNames.contains(profile)) {
+                        throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " contains invalid profile " + profile);
+                    }
+                    policyRep.getProfiles().add(profile);
+                }
+            }
+
+            updatingPolicyList.add(policyRep);
+        }
+
+        return updatingPolicyList;
+    }
+
+    /**
      * get validated and modified client policies as representation.
      * it can be constructed by merging proposed client policies with existing client policies.
      * not return null.
@@ -405,73 +580,22 @@ public class ClientPoliciesUtil {
      * @param proposedPoliciesRep
      */
     static ClientPoliciesRepresentation getValidatedClientPoliciesForUpdate(KeycloakSession session, RealmModel realm,
-                                                                                   ClientPoliciesRepresentation proposedPoliciesRep, List<ClientProfileRepresentation> existingGlobalProfiles) throws ClientPolicyException {
+            ClientPoliciesRepresentation proposedPoliciesRep, List<ClientProfileRepresentation> existingGlobalProfiles,
+            List<ClientPolicyRepresentation> existingGlobalPolicies) throws ClientPolicyException {
         if (realm == null) {
             throw new ClientPolicyException("realm not specified.");
         }
 
-        // no policy contained (it is valid)
-        List<ClientPolicyRepresentation> proposedPolicyRepList = proposedPoliciesRep.getPolicies();
-        if (proposedPolicyRepList == null || proposedPolicyRepList.isEmpty()) {
-            proposedPolicyRepList = new ArrayList<>();
-            proposedPoliciesRep.setPolicies(new ArrayList<>());
-         }
-
-        // Policy without name not allowed
-        if (proposedPolicyRepList.stream().anyMatch(clientPolicy -> clientPolicy.getName() == null || clientPolicy.getName().isEmpty())) {
-            throw new ClientPolicyException("proposed client policy name missing.");
+        // validate global profiles not changed
+        if (isGlobalPoliciesUpdated(proposedPoliciesRep.getGlobalPolicies(), existingGlobalPolicies)) {
+            throw new ClientPolicyException("Global policies cannot be updated");
         }
 
-        // duplicated policy name is not allowed.
-        if (proposedPolicyRepList.size() != proposedPolicyRepList.stream().map(i->i.getName()).distinct().count()) {
-            throw new ClientPolicyException("proposed client policy name duplicated.");
-        }
-
-        // construct updating policies from existing policies and proposed policies
         ClientPoliciesRepresentation updatingPoliciesRep = new ClientPoliciesRepresentation();
-        updatingPoliciesRep.setPolicies(new ArrayList<>());
-        List<ClientPolicyRepresentation> updatingPoliciesList = updatingPoliciesRep.getPolicies();
 
-        for (ClientPolicyRepresentation proposedPolicyRep : proposedPoliciesRep.getPolicies()) {
-            // newly proposed builtin policy not allowed because builtin policy cannot added/deleted/modified.
-            Boolean enabled = (proposedPolicyRep.isEnabled() != null) ? proposedPolicyRep.isEnabled() : Boolean.FALSE;
-
-            // basically, proposed policy totally overrides existing policy except for enabled field..
-            ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
-            policyRep.setName(proposedPolicyRep.getName());
-            policyRep.setDescription(proposedPolicyRep.getDescription());
-            policyRep.setEnabled(enabled);
-
-            policyRep.setConditions(new ArrayList<>());
-            if (proposedPolicyRep.getConditions() != null) {
-                for (ClientPolicyConditionRepresentation conditionRep : proposedPolicyRep.getConditions()) {
-                    if (!isValidCondition(session, conditionRep.getConditionProviderId())) {
-                        throw new ClientPolicyException("the proposed client policy contains the condition with its invalid configuration.");
-                    }
-                    policyRep.getConditions().add(conditionRep);
-                }
-            }
-
-            Set<String> existingProfileNames = existingGlobalProfiles.stream().map(ClientProfileRepresentation::getName).collect(Collectors.toSet());
-            ClientProfilesRepresentation reps = getClientProfilesRepresentation(session, realm);
-            policyRep.setProfiles(new ArrayList<>());
-            if (reps.getProfiles() != null) {
-                existingProfileNames.addAll(reps.getProfiles().stream()
-                        .map(ClientProfileRepresentation::getName)
-                        .collect(Collectors.toSet()));
-            }
-            if (proposedPolicyRep.getProfiles() != null) {
-                for (String profileName : proposedPolicyRep.getProfiles()) {
-                    if (!existingProfileNames.contains(profileName)) {
-                        logger.warnf("Client policy %s referred not existing profile %s");
-                        throw new ClientPolicyException("referring not existing client profile not allowed.");
-                    }
-                }
-                proposedPolicyRep.getProfiles().stream().distinct().forEach(profileName->policyRep.getProfiles().add(profileName));
-            }
-
-            updatingPoliciesList.add(policyRep);
-        }
+        List<ClientProfileRepresentation> allProfiles = new ArrayList<>(getClientProfilesRepresentation(session, realm).getProfiles());
+        allProfiles.addAll(existingGlobalProfiles);
+        updatingPoliciesRep.setPolicies(validatePolicies(session, proposedPoliciesRep.getPolicies(), allProfiles, existingGlobalPolicies));
 
         return updatingPoliciesRep;
     }
@@ -487,6 +611,30 @@ public class ClientPoliciesUtil {
         }
         logger.warnv("no condition provider found. providerId = {0}", conditionProviderId);
         return false;
+    }
+
+    private static void validateConditionConfig(KeycloakSession session, ClientPolicyConditionRepresentation conditionRep) throws ClientPolicyException {
+        ClientPolicyConditionProviderFactory factory = getClientPolicyConditionFactory(session, conditionRep.getConditionProviderId());
+        try {
+            factory.validateConfiguration(session, session.getContext().getRealm(), conditionRep);
+        }
+        catch (ClientPolicyException e) {
+            throw new ClientPolicyException("Invalid " + conditionRep.getConditionProviderId() + " configuration - " + e.getMessage());
+        }
+    }
+
+    private static ClientPolicyConditionProviderFactory getClientPolicyConditionFactory(KeycloakSession session, String providerId) {
+        Class<? extends Provider> provider = session.getProviderClass(ClientPolicyConditionProvider.class.getName());
+        if (provider == null) {
+            throw new IllegalArgumentException("Invalid provider type '" + ClientPolicyConditionProvider.class.getName() + "'");
+        }
+
+        ProviderFactory<? extends Provider> f = session.getKeycloakSessionFactory().getProviderFactory(provider, providerId);
+        if (f == null) {
+            throw new IllegalArgumentException("No such provider '" + providerId + "'");
+        }
+
+        return (ClientPolicyConditionProviderFactory) f;
     }
 
     static String getClientProfilesJsonString(RealmModel realm) {

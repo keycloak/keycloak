@@ -17,6 +17,8 @@
 
 package org.keycloak.http;
 
+import jakarta.ws.rs.core.NewCookie;
+
 /**
  * <p>Represents an out coming HTTP response.
  *
@@ -24,15 +26,24 @@ package org.keycloak.http;
  */
 public interface HttpResponse {
     /**
-     * Gets a status code.
+     * Gets the current status code.
+     *
+     * <p><strong>Warning:</strong> this will typically not be the actual status returned as that will be managed by JAX-RS based upon the return value or exception from the endpoint method.
+     *
+     * @deprecated This method is not useful for JAX-RS resource endpoints.
      */
+    @Deprecated
     int getStatus();
 
     /**
      * Sets a status code.
      *
+     * <p><strong>Warning:</strong> this value is silently overwritten by the JAX-RS runtime based upon the return value or exception from the endpoint method. Please use a JAX-RS compatible way of setting the status instead.
+     *
      * @param statusCode the status code
+     * @deprecated This method is not useful for JAX-RS resource endpoints.
      */
+    @Deprecated
     void setStatus(int statusCode);
 
     /**
@@ -56,14 +67,6 @@ public interface HttpResponse {
      *
      * @param cookie the cookie
      */
-    void setCookieIfAbsent(HttpCookie cookie);
+    void setCookieIfAbsent(NewCookie cookie);
 
-    /**
-     * Adding cookies at the end of the transaction helps when retrying a transaction might add the
-     * cookie multiple times. In some scenarios it must not be added at the end of the transaction,
-     * as at that time the response has already been sent to the caller ("committed"), so the code
-     * needs to make a choice. As retrying transactions is the exception, adding cookies at the end
-     * of the transaction is also the exception and needs to be switched on where necessary.
-     */
-    void setWriteCookiesOnTransactionComplete();
 }

@@ -16,7 +16,7 @@ describe("Authentication management", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
-    const realmName = faker.internet.userName().toLowerCase();
+    const realmName = faker.internet.username().toLowerCase();
     await kcAdminClient.realms.create({
       id: realmName,
       realm: realmName,
@@ -133,19 +133,79 @@ describe("Authentication management", () => {
       );
     });
 
+    it("should fetch config description for required action", async () => {
+      const configDescription =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfigDescription(
+          {
+            alias: "UPDATE_PASSWORD",
+          },
+        );
+
+      expect(configDescription).is.ok;
+      expect(configDescription.properties).is.ok;
+    });
+
+    it("should fetch required action config for update password", async () => {
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.undefined; // default max_auth_age for update password
+    });
+
+    it("should update required action config for update password", async () => {
+      await kcAdminClient.authenticationManagement.updateRequiredActionConfig(
+        {
+          alias: "UPDATE_PASSWORD",
+        },
+        {
+          config: {
+            max_auth_age: "301",
+          },
+        },
+      );
+
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.eq("301"); // updated value max_auth_age for update password
+    });
+
+    it("should reset required action config for update password", async () => {
+      await kcAdminClient.authenticationManagement.removeRequiredActionConfig({
+        alias: "UPDATE_PASSWORD",
+      });
+
+      const actionConfig =
+        await kcAdminClient.authenticationManagement.getRequiredActionConfig({
+          alias: "UPDATE_PASSWORD",
+        });
+
+      expect(actionConfig).is.ok;
+      expect(actionConfig.config).is.ok;
+      expect(actionConfig.config!["max_auth_age"]).to.be.undefined; // default max_auth_age for update password
+    });
+
     it("should get client authenticator providers", async () => {
       const authenticationProviders =
         await kcAdminClient.authenticationManagement.getClientAuthenticatorProviders();
 
       expect(authenticationProviders).is.ok;
-      expect(authenticationProviders.length).to.be.equal(4);
+      expect(authenticationProviders.length).to.be.equal(5);
     });
 
     it("should fetch form providers", async () => {
       const formProviders =
         await kcAdminClient.authenticationManagement.getFormActionProviders();
       expect(formProviders).is.ok;
-      expect(formProviders.length).to.be.eq(4);
+      expect(formProviders.length).to.be.eq(5);
     });
 
     it("should fetch authenticator providers", async () => {
@@ -219,11 +279,13 @@ describe("Authentication management", () => {
       const flow = flows.find((f) => f.alias === flowName)!;
       const description = "Updated description";
       flow.description = description;
-      const updatedFlow =
-        await kcAdminClient.authenticationManagement.updateFlow(
-          { flowId: flow.id! },
-          flow,
-        );
+      await kcAdminClient.authenticationManagement.updateFlow(
+        { flowId: flow.id! },
+        flow,
+      );
+      const updatedFlow = await kcAdminClient.authenticationManagement.getFlow({
+        flowId: flow.id!,
+      });
 
       expect(updatedFlow.description).to.be.eq(description);
     });
@@ -391,7 +453,7 @@ describe("Authentication management", () => {
           id: config.id!,
         });
         fail("should not find deleted config");
-      } catch (error) {
+      } catch {
         // ignore
       }
     });

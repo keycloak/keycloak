@@ -20,7 +20,7 @@ package org.keycloak.events.log;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
@@ -28,6 +28,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,10 +44,11 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
     private Logger.Level errorLevel;
     private boolean sanitize;
     private Character quotes;
+    private boolean includeRepresentation;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel, quotes, sanitize);
+        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel, quotes, sanitize, includeRepresentation);
     }
 
     @Override
@@ -59,6 +62,7 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
             quotesString = "\"";
         }
         quotes = quotesString.equals("none")? null : quotesString.charAt(0);
+        includeRepresentation = config.getBoolean("include-representation", false);
     }
 
     @Override
@@ -108,6 +112,15 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
                 .type("string")
                 .helpText("The quotes to use for values, it should be one character like \" or '. Use \"none\" if quotes are not needed.")
                 .defaultValue("\"")
+                .add()
+                .property()
+                .name("include-representation")
+                .type("boolean")
+                .helpText("""
+                          When "true" the "representation" field with the JSON admin object is also added to the message.
+                          The realm should be also configured to include representation for the admin events.
+                          """)
+                .defaultValue("false")
                 .add()
                 .build();
     }

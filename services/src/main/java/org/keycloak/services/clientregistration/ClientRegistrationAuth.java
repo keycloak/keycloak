@@ -17,10 +17,20 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.jboss.resteasy.spi.Failure;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -31,10 +41,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
@@ -44,12 +53,11 @@ import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,11 +69,12 @@ public class ClientRegistrationAuth {
     private final EventBuilder event;
 
     private RealmModel realm;
-    private JsonWebToken jwt;
+    private AccessToken jwt;
     private ClientInitialAccessModel initialAccessModel;
     private String kid;
     private String token;
     private String endpoint;
+    private boolean initialized;
 
     public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event, String endpoint) {
         this.session = session;
@@ -74,7 +83,11 @@ public class ClientRegistrationAuth {
         this.endpoint = endpoint;
     }
 
-    private void init() {
+    void init() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
         realm = session.getContext().getRealm();
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -82,12 +95,24 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        String[] split = authorizationHeader.split(" ");
-        if (!split[0].equalsIgnoreCase("bearer")) {
+        int indexOfSpace = authorizationHeader.indexOf(' ');
+
+        if (indexOfSpace <= 0) {
             return;
         }
 
-        token = split[1];
+        String typeString = authorizationHeader.substring(0, indexOfSpace);
+        String tokenString = authorizationHeader.substring(indexOfSpace + 1);
+
+        if (!typeString.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_BEARER)) {
+            return;
+        }
+
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
+            return;
+        }
+
+        token = tokenString;
 
         ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token);
         if (tokenVerification.getError() != null) {
@@ -112,11 +137,11 @@ public class ClientRegistrationAuth {
         return kid;
     }
 
-    public JsonWebToken getJwt() {
+    public AccessToken getJwt() {
         return jwt;
     }
 
-    private boolean isBearerToken() {
+    boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
@@ -126,6 +151,12 @@ public class ClientRegistrationAuth {
 
     public boolean isRegistrationAccessToken() {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
+    }
+
+    public boolean isViewOnly() {
+        return isBearerToken()
+                && hasRole(AdminRoles.VIEW_CLIENTS)
+                && !hasRole(AdminRoles.MANAGE_CLIENTS);
     }
 
     public RegistrationAuth requireCreate(ClientRegistrationContext context) {
@@ -155,8 +186,14 @@ public class ClientRegistrationAuth {
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientRegisterContext(context, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRegister(context, registrationAuth);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
 
         return registrationAuth;
@@ -186,7 +223,7 @@ public class ClientRegistrationAuth {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
                 checkClientProtocol(client);
                 authenticated = true;
                 authType = getRegistrationAuth();
@@ -202,8 +239,14 @@ public class ClientRegistrationAuth {
             try {
                 session.clientPolicy().triggerOnEvent(new DynamicClientViewContext(session, client, jwt, realm));
                 ClientRegistrationPolicyManager.triggerBeforeView(session, provider, authType, client);
-            } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+            } catch (ClientRegistrationPolicyException crpe) {
                 throw forbidden(crpe.getMessage());
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw forbidden(cpe.getMessage());
             }
         } else {
             throw unauthorized("Not authorized to view client. Not valid token or client credentials provided.");
@@ -215,14 +258,31 @@ public class ClientRegistrationAuth {
         return RegistrationAuth.fromString(str);
     }
 
+    public RegistrationAuth resolveRegistrationAuth() {
+        init();
+        if (jwt == null) {
+            return RegistrationAuth.ANONYMOUS;
+        }
+        if (isRegistrationAccessToken()) {
+            return getRegistrationAuth();
+        }
+        return RegistrationAuth.AUTHENTICATED;
+    }
+
     public RegistrationAuth requireUpdate(ClientRegistrationContext context, ClientModel client) {
         RegistrationAuth regAuth = requireUpdateAuth(client);
 
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdateContext(context, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeUpdate(context, regAuth, client);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
 
         return regAuth;
@@ -234,8 +294,14 @@ public class ClientRegistrationAuth {
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientUnregisterContext(session, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRemove(session, provider, chainType, client);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
     }
 
@@ -269,7 +335,8 @@ public class ClientRegistrationAuth {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 return getRegistrationAuth();
             }
         }
@@ -283,68 +350,49 @@ public class ClientRegistrationAuth {
 
     private boolean hasRole(String... roles) {
         try {
-            if (jwt.getIssuedFor().equals(Constants.ADMIN_CLI_CLIENT_ID)
-                    || jwt.getIssuedFor().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
-                return hasRoleInModel(roles);
+            boolean lightweight = AuthenticationManager.resolveLightweightAccessTokenRoles(session, jwt, session.getContext().getRealm());
 
-            } else {
-                return hasRoleInToken(roles);
+            if (!lightweight) {
+                // For lightweight access token, the roles are already considered just for those, which are present on UserModel
+                if (isBearerToken()) {
+                    String clientId = getMgmtClientId();
+                    AccessToken.Access mgmtClientAccess = jwt.getResourceAccess(clientId);
+                    if (mgmtClientAccess != null) {
+                        ClientModel client = realm.getClientByClientId(jwt.getIssuedFor());
+                        if (client == null) return false;
+                        UserSessionModel userSession = UserSessionUtil.findValidSessionForAccessToken(session,realm, jwt, client, (invalidUserSession -> {})).getUserSession();
+                        if (userSession == null) return false;
+
+                        removeTransientAdminRoles(realm, clientId, userSession.getUser(), mgmtClientAccess);
+                    }
+                }
             }
+
+            return hasRoleInToken(roles);
         } catch (Throwable t) {
             return false;
         }
     }
 
-    private boolean hasRoleInModel(String[] roles) {
-        ClientModel roleNamespace;
-        UserModel user = session.users().getUserById(realm, jwt.getSubject());
-        if (user == null) {
+    private boolean hasRoleInToken(String[] role) {
+        Map<String, AccessToken.Access> resourceAccess = jwt.getResourceAccess();
+        if (resourceAccess == null) {
             return false;
         }
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            roleNamespace = realm.getMasterAdminClient();
-        } else {
-            roleNamespace = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-        }
-        for (String role : roles) {
-            RoleModel roleModel = roleNamespace.getRole(role);
-            if (user.hasRole(roleModel)) return true;
-        }
-        return false;
+
+        String clientId = getMgmtClientId();
+
+        Set<String> roles = Optional.ofNullable(resourceAccess.get(clientId))
+                .map(AccessToken.Access::getRoles)
+                .orElse(Collections.emptySet());
+
+        return Arrays.stream(role).anyMatch(roles::contains);
     }
 
-    private boolean hasRoleInToken(String[] role) {
-        Map<String, Object> otherClaims = jwt.getOtherClaims();
-        if (otherClaims != null) {
-            Map<String, Map<String, List<String>>> resourceAccess = (Map<String, Map<String, List<String>>>) jwt.getOtherClaims().get("resource_access");
-            if (resourceAccess == null) {
-                return false;
-            }
-
-            List<String> roles = null;
-
-            Map<String, List<String>> map;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
-            } else {
-                map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
-            }
-
-            if (map != null) {
-                roles = map.get("roles");
-            }
-
-            if (roles == null) {
-                return false;
-            }
-
-            for (String r : role) {
-                if (roles.contains(r)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    private String getMgmtClientId() {
+        return realm.getName().equals(Config.getAdminRealm())
+                ? realm.getMasterAdminClient().getClientId()
+                : Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
     private boolean authenticatePublicClient(ClientModel client) {
@@ -380,21 +428,21 @@ public class ClientRegistrationAuth {
         return true;
     }
 
-    private Failure unauthorized(String errorDescription) {
+    private WebApplicationException unauthorized(String errorDescription) {
         event.detail(Details.REASON, errorDescription).error(Errors.INVALID_TOKEN);
         throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, errorDescription, Response.Status.UNAUTHORIZED);
     }
 
-    private Failure forbidden() {
+    private WebApplicationException forbidden() {
         return forbidden("Forbidden");
     }
 
-    private Failure forbidden(String errorDescription) {
+    private WebApplicationException forbidden(String errorDescription) {
         event.error(Errors.NOT_ALLOWED);
         throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, errorDescription, Response.Status.FORBIDDEN);
     }
 
-    private Failure notFound() {
+    private WebApplicationException notFound() {
         event.error(Errors.CLIENT_NOT_FOUND);
         throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.NOT_FOUND);
     }

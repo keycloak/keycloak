@@ -1,30 +1,25 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import {
+  HelpItem,
+  TextControl,
+  SelectControl,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
+  TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
-
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 type AdvancedSettingsProps = {
@@ -41,53 +36,113 @@ export const AdvancedSettings = ({
   hasConfigureAccess,
 }: AdvancedSettingsProps) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
-  const { realm: realmName } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
 
-  const isFeatureEnabled = useIsFeatureEnabled();
-  const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
+  const { control, watch, register } = useFormContext();
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    setRealm,
+  const acrUriMapRealm = realm.attributes?.["acr.uri.map"]
+    ? Object.values(JSON.parse(realm.attributes["acr.uri.map"]))
+    : [];
+
+  const acrLoAMapClient = watch(
+    convertAttributeNameToForm<FormFields>("attributes.acr.loa.map"),
     [],
   );
 
-  const { control } = useFormContext();
+  const validAcrLoAOptions = () =>
+    acrLoAMapClient.length > 0
+      ? acrLoAMapClient.map((i: any) => i?.key).filter((i: any) => i !== "")
+      : acrUriMapRealm;
+
+  const acrLoAMapNamesOptions = () => [
+    { key: "", value: t("choose") },
+    ...validAcrLoAOptions().map((i: any) => ({ key: i, value: i })),
+  ];
+
+  const isFeatureEnabled = useIsFeatureEnabled();
+
   return (
     <FormAccess
       role="manage-realm"
       fineGrainedAccess={hasConfigureAccess}
       isHorizontal
     >
-      {protocol !== "openid-connect" && (
-        <FormGroup
-          label={t("assertionLifespan")}
-          fieldId="assertionLifespan"
-          labelIcon={
-            <HelpItem
-              helpText={t("assertionLifespanHelp")}
-              fieldLabelId="assertionLifespan"
-            />
-          }
-        >
-          <Controller
-            name={convertAttributeNameToForm<FormFields>(
-              "attributes.saml.assertion.lifespan",
-            )}
-            defaultValue=""
-            control={control}
-            render={({ field }) => (
-              <TimeSelector
-                units={["minute", "day", "hour"]}
-                value={field.value}
-                onChange={field.onChange}
+      {protocol === "saml" && (
+        <>
+          <FormGroup
+            label={t("assertionLifespan")}
+            fieldId="assertionLifespan"
+            labelIcon={
+              <HelpItem
+                helpText={t("assertionLifespanHelp")}
+                fieldLabelId="assertionLifespan"
               />
-            )}
-          />
-        </FormGroup>
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.saml.assertion.lifespan",
+              )}
+              defaultValue=""
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  units={["minute", "day", "hour"]}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </FormGroup>
+          {isFeatureEnabled(Feature.StepUpAuthenticationSaml) && (
+            <>
+              <FormGroup
+                label={t("acrToLoAMapping")}
+                fieldId="acrToLoAMapping"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("acrToLoAMappingSamlHelp")}
+                    fieldLabelId="acrToLoAMapping"
+                  />
+                }
+              >
+                <KeyValueInput
+                  label={t("acrToLoAMapping")}
+                  name={convertAttributeNameToForm("attributes.acr.loa.map")}
+                  keyLabel="uri"
+                  valueLabel="loa"
+                  ValueComponent={(props) => (
+                    <TextInput
+                      placeholder={t("loaPlaceholder")}
+                      aria-label={t("loa")}
+                      validated={props.error ? "error" : "default"}
+                      {...register(props.name, {
+                        required: true,
+                        validate: (v: string) => Number.isInteger(parseInt(v)),
+                      })}
+                    />
+                  )}
+                />
+              </FormGroup>
+              <SelectControl
+                name={convertAttributeNameToForm(
+                  "attributes.minimum.acr.value",
+                )}
+                label={t("minimumACRValue")}
+                labelIcon={t("minimumACRValueSamlHelp")}
+                controller={{
+                  defaultValue: "",
+                  rules: {
+                    validate: (v: string) =>
+                      v === "" || validAcrLoAOptions().includes(v),
+                  },
+                }}
+                options={acrLoAMapNamesOptions()}
+              />
+            </>
+          )}
+        </>
       )}
       {protocol === "openid-connect" && (
         <>
@@ -96,176 +151,77 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.access.token.lifespan",
             )}
-            defaultValue={realm?.accessTokenLifespan}
+            defaultValue={realm.accessTokenLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionIdle"
             name={convertAttributeNameToForm(
               "attributes.client.session.idle.timeout",
             )}
-            defaultValue={realm?.clientSessionIdleTimeout}
+            defaultValue={realm.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionMax"
             name={convertAttributeNameToForm(
               "attributes.client.session.max.lifespan",
             )}
-            defaultValue={realm?.clientSessionMaxLifespan}
+            defaultValue={realm.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientOfflineSessionIdle"
             name={convertAttributeNameToForm(
               "attributes.client.offline.session.idle.timeout",
             )}
-            defaultValue={realm?.offlineSessionIdleTimeout}
+            defaultValue={realm.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
 
-          <TokenLifespan
-            id="clientOfflineSessionMax"
-            name={convertAttributeNameToForm(
-              "attributes.client.offline.session.max.lifespan",
-            )}
-            defaultValue={
-              realm?.offlineSessionMaxLifespanEnabled
-                ? realm.offlineSessionMaxLifespan
-                : undefined
-            }
-            units={["minute", "day", "hour"]}
-          />
-
-          <FormGroup
-            label={t("oAuthMutual")}
-            fieldId="oAuthMutual"
-            hasNoPaddingTop
-            labelIcon={
-              <HelpItem
-                helpText={t("oAuthMutualHelp")}
-                fieldLabelId="oAuthMutual"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.tls.client.certificate.bound.access.tokens",
+          {realm.offlineSessionMaxLifespanEnabled && (
+            <TokenLifespan
+              id="clientOfflineSessionMax"
+              name={convertAttributeNameToForm(
+                "attributes.client.offline.session.max.lifespan",
               )}
-              defaultValue={false}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="oAuthMutual-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
-                  aria-label={t("oAuthMutual")}
-                />
-              )}
+              defaultValue={realm.offlineSessionMaxLifespan}
+              units={["minute", "day", "hour"]}
             />
-          </FormGroup>
-          {isDPoPEnabled && (
-            <FormGroup
-              label={t("oAuthDPoP")}
-              fieldId="oAuthDPoP"
-              hasNoPaddingTop
-              labelIcon={
-                <HelpItem
-                  helpText={t("oAuthDPoPHelp")}
-                  fieldLabelId="oAuthDPoP"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.dpop.bound.access.tokens",
-                )}
-                defaultValue={false}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="oAuthDPoP-switch"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange("" + value)}
-                    aria-label={t("oAuthDPoP")}
-                  />
-                )}
-              />
-            </FormGroup>
           )}
-          <FormGroup
-            label={t("keyForCodeExchange")}
-            fieldId="keyForCodeExchange"
-            hasNoPaddingTop
-            labelIcon={
-              <HelpItem
-                helpText={t("keyForCodeExchangeHelp")}
-                fieldLabelId="keyForCodeExchange"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.pkce.code.challenge.method",
-              )}
-              defaultValue=""
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="keyForCodeExchange"
-                  variant={SelectVariant.single}
-                  onToggle={setOpen}
-                  isOpen={open}
-                  onSelect={(_, value) => {
-                    field.onChange(value);
-                    setOpen(false);
-                  }}
-                  selections={[field.value || t("choose")]}
-                >
-                  {["", "S256", "plain"].map((v) => (
-                    <SelectOption key={v} value={v}>
-                      {v || t("choose")}
-                    </SelectOption>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.tls.client.certificate.bound.access.tokens",
+            )}
+            label={t("oAuthMutual")}
+            labelIcon={t("oAuthMutualHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.require.pushed.authorization.requests",
+            )}
             label={t("pushedAuthorizationRequestRequired")}
-            fieldId="pushedAuthorizationRequestRequired"
-            labelIcon={
-              <HelpItem
-                helpText={t("pushedAuthorizationRequestRequiredHelp")}
-                fieldLabelId="pushedAuthorizationRequestRequired"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.require.pushed.authorization.requests",
-              )}
-              defaultValue="false"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="pushedAuthorizationRequestRequired"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
-                  aria-label={t("pushedAuthorizationRequestRequired")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("pushedAuthorizationRequestRequiredHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.use.lightweight.access.token.enabled",
+            )}
+            label={t("lightweightAccessToken")}
+            labelIcon={t("lightweightAccessTokenHelp")}
+            stringify
+          />
+
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.introspection.response.allow.jwt.claim.enabled",
+            )}
+            label={t("supportJwtClaimInIntrospectionResponse")}
+            labelIcon={t("supportJwtClaimInIntrospectionResponseHelp")}
+            stringify
+          />
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
@@ -279,6 +235,19 @@ export const AdvancedSettings = ({
             <KeyValueInput
               label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
+              keyLabel="acr"
+              valueLabel="loa"
+              ValueComponent={(props) => (
+                <TextInput
+                  placeholder={t("loaPlaceholder")}
+                  aria-label={t("loa")}
+                  validated={props.error ? "error" : "default"}
+                  {...register(props.name, {
+                    required: true,
+                    validate: (v: string) => Number.isInteger(parseInt(v)),
+                  })}
+                />
+              )}
             />
           </FormGroup>
           <FormGroup
@@ -298,6 +267,12 @@ export const AdvancedSettings = ({
               stringify
             />
           </FormGroup>
+          <TextControl
+            type="text"
+            name={convertAttributeNameToForm("attributes.minimum.acr.value")}
+            label={t("minimumACRValue")}
+            labelIcon={t("minimumACRValueHelp")}
+          />
         </>
       )}
       <ActionGroup>

@@ -17,6 +17,8 @@
 package org.keycloak.dom.xmlsec.w3.xmlenc;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -51,6 +53,8 @@ public class EncryptionMethodType {
         protected BigInteger keySize;
         protected byte[] OAEPparams;
 
+        protected List<Object> any = new ArrayList<>();
+
         public EncryptionMethod(BigInteger bigInteger, byte[] oAEPparams) {
             this.keySize = bigInteger;
             OAEPparams = oAEPparams;
@@ -76,6 +80,14 @@ public class EncryptionMethodType {
         public void setOAEPparams(byte[] OAEPparams) {
             this.OAEPparams = OAEPparams;
         }
+
+        public List<Object> getAny() {
+            return any;
+        }
+
+        public void addAny(Object e) {
+            this.any.add(e);
+        }
     }
 
     public EncryptionMethodType(String algo) {
@@ -98,4 +110,5 @@ public class EncryptionMethodType {
     public String getAlgorithm() {
         return algorithm;
     }
+
 }

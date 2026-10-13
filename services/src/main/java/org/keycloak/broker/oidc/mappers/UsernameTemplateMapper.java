@@ -17,6 +17,17 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -34,25 +45,15 @@ import org.keycloak.social.github.GitHubIdentityProviderFactory;
 import org.keycloak.social.gitlab.GitLabIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.instagram.InstagramIdentityProviderFactory;
-import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInOIDCIdentityProviderFactory;
 import org.keycloak.social.microsoft.MicrosoftIdentityProviderFactory;
-import org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory;
 import org.keycloak.social.openshift.OpenshiftV4IdentityProviderFactory;
 import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.jboss.logging.Logger;
+
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGET;
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGETS;
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TRANSFORMERS;
@@ -64,6 +65,8 @@ import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.getTarget;
  */
 public class UsernameTemplateMapper extends AbstractClaimMapper {
 
+    private static final Logger logger = Logger.getLogger(UsernameTemplateMapper.class);
+
     public static final String[] COMPATIBLE_PROVIDERS = {
             KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
             OIDCIdentityProviderFactory.PROVIDER_ID,
@@ -73,10 +76,8 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             GitLabIdentityProviderFactory.PROVIDER_ID,
             GoogleIdentityProviderFactory.PROVIDER_ID,
             InstagramIdentityProviderFactory.PROVIDER_ID,
-            LinkedInIdentityProviderFactory.PROVIDER_ID,
             LinkedInOIDCIdentityProviderFactory.PROVIDER_ID,
             MicrosoftIdentityProviderFactory.PROVIDER_ID,
-            OpenshiftV3IdentityProviderFactory.PROVIDER_ID,
             OpenshiftV4IdentityProviderFactory.PROVIDER_ID,
             PayPalIdentityProviderFactory.PROVIDER_ID,
             StackoverflowIdentityProviderFactory.PROVIDER_ID,
@@ -165,6 +166,7 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
         String template = mapperModel.getConfig().get(TEMPLATE);
         Matcher m = SUBSTITUTION.matcher(template);
         StringBuffer sb = new StringBuffer();
+        boolean hasUnresolvedVariable = false;
         while (m.find()) {
             String variable = m.group(1);
             UnaryOperator<String> transformer = Optional.ofNullable(m.group(2)).map(TRANSFORMERS::get).orElse(UnaryOperator.identity());
@@ -177,12 +179,15 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
                 String name = variable.substring("CLAIM.".length());
                 Object value = AbstractClaimMapper.getClaimValue(context, name);
                 if (value == null) {
-                    value = "";
-                } else if (value instanceof Collection && ((Collection<?>) value).size() == 1) {
-                    // In case the value is list with single value, it might be preferred to avoid converting whole collection toString, but rather use value like "foo" instead of "[foo]"
-                    value = ((Collection<?>) value).iterator().next();
+                    hasUnresolvedVariable = true;
+                    m.appendReplacement(sb, "");
+                } else {
+                    if (value instanceof Collection && ((Collection<?>) value).size() == 1) {
+                        // In case the value is list with single value, it might be preferred to avoid converting whole collection toString, but rather use value like "foo" instead of "[foo]"
+                        value = ((Collection<?>) value).iterator().next();
+                    }
+                    m.appendReplacement(sb, transformer.apply(value.toString()));
                 }
-                m.appendReplacement(sb, transformer.apply(value.toString()));
             } else {
                 m.appendReplacement(sb, m.group(1));
             }
@@ -190,8 +195,13 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
         }
         m.appendTail(sb);
 
+        if (hasUnresolvedVariable) {
+            logger.warnf("Username template '%s' for identity provider '%s' contains unresolved claims. Check that the identity provider is sending the expected claims.",
+                    template, context.getIdpConfig().getAlias());
+        }
+
         Target t = getTarget(mapperModel.getConfig().get(TARGET));
-        t.set(context, sb.toString());
+        t.set(context, hasUnresolvedVariable ? "" : sb.toString());
     }
 
     @Override

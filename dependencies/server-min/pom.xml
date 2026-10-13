@@ -28,7 +28,7 @@
 	<artifactId>keycloak-dependencies-server-min</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Dependencies Server Min</name>
-	<description />
+    <description>Keycloak Dependencies Server Min</description>
 
     <dependencies>
         <dependency>
@@ -62,10 +62,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
-        </dependency>
-         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter-jar</artifactId>
         </dependency>
 
         <!-- forms -->

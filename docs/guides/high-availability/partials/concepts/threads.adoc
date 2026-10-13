@@ -1,0 +1,36 @@
+[#${parent}-quarkus-executor-pool]
+=== Quarkus executor pool
+
+{project_name} requests, as well as blocking probes, are handled by an executor pool. 
+It has a default maximum size of 50 or more threads depending on the available CPU cores.
+Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
+{project_name} allows configuring the maximum thread pool size by the link:{links_server_all-config_url}?q=http-pool-max-threads[`http-pool-max-threads`] configuration option.
+
+[#${parent}-load-shedding]
+=== Load Shedding
+
+By default, {project_name} will queue all incoming requests infinitely, even if the request processing stalls.
+This will use additional memory in the Pod, can exhaust resources in the load balancers, and the requests will eventually time out on the client side without the client knowing if the request has been processed.
+To limit the number of queued requests in {project_name}, set an additional Quarkus configuration option.
+
+Configure `http-max-queued-requests` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded.
+Assuming a {project_name} Pod processes around 200 requests per second, a queue of 1000 would lead to maximum waiting times of around 5 seconds.
+
+When this setting is active, requests that exceed the number of queued requests will return with an HTTP 503 error.
+{project_name} logs the error message in its log.
+
+[#${parent}-probes]
+=== Probes
+
+{project_name}'s liveness probe is non-blocking to avoid a restart of a Pod under a high load.
+
+// Developer's note: See KeycloakReadyHealthCheck for the details of the blocking/non-blocking behavior
+The overall health probe and the readiness probe can in some cases block to check the connection to the database, so they might fail under a high load.
+Due to this, a Pod can become non-ready under a high load.
+
+[#${parent}-os-resources]
+=== OS Resources
+
+In order for Java to create threads, when running on Linux it needs to have file handles available.
+Therefore, the number of open files (as retrieved as `ulimit -n` on Linux) need to provide head-space for {project_name} to increase the number of threads needed.
+Each thread will also consume memory, and the container memory limits need to be set to a value that allows for this or the Pod will be killed by {kubernetes}.

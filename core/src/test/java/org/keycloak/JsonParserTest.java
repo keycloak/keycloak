@@ -17,21 +17,6 @@
 
 package org.keycloak;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.representations.ClaimsRepresentation;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
-import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
-import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
-import org.keycloak.representations.idm.ClientPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -40,6 +25,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.representations.ClaimsRepresentation;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -95,30 +95,6 @@ public class JsonParserTest {
         nested = (Map<String, String>)test.getOtherClaims().get("nested");
         Assert.assertNotNull(nested);
         Assert.assertNotNull(nested.get("foo"));
-    }
-
-    @Test
-    public void testParsingSystemProps() throws IOException {
-        System.setProperty("my.host", "foo");
-        System.setProperty("con.pool.size", "200");
-        System.setProperty("allow.any.hostname", "true");
-        System.setProperty("socket.timeout.millis", "6000");
-        System.setProperty("connection.timeout.millis", "7000");
-        System.setProperty("connection.ttl.millis", "500");
-
-        InputStream is = getClass().getClassLoader().getResourceAsStream("keycloak.json");
-
-        AdapterConfig config = JsonSerialization.readValue(is, AdapterConfig.class, true);
-        Assert.assertEquals("http://foo:8080/auth", config.getAuthServerUrl());
-        Assert.assertEquals("external", config.getSslRequired());
-        Assert.assertEquals("angular-product${non.existing}", config.getResource());
-        Assert.assertTrue(config.isPublicClient());
-        Assert.assertTrue(config.isAllowAnyHostname());
-        Assert.assertEquals(100, config.getCorsMaxAge());
-        Assert.assertEquals(200, config.getConnectionPoolSize());
-        Assert.assertEquals(6000L, config.getSocketTimeout());
-        Assert.assertEquals(7000L, config.getConnectionTimeout());
-        Assert.assertEquals(500L, config.getConnectionTTL());
     }
 
     static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");

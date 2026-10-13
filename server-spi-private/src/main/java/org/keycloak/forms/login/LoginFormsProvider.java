@@ -17,17 +17,20 @@
 
 package org.keycloak.forms.login;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,7 +57,7 @@ public interface LoginFormsProvider extends Provider {
 
     Response createForm(String form);
 
-    String getMessage(String message);
+    String getMessage(String message, Object... parameters);
 
     Response createLoginUsernamePassword();
 
@@ -79,6 +82,8 @@ public interface LoginFormsProvider extends Provider {
     Response createUpdateProfilePage();
 
     Response createIdpLinkConfirmLinkPage();
+
+    Response createIdpLinkConfirmOverrideLinkPage();
 
     Response createIdpLinkEmailPage();
 
@@ -162,4 +167,6 @@ public interface LoginFormsProvider extends Provider {
     LoginFormsProvider setExecution(String execution);
 
     LoginFormsProvider setAuthContext(AuthenticationFlowContext context);
+
+    LoginFormsProvider setAttributeMapper(Function<Map<String, Object>, Map<String, Object>> configurer);
 }

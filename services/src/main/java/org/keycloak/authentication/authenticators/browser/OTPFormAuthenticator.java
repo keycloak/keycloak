@@ -17,6 +17,12 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.Collections;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -38,11 +44,6 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -87,8 +88,19 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
         UserModel userModel = context.getUser();
-        if (!enabledUser(context, userModel)) {
+        boolean userEnabled = enabledUser(context, userModel);
+        // the brute force lock might be lifted/user enabled in the meantime -> we need to clear the auth session note
+        if (userEnabled) {
+            context.getAuthenticationSession().removeAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID);
+        }
+        if("true".equals(context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
+            context.getEvent().user(context.getUser()).error(Errors.INVALID_AUTHENTICATION_SESSION);
+            // challenge already set by calling enabledUser() above
+            return;
+        }
+        if (!userEnabled) {
             // error in context is set in enabledUser/isDisabledByBruteForce
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
             return;
         }
 
@@ -105,7 +117,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
-        context.success();
+        context.success(OTPCredentialModel.TYPE);
     }
 
     @Override
@@ -114,8 +126,11 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_TOTP;
+    protected String disabledByBruteForceError(String error) {
+        if(Errors.USER_TEMPORARILY_DISABLED.equals(error)) {
+            return Messages.ACCOUNT_TEMPORARILY_DISABLED_TOTP;
+        }
+        return Messages.ACCOUNT_PERMANENTLY_DISABLED_TOTP;
     }
 
     @Override

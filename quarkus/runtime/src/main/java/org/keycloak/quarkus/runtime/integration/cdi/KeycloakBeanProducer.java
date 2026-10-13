@@ -19,19 +19,32 @@ package org.keycloak.quarkus.runtime.integration.cdi;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Produces;
-import org.keycloak.common.util.Resteasy;
+import jakarta.enterprise.inject.Disposes;
+import jakarta.inject.Inject;
+
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
 
 import io.quarkus.arc.Unremovable;
 
 @ApplicationScoped
 @Unremovable
-public class KeycloakBeanProducer {
+public class KeycloakBeanProducer implements TransactionalSessionHandler {
+    
+    @Inject
+    QuarkusKeycloakSessionFactory factory;
 
-    @Produces
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
-        return Resteasy.getContextData(KeycloakSession.class);
+        // This is triggered lazily on the first method call on the session.
+        // Do not start the transaction here as it could still be inside the event loop when used with a (prematching) filter.
+        // JTA transactions must only be used in a blocking thread, so defer this until later.
+        return factory.create();
+    }
+
+    void dispose(@Disposes KeycloakSession session) {
+        // ensures the session is closed if the CloseSessionFilter did not run
+        close(session);
     }
 }

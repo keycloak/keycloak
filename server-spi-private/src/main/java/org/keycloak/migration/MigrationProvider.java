@@ -17,14 +17,14 @@
 
 package org.keycloak.migration;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Various common utils needed for migration from older version to newer
@@ -76,5 +76,44 @@ public interface MigrationProvider extends Provider {
      * @param realm
      * @return created or already existing client scope 'acr'
      */
-    void addOIDCAcrClientScope(RealmModel realm);
+    ClientScopeModel addOIDCAcrClientScope(RealmModel realm);
+
+    /**
+     * Add 'basic' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'basic'
+     */
+    ClientScopeModel addOIDCBasicClientScope(RealmModel realm);
+
+    /**
+     * Add 'service_account' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'service_account'
+     */
+    ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm);
+
+    /**
+     * Add the SAML mapper for the step-up <em>AuthnContextClassRef</em> authentication to the realm.
+     * @param realm
+     * @return created, already existing client scope or null if not step-up not enabled
+     */
+    ClientScopeModel addSamlAuthnContextClassRefClientScope(RealmModel realm);
+
+    /**
+     * Add 'delegation:user' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'delegation:user'
+     */
+    ClientScopeModel addOIDCUserDelegationClientScope(RealmModel realm);
+
+    /**
+     * Add 'delegation:client' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'delegation:client'
+     */
+    ClientScopeModel addOIDCClientDelegationClientScope(RealmModel realm);
 }

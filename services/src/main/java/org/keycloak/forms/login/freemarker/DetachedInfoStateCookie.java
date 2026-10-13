@@ -21,9 +21,10 @@ package org.keycloak.forms.login.freemarker;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Cookie encapsulating data to be displayed on the info/error page. We need this data due the fact that authenticationSession may not exists.

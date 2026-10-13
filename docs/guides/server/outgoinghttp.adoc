@@ -4,20 +4,40 @@
 
 <@tmpl.guide
 title="Configuring outgoing HTTP requests"
-summary="How to configure the client used for outgoing HTTP requests."
-includedOptions="">
+summary="Configure the client used for outgoing HTTP requests."
+includedOptions="truststore-*">
 
 {project_name} often needs to make requests to the applications and services that it secures. {project_name} manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
+
+== Vert.x HTTP client (Experimental)
+
+A Vert.x-based HTTP client is available as an experimental feature. It replaces the Apache HTTP Client with Vert.x/Netty for all outgoing connections.
+
+To enable it:
+
+<@kc.start parameters="--features=http-client:v2"/>
+
+When enabled, all outgoing HTTP traffic, including identity provider federation, token exchange, backchannel logout, OCSP/CRL validation and SAML artifact resolution, uses the Vert.x HTTP client. All existing configuration options documented below (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way with both clients.
+
+When the Vert.x client is enabled, `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
+
+== Configuring trusted certificates for TLS connections
+
+See <@links.server id="keycloak-truststore"/> for how
+to configure a {project_name} Truststore so that {project_name} is able to perform outgoing requests using TLS.
 
 == Client Configuration Command
 The HTTP client that {project_name} uses for outgoing communication is highly configurable. To configure the {project_name} outgoing HTTP client, enter this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-<configurationoption>=<value>"/>
+<@kc.start parameters="--spi-connections-http-client--default--<configurationoption>=<value>"/>
 
 The following are the command options:
 
 *establish-connection-timeout-millis*::
 Maximum time in milliseconds until establishing a connection times out. Default: Not set.
+
+*connection-request-timeout-millis*::
+Maximum time in milliseconds to obtain a connection for a request. Default: 5000ms
 
 *socket-timeout-millis*::
 Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
@@ -37,8 +57,13 @@ Maximum time an idle connection stays in the connection pool, in milliseconds. I
 *disable-cookies*::
 Enable or disable caching of cookies. Default: true.
 
+*allow-redirects*::
+Whether to allow following HTTP redirects. Default: false.
+This option is deprecated, only provided for backwards compatibility, and will be removed in a future release.
+It is recommended to be `false` to avoid redirects that could lead for example to server-side request forgery (SSRF).
+
 *client-keystore*::
-File path to a Java keystore file. This keystore contains client certificates for two-way SSL.
+File path to a Java keystore file. This keystore contains client certificates for mTLS.
 
 *client-keystore-password*::
 Password for the client keystore. REQUIRED, when `client-keystore` is set.
@@ -51,6 +76,42 @@ Specify proxy configurations for outgoing HTTP requests. For more details, see <
 
 *disable-trust-manager*::
 If an outgoing request requires HTTPS and this configuration option is set to true, you do not have to specify a truststore. This setting should be used only during development and *never in production* because it will disable verification of SSL certificates. Default: false.
+
+== Configuring retry behavior for outgoing HTTP requests
+IMPORTANT: Do not let outgoing retry duration exceed the caller’s timeout. Otherwise, the caller may time out and see an error while {project_name} continues retrying in the background.
+
+{project_name} can automatically retry failed outgoing HTTP requests. This is useful for handling transient network errors or temporary service unavailability. Retry behavior is disabled by default and must be explicitly enabled.
+
+The following are the retry configuration options:
+
+*max-retries*::
+Maximum number of retry attempts for failed HTTP requests. Set to 0 to disable retries. Default: 0.
+
+NOTE: Retries for requests that have already been sent (for common methods such as GET and POST) are always enabled. Use `max-retries` to control whether retries are performed.
+
+*initial-backoff-millis*::
+Initial backoff time in milliseconds before the first retry attempt. Default: 1000.
+
+*backoff-multiplier*::
+Multiplier for exponential backoff between retry attempts. For example, with an initial backoff of 1000ms and a multiplier of 2.0, the retry delays would be: 1000ms, 2000ms, 4000ms, etc. Default: 2.0.
+
+*use-jitter*::
+Whether to apply jitter to backoff times to prevent synchronized retry storms when multiple clients are retrying at the same time. Default: true.
+
+*jitter-factor*::
+Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time. Default: 0.5.
+
+.Example of enabling retry behavior
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-connections-http-client-default-max-retries=3 \
+  --spi-connections-http-client-default-initial-backoff-millis=1000 \
+  --spi-connections-http-client-default-backoff-multiplier=2.0
+----
+
+In this example, {project_name} will retry failed HTTP requests up to 3 times with exponential backoff starting at 1000ms and doubling with each retry attempt.
+
+NOTE: Retry behavior applies to all outgoing HTTP requests made by {project_name}, including OCSP validation, identity provider communication, and other external service calls.
 
 == Proxy mappings for outgoing HTTP requests
 To configure outgoing requests to use a proxy, you can use the following standard proxy environment variables to configure the proxy mappings: `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`.
@@ -85,7 +146,9 @@ For example, consider the following regex:
 
 You apply a regex-based hostname pattern by entering this command:
 
-<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\"\'*\\\\\\.(google|googleapis)\\\\\\.com;http://www-proxy.acme.com:8080\'\""/>
+<@kc.start parameters="--spi-connections-http-client--default--proxy-mappings=\'.*\\\\.(google|googleapis)\\\\.com;http://www-proxy.acme.com:8080\'"/>
+
+The backslash character `\` is escaped again because micro-profile config is used to parse the array of mappings.
 
 To determine the proxy for the outgoing HTTP request, the following occurs:
 
@@ -117,10 +180,5 @@ In this example, the following occurs:
 
 * The special value NO_PROXY for the proxy-uri is used, which means that no proxy is used for hosts matching the associated hostname pattern.
 * A catch-all pattern ends the proxy-mappings, providing a default proxy for all outgoing requests.
-
-== Configuring trusted certificates for TLS connections
-
-See <@links.server id="keycloak-truststore"/> for how
-to configure a {project_name} Truststore so that {project_name} is able to perform outgoing requests using TLS.
 
 </@tmpl.guide>

@@ -1,5 +1,20 @@
 package org.keycloak.testsuite.broker;
 
+import java.io.Closeable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.namespace.QName;
+
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -15,7 +30,6 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
@@ -24,21 +38,9 @@ import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.Saml2DocumentTransformer;
-import java.io.Closeable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
-import java.util.Map.Entry;
-import java.util.Set;
-import jakarta.ws.rs.core.Response.Status;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.namespace.QName;
 import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -50,13 +52,14 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
 
@@ -148,9 +151,13 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         loginUser();
 
         // Logout should fail because logout response is not signed.
+        final String code = oauth.parseLoginResponse().getCode();
+        final AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        final String idTokenString = tokenResponse.getIdToken();
         final String redirectUri = getAccountUrl(getProviderRoot(), bc.providerRealmName());
-        final String logoutUri = oauth.realm(bc.providerRealmName()).getLogoutUrl().redirectUri(redirectUri).build();
-        driver.navigate().to(logoutUri);
+        oauth.realm(bc.providerRealmName()).logoutForm()
+            .idTokenHint(idTokenString)
+            .postLogoutRedirectUri(redirectUri).open();
 
         errorPage.assertCurrent();
     }

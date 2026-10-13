@@ -17,12 +17,17 @@
  */
 package org.keycloak.authorization.protection;
 
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.permission.PermissionService;
+import org.keycloak.authorization.protection.permission.PermissionTicketService;
+import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 import org.keycloak.authorization.protection.resource.ResourceService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
@@ -32,11 +37,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Response.Status;
-import org.keycloak.authorization.protection.permission.PermissionTicketService;
-import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -59,7 +59,7 @@ public class ProtectionService {
         KeycloakIdentity identity = createIdentity(true);
         ResourceServer resourceServer = getResourceServer(identity);
         ResourceSetService resourceManager = new ResourceSetService(this.session, resourceServer, this.authorization, null, createAdminEventBuilder(identity, resourceServer));
-        return new ResourceService(this.session, resourceServer, identity, resourceManager);
+        return new ResourceService(authorization, resourceServer, identity, resourceManager);
     }
 
     private AdminEventBuilder createAdminEventBuilder(KeycloakIdentity identity, ResourceServer resourceServer) {
@@ -80,7 +80,7 @@ public class ProtectionService {
     
     @Path("/permission/ticket")
     public Object ticket() {
-        KeycloakIdentity identity = createIdentity(false);
+        KeycloakIdentity identity = createIdentity(true);
 
         return new PermissionTicketService(identity, getResourceServer(identity), this.authorization);
     }
@@ -100,6 +100,11 @@ public class ProtectionService {
         ClientModel client = realm.getClientById(resourceServer.getClientId());
 
         if (checkProtectionScope) {
+            if (identity.isResourceServer()) {
+                // if the identity is the resource server itself, then we don't need to check for uma_protection scope
+                return identity;
+            }
+
             if (!identity.hasClientRole(client.getClientId(), "uma_protection")) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
             }

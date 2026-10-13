@@ -19,6 +19,7 @@ package org.keycloak.authorization.client.util;
 import java.util.concurrent.Callable;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
+import org.keycloak.authorization.client.ResourceNotFoundException;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 
 /**
@@ -85,6 +86,8 @@ public final class Throwables {
                 }
 
                 throw handleWrapException(message, cause);
+            } else if (httpe.getStatusCode() == 400 && new String(httpe.getBytes()).contains("invalid_resource_id")) {
+                throw new ResourceNotFoundException(message, cause);
             }
         }
 

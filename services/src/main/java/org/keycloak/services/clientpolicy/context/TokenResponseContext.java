@@ -21,27 +21,23 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TokenResponseContext implements ClientPolicyContext {
+public class TokenResponseContext extends AbstractClientSessionCtxTokenResponseContext {
 
     private final MultivaluedMap<String, String> params;
     private final OAuth2CodeParser.ParseResult parseResult;
-    private final ClientSessionContext clientSessionCtx;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public TokenResponseContext(MultivaluedMap<String, String> params,
             OAuth2CodeParser.ParseResult parseResult,
             ClientSessionContext clientSessionCtx,
             TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(clientSessionCtx, accessTokenResponseBuilder);
         this.params = params;
         this.parseResult = parseResult;
-        this.clientSessionCtx = clientSessionCtx;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -56,13 +52,4 @@ public class TokenResponseContext implements ClientPolicyContext {
     public OAuth2CodeParser.ParseResult getParseResult() {
         return parseResult;
     }
-
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
-    }
-
-    public ClientSessionContext getClientSessionContext() {
-        return clientSessionCtx;
-    }
-
 }

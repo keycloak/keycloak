@@ -1,0 +1,127 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Visualizing activities in dashboards"
+summary="Install the {project_name} Grafana dashboards to visualize the metrics that capture the status and activities of your deployment.">
+
+{project_name} provides metrics to observe what is happening inside the deployment.
+To understand how metrics evolve over time, it is helpful to collect and visualize them in graphs.
+
+This guide provides instructions on how to visualize collected {project_name} metrics in a running Grafana instance.
+
+== Prerequisites
+
+* {project_name} metrics are enabled. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
+* Grafana instance is running and {project_name} metrics are collected into a Prometheus instance.
+* For the HTTP request latency heatmaps to work, enable histograms for HTTP metrics by setting `http-metrics-histograms-enabled` to `true`.
+
+== {project_name} Grafana dashboards
+
+Grafana dashboards are distributed in the form of a JSON file that is imported into a Grafana instance.
+JSON definitions of {project_name} Grafana dashboards are available in the https://github.com/keycloak/keycloak-grafana-dashboard[keycloak/keycloak-grafana-dashboard GitHub repository].
+
+Follow these steps to download JSON file definitions.
+
+. Identify the branch from `keycloak-grafana-dashboards` to use from the following table.
++
+
+|===
+|{project_name} version |`keycloak-grafana-dashboards` branch/tag
+
+|26.1 - 26.2
+m|26.2.0
+
+|>= 26.3
+m|main
+|===
+
+. Clone the GitHub repository
++
+----
+git clone -b BRANCH_FROM_STEP_1 https://github.com/keycloak/keycloak-grafana-dashboard.git
+----
+. The dashboards are available in the directory `keycloak-grafana-dashboard/dashboards`.
+
+The following sections describe the purpose of each dashboard.
+
+=== {project_name} troubleshooting dashboard
+
+This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboard.json`.
+
+On the top of the dashboard, graphs display the service level indicators as defined in <@links.observability id="keycloak-service-level-indicators"/>.
+This dashboard can be also used while troubleshooting a {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
+
+.Troubleshooting dashboard
+image::observability/keycloak-troubleshooting-grafana-dashboard.png[Troubleshooting dashboard]
+
+=== Keycloak capacity planning dashboard
+
+This dashboard is available in the JSON file: `keycloak-capacity-planning-dashboard.json`.
+
+This dashboard shows metrics that are important when estimating the load handled by a {project_name} deployment.
+For example, it shows the number of password validations or login flows performed by {project_name}.
+For more detail on these metrics, see the {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>.
+
+NOTE:  {project_name} event metrics must be enabled for this dashboard to work correctly.  To enable them, see the {section} <@links.observability id="event-metrics"/>.
+
+.Capacity planning dashboard
+image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning dashboard]
+
+== Import a dashboard
+
+. Open the dashboard page from the left Grafana menu.
+. Click *New* and *Import*.
+. Click *Upload dashboard JSON file* and select the JSON file of the dashboard you want to import.
+. Pick your Prometheus datasource.
+. Click *Import*.
+
+[TIP]
+====
+The Grafana dashboards have labels inserted by Kubernetes.
+It is possible to use the dashboards with bare-metal deployments by adding the missing labels in the Prometheus configuration file, as shown below.
+
+.Prometheus Scrape Configuration
+[source,yaml]
+----
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any time series scraped from this config.
+  - job_name: "keycloak-service"
+    static_configs:
+      - targets: ["localhost:9000", "localhost:9001", "localhost:9002"]
+        labels:
+          namespace: 'keycloak'
+          container: 'keycloak'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: pod
+----
+====
+
+== Export a dashboard
+
+Exporting a dashboard to JSON format may be useful. For example, you may want to suggest a change in our dashboard repository.
+
+++++
+<div class="grafana-share-icon">
+<style>
+.grafana-share-icon img {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+</style>
+++++
+. Open a dashboard you would like to export.
+. Click *share* (image:observability/grafana-share-icon.svg[Grafana share icon]) in the top left corner next to the dashboard name.
+. Click the *Export* tab.
+. Enable *Export for sharing externally*.
+. Click either *Save to file* or *View JSON* and *Copy to Clipboard* according to where you want to store the resulting JSON.
+++++
+</div>
+++++
+
+== Further reading
+
+Continue reading on how to connect traces to dashboard in the <@links.observability id="exemplars" /> {section}.
+
+</@tmpl.guide>

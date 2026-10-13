@@ -16,41 +16,6 @@
  */
 package org.keycloak.services;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.StackUtil;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.jose.jws.DefaultTokenManager;
-import org.keycloak.keys.DefaultKeyManager;
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.GroupProvider;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleProvider;
-import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.models.ThemeManager;
-import org.keycloak.models.TokenManager;
-import org.keycloak.models.UserLoginFailureProvider;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
-import org.keycloak.provider.InvalidationHandler.ObjectType;
-import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.vault.DefaultVaultTranscriber;
-import org.keycloak.vault.VaultProvider;
-import org.keycloak.vault.VaultTranscriber;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,18 +24,59 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.common.util.StackUtil;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.jose.jws.DefaultTokenManager;
+import org.keycloak.keys.DefaultKeyManager;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.IdentityProviderStorageProvider;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RevokedTokenProvider;
+import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.ThemeManager;
+import org.keycloak.models.TokenManager;
+import org.keycloak.models.UserLoginFailureProvider;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
+import org.keycloak.provider.InvalidationHandler.ObjectType;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.clientpolicy.ClientPolicyManager;
+import org.keycloak.sessions.AuthenticationSessionProvider;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.vault.DefaultVaultTranscriber;
+import org.keycloak.vault.VaultProvider;
+import org.keycloak.vault.VaultTranscriber;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakSession implements KeycloakSession {
+public abstract class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
-    private final Map<Integer, Provider> providers = new HashMap<>();
+    private final Map<List<String>, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
@@ -78,11 +84,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private DatastoreProvider datastoreProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
-    private ThemeManager themeManager;
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
     private boolean closed = false;
+    private boolean readOnly = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -149,6 +155,33 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T runAsReadOnly(Supplier<T> supplier) {
+        boolean previous = readOnly;
+        readOnly = true;
+        boolean restore = true;
+        try {
+            T result = supplier.get();
+            if (result instanceof Stream<?> stream) {
+                T closing = (T) stream.onClose(() -> readOnly = previous);
+                // the close handler is registered, so it takes over restoring the flag
+                restore = false;
+                return closing;
+            }
+            return result;
+        } finally {
+            if (restore) {
+                readOnly = previous;
+            }
+        }
+    }
+
+    @Override
     public KeycloakTransactionManager getTransactionManager() {
         return transactionManager;
     }
@@ -163,40 +196,32 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return getDatastoreProvider().users();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz) {
-        Integer hash = clazz.hashCode();
-        T provider = (T) providers.get(hash);
+        List<String> key = List.of(clazz.getName());
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz));
+    }
+
+    private <T extends Provider> T getOrCreateProvider(List<String> key, Supplier<ProviderFactory<T>> supplier) {
+        @SuppressWarnings("unchecked")
+        T provider = (T) providers.get(key);
         // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
         // since per JDK-8071667 the remapping function should not modify the map during computation. While
         // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz);
+            ProviderFactory<T> providerFactory = supplier.get();
             if (providerFactory != null) {
                 provider = providerFactory.create(DefaultKeycloakSession.this);
-                providers.put(hash, provider);
+                providers.put(key, provider);
             }
         }
         return provider;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
-        Integer hash = clazz.hashCode() + id.hashCode();
-        T provider = (T) providers.get(hash);
-        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
-        // since per JDK-8071667 the remapping function should not modify the map during computation. While
-        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
-        if (provider == null) {
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
-            if (providerFactory != null) {
-                provider = providerFactory.create(DefaultKeycloakSession.this);
-                providers.put(hash, provider);
-            }
-        }
-        return provider;
+        List<String> key = List.of(clazz.getName(), id);
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, id));
     }
 
     @Override
@@ -211,24 +236,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter) {
-        Integer hash = clazz.hashCode() + componentId.hashCode();
-        T provider = (T) providers.get(hash);
+        List<String> key = List.of("component", clazz.getName(), componentId);
         final RealmModel realm = getContext().getRealm();
-
-        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
-        // since per JDK-8071667 the remapping function should not modify the map during computation. While
-        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
-        if (provider == null) {
-            final String realmId = realm == null ? null : realm.getId();
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, modelGetter);
-            if (providerFactory != null) {
-                provider = providerFactory.create(this);
-                providers.put(hash, provider);
-            }
-        }
-        return provider;
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, Optional.ofNullable(realm).map(RealmModel::getId).orElse(null), componentId, modelGetter));
     }
 
     @Override
@@ -253,6 +264,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -316,6 +328,16 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public RevokedTokenProvider revokedTokens() {
+        return getDatastoreProvider().revokedTokens();
+    }
+
+    @Override
+    public IdentityProviderStorageProvider identityProviders() {
+        return getDatastoreProvider().identityProviders();
+    }
+
+    @Override
     public KeyManager keys() {
         if (keyManager == null) {
             keyManager = new DefaultKeyManager(this);
@@ -325,10 +347,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public ThemeManager theme() {
-        if (themeManager == null) {
-            themeManager = factory.getThemeManagerFactory().create(this);
-        }
-        return themeManager;
+        return this.getProvider(ThemeManager.class);
     }
 
     @Override
@@ -418,9 +437,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return String.format("session @ %08x", System.identityHashCode(this));
     }
 
-    protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
-        return new DefaultKeycloakContext(session);
-    }
+    protected abstract DefaultKeycloakContext createKeycloakContext(KeycloakSession session);
 
     public boolean isClosed() {
         return closed;

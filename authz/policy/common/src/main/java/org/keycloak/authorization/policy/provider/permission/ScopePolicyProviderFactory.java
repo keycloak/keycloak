@@ -16,8 +16,12 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
@@ -25,15 +29,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePermissionRepresentation> {
 
-    private ScopePolicyProvider provider = new ScopePolicyProvider();
+    public static final String ID = "scope";
+    private final ScopePolicyProvider provider = new ScopePolicyProvider();
 
     @Override
     public String getName() {
@@ -52,7 +54,7 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -77,9 +79,14 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
         updateResourceType(policy, representation);
     }
 
+    @Override
+    public void onRemove(Policy policy, AuthorizationProvider authorization) {
+        AdminPermissionsSchema.SCHEMA.removeOrphanResources(policy, authorization);
+    }
+
     private void updateResourceType(Policy policy, ScopePermissionRepresentation representation) {
         if (representation != null) {
-            Map<String, String> config = new HashMap(policy.getConfig());
+            Map<String, String> config = new HashMap<>(policy.getConfig());
 
             config.compute("defaultResourceType", (key, value) -> {
                 String resourceType = representation.getResourceType();
@@ -107,6 +114,6 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
 
     @Override
     public String getId() {
-        return "scope";
+        return ID;
     }
 }

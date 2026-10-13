@@ -16,9 +16,11 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.util.Base64;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  *
@@ -39,7 +41,16 @@ public interface SingleUseObjectKeyModel {
     /**
      * Returns absolute number of seconds since the epoch in UTC timezone when the token expires.
      */
-    int getExpiration();
+    Long getExp();
+
+    /**
+     * @deprecated int will overflow with values after 2038. Use {@link #getExp()} instead.
+     */
+    @Deprecated
+    @JsonIgnore
+    default int getExpiration() {
+        return getExp().intValue();
+    }
 
     /**
      * @return Single-use random value used for verification whether the relevant action is allowed.
@@ -48,7 +59,7 @@ public interface SingleUseObjectKeyModel {
 
     default String serializeKey() {
         String userId = getUserId();
-        String encodedUserId = userId == null ? "" : Base64.encodeBytes(userId.getBytes(StandardCharsets.UTF_8));
-        return String.format("%s.%d.%s.%s", encodedUserId, getExpiration(), getActionVerificationNonce(), getActionId());
+        String encodedUserId = userId == null ? "" : Base64.getEncoder().encodeToString(userId.getBytes(StandardCharsets.UTF_8));
+        return String.format("%s.%d.%s.%s", encodedUserId, getExp(), getActionVerificationNonce(), getActionId());
     }
 }

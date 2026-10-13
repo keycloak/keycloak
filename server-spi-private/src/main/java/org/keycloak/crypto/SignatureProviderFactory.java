@@ -16,11 +16,18 @@
  */
 package org.keycloak.crypto;
 
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
 public interface SignatureProviderFactory extends ProviderFactory<SignatureProvider> {
+
+    Set<String> RSA_PRIVATE_JWK_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth");
+    Set<String> EC_PRIVATE_JWK_CLAIMS = Set.of("d");
+    Set<String> OKP_PRIVATE_JWK_CLAIMS = Set.of("d");
+    Set<String> OCT_PRIVATE_JWK_CLAIMS = Set.of("k");
 
     @Override
     default void init(Config.Scope config) {
@@ -33,5 +40,11 @@ public interface SignatureProviderFactory extends ProviderFactory<SignatureProvi
     @Override
     default void close() {
     }
+
+    /**
+     * Returns the JWK claim names that represent private key material for the algorithm
+     * supported by this provider implementation.
+     */
+    Set<String> getJwkPrivateKeyClaims();
 
 }

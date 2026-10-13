@@ -17,20 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.setProfile;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
-
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -40,51 +34,36 @@ import java.util.stream.Collectors;
         footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
                 + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
-public final class Start extends AbstractStartCommand implements Runnable {
+public final class Start extends AbstractAutoBuildCommand {
 
     public static final String NAME = "start";
 
     @CommandLine.Mixin
-    OptimizedMixin optimizedMixin;
+    OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
 
-    @CommandLine.Mixin
-    HelpAllMixin helpAllMixin;
-
     @Override
     protected void doBeforeRun() {
-        devProfileNotAllowedError();
-    }
-
-    private void devProfileNotAllowedError() {
-        if (isDevProfileNotAllowed()) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+        if (Environment.isDevProfile()) {
+            throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
-    }
-
-    public static boolean isDevProfileNotAllowed() {
-        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
-        Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
-
-        setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
-
-        return Environment.isDevProfile();
-    }
-
-    @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean includeRuntime() {
-        return true;
     }
 
     @Override
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isServing() {
+        return true;
+    }
+
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }

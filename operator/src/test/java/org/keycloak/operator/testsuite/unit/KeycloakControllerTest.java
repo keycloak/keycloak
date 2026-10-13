@@ -17,20 +17,25 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.config.v1.Ingress;
 import io.fabric8.openshift.api.model.config.v1.IngressBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakController;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,9 +58,9 @@ class KeycloakControllerTest {
         // both the instances and hostname should be updated
         UpdateControl<Keycloak> update = controller.reconcile(kc, mockContext);
 
-        assertTrue(update.isUpdateResource());
-        assertEquals(1, update.getResource().getSpec().getInstances());
-        assertEquals("example-kc-ingress-ns.openshift.com", update.getResource().getSpec().getHostnameSpec().getHostname());
+        assertTrue(update.isPatchResource());
+        assertEquals(1, update.getResource().orElseThrow().getSpec().getInstances());
+        assertEquals("example-kc-ingress-ns.openshift.com", update.getResource().orElseThrow().getSpec().getHostnameSpec().getHostname());
 
         // just the instances should be updated if not openshift-default
         kc = K8sUtils.getDefaultKeycloakDeployment();
@@ -63,9 +68,43 @@ class KeycloakControllerTest {
         kc.getSpec().setInstances(null);
         kc.getSpec().getHostnameSpec().setHostname(null);
         update = controller.reconcile(kc, mockContext);
-        assertTrue(update.isUpdateResource());
-        assertEquals(1, update.getResource().getSpec().getInstances());
-        assertNull(update.getResource().getSpec().getHostnameSpec().getHostname());
+        assertTrue(update.isPatchResource());
+        assertEquals(1, update.getResource().orElseThrow().getSpec().getInstances());
+        assertNull(update.getResource().orElseThrow().getSpec().getHostnameSpec().getHostname());
+    }
+    
+    @Test
+    void testUpdateStatus() {
+        KeycloakController controller = new KeycloakController();
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc = new KeycloakBuilder(kc).editSpec().withNewUnsupported().withNewPodTemplate().withNewSpec()
+                .withServiceAccountName("foo").endSpec().endPodTemplate().endUnsupported().endSpec().build();
+
+        Context<Keycloak> mockContext = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+
+        KeycloakStatusAggregator agg = new KeycloakStatusAggregator(null, 1L);
+        controller.updateStatus(kc, null, agg, mockContext);
+        CRAssert.assertKeycloakStatusCondition(agg.build(), "HasErrors", false, null, 1L).extracting("message").isEqualTo("");
+        
+        Mockito.when(mockContext.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        agg = new KeycloakStatusAggregator(null, 1L);
+        controller.updateStatus(kc, null, agg, mockContext);
+        CRAssert.assertKeycloakStatusCondition(agg.build(), "HasErrors", false, "The serviceAccountName cannot be set in a multi-namespace install mode");
+    }
+
+    @Test
+    void testPause() {
+        KeycloakController controller = new KeycloakController();
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc = new KeycloakBuilder(kc).editMetadata().addToAnnotations(Constants.KEYCLOAK_PAUSE_ANNOTATION, "true").addToAnnotations(Constants.KEYCLOAK_PAUSED_ANNOTATION, "true").endMetadata().build();
+
+        Context<Keycloak> mockContext = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+
+        Mockito.when(mockContext.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        var update = controller.reconcile(kc, mockContext);
+        assertFalse(update.isPatchResource());
     }
 
 }

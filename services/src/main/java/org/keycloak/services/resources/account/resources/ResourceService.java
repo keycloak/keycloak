@@ -16,15 +16,6 @@
  */
 package org.keycloak.services.resources.account.resources;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,18 +25,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.utils.MediaType;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -88,7 +87,7 @@ public class ResourceService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null));
+        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(resourceServer, filters, null, null));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
         
         if (!resources.isEmpty()) {
@@ -103,11 +102,33 @@ public class ResourceService extends AbstractResourceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response user(@QueryParam("value") String value) {
         try {
-            final UserModel user = getUser(value);
-            return Response.ok(toRepresentation(provider.getKeycloakSession(), provider.getRealm(), user)).build();
+            final UserModel queriedUser = getUser(value);
+            final UserModel authenticatedUser = auth.getUser();
+
+            if (!queriedUser.getId().equals(authenticatedUser.getId()) && !hasPermissionRequest(queriedUser.getId())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+
+            UserRepresentation minimalUserRep = new UserRepresentation();
+            minimalUserRep.setId(queriedUser.getId());
+            minimalUserRep.setUsername(queriedUser.getUsername());
+            minimalUserRep.setFirstName(queriedUser.getFirstName());
+            minimalUserRep.setLastName(queriedUser.getLastName());
+            minimalUserRep.setEmail(queriedUser.getEmail());
+
+            return Response.ok(minimalUserRep).build();
         } catch (NotFoundException e) {
             return Response.noContent().build();
         }
+    }
+
+    private boolean hasPermissionRequest(String userId) {
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
+
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
+
+        return !ticketStore.find(resourceServer, filters, null, null).isEmpty();
     }
 
     /**
@@ -128,7 +149,6 @@ public class ResourceService extends AbstractResourceService {
         }
         
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
-        RealmModel realm = resourceServer.getRealm();
 
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
@@ -138,7 +158,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(realm, resourceServer, filters, null, null);
+            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, null, null);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {
@@ -174,7 +194,7 @@ public class ResourceService extends AbstractResourceService {
                 
                 // remove all tickets that are not within the requested permissions
                 for (PermissionTicket ticket : tickets) {
-                    ticketStore.delete(realm, ticket.getId());
+                    ticketStore.delete(ticket.getId());
                 }                
             }
         }
@@ -199,7 +219,7 @@ public class ResourceService extends AbstractResourceService {
         
         Map<String, Permission> requests = new HashMap<>();
 
-        for (PermissionTicket ticket : ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null)) {
+        for (PermissionTicket ticket : ticketStore.find(resourceServer, filters, null, null)) {
             requests.computeIfAbsent(ticket.getRequester(), requester -> new Permission(ticket, provider)).addScope(ticket.getScope().getName());
         }
         
@@ -216,7 +236,7 @@ public class ResourceService extends AbstractResourceService {
         org.keycloak.authorization.model.Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
         if (scope == null) {
-            scope = scopeStore.findById(resourceServer.getRealm(), resourceServer, scopeId);
+            scope = scopeStore.findById(resourceServer, scopeId);
         }
         
         return scope;
@@ -224,11 +244,15 @@ public class ResourceService extends AbstractResourceService {
 
     private UserModel getUser(String requester) {
         UserProvider users = provider.getKeycloakSession().users();
-        UserModel user = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByUsername = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByEmail = users.getUserByEmail(provider.getRealm(), requester);
 
-        if (user == null) {
-            user = users.getUserByEmail(provider.getRealm(), requester);
+        if (userByUsername != null && userByEmail != null
+                && !userByUsername.getId().equals(userByEmail.getId())) {
+            throw new BadRequestException("ambiguous_user");
         }
+
+        UserModel user = userByUsername != null ? userByUsername : userByEmail;
 
         if (user == null) {
             throw new NotFoundException(requester);

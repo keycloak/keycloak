@@ -1,13 +1,13 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import java.math.BigInteger;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
-import java.math.BigInteger;
 
 import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ENCRYPTION_METHOD;
 
@@ -37,7 +37,7 @@ public class SAMLEncryptionMethodParser extends AbstractStaxSamlMetadataParser<E
             case KEY_SIZE:
                 {
                     StaxParserUtil.advance(xmlEventReader);
-                    BigInteger keySize = BigInteger.valueOf(Long.valueOf(StaxParserUtil.getElementText(xmlEventReader)));
+                    BigInteger keySize = BigInteger.valueOf(Long.parseLong(StaxParserUtil.getElementText(xmlEventReader)));
 
                     EncryptionMethodType.EncryptionMethod encMethod = target.getEncryptionMethod();
                     if (encMethod == null) {
@@ -64,7 +64,15 @@ public class SAMLEncryptionMethodParser extends AbstractStaxSamlMetadataParser<E
                 break;
 
             default:
-                throw LOGGER.parserUnknownTag(StaxParserUtil.getElementName(elementDetail), elementDetail.getLocation());
+                {
+                    EncryptionMethodType.EncryptionMethod encMethod = target.getEncryptionMethod();
+                    if (encMethod == null) {
+                        encMethod = new EncryptionMethodType.EncryptionMethod();
+                        target.setEncryptionMethod(encMethod);
+                    }
+                    encMethod.addAny(StaxParserUtil.getDOMElement(xmlEventReader));
+                }
+
         }
     }
 }

@@ -1,4 +1,9 @@
 import {
+  ContinueCancelModal,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   DataList,
   DataListContent,
@@ -23,7 +28,8 @@ import {
 } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+
+import { AccountEnvironment } from "..";
 import { deleteSession, getDevices } from "../api/methods";
 import {
   ClientRepresentation,
@@ -31,14 +37,14 @@ import {
   SessionRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { formatDate } from "../utils/formatDate";
+import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
-const DeviceActivity = () => {
+export const DeviceActivity = () => {
   const { t } = useTranslation();
-  const { addAlert, addError } = useAlerts();
+  const context = useEnvironment<AccountEnvironment>();
+  const { addAlert, addError } = useAccountAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
   const [key, setKey] = useState(0);
@@ -58,11 +64,13 @@ const DeviceActivity = () => {
     setDevices(devices);
   };
 
-  usePromise((signal) => getDevices({ signal }), moveCurrentToTop, [key]);
+  usePromise((signal) => getDevices({ signal, context }), moveCurrentToTop, [
+    key,
+  ]);
 
   const signOutAll = async () => {
-    await deleteSession();
-    keycloak.logout();
+    await deleteSession(context);
+    await context.keycloak.logout();
   };
 
   const signOutSession = async (
@@ -70,13 +78,13 @@ const DeviceActivity = () => {
     device: DeviceRepresentation,
   ) => {
     try {
-      await deleteSession(session.id);
+      await deleteSession(context, session.id);
       addAlert(
         t("signedOutSession", { browser: session.browser, os: device.os }),
       );
       refresh();
     } catch (error) {
-      addError(t("errorSignOutMessage", { error }).toString());
+      addError("errorSignOutMessage", error);
     }
   };
 
@@ -85,7 +93,7 @@ const DeviceActivity = () => {
     clients.forEach((client, index) => {
       let clientName: string;
       if (client.clientName !== "") {
-        clientName = t(client.clientName as TFuncKey);
+        clientName = label(t, client.clientName);
       } else {
         clientName = client.clientId;
       }
@@ -107,7 +115,7 @@ const DeviceActivity = () => {
       title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
-      <Split hasGutter className="pf-u-mb-lg">
+      <Split hasGutter className="pf-v5-u-mb-lg">
         <SplitItem isFilled>
           <Title headingLevel="h2" size="xl">
             {t("signedInDevices")}
@@ -142,18 +150,18 @@ const DeviceActivity = () => {
       >
         <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
-            device.sessions.map((session) => (
-              <DataListItemRow key={device.id}>
+            device.sessions.map((session, index) => (
+              <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
-                  className="pf-u-flex-grow-1"
+                  className="pf-v5-u-flex-grow-1"
                 >
                   <Grid hasGutter>
                     <GridItem span={1} rowSpan={2}>
                       {device.mobile ? <MobileAltIcon /> : <DesktopIcon />}
                     </GridItem>
                     <GridItem sm={8} md={9} span={10}>
-                      <span className="pf-u-mr-md session-title">
+                      <span className="pf-v5-u-mr-md session-title">
                         {device.os.toLowerCase().includes("unknown")
                           ? t("unknownOperatingSystem")
                           : device.os}{" "}
@@ -166,7 +174,7 @@ const DeviceActivity = () => {
                       )}
                     </GridItem>
                     <GridItem
-                      className="pf-u-text-align-right"
+                      className="pf-v5-u-text-align-right"
                       sm={3}
                       md={2}
                       span={1}
@@ -204,7 +212,10 @@ const DeviceActivity = () => {
                             {t("lastAccessedOn")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.lastAccess * 1000))}
+                            {formatDate(
+                              new Date(session.lastAccess * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -220,7 +231,10 @@ const DeviceActivity = () => {
                             {t("started")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.started * 1000))}
+                            {formatDate(
+                              new Date(session.started * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -228,7 +242,10 @@ const DeviceActivity = () => {
                             {t("expires")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatDate(new Date(session.expires * 1000))}
+                            {formatDate(
+                              new Date(session.expires * 1000),
+                              context.environment.locale,
+                            )}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>

@@ -17,7 +17,14 @@
 
 package org.keycloak.storage.ldap.mappers.msad;
 
-import org.jboss.logging.Logger;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import javax.naming.AuthenticationException;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -34,11 +41,7 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 import org.keycloak.storage.ldap.mappers.TxAwareLDAPUserModelDelegate;
 
-import javax.naming.AuthenticationException;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * Mapper specific to MSAD. It's able to read the userAccountControl and pwdLastSet attributes and set actions in Keycloak based on that.
@@ -49,11 +52,25 @@ import java.util.stream.Stream;
 public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdateCallback {
 
     public static final String LDAP_PASSWORD_POLICY_HINTS_ENABLED = "ldap.password.policy.hints.enabled";
+    public static final String ALWAYS_READ_ENABLED_VALUE_FROM_LDAP = "always.read.enabled.value.from.ldap";
 
     private static final Logger logger = Logger.getLogger(MSADUserAccountControlStorageMapper.class);
 
     private static final Pattern AUTH_EXCEPTION_REGEX = Pattern.compile(".*AcceptSecurityContext error, data ([0-9a-f]*), v.*");
-    private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile(".*ERROR CODE ([0-9A-F]+) - ([0-9A-F]+): .*WILL_NOT_PERFORM.*");
+    private static final Pattern ERROR_CODE_REGEX = Pattern.compile(".*ERROR CODE ([0-9A-F]*) - ([0-9A-F]*).*");
+
+    // See https://datatracker.ietf.org/doc/html/rfc4511#appendix-A.2
+    public static final Set<String> PASSWORD_UPDATE_LDAP_ERROR_CODES = Set.of("53", "19");
+    // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
+    public static final Set<String> PASSWORD_UPDATE_MSAD_ERROR_CODES = Set.of("52D");
+
+    private final Function<LDAPObject, UserAccountControl> GET_USER_ACCOUNT_CONTROL = ldapUser -> {
+        if (ldapUser == null) {
+            return UserAccountControl.empty();
+        }
+        String userAccountControl = ldapUser.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
+        return UserAccountControl.of(userAccountControl);
+    };
 
     public MSADUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -112,7 +129,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
     @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-        return new MSADUserModelDelegate(delegate, ldapUser);
+        return new MSADUserModelDelegate(delegate, ldapUser, parseBooleanParameter(mapperModel, ALWAYS_READ_ENABLED_VALUE_FROM_LDAP));
     }
 
     @Override
@@ -122,7 +139,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-
+        // check if user is enabled in MSAD or not.
+        user.setEnabled(!getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE));
     }
 
     @Override
@@ -145,7 +163,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
                 if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                     // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
-                    AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                    AuthenticationSessionModel authSession = getSession().getContext().getAuthenticationSession();
                     if (authSession != null) {
                         if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                             logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
@@ -186,13 +204,13 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         logger.debugf("Failed to update password in Active Directory. Exception message: %s", exceptionMessage);
         exceptionMessage = exceptionMessage.toUpperCase();
 
-        Matcher m = AUTH_INVALID_NEW_PASSWORD.matcher(exceptionMessage);
+        Matcher m = ERROR_CODE_REGEX.matcher(exceptionMessage);
+
         if (m.matches()) {
             String errorCode = m.group(1);
             String errorCode2 = m.group(2);
 
-            // 52D corresponds to ERROR_PASSWORD_RESTRICTION. See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
-            if ((errorCode.equals("53")) && errorCode2.endsWith("52D")) {
+            if ((PASSWORD_UPDATE_LDAP_ERROR_CODES.contains(errorCode)) && PASSWORD_UPDATE_MSAD_ERROR_CODES.stream().anyMatch(errorCode2::endsWith)) {
                 ModelException me = new ModelException("invalidPasswordGenericMessage", e);
                 return me;
             }
@@ -202,9 +220,21 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     protected UserAccountControl getUserAccountControl(LDAPObject ldapUser) {
-        String userAccountControl = ldapUser.getAttributeAsString(LDAPConstants.USER_ACCOUNT_CONTROL);
-        long longValue = userAccountControl == null ? 0 : Long.parseLong(userAccountControl);
-        return new UserAccountControl(longValue);
+        UserAccountControl control = GET_USER_ACCOUNT_CONTROL.apply(ldapUser);
+
+        if (control.isAnySet()) {
+            return control;
+        }
+
+        RealmModel realm = getSession().getContext().getRealm();
+
+        if (realm == null) {
+            return control;
+        }
+
+        ldapUser = ldapProvider.loadLDAPUserByUuid(realm, ldapUser.getUuid());
+
+        return GET_USER_ACCOUNT_CONTROL.apply(ldapUser);
     }
 
     // Update user in LDAP if "updateInLDAP" is true. Otherwise it is assumed that LDAP update will be called at the end of transaction
@@ -220,7 +250,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     private String getRealmName() {
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = getSession().getContext().getRealm();
         return (realm != null) ? realm.getName() : "null";
     }
 
@@ -228,44 +258,42 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     public class MSADUserModelDelegate extends TxAwareLDAPUserModelDelegate {
 
         private final LDAPObject ldapUser;
+        private final boolean isAlwaysReadEnabledFromLdap;
 
-        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser) {
+        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser, boolean isAlwaysReadEnabledFromLdap) {
             super(delegate, ldapProvider, ldapUser);
             this.ldapUser = ldapUser;
+            this.isAlwaysReadEnabledFromLdap = isAlwaysReadEnabledFromLdap;
         }
 
         @Override
         public boolean isEnabled() {
-            boolean kcEnabled = super.isEnabled();
-
-            if (getPwdLastSet() > 0) {
-                // Merge KC and MSAD
-                return kcEnabled && !getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE);
-            } else {
-                // If new MSAD user is created and pwdLastSet is still 0, MSAD account is in disabled state. So read just from Keycloak DB. User is not able to login via MSAD anyway
-                return kcEnabled;
+            if (isAlwaysReadEnabledFromLdap) {
+                return !getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE);
             }
+            return super.isEnabled();
         }
 
         @Override
         public void setEnabled(boolean enabled) {
+            if (UserStorageProvider.EditMode.WRITABLE.equals(ldapProvider.getEditMode())) {
+                UserAccountControl control = getUserAccountControl(ldapUser);
+
+                if (control.isAnySet()) {
+                    MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
+
+                    if (enabled) {
+                        control.remove(UserAccountControl.ACCOUNTDISABLE);
+                    } else {
+                        control.add(UserAccountControl.ACCOUNTDISABLE);
+                    }
+
+                    markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
+                    updateUserAccountControl(false, ldapUser, control);
+                }
+            }
             // Always update DB
             super.setEnabled(enabled);
-
-            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
-                MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
-
-                UserAccountControl control = getUserAccountControl(ldapUser);
-                if (enabled) {
-                    control.remove(UserAccountControl.ACCOUNTDISABLE);
-                } else {
-                    control.add(UserAccountControl.ACCOUNTDISABLE);
-                }
-
-                markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
-
-                updateUserAccountControl(false, ldapUser, control);
-            }
         }
 
         @Override

@@ -17,6 +17,7 @@
 package org.keycloak.authorization.protection.policy;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.PermissionService;
@@ -43,10 +43,14 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:federico@martel-innovate.com">Federico M. Facca</a>
@@ -57,11 +61,13 @@ public class UserManagedPermissionService {
     private final Identity identity;
     private final AuthorizationProvider authorization;
     private final PermissionService delegate;
+    private final AdminEventBuilder adminEvent;
 
     public UserManagedPermissionService(KeycloakIdentity identity, ResourceServer resourceServer, AuthorizationProvider authorization, AdminEventBuilder eventBuilder) {
         this.identity = identity;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
+        this.adminEvent = eventBuilder;
         delegate = new PermissionService(resourceServer, authorization, null, eventBuilder);
     }
 
@@ -79,7 +85,16 @@ public class UserManagedPermissionService {
         representation.addResource(resourceId);
         representation.setOwner(identity.getId());
 
-        return findById(delegate.create(representation).getId());
+        Policy policy = delegate.create(representation);
+
+        representation.setId(policy.getId());
+        adminEvent.resource(ResourceType.AUTHORIZATION_POLICY)
+                .operation(OperationType.CREATE)
+                .resourcePath("authz", "protection", "uma-policy", policy.getId())
+                .representation(representation)
+                .success();
+
+        return findById(policy.getId());
     }
 
     @Path("{policyId}")
@@ -95,9 +110,16 @@ public class UserManagedPermissionService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Failed to parse representation", Status.BAD_REQUEST);
         }
 
-        checkRequest(getAssociatedResourceId(policyId), representation);
+        String resourceId = getAssociatedResourceId(policyId);
+        Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
 
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        if (resources.isEmpty() || (resources.size() == 1 && resources.contains(resourceId))) {
+            checkRequest(resourceId, representation);
+
+            return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        }
+
+        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Uma permission resource cannot be changed", Response.Status.BAD_REQUEST);
     }
 
     @Path("{policyId}")
@@ -124,11 +146,11 @@ public class UserManagedPermissionService {
                          @QueryParam("scope") String scope,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return  delegate.findAll(null, name, "uma", resource, scope, true, identity.getId(), null, firstResult, maxResult);
+        return  delegate.findAll(null, name, "uma", null, resource, scope, true, identity.getId(), null, firstResult, maxResult);
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {
-        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getRealm(), resourceServer, policyId);
+        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
 
         if (existing == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Policy with [" + policyId + "] does not exist", Status.NOT_FOUND);
@@ -139,7 +161,7 @@ public class UserManagedPermissionService {
 
     private void checkRequest(String resourceId, UmaPermissionRepresentation representation) {
         ResourceStore resourceStore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceId);
+        Resource resource = resourceStore.findById(resourceServer, resourceId);
 
         if (resource == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource [" + resourceId + "] cannot be found", Response.Status.BAD_REQUEST);
@@ -168,6 +190,12 @@ public class UserManagedPermissionService {
 
             if (!resourceScopes.containsAll(scopes)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Some of the scopes [" + scopes + "] are not valid for resource [" + resourceId + "]", Response.Status.BAD_REQUEST);
+            }
+
+            Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
+
+            if (!resources.isEmpty() && (resources.size() != 1 || !resources.contains(resource.getId()))) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
             }
         }
     }

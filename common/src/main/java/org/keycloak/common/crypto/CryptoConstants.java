@@ -10,6 +10,10 @@ public class CryptoConstants {
     public static final String RSA1_5 = "RSA1_5";
     public static final String RSA_OAEP = "RSA-OAEP";
     public static final String RSA_OAEP_256 = "RSA-OAEP-256";
+    public static final String ECDH_ES = "ECDH-ES";
+    public static final String ECDH_ES_A128KW = "ECDH-ES+A128KW";
+    public static final String ECDH_ES_A192KW = "ECDH-ES+A192KW";
+    public static final String ECDH_ES_A256KW = "ECDH-ES+A256KW";
 
     // Constant for the OCSP provider
     // public static final String OCSP = "OCSP";
@@ -19,5 +23,9 @@ public class CryptoConstants {
 
     /** Name of Java security provider used with fips BouncyCastle. Should be used in FIPS environment */
     public static final String BCFIPS_PROVIDER_ID = "BCFIPS";
+
+    public static final String EC_KEY_SECP256R1 = "secp256r1";
+    public static final String EC_KEY_SECP384R1 = "secp384r1";
+    public static final String EC_KEY_SECP521R1 = "secp521r1";
 
 }

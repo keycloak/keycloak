@@ -17,13 +17,22 @@
 
 package org.keycloak.broker.provider;
 
-import org.jboss.logging.Logger;
+import java.util.Set;
+
 import org.keycloak.broker.provider.mappersync.ConfigSyncEventListener;
+import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -65,7 +74,7 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
                 if (keycloakSessionFactory != factory) {
                     keycloakSessionFactory = factory;
 
-                    LOG.infof("Registering %s", ConfigSyncEventListener.class);
+                    LOG.debugf("Registering %s", ConfigSyncEventListener.class);
                     factory.register(new ConfigSyncEventListener());
                 }
             }
@@ -90,5 +99,46 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
     @Override
     public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         updateBrokeredUser(session, realm, user, mapperModel, context);
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(AlternativeLookupProvider.class); //for caching
+    }
+
+    protected static boolean isAdminRoleGrantAllowed(KeycloakSession session, RealmModel realm, RoleModel role, IdentityProviderMapperModel mapperModel) {
+        if (role == null || !AdminRoles.isAdminRoleOrComposite(role)) {
+            return true;
+        }
+        IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
+        if (idp == null) {
+            LOG.warnf("Identity provider '%s' referenced by mapper '%s' in realm '%s' could not be resolved; denying admin role mapping.",
+                    mapperModel.getIdentityProviderAlias(), mapperModel.getName(), realm.getName());
+            return false;
+        }
+        if (!idp.isAllowAdminRoleMapping()) {
+            LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to grant admin role '%s' but '%s' is disabled.",
+                    mapperModel.getName(), idp.getAlias(), realm.getName(), role.getName(), IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING);
+            return false;
+        }
+        return true;
+    }
+
+    protected static boolean isAdminGroupJoinAllowed(KeycloakSession session, RealmModel realm, GroupModel group, IdentityProviderMapperModel mapperModel) {
+        if (group == null || !AdminRoles.groupHasAdminRoles(group)) {
+            return true;
+        }
+        IdentityProviderModel idp = session.identityProviders().getByAlias(mapperModel.getIdentityProviderAlias());
+        if (idp == null) {
+            LOG.warnf("Identity provider '%s' referenced by mapper '%s' in realm '%s' could not be resolved; denying admin group mapping.",
+                    mapperModel.getIdentityProviderAlias(), mapperModel.getName(), realm.getName());
+            return false;
+        }
+        if (!idp.isAllowAdminRoleMapping()) {
+            LOG.warnf("Mapper '%s' on identity provider '%s' in realm '%s' attempted to add the user to group '%s' which grants admin roles but '%s' is disabled.",
+                    mapperModel.getName(), idp.getAlias(), realm.getName(), group.getName(), IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING);
+            return false;
+        }
+        return true;
     }
 }

@@ -17,18 +17,15 @@
 
 package org.keycloak.services;
 
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorResponseException extends WebApplicationException {
+public class ErrorResponseException extends RollbackWebApplicationException {
 
     private final Response response;
     private final String error;
@@ -36,6 +33,7 @@ public class ErrorResponseException extends WebApplicationException {
     private final Response.Status status;
 
     public ErrorResponseException(String error, String errorDescription, Response.Status status) {
+        super(error, status);
         this.response = null;
         this.error = error;
         this.errorDescription = errorDescription;
@@ -43,10 +41,15 @@ public class ErrorResponseException extends WebApplicationException {
     }
 
     public ErrorResponseException(Response response) {
+        super((String) null, response);
         this.response = response;
         this.error = null;
         this.errorDescription = null;
         this.status = null;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public String getErrorDescription() {
@@ -54,17 +57,7 @@ public class ErrorResponseException extends WebApplicationException {
     }
 
     @Override
-    public Response getResponse() {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        if (session != null) {
-            // This has to happen, since calling getResponse() with non-null result leads to
-            // directly returning the result instead of 
-            // propagating exception to KeycloakErrorHandler.toResponse(Throwable) which would ensure rollback on other exception types.
-            //
-            // See org.jboss.resteasy.core.ExceptionHandler.unwrapException(HttpRequest, Throwable, RESTEasyTracingLogger)
-
-            session.getTransactionManager().setRollbackOnly();
-        }
+    public Response createErrorResponse() {
         if (response != null) {
             return response;
         } else {

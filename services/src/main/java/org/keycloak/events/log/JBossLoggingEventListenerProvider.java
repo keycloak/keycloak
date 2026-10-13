@@ -17,7 +17,13 @@
 
 package org.keycloak.events.log;
 
-import org.jboss.logging.Logger;
+import java.util.Map;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -28,10 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,16 +47,19 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger.Level errorLevel;
     private final boolean sanitize;
     private final Character quotes;
+    private final boolean includeRepresentation;
     private final EventListenerTransaction tx = new EventListenerTransaction(this::logAdminEvent, this::logEvent);
 
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger,
-            Logger.Level successLevel, Logger.Level errorLevel, Character quotes, boolean sanitize) {
+            Logger.Level successLevel, Logger.Level errorLevel, Character quotes,
+            boolean sanitize, boolean includeRepresentation) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
         this.sanitize = sanitize;
         this.quotes = quotes;
+        this.includeRepresentation = includeRepresentation;
         this.session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
@@ -80,7 +86,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         }
     }
 
-    private void logEvent(Event event) {
+    protected void logEvent(Event event) {
         Logger.Level level = event.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -90,10 +96,16 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, event.getType().toString());
             sb.append(", realmId=");
             sanitize(sb, event.getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, event.getRealmName());
             sb.append(", clientId=");
             sanitize(sb, event.getClientId());
             sb.append(", userId=");
             sanitize(sb, event.getUserId());
+            if (event.getSessionId() != null) {
+                sb.append(", sessionId=");
+                sanitize(sb, event.getSessionId());
+            }
             sb.append(", ipAddress=");
             sanitize(sb, event.getIpAddress());
 
@@ -131,7 +143,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
         }
     }
 
-    private void logAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+    protected void logAdminEvent(AdminEvent adminEvent, boolean realmIncludeRepresentation) {
         Logger.Level level = adminEvent.getError() != null ? errorLevel : successLevel;
 
         if (logger.isEnabled(level)) {
@@ -141,6 +153,8 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
             sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sb.append(", realmName=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
             sb.append(", clientId=");
             sanitize(sb, adminEvent.getAuthDetails().getClientId());
             sb.append(", userId=");
@@ -157,6 +171,20 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 sanitize(sb, adminEvent.getError());
             }
 
+            if (adminEvent.getDetails() != null) {
+                for (Map.Entry<String, String> e : adminEvent.getDetails().entrySet()) {
+                    sb.append(", ");
+                    sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getKey(), null));
+                    sb.append("=");
+                    sanitize(sb, e.getValue());
+                }
+            }
+
+            if (realmIncludeRepresentation && includeRepresentation && adminEvent.getRepresentation() != null) {
+                sb.append(", representation=");
+                sanitize(sb, adminEvent.getRepresentation());
+            }
+
             if(logger.isTraceEnabled()) {
                 setKeycloakContext(sb);
             }
@@ -168,30 +196,33 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     @Override
     public void close() {
     }
-    
+
     private void setKeycloakContext(StringBuilder sb) {
         KeycloakContext context = session.getContext();
-        UriInfo uriInfo = context.getUri();
-        HttpHeaders headers = context.getRequestHeaders();
-        if (uriInfo != null) {
-            sb.append(", requestUri=");
-            sanitize(sb, uriInfo.getRequestUri().toString());
-        }
-
-        if (headers != null) {
-            sb.append(", cookies=[");
-            boolean f = true;
-            for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
-                if (f) {
-                    f = false;
-                } else {
-                    sb.append(", ");
-                }
-                sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getValue().toString(), null));
+        try {
+            UriInfo uriInfo = context.getUri();
+            HttpHeaders headers = context.getRequestHeaders();
+            if (uriInfo != null) {
+                sb.append(", requestUri=");
+                sanitize(sb, uriInfo.getRequestUri().toString());
             }
-            sb.append("]");
+
+            if (headers != null) {
+                sb.append(", cookies=[");
+                boolean f = true;
+                for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
+                    if (f) {
+                        f = false;
+                    } else {
+                        sb.append(", ");
+                    }
+                    sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getValue().toString(), null));
+                }
+                sb.append("]");
+            }
+        } catch (ContextNotActiveException e) {
+            // no context information to add
         }
-        
     }
 
 }

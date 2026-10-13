@@ -16,21 +16,21 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.util.SecurityActions;
-import org.keycloak.saml.common.util.SystemPropertiesUtil;
-import org.keycloak.common.util.Time;
-
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.util.SecurityActions;
+import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
 /**
  * Util class dealing with xml based time
@@ -43,7 +43,7 @@ public class XMLTimeUtil {
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     /**
-     * Add additional time in miliseconds
+     * Add additional time in milliseconds
      *
      * @param value calendar whose value needs to be updated
      * @param millis
@@ -68,10 +68,10 @@ public class XMLTimeUtil {
     }
 
     /**
-     * Subtract some miliseconds from the time value
+     * Subtract some milliseconds from the time value
      *
      * @param value
-     * @param millis miliseconds entered in a positive value
+     * @param millis milliseconds entered in a positive value
      *
      * @return
      */
@@ -128,7 +128,7 @@ public class XMLTimeUtil {
     }
 
     /**
-     * Convert the minutes into miliseconds
+     * Convert the minutes into milliseconds
      *
      * @param valueInMins
      *
@@ -190,7 +190,7 @@ public class XMLTimeUtil {
             if (timeValue.startsWith("P")) {
                 return factory.newDuration(timeValue);
             } else {
-                return factory.newDuration(Long.valueOf(timeValue));
+                return factory.newDuration(Long.parseLong(timeValue));
             }
         } catch (Exception e) {
             throw logger.samlMetaDataFailedToCreateCacheDuration(timeValue);

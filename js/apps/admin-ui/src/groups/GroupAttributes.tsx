@@ -1,4 +1,5 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   PageSection,
@@ -8,19 +9,18 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
-import { useFetch } from "../utils/useFetch";
+import { convertFormValuesToObject } from "../util";
 import { getLastId } from "./groupIdUtils";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 export const GroupAttributes = () => {
+  const groups = useGroupResource();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
@@ -32,10 +32,12 @@ export const GroupAttributes = () => {
   const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
 
   useFetch(
-    () => adminClient.groups.findOne({ id }),
+    () => groups.findOne({ id }),
     (group) => {
-      convertToFormValues(group!, form.setValue);
-      setCurrentGroup(group);
+      form.reset({
+        attributes: arrayToKeyValue(group?.attributes!),
+      });
+      setCurrentGroup(group ?? undefined);
     },
     [id],
   );
@@ -43,10 +45,7 @@ export const GroupAttributes = () => {
   const save = async (attributeForm: AttributeForm) => {
     try {
       const attributes = convertFormValuesToObject(attributeForm).attributes;
-      await adminClient.groups.update(
-        { id: id! },
-        { ...currentGroup, attributes },
-      );
+      await groups.update({ id: id! }, { ...currentGroup, attributes });
 
       setCurrentGroup({ ...currentGroup, attributes });
       addAlert(t("groupUpdated"), AlertVariant.success);

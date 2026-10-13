@@ -28,6 +28,7 @@ public class ComponentTypeRepresentation {
     protected String id;
     protected String helpText;
     protected List<ConfigPropertyRepresentation> properties;
+    protected List<ConfigPropertyRepresentation> clientProperties;
 
     protected Map<String, Object> metadata = new HashMap<>();
 
@@ -56,9 +57,18 @@ public class ComponentTypeRepresentation {
         this.properties = properties;
     }
 
+    public List<ConfigPropertyRepresentation> getClientProperties() {
+        return clientProperties;
+    }
+
+    public void setClientProperties(List<ConfigPropertyRepresentation> clientProperties) {
+        this.clientProperties = clientProperties;
+    }
+
     /**
-     * Extra information about the component that might come from annotations or interfaces that the component implements
-     * For example, if UserStorageProvider implements ImportSynchronization
+     * Extra information about the component
+     * that might come from annotations or interfaces that the component implements.
+     * For example, if UserStorageProviderFactory implements ImportSynchronization
      *
      * @return
      */

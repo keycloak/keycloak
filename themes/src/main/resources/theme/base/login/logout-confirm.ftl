@@ -6,7 +6,7 @@
         <div id="kc-logout-confirm" class="content-area">
             <p class="instruction">${msg("logoutConfirmHeader")}</p>
 
-            <form class="form-actions" action="${url.logoutConfirmAction}" method="POST">
+            <form class="form-actions" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
                 <div class="${properties.kcFormGroupClass!}">
                     <div id="kc-form-options">
@@ -27,7 +27,7 @@
                 <#if logoutConfirm.skipLink>
                 <#else>
                     <#if (client.baseUrl)?has_content>
-                        <p><a href="${client.baseUrl}">${kcSanitize(msg("backToApplication"))?no_esc}</a></p>
+                        <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
                     </#if>
                 </#if>
             </div>

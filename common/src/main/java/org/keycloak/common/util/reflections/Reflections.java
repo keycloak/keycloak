@@ -31,7 +31,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -398,7 +397,7 @@ public class Reflections {
 
     /**
      * Set the accessibility flag on the {@link AccessibleObject} as described in {@link
-     * AccessibleObject#setAccessible(boolean)} within the context of a {link PrivilegedAction}.
+     * AccessibleObject#setAccessible(boolean)}.
      *
      * @param <A> member the accessible object type
      * @param member the accessible object
@@ -406,13 +405,13 @@ public class Reflections {
      * @return the accessible object after the accessible flag has been altered
      */
     public static <A extends AccessibleObject> A setAccessible(A member) {
-        AccessController.doPrivileged(new SetAccessiblePrivilegedAction(member));
+        member.setAccessible(true);
         return member;
     }
 
     /**
      * Set the accessibility flag on the {@link AccessibleObject} to false as described in {@link
-     * AccessibleObject#setAccessible(boolean)} within the context of a {link PrivilegedAction}.
+     * AccessibleObject#setAccessible(boolean)}.
      *
      * @param <A> member the accessible object type
      * @param member the accessible object
@@ -420,7 +419,7 @@ public class Reflections {
      * @return the accessible object after the accessible flag has been altered
      */
     public static <A extends AccessibleObject> A unsetAccessible(A member) {
-        AccessController.doPrivileged(new UnSetAccessiblePrivilegedAction(member));
+        member.setAccessible(false);
         return member;
     }
 
@@ -705,12 +704,12 @@ public class Reflections {
     }
 
     /**
-     * Check the assignability of one type to another, taking into account the actual type arguements
+     * Check the assignability of one type to another, taking into account the actual type arguments
      *
      * @param rawType1 the raw type of the class to check
-     * @param actualTypeArguments1 the actual type arguements to check, or an empty array if not a parameterized type
+     * @param actualTypeArguments1 the actual type arguments to check, or an empty array if not a parameterized type
      * @param rawType2 the raw type of the class to check
-     * @param actualTypeArguments2 the actual type arguements to check, or an empty array if not a parameterized type
+     * @param actualTypeArguments2 the actual type arguments to check, or an empty array if not a parameterized type
      *
      * @return
      */
@@ -987,7 +986,9 @@ public class Reflections {
      * @throws ClassNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
+     * @deprecated for removal in Keycloak 27
      */
+    @Deprecated
     public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return newInstance(fromClass, fromClass.getName());
     }
@@ -1005,7 +1006,9 @@ public class Reflections {
      * @throws ClassNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
+     * @deprecated for removal in Keycloak 27
      */
+    @Deprecated
     public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
     }
@@ -1047,5 +1050,39 @@ public class Reflections {
         }
 
         return Object.class;
+    }
+
+    public static <T> T convertValueToType(Object value, Class<T> type) {
+
+        if (value == null) {
+            return null;
+
+        } else if (value instanceof String) {
+            if (type == String.class) {
+                return type.cast(value);
+            } else if (type == Boolean.class) {
+                return type.cast(Boolean.parseBoolean(value.toString()));
+            } else if (type == Integer.class) {
+                return type.cast(Integer.parseInt(value.toString()));
+            } else if (type == Long.class) {
+                return type.cast(Long.parseLong(value.toString()));
+            }
+        } else if (value instanceof Number) {
+            if (type == Integer.class) {
+                return type.cast(((Number) value).intValue());
+            } else if (type == Long.class) {
+                return type.cast(((Number) value).longValue());
+            } else if (type == String.class) {
+                return type.cast(value.toString());
+            }
+        } else if (value instanceof Boolean) {
+            if (type == Boolean.class) {
+                return type.cast(value);
+            } else if (type == String.class) {
+                return type.cast(value);
+            }
+        }
+
+        throw new RuntimeException("Unable to handle type [" + type + "]");
     }
 }

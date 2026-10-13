@@ -10,7 +10,7 @@ import { PencilAltIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextAreaControl, TextControl } from "ui-shared";
+import { TextAreaControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../../utils/useToggle";
 import type { ExpandableExecution } from "../execution-model";
 
@@ -81,10 +81,10 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
           >
             <FormProvider {...form}>
               <TextControl
-                name="name"
+                name="displayName"
                 label={t("name")}
                 labelIcon={t("flowNameHelp")}
-                rules={{ required: { value: true, message: t("required") } }}
+                rules={{ required: t("required") }}
               />
               <TextAreaControl
                 name="description"

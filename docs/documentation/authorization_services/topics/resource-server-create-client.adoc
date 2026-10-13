@@ -35,4 +35,4 @@ http://${host}:${port}/my-resource-server
 . Click *Save*. The client is created and the client Settings page opens. A page similar to the following is displayed:
 +
 .Client Settings
-image:images/resource-server/client-enable-authz.png[alt="Client Settings"]
+image:images/resource-server/client-settings.png[alt="Client Settings"]

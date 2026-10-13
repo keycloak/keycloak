@@ -3,7 +3,7 @@
 
 <@template.guide
 title="All configuration"
-summary="Complete list of all build options and configuration for {project_name}">
+summary="Review build options and configuration for {project_name}.">
 
 <#list ctx.options.categories as category>
 <#assign categoryOptions=ctx.options.getValues(category)>
@@ -11,7 +11,7 @@ summary="Complete list of all build options and configuration for {project_name}
 [#category-${category.name()?lower_case}]
 == ${category.heading}
 
-<@opts.list options=categoryOptions></@opts.list>
+<@opts.list options=categoryOptions categoryName=category.name()></@opts.list>
 </#if>
 </#list>
 </@template.guide>

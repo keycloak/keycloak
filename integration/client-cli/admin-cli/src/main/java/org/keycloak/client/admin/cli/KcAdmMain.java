@@ -16,84 +16,107 @@
  */
 package org.keycloak.client.admin.cli;
 
-import org.jboss.aesh.console.AeshConsoleBuilder;
-import org.jboss.aesh.console.AeshConsoleImpl;
-import org.jboss.aesh.console.Prompt;
-import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
-import org.jboss.aesh.console.command.registry.CommandRegistry;
-import org.jboss.aesh.console.settings.Settings;
-import org.jboss.aesh.console.settings.SettingsBuilder;
-import org.keycloak.client.admin.cli.aesh.AeshEnhancer;
-import org.keycloak.client.admin.cli.aesh.Globals;
-import org.keycloak.client.admin.cli.aesh.ValveInputStream;
-import org.keycloak.client.admin.cli.commands.KcAdmCmd;
-import org.keycloak.client.admin.cli.util.ClassLoaderUtil;
-import org.keycloak.common.crypto.CryptoIntegration;
-
-import java.util.ArrayList;
+import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Set;
+
+import org.keycloak.client.admin.cli.commands.KcAdmCmd;
+import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
+import org.keycloak.client.admin.cli.v2.KcAdmV2Completer;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.cli.common.CommandState;
+import org.keycloak.client.cli.common.Globals;
+import org.keycloak.client.cli.util.OsUtil;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KcAdmMain {
 
-    public static void main(String [] args) {
-        String libDir = System.getProperty("kc.lib.dir");
-        if (libDir == null) {
-            throw new RuntimeException("System property kc.lib.dir needs to be set");
+    public static final String DEFAULT_CONFIG_FILE_PATH = System.getProperty("user.home") + "/.keycloak/kcadm.config";
+
+    public static final String DEFAULT_CONFIG_FILE_STRING = OsUtil.OS_ARCH.isWindows() ? "%HOMEDRIVE%%HOMEPATH%\\.keycloak\\kcadm.config" : "~/.keycloak/kcadm.config";
+
+    public static final String CMD = OsUtil.OS_ARCH.isWindows() ? "kcadm.bat" : "kcadm.sh";
+
+    public static final CommandState COMMAND_STATE = new CommandState() {
+
+        @Override
+        public String getCommand() {
+            return CMD;
         }
-        ClassLoader cl = ClassLoaderUtil.resolveClassLoader(libDir);
-        Thread.currentThread().setContextClassLoader(cl);
 
-        CryptoIntegration.init(cl);
-        
-        Globals.stdin = new ValveInputStream();
+        @Override
+        public String getDefaultConfigFilePath() {
+            return DEFAULT_CONFIG_FILE_PATH;
+        }
 
-        Settings settings = new SettingsBuilder()
-        .logging(false)
-        .readInputrc(false)
-        .disableCompletion(true)
-        .disableHistory(true)
-        .enableAlias(false)
-        .enableExport(false)
-        .inputStream(Globals.stdin)
-        .create();
-        
-        CommandRegistry registry = new AeshCommandRegistryBuilder()
-        .command(KcAdmCmd.class)
-                .create();
-                
-        AeshConsoleImpl console = (AeshConsoleImpl) new AeshConsoleBuilder()
-        .settings(settings)
-        .commandRegistry(registry)
-        .prompt(new Prompt(""))
-        //                .commandInvocationProvider(new CommandInvocationServices() {
-            //
-            //                })
-            .create();
-            
-            AeshEnhancer.enhance(console);
-            
-            // work around parser issues with quotes and brackets
-            ArrayList<String> arguments = new ArrayList<>();
-            arguments.add("kcadm");
-            arguments.addAll(Arrays.asList(args));
-            Globals.args = arguments;
-            
-            StringBuilder b = new StringBuilder();
-            for (String s : args) {
-                // quote if necessary
-                b.append(' ');
-                s = s.replace("'", "\\'");
-                b.append('\'');
-                b.append(s);
-                b.append('\'');
-            }
-            console.setEcho(false);
+        @Override
+        public boolean isTokenGlobal() {
+            return true;
+        };
 
-            console.execute("kcadm" + b.toString());
-            
-            console.start();
+    };
+
+    public static final String V2_FLAG = "--v2";
+
+    private static final String COMPLETE_FLAG = "__complete";
+
+    public static void main(String[] args) {
+        if (!containsArg(args, V2_FLAG)) {
+            Globals.main(args, new KcAdmCmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
+            return;
+        }
+
+        String[] v2Args = stripArgs(args, V2_FLAG);
+
+        if (containsArg(v2Args, COMPLETE_FLAG)) {
+            KcAdmV2Completer.complete(stripArgs(v2Args, COMPLETE_FLAG),
+                    new PrintWriter(System.out, true));
+        } else {
+            showHelpForLeafCommand(v2Args);
+            Globals.main(v2Args, new KcAdmV2Cmd(v2Args), CMD, DEFAULT_CONFIG_FILE_STRING);
         }
     }
+
+    /**
+     * This assures that the root command or the config command shows help if user (by mistake?)
+     * does not use the {@code --help} option on the leaf command, e.g.
+     * <code>
+     * kcadm.sh --v2 --help client
+     * kcadm.sh --v2 config --help editor
+     * </code>
+     * They require special treatment as they extend the {@link BaseGlobalOptionsCmd} unlike v2 commands generated
+     * from the OpenAPI specification.
+     * Additionally, this also improves default behavior: whenever the help is requested, we show it for the leaf command.
+     * Reasoning here is that if users write commands like:
+     * <pre>{@code
+     * kcadm.sh --v2 --help client list
+     * kcadm.sh --v2 client --help list
+     * }</pre>
+     * they probably want to see the {@code list} command help, or they would stop typing after the {@code --help}.
+     */
+    public static void showHelpForLeafCommand(String[] v2Args) {
+        if (v2Args.length > 1) {
+            for (int i = 0; i < v2Args.length - 1; i++) {
+                if ("--help".equals(v2Args[i]) || "-h".equals(v2Args[i])) {
+                    String helpFlag = v2Args[i];
+                    System.arraycopy(v2Args, i + 1, v2Args, i, v2Args.length - i - 1);
+                    v2Args[v2Args.length - 1] = helpFlag;
+                    break;
+                }
+            }
+        }
+    }
+
+    private static boolean containsArg(String[] args, String arg) {
+        return Arrays.stream(args).anyMatch(arg::equalsIgnoreCase);
+    }
+
+    private static String[] stripArgs(String[] args, String... argsToStrip) {
+        Set<String> toStrip = Set.of(argsToStrip);
+        return Arrays.stream(args)
+                .filter(a -> !toStrip.contains(a.toLowerCase()))
+                .toArray(String[]::new);
+    }
+}

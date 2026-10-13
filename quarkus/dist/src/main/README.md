@@ -1,6 +1,8 @@
 Keycloak
 ========
 
+To understand the contents of your Keycloak installation, see the [directory structure guide](https://www.keycloak.org/server/directory-structure).
+
 To get help configuring Keycloak via the CLI, run:
 
 on Linux/Unix:

@@ -1,10 +1,10 @@
 package org.keycloak.vault;
 
+import java.nio.charset.StandardCharsets;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * Checks if {@link VaultRawSecret} is equal to a String.

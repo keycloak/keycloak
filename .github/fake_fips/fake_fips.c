@@ -22,6 +22,7 @@
 
 #include <linux/module.h>
 #include <linux/sysctl.h>
+#include <linux/version.h>
 
 int fips_enabled = 1;
 
@@ -33,22 +34,32 @@ static struct ctl_table crypto_sysctl_table[] = {
 		.mode		= 0444,
 		.proc_handler	= proc_dointvec
 	},
-        {}
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
+	{}
+#endif
 };
 static struct ctl_table crypto_dir_table[] = {
 	{
 		.procname       = "crypto",
 		.mode           = 0555,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0))
 		.child          = crypto_sysctl_table
+#endif
 	},
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
 	{}
+#endif
 };
 
 static struct ctl_table_header *crypto_sysctls;
 
 static void crypto_proc_fips_init(void)
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0))
 	crypto_sysctls = register_sysctl_table(crypto_dir_table);
+#else
+	crypto_sysctls = register_sysctl(crypto_dir_table->procname, crypto_sysctl_table);
+#endif
 }
 
 static void crypto_proc_fips_exit(void)

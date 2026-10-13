@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -90,7 +91,7 @@ public class VerifyUserProfile extends UpdateProfile {
             
             EventBuilder event = context.getEvent().clone();
             event.event(EventType.VERIFY_PROFILE);
-            event.detail("fields_to_update", collectFields(errors));
+            event.detail(Details.FIELDS_TO_UPDATE, collectFields(errors));
             event.success();
         }
     }

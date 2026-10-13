@@ -20,11 +20,10 @@ package org.keycloak.adapters.saml.elytron;
 import java.net.URI;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import javax.security.auth.callback.CallbackHandler;
-import javax.servlet.http.HttpServletResponse;
 
-import org.jboss.logging.Logger;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
@@ -32,6 +31,8 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
@@ -159,7 +160,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     }
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
-    
+
     static void sendRedirect(final ElytronHttpFacade exchange, final String location) {
         if (location == null) {
             LOGGER.warn("Logout page not set.");

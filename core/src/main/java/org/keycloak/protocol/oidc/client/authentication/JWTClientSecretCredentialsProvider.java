@@ -18,19 +18,19 @@ package org.keycloak.protocol.oidc.client.authentication;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.UUID;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import org.jboss.logging.Logger;
 
 /**
  * Client authentication based on JWT signed by client secret instead of private key .
@@ -126,16 +126,16 @@ public class JWTClientSecretCredentialsProvider implements ClientCredentialsProv
         // JWT claims is the same as one by private_key_jwt
 
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(UUID.randomUUID().toString());
+        reqToken.id(SecretGenerator.getInstance().generateSecureID());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
         // the same as in KEYCLOAK-2986, JWTClientCredentialsProvider's timeout field
-        reqToken.expiration(now + 10);
-        reqToken.notBefore(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
         return reqToken;
     }
 

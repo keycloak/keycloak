@@ -9,10 +9,10 @@ The discovery document can be obtained from:
 [source,bash,subs="attributes+"]
 ----
 curl -X GET \
-  http://${host}:${port}{kc_realms_path}/${realm}/.well-known/uma2-configuration
+  http://${host}:${port}{kc_realms_path}/${realm-name}/.well-known/uma2-configuration
 ----
 
-Where `${host}:${port}` is the hostname (or IP address) and port where {project_name} is running and `${realm}` is the name of
+Where `${host}:${port}` is the hostname (or IP address) and port where {project_name} is running and `${realm-name}` is the name of
 a realm in {project_name}.
 
 As a result, you should get a response as follows:
@@ -24,11 +24,11 @@ As a result, you should get a response as follows:
     // some claims are expected here
 
     // these are the main claims in the discovery document about Authorization Services endpoints location
-    "token_endpoint": "http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token",
-    "token_introspection_endpoint": "http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token/introspect",
-    "resource_registration_endpoint": "http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/resource_set",
-    "permission_endpoint": "http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/permission",
-    "policy_endpoint": "http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy"
+    "token_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token",
+    "token_introspection_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token/introspect",
+    "resource_registration_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set",
+    "permission_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission",
+    "policy_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy"
 }
 ----
 
@@ -37,7 +37,7 @@ Each of these endpoints expose a specific set of capabilities:
 * **token_endpoint**
 +
 A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. Through this
-endpoint clients can send authorization requests and obtain an RPT with all permissions granted by {project_name}.
+endpoint, clients can send authorization requests and obtain an RPT with all permissions granted by {project_name}.
 +
 * **token_introspection_endpoint**
 +

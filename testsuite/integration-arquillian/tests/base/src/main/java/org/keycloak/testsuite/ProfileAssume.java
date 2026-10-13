@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite;
 
-import org.junit.Assume;
+import java.util.Set;
+
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.TestContext;
 
-import java.util.Set;
+import org.junit.Assume;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,5 +58,9 @@ public class ProfileAssume {
 
     public static void setTestContext(TestContext testContext) {
         TEST_CONTEXT = testContext;
+    }
+    
+    public static Set<Profile.Feature> getDisabledFeatures() {
+        return DISABLED_FEATURES;
     }
 }

@@ -28,7 +28,7 @@
     <artifactId>keycloak-dependencies-parent</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Dependencies Parent</name>
-    <description/>
+    <description>Keycloak Dependencies Parent</description>
 
     <modules>
         <module>server-min</module>

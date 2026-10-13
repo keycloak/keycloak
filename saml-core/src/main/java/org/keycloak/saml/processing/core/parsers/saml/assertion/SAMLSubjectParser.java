@@ -16,16 +16,17 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.assertion;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
-import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
+
 import org.w3c.dom.Element;
 
 /**

@@ -16,6 +16,8 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -26,8 +28,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
@@ -95,7 +95,7 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory, Envir
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
     }
 }

@@ -17,7 +17,6 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,8 +31,7 @@ public class RequiredActionProviderRepresentation {
     private boolean enabled;
     private boolean defaultAction;
     private int priority;
-    private Map<String, String> config = new HashMap<>();
-
+    private Map<String, String> config;
 
     public String getAlias() {
         return alias;

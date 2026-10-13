@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { TextControl, TextAreaControl } from "ui-shared";
+import { TextControl, TextAreaControl } from "@keycloak/keycloak-ui-shared";
 
 import { FormAccess } from "../components/form/FormAccess";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -19,7 +19,7 @@ export const ClientDescription = ({
         name="clientId"
         label={t("clientId")}
         labelIcon={t("clientIdHelp")}
-        rules={{ required: { value: true, message: t("required") } }}
+        rules={{ required: t("required") }}
       />
       <TextControl
         name="name"

@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,14 +59,14 @@ public class SamlSessionUtils {
 
         String userSessionId = parts[0];
         String clientUUID = parts[1];
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, false, clientUUID);
+        UserSessionModel userSession = session.sessions().getUserSessionIfClientExists(realm, userSessionId, false, clientUUID);
         if (userSession == null) {
             return null;
         }
 
         return userSession.getAuthenticatedClientSessionByClient(clientUUID);
     }
-    
+
     public static Iterator<SamlAuthenticationPreprocessor> getSamlAuthenticationPreprocessorIterator(KeycloakSession session) {
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(SamlAuthenticationPreprocessor.class)
                 .filter(Objects::nonNull)

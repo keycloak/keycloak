@@ -39,7 +39,7 @@ public class NotUsernamePasswordPolicyProvider implements PasswordPolicyProvider
         if (username == null) {
             return null;
         }
-        return username.equals(password) ? new PolicyError(ERROR_MESSAGE) : null;
+        return username.equalsIgnoreCase(password) ? new PolicyError(ERROR_MESSAGE) : null;
     }
 
     @Override

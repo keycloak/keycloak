@@ -17,6 +17,11 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -27,11 +32,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Mappings UserSessionModel.note to an ID Token claim.
@@ -49,6 +49,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         property.setLabel(ProtocolMapperUtils.USER_SESSION_MODEL_NOTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_SESSION_MODEL_NOTE_HELP_TEXT);
         property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setRequired(true);
         configProperties.add(property);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserSessionNoteMapper.class);
     }

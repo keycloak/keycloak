@@ -1,18 +1,12 @@
 import {
-  FormGroup,
-  NumberInput,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core";
-import { isEqual } from "lodash-es";
-import { Controller, UseFormReturn, useWatch } from "react-hook-form";
+  NumberControl,
+  SelectControl,
+  SelectControlOption,
+} from "@keycloak/keycloak-ui-shared";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import useToggle from "../../utils/useToggle";
 
 export type SettingsCacheProps = {
   form: UseFormReturn;
@@ -21,261 +15,120 @@ export type SettingsCacheProps = {
   unWrap?: boolean;
 };
 
+const getValue = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+};
+
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
   const { t } = useTranslation();
-
-  const [isCachePolicyOpen, toggleCachePolicy] = useToggle();
-  const [isEvictionHourOpen, toggleEvictionHour] = useToggle();
-  const [isEvictionMinuteOpen, toggleEvictionMinute] = useToggle();
-
-  const [isEvictionDayOpen, toggleEvictionDay] = useToggle();
 
   const cachePolicyType = useWatch({
     control: form.control,
     name: "config.cachePolicy",
   });
 
-  const hourOptions = [
-    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
-      {[`0${0}`]}
-    </SelectOption>,
-  ];
+  const cachePolicy = getValue(cachePolicyType);
+
+  const hourOptions: SelectControlOption[] = [];
   let hourDisplay = "";
-  for (let index = 1; index < 24; index++) {
+  for (let index = 0; index < 24; index++) {
     if (index < 10) {
       hourDisplay = `0${index}`;
     } else {
       hourDisplay = `${index}`;
     }
-    hourOptions.push(
-      <SelectOption key={index} value={[`${index}`]}>
-        {hourDisplay}
-      </SelectOption>,
-    );
+    hourOptions.push({ key: `${index}`, value: hourDisplay });
   }
 
-  const minuteOptions = [
-    <SelectOption key={0} value={[`${0}`]} isPlaceholder>
-      {[`0${0}`]}
-    </SelectOption>,
-  ];
+  const minuteOptions: SelectControlOption[] = [];
   let minuteDisplay = "";
-  for (let index = 1; index < 60; index++) {
+  for (let index = 0; index < 60; index++) {
     if (index < 10) {
       minuteDisplay = `0${index}`;
     } else {
       minuteDisplay = `${index}`;
     }
-    minuteOptions.push(
-      <SelectOption key={index} value={[`${index}`]}>
-        {minuteDisplay}
-      </SelectOption>,
-    );
+    minuteOptions.push({ key: `${index}`, value: minuteDisplay });
   }
 
   return (
     <>
-      <FormGroup
+      <SelectControl
+        id="kc-cache-policy"
+        name="config.cachePolicy"
         label={t("cachePolicy")}
-        labelIcon={
-          <HelpItem
-            helpText={t("cachePolicyHelp")}
-            fieldLabelId="cachePolicy"
-          />
-        }
-        fieldId="kc-cache-policy"
-      >
-        <Controller
-          name="config.cachePolicy"
-          defaultValue={["DEFAULT"]}
-          control={form.control}
-          render={({ field }) => (
-            <Select
-              toggleId="kc-cache-policy"
-              required
-              onToggle={toggleCachePolicy}
-              isOpen={isCachePolicyOpen}
-              onSelect={(_, value) => {
-                field.onChange(value as string);
-                toggleCachePolicy();
-              }}
-              selections={field.value}
-              variant={SelectVariant.single}
-              data-testid="kerberos-cache-policy"
-            >
-              <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
-              <SelectOption key={1} value={["EVICT_DAILY"]} />
-              <SelectOption key={2} value={["EVICT_WEEKLY"]} />
-              <SelectOption key={3} value={["MAX_LIFESPAN"]} />
-              <SelectOption key={4} value={["NO_CACHE"]} />
-            </Select>
-          )}
-        />
-      </FormGroup>
-      {isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
-        <FormGroup
+        labelIcon={t("cachePolicyHelp")}
+        controller={{
+          defaultValue: ["DEFAULT"],
+        }}
+        aria-label={t("selectCacheType")}
+        options={[
+          "DEFAULT",
+          "EVICT_DAILY",
+          "EVICT_WEEKLY",
+          "MAX_LIFESPAN",
+          "NO_CACHE",
+        ]}
+      />
+      {cachePolicy === "EVICT_WEEKLY" ? (
+        <SelectControl
+          id="kc-eviction-day"
+          name="config.evictionDay[0]"
           label={t("evictionDay")}
-          labelIcon={
-            <HelpItem
-              helpText={t("evictionDayHelp")}
-              fieldLabelId="evictionDay"
-            />
-          }
-          isRequired
-          fieldId="kc-eviction-day"
-        >
-          <Controller
-            name="config.evictionDay[0]"
-            defaultValue={"1"}
-            control={form.control}
-            render={({ field }) => (
-              <Select
-                data-testid="cache-day"
-                toggleId="kc-eviction-day"
-                required
-                onToggle={toggleEvictionDay}
-                isOpen={isEvictionDayOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  toggleEvictionDay();
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-              >
-                <SelectOption key={0} value="1" isPlaceholder>
-                  {t("Sunday")}
-                </SelectOption>
-                <SelectOption key={1} value="2">
-                  {t("Monday")}
-                </SelectOption>
-                <SelectOption key={2} value="3">
-                  {t("Tuesday")}
-                </SelectOption>
-                <SelectOption key={3} value="4">
-                  {t("Wednesday")}
-                </SelectOption>
-                <SelectOption key={4} value="5">
-                  {t("Thursday")}
-                </SelectOption>
-                <SelectOption key={5} value="6">
-                  {t("Friday")}
-                </SelectOption>
-                <SelectOption key={6} value="7">
-                  {t("Saturday")}
-                </SelectOption>
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("evictionDayHelp")}
+          controller={{
+            defaultValue: "1",
+          }}
+          aria-label={t("selectEvictionDay")}
+          options={[
+            { key: "1", value: t("Sunday") },
+            { key: "2", value: t("Monday") },
+            { key: "3", value: t("Tuesday") },
+            { key: "4", value: t("Wednesday") },
+            { key: "5", value: t("Thursday") },
+            { key: "6", value: t("Friday") },
+            { key: "7", value: t("Saturday") },
+          ]}
+        />
       ) : null}
-      {isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
-      isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
+      {cachePolicy === "EVICT_DAILY" || cachePolicy === "EVICT_WEEKLY" ? (
         <>
-          <FormGroup
+          <SelectControl
+            id="kc-eviction-hour"
+            name="config.evictionHour[0]"
             label={t("evictionHour")}
-            labelIcon={
-              <HelpItem
-                helpText={t("evictionHourHelp")}
-                fieldLabelId="evictionHour"
-              />
-            }
-            isRequired
-            fieldId="kc-eviction-hour"
-          >
-            <Controller
-              name="config.evictionHour"
-              defaultValue={["0"]}
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-eviction-hour"
-                  onToggle={toggleEvictionHour}
-                  isOpen={isEvictionHourOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value as string);
-                    toggleEvictionHour();
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                >
-                  {hourOptions}
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("evictionHourHelp")}
+            controller={{
+              defaultValue: "0",
+            }}
+            aria-label={t("selectEvictionHour")}
+            options={hourOptions}
+          />
+          <SelectControl
+            id="kc-eviction-minute"
+            name="config.evictionMinute[0]"
             label={t("evictionMinute")}
-            labelIcon={
-              <HelpItem
-                helpText={t("evictionMinuteHelp")}
-                fieldLabelId="evictionMinute"
-              />
-            }
-            isRequired
-            fieldId="kc-eviction-minute"
-          >
-            <Controller
-              name="config.evictionMinute"
-              defaultValue={["0"]}
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-eviction-minute"
-                  onToggle={toggleEvictionMinute}
-                  isOpen={isEvictionMinuteOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value as string);
-                    toggleEvictionMinute();
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                >
-                  {minuteOptions}
-                </Select>
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("evictionMinuteHelp")}
+            controller={{
+              defaultValue: "0",
+            }}
+            aria-label={t("selectEvictionMinute")}
+            options={minuteOptions}
+          />
         </>
       ) : null}
-      {isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
-        <FormGroup
+      {cachePolicy === "MAX_LIFESPAN" ? (
+        <NumberControl
+          data-testid="kerberos-cache-lifespan"
+          name="config.maxLifespan[0]"
           label={t("maxLifespan")}
-          labelIcon={
-            <HelpItem
-              helpText={t("maxLifespanHelp")}
-              fieldLabelId="maxLifespan"
-            />
-          }
-          fieldId="kc-max-lifespan"
-        >
-          <Controller
-            name="config.maxLifespan[0]"
-            defaultValue={0}
-            control={form.control}
-            render={({ field }) => {
-              const MIN_VALUE = 0;
-              const setValue = (newValue: number) =>
-                field.onChange(Math.max(newValue, MIN_VALUE));
-
-              return (
-                <NumberInput
-                  id="kc-max-lifespan"
-                  data-testid="kerberos-cache-lifespan"
-                  value={field.value}
-                  min={MIN_VALUE}
-                  unit={t("ms")}
-                  type="text"
-                  onPlus={() => field.onChange(Number(field.value) + 1)}
-                  onMinus={() => field.onChange(Number(field.value) - 1)}
-                  onChange={(event) => {
-                    const newValue = Number(event.currentTarget.value);
-                    setValue(!isNaN(newValue) ? newValue : 0);
-                  }}
-                />
-              );
-            }}
-          />
-        </FormGroup>
+          labelIcon={t("maxLifespanHelp")}
+          unit={t("ms")}
+          controller={{ defaultValue: 0, rules: { min: 0 } }}
+        />
       ) : null}
     </>
   );

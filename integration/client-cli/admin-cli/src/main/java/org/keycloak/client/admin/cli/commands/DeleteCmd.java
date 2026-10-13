@@ -16,42 +16,27 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
+import picocli.CommandLine.Command;
+
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
+@Command(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
 public class DeleteCmd extends CreateCmd {
 
-    void initOptions() {
-        super.initOptions();
-        httpVerb = "delete";
+    public DeleteCmd() {
+        this.httpVerb = "delete";
     }
 
     @Override
-    protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
-    }
-
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help delete' for more information";
-    }
-
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " delete ENDPOINT_URI [ARGUMENTS]");
@@ -60,21 +45,7 @@ public class DeleteCmd extends CreateCmd {
         out.println();
         out.println("Use '" + CMD + " config credentials' to establish an authenticated sessions, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    ENDPOINT_URI              URI used to compose a target resource url. Commonly used values start with:");
         out.println("                              realms/, users/, roles/, groups/, clients/, keys/, components/ ...");
         out.println("                              If it starts with 'http://' then it will be used as target resource url");
@@ -83,7 +54,7 @@ public class DeleteCmd extends CreateCmd {
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Send a body with request - read object from file or standard input if FILENAME is set to '-'");
         out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println();
         out.println("    -H, --print-headers       Print response headers");

@@ -22,9 +22,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * Abstract class that is meant to be extended by implementations of {@link VaultProviderFactory} that want to offer support
@@ -140,7 +141,7 @@ public abstract class AbstractVaultProviderFactory implements VaultProviderFacto
          * all realms to share the secrets, so instead of replicating entries for all existing realms in the vault one can
          * simply use key directly and all realms will obtain the same secret.
          */
-        KEY_ONLY((realm, key) -> key),
+        KEY_ONLY((realm, key) -> key.replaceAll("_", "__")),
 
         /**
          * The realm is prepended to the vault key and they are separated by an underscore ({@code '_'}) character. If either

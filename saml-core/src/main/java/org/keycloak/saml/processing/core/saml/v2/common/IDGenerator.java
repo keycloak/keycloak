@@ -16,10 +16,10 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.common;
 
+import java.util.UUID;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
-
-import java.util.UUID;
 
 /**
  * Utility class that generates unique IDs

@@ -16,6 +16,15 @@
  */
 package org.keycloak.partialimport;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -24,14 +33,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
-
-import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * Partial Import handler for Client Roles.
@@ -108,18 +110,19 @@ public class ClientRolesPartialImport {
         client.removeRole(role);
     }
 
-    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) {
         Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
         if (repList == null || repList.isEmpty()) return;
 
-        for (String clientId : repList.keySet()) {
+        for (var entry : repList.entrySet()) {
+            String clientId = entry.getKey();
             if (!clientExists(partialImportRep, realm, clientId)) {
                 throw noClientFound(clientId);
             }
 
             toOverwrite.put(clientId, new HashSet<>());
             toSkip.put(clientId, new HashSet<>());
-            for (RoleRepresentation roleRep : repList.get(clientId)) {
+            for (RoleRepresentation roleRep : entry.getValue()) {
                 if (exists(realm, session, clientId, roleRep)) {
                     switch (partialImportRep.getPolicy()) {
                         case SKIP:

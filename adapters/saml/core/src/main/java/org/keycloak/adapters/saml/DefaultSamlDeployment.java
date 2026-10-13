@@ -17,21 +17,22 @@
 
 package org.keycloak.adapters.saml;
 
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.saml.SignatureAlgorithm;
-
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.apache.http.client.HttpClient;
+
 import org.keycloak.adapters.saml.rotation.SamlDescriptorPublicKeyLocator;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.rotation.CompositeKeyLocator;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
-import java.net.URI;
+import org.keycloak.saml.SignatureAlgorithm;
+
+import org.apache.http.client.HttpClient;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

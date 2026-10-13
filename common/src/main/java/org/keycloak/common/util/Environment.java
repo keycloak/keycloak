@@ -29,6 +29,11 @@ public class Environment {
 
     public static final int DEFAULT_JBOSS_AS_STARTUP_TIMEOUT = 300;
 
+    public static final String PROFILE = "kc.profile";
+    public static final String ENV_PROFILE = "KC_PROFILE";
+    public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String NON_SERVER_MODE = "nonserver";
+
     public static int getServerStartupTimeout() {
         String timeout = System.getProperty("jboss.as.management.blocking.timeout");
         if (timeout != null) {
@@ -51,10 +56,40 @@ public class Environment {
 
         // Otherwise try to auto-detect
         for (Provider provider : Security.getProviders()) {
-            if (provider.getName().equals("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
-            if (provider.getName().toUpperCase().contains("FIPS")) return true;
+            if (provider.getName().equals("BCFIPS")) {
+                continue; // Ignore BCFIPS provider for the detection as we may register it programatically
+            }
+            if (provider.getName().toUpperCase().contains("FIPS")) {
+                return true;
+            }
         }
         return false;
+    }
+
+    /**
+     * Check if dev mode - note that non server commands may switch to non-server mode
+     * at runtime. See {@link #isNonServerMode()}
+     */
+    public static boolean isDevMode() {
+        return DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile());
+    }
+
+    public static String getProfile() {
+        String profile = System.getProperty(PROFILE);
+
+        if (profile != null) {
+            return profile;
+        }
+
+        return System.getenv(ENV_PROFILE);
+    }
+
+    /**
+     * Check if running in non-server mode - valid only as a runtime check.
+     * <br>At build time, we build as prod or dev.
+     */
+    public static boolean isNonServerMode() {
+        return NON_SERVER_MODE.equalsIgnoreCase(Environment.getProfile());
     }
 
 }

@@ -18,17 +18,19 @@ package org.keycloak.testsuite.oauth;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Before;
+import org.junit.Test;
 import org.openqa.selenium.By;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>
@@ -42,7 +44,7 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override
@@ -63,8 +65,8 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
     public void loginWithUsername() throws Exception {
         oauth.doLogin("non-duplicate-email-user", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
 
@@ -76,7 +78,7 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void loginWithEmail() throws Exception {
-        oauth.doLoginGrant("non-duplicate-email-user@localhost", "password");
+        oauth.doLogin("non-duplicate-email-user@localhost", "password");
         
         assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
     }

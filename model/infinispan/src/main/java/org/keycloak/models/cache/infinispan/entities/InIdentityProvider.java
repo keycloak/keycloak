@@ -1,6 +1,5 @@
 package org.keycloak.models.cache.infinispan.entities;
 
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

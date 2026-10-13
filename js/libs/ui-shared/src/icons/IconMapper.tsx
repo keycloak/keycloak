@@ -1,3 +1,4 @@
+import { Icon } from "@patternfly/react-core";
 import {
   BitbucketIcon,
   CubeIcon,
@@ -19,8 +20,12 @@ type IconMapperProps = {
 };
 
 export const IconMapper = ({ icon }: IconMapperProps) => {
-  const Icon = getIcon(icon);
-  return <Icon size="lg" alt={icon} />;
+  const SpecificIcon = getIcon(icon);
+  return (
+    <Icon size="lg">
+      <SpecificIcon alt={icon} />
+    </Icon>
+  );
 };
 
 function getIcon(icon: string) {
@@ -37,7 +42,6 @@ function getIcon(icon: string) {
     case "linkedin-openid-connect":
       return LinkedinIcon;
 
-    case "openshift-v3":
     case "openshift-v4":
       return OpenshiftIcon;
     case "stackoverflow":

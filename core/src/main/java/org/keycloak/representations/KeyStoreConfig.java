@@ -29,6 +29,8 @@ public class KeyStoreConfig {
     protected String keyAlias;
     protected String realmAlias;
     protected String format;
+    protected Integer keySize;
+    protected Integer validity;
 
     public Boolean isRealmCertificate() {
         return realmCertificate;
@@ -76,5 +78,21 @@ public class KeyStoreConfig {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+    
+    public Integer getKeySize() {
+        return keySize;
+    }
+    
+    public void setKeySize(Integer keySize) {
+        this.keySize = keySize;
+    }
+    
+    public Integer getValidity() {
+        return validity;
+    }
+    
+    public void setValidity(Integer validity) {
+        this.validity = validity;
     }
 }

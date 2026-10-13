@@ -1,10 +1,10 @@
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 public class NameIdMapperHelper {
 
@@ -23,10 +23,6 @@ public class NameIdMapperHelper {
         List<String> types = new ArrayList<String>();
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get());
-        types.add(JBossSAMLURIConstants.NAMEID_FORMAT_ENTITY.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         types.add(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get());
         property.setType(ProviderConfigProperty.LIST_TYPE);

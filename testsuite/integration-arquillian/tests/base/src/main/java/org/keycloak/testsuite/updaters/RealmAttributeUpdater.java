@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.RealmRepresentation;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Updater for realm attributes. See {@link ServerResourceUpdater} for further details.
@@ -49,6 +51,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
+        rep.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        return this;
+    }
+
     public RealmAttributeUpdater setSsoSessionIdleTimeout(Integer timeout) {
         rep.setSsoSessionIdleTimeout(timeout);
         return this;
@@ -89,6 +96,52 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setPermanentLockout(Boolean value) {
+        rep.setPermanentLockout(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setQuickLoginCheckMilliSeconds(Long value) {
+        rep.setQuickLoginCheckMilliSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setWaitIncrementSeconds(Integer value) {
+        rep.setWaitIncrementSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxFailureWaitSeconds(Integer value) {
+        rep.setMaxFailureWaitSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setFailureFactor(Integer value) {
+        rep.setFailureFactor(value);
+        return this;
+    }
+    public RealmAttributeUpdater setMaxDeltaTimeSeconds(Integer value) {
+        rep.setMaxDeltaTimeSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxSecondaryAuthFailures(Integer value) {
+        rep.setMaxSecondaryAuthFailures(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setEventsListeners(List<String> eventListanets) {
+        rep.setEventsListeners(eventListanets);
+        return this;
+    }
+
+    public RealmAttributeUpdater addEventsListener(String value) {
+        List<String> list = new ArrayList<>(rep.getEventsListeners());
+        list.add(value);
+        rep.setEventsListeners(list);
+        return this;
+    }
+
     public RealmAttributeUpdater setDuplicateEmailsAllowed(Boolean value) {
         rep.setDuplicateEmailsAllowed(value);
         return this;
@@ -120,6 +173,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
     }
 
     public RealmAttributeUpdater addSupportedLocale(String locale) {
+        if (origRep.getSupportedLocales() == null) {
+            origRep.setSupportedLocales(Collections.emptySet());
+        }
         rep.addSupportedLocales(locale);
         return this;
     }
@@ -167,6 +223,31 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setSmtpServer(String name, String value) {
         rep.getSmtpServer().put(name, value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setBrowserSecurityHeader(String name, String value) {
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setOrganizationsEnabled(Boolean organizationsEnabled) {
+        rep.setOrganizationsEnabled(organizationsEnabled);
+        return this;
+    }
+
+    public RealmAttributeUpdater setRegistrationAllowed(Boolean registrationAllowed) {
+        rep.setRegistrationAllowed(registrationAllowed);
+        return this;
+    }
+
+    public RealmAttributeUpdater setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
+        return this;
+    }
+
+    public RealmAttributeUpdater setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean passkeysEnabled) {
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(passkeysEnabled);
         return this;
     }
 }

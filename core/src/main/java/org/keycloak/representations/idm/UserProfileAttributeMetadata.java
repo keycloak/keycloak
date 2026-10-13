@@ -30,13 +30,15 @@ public class UserProfileAttributeMetadata {
     private Map<String, Object> annotations;
     private Map<String, Map<String, Object>> validators;
     private String group;
+    private boolean multivalued;
+    private String defaultValue;
 
     public UserProfileAttributeMetadata() {
 
     }
 
     public UserProfileAttributeMetadata(String name, String displayName, boolean required, boolean readOnly, String group, Map<String, Object> annotations,
-            Map<String, Map<String, Object>> validators) {
+            Map<String, Map<String, Object>> validators, boolean multivalued, String defaultValue) {
         this.name = name;
         this.displayName = displayName;
         this.required = required;
@@ -44,10 +46,16 @@ public class UserProfileAttributeMetadata {
         this.annotations = annotations;
         this.validators = validators;
         this.group = group;
+        this.multivalued = multivalued;
+        this.defaultValue = defaultValue;
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
     }
 
     /**
@@ -85,4 +93,11 @@ public class UserProfileAttributeMetadata {
         return validators;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
 }

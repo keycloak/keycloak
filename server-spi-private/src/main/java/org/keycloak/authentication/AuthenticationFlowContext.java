@@ -17,14 +17,14 @@
 
 package org.keycloak.authentication;
 
+import java.net.URI;
+import java.util.List;
+
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.net.URI;
-import java.util.List;
 
 /**
  * This interface encapsulates information about an execution in an AuthenticationFlow.  It is also used to set
@@ -113,7 +113,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     URI getRefreshUrl(boolean authSessionIdParam);
 
     /**
-     * End the flow and redirect browser based on protocol specific respones.  This should only be executed
+     * End the flow and redirect browser based on protocol specific response.  This should only be executed
      * in browser-based flows.
      *
      */

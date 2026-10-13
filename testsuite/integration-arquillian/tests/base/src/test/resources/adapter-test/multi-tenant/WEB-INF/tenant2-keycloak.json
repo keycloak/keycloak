@@ -1,9 +1,0 @@
-{
-  "realm" : "tenant2",
-  "resource" : "multi-tenant",
-  "auth-server-url" : "http://localhost:8180/auth",
-  "ssl-required" : "external",
-  "credentials" : {
-      "secret": "password"
-   }
-}

@@ -17,30 +17,20 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
-import static org.keycloak.quarkus.runtime.Environment.getHomePath;
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
-import static org.keycloak.quarkus.runtime.cli.Picocli.println;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
-
-import org.keycloak.config.ClassLoaderOptions;
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
-import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
-
-import io.quarkus.runtime.configuration.ProfileManager;
-import io.smallrye.config.ConfigValue;
-import org.keycloak.utils.StringUtil;
+import io.quarkus.runtime.LaunchMode;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import java.util.List;
-import java.util.Optional;
+import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -62,31 +52,42 @@ import java.util.Optional;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "  Change the relative path:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
-public final class Build extends AbstractCommand implements Runnable {
+public final class Build extends AbstractCommand {
 
     public static final String NAME = "build";
+
+    public static final String QUARKUS_REMOVED_ARTIFACTS_PROPERTY = "quarkus.class-loading.removed-artifacts";
 
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin;
+
     @Override
-    public void run() {
-        exitWithErrorIfDevProfileIsSetAndNotStartDev();
+    protected void runCommand() {
+        checkProfileAndDb();
 
-        System.setProperty("quarkus.launch.rebuild", "true");
-        validateConfig();
-
-        println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
+        // validate before setting that we're rebuilding so that runtime options are still seen
+        // the validation and setting the artifacts to remove need to be done without the current persisted properties
+        PersistedConfigSource.getInstance().runWithDisabled(() -> {
+            validateConfig();
+            System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, String.join(",", IgnoredArtifacts.getDefaultIgnoredArtifacts()));
+            return null;
+        });
+        picocli.println("Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
-            configureBuildClassLoader();
-
             beforeReaugmentationOnWindows();
-            QuarkusEntryPoint.main();
+            if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+                picocli.build();
+            } else if (DryRunMixin.isDryRunBuild()) {
+                PersistedConfigSource.getInstance().saveDryRunProperties();
+            }
 
-            if (!isDevMode()) {
-                println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
-                println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+            if (!isDevProfile()) {
+                picocli.println("Server configuration updated and persisted. Run the following command to review the configuration:\n");
+                picocli.println("\t" + Environment.getCommand() + " show-config\n");
             }
         } catch (Throwable throwable) {
             executionError(spec.commandLine(), "Failed to update server configuration.", throwable);
@@ -95,27 +96,16 @@ public final class Build extends AbstractCommand implements Runnable {
         }
     }
 
-    private static void configureBuildClassLoader() {
-        // ignored artifacts must be set prior to starting re-augmentation
-        Optional.ofNullable(Configuration.getCurrentBuiltTimeProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
-                .map(ConfigValue::getValue)
-                .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
-    }
-
-    @Override
-    public boolean includeBuildTime() {
-        return true;
-    }
-
-    @Override
-    public List<OptionCategory> getOptionCategories() {
-        // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
-        return super.getOptionCategories();
-    }
-
-    private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
-        if (Environment.isDevProfile() && !getAllCliArgs().contains(StartDev.NAME)) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+    private void checkProfileAndDb() {
+        if (Environment.isDevProfile()) {
+            String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            // we allow start-dev, and import|export|bootstrap-admin --profile=dev
+            // but not start --profile=dev, nor build --profile=dev
+            if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
+                executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
+            }
+        } else if (Configuration.isDefault(Configuration.getConfigValue(DB))) {
+            picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }
 
@@ -134,9 +124,9 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private void cleanTempResources() {
-        if (!ProfileManager.getLaunchMode().isDevOrTest()) {
+        if (!LaunchMode.current().isDevOrTest()) {
             // only needed for dev/testing purposes
-            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
+            getHomePath().ifPresent(path -> path.resolve("quarkus-artifact.properties").toFile().delete());
         }
     }
 
@@ -144,4 +134,10 @@ public final class Build extends AbstractCommand implements Runnable {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return helpAllMixin != null ? helpAllMixin.allOptions : false;
+    }
+
 }

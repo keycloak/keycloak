@@ -18,13 +18,15 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.events.Errors;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Check that switch "fullScopeAllowed" is not enabled for the clients
@@ -39,10 +41,14 @@ public class FullScopeDisabledExecutor implements ClientPolicyExecutorProvider<F
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
             case REGISTER:
+                ClientCRUDContext clientRegisterContext = (ClientCRUDContext) context;
+                autoConfigure(clientRegisterContext.getProposedClientRepresentation());
+                validate(clientRegisterContext.getProposedClientRepresentation());
+                break;
             case UPDATE:
-                ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
+                ClientCRUDContext clientUpdateContext = (ClientCRUDContext) context;
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
-                validate(clientUpdateContext.getProposedClientRepresentation());
+                beforeUpdate(clientUpdateContext.getTargetClient(), clientUpdateContext.getProposedClientRepresentation());
                 break;
             default:
                 return;
@@ -84,8 +90,20 @@ public class FullScopeDisabledExecutor implements ClientPolicyExecutorProvider<F
     }
 
     private void validate(ClientRepresentation proposedClient) throws ClientPolicyException {
-        if (proposedClient.isFullScopeAllowed() != null && proposedClient.isFullScopeAllowed()) {
+        // null means fullScopeAllowed is not explicitly set; the server default is true, so treat null as true
+        if (proposedClient.isFullScopeAllowed() == null || proposedClient.isFullScopeAllowed()) {
             throw new ClientPolicyException(Errors.INVALID_REGISTRATION, "Not permitted to enable fullScopeAllowed");
         }
+    }
+
+    private void beforeUpdate(ClientModel existingClient, ClientRepresentation proposedClient) throws ClientPolicyException {
+        if (existingClient == null) {
+            return;
+        }
+        // fullScopeAllowed is not being updated in the representation, but existing client already has it disabled
+        if (proposedClient.isFullScopeAllowed() == null && !existingClient.isFullScopeAllowed()) {
+            return;
+        }
+        validate(proposedClient);
     }
 }

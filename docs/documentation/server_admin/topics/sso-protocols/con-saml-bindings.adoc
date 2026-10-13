@@ -20,7 +20,7 @@ _Redirect_ binding uses a series of browser redirect URIs to exchange informatio
 
 ===== POST binding
 
-_POST_ binding is similar to _Redirect_ binding but _POST_ binding exchanges XML documents using POST requests instead of using GET requests. _POST_ Binding uses JavaScript to make the browser send a POST request to the {project_name} server or application when exchanging documents. HTTP responds with an HTML document which contains an HTML form containing embedded JavaScript.  When the page loads, the JavaScript automatically invokes the form.
+_POST_ binding is similar to _Redirect_ binding but _POST_ binding exchanges XML documents using POST requests instead of using GET requests. _POST_ binding uses JavaScript to make the browser send a POST request to the {project_name} server or application when exchanging documents. HTTP responds with an HTML document which contains an HTML form containing embedded JavaScript.  When the page loads, the JavaScript automatically invokes the form.
 
 _POST_ binding is recommended due to two restrictions:
 

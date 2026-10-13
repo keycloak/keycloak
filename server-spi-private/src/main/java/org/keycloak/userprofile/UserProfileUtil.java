@@ -28,7 +28,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ConfiguredProvider;
@@ -38,6 +37,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.validate.Validators;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -46,6 +47,8 @@ public class UserProfileUtil {
     private static final Logger logger = Logger.getLogger(UserProfileUtil.class);
 
     public static final String USER_METADATA_GROUP = "user-metadata";
+
+    public static final Predicate<AttributeContext> ONLY_ADMIN_CONDITION = context -> context.getContext().isAdminContext();
 
     /**
      * Find the metadata group "user-metadata"
@@ -69,30 +72,38 @@ public class UserProfileUtil {
      * @param attrName attribute name
      * @param metadata user-profile metadata where attribute would be added
      * @param metadataGroup metadata group in user-profile
-     * @param userFederationUsersSelector used to recognize if user belongs to this user-storage provider or not
      * @param guiOrder guiOrder to where to put the attribute
      * @param storageProviderName storageProviderName (just for logging purposes)
-     * @return true if attribute was added. False otherwise
+     * @return the attribute metadata if attribute was created. False otherwise
      */
-    public static boolean addMetadataAttributeToUserProfile(String attrName, UserProfileMetadata metadata, AttributeGroupMetadata metadataGroup, Predicate<AttributeContext> userFederationUsersSelector, int guiOrder, String storageProviderName) {
-        // In case that attributes like LDAP_ID, KERBEROS_PRINCIPAL are explicitly defined on user profile, we can prefer defined configuration
+    public static AttributeMetadata createAttributeMetadata(String attrName, UserProfileMetadata metadata, AttributeGroupMetadata metadataGroup, int guiOrder, String storageProviderName) {
+        return createAttributeMetadata(attrName, metadata, metadataGroup, ONLY_ADMIN_CONDITION, AttributeMetadata.ALWAYS_FALSE, guiOrder, storageProviderName);
+    }
+
+    public static AttributeMetadata createAttributeMetadata(String attrName, UserProfileMetadata metadata, int guiOrder, String storageProviderName) {
+        return createAttributeMetadata(attrName, metadata, null, ONLY_ADMIN_CONDITION, ONLY_ADMIN_CONDITION, guiOrder, storageProviderName);
+    }
+
+    private static AttributeMetadata createAttributeMetadata(String attrName, UserProfileMetadata metadata, AttributeGroupMetadata metadataGroup, Predicate<AttributeContext> readCondition, Predicate<AttributeContext> writeCondition, int guiOrder, String storageProviderName) {
         if (!metadata.getAttribute(attrName).isEmpty()) {
             logger.tracef("Ignore adding metadata attribute '%s' to user profile by user storage provider '%s' as attribute is already defined on user profile.", attrName, storageProviderName);
-            return false;
         } else {
             logger.tracef("Adding metadata attribute '%s' to user profile by user storage provider '%s' for user profile context '%s'.", attrName, storageProviderName, metadata.getContext().toString());
-            Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext().isAdminContext();
-            AttributeMetadata attributeMetadata = metadata.addAttribute(attrName, guiOrder, Collections.emptyList())
-                    .addWriteCondition(AttributeMetadata.ALWAYS_FALSE)  // Not writable for anyone
-                    .addReadCondition(onlyAdminCondition) // Read-only for administrators
+
+            AttributeMetadata attributeMetadata = new AttributeMetadata(attrName, guiOrder)
+                    .setValidators(Collections.emptyList())
+                    .addWriteCondition(writeCondition)
+                    .addReadCondition(readCondition)
                     .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
             if (metadataGroup != null) {
                 attributeMetadata.setAttributeGroupMetadata(metadataGroup);
             }
-            attributeMetadata.setSelector(userFederationUsersSelector);
-            return true;
+
+            return attributeMetadata;
         }
+
+        return null;
     }
 
     /**
@@ -145,13 +156,17 @@ public class UserProfileUtil {
             group = am.getAttributeGroupMetadata().getName();
         }
 
+        Attributes attributes = profile.getAttributes();
+
         return new UserProfileAttributeMetadata(am.getName(),
                 am.getAttributeDisplayName(),
-                profile.getAttributes().isRequired(am.getName()),
-                profile.getAttributes().isReadOnly(am.getName()),
+                attributes.isRequired(am.getName()),
+                attributes.isReadOnly(am.getName()),
                 group,
-                am.getAnnotations(),
-                toValidatorMetadata(am, session));
+                attributes.getAnnotations(am.getName()),
+                toValidatorMetadata(am, session),
+                am.isMultivalued(),
+                am.getDefaultValue());
     }
 
     private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){

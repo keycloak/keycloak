@@ -34,6 +34,14 @@ When using transient users, you should be aware of the following:
 
 - Roles and groups can be assigned to the transient users only by
   identity provider mappers of the respective identity provider.
+  This is especially important for the `default-roles-{realm-name}` realm role,
+  which is added to regular users automatically, but has to be assigned
+  to transient users also through a mapper (e.g. the `Hardcoded Role` mapper type).
+
+  An alternative to the Hardcoded Role mapper approach is to use groups which allows for more flexible role mappings.
+  To do so, create a group like `transient-users` and assign the `default-roles-{realm-name}` realm role to it.
+  Then add a Hardcoded Group mapper to the identity-provider and select the `transient-users` group.
+  This will ensure that all roles associated with the `transient-users` group are automatically assigned to the brokered users.
 
 - Since every transient user is created afresh, mappers always
   work in the `Import` sync mode.
@@ -46,10 +54,17 @@ When using transient users, you should be aware of the following:
   needed since persistent users can manage offline tokens more easily
   by the Account Console. Also, the transient users feature contributes
   the purpose of not storing any personally identifiable information into the database.
-  Since offline sessions are persisted in database, the transient user data would be stored
+  Since sessions are persisted in database, the transient user data would be stored
   there as well. It is up to the administrator to determine whether this is acceptable or not.
 
 - Technically, transient user data is stored as part
   of the user session. It thus increases the session size.
+
+- The transient user login uses the `first broker login` authentication-flow for each authentication causing
+  a profile review for each authenticated user each time a user authenticates. To prevent this behaviour
+  copy the `first broker login` authentication-flow, disable the `Review Profile` step and assign the new
+  authentication-flow to the `Identity Provider` configuration by selecting it in the `First login flow`
+  selection-box of the `Identity Provider` configuration.
+  
 
 </@tmpl.guide>

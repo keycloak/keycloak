@@ -1,32 +1,40 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  FormErrorText,
+  HelpItem,
+  KeycloakSelect,
+  SelectControl,
   SelectVariant,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
+  FormGroup,
+  SelectOption,
   Switch,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useFetch } from "../../utils/useFetch";
+import { useAdminClient } from "../../admin-client";
+import { useAccess } from "../../context/access/Access";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { TimeSelector } from "../../components/time-selector/TimeSelector";
 
 const LoginFlow = ({
   field,
   label,
   defaultValue,
-}: FieldProps & { defaultValue: string }) => {
+  labelForEmpty = "none",
+}: FieldProps & { defaultValue: string; labelForEmpty?: string }) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { control } = useFormContext();
 
@@ -51,15 +59,14 @@ const LoginFlow = ({
         defaultValue={defaultValue}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={label}
-            required
             onToggle={() => setOpen(!open)}
-            onSelect={(_, value) => {
+            onSelect={(value) => {
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("none")}
+            selections={field.value || t(labelForEmpty)}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -68,7 +75,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("none")}
+                      {t(labelForEmpty)}
                     </SelectOption>,
                   ]
                 : []),
@@ -82,25 +89,35 @@ const LoginFlow = ({
                 </SelectOption>
               )) || []),
             ]}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>
   );
 };
 
-const syncModes = ["import", "legacy", "force"];
-type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
+const SYNC_MODES = ["IMPORT", "LEGACY", "FORCE"];
+const SHOW_IN_ACCOUNT_CONSOLE_VALUES = ["ALWAYS", "WHEN_LINKED", "NEVER"];
+type AdvancedSettingsProps = {
+  isOIDC: boolean;
+  isSAML: boolean;
+  isOAuth2: boolean;
+};
 
-export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
+export const AdvancedSettings = ({
+  isOIDC,
+  isSAML,
+  isOAuth2,
+}: AdvancedSettingsProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const { hasAccess } = useAccess();
   const {
     control,
     register,
     setValue,
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
   const filteredByClaim = useWatch({
     control,
     name: "config.filteredByClaim",
@@ -109,26 +126,80 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   const claimFilterRequired = filteredByClaim === "true";
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
+  const isClientAuthFederatedEnabled = isFeatureEnabled(
+    Feature.ClientAuthFederated,
+  );
+  const jwtAuthorizationGrant = isFeatureEnabled(Feature.JWTAuthorizationGrant);
+  const isIdentityBrokeringAPIV1Enabled = isFeatureEnabled(
+    Feature.IdentityBrokeringAPIV1,
+  );
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
     defaultValue: "false",
   });
   const syncModeAvailable = transientUsers === "false";
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
+  });
+
+  const [hasBrokerReadTokenRole, setHasBrokerReadTokenRole] = useState(false);
+  const storedTokensReadableSupported =
+    (isOIDC || isSAML || isOAuth2) && isIdentityBrokeringAPIV1Enabled;
+
+  useFetch(
+    async () => {
+      if (!storedTokensReadableSupported) {
+        return false;
+      }
+      if (!hasAccess("view-clients")) {
+        return true;
+      }
+      const brokerClient = (
+        await adminClient.clients.find({ clientId: "broker" })
+      ).find((client) => client.clientId === "broker");
+      if (!brokerClient?.id) {
+        return false;
+      }
+      const role = await adminClient.clients.findRole({
+        id: brokerClient.id,
+        roleName: "read-token",
+      });
+      return !!role;
+    },
+    (hasRole) => {
+      setHasBrokerReadTokenRole(hasRole);
+    },
+    [storedTokensReadableSupported],
+  );
+
   return (
     <>
-      {!isOIDC && !isSAML && (
+      {!isOIDC && !isSAML && !isOAuth2 && (
         <TextField field="config.defaultScope" label="scopes" />
       )}
+      {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && (
+        <SwitchField
+          field="config.storeTokenInSession"
+          label="storeTokenInSession"
+          fieldType="boolean"
+          defaultValue={!isSAML}
+        />
+      )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
-      {(isSAML || isOIDC) && (
+      {storedTokensReadableSupported && hasBrokerReadTokenRole && (
         <SwitchField
           field="addReadTokenRoleOnCreate"
           label="storedTokensReadable"
           fieldType="boolean"
         />
       )}
-      {!isOIDC && !isSAML && (
+      {!isOIDC && !isSAML && !isOAuth2 && (
         <>
           <SwitchField
             field="config.acceptsPromptNoneForwardFromClient"
@@ -146,9 +217,28 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label="accountLinkingOnly"
         fieldType="boolean"
       />
-      <SwitchField field="config.hideOnLoginPage" label="hideOnLoginPage" />
+      <SwitchField
+        field="hideOnLogin"
+        label="hideOnLoginPage"
+        fieldType="boolean"
+      />
+      <SelectControl
+        name="config.showInAccountConsole"
+        label={t("showInAccountConsole")}
+        labelIcon={t("showInAccountConsoleHelp")}
+        options={SHOW_IN_ACCOUNT_CONSOLE_VALUES.map((showInAccountConsole) => ({
+          key: showInAccountConsole,
+          value: t(
+            `showInAccountConsole.${showInAccountConsole.toLocaleLowerCase()}`,
+          ),
+        }))}
+        controller={{
+          defaultValue: SHOW_IN_ACCOUNT_CONSOLE_VALUES[0],
+          rules: { required: t("required") },
+        }}
+      />
 
-      {(!isSAML || isOIDC) && (
+      {((!isSAML && !isOAuth2) || isOIDC) && (
         <FormGroupField label="filteredByClaim">
           <Controller
             name="config.filteredByClaim"
@@ -160,7 +250,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                 }}
               />
@@ -180,14 +270,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-name"
             isRequired
-            validated={
-              errors.config?.claimFilterName
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-name"
               data-testid="claimFilterName"
@@ -198,6 +282,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterName", { required: true })}
             />
+            {errors.config?.claimFilterName && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
           <FormGroup
             label={t("claimFilterValue")}
@@ -209,14 +296,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-value"
             isRequired
-            validated={
-              errors.config?.claimFilterValue
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-value"
               data-testid="claimFilterValue"
@@ -227,13 +308,17 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterValue", { required: true })}
             />
+            {errors.config?.claimFilterValue && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
         </>
       )}
       <LoginFlow
         field="firstBrokerLoginFlowAlias"
-        label="firstBrokerLoginFlowAlias"
-        defaultValue="fist broker login"
+        label="firstBrokerLoginFlowAliasOverride"
+        defaultValue=""
+        labelForEmpty=""
       />
       <LoginFlow
         field="postBrokerLoginFlowAlias"
@@ -253,11 +338,13 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                   // if field is checked, set sync mode to import
                   if (value) {
-                    setValue("config.syncMode", "IMPORT");
+                    setValue("config.syncMode", "IMPORT", {
+                      shouldDirty: true,
+                    });
                   }
                 }}
               />
@@ -266,47 +353,76 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         </FormGroupField>
       )}
       {syncModeAvailable && (
-        <FormGroup
-          className="pf-u-pb-3xl"
+        <SelectControl
+          name="config.syncMode"
           label={t("syncMode")}
-          labelIcon={
-            <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
-          }
-          fieldId="syncMode"
-        >
-          <Controller
-            name="config.syncMode"
-            defaultValue={syncModes[0].toUpperCase()}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="syncMode"
-                required
-                direction="up"
-                onToggle={() => setSyncModeOpen(!syncModeOpen)}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setSyncModeOpen(false);
-                }}
-                selections={t(`syncModes.${field.value.toLowerCase()}`)}
-                variant={SelectVariant.single}
-                aria-label={t("syncMode")}
-                isOpen={syncModeOpen}
-              >
-                {syncModes.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option.toUpperCase()}
-                  >
-                    {t(`syncModes.${option}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("syncModeHelp")}
+          options={SYNC_MODES.map((syncMode) => ({
+            key: syncMode,
+            value: t(`syncModes.${syncMode.toLocaleLowerCase()}`),
+          }))}
+          controller={{
+            defaultValue: SYNC_MODES[0],
+            rules: { required: t("required") },
+          }}
+        />
       )}
+      <SwitchField
+        field="config.caseSensitiveOriginalUsername"
+        label="caseSensitiveOriginalUsername"
+      />
+      {hasAccess("manage-realm") && (
+        <SwitchField
+          field="config.allowAdminRoleMapping"
+          label="allowAdminRoleMapping"
+        />
+      )}
+      {isClientAuthFederatedEnabled && isOIDC && (
+        <SwitchField
+          field="config.supportsClientAssertions"
+          label="supportsClientAssertions"
+        />
+      )}
+      {isClientAuthFederatedEnabled &&
+        isOIDC &&
+        supportsClientAssertions === "true" && (
+          <SwitchField
+            field="config.supportsClientAssertionReuse"
+            label="supportsClientAssertionReuse"
+          />
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
+          <SwitchField
+            field="config.allowClientIdAsAudience"
+            label="allowClientIdAsAudience"
+          />
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
+          <FormGroupField label="fedClientAssertionMaxExp">
+            <Controller
+              name="config.fedClientAssertionMaxExp"
+              defaultValue={""}
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  className="kc-fed-client-assertion-max-expiration-time"
+                  data-testid="fed-client-assertion-max-expiration-time-input"
+                  value={field.value!}
+                  onChange={field.onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroupField>
+        )}
     </>
   );
 };

@@ -3,7 +3,7 @@ import type { Path } from "react-router-dom";
 import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
-export type ClientScopeTab = "settings" | "mappers" | "scope";
+export type ClientScopeTab = "settings" | "mappers" | "scope" | "events";
 
 export type ClientScopeParams = {
   realm: string;
@@ -16,9 +16,9 @@ const EditClientScope = lazy(() => import("../EditClientScope"));
 export const ClientScopeRoute: AppRouteObject = {
   path: "/:realm/client-scopes/:id/:tab",
   element: <EditClientScope />,
-  breadcrumb: (t) => t("clientScopeDetails"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("clientScopeDetails"),
   },
 };
 

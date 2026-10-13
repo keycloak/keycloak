@@ -18,32 +18,52 @@
 package org.keycloak.common.util;
 
 import java.util.Collections;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 
 /**
+ * <p>An utility class to resolve the value of a key based on the environment variables
+ * and system properties available at runtime. In most cases, you do not want to resolve whatever system variable is available at runtime but specify which ones
+ * can be used when resolving placeholders.
+ *
+ * <p>To resolve to an environment variable, the key must have a format like {@code env.<key>} where {@code key} is the name of an environment variable.
+ * For system properties, there is no specific format and the value is resolved from a system property that matches the key.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class SystemEnvProperties extends Properties {
 
-    private final Map<String, String> overrides;
+    /**
+     * <p>An variation of {@link SystemEnvProperties} that gives unrestricted access to any system variable available at runtime.
+     * Most of the time you don't want to use this class but favor creating a {@link SystemEnvProperties} instance that
+     * filters which system variables should be available at runtime.
+     */
+    public static final SystemEnvProperties UNFILTERED = new SystemEnvProperties(Collections.emptySet()) {
+        @Override
+        protected boolean isAllowed(String key) {
+            return true;
+        }
+    };
 
-    public SystemEnvProperties(Map<String, String> overrides) {
-        this.overrides = overrides;
-    }
+    private final Set<String> allowedSystemVariables;
 
-    public SystemEnvProperties() {
-        this.overrides = Collections.EMPTY_MAP;
+    /**
+     * Creates a new instance where system variables where only specific keys can be resolved from system variables.
+     *
+     * @param allowedSystemVariables the keys of system variables that should be available at runtime
+     */
+    public SystemEnvProperties(Set<String> allowedSystemVariables) {
+        this.allowedSystemVariables = Optional.ofNullable(allowedSystemVariables).orElse(Collections.emptySet());
     }
 
     @Override
     public String getProperty(String key) {
-        if (overrides.containsKey(key)) {
-            return overrides.get(key);
-        } else if (key.startsWith("env.")) {
-            return System.getenv().get(key.substring(4));
+        if (key.startsWith("env.")) {
+            String envKey = key.substring(4);
+            return isAllowed(envKey) ? System.getenv().get(envKey) : null;
         } else {
-            return System.getProperty(key);
+            return isAllowed(key) ? System.getProperty(key) : null;
         }
     }
 
@@ -53,4 +73,7 @@ public class SystemEnvProperties extends Properties {
         return value != null ? value : defaultValue;
     }
 
+    protected boolean isAllowed(String key) {
+        return allowedSystemVariables.contains(key);
+    }
 }

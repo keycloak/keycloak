@@ -16,8 +16,9 @@
  */
 package org.keycloak.crypto.elytron.test;
 
-import org.junit.Before;
 import org.keycloak.KeyPairVerifierTest;
+
+import org.junit.Before;
 
 /**
  * Test with default security provider and non-fips bouncycastle

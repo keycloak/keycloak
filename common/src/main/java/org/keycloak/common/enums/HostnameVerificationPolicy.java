@@ -25,12 +25,19 @@ public enum HostnameVerificationPolicy {
     ANY,
 
     /**
-     * Allows wildcards in subdomain names i.e. *.foo.com
+     * Allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com)
      */
+    @Deprecated
     WILDCARD,
 
     /**
      * CN must match hostname connecting to
      */
-    STRICT
+    @Deprecated
+    STRICT,
+
+    /**
+     * Similar to STRICT, but checks against a more complete public suffix matcher
+     */
+    DEFAULT
 }

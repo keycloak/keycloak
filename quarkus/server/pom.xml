@@ -12,12 +12,20 @@
     </parent>
     
     <name>Keycloak Quarkus Server App</name>
+    <description>Keycloak Quarkus Server App</description>
+
     <artifactId>keycloak-quarkus-server-app</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
+        </dependency>
+        <!-- Only necessary for proper Maven build order - if explicitly added, deployment JARs will not be part of /lib/deployment folder -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-server-deployment</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -27,12 +35,20 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
-        <!-- Necessary for proper execution of IDELauncher -->
-        <!-- Can be removed as part of the https://github.com/keycloak/keycloak/issues/22455 enhancement -->
+        <dependency>
+            <groupId>io.mvnpm</groupId>
+            <artifactId>importmap</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
-            <scope>provided</scope>
+            <artifactId>quarkus-smallrye-openapi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlinx</groupId>
+                    <artifactId>kotlinx-metadata-jvm</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -47,7 +63,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
+                <version>${version.surefire.plugin}</version>
                 <configuration>
                     <systemProperties>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -58,10 +74,13 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.build.version}</version>
+                <extensions>true</extensions>
                 <configuration>
                     <finalName>keycloak</finalName>
                     <systemProperties>
                         <kc.home.dir>${kc.home.dir}</kc.home.dir>
+                        <kc.db>dev-file</kc.db>
+                        <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                     </systemProperties>
                 </configuration>
                 <executions>
@@ -74,15 +93,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>snyk-quarkus</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-quarkus-server-deployment</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>

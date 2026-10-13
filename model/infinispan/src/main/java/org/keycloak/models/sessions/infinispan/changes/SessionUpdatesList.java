@@ -30,7 +30,7 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class SessionUpdatesList<S extends SessionEntity> {
+public class SessionUpdatesList<S extends SessionEntity> {
 
     private final RealmModel realm;
 
@@ -80,5 +80,10 @@ class SessionUpdatesList<S extends SessionEntity> {
 
     public UserSessionModel.SessionPersistenceState getPersistenceState() {
         return persistenceState;
+    }
+
+    public void addAndExecute(SessionUpdateTask<S> task) {
+        add(task);
+        task.runUpdate(getEntityWrapper().getEntity());
     }
 }

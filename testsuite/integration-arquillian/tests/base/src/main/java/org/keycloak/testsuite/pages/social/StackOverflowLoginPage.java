@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,11 +34,15 @@ public class StackOverflowLoginPage extends AbstractSocialLoginPage {
     @FindBy(xpath = "//button[@name='submit-button']")
     private WebElement loginButton;
 
+    @FindBy(id = "onetrust-accept-btn-handler")
+    private WebElement acceptAllCookiesButton;
+
     @Override
     public void login(String user, String password) {
+        acceptAllCookiesButton.click();
+
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
-
-        loginButton.click();
+        passwordInput.sendKeys(Keys.RETURN);
     }
 }

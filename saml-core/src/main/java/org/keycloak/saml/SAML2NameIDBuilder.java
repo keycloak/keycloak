@@ -16,9 +16,9 @@
  */
 package org.keycloak.saml;
 
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-
 import java.net.URI;
+
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 
 public class SAML2NameIDBuilder {
     private final NameIDType nameIdType;

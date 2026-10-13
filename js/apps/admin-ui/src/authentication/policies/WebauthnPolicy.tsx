@@ -1,19 +1,21 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { FieldValues } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
+  Divider,
   FormGroup,
   PageSection,
   Popover,
-  SelectVariant,
   Text,
   TextContent,
+  Title,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { ReactNode, useEffect } from "react";
+import { FormProvider, useForm, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   HelpItem,
@@ -21,15 +23,16 @@ import {
   SwitchControl,
   TextControl,
   useHelp,
-} from "ui-shared";
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+} from "@keycloak/keycloak-ui-shared";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
+import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
 
 const SIGNATURE_ALGORITHMS = [
@@ -39,6 +42,7 @@ const SIGNATURE_ALGORITHMS = [
   "RS256",
   "RS384",
   "RS512",
+  "Ed25519",
   "RS1",
 ] as const;
 const ATTESTATION_PREFERENCE = [
@@ -56,6 +60,13 @@ const AUTHENTICATOR_ATTACHMENT = [
 
 const RESIDENT_KEY_OPTIONS = ["not specified", "Yes", "No"] as const;
 
+const RESIDENT_KEY_REQUIREMENT = [
+  "not specified",
+  "required",
+  "preferred",
+  "discouraged",
+] as const;
+
 const USER_VERIFY = [
   "not specified",
   "required",
@@ -63,35 +74,45 @@ const USER_VERIFY = [
   "discouraged",
 ] as const;
 
+const MEDIATION_OPTIONS = [
+  "conditional",
+  "none",
+  "optional",
+  "required",
+  "silent",
+] as const;
+
 type WeauthnSelectProps = {
   name: string;
   label: string;
+  labelIcon?: string | ReactNode;
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
+  validate?: Validate<any, FieldValues>;
 };
 
 const WebauthnSelect = ({
   name,
   label,
+  labelIcon,
   options,
   labelPrefix,
   isMultiSelect = false,
+  validate,
 }: WeauthnSelectProps) => {
   const { t } = useTranslation();
   return (
     <SelectControl
       name={name}
-      label={t(label)}
-      variant={
-        isMultiSelect ? SelectVariant.typeaheadMulti : SelectVariant.single
-      }
-      controller={{ defaultValue: options[0] }}
+      label={label}
+      labelIcon={labelIcon}
+      variant={isMultiSelect ? "typeaheadMulti" : "single"}
+      controller={{ defaultValue: options[0], rules: { validate: validate } }}
       options={options.map((option) => ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
       }))}
-      typeAheadAriaLabel={t(name)}
     />
   );
 };
@@ -107,6 +128,8 @@ export const WebauthnPolicy = ({
   realmUpdated,
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
@@ -115,6 +138,7 @@ export const WebauthnPolicy = ({
   const {
     setValue,
     handleSubmit,
+    watch,
     formState: { isDirty },
   } = form;
 
@@ -139,6 +163,13 @@ export const WebauthnPolicy = ({
     }
   };
 
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const acceptableAAGUIDs = watch(`${namePrefix}AcceptableAaguids`, []);
+  const requireResidentKey = watch(
+    `${namePrefix}RequireResidentKey`,
+    "not specified",
+  );
+
   return (
     <PageSection variant="light">
       {enabled && (
@@ -158,15 +189,43 @@ export const WebauthnPolicy = ({
         className="keycloak__webauthn_policies_authentication__form"
       >
         <FormProvider {...form}>
+          {isPasswordLess && isFeatureEnabled(Feature.Passkeys) && (
+            <>
+              <Title headingLevel="h2" size="lg">
+                {t("passkeys")}
+              </Title>
+              <SwitchControl
+                name={`${namePrefix}PasskeysEnabled`}
+                label={t("webAuthnPolicyPasskeysEnabled")}
+                labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
+                labelOn={t("on")}
+                labelOff={t("off")}
+              />
+              {watch(`${namePrefix}PasskeysEnabled`) && (
+                <WebauthnSelect
+                  name={`${namePrefix}Mediation`}
+                  label={t("webAuthnPolicyMediation")}
+                  labelIcon={t("webAuthnPolicyMediationHelp")}
+                  options={MEDIATION_OPTIONS}
+                  labelPrefix="mediation"
+                />
+              )}
+              <Divider className="pf-v5-u-mb-lg pf-v5-u-mt-lg" />
+              <Title headingLevel="h2" size="lg">
+                {t("webauthnPasswordlessPolicy")}
+              </Title>
+            </>
+          )}
           <TextControl
             name={`${namePrefix}RpEntityName`}
             label={t("webAuthnPolicyRpEntityName")}
             labelIcon={t("webAuthnPolicyRpEntityNameHelp")}
-            rules={{ required: { value: true, message: t("required") } }}
+            rules={{ required: t("required") }}
           />
           <WebauthnSelect
             name={`${namePrefix}SignatureAlgorithms`}
-            label="webAuthnPolicySignatureAlgorithms"
+            label={t("webAuthnPolicySignatureAlgorithms")}
+            labelIcon={t("webAuthnPolicySignatureAlgorithmsHelp")}
             options={SIGNATURE_ALGORITHMS}
             isMultiSelect
           />
@@ -177,32 +236,61 @@ export const WebauthnPolicy = ({
           />
           <WebauthnSelect
             name={`${namePrefix}AttestationConveyancePreference`}
-            label="webAuthnPolicyAttestationConveyancePreference"
+            label={t("webAuthnPolicyAttestationConveyancePreference")}
+            labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
             labelPrefix="attestationPreference"
+            validate={(value) => {
+              const hasValidAAGUIDs = acceptableAAGUIDs.some(
+                (guid: string) => guid.trim().length > 0,
+              );
+
+              if (
+                (value === "none" || value === "not specified") &&
+                hasValidAAGUIDs
+              ) {
+                return t("acceptableAAGUIDsRequiresAttestation");
+              }
+            }}
           />
           <WebauthnSelect
             name={`${namePrefix}AuthenticatorAttachment`}
-            label="webAuthnPolicyAuthenticatorAttachment"
+            label={t("webAuthnPolicyAuthenticatorAttachment")}
+            labelIcon={t("webAuthnPolicyAuthenticatorAttachmentHelp")}
             options={AUTHENTICATOR_ATTACHMENT}
             labelPrefix="authenticatorAttachment"
           />
           <WebauthnSelect
+            name={`${namePrefix}ResidentKey`}
+            label={t("webAuthnPolicyResidentKey")}
+            labelIcon={t("webAuthnPolicyResidentKeyHelp")}
+            options={RESIDENT_KEY_REQUIREMENT}
+            labelPrefix="residentKeyRequirement"
+          />
+          <WebauthnSelect
             name={`${namePrefix}RequireResidentKey`}
-            label="webAuthnPolicyRequireResidentKey"
+            label={t("webAuthnPolicyRequireResidentKey")}
+            labelIcon={
+              <HelpItem
+                helpText={t("webAuthnPolicyRequireResidentKeyHelp")}
+                fieldLabelId={`${namePrefix}RequireResidentKey`}
+                isRecommendation={requireResidentKey !== "not specified"}
+              />
+            }
             options={RESIDENT_KEY_OPTIONS}
             labelPrefix="residentKey"
           />
           <WebauthnSelect
             name={`${namePrefix}UserVerificationRequirement`}
-            label="webAuthnPolicyUserVerificationRequirement"
+            label={t("webAuthnPolicyUserVerificationRequirement")}
+            labelIcon={t("webAuthnPolicyUserVerificationRequirementHelp")}
             options={USER_VERIFY}
             labelPrefix="userVerify"
           />
           <TimeSelectorControl
             name={`${namePrefix}CreateTimeout`}
             label={t("webAuthnPolicyCreateTimeout")}
-            labelIcon={t("otpPolicyPeriodHelp")}
+            labelIcon={t("webAuthnPolicyCreateTimeoutHelp")}
             units={["second", "minute", "hour"]}
             controller={{
               defaultValue: 0,

@@ -27,13 +27,9 @@
     <artifactId>keycloak-client-cli-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Client CLI Distribution</name>
-    <description/>
+    <description>Keycloak Client CLI Distribution</description>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-client-registration-cli</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-cli</artifactId>

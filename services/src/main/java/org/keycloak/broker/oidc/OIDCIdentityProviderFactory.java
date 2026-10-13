@@ -16,15 +16,14 @@
  */
 package org.keycloak.broker.oidc;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -54,14 +53,14 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
-        return parseOIDCConfig(session, inputStream);
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
+        return parseOIDCConfig(session, config);
     }
 
-    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, InputStream inputStream) {
+    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, String configString) {
         OIDCConfigurationRepresentation rep;
         try {
-            rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
+            rep = JsonSerialization.readValue(configString, OIDCConfigurationRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException("failed to load openid connect metadata", e);
         }
@@ -75,6 +74,12 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
             config.setValidateSignature(true);
             config.setUseJwksUrl(true);
             config.setJwksUrl(rep.getJwksUri());
+        }
+
+        // Introspection URL may or may not be available in the configuration. It is available in RFC8414 , but not in the OIDC discovery specification.
+        // Hence some servers may not add it to their well-known responses
+        if (rep.getIntrospectionEndpoint() != null) {
+            config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
         }
         return config.getConfig();
     }

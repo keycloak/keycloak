@@ -1,24 +1,31 @@
 package org.keycloak.testsuite.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpOptions;
+import org.junit.Rule;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -39,16 +46,15 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").addWebOrigin(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrants().build());
+        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").webOrigins(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrantsEnabled().build());
         testRealms.add(realm);
     }
 
+
     @Test
     public void preflightRequest() throws Exception {
-        CloseableHttpResponse response = oauth.doPreflightRequest();
-
-        String[] methods = response.getHeaders("Access-Control-Allow-Methods")[0].getValue().split(", ");
-        Set allowedMethods = new HashSet(Arrays.asList(methods));
+        Map<String, String> responseHeaders = getTokenEndpointPreflightResponseHeaders(oauth);
+        Set<String> allowedMethods = Arrays.stream(responseHeaders.get(Cors.ACCESS_CONTROL_ALLOW_METHODS).split(", ")).collect(Collectors.toSet());
 
         assertEquals(2, allowedMethods.size());
         assertTrue(allowedMethods.containsAll(Arrays.asList("POST", "OPTIONS")));
@@ -57,36 +63,35 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        oauth.postLogoutRedirectUri(VALID_CORS_URL + "/realms/master/app");
 
         oauth.doLogin("test-user@localhost", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.origin(VALID_CORS_URL);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
         // Refresh request
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
         // Invalid origin
         oauth.origin(INVALID_CORS_URL);
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
-        assertEquals(200, response.getStatusCode());
-        assertNotCors(response);
+        AccessTokenResponse invalidOriginResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(403, invalidOriginResponse.getStatusCode());
+        assertNotCors(invalidOriginResponse);
         oauth.origin(VALID_CORS_URL);
 
         // No session
-        oauth.idTokenHint(response.getIdToken()).openLogout();
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());
         assertCors(response);
         assertEquals("invalid_grant", response.getError());
@@ -96,54 +101,69 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenResourceOwnerCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2");
         oauth.origin(VALID_CORS_URL);
 
         // Token request
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
         // Invalid password
-        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "invalid");
+        response = oauth.doPasswordGrantRequest("test-user@localhost", "invalid");
 
-        assertEquals(401, response.getStatusCode());
+        assertEquals(400, response.getStatusCode());
         assertCors(response);
     }
 
     @Test
     public void accessTokenWithConfidentialClientCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
         oauth.origin(VALID_CORS_URL);
 
         // Successful token request with correct origin - cors should work
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
+        oauth.client("direct-grant", "invalid");
+
         // Invalid client authentication with correct origin - cors should work
-        response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+        response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(401, response.getStatusCode());
         assertCors(response);
 
+        oauth.client("direct-grant", "password");
+
         // Successful token request with bad origin - cors should NOT work
         oauth.origin(INVALID_CORS_URL);
-        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-        assertEquals(200, response.getStatusCode());
+        response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertEquals(403, response.getStatusCode());
         assertNotCors(response);
     }
 
-    private static void assertCors(OAuthClient.AccessTokenResponse response) {
+    private static void assertCors(AccessTokenResponse response) {
         assertEquals("true", response.getHeaders().get("Access-Control-Allow-Credentials"));
         assertEquals(VALID_CORS_URL, response.getHeaders().get("Access-Control-Allow-Origin"));
         assertEquals("Access-Control-Allow-Methods", response.getHeaders().get("Access-Control-Expose-Headers"));
     }
 
-    private static void assertNotCors(OAuthClient.AccessTokenResponse response) {
+    private static void assertNotCors(AccessTokenResponse response) {
         assertNull(response.getHeaders().get("Access-Control-Allow-Credentials"));
         assertNull(response.getHeaders().get("Access-Control-Allow-Origin"));
         assertNull(response.getHeaders().get("Access-Control-Expose-Headers"));
     }
+
+    public static Map<String, String> getTokenEndpointPreflightResponseHeaders(OAuthClient oAuthClient) {
+        HttpOptions options = new HttpOptions(oAuthClient.getEndpoints().getToken());
+        options.setHeader("Origin", "http://example.com");
+        try (CloseableHttpResponse response = oAuthClient.httpClient().get().execute(options)) {
+            return Arrays.stream(response.getAllHeaders()).collect(Collectors.toMap(Header::getName, Header::getValue));
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
 }

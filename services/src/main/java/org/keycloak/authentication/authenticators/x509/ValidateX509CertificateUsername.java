@@ -31,6 +31,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
+import org.jboss.logging.Logger;
+
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
 /**
@@ -41,7 +43,11 @@ import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils
 
 public class ValidateX509CertificateUsername extends AbstractX509ClientCertificateDirectGrantAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
+    private final static Logger logger = Logger.getLogger(ValidateX509CertificateUsername.class);
+
+    public ValidateX509CertificateUsername(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -69,16 +75,22 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        if (config.getCASubjectDN().isEmpty()) {
+            logger.warnf("[ValidateX509CertificateUsername:authenticate] Option '%s' is empty, this configuration is deprecated, please configure it for the authenticator in realm '%s'",
+                    CERTIFICATE_CA_SUBJECT_DN, context.getRealm().getName());
+        }
+
         // Validate X509 client certificate
         try {
             CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
             CertificateValidator validator = builder.build(certs);
-            validator.checkRevocationStatus()
-                    .validateTrust()
-                    .validateKeyUsage()
-                    .validateExtendedKeyUsage()
+            validator.validateTrust()
+                    .validateCASubjectDN()
                     .validateTimestamps()
-                    .validatePolicy();
+                    .validateKeyUsage(isLegacyCriticalBehavior())
+                    .validateExtendedKeyUsage(isLegacyCriticalBehavior())
+                    .validatePolicy()
+                    .checkRevocationStatus();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages
@@ -104,7 +116,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             user = getUserIdentityToModelMapper(config).find(context, userIdentity);
         }
         catch(ModelDuplicateException e) {
-            logger.modelDuplicateException(e);
+            ServicesLogger.LOGGER.modelDuplicateException(e);
             String errorMessage = String.format("X509 certificate authentication's failed. Reason: \"%s\"", e.getMessage());
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", errorMessage);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -119,7 +131,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         }
         if (user == null) {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }

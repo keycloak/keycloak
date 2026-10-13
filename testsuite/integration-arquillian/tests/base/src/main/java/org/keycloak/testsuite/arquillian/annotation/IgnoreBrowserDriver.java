@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.arquillian.annotation;
 
-import org.openqa.selenium.WebDriver;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.openqa.selenium.WebDriver;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -39,14 +39,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface IgnoreBrowserDriver {
 
     /**
-     * Define for which WebDriver the test method/class should be ignored
+     * Define for which WebDrivers the test method/class should be ignored
+     * @return
      */
-    Class<? extends WebDriver> value();
+    Class<? extends WebDriver>[] value();
 
     /**
      * Define whether the value should be negated
      *
-     * Usable in cases when we want to execute test method/class with all WebDrivers except the one specified in value()
+     * Usable in cases when we want to execute test method/class with all WebDrivers except the ones specified in value()
+     * @return
      */
     boolean negate() default false;
 

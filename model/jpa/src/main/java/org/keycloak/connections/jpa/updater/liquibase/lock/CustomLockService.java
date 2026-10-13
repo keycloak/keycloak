@@ -17,6 +17,18 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
+import org.keycloak.models.dblock.DBLockProvider;
+
 import liquibase.Scope;
 import liquibase.database.core.DerbyDatabase;
 import liquibase.exception.DatabaseException;
@@ -28,6 +40,7 @@ import liquibase.snapshot.DatabaseSnapshot;
 import liquibase.snapshot.InvalidExampleException;
 import liquibase.snapshot.SnapshotControl;
 import liquibase.snapshot.SnapshotGeneratorFactory;
+import liquibase.statement.SqlStatement;
 import liquibase.statement.core.CreateDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.DropTableStatement;
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
@@ -37,18 +50,6 @@ import liquibase.structure.core.PrimaryKey;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Time;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
-import org.keycloak.models.dblock.DBLockProvider;
-
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import liquibase.statement.SqlStatement;
 
 /**
  * Liquibase lock service, which has some bugfixes and assumes timeouts to be configured in milliseconds
@@ -60,8 +61,8 @@ public class CustomLockService extends StandardLockService {
     private static final Logger log = Logger.getLogger(CustomLockService.class);
 
     @Override
-    protected boolean hasDatabaseChangeLogLockTable() throws DatabaseException {
-        boolean originalReturnValue = super.hasDatabaseChangeLogLockTable();
+    protected boolean isDatabaseChangeLogLockTableCreated() throws DatabaseException {
+        boolean originalReturnValue = super.isDatabaseChangeLogLockTableCreated();
         if (originalReturnValue && database.getConnection().getDatabaseProductName().equals("H2")) {
             /* Liquibase only checks that the table exists. On the H2 database, creation of a table with a primary key is not atomic,
                and the primary key might not be visible yet. The primary key would be needed to prevent inserting the data into the table
@@ -98,7 +99,7 @@ public class CustomLockService extends StandardLockService {
     public void init() throws DatabaseException {
         Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database);
 
-        if (!hasDatabaseChangeLogLockTable()) {
+        if (!isDatabaseChangeLogLockTableCreated()) {
 
             try {
                 if (log.isTraceEnabled()) {
@@ -128,7 +129,10 @@ public class CustomLockService extends StandardLockService {
 
         try {
             Set<Integer> currentIds = currentIdsInDatabaseChangeLogLockTable();
-            if (!currentIds.containsAll(Arrays.asList(DBLockProvider.Namespace.values()))) {
+            Set<Integer> customNamespaceIds = Arrays.stream(DBLockProvider.Namespace.values())
+                    .map(DBLockProvider.Namespace::getId)
+                    .collect(Collectors.toSet());
+            if (!currentIds.containsAll(customNamespaceIds)) {
                 if (log.isTraceEnabled()) {
                     log.tracef("Initialize Database Lock Table, current locks %s", currentIds);
                 }

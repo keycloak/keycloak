@@ -1,0 +1,8 @@
+[id="con-dpop_{context}"]
+[[_dpop-bound-tokens]]
+= DPoP
+[role="_abstract"]
+
+{project_name} supports **DPoP** (Demonstrating Proof-of-Possession) to bind access and refresh tokens to a cryptographic key pair, ensuring they can only be used by the legitimate client.
+
+For detailed instructions on how to configure, enforce, and use DPoP within {project_name}, see the dedicated link:{securing_apps_dpop_link}[*Securing applications with DPoP*] guide.

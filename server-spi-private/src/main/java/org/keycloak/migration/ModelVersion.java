@@ -94,7 +94,7 @@ public class ModelVersion {
 
         if (micro < version.micro) {
             return true;
-        } else if (minor > version.minor) {
+        } else if (micro > version.micro) {
             return false;
         }
 
@@ -109,6 +109,10 @@ public class ModelVersion {
         }
 
         return false;
+    }
+
+    public boolean hasSameMajorMinor(ModelVersion v2) {
+        return major == v2.major && minor == v2.minor;
     }
 
     @Override

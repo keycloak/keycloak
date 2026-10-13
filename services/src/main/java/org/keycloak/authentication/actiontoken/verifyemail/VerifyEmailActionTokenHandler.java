@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,10 +16,22 @@
  */
 package org.keycloak.authentication.actiontoken.verifyemail;
 
-import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.authentication.actiontoken.*;
-import org.keycloak.events.*;
+import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.TokenUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -34,12 +46,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import java.util.Objects;
-import java.util.stream.Stream;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
  * Action token handler for verification of e-mail address.
@@ -73,14 +80,18 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         KeycloakSession session = tokenContext.getSession();
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
 
         event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
 
         if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
             event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
-            return session.getProvider(LoginFormsProvider.class)
+
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_ALREADY_HEADER, user.getEmail()))
                     .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
+                    .setUser(user)
                     .createInfoPage();
         }
 
@@ -94,13 +105,15 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
             UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                    authSession.getClient().getClientId(), authSession.getTabId());
+                    authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
-            return session.getProvider(LoginFormsProvider.class)
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER, user.getEmail()))
                     .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
+                    .setUser(user)
                     .createInfoPage();
         }
 
@@ -118,19 +131,33 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
 
         event.success();
 
-        if (token.getCompoundOriginalAuthenticationSessionId() != null) {
-            AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-            asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
+        String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
 
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.EMAIL_VERIFIED)
-                    .createInfoPage();
+        if (token.getCompoundOriginalAuthenticationSessionId() != null) {
+            // Email verified in other browser than the one originally started. Removing original authSession. This authenticationSession would be finished after requiredAction
+            AuthenticationSessionCompoundId origAuthSession = AuthenticationSessionCompoundId.encoded(token.getCompoundOriginalAuthenticationSessionId());
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, origAuthSession.getRootSessionId());
+            if (rootAuthSession != null) {
+                session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+            }
+
+            if (nextAction == null) {
+                AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
+                asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
+
+                return forms
+                        .setAuthenticationSession(authSession)
+                        .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_HEADER, user.getEmail()))
+                        .setSuccess(Messages.EMAIL_VERIFIED)
+                        .setUser(user)
+                        .createInfoPage();
+            } else {
+                // Updating current authSession to end after required actions (should be marked already, but just to re-add in case of some corner case scenarios)
+                authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+            }
         }
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
-
-        String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
     }
 

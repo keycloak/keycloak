@@ -1,22 +1,11 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import {
-  ExpandableSection,
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { FormGroupField } from "../component/FormGroupField";
-import { SwitchField } from "../component/SwitchField";
-import { TextField } from "../component/TextField";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { JwksSettings } from "./JwksSettings";
 
 import "./discovery-settings.css";
 
@@ -24,183 +13,122 @@ const PKCE_METHODS = ["plain", "S256"] as const;
 
 type DiscoverySettingsProps = {
   readOnly: boolean;
+  isOIDC: boolean;
 };
 
-const Fields = ({ readOnly }: DiscoverySettingsProps) => {
+const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const { t } = useTranslation();
-  const [pkceMethodOpen, setPkceMethodOpen] = useState(false);
-  const {
-    register,
-    control,
-    formState: { errors },
-  } = useFormContext<IdentityProviderRepresentation>();
+  const { control } = useFormContext<IdentityProviderRepresentation>();
 
   const validateSignature = useWatch({
     control,
     name: "config.validateSignature",
   });
-  const useJwks = useWatch({
-    control,
-    name: "config.useJwksUrl",
-  });
   const isPkceEnabled = useWatch({
     control,
     name: "config.pkceEnabled",
   });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
+  });
 
   return (
-    <div className="pf-c-form pf-m-horizontal">
-      <FormGroup
+    <div className="pf-v5-c-form pf-m-horizontal">
+      <TextControl
+        name="config.authorizationUrl"
         label={t("authorizationUrl")}
-        fieldId="kc-authorization-url"
-        isRequired
-        validated={
-          errors.config?.authorizationUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          type="url"
-          data-testid="authorizationUrl"
-          id="kc-authorization-url"
-          validated={
-            errors.config?.authorizationUrl
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-          isReadOnly={readOnly}
-          {...register("config.authorizationUrl", { required: true })}
-        />
-      </FormGroup>
-
-      <FormGroup
+        type="url"
+        readOnly={readOnly}
+        rules={{
+          required: t("required"),
+        }}
+      />
+      <TextControl
+        name="config.tokenUrl"
         label={t("tokenUrl")}
-        fieldId="tokenUrl"
-        isRequired
-        validated={
-          errors.config?.tokenUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          type="url"
-          id="tokenUrl"
-          data-testid="tokenUrl"
-          validated={
-            errors.config?.tokenUrl
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-          isReadOnly={readOnly}
-          {...register("config.tokenUrl", { required: true })}
+        type="url"
+        readOnly={readOnly}
+        rules={{
+          required: t("required"),
+        }}
+      />
+      {isOIDC && (
+        <TextControl
+          name="config.logoutUrl"
+          label={t("logoutUrl")}
+          readOnly={readOnly}
         />
-      </FormGroup>
-      <TextField
-        field="config.logoutUrl"
-        label="logoutUrl"
-        isReadOnly={readOnly}
+      )}
+      <TextControl
+        name="config.userInfoUrl"
+        label={t("userInfoUrl")}
+        readOnly={readOnly}
+        rules={{
+          required: isOIDC ? "" : t("required"),
+        }}
       />
-      <TextField
-        field="config.userInfoUrl"
-        label="userInfoUrl"
-        isReadOnly={readOnly}
+      <TextControl
+        name="config.tokenIntrospectionUrl"
+        label={t("tokenIntrospectionUrl")}
+        type="url"
+        readOnly={readOnly}
       />
-      <TextField field="config.issuer" label="issuer" isReadOnly={readOnly} />
-      <SwitchField
-        field="config.validateSignature"
-        label="validateSignature"
-        isReadOnly={readOnly}
-      />
-      {validateSignature === "true" && (
+      {isOIDC && (
+        <TextControl
+          name="config.issuer"
+          label={t("issuer")}
+          readOnly={readOnly}
+        />
+      )}
+      {isOIDC && (
         <>
-          <SwitchField
-            field="config.useJwksUrl"
-            label="useJwksUrl"
-            data-testid="useJwksUrl"
-            isReadOnly={readOnly}
+          <DefaultSwitchControl
+            name="config.validateSignature"
+            label={t("validateSignature")}
+            labelIcon={t("validateSignatureHelp")}
+            isDisabled={readOnly}
+            stringify
           />
-          {useJwks === "true" ? (
-            <TextField
-              field="config.jwksUrl"
-              label="jwksUrl"
-              isReadOnly={readOnly}
-            />
-          ) : (
-            <>
-              <FormGroupField label="validatingPublicKey">
-                <KeycloakTextArea
-                  data-testid="validatingPublicKey"
-                  {...register("config.publicKeySignatureVerifier")}
-                />
-              </FormGroupField>
-              <TextField
-                field="config.publicKeySignatureVerifierKeyId"
-                label="validatingPublicKeyId"
-                isReadOnly={readOnly}
-              />
-            </>
+          {(validateSignature === "true" ||
+            jwtAuthorizationGrantEnabled === "true" ||
+            supportsClientAssertions == "true") && (
+            <JwksSettings readOnly={readOnly} />
           )}
         </>
       )}
-      <SwitchField
-        field="config.pkceEnabled"
-        label="pkceEnabled"
-        isReadOnly={readOnly}
+      <DefaultSwitchControl
+        name="config.pkceEnabled"
+        label={t("pkceEnabled")}
+        isDisabled={readOnly}
+        stringify
       />
       {isPkceEnabled === "true" && (
-        <FormGroup
-          className="pf-u-pb-3xl"
+        <SelectControl
+          name="config.pkceMethod"
           label={t("pkceMethod")}
-          labelIcon={
-            <HelpItem
-              helpText={t("pkceMethodHelp")}
-              fieldLabelId="pkceMethod"
-            />
-          }
-          fieldId="pkceMethod"
-        >
-          <Controller
-            name="config.pkceMethod"
-            defaultValue={PKCE_METHODS[0]}
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="pkceMethod"
-                required
-                direction="down"
-                onToggle={() => setPkceMethodOpen(!pkceMethodOpen)}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setPkceMethodOpen(false);
-                }}
-                selections={t(`${field.value}`)}
-                variant={SelectVariant.single}
-                aria-label={t("pkceMethod")}
-                isOpen={pkceMethodOpen}
-              >
-                {PKCE_METHODS.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option}
-                  >
-                    {t(`${option}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
+          labelIcon={t("pkceMethodHelp")}
+          controller={{
+            defaultValue: PKCE_METHODS[0],
+          }}
+          options={PKCE_METHODS.map((option) => ({
+            key: option,
+            value: t(option),
+          }))}
+        />
       )}
     </div>
   );
 };
 
-export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
+export const DiscoverySettings = ({
+  readOnly,
+  isOIDC,
+}: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -213,10 +141,10 @@ export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
           onToggle={() => setIsExpanded(!isExpanded)}
           isExpanded={isExpanded}
         >
-          <Fields readOnly={readOnly} />
+          <Fields readOnly={readOnly} isOIDC={isOIDC} />
         </ExpandableSection>
       )}
-      {!readOnly && <Fields readOnly={readOnly} />}
+      {!readOnly && <Fields readOnly={readOnly} isOIDC={isOIDC} />}
     </>
   );
 };

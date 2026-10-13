@@ -16,12 +16,12 @@
  */
 package org.keycloak.validate;
 
-import jakarta.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * Denotes an error found during validation.
@@ -118,7 +118,7 @@ public class ValidationError implements Serializable {
     }
 
     /**
-     * Returns an array where the first element is the {@link #inputHint} follwed by the {@link #messageParameters}.
+     * Returns an array where the first element is the {@link #inputHint} followed by the {@link #messageParameters}.
      *
      * @return
      */

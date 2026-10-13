@@ -1,0 +1,21 @@
+
+=== Key PEMS
+
+Within the `Key` element you declare your keys and certificates directly using the sub elements
+`PrivateKeyPem`, `PublicKeyPem`, and `CertificatePem`.
+The values contained in these elements must conform to the PEM key format.
+You usually use this option if you are generating keys using `openssl` or similar command line tool.
+
+[source,xml]
+----
+<Keys>
+   <Key signing="true">
+      <PrivateKeyPem>
+         2341251234AB31234==231BB998311222423522334
+      </PrivateKeyPem>
+      <CertificatePem>
+         211111341251234AB31234==231BB998311222423522334
+      </CertificatePem>
+   </Key>
+</Keys>
+----

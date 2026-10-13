@@ -17,22 +17,26 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.provider.ProviderEvent;
+
+import static org.keycloak.utils.StringUtil.isNotBlank;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserModel extends RoleMapperModel {
+public interface UserModel extends RoleMapperModel, Model {
+    String ID = "id";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
     String EMAIL = "email";
+    String EMAIL_PENDING = "kc.email.pending";
     String EMAIL_VERIFIED = "emailVerified";
     String LOCALE = "locale";
     String ENABLED = "enabled";
@@ -42,7 +46,12 @@ public interface UserModel extends RoleMapperModel {
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+    String CREATED_AFTER = "keycloak.session.realm.users.query.created_after";
+    String CREATED_BEFORE = "keycloak.session.realm.users.query.created_before";
     String DISABLED_REASON = "disabledReason";
+    //attribute name used to mark a temporary admin user/service account as temporary
+    String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
+    String CREATED_TIMESTAMP = "createdTimestamp";
 
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
@@ -52,7 +61,11 @@ public interface UserModel extends RoleMapperModel {
         KeycloakSession getKeycloakSession();
     }
 
-    String getId();
+    interface UserPreRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
 
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
@@ -72,6 +85,17 @@ public interface UserModel extends RoleMapperModel {
     Long getCreatedTimestamp();
 
     void setCreatedTimestamp(Long timestamp);
+
+    /**
+     * Get timestamp of last user modification. May be null for users that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
 
     boolean isEnabled();
 
@@ -106,9 +130,9 @@ public interface UserModel extends RoleMapperModel {
     Map<String, List<String>> getAttributes();
 
     /**
-     * Obtains the names of required actions associated with the user.
+     * Obtains the aliases of required actions associated with the user.
      *
-     * @return a non-null {@link Stream} of required action names.
+     * @return a non-null {@link Stream} of required action aliases.
      */
     Stream<String> getRequiredActionsStream();
 
@@ -195,14 +219,30 @@ public interface UserModel extends RoleMapperModel {
     }
 
     void joinGroup(GroupModel group);
+    default void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        joinGroup(group);
+    }
     void leaveGroup(GroupModel group);
     boolean isMemberOf(GroupModel group);
 
     String getFederationLink();
     void setFederationLink(String link);
 
+    default boolean isServiceAccount() {
+        return getServiceAccountClientLink() != null;
+    }
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
+
+    /**
+     * Indicates if this {@link UserModel} maps to a local account or an account
+     * federated from an external user storage.
+     *
+     * @return {@code true} if a federated account. Otherwise, {@code false}.
+     */
+    default boolean isFederated() {
+        return isNotBlank(getFederationLink());
+    }
 
     /**
      * Instance of a user credential manager to validate and update the credentials of this user.

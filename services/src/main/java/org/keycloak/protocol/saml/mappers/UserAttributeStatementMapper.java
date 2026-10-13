@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.saml.mappers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,10 +30,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mappings UserModel attribute (not property name of a getter method) to an AttributeStatement.
@@ -46,6 +46,8 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
+        property.setRequired(Boolean.TRUE);
         configProperties.add(property);
         AttributeStatementHelper.setConfigProperties(configProperties);
 
@@ -80,7 +82,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a to a SAML attribute.";
+        return "Map a custom user attribute to a SAML attribute.";
     }
 
     @Override

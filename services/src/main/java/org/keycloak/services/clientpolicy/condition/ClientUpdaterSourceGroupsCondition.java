@@ -17,26 +17,35 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -74,19 +83,25 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext clientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return getVoteForGroupsMatched(clientPolicyCRUDContext.getAuthenticatedUser());
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
-            if (context instanceof AdminClientRegisterContext) {
+        case REGISTERED:
+            if (context instanceof AdminClientRegisterContext || context instanceof AdminClientRegisteredContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
-            } else if (context instanceof DynamicClientRegisterContext) {
+            } else if (context instanceof DynamicClientRegisterContext || context instanceof DynamicClientRegisteredContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
         case UPDATE:
-            if (context instanceof AdminClientUpdateContext) {
+        case UPDATED:
+            if (context instanceof AdminClientUpdateContext || context instanceof AdminClientUpdatedContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getAuthenticatedUser());
-            } else if (context instanceof DynamicClientUpdateContext) {
+            } else if (context instanceof DynamicClientUpdateContext || context instanceof DynamicClientUpdatedContext) {
                 return getVoteForGroupsMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
@@ -115,24 +130,35 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
     private boolean isGroupsMatched(UserModel user) {
         if (user == null) return false;
 
-        Set<String> expectedGroups = instantiateGroupsForMatching();
-        if (expectedGroups == null) return false;
+        List<String> configuredGroups = configuration.getGroups();
+        if (configuredGroups == null) return false;
 
-        // user.getGroupsStream() never returns null according to {@link UserModel.getGroupsStream}
-        Set<String> groups = user.getGroupsStream().map(GroupModel::getName).collect(Collectors.toSet());
+        Set<String> expectedGroups = configuredGroups.stream().map(this::resolveGroup).filter(Objects::nonNull)
+                .map(GroupModel::getId).collect(Collectors.toSet());
+
+        Set<String> groups = user.getGroupsStream().map(GroupModel::getId).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
-            groups.forEach(i -> logger.tracev("user group = {0}", i));
-            expectedGroups.forEach(i -> logger.tracev("expected user group = {0}", i));
+            groups.forEach(i -> logger.tracev("user group id = {0}", i));
+            expectedGroups.forEach(i -> logger.tracev("expected user group id = {0}", i));
         }
 
-        return expectedGroups.removeAll(groups); // may change expectedGroups so that it has needed to be instantiated.
+        return groups.stream().anyMatch(expectedGroups::contains);
     }
 
-    private Set<String> instantiateGroupsForMatching() {
-        List<String> groups = configuration.getGroups();
-        if (groups == null) return null;
-        return new HashSet<>(groups);
+    private GroupModel resolveGroup(String group) {
+        if (group == null) return null;
+
+        RealmModel realm = session.getContext().getRealm();
+
+        // the configured groups are resolved regardless of the groups the user performing the request is allowed to view
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            // a value with a leading slash is the full path of the group, otherwise it is the name of a top level group
+            if (group.startsWith("/")) {
+                return KeycloakModelUtils.findGroupByPath(session, realm, group);
+            }
+            return session.groups().getGroupByName(realm, null, group);
+        });
     }
 
 }

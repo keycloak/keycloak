@@ -22,16 +22,10 @@
         <app.server.jboss.artifactId>wildfly-ee-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${eap.version}</app.server.jboss.version>
 
-        <app.server.jboss.unpacked.folder.path>${containers.home}/jboss-distribution
-        </app.server.jboss.unpacked.folder.path>
+        <app.server.jboss.unpacked.folder.path>${containers.home}/jboss-distribution</app.server.jboss.unpacked.folder.path>
         <app.server.jboss.unpacked.folder.name>jboss-eap-8.0</app.server.jboss.unpacked.folder.name>
 
         <app.server.saml.adapter.artifactId>keycloak-saml-adapter-galleon-pack</app.server.saml.adapter.artifactId>
-
-        <skip.apply.offline.cli>true</skip.apply.offline.cli>
-        <skip.configure.clustered.scenario>true</skip.configure.clustered.scenario>
-        <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
-        <skip.oidc.adapter.installation>true</skip.oidc.adapter.installation>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -41,26 +35,10 @@
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.arquillian.protocol</groupId>
-                    <artifactId>arquillian-protocol-servlet</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.protocol</groupId>
-            <artifactId>arquillian-protocol-servlet-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.arquillian</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.arquillian.protocol</groupId>
-                    <artifactId>arquillian-protocol-servlet</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>

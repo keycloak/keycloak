@@ -21,12 +21,14 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.keycloak.models.Constants;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.RawSqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.keycloak.models.Constants;
 
 public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
 

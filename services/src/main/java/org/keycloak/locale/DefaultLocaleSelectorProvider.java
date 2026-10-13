@@ -16,17 +16,21 @@
  */
 package org.keycloak.locale;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
@@ -40,14 +44,26 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user) {
-        HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        return resolveLocale(realm, user, false);
+    }
+
+    @Override
+    public Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
+        HttpHeaders requestHeaders = null;
+
+        try {
+            requestHeaders = session.getContext().getRequestHeaders();
+        } catch (ContextNotActiveException e) {
+            logger.debug("No active request, can't obtain locale from request");
+        }
+
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
         if (!realm.isInternationalizationEnabled()) {
             return Locale.ENGLISH;
         }
 
-        Locale userLocale = getUserLocale(realm, session, user, requestHeaders);
+        Locale userLocale = getUserLocale(realm, session, user, requestHeaders, ignoreAcceptLanguageHeader);
         if (userLocale != null) {
             return userLocale;
         }
@@ -60,7 +76,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return Locale.ENGLISH;
     }
 
-    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {
+    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders, boolean ignoreAcceptLanguageHeader) {
         Locale locale;
 
         locale = getUserSelectedLocale(realm, session);
@@ -83,7 +99,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return locale;
         }
 
-        locale = getAcceptLanguageHeaderLocale(realm, requestHeaders);
+        locale = getAcceptLanguageHeaderLocale(realm, requestHeaders, ignoreAcceptLanguageHeader);
         if (locale != null) {
             return locale;
         }
@@ -131,15 +147,20 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        Cookie localeCookie = httpHeaders.getCookies().get(LOCALE_COOKIE);
+        String localeCookie = session.getProvider(CookieProvider.class).get(CookieType.LOCALE);
         if (localeCookie == null) {
             return null;
         }
 
-        return findLocale(realm, localeCookie.getValue());
+        return findLocale(realm, localeCookie);
     }
 
-    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
+    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders, boolean ignoreAcceptLanguageHeader) {
+
+        if (ignoreAcceptLanguageHeader) {
+            return null;
+        }
+
         if (httpHeaders == null) {
             return null;
         }
@@ -166,7 +187,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findBestMatchingLocale(supportedLocales, localeStrings);
     }
 
-    static Locale findBestMatchingLocale(List<Locale> supportedLocales, String... localeStrings) {
+    public static Locale findBestMatchingLocale(List<Locale> supportedLocales, String... localeStrings) {
         for (String localeString : localeStrings) {
             if (localeString != null) {
                 Locale result = null;

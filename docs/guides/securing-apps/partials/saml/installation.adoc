@@ -1,0 +1,126 @@
+== Installation
+
+The provision of the feature pack is done using the https://docs.wildfly.org/wildfly-maven-plugin[wildfly-maven-plugin], https://docs.wildfly.org/bootablejar/[wildfly-jar-maven-plugin] or https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/8.0/html/using_jboss_eap_on_openshift_container_platform/assembly_provisioning-a-jboss-eap-server-using-the-maven-plugin_default[eap-maven-plugin] respectively.
+
+=== Example of provision using wildfly maven plugin
+
+[source,xml,subs="attributes+"]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-maven-plugin</artifactId>
+    <version>5.0.0.Final</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe)#32.0.1.Final</location>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>{version}</version>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>core-server</layer>
+            <layer>web-server</layer>
+            <layer>jaxrs-server</layer>
+            <layer>datasources-web-server</layer>
+            <layer>webservices</layer>
+            <layer>keycloak-saml</layer>
+            <layer>keycloak-client-saml</layer>
+            <layer>keycloak-client-saml-ejb</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+=== Example of provision using wildfly jar maven plugin
+
+[source,xml,subs="attributes+"]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>11.0.2.Final</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe)#32.0.1.Final</location>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>{version}</version>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>core-server</layer>
+            <layer>web-server</layer>
+            <layer>jaxrs-server</layer>
+            <layer>datasources-web-server</layer>
+            <layer>webservices</layer>
+            <layer>keycloak-saml</layer>
+            <layer>keycloak-client-saml</layer>
+            <layer>keycloak-client-saml-ejb</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+=== Example of provision using EAP maven plugin
+
+[source,xml,subs="attributes+"]
+----
+<plugin>
+    <groupId>org.jboss.eap.plugins</groupId>
+    <artifactId>eap-maven-plugin</artifactId>
+    <version>1.0.0.Final-redhat-00014</version>
+    <configuration>
+        <channels>
+            <channel>
+                <manifest>
+                    <groupId>org.jboss.eap.channels</groupId>
+                    <artifactId>eap-8.0</artifactId>
+                </manifest>
+            </channel>
+        </channels>
+        <feature-packs>
+            <feature-pack>
+                <location>org.keycloak:keycloak-saml-adapter-galleon-pack</location>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>core-server</layer>
+            <layer>web-server</layer>
+            <layer>jaxrs-server</layer>
+            <layer>datasources-web-server</layer>
+            <layer>webservices</layer>
+            <layer>keycloak-saml</layer>
+            <layer>keycloak-client-saml</layer>
+            <layer>keycloak-client-saml-ejb</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----

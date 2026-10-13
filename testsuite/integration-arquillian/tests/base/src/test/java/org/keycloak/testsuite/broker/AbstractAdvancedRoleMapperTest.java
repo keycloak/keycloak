@@ -1,17 +1,17 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
-import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
+import java.util.List;
+import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 
-import java.util.List;
-import java.util.Map;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 
 /**
  * @author hmlnarik,
@@ -142,6 +142,21 @@ public abstract class AbstractAdvancedRoleMapperTest extends AbstractRoleMapperT
     public void updateBrokeredUserAssignsRoleInForceModeWhenCreatingTheMapperAfterFirstLogin() {
         newValueForAttribute2 = "value 2";
         createMapperAndLoginAsUserTwiceWithMapper(FORCE, true);
+
+        assertThatRoleHasBeenAssignedInConsumerRealm();
+    }
+
+    @Test
+    public void valuesMatchIfNullClaimsSpecified() {
+        createAdvancedRoleMapper(null, false);
+        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME,
+                        ImmutableList.<String>builder().add("some value").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
+                        ImmutableList.<String>builder().add("some value").build())
+                .build());
+
+        logInAsUserInIDPForFirstTime();
 
         assertThatRoleHasBeenAssignedInConsumerRealm();
     }

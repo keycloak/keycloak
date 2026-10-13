@@ -2,15 +2,16 @@ package org.keycloak.crypto.def.test;
 
 import java.security.SecureRandom;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Environment;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Environment;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

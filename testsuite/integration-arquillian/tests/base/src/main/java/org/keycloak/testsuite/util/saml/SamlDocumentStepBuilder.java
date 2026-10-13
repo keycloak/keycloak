@@ -16,7 +16,11 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.function.Consumer;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
@@ -34,12 +38,10 @@ import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQName
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.testsuite.util.SamlClient.Step;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.function.Consumer;
-import javax.xml.stream.XMLStreamWriter;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.jboss.logging.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 
 /**
@@ -125,8 +127,8 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
             } else if (transformed instanceof StatusResponseType) {
                 new SAMLResponseWriter(xmlStreamWriter).write((StatusResponseType) transformed, SAMLProtocolQNames.LOGOUT_RESPONSE.getQName("samlp"));
             } else {
-                Assert.assertNotNull("Unknown type: <null>", transformed);
-                Assert.fail("Unknown type: " + transformed.getClass().getName());
+                Assertions.assertNotNull(transformed, "Unknown type: <null>");
+                Assertions.fail("Unknown type: " + transformed.getClass().getName());
             }
             return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         } catch (ProcessingException ex) {

@@ -1,0 +1,1063 @@
+package org.keycloak.tests.ssf.transmitter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.SsfProfile;
+import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.stream.StreamStatus;
+import org.keycloak.ssf.stream.StreamStatusValue;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
+import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.HttpServerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests for the SSF Transmitter push delivery pipeline end-to-end:
+ * Keycloak user event → {@code SsfTransmitterEventListener} → SET mapping →
+ * {@code SecurityEventTokenDispatcher} → {@code PushDeliveryService} → mock
+ * receiver.
+ *
+ * <p>Each test fires a real LOGOUT user event by obtaining an access token
+ * via a password grant (creating a user session) and then logging the
+ * refresh token out, which the SSF event listener maps to a
+ * {@link CaepSessionRevoked} SET and pushes to the mock receiver.
+ *
+ * <p>Three receiver clients are registered by {@link PushDeliveryRealm}:
+ * <ul>
+ *     <li>{@link #RECEIVER_SSF} — default SSF 1.0 profile, used for the
+ *         happy path that covers a standard SSF SET payload.</li>
+ *     <li>{@link #RECEIVER_SSE_CAEP} — legacy SSE CAEP profile, used to
+ *         regression-guard the enum-switch fix in
+ *         {@code SecurityEventTokenDispatcher#getNarrowedEventToken}.</li>
+ *     <li>{@link #RECEIVER_CRED_ONLY} — receiver that only requests the
+ *         CAEP credential-change event, used to assert that SETs carrying
+ *         un-requested event types are not delivered.</li>
+ * </ul>
+ *
+ * <p>The token-revocation tests additionally use a plain relying party,
+ * {@link #SECOND_RP}, to share one SSO session between two clients.
+ */
+@KeycloakIntegrationTest(config = SsfTransmitterPushDeliveryTests.PushDeliveryKeycloakServerConfig.class)
+public class SsfTransmitterPushDeliveryTests {
+
+    static final String RECEIVER_SSF = "ssf-receiver-push-ssf";
+    static final String RECEIVER_SSF_SECRET = "receiver-push-ssf-secret";
+
+    static final String RECEIVER_SSE_CAEP = "ssf-receiver-push-sse-caep";
+    static final String RECEIVER_SSE_CAEP_SECRET = "receiver-push-sse-caep-secret";
+
+    static final String RECEIVER_CRED_ONLY = "ssf-receiver-push-cred-only";
+    static final String RECEIVER_CRED_ONLY_SECRET = "receiver-push-cred-only-secret";
+
+    /**
+     * Second relying party that joins the SSO session established by the
+     * injected {@code test-app} client in
+     * {@link #testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive}.
+     */
+    static final String SECOND_RP = "second-rp";
+    static final String SECOND_RP_SECRET = "second-rp-secret";
+
+    static final String TEST_USER = "tester";
+    static final String TEST_PASSWORD = "test";
+
+    static final String PUSH_CONTEXT_PATH = "/ssf/push-delivery";
+    static final String MOCK_PUSH_ENDPOINT = "http://127.0.0.1:8500" + PUSH_CONTEXT_PATH;
+    static final String EXPECTED_PUSH_AUTH_HEADER = "Bearer dummy-push-delivery-receiver";
+
+    static final long PUSH_WAIT_SECONDS = 5;
+
+    @InjectRealm(config = PushDeliveryRealm.class)
+    ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oauthClient;
+
+    @InjectSimpleHttp
+    SimpleHttp http;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectHttpServer
+    HttpServer mockReceiverServer;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    private final BlockingQueue<CapturedPush> pushes = new LinkedBlockingQueue<>();
+
+    @BeforeEach
+    public void setup() {
+        pushes.clear();
+
+        mockReceiverServer.createContext(PUSH_CONTEXT_PATH, new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                try (InputStream is = exchange.getRequestBody()) {
+                    pushes.add(new CapturedPush(
+                            new String(is.readAllBytes(), StandardCharsets.UTF_8),
+                            exchange.getRequestHeaders().getFirst("Authorization"),
+                            exchange.getRequestHeaders().getFirst("Content-Type")));
+                }
+                HttpServerUtil.sendResponse(exchange, 202, Map.of());
+            }
+        });
+
+        // Assign the SSF scopes to every receiver client. These scopes are
+        // created by RealmPostCreateEvent after client import, so declaring
+        // them as optionalClientScopes on the realm config is silently
+        // dropped.
+        assignOptionalClientScopes(RECEIVER_SSF, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        assignOptionalClientScopes(RECEIVER_SSE_CAEP, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        assignOptionalClientScopes(RECEIVER_CRED_ONLY, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        List.of(RECEIVER_SSF, RECEIVER_SSE_CAEP, RECEIVER_CRED_ONLY)
+                .forEach(this::bestEffortDeleteStream);
+        try {
+            mockReceiverServer.removeContext(PUSH_CONTEXT_PATH);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnUserLogout() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepSessionRevoked.TYPE, CaepCredentialChange.TYPE));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+
+        // Regression guard: the push must carry the receiver-supplied
+        // authorization header verbatim and the SSF SET content-type.
+        Assertions.assertEquals(EXPECTED_PUSH_AUTH_HEADER, captured.authorizationHeader,
+                "push authorization header should be forwarded verbatim");
+        Assertions.assertEquals(Ssf.APPLICATION_SECEVENT_JWT_TYPE, captured.contentType,
+                "content-type should be application/secevent+jwt");
+
+        JsonNode set = decodeSet(captured);
+
+        Assertions.assertEquals(realm.getBaseUrl(), set.get("iss").asText());
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud in the SET should match the stream audience");
+
+        JsonNode events = set.path("events");
+        Assertions.assertTrue(events.has(CaepSessionRevoked.TYPE),
+                "SET should carry the CAEP session-revoked event");
+
+        // SSF 1.0 profile carries sub_id at the token level (complex user +
+        // session subject id), not nested under the event.
+        JsonNode subId = set.path("sub_id");
+        Assertions.assertFalse(subId.isMissingNode(), "SSF 1.0 SET should carry a top-level sub_id");
+        Assertions.assertTrue(subId.path("user").isObject(), "sub_id.user should describe the logged-out user");
+        Assertions.assertTrue(subId.path("session").isObject(), "sub_id.session should describe the revoked session");
+    }
+
+    /**
+     * A relying party that validates tokens offline and trusts SSF/CAEP
+     * for real-time revocation must learn about sessions ended through
+     * OAuth2 token revocation, not just logout: revoking a refresh token
+     * on {@code POST /protocol/openid-connect/revoke} removes the user
+     * session server-side and must emit the same {@link CaepSessionRevoked}
+     * SET as a logout (keycloak#51376).
+     */
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnRefreshTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                "password grant response should include a refresh token");
+        String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken())
+                        .refreshToken().send().isSuccess(),
+                "token revocation should succeed");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode sessionRevoked = set.path("events").path(CaepSessionRevoked.TYPE);
+        Assertions.assertFalse(sessionRevoked.isMissingNode(),
+                "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
+        Assertions.assertEquals("Token revoked", sessionRevoked.path("reason_admin").path("en").asText(),
+                "reason_admin should distinguish token revocation from logout");
+        Assertions.assertEquals(InitiatingEntity.SYSTEM.getCode(), sessionRevoked.path("initiating_entity").asText(),
+                "/revoke is called by the RP with client credentials, so the RP's system initiated the revocation, not the user");
+
+        Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                "sub_id.session should identify the session the revoked token belonged to");
+    }
+
+    /**
+     * Same as {@link #testPushDeliversCaepSessionRevokedOnRefreshTokenRevocation}
+     * for offline tokens: revoking the offline token removes the offline
+     * user session (and the online session it was minted from), so a
+     * {@link CaepSessionRevoked} SET must be pushed.
+     */
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnOfflineTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        oauthClient.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        try {
+            AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+            Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                    () -> "password grant with offline_access should return an offline token, got error: "
+                            + tokenResponse.getError() + " / " + tokenResponse.getErrorDescription());
+            String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "offline token revocation should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the offline token ends the offline session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the session the revoked offline token belonged to");
+        } finally {
+            oauthClient.scope(null);
+        }
+    }
+
+    /**
+     * Counterpart guard against over-notification: revoking a bearer
+     * access token blocklists the token but does not end the user
+     * session, so no session-revoked SET may be emitted — receivers
+     * would otherwise kill a session that is still legitimately alive.
+     */
+    @Test
+    public void testNoPushOnAccessTokenRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                "password grant should succeed for the test user");
+
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getAccessToken())
+                        .accessToken().send().isSuccess(),
+                "access token revocation should succeed");
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "access-token revocation leaves the session alive — no session-revoked SET may be pushed");
+    }
+
+    /**
+     * Multi-client counterpart of {@link #testNoPushOnAccessTokenRevocation}:
+     * when two clients share one SSO session, revoking one client's
+     * refresh token only detaches that client's client-session — Keycloak
+     * keeps the user session alive for the other client. The
+     * {@code REVOKE_GRANT} event still carries the session id, so the
+     * mapper must look the session up and stay silent while it is alive;
+     * announcing it as revoked would let receivers kill a session the
+     * other client still legitimately uses. Only revoking the last
+     * remaining refresh token ends the session and must trigger the push.
+     *
+     * <p>Unlike the access-token case (whose event has no session id at
+     * all) this exercises the session-liveness lookup in
+     * {@code SecurityEventTokenMapper#shouldIgnoreRevokeGrant}.
+     */
+    @Test
+    public void testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        String firstClientId = oauthClient.config().getClientId();
+        String firstClientSecret = oauthClient.config().getClientSecret();
+        try {
+            // Browser login with the first client establishes the SSO session.
+            AuthorizationEndpointResponse firstLogin = oauthClient.doLogin(TEST_USER, TEST_PASSWORD);
+            Assertions.assertNotNull(firstLogin.getCode(),
+                    () -> "browser login with the first client should succeed, got error: "
+                            + firstLogin.getError() + " / " + firstLogin.getErrorDescription());
+            AccessTokenResponse firstTokens = oauthClient.doAccessTokenRequest(firstLogin.getCode());
+            Assertions.assertNotNull(firstTokens.getRefreshToken(),
+                    "code exchange for the first client should include a refresh token");
+            String sessionId = extractSessionId(firstTokens.getRefreshToken());
+
+            // The second client joins the same SSO session through the
+            // browser's identity cookie — no credentials are prompted.
+            oauthClient.client(SECOND_RP, SECOND_RP_SECRET);
+            oauthClient.openLoginForm();
+            AuthorizationEndpointResponse secondLogin = oauthClient.parseLoginResponse();
+            Assertions.assertNotNull(secondLogin.getCode(),
+                    () -> "SSO login with the second client should succeed, got error: "
+                            + secondLogin.getError() + " / " + secondLogin.getErrorDescription());
+            AccessTokenResponse secondTokens = oauthClient.doAccessTokenRequest(secondLogin.getCode());
+            Assertions.assertNotNull(secondTokens.getRefreshToken(),
+                    "code exchange for the second client should include a refresh token");
+            Assertions.assertEquals(sessionId, extractSessionId(secondTokens.getRefreshToken()),
+                    "both clients should share the same SSO session");
+
+            // Revoking the second client's refresh token detaches only its
+            // client session; the first client keeps the user session alive.
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(secondTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the second client should succeed");
+
+            Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                    "another client still holds the SSO session — no session-revoked SET may be pushed");
+
+            // Revoking the last remaining refresh token removes the user
+            // session, which must now be announced.
+            oauthClient.client(firstClientId, firstClientSecret);
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(firstTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the first client should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the last refresh token ends the session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the shared SSO session");
+        } finally {
+            oauthClient.client(firstClientId, firstClientSecret);
+            oauthClient.getDriver().manage().deleteAllCookies();
+        }
+    }
+
+    /**
+     * Account-console consent revocation also fires {@code REVOKE_GRANT},
+     * and unlike access-token revocation its event <em>does</em> carry a
+     * session id: the caller's own, set by {@code AccountLoader}. That
+     * session is alive inside its own request and is unrelated to the
+     * revocation, so the mapper must stay silent; a SET here would tell
+     * receivers that the very session the user is working in was revoked.
+     * Revoking the same session's refresh token afterwards must push,
+     * which proves the id on the consent event named a live session and
+     * that the stream itself was working.
+     */
+    @Test
+    public void testNoPushOnAccountConsoleConsentRevocation() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                () -> "password grant should succeed, got error: " + tokenResponse.getError() + " / " + tokenResponse.getErrorDescription());
+        String sessionId = extractSessionId(tokenResponse.getRefreshToken());
+
+        // Revoke consent for another client through the account REST API,
+        // authenticated with the session established above. The JSON accept
+        // header is what routes the request to the REST service rather than
+        // the account console web app.
+        String consentUrl = realm.getBaseUrl() + "/account/applications/" + SECOND_RP + "/consent";
+        try (SimpleHttpResponse response = http.doDelete(consentUrl).acceptJson().auth(tokenResponse.getAccessToken()).asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(), "consent revocation through the account REST API should succeed");
+        }
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "consent revocation names the caller's own live session — no session-revoked SET may be pushed");
+
+        // The caller's session is still alive; revoking its refresh token now ends it and must push.
+        Assertions.assertTrue(oauthClient.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess(),
+                "refresh token revocation should succeed");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+        Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                "revoking the refresh token ends the session — the SET must carry CAEP session-revoked");
+        Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                "sub_id.session should identify the session the consent-revocation event had named");
+    }
+
+    /**
+     * The one-store case that {@link #testNoPushOnRefreshTokenRevocationWhileOtherClientSessionAlive}
+     * does not cover: online and offline sessions share one session id and
+     * the SET subject cannot say which of the two ended, so the mapper
+     * must stay silent while the id is still in use in <em>either</em>
+     * store. The first client logs in through the browser and keeps a
+     * plain refresh token; the second client joins the SSO session with
+     * {@code offline_access} and holds an offline token, so the id now
+     * lives in both stores. Revoking the offline token removes the offline
+     * session (the second client was its only member) and detaches the
+     * second client's online client session, but the first client keeps
+     * the online user session alive; a SET now would let the first
+     * client's receiver kill a live session. Revoking the first client's
+     * refresh token afterwards ends the last session under that id and
+     * must trigger the push.
+     */
+    @Test
+    public void testNoPushOnOfflineTokenRevocationWhileOtherClientOnlineSessionAlive() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        String firstClientId = oauthClient.config().getClientId();
+        String firstClientSecret = oauthClient.config().getClientSecret();
+        try {
+            // Browser login with the first client establishes the SSO session.
+            AuthorizationEndpointResponse firstLogin = oauthClient.doLogin(TEST_USER, TEST_PASSWORD);
+            Assertions.assertNotNull(firstLogin.getCode(),
+                    () -> "browser login with the first client should succeed, got error: "
+                            + firstLogin.getError() + " / " + firstLogin.getErrorDescription());
+            AccessTokenResponse firstTokens = oauthClient.doAccessTokenRequest(firstLogin.getCode());
+            Assertions.assertNotNull(firstTokens.getRefreshToken(),
+                    "code exchange for the first client should include a refresh token");
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_REFRESH, extractTokenType(firstTokens.getRefreshToken()),
+                    "the first client should hold a plain refresh token");
+            String sessionId = extractSessionId(firstTokens.getRefreshToken());
+
+            // The second client joins the same SSO session through the
+            // browser's identity cookie, requesting offline_access.
+            oauthClient.client(SECOND_RP, SECOND_RP_SECRET);
+            oauthClient.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+            oauthClient.openLoginForm();
+            AuthorizationEndpointResponse secondLogin = oauthClient.parseLoginResponse();
+            Assertions.assertNotNull(secondLogin.getCode(),
+                    () -> "SSO login with the second client should succeed, got error: "
+                            + secondLogin.getError() + " / " + secondLogin.getErrorDescription());
+            AccessTokenResponse secondTokens = oauthClient.doAccessTokenRequest(secondLogin.getCode());
+            Assertions.assertNotNull(secondTokens.getRefreshToken(),
+                    "code exchange for the second client should include a token");
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, extractTokenType(secondTokens.getRefreshToken()),
+                    "the second client should hold an offline token");
+            Assertions.assertEquals(sessionId, extractSessionId(secondTokens.getRefreshToken()),
+                    "both clients should share the same session id");
+            oauthClient.scope(null);
+
+            // Precondition: the id is now present in both stores.
+            Assertions.assertEquals(Stream.of(firstClientId, SECOND_RP).sorted().toList(), onlineSessionClients(sessionId),
+                    "both clients should be attached to the online session");
+            Assertions.assertTrue(offlineSessionExists(sessionId, SECOND_RP),
+                    "the second client should have an offline session under the same id");
+
+            // Revoking the offline token removes the offline session and the
+            // second client's online client session, but the first client
+            // keeps the online user session under the same id.
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(secondTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "offline token revocation for the second client should succeed");
+            Assertions.assertFalse(offlineSessionExists(sessionId, SECOND_RP),
+                    "the offline session should be gone after revoking its only offline token");
+            Assertions.assertEquals(List.of(firstClientId), onlineSessionClients(sessionId),
+                    "the online session should survive with the first client attached");
+
+            Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                    "the offline session is gone, but the first client still holds the online SSO session — no session-revoked SET may be pushed");
+
+            // Revoking the last refresh token removes the online user session
+            // as well; the id is now gone from both stores and must be announced.
+            oauthClient.client(firstClientId, firstClientSecret);
+            Assertions.assertTrue(oauthClient.tokenRevocationRequest(firstTokens.getRefreshToken())
+                            .refreshToken().send().isSuccess(),
+                    "refresh token revocation for the first client should succeed");
+
+            CapturedPush captured = awaitPush();
+            JsonNode set = decodeSet(captured);
+
+            Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                    "revoking the last token under the session id ends the session — the SET must carry CAEP session-revoked");
+            Assertions.assertEquals(sessionId, set.path("sub_id").path("session").path("id").asText(),
+                    "sub_id.session should identify the shared session id");
+        } finally {
+            oauthClient.scope(null);
+            oauthClient.client(firstClientId, firstClientSecret);
+            oauthClient.getDriver().manage().deleteAllCookies();
+        }
+    }
+
+    /**
+     * Regression guard: an admin-UI-flavored stream (where
+     * {@code events_requested} carries event <b>aliases</b> rather than
+     * full URIs) must still receive matching pushes. Before the
+     * dispatcher's gate canonicalized both sides through
+     * {@link org.keycloak.ssf.event.SsfEventRegistry SsfEventRegistry},
+     * the URI extracted from the SET token never matched the alias-form
+     * set, every dispatch was suppressed with reason
+     * {@code EVENT_NOT_REQUESTED}, and no push ever reached the
+     * receiver — silently.
+     *
+     * <p>The receiver-facing stream-create endpoint deliberately accepts
+     * both URI and alias form (see
+     * {@link ClientStreamStore#getEventsConfig
+     * ClientStreamStore.getEventsConfig}); persisting aliases here
+     * mirrors what the admin UI sends.
+     */
+    @Test
+    public void testPushDeliveredWhenEventsRequestedUsesAliases() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        // Pass the simple-class-name aliases the admin UI sends, not
+        // CaepSessionRevoked.TYPE / CaepCredentialChange.TYPE URIs.
+        StreamConfig stream = createPushStream(token, Set.of("CaepSessionRevoked", "CaepCredentialChange"));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+
+        JsonNode set = decodeSet(captured);
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud in the SET should match the stream audience");
+        Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                "SET should carry the CAEP session-revoked event even though events_requested was alias-flavored");
+    }
+
+    @Test
+    public void testSseCaepProfileNarrowsEventShape() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSE_CAEP, RECEIVER_SSE_CAEP_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        // Regression guard for the SsfProfile enum-vs-String comparison bug:
+        // with SSE CAEP profile, the SseCaepEventConverter wraps the subject
+        // inside the event body and the SET no longer carries a top-level
+        // sub_id. If the converter is not invoked (original bug), the payload
+        // is still SSF 1.0-shaped with sub_id at the token level.
+        Assertions.assertTrue(set.path("sub_id").isMissingNode() || set.path("sub_id").isNull(),
+                "SSE CAEP SET should not carry a top-level sub_id");
+
+        JsonNode event = set.path("events").path(CaepSessionRevoked.TYPE);
+        Assertions.assertFalse(event.isMissingNode(), "SET should carry a CAEP session-revoked event");
+        Assertions.assertTrue(event.path("subject").isObject(),
+                "SSE CAEP event should carry a nested 'subject' object");
+        Assertions.assertTrue(event.path("subject").path("user").isObject(),
+                "SSE CAEP event.subject should wrap a 'user' entry");
+        // Per SSE 1.0 §3.2 each subject member of a complex subject is a sibling
+        // key under `subject`. The native CaepSessionRevoked path always
+        // carries a complex subject (user + session), so both subject members
+        // must appear at the same depth — not nested under user.
+        Assertions.assertTrue(event.path("subject").path("session").isObject(),
+                "SSE CAEP event.subject.session must be a sibling of subject.user, not nested under it");
+        Assertions.assertTrue(event.path("subject").path("user").path("session").isMissingNode(),
+                "regression guard: complex subject must not be wrapped under subject.user");
+    }
+
+    @Test
+    public void testUnsupportedEventNotDelivered() throws Exception {
+
+        // RECEIVER_CRED_ONLY only requests credential-change events; a
+        // session-revoked push should be discarded by the dispatcher's
+        // events_requested filter and never reach the mock receiver.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerUserLogout();
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "no push should be delivered when the event type is not in events_requested");
+    }
+
+    @Test
+    public void testDisabledStreamDoesNotReceivePush() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Disable the stream. The dispatcher must skip delivery of
+        // regular events, but the spec requires a stream-updated SET
+        // on every status transition, so we expect exactly one push
+        // — the stream-updated notification — and then silence.
+        StreamStatus disableStatus = new StreamStatus();
+        disableStatus.setStreamId(stream.getStreamId());
+        disableStatus.setStatus(StreamStatusValue.disabled.getStatusCode());
+        try (SimpleHttpResponse response = http.doPost(streamsStatusEndpoint())
+                .json(disableStatus)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "POST /streams/status should succeed");
+        }
+
+        // Drain the stream-updated SET fired by the disable transition.
+        CapturedPush streamUpdated = awaitPush();
+        JsonNode statusSet = decodeSet(streamUpdated);
+        Assertions.assertTrue(
+                statusSet.path("events").has(
+                        "https://schemas.openid.net/secevent/ssf/event-type/stream-updated"),
+                "disable transition should emit a stream-updated SET");
+
+        triggerUserLogout();
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "disabled stream should not receive regular event pushes after the status transition");
+    }
+
+    @Test
+    public void testPushDeliversCredentialChangeUpdateOnUpdateCredential() throws Exception {
+
+        // UPDATE_CREDENTIAL with details.credential_type=password →
+        // CAEP credential-change with change_type=update,
+        // credential_type=password.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.UPDATE_CREDENTIAL, "password");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud should match the stream audience");
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("update", credentialChange.path("change_type").asText(),
+                "UPDATE_CREDENTIAL must map to CAEP change_type=update");
+        Assertions.assertEquals("password", credentialChange.path("credential_type").asText(),
+                "credential_type should be propagated from the event details");
+    }
+
+    @Test
+    public void testPushDeliversCredentialChangeDeleteOnRemoveCredential() throws Exception {
+
+        // REMOVE_CREDENTIAL with details.credential_type=otp →
+        // CAEP credential-change with change_type=delete,
+        // credential_type=otp. Regression guard: prior behaviour
+        // hardcoded change_type=update for every credential event.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.REMOVE_CREDENTIAL, "otp");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("delete", credentialChange.path("change_type").asText(),
+                "REMOVE_CREDENTIAL must map to CAEP change_type=delete");
+        Assertions.assertEquals("app", credentialChange.path("credential_type").asText(),
+                "credential_type should be propagated from the event details");
+    }
+
+    @Test
+    public void testPushDeliversCredentialChangeUpdateOnResetPassword() throws Exception {
+
+        // RESET_PASSWORD doesn't carry a credential_type detail —
+        // the mapper falls back to "password". change_type stays
+        // update because the password value is being changed, not
+        // added or removed.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.RESET_PASSWORD, null);
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("update", credentialChange.path("change_type").asText(),
+                "RESET_PASSWORD must map to CAEP change_type=update");
+        Assertions.assertEquals("password", credentialChange.path("credential_type").asText(),
+                "credential_type should fall back to 'password' when the event has no detail");
+    }
+
+    // --- helpers ---------------------------------------------------------
+
+    /**
+     * Obtains a new access token via password grant for {@link #TEST_USER},
+     * then invokes the OIDC logout endpoint with the refresh token. That
+     * fires a {@code LOGOUT} user event which the SSF event listener maps
+     * to a {@link CaepSessionRevoked} SET for every enabled stream.
+     */
+    protected void triggerUserLogout() {
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                "password grant should succeed for the test user");
+        Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                "password grant response should include a refresh token");
+        oauthClient.doLogout(tokenResponse.getRefreshToken());
+    }
+
+    /**
+     * Fires a Keycloak credential-related user event from inside the
+     * server context — the same code path that real flows use, so the
+     * SSF event listener picks it up and the dispatcher narrows it
+     * into a CAEP credential-change SET. Uses {@code runOnServer}
+     * because EventBuilder/EventStore live in the server JVM and
+     * have no public REST shim. {@code credentialType} is written to
+     * {@link Details#CREDENTIAL_TYPE} when non-null; pass {@code null}
+     * to omit the detail (e.g. for {@link EventType#RESET_PASSWORD}).
+     */
+    protected void triggerCredentialEvent(EventType type, String credentialType) {
+        runOnServer.run(session -> {
+            RealmModel serverRealm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(serverRealm, TEST_USER);
+            EventBuilder builder = new EventBuilder(serverRealm, session)
+                    .event(type)
+                    .user(user);
+            if (credentialType != null) {
+                builder.detail(Details.CREDENTIAL_TYPE, credentialType);
+            }
+            builder.success();
+        });
+    }
+
+    /**
+     * Reads the {@code sid} claim from a (refresh) token so tests can
+     * correlate the revoked token's session with the {@code sub_id.session}
+     * of the pushed SET.
+     */
+    protected String extractSessionId(String token) throws JWSInputException, IOException {
+        JsonNode claims = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonNode.class);
+        String sid = claims.path("sid").asText();
+        Assertions.assertFalse(sid.isEmpty(), "token should carry a sid claim");
+        return sid;
+    }
+
+    /**
+     * Reads the {@code typ} claim of a token, {@link TokenUtil#TOKEN_TYPE_REFRESH}
+     * or {@link TokenUtil#TOKEN_TYPE_OFFLINE} for the tokens revoked here.
+     */
+    protected String extractTokenType(String token) throws JWSInputException, IOException {
+        JsonNode claims = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonNode.class);
+        return claims.path("typ").asText();
+    }
+
+    /**
+     * Client ids attached to the <em>online</em> user session with the given
+     * id, or an empty list when the online store no longer has it.
+     */
+    protected List<String> onlineSessionClients(String sessionId) {
+        String userId = realm.admin().users().search(TEST_USER, true).get(0).getId();
+        return realm.admin().users().get(userId).getUserSessions().stream()
+                .filter(userSession -> sessionId.equals(userSession.getId()))
+                .flatMap(userSession -> userSession.getClients().values().stream())
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * Whether the <em>offline</em> store still holds a session with the given
+     * id for the given client.
+     */
+    protected boolean offlineSessionExists(String sessionId, String clientId) {
+        String userId = realm.admin().users().search(TEST_USER, true).get(0).getId();
+        String clientUuid = realm.admin().clients().findByClientId(clientId).get(0).getId();
+        return realm.admin().users().get(userId).getOfflineSessions(clientUuid).stream()
+                .anyMatch(userSession -> sessionId.equals(userSession.getId()));
+    }
+
+    protected CapturedPush awaitPush() throws InterruptedException {
+        CapturedPush captured = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(captured,
+                () -> "expected a push within " + PUSH_WAIT_SECONDS + "s but the mock receiver saw nothing");
+        return captured;
+    }
+
+    protected JsonNode decodeSet(CapturedPush captured) throws JWSInputException, IOException {
+        JWSInput jws = new JWSInput(captured.body);
+        // Parse as raw JsonNode; the typed SsfSecurityEventToken pulls in a
+        // custom Jackson deserializer that needs a live Keycloak session.
+        return JsonSerialization.readValue(jws.getContent(), JsonNode.class);
+    }
+
+    protected Set<String> extractAudience(JsonNode set) {
+        JsonNode aud = set.get("aud");
+        Assertions.assertNotNull(aud, "SET should carry an aud claim");
+        if (aud.isArray()) {
+            Set<String> result = new java.util.LinkedHashSet<>();
+            aud.forEach(element -> result.add(element.asText()));
+            return result;
+        }
+        return Set.of(aud.asText());
+    }
+
+    protected StreamConfig createPushStream(String token, Set<String> eventsRequested) throws IOException {
+        StreamDeliveryConfig delivery = new StreamDeliveryConfig();
+        delivery.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
+        delivery.setEndpointUrl(MOCK_PUSH_ENDPOINT);
+        delivery.setAuthorizationHeader(EXPECTED_PUSH_AUTH_HEADER);
+
+        StreamConfig streamConfig = new StreamConfig();
+        streamConfig.setDelivery(delivery);
+        streamConfig.setEventsRequested(eventsRequested);
+        streamConfig.setDescription("Push delivery integration test");
+
+        try (SimpleHttpResponse response = http.doPost(streamsEndpoint())
+                .json(streamConfig)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(), "stream creation should succeed");
+            return response.asJson(StreamConfig.class);
+        }
+    }
+
+    protected String streamsEndpoint() {
+        return SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl());
+    }
+
+    protected String streamsStatusEndpoint() {
+        return SsfTransmitterUrls.getStreamStatusEndpointUrl(realm.getBaseUrl());
+    }
+
+    protected String obtainReceiverToken(String clientId, String secret) throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(clientId, secret)
+                .param("grant_type", "client_credentials")
+                .param("scope", SsfScopes.SCOPE_SSF_MANAGE + " " + SsfScopes.SCOPE_SSF_READ)
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    () -> "CC grant for client '" + clientId + "' should succeed");
+            return response.asJson().get("access_token").asText();
+        }
+    }
+
+    protected ClientRepresentation findClientByClientId(String clientId) {
+        List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientId);
+        if (clients.isEmpty()) {
+            return null;
+        }
+        return clients.get(0);
+    }
+
+    protected void assignOptionalClientScopes(String clientId, String... scopeNames) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
+        ClientResource clientResource = realm.admin().clients().get(client.getId());
+
+        Set<String> alreadyAssigned = clientResource.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        List<ClientScopeRepresentation> allScopes = realm.admin().clientScopes().findAll();
+        for (String scopeName : scopeNames) {
+            if (alreadyAssigned.contains(scopeName)) {
+                continue;
+            }
+            ClientScopeRepresentation scope = allScopes.stream()
+                    .filter(s -> scopeName.equals(s.getName()))
+                    .findFirst()
+                    .orElse(null);
+            Assertions.assertNotNull(scope,
+                    () -> "expected realm scope '" + scopeName + "' to exist");
+            clientResource.addOptionalClientScope(scope.getId());
+        }
+    }
+
+    protected void bestEffortDeleteStream(String clientId) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        if (client == null) {
+            return;
+        }
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + client.getClientId() + "/stream";
+        try (SimpleHttpResponse ignored = http.doDelete(adminStreamUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .asResponse()) {
+            // 204 / 404 both fine
+        } catch (IOException e) {
+            // best-effort
+        }
+    }
+
+    /**
+     * Snapshot of the request the mock receiver saw from the transmitter.
+     */
+    protected static final class CapturedPush {
+        final String body;
+        final String authorizationHeader;
+        final String contentType;
+
+        CapturedPush(String body, String authorizationHeader, String contentType) {
+            this.body = body;
+            this.authorizationHeader = authorizationHeader;
+            this.contentType = contentType;
+        }
+    }
+
+    public static class PushDeliveryKeycloakServerConfig extends DefaultKeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            KeycloakServerConfigBuilder configured = super.configure(config);
+            config.features(Profile.Feature.SSF);
+            config.log().categoryLevel("org.keycloak.protocol.ssf", "DEBUG");
+            // Relax the min-verification-interval rate limiter so these
+            // tests aren't affected by it (they don't exercise /verify).
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Async pushes flow through the outbox — the drainer needs to
+            // tick well inside PUSH_WAIT_SECONDS or every await times out.
+            config.spiOption("ssf-transmitter", "default",
+                    DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
+            return configured;
+        }
+    }
+
+    public static class PushDeliveryRealm implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name("ssf-transmitter-push-delivery");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
+
+            // Enable user events and register the SSF event listener so
+            // LOGOUT user events flow into the SSF transmitter pipeline.
+            realm.eventsEnabled(true);
+            realm.adminEventsEnabled(true);
+            realm.eventsListeners("jboss-logging", "ssf-events");
+
+            // Test user used by the password grant + logout flow in each
+            // test. Creating a password grant for this user implicitly
+            // creates a user session that the subsequent logout terminates.
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_USER + "@local.test")
+                            .firstName("Theo")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            // grant offline_access explicitly for the offline-token revocation test
+                            .realmRoles(OAuth2Constants.OFFLINE_ACCESS)
+                            // account REST access for the consent-revocation test
+                            .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT)
+                            .build()
+            );
+
+            // Plain relying party (no SSF role) that shares the SSO session
+            // with the injected test-app client in the multi-client
+            // token-revocation test. Wildcard redirect keeps it independent
+            // of the test framework's dynamically assigned callback URL.
+            realm.clients(
+                    ClientBuilder.create(SECOND_RP)
+                            .secret(SECOND_RP_SECRET)
+                            .publicClient(false)
+                            .redirectUris("*")
+                            .build()
+            );
+
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_SSF)
+                            .secret(RECEIVER_SSF_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
+
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_SSE_CAEP)
+                            .secret(RECEIVER_SSE_CAEP_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .attribute(ClientStreamStore.SSF_PROFILE_KEY, SsfProfile.SSE_CAEP.name())
+                            .build()
+            );
+
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_CRED_ONLY)
+                            .secret(RECEIVER_CRED_ONLY_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
+
+            return realm;
+        }
+    }
+}

@@ -17,20 +17,24 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
-import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler.runIfUserVerified;
 
 public class IdpDetectExistingBrokerUserAuthenticator extends IdpCreateUserIfUniqueAuthenticator {
 
@@ -72,10 +76,22 @@ public class IdpDetectExistingBrokerUserAuthenticator extends IdpCreateUserIfUni
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
 
+            UserModel user = context.getSession().users().getUserById(realm, duplication.getExistingUserId());
+            IdentityProviderModel broker = brokerContext.getIdpConfig();
+
+            runIfUserVerified(context.getSession(), user, broker, brokerContext.getId(),
+                    () -> {
+                        context.setUser(user);
+                        context.getAuthenticationSession().setAuthNote(
+                                IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME,
+                                brokerContext.getUsername()
+                        );
+                    });
+
             // Set duplicated user, so next authenticators can deal with it
             context.getAuthenticationSession().setAuthNote(EXISTING_USER_INFO, duplication.serialize());
-
             context.success();
+
         }
     }
 

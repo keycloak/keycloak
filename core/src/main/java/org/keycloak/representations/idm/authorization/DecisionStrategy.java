@@ -18,6 +18,7 @@ package org.keycloak.representations.idm.authorization;
 
 import java.util.Map;
 import java.util.Objects;
+
 import org.keycloak.util.EnumWithStableIndex;
 
 /**

@@ -1,16 +1,16 @@
 package org.keycloak.models.credential;
 
-import org.keycloak.common.util.Time;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.credential.dto.OTPCredentialData;
-import org.keycloak.models.credential.dto.OTPSecretData;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.Base32;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.credential.dto.OTPCredentialData;
+import org.keycloak.models.credential.dto.OTPSecretData;
+import org.keycloak.models.utils.Base32;
+import org.keycloak.util.JsonSerialization;
 
 public class OTPCredentialModel extends CredentialModel {
 

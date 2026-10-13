@@ -16,8 +16,6 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
-
 import jakarta.persistence.EntityManager;
 
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
@@ -30,6 +28,8 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
+
+import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,7 +90,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     @Override
@@ -101,8 +101,8 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
-        return storeFactory.getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, policy.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+        return storeFactory.getPolicyStore().findById(resourceServer, policy.getId());
     }
 
     @Override
@@ -114,7 +114,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, getResourceServer(), entity.getResource().getId());
+        return storeFactory.getResourceStore().findById(getResourceServer(), entity.getResource().getId());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        return storeFactory.getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, getResourceServer(), scope.getId());
+        return storeFactory.getScopeStore().findById(getResourceServer(), scope.getId());
     }
 
     @Override

@@ -6,7 +6,7 @@
     ${msg("recovery-code-config-header")}
 <#elseif section = "form">
     <!-- warning -->
-    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning}" aria-label="Warning alert">
+    <div class="pf-c-alert pf-m-warning pf-m-inline ${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
         <div class="pf-c-alert__icon">
             <i class="pficon-warning-triangle-o" aria-hidden="true"></i>
         </div>
@@ -26,7 +26,7 @@
     </ol>
 
     <!-- actions -->
-    <div class="${properties.kcRecoveryCodesActions}">
+    <div class="${properties.kcRecoveryCodesActions!}">
         <button id="printRecoveryCodes" class="pf-c-button pf-m-link" type="button">
             <i class="pficon-print"></i> ${msg("recovery-codes-print")}
         </button>
@@ -40,7 +40,7 @@
 
     <!-- confirmation checkbox -->
     <div class="${properties.kcFormOptionsClass!}">
-        <input class="${properties.kcCheckInputClass}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck" 
+        <input class="${properties.kcCheckInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
         onchange="document.getElementById('saveRecoveryAuthnCodesBtn').disabled = !this.checked;"
         />
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
@@ -72,10 +72,11 @@
     </form>
 
     <script>
+        <#outputformat "JavaScript">
         /* copy recovery codes  */
         function copyRecoveryCodes() {
             var tmpTextarea = document.createElement("textarea");
-            var codes = document.getElementById("kc-recovery-codes-list").getElementsByTagName("li");
+            var codes = document.querySelectorAll("#kc-recovery-codes-list li");
             for (i = 0; i < codes.length; i++) {
                 tmpTextarea.value = tmpTextarea.value + codes[i].innerText + "\n";
             }
@@ -106,7 +107,7 @@
         }
 
         function parseRecoveryCodeList() {
-            var recoveryCodes = document.querySelectorAll(".kc-recovery-codes-list li");
+            var recoveryCodes = document.querySelectorAll("#kc-recovery-codes-list li");
             var recoveryCodeList = "";
 
             for (var i = 0; i < recoveryCodes.length; i++) {
@@ -130,10 +131,10 @@
             };
 
             return fileBodyContent =
-                "${msg("recovery-codes-download-file-header")}\n\n" +
+                ${msg("recovery-codes-download-file-header")?c} + "\n\n" +
                 recoveryCodeList + "\n" +
-                "${msg("recovery-codes-download-file-description")}\n\n" +
-                "${msg("recovery-codes-download-file-date")} " + formatCurrentDateTime();
+                ${msg("recovery-codes-download-file-description")?c} + "\n\n" +
+                ${msg("recovery-codes-download-file-date")?c} + " " + formatCurrentDateTime();
         }
 
         function setUpDownloadLinkAndDownload(filename, text) {
@@ -165,10 +166,10 @@
             return printFileContent =
                 "<html><style>" + styles + "</style><body>" +
                 "<title>kc-download-recovery-codes</title>" +
-                "<p>${msg("recovery-codes-download-file-header")}</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-header")?c} + "</p>" +
                 "<div>" + recoveryCodeListHTML + "</div>" +
-                "<p>${msg("recovery-codes-download-file-description")}</p>" +
-                "<p>${msg("recovery-codes-download-file-date")} " + formatCurrentDateTime() + "</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-description")?c} + "</p>" +
+                "<p>" + ${msg("recovery-codes-download-file-date")?c} + " " + formatCurrentDateTime() + "</p>" +
                 "</body></html>";
         }
 
@@ -181,6 +182,7 @@
 
         var printButton = document.getElementById("printRecoveryCodes");
         printButton && printButton.addEventListener("click", printRecoveryCodes);
+        </#outputformat>
     </script>
 </#if>
 </@layout.registrationLayout>

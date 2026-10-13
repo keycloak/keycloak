@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.junit.Before;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -15,14 +15,16 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.AccountHelper;
+
+import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
@@ -56,8 +58,9 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         GroupRepresentation mapperTestGroup = new GroupRepresentation();
         mapperTestGroup.setName(MAPPER_TEST_GROUP_NAME);
 
-        Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup);
-        mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        try (Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup)) {
+            mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        }
     }
 
     protected UserRepresentation loginAsUserTwiceWithMapper(
@@ -86,7 +89,7 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         updateUser();
 
         logInAsUserInIDP();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         return user;

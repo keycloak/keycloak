@@ -23,14 +23,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -70,9 +72,15 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return isHostMatched() ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
+        case REGISTERED:
+        case UPDATED:
             if (isHostMatched()) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
@@ -83,7 +91,11 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
     private boolean isHostMatched() {
         String hostAddress = session.getContext().getConnection().getRemoteAddr();
 
-        logger.tracev("Verifying remote host = {0}", hostAddress);
+        logger.tracev("Verifying remote host = {0}", session.getContext().getConnection().getRemoteHost());
+
+        if (hostAddress == null) {
+            return false;
+        }
 
         List<String> trustedHosts = getTrustedHosts();
         List<String> trustedDomains = getTrustedDomains();
@@ -147,7 +159,7 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
                 String hostname = InetAddress.getByName(hostAddress).getHostName();
                 logger.tracev("Trying verify request from address {0} of host {1} by domains", hostAddress, hostname);
                 for (String confDomain : trustedDomains) {
-                    if (hostname.endsWith(confDomain)) {
+                    if (hostname.equals(confDomain) || hostname.endsWith("." + confDomain)) {
                         logger.tracev("Successfully verified host {0} by trusted domain {1}", hostname, confDomain);
                         return hostname;
                     }

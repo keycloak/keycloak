@@ -1,5 +1,6 @@
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { HelpItem, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -9,14 +10,7 @@ import {
   PageSectionVariants,
 } from "@patternfly/react-core";
 import styles from "@patternfly/react-styles/css/components/Table/table";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import {
   Fragment,
   DragEvent as ReactDragEvent,
@@ -25,25 +19,23 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { toUpperCase } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { CredentialRow } from "./user-credentials/CredentialRow";
 import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
 import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
+import useFormatDate from "../utils/useFormatDate";
 
 import "./user-credentials.css";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
+  setUser: (user: UserRepresentation) => void;
 };
 
 type ExpandableCredentialRepresentation = {
@@ -52,10 +44,63 @@ type ExpandableCredentialRepresentation = {
   isExpanded: boolean;
 };
 
-export const UserCredentials = ({ user }: UserCredentialsProps) => {
+type UserLabelEdit = {
+  status: boolean;
+  rowKey: string;
+};
+
+type UserCredentialsRowProps = {
+  credential: CredentialRepresentation;
+  userId: string;
+  toggleDelete: (credential: CredentialRepresentation) => void;
+  resetPassword: () => void;
+  isUserLabelEdit?: UserLabelEdit;
+  setIsUserLabelEdit: (isUserLabelEdit: UserLabelEdit) => void;
+  refresh: () => void;
+};
+
+const UserCredentialsRow = ({
+  credential,
+  userId,
+  toggleDelete,
+  resetPassword,
+  isUserLabelEdit,
+  setIsUserLabelEdit,
+  refresh,
+}: UserCredentialsRowProps) => (
+  <CredentialRow
+    key={credential.id}
+    credential={credential}
+    toggleDelete={() => toggleDelete(credential)}
+    resetPassword={resetPassword}
+  >
+    <InlineLabelEdit
+      credential={credential}
+      userId={userId}
+      isEditable={
+        (isUserLabelEdit?.status && isUserLabelEdit.rowKey === credential.id) ||
+        false
+      }
+      toggle={() => {
+        setIsUserLabelEdit({
+          status: !isUserLabelEdit?.status,
+          rowKey: credential.id!,
+        });
+        if (isUserLabelEdit?.status) {
+          refresh();
+        }
+      }}
+    />
+  </CredentialRow>
+);
+
+export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
+  const formatDate = useFormatDate();
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
@@ -65,13 +110,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [groupedUserCredentials, setGroupedUserCredentials] = useState<
     ExpandableCredentialRepresentation[]
   >([]);
+  const [credentialTypes, setCredentialTypes] = useState<
+    CredentialRepresentation[] | undefined
+  >();
   const [selectedCredential, setSelectedCredential] =
     useState<CredentialRepresentation>({});
   const [isResetPassword, setIsResetPassword] = useState(false);
-  const [isUserLabelEdit, setIsUserLabelEdit] = useState<{
-    status: boolean;
-    rowKey: string;
-  }>();
+  const [isUserLabelEdit, setIsUserLabelEdit] = useState<UserLabelEdit>();
 
   const bodyRef = useRef<HTMLTableSectionElement>(null);
   const [state, setState] = useState({
@@ -82,11 +127,19 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   });
 
   useFetch(
-    () => adminClient.users.getCredentials({ id: user.id! }),
+    () => {
+      if (user.enabled) {
+        return adminClient.users.getCredentials({ id: user.id! });
+      }
+      return Promise.resolve([]);
+    },
     (credentials) => {
-      setUserCredentials(credentials);
+      const ownCredentials = credentials.filter(
+        (c: CredentialRepresentation) => c.federationLink === undefined,
+      );
+      setUserCredentials(ownCredentials);
 
-      const groupedCredentials = credentials.reduce((r, a) => {
+      const groupedCredentials = ownCredentials.reduce((r, a) => {
         r[a.type!] = r[a.type!] || [];
         r[a.type!].push(a);
         return r;
@@ -102,12 +155,14 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           isExpanded: false,
         })),
       );
+
+      setCredentialTypes(
+        credentials.filter(
+          (c: CredentialRepresentation) => c.federationLink !== undefined,
+        ),
+      );
     },
     [key],
-  );
-
-  const passwordTypeFinder = userCredentials.find(
-    (credential) => credential.type === "password",
   );
 
   const toggleModal = () => setIsOpen(!isOpen);
@@ -139,37 +194,6 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       }
     },
   });
-
-  const Row = ({ credential }: { credential: CredentialRepresentation }) => (
-    <CredentialRow
-      key={credential.id}
-      credential={credential}
-      toggleDelete={() => {
-        setSelectedCredential(credential);
-        toggleDeleteDialog();
-      }}
-      resetPassword={resetPassword}
-    >
-      <InlineLabelEdit
-        credential={credential}
-        userId={user.id!}
-        isEditable={
-          (isUserLabelEdit?.status &&
-            isUserLabelEdit.rowKey === credential.id) ||
-          false
-        }
-        toggle={() => {
-          setIsUserLabelEdit({
-            status: !isUserLabelEdit?.status,
-            rowKey: credential.id!,
-          });
-          if (isUserLabelEdit?.status) {
-            refresh();
-          }
-        }}
-      />
-    </CredentialRow>
-  );
 
   const itemOrder = useMemo(
     () =>
@@ -246,9 +270,9 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     );
   };
 
-  const onDrop = (evt: ReactDragEvent) => {
+  const onDrop = async (evt: ReactDragEvent) => {
     if (isValidDrop(evt)) {
-      onDragFinish(state.draggedItemId, state.tempItemOrder);
+      await onDragFinish(state.draggedItemId, state.tempItemOrder);
     } else {
       onDragCancel();
     }
@@ -284,6 +308,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         tempItemOrder,
       });
     }
+  };
+
+  const onAddRequiredActions = (requiredActions: string[]) => {
+    setUser({
+      ...user,
+      requiredActions: [...(user.requiredActions ?? []), ...requiredActions],
+    });
   };
 
   const onDragEnd = ({ target }: ReactDragEvent) => {
@@ -331,14 +362,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     }
   };
 
-  const useFederatedCredentials = user.federationLink || user.origin;
-  const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
+  const onToggleDelete = (credential: CredentialRepresentation) => {
+    setSelectedCredential(credential);
+    toggleDeleteDialog();
+  };
 
-  useFetch(
-    () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
-    setCredentialTypes,
-    [],
-  );
+  const useFederatedCredentials = user.federationLink;
 
   if (!credentialTypes) {
     return <KeycloakSpinner />;
@@ -357,6 +386,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         <ResetPasswordDialog
           user={user}
           isResetPassword={isResetPassword}
+          onAddRequiredActions={onAddRequiredActions}
           refresh={refresh}
           onClose={() => setIsOpen(false)}
         />
@@ -378,25 +408,29 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           {t("credentialResetBtn")}
         </Button>
       )}
-      {userCredentials.length !== 0 && passwordTypeFinder === undefined && (
-        <>
-          <Button
-            className="kc-setPasswordBtn-tbl"
-            data-testid="setPasswordBtn-table"
-            variant="primary"
-            form="userCredentials-form"
-            onClick={() => {
-              setIsOpen(true);
-            }}
-          >
-            {t("setPassword")}
-          </Button>
-          <Divider />
-        </>
-      )}
+      {userCredentials.length !== 0 &&
+        !userCredentials.find((credential) => credential.type === "password") &&
+        !credentialTypes.find(
+          (credential) => credential.type === "password",
+        ) && (
+          <>
+            <Button
+              className="kc-setPasswordBtn-tbl"
+              data-testid="setPasswordBtn-table"
+              variant="primary"
+              form="userCredentials-form"
+              onClick={() => {
+                setIsOpen(true);
+              }}
+            >
+              {t("setPassword")}
+            </Button>
+            <Divider />
+          </>
+        )}
       {groupedUserCredentials.length !== 0 && (
         <PageSection variant={PageSectionVariants.light}>
-          <TableComposable variant={"compact"}>
+          <Table variant={"compact"}>
             <Thead>
               <Tr className="kc-table-header">
                 <Th>
@@ -471,7 +505,16 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                     </Td>
                     {groupedCredential.value.length <= 1 &&
                       groupedCredential.value.map((credential) => (
-                        <Row key={credential.id} credential={credential} />
+                        <UserCredentialsRow
+                          key={credential.id}
+                          credential={credential}
+                          userId={user.id!}
+                          toggleDelete={onToggleDelete}
+                          resetPassword={resetPassword}
+                          isUserLabelEdit={isUserLabelEdit}
+                          setIsUserLabelEdit={setIsUserLabelEdit}
+                          refresh={refresh}
+                        />
                       ))}
                   </Tr>
                   {groupedCredential.isExpanded &&
@@ -499,35 +542,45 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                         >
                           {toUpperCase(credential.type!)}
                         </Td>
-                        <Row credential={credential} />
+                        <UserCredentialsRow
+                          credential={credential}
+                          userId={user.id!}
+                          toggleDelete={onToggleDelete}
+                          resetPassword={resetPassword}
+                          isUserLabelEdit={isUserLabelEdit}
+                          setIsUserLabelEdit={setIsUserLabelEdit}
+                          refresh={refresh}
+                        />
                       </Tr>
                     ))}
                 </Fragment>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         </PageSection>
       )}
       {useFederatedCredentials && hasCredentialTypes && (
         <PageSection variant={PageSectionVariants.light}>
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("type")}</Th>
                 <Th>{t("providedBy")}</Th>
+                <Th>{t("createdAt")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>
               {credentialTypes.map((credential) => (
-                <Tr key={credential}>
+                <Tr key={credential.type}>
                   <Td>
-                    <b>{credential}</b>
+                    <b>{credential.type}</b>
                   </Td>
                   <Td>
                     <FederatedUserLink user={user} />
                   </Td>
-                  {credential === "password" && (
+                  <Td>{formatDate(new Date(credential.createdDate!))}</Td>
+                  {credential.type === "password" && (
                     <Td modifier="fitContent">
                       <Button variant="secondary" onClick={toggleModal}>
                         {t("setPassword")}
@@ -537,7 +590,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         </PageSection>
       )}
       {emptyState && (

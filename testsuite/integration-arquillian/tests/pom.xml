@@ -77,7 +77,7 @@
         <auth.server.keystore>${auth.server.config.dir}/keycloak.jks</auth.server.keystore>
         <auth.server.keystore.password>secret</auth.server.keystore.password>
         <auth.server.keystore.type>jks</auth.server.keystore.type>
-        <auth.server.jvm.args.extra/>
+        <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -93,9 +93,9 @@
         <auth.server.remote>false</auth.server.remote>
         <auth.server.quarkus>false</auth.server.quarkus>
         <auth.server.quarkus.embedded>false</auth.server.quarkus.embedded>
+        <auth.server.jgroups.mtls>false</auth.server.jgroups.mtls>
 
         <auth.server.profile/>
-        <auth.server.feature/>
 
         <auth.server.host2>${auth.server.host}</auth.server.host2> <!-- for broker and JS adapter tests; defaults to auth.server.host -->
         <app.server.host>localhost</app.server.host>
@@ -132,8 +132,7 @@
         <app.server.truststore.password>secret</app.server.truststore.password>
         <app.server.keystore>${app.server.keystore.dir}/adapter.jks</app.server.keystore>
         <app.server.keystore.password>secret</app.server.keystore.password>
-        <app.server.jvm.args.extra/>
-        <tomcat.javax.net.ssl.properties/>
+        <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
 
         <cache.server.legacy>false</cache.server.legacy>
         <cache.server.home>${containers.home}/cache-server-${cache.server}</cache.server.home>
@@ -169,9 +168,9 @@
         <dependency.keystore>${dependency.keystore.root}/keycloak.jks</dependency.keystore>
         <dependency.keystore.password>secret</dependency.keystore.password>
 
-        <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
-        <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
-        <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
+        <keycloak.cacheRemote.hostname>localhost</keycloak.cacheRemote.hostname>
+        <keycloak.cacheRemote.port>12232</keycloak.cacheRemote.port>
+        <keycloak.cacheRemote.port.2>13232</keycloak.cacheRemote.port.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
         <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
@@ -211,29 +210,22 @@
         <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
+        <login.theme.default>keycloak.v2</login.theme.default>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
         <ieDriverVersion/>
         <js.browser>chrome</js.browser>
-        <js.chromeArguments>--headless</js.chromeArguments>
+        <js.chromeArguments>--headless --ignore-ssl-errors=yes --ignore-certificate-errors</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>true</firefoxHeadless>
+        <firefoxArguments>-headless</firefoxArguments>
         <chromeBinary/>
-        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=* --ignore-ssl-errors=yes --ignore-certificate-errors</chromeArguments>
         <chromeDriverVersion/>
-
-        <appium.platformName/>
-        <appium.deviceName/>
-        <appium.browserName/>
-        <appium.avd/>
-        <appium.automationName/>
-        <appium.noReset/>
-        <appium.fullReset/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -265,7 +257,7 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
-        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
+        <auth.server.supported.rsa.key.sizes>1024,2048,3072,4096</auth.server.supported.rsa.key.sizes>
         <auth.server.kerberos.supported>true</auth.server.kerberos.supported>
     </properties>
 
@@ -291,7 +283,7 @@
                                         <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
                                     </artifactItem>
                                 </artifactItems>
-                                <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
+                                <includes>*.jks,*.p12,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
                                 <skip>${auth.server.undertow.skip.unpack}</skip>
                             </configuration>
                         </execution>
@@ -333,95 +325,11 @@
                                 <skip>${app.server.skip.unpack}</skip>
                             </configuration>
                         </execution>
-                        <execution>
-                            <id>example-wars</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>copy</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.copy.example.wars}</skip>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>hello-world-authz-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>servlet-authz-app</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>servlet-policy-enforcer</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-cors-database-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${examples.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>test-apps-realms</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-test-apps-dist</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>zip</type>
-                                        <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${examples.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                            </configuration>
-                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
-                        <execution>
-                            <id>copy-admin-user-json-file</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.add.user.json}</skip>
-                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>src/test/resources</directory>
-                                        <includes>
-                                            <include>keycloak-add-user.json</include>
-                                        </includes>
-                                        <filtering>true</filtering>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
                         <execution>
                             <id>copy-truststore</id>
                             <phase>generate-resources</phase>
@@ -487,7 +395,6 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
-                            <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
 
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
@@ -523,9 +430,11 @@
                             <auth.server.keystore.type>${auth.server.keystore.type}</auth.server.keystore.type>
                             <auth.server.java.security.file>${auth.server.java.security.file}</auth.server.java.security.file>
                             <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
+                            <auth.server.jgroups.mtls>${auth.server.jgroups.mtls}</auth.server.jgroups.mtls>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
+                            <auth.server.feature.disable>${auth.server.feature.disable}</auth.server.feature.disable>
 
                             <auth.server.host2>${auth.server.host2}</auth.server.host2> <!-- for broker tests -->
 
@@ -553,7 +462,6 @@
                             <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
                             <app.server.2.jboss.jvm.debug.args>${app.server.2.jboss.jvm.debug.args}</app.server.2.jboss.jvm.debug.args>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
-                            <tomcat.javax.net.ssl.properties>${tomcat.javax.net.ssl.properties}</tomcat.javax.net.ssl.properties>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -588,6 +496,7 @@
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
                             <droneInstantiationTimeoutInSeconds>${droneInstantiationTimeoutInSeconds}</droneInstantiationTimeoutInSeconds>
+                            <login.theme.default>${login.theme.default}</login.theme.default>
 
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
@@ -602,15 +511,7 @@
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
-                            <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
-
-                            <appium.platformName>${appium.platformName}</appium.platformName>
-                            <appium.deviceName>${appium.deviceName}</appium.deviceName>
-                            <appium.browserName>${appium.browserName}</appium.browserName>
-                            <appium.avd>${appium.avd}</appium.avd>
-                            <appium.automationName>${appium.automationName}</appium.automationName>
-                            <appium.noReset>${appium.noReset}</appium.noReset>
-                            <appium.fullReset>${appium.fullReset}</appium.fullReset>
+                            <firefoxArguments>${firefoxArguments}</firefoxArguments>
 
                             <project.version>${project.version}</project.version>
 
@@ -658,10 +559,9 @@
                             <cache.server.java.home>${cache.server.java.home}</cache.server.java.home>
                             <cache.server.auth>${cache.server.auth}</cache.server.auth>
 
-                            <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
-                            <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
-                            <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
-                            <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
+                            <keycloak.cacheRemote.port>${keycloak.cacheRemote.port}</keycloak.cacheRemote.port>
+                            <keycloak.cacheRemote.port.2>${keycloak.cacheRemote.port.2}</keycloak.cacheRemote.port.2>
+                            <keycloak.cacheRemote.hostname>${keycloak.cacheRemote.hostname}</keycloak.cacheRemote.hostname>
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
@@ -688,13 +588,10 @@
                               ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
                               -->
                             <wildfly-client.config.path>${project.build.directory}${file.separator}dependency${file.separator}wildfly-config.xml</wildfly-client.config.path>
+
+                            <!-- needed when running the embedded Quarkus auth server -->
+                            <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                         </systemPropertyVariables>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
-                            </property>
-                        </properties>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -791,7 +688,6 @@
                 <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
                 <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -858,7 +754,6 @@
                                     -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
                                 </cache.server.crossdc2.jvm.debug.args>
 
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                             </systemPropertyVariables>
                         </configuration>
@@ -879,7 +774,6 @@
                 <auth.server.crossdc11.home>${containers.home}/auth-server-${auth.server}-crossdc11</auth.server.crossdc11.home>
                 <auth.server.crossdc12.home>${containers.home}/auth-server-${auth.server}-crossdc12</auth.server.crossdc12.home>
 
-                <!-- property specifies keycloak-add-user.json file destination -->
                 <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
 
                 <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
@@ -971,8 +865,6 @@
                                 <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
                                 <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
 
-                                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                                 <!--8101-->
                                 <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
@@ -1024,8 +916,6 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1095,8 +985,6 @@
                 <cache.server.legacy>true</cache.server.legacy>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1166,8 +1054,6 @@
                 <cache.server>infinispan</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1263,8 +1149,6 @@
                 <cache.server>datagrid</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1412,8 +1296,6 @@
                 <auth.server.undertow.cluster>true</auth.server.undertow.cluster>
 
                 <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
-
-                <keycloak.connectionsInfinispan.sessionsOwners>2</keycloak.connectionsInfinispan.sessionsOwners>
             </properties>
             <build>
                 <plugins>
@@ -1422,44 +1304,11 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <pageload.timeout>20000</pageload.timeout>
+                                <keycloak.cacheEmbedded.configFile>cluster-test-ispn.xml</keycloak.cacheEmbedded.configFile>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>clean-jpa</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.liquibase</groupId>
-                            <artifactId>liquibase-maven-plugin</artifactId>
-                            <configuration>
-                                <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
-
-                                <url>${keycloak.connectionsJpa.url}</url>
-                                <driver>${keycloak.connectionsJpa.driver}</driver>
-                                <username>${keycloak.connectionsJpa.user}</username>
-                                <password>${keycloak.connectionsJpa.password}</password>
-
-                                <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
-                                <databaseClass>${keycloak.connectionsJpa.liquibaseDatabaseClass}</databaseClass>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <id>clean-jpa</id>
-                                    <phase>clean</phase>
-                                    <goals>
-                                        <goal>dropAll</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
             </build>
         </profile>
 
@@ -1600,13 +1449,16 @@
                             <groupId>com.google.guava</groupId>
                             <artifactId>guava</artifactId>
                         </exclusion>
+                        <exclusion>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
                     </exclusions>
                 </dependency>
 
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>1.12.18</version>
                 </dependency>
 
                 <dependency>
@@ -1622,12 +1474,8 @@
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.protocol</groupId>
-                    <artifactId>arquillian-protocol-servlet</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.arquillian.extension</groupId>
-                    <artifactId>arquillian-phantom-driver</artifactId>
-                    <version>1.2.1.Final</version>
+                    <artifactId>arquillian-protocol-servlet-jakarta</artifactId>
+                    <version>${arquillian.protocol.servlet.jakarta.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
@@ -1643,12 +1491,6 @@
                             <artifactId>guava</artifactId>
                         </exclusion>
                     </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>io.appium</groupId>
-                    <artifactId>java-client</artifactId>
-                    <version>${appium.client.version}</version>
                 </dependency>
 
                 <!--
@@ -1685,16 +1527,12 @@
                 </dependency>-->
 
                 <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>org.jboss.logmanager</groupId>
+                    <artifactId>jboss-logmanager</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1749,7 +1587,7 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client</artifactId>
+                    <artifactId>keycloak-admin-client-internal</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
@@ -1761,7 +1599,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-authz-client</artifactId>
+                    <artifactId>keycloak-authz-client-tests</artifactId>
                 </dependency>
 
                 <!--UNDERTOW-->
@@ -1813,10 +1651,11 @@
                 <dependency>
                     <groupId>org.hamcrest</groupId>
                     <artifactId>hamcrest</artifactId>
+                    <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core-jakarta</artifactId>
+                    <artifactId>infinispan-core</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1851,13 +1690,6 @@
                     <type>zip</type>
                 </dependency>
 
-                <!-- Fuse adapter dependency -->
-                <dependency>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>org.osgi.enterprise</artifactId>
-                    <scope>provided</scope>
-                </dependency>
-
                 <!-- Needed for infinispan statistics -->
                 <dependency>
                     <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -1865,17 +1697,6 @@
                 </dependency>
 
             </dependencies>
-
-            <dependencyManagement>
-                <dependencies>
-                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
-                    <dependency>
-                        <groupId>org.seleniumhq.selenium</groupId>
-                        <artifactId>htmlunit-driver</artifactId>
-                        <version>2.27</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
 
             <build>
                 <plugins>
@@ -1891,10 +1712,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
@@ -1916,64 +1733,10 @@
         </profile>
 
         <profile>
-            <id>java11-auth-server</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <properties>
-                <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java11-app-server</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <properties>
-                <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
-            </properties>
-        </profile>
-
-        <profile>
             <id>java7-app-server</id>
             <properties>
                 <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:PermSize=${surefire.memory.metaspace} -XX:MaxPermSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
             </properties>
-        </profile>
-
-        <profile>
-            <id>app-server-eap8</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap8</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-servlets-jakarta</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>not-app-server-eap8</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>!eap8</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-servlets</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
         </profile>
 
         <profile>
@@ -2081,23 +1844,11 @@
                 <browser>firefox</browser>
                 <js.browser>firefox</js.browser>
                 <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
-                <firefoxHeadless>true</firefoxHeadless>
+                <firefoxArguments>-headless</firefoxArguments>
                 <browser.strict.cookies>true</browser.strict.cookies>
             </properties>
         </profile>
 
-        <profile>
-            <id>set-javax.net.ssl-properties-for-tomcat</id>
-            <activation>
-                <property>
-                    <name>app.server.ssl.required</name>
-                </property>
-            </activation>
-            <properties>
-                <tomcat.javax.net.ssl.properties>-Djavax.net.ssl.trustStore=${app.server.home}/lib/keycloak.truststore -Djavax.net.ssl.trustStorePassword=secret</tomcat.javax.net.ssl.properties>
-            </properties>
-        </profile>
-        
         <profile>
             <id>cache-auth</id>
             <properties>

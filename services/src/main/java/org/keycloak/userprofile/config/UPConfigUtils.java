@@ -16,15 +16,17 @@
  */
 package org.keycloak.userprofile.config;
 
-import static org.keycloak.common.util.ObjectUtil.isBlank;
-
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,13 +44,17 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.Validators;
 
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
+
 /**
  * Utility methods to work with User Profile Configurations
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
@@ -58,7 +64,9 @@ public class UPConfigUtils {
     public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
+    private static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
     private static final Set<String> PSEUDOROLES = new HashSet<>();
+    public static final Pattern ATTRIBUTE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9\\._\\-]+");
 
     static {
         PSEUDOROLES.add(ROLE_ADMIN);
@@ -87,7 +95,7 @@ public class UPConfigUtils {
      * @throws IOException if JSON configuration can't be loaded (eg due to JSON format errors etc)
      */
     public static UPConfig parseConfig(String rawConfig) throws IOException {
-        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+        return readConfig(new ByteArrayInputStream(rawConfig.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
@@ -110,13 +118,13 @@ public class UPConfigUtils {
         errors.addAll(validateAttributeGroups(config));
         return errors;
     }
-    
+
     private static List<String> validateAttributeGroups(UPConfig config) {
         long groupsWithoutName = config.getGroups().stream().filter(g -> g.getName() == null).collect(Collectors.counting());
-        
+
         if (groupsWithoutName > 0) {
             String errorMessage = "Name is mandatory for groups, found " + groupsWithoutName + " group(s) without name.";
-            return Collections.singletonList(errorMessage);            
+            return Collections.singletonList(errorMessage);
         }
         return Collections.emptyList();
     }
@@ -126,16 +134,114 @@ public class UPConfigUtils {
         Set<String> groups = config.getGroups().stream()
                 .map(g -> g.getName())
                 .collect(Collectors.toSet());
-        
+
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
             errors.addAll(validateRootAttributes(config));
-        } else {
-            errors.add("UserProfile configuration without 'attributes' section is not allowed");
+            errors.addAll(validateScimAttributeMappings(config));
         }
 
         return errors;
+    }
+
+    private static List<String> validateScimAttributeMappings(UPConfig config) {
+        List<String> errors = new ArrayList<>();
+
+        errors.addAll(validateOneToOneScimAttributeMappings(config));
+        errors.addAll(validateComplexScimAttributeMappings(config));
+
+        return errors;
+    }
+
+    private static List<String> validateOneToOneScimAttributeMappings(UPConfig config) {
+        Map<String, String> attributeNamesByScimAttribute = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            Map<String, Object> annotations = attribute.getAnnotations();
+
+            if (annotations == null) {
+                continue;
+            }
+
+            Object scimValue = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+
+            if (!(scimValue instanceof String scimName) || isBlank(scimName)) {
+                continue;
+            }
+
+            String existingAttributeName = attributeNamesByScimAttribute.putIfAbsent(scimName, attribute.getName());
+
+            if (existingAttributeName != null) {
+                errors.add("Duplicate SCIM attribute mapping '" + scimName + "' configured for attributes '"
+                        + existingAttributeName + "' and '" + attribute.getName() + "'");
+            }
+        }
+
+        return errors;
+    }
+
+    private static List<String> validateComplexScimAttributeMappings(UPConfig config) {
+        Map<String, List<ScimSubAttributeMapping>> mappingsByParent = new HashMap<>();
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            Map<String, Object> annotations = attribute.getAnnotations();
+
+            if (annotations == null) {
+                continue;
+            }
+
+            Object scimValue = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+
+            if (!(scimValue instanceof String scimName) || !scimName.contains(":")) {
+                continue;
+            }
+
+            int lastColon = scimName.lastIndexOf(':');
+            String schema = scimName.substring(0, lastColon);
+            String simpleName = scimName.substring(lastColon + 1);
+            int dot = simpleName.indexOf('.');
+
+            if (dot == -1) {
+                continue;
+            }
+
+            String parentName = simpleName.substring(0, dot);
+            String subAttributeName = simpleName.substring(dot + 1);
+            String parentKey = schema + ":" + parentName;
+
+            mappingsByParent.computeIfAbsent(parentKey, k -> new ArrayList<>())
+                    .add(new ScimSubAttributeMapping(subAttributeName, attribute.isMultivalued()));
+        }
+
+        List<String> errors = new ArrayList<>();
+
+        for (Map.Entry<String, List<ScimSubAttributeMapping>> entry : mappingsByParent.entrySet()) {
+            List<ScimSubAttributeMapping> mappings = entry.getValue();
+            boolean hasMultivaluedValue = mappings.stream()
+                    .anyMatch(m -> "value".equals(m.subAttributeName) && m.multivalued);
+
+            if (!hasMultivaluedValue) {
+                continue;
+            }
+
+            List<String> siblings = mappings.stream()
+                    .filter(m -> !("value".equals(m.subAttributeName) && m.multivalued))
+                    .map(m -> m.subAttributeName)
+                    .toList();
+
+            if (!siblings.isEmpty()) {
+                errors.add("Incompatible SCIM extension mappings for complex attribute '"
+                        + entry.getKey() + "': multivalued '.value' cannot be combined with sibling sub-attributes "
+                        + siblings);
+            }
+        }
+
+        return errors;
+    }
+
+    private record ScimSubAttributeMapping(String subAttributeName, boolean multivalued) {
     }
 
     private static List<String> validateRootAttributes(UPConfig config) {
@@ -146,7 +252,7 @@ public class UPConfigUtils {
         }
 
         List<String> errors = new ArrayList<>();
-        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).collect(Collectors.toList());
+        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).toList();
 
         for (String name : Arrays.asList(UserModel.USERNAME, UserModel.EMAIL)) {
             if (!attributeNames.contains(name)) {
@@ -182,6 +288,7 @@ public class UPConfigUtils {
         }
         if (attributeConfig.getValidations() != null) {
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
+            validateDefaultValue(session, attributeConfig, errors);
         }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {
@@ -198,15 +305,36 @@ public class UPConfigUtils {
         if (attributeConfig.getSelector() != null) {
             validateScopes(attributeConfig.getSelector().getScopes(), "selector.scopes", attributeName, errors, session);
         }
-        
+
         if (attributeConfig.getGroup() != null) {
             if (!groups.contains(attributeConfig.getGroup())) {
                 errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");
             }
         }
-        
+
         if (attributeConfig.getAnnotations()!=null) {
             validateAnnotations(attributeConfig.getAnnotations(), errors, attributeName);
+        }
+    }
+
+    private static void validateDefaultValue(KeycloakSession session, UPAttribute attributeConfig, List<String> errors) {
+        String defaultValue = attributeConfig.getDefaultValue();
+
+        if (defaultValue == null) {
+            return;
+        }
+
+        String attributeName = attributeConfig.getName();
+
+        if (isRootAttribute(attributeName)) {
+            errors.add("Default value not supported for attribute '" + attributeName + "'");
+        } else {
+            attributeConfig.getValidations().forEach((validator, validatorConfig) -> {
+                ValidationContext context = Validators.validator(session, validator).validate(defaultValue, attributeName, ValidatorConfig.configFromMap(validatorConfig));
+                if (!context.isValid()) {
+                    errors.add("Default value for attribute '" + attributeName + "' is invalid");
+                }
+            });
         }
     }
 
@@ -239,7 +367,7 @@ public class UPConfigUtils {
      * @return
      */
     public static boolean isValidAttributeName(String attributeName) {
-        return Pattern.matches("[a-zA-Z0-9\\._\\-]+", attributeName);
+        return ATTRIBUTE_NAME_PATTERN.matcher(attributeName).matches();
     }
 
     /**
@@ -247,7 +375,7 @@ public class UPConfigUtils {
      *
      * @param roles to validate
      * @param fieldName we are validating for use in error messages
-     * @param errors to ass error message into
+     * @param errors to pass error message into
      * @param attributeName we are validating for use in error messages
      */
     private static void validateRoles(Set<String> roles, String fieldName, List<String> errors, String attributeName) {
@@ -272,18 +400,18 @@ public class UPConfigUtils {
         if (isBlank(validator)) {
             errors.add("Validation without validator id is defined for attribute '" + attributeName + "'");
         } else {
-        	if(session!=null) {
-            	if(Validators.validator(session, validator) == null) {
-            		errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
-            	} else {
-            		ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
-            		if(!result.isValid()) {
-            			final StringBuilder sb = new StringBuilder();
-            			result.forEachError(err -> sb.append(err.toString()+", "));
-            			errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
-            		}
-            	}
-        	}
+            if(session!=null) {
+                if(Validators.validator(session, validator) == null) {
+                    errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
+                } else {
+                    ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
+                    if(!result.isValid()) {
+                        final StringBuilder sb = new StringBuilder();
+                        result.forEachError(err -> sb.append(err.toString()+", "));
+                        errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
+                    }
+                }
+            }
         }
     }
 
@@ -293,19 +421,39 @@ public class UPConfigUtils {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    public static String readDefaultConfig() {
-        try (InputStream is = UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
+    public static String readSystemDefaultConfig() {
+        try (InputStream is = getSystemDefaultConfig()) {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
         }
     }
 
-    public static UPConfig parseDefaultConfig() {
-        try {
-            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse default user profile configuration", e);
+    public static UPConfig parseSystemDefaultConfig() {
+        return parseConfig(getSystemDefaultConfig());
+    }
+
+    public static UPConfig parseConfig(Path configPath) {
+        if (configPath == null) {
+            throw new IllegalArgumentException("Null configPath");
         }
+
+        try (InputStream is = new FileInputStream(configPath.toFile())) {
+            return parseConfig(is);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to read default user profile configuration: " + configPath, ioe);
+        }
+    }
+
+    private static UPConfig parseConfig(InputStream is) {
+        try {
+            return JsonSerialization.readValue(is, UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration stream", e);
+        }
+    }
+
+    private static InputStream getSystemDefaultConfig() {
+        return UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE);
     }
 }

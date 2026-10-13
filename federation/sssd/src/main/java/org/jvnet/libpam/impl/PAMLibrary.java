@@ -23,6 +23,9 @@
  */
 package org.jvnet.libpam.impl;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -30,9 +33,6 @@ import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 import com.sun.jna.Structure;
 import com.sun.jna.ptr.PointerByReference;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.jvnet.libpam.impl.CLibrary.libc;
 
@@ -74,7 +74,7 @@ public interface PAMLibrary extends Library {
     class pam_response extends Structure {
         /**
          * This is really a string, but this field needs to be malloc-ed by the conversation
-         * method, and to be freed by the caler, so I bind it to {@link Pointer} here.
+         * method, and to be freed by the caller, so I bind it to {@link Pointer} here.
          * <p>
          * The man page doesn't say that, but see
          * http://www.netbsd.org/docs/guide/en/chap-pam.html#pam-sample-conv

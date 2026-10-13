@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
-import org.subethamail.smtp.server.SMTPServer;
-
-import jakarta.mail.internet.MimeMessage;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +31,16 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+
+import jakarta.mail.internet.MimeMessage;
+
+import org.jboss.logging.Logger;
+import org.subethamail.smtp.server.SMTPServer;
 
 import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
 import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
@@ -92,7 +93,7 @@ public class SslMailServer {
         }
     }
 
-    public static void startWithSsl(String privateKey){
+    public static void startWithSsl(String privateKey, boolean enableSsl) {
         InputStream keyStoreIS = null;
         try {
             keyStoreIS = new FileInputStream(privateKey);
@@ -142,10 +143,18 @@ public class SslMailServer {
 
         smtpServer.setHostName(HOST);
         smtpServer.setPort(Integer.parseInt(PORT_SSL));
-        smtpServer.setEnableTLS(true);
+        smtpServer.setEnableTLS(enableSsl);
         smtpServer.start();
 
         log.info("Started mail server (" + smtpServer.getHostName() + ":" + smtpServer.getPort() + ")");
+    }
+
+    public static void startWithSsl(String privateKey) {
+        startWithSsl(privateKey, true);
+    }
+
+    public static void startWithOpportunisticSsl(String privateKey) {
+        startWithSsl(privateKey, false);
     }
 
     public static Map<String, String> getServerConfiguration() {

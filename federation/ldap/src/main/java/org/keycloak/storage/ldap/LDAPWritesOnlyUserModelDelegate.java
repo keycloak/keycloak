@@ -19,11 +19,9 @@
 package org.keycloak.storage.ldap;
 
 import java.util.List;
-import java.util.function.Function;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ldap.mappers.LDAPTransaction;
 

@@ -17,6 +17,17 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
+import org.keycloak.models.KeycloakSession;
+
 import liquibase.change.custom.CustomSqlChange;
 import liquibase.database.Database;
 import liquibase.database.jvm.JdbcConnection;
@@ -28,24 +39,11 @@ import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
-import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class CustomKeycloakTask implements CustomSqlChange {
-
-    private final Logger logger = Logger.getLogger(getClass());
 
     protected KeycloakSession kcSession;
 
@@ -73,18 +71,8 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
     @Override
     public void setUp() throws SetupException {
         this.kcSession = ThreadLocalSessionContext.getCurrentSession();
-
         if (this.kcSession == null) {
-            // Probably running Liquibase from maven plugin. Try to create kcSession programmatically
-            logger.info("No KeycloakSession provided in ThreadLocal. Initializing KeycloakSessionFactory");
-
-            try {
-                DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
-                factory.init();
-                this.kcSession = factory.create();
-            } catch (Exception e) {
-                throw new SetupException("Exception when initializing factory", e);
-            }
+            throw new SetupException("Thread bound session is null");
         }
     }
 
@@ -108,8 +96,14 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
         try {
             String correctedTableName = database.correctObjectName("REALM", Table.class);
             if (SnapshotGeneratorFactory.getInstance().has(new Table().setName(correctedTableName), database)) {
+                // We're inside a liquibase managed transaction at this point. Some RDBMS don't like updates to tables
+                // that were queried in the same transaction. So we need to create a savepoint and rollback to it so that
+                // this select is effectively removed from a transaction and doesn't interfere with an update that will come later.
+                Savepoint savepoint = connection.setSavepoint();
                 try (Statement st = connection.createStatement(); ResultSet resultSet = st.executeQuery("SELECT ID FROM " + getTableName(correctedTableName))) {
                     return (resultSet.next());
+                } finally {
+                    connection.rollback(savepoint);
                 }
             } else {
                 return false;

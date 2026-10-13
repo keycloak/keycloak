@@ -37,7 +37,7 @@ public enum FlowStatus {
     CHALLENGE,
 
     /**
-     * Irregardless of the execution's requirement, this challenge will be sent to the user.
+     * Regardless of the execution's requirement, this challenge will be sent to the user.
      *
      */
     FORCE_CHALLENGE,

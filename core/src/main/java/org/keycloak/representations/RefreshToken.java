@@ -18,16 +18,29 @@
 package org.keycloak.representations;
 
 import org.keycloak.TokenCategory;
+import org.keycloak.json.StringOrArray;
 import org.keycloak.util.TokenUtil;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class RefreshToken extends AccessToken {
+
+    public static final String ORIGINAL_AUD = "aud_x";
+
+    public static final String PROVIDER = "prov";
+
+    @JsonProperty(ORIGINAL_AUD)
+    @StringOrArray
+    protected String[] originalAudience;
+
+    // Reference to refresh-token provider
+    @JsonProperty(PROVIDER)
+    private String provider;
 
     private RefreshToken() {
         type(TokenUtil.TOKEN_TYPE_REFRESH);
@@ -37,20 +50,41 @@ public class RefreshToken extends AccessToken {
      * Deep copies issuer, subject, issuedFor, sessionState from AccessToken.
      *
      * @param token
+     * @param confirmation optional confirmation parameter that might be processed during authentication but should not
+     *                     always be included in the response
      */
-    public RefreshToken(AccessToken token) {
+    public RefreshToken(AccessToken token, Confirmation confirmation, String provider) {
         this();
         this.issuer = token.issuer;
         this.subject = token.subject;
         this.issuedFor = token.issuedFor;
-        this.sessionState = token.sessionState;
+        this.sessionId = token.sessionId;
         this.nonce = token.nonce;
         this.audience = new String[] { token.issuer };
+        this.originalAudience = token.audience;
         this.scope = token.scope;
+        this.authorizationDetails = token.authorizationDetails;
+        this.confirmation = confirmation;
+        this.provider = provider;
     }
 
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    @Override
+    public String getSessionId() {
+        String sessionId = super.getSessionId();
+        // Fallback as offline tokens created in Keycloak 14 or earlier have only the "session_state" claim, but not "sid"
+        return sessionId != null ? sessionId : (String) getOtherClaims().get(IDToken.SESSION_STATE);
+    }
+
+    public String[] getOriginalAudience() {
+        return originalAudience;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 }

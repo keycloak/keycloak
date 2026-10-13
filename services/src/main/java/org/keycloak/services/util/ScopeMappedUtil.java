@@ -17,19 +17,22 @@
 
 package org.keycloak.services.util;
 
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class ScopeMappedUtil {
-    public static ClientMappingsRepresentation toClientMappingsRepresentation(ClientModel client, ScopeContainerModel scopeContainer) {
+    public static ClientMappingsRepresentation toClientMappingsRepresentation(ClientModel client, ScopeContainerModel scopeContainer, Predicate<RoleModel> filter) {
         List<RoleRepresentation> roles = KeycloakModelUtils.getClientScopeMappingsStream(client, scopeContainer)
+                .filter(filter)
                 .map(role -> ModelToRepresentation.toBriefRepresentation(role))
                 .collect(Collectors.toList());
 

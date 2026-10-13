@@ -17,21 +17,23 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.http.HttpRequest;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
+import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import java.net.URI;
+
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
- * Interface that encapsulates current information about the current requred action
+ * Interface that encapsulates information about the current required action
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -40,6 +42,7 @@ public interface RequiredActionContext {
     enum Status {
         CHALLENGE,
         SUCCESS,
+        CANCELLED,
         IGNORE,
         FAILURE
     }
@@ -49,6 +52,8 @@ public interface RequiredActionContext {
         CANCELLED,
         ERROR
     }
+
+    String getAction();
 
     /**
      * Get the action URL for the required action.
@@ -102,6 +107,12 @@ public interface RequiredActionContext {
     HttpRequest getHttpRequest();
 
     /**
+     * The configuration of the current required action. Returns {@literal null} if the current required action is not configurable.
+     * @return
+     */
+    RequiredActionConfigModel getConfig();
+
+    /**
      * Generates access code and updates clientsession timestamp
      * Access codes must be included in form action callbacks as a query parameter.
      *
@@ -111,6 +122,8 @@ public interface RequiredActionContext {
 
     Status getStatus();
 
+    String getErrorMessage();
+
     /**
      * Send a challenge Response back to user
      *
@@ -119,16 +132,29 @@ public interface RequiredActionContext {
     void challenge(Response response);
 
     /**
+     * Abort the authentication with an error, optionally with an erroMessage.
+     *
+     */
+    void failure(String errorMessage);
+
+    /**
      * Abort the authentication with an error
      *
      */
-    void failure();
+    default void failure() {
+        failure(null);
+    }
 
     /**
      * Mark this required action as successful.  The required action will be removed from the UserModel
      *
      */
     void success();
+
+    /**
+     * Mark this action as cancelled. Can be only used in AIA
+     */
+    void cancel();
 
     /**
      * Ignore this required action and go onto the next, or complete the flow.

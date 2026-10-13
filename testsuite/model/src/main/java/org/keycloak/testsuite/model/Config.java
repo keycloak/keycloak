@@ -16,25 +16,23 @@
  */
 package org.keycloak.testsuite.model;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.Config.ConfigProvider;
 import org.keycloak.Config.Scope;
 import org.keycloak.Config.SystemPropertiesScope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 /**
  *
  * @author hmlnarik
  */
 public class Config implements ConfigProvider {
-
-    private final Properties systemProperties = new SystemEnvProperties();
 
     private final Map<String, String> defaultProperties = new ConcurrentHashMap<>();
     private final ThreadLocal<Map<String, String>> properties = new ThreadLocal<Map<String, String>>() {
@@ -123,10 +121,10 @@ public class Config implements ConfigProvider {
         }
 
         @Override
-        public String get(String key, String defaultValue) {
+        public String get(String key) {
             String v = replaceProperties(getConfig().get(prefix + key));
             if (v == null || v.isEmpty()) {
-                v = System.getProperty("keycloak." + prefix + key, defaultValue);
+                v = System.getProperty("keycloak." + prefix + key);
             }
             return v != null && ! v.isEmpty() ? v : null;
         }
@@ -148,12 +146,16 @@ public class Config implements ConfigProvider {
         return getConfig().get(spiName + ".provider");
     }
 
+    public String getDefaultProvider(String spiName) {
+        return getConfig().get(spiName + ".provider.default");
+    }
+
     public Map<String, String> getConfig() {
         return useGlobalConfigurationFunc.getAsBoolean() ? defaultProperties : properties.get();
     }
 
     private String replaceProperties(String value) {
-        return StringPropertyReplacer.replaceProperties(value, systemProperties);
+        return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
     @Override

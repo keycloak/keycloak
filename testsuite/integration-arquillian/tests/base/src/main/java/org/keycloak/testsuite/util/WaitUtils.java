@@ -16,9 +16,18 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
-import org.keycloak.common.Profile;
-import org.keycloak.testsuite.ProfileAssume;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
@@ -28,12 +37,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
-import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -44,6 +52,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
  * @author tkyjovsk
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@Deprecated(forRemoval = true)
 public final class WaitUtils {
 
     protected final static org.jboss.logging.Logger log = org.jboss.logging.Logger.getLogger(WaitUtils.class);
@@ -80,7 +89,7 @@ public final class WaitUtils {
     }
 
     public static void waitUntilElementClassContains(WebElement element, String value) {
-        new WebDriverWait(getCurrentDriver(), 1).until(
+        new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
     }
@@ -107,7 +116,7 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
 
         try {
             wait
@@ -131,27 +140,23 @@ public final class WaitUtils {
             return; // not needed
         }
 
-        String currentUrl = null;
-
         // Ensure the URL is "stable", i.e. is not changing anymore; if it'd changing, some redirects are probably still in progress
         for (int maxRedirects = 4; maxRedirects > 0; maxRedirects--) {
-            currentUrl = driver.getCurrentUrl();
-            FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
             try {
+                String currentUrl = driver.getCurrentUrl();
+                FluentWait<WebDriver> wait = new FluentWait<>(driver).withTimeout(Duration.ofMillis(250));
                 wait.until(not(urlToBe(currentUrl)));
-            }
-            catch (TimeoutException e) {
-                break; // URL has not changed recently - ok, the URL is stable and page is current
+            } catch (TimeoutException e) {
+                if (driver.getPageSource() != null) {
+                    break; // URL has not changed recently - ok, the URL is stable and page is current
+                }
+            } catch (Exception e) {
+                log.warnf("Unknown exception thrown waiting stabilization of the URL: %s", e.getMessage());
+                pause(250);
             }
             if (maxRedirects == 1) {
                 log.warn("URL seems unstable! (Some redirect are probably still in progress)");
             }
-        }
-
-        if (
-                ProfileAssume.isFeatureEnabled(Profile.Feature.ACCOUNT2) && currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/realms\\/[^\\/]+\\/account\\/.*$") // check for new Account Console URL
-        ) {
-            pause(2000); // TODO rework this temporary workaround once KEYCLOAK-11201 and/or KEYCLOAK-8181 are fixed
         }
     }
 
@@ -163,4 +168,35 @@ public final class WaitUtils {
         waitUntilElementIsNotPresent(By.className("modal-backdrop"));
     }
 
+    /**
+     * Wait for the brute force executor to finish processing all pending login failure tasks.
+     * Needed because {@code DefaultBlockingBruteForceProtector} processes failure counting asynchronously.
+     * Without this wait, a subsequent login request may race with the in-flight task and miss incrementing
+     * the failure counter (see <a href="https://github.com/keycloak/keycloak/issues/52428">#52428</a>).
+     * Once <a href="https://github.com/keycloak/keycloak/issues/52128">#52128</a> makes brute force processing synchronous, this method becomes unnecessary.
+     */
+    public static void waitForBruteForceExecutors(KeycloakTestingClient testingClient) {
+        testingClient.server().run(session -> {
+            ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
+            ExecutorService executor = provider.getExecutor("bruteforce");
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+            try {
+                CompletableFuture.runAsync(() -> {
+                    do {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } while (!threadPoolExecutor.getQueue().isEmpty() || threadPoolExecutor.getActiveCount() > 0);
+                }).get(30, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException te) {
+                fail("Timeout while waiting for brute force executors!");
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail("Unexpected error while waiting for brute force executors!");
+            }
+            assertEquals(0, threadPoolExecutor.getActiveCount());
+        });
+    }
 }

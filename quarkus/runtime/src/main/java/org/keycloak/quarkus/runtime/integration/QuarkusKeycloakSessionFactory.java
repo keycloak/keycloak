@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.integration;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,43 +25,19 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
-
-    public static QuarkusKeycloakSessionFactory getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new QuarkusKeycloakSessionFactory();
-        }
-
-        return INSTANCE;
-    }
-
-    public static void setInstance(QuarkusKeycloakSessionFactory instance) {
-        INSTANCE = instance;
-    }
-
-    private static QuarkusKeycloakSessionFactory INSTANCE;
-    private final Boolean reaugmented;
-    private final Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories;
-    private Map<String, ProviderFactory> preConfiguredProviders;
 
     public QuarkusKeycloakSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes,
-            Boolean reaugmented) {
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
         this.provider = defaultProviders;
-        this.factories = factories;
-        this.preConfiguredProviders = preConfiguredProviders;
-        this.reaugmented = reaugmented;
-        serverStartupTimestamp = System.currentTimeMillis();
         spis = factories.keySet();
 
         for (Spi spi : spis) {
@@ -85,31 +60,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
                 }
             }
         }
-    }
-
-    private QuarkusKeycloakSessionFactory() {
-        reaugmented = false;
-        factories = Collections.emptyMap();
-    }
-
-    @Override
-    public void init() {
-        // Component factory must be initialized first, so that postInit in other factories can use component factories
-        updateComponentFactoryProviderFactory();
-        if (componentFactoryPF != null) {
-            componentFactoryPF.postInit(this);
-        }
-        for (Map<String, ProviderFactory> f : factoriesMap.values()) {
-            for (ProviderFactory factory : f.values()) {
-                if (factory != componentFactoryPF) {
-                    factory.postInit(this);
-                }
-            }
-        }
-
-        AdminPermissions.registerListener(this);
-        // make the session factory ready for hot deployment
-        ProviderManagerRegistry.SINGLETON.setDeployer(this);
     }
 
     private ProviderFactory lookupProviderFactory(Class<? extends ProviderFactory> factoryClazz) {

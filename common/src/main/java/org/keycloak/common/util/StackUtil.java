@@ -2,6 +2,7 @@ package org.keycloak.common.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+
 import org.jboss.logging.Logger;
 
 /**

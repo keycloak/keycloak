@@ -1,6 +1,4 @@
 
-include::templates/making-open-source-more-inclusive.adoc[]
-
 == {project_name} API Documentation
 
 === JavaDocs Documentation

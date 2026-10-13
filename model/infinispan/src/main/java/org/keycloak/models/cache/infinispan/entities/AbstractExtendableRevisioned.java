@@ -25,12 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractExtendableRevisioned extends AbstractRevisioned {
     protected ConcurrentHashMap cachedWith = new ConcurrentHashMap();
 
-    public AbstractExtendableRevisioned(Long revision, String id) {
+    public AbstractExtendableRevisioned(long revision, String id) {
         super(revision, id);
     }
 
     /**
-     * Cache things along with this cachable object
+     * Cache things along with this cacheable object
      *
      * @return
      */

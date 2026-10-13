@@ -19,15 +19,14 @@
 package org.keycloak.models.credential;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.models.credential.dto.WebAuthnSecretData;
 import org.keycloak.util.JsonSerialization;
-
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -62,6 +61,15 @@ public class WebAuthnCredentialModel extends CredentialModel {
 
         WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);
         credentialModel.fillCredentialModelFields();
+        credentialModel.setUserLabel(userLabel);
+        return credentialModel;
+    }
+
+    public static WebAuthnCredentialModel create(String id, String credentialType, Long createdDate, String userLabel, WebAuthnCredentialData credentialData, WebAuthnSecretData secretData) {
+        WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);
+        credentialModel.fillCredentialModelFields();
+        credentialModel.setId(id);
+        credentialModel.setCreatedDate(createdDate);
         credentialModel.setUserLabel(userLabel);
         return credentialModel;
     }

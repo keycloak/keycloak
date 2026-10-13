@@ -1,11 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -24,13 +22,17 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProviderMapperTest {
 
@@ -135,13 +137,14 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     }
 
     private AccessToken login() {
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
-                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account")
-                .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        oauth.realm(bc.consumerRealmName())
+                .client("broker-app", consumerClientRep.getSecret())
+                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/app");
+        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        Assertions.assertTrue(authzResponse.isSuccess());
 
         String code = authzResponse.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, consumerClientRep.getSecret());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         return toAccessToken(response.getAccessToken());
     }
 

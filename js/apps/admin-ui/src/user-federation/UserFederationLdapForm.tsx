@@ -3,7 +3,7 @@ import { Button, Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ScrollForm } from "ui-shared";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -75,12 +75,12 @@ export const UserFederationLdapForm = ({
       <Form onSubmit={form.handleSubmit(onSubmit)}>
         <FixedButtonsGroup
           name="ldap"
-          isActive={form.formState.isDirty}
+          isDisabled={!form.formState.isDirty}
           isSubmit
         >
           <Button
             variant="link"
-            onClick={() => navigate(toUserFederation({ realm }))}
+            onClick={() => void navigate(toUserFederation({ realm }))}
             data-testid="ldap-cancel"
           >
             {t("cancel")}

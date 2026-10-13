@@ -17,10 +17,25 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.http.HttpRequest;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
@@ -31,19 +46,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,6 +60,9 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     public FormAuthenticationFlow(AuthenticationProcessor processor, AuthenticationExecutionModel execution) {
         this.processor = processor;
+        if (execution == null) {
+            throw new AuthenticationFlowException("Execution not provided to flow", AuthenticationFlowError.INTERNAL_ERROR);
+        }
         this.formExecution = execution;
         formActionExecutions = processor.getRealm().getAuthenticationExecutionsStream(execution.getFlowId()).collect(Collectors.toList());
         formAuthenticator = processor.getSession().getProvider(FormAuthenticator.class, execution.getAuthenticator());
@@ -223,7 +228,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         }
 
         if (!errors.isEmpty()) {
-            processor.logFailure();
+            processor.logFailure(null);
             List<FormMessage> messages = new LinkedList<>();
             Set<String> fields = new HashSet<>();
             for (ValidationContextImpl v : errors) {
@@ -266,12 +271,21 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     public URI getActionUrl(String executionId, String code) {
         ClientModel client = processor.getAuthenticationSession().getClient();
-        return LoginActionsService.registrationFormProcessor(processor.getUriInfo())
+        UriBuilder builder = LoginActionsService.registrationFormProcessor(processor.getUriInfo())
                 .queryParam(LoginActionsService.SESSION_CODE, code)
                 .queryParam(Constants.EXECUTION, executionId)
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())
-                .build(processor.getRealm().getName());
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(processor.getSession(), processor.getAuthenticationSession()));
+
+        MultivaluedMap<String, String> query = processor.getSession().getContext().getUri().getQueryParameters();
+        List<String> token = query.get(Constants.TOKEN);
+
+        if (token != null && !token.isEmpty()) {
+            builder.queryParam(Constants.TOKEN, token.get(0));
+        }
+
+        return builder.build(processor.getRealm().getName());
     }
 
 

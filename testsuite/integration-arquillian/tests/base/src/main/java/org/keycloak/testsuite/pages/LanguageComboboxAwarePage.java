@@ -17,9 +17,14 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.junit.Assert;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -30,17 +35,29 @@ import org.openqa.selenium.support.FindBy;
  * Provides some generic utils available on most of login pages (Language combobox, Link "Try another way" etc)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
-    @FindBy(id = "kc-current-locale-link")
+    @FindBy(xpath = "//select[@aria-label='languages']/option[@selected]")
     private WebElement languageText;
 
-    @FindBy(id = "kc-locale-dropdown")
+    @FindBy(xpath = "//select[@aria-label='languages']")
     private WebElement localeDropdown;
+
+    @FindBy(id = "kc-current-locale-link")
+    private WebElement languageTextBase;    // base theme
+
+    @FindBy(id = "kc-locale-dropdown")
+    private WebElement localeDropdownBase;  // base theme
 
     @FindBy(id = "try-another-way")
     private WebElement tryAnotherWayLink;
+
+    @FindBy(id = "switch-organization")
+    private WebElement switchOrganizationLink;
 
     @FindBy(id = "kc-attempted-username")
     private WebElement attemptedUsernameLabel;
@@ -52,13 +69,26 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     private WebElement accountLink;
 
     public String getLanguageDropdownText() {
-        return languageText.getText();
+        try {
+            final String text = languageText.getText();
+            return text == null ? text : text.trim();
+        } catch (NoSuchElementException ex) {
+            return languageTextBase.getText();
+        }
     }
 
     public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" + language + "']"));
-        String url = langLink.getAttribute("href");
-        DroneUtils.getCurrentDriver().navigate().to(url);
+        try {
+            WebElement langLink = localeDropdown.findElement(By.xpath("//option[text()[contains(.,'" + language + "')]]"));
+            String url = langLink.getAttribute("value");
+            DroneUtils.getCurrentDriver().navigate().to(new URI(DroneUtils.getCurrentDriver().getCurrentUrl()).resolve(url).toString());
+        } catch (NoSuchElementException ex) {
+            WebElement langLink = localeDropdownBase.findElement(By.xpath("//a[text()[contains(.,'" + language + "')]]"));
+            String url = langLink.getAttribute("href");
+            DroneUtils.getCurrentDriver().navigate().to(url);
+        } catch (URISyntaxException ex) {
+            Assertions.fail(ex.getMessage());
+        }
         WaitUtils.waitForPageToLoad();
     }
 
@@ -66,27 +96,40 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public void assertTryAnotherWayLinkAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.id("try-another-way"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
     public void clickTryAnotherWayLink() {
-        tryAnotherWayLink.click();
+        UIUtils.clickLink(tryAnotherWayLink);
+    }
+
+    public void assertSwitchOrganizationLinkAvailability(boolean expectedAvailability) {
+        try {
+            driver.findElement(By.id("switch-organization"));
+            Assertions.assertTrue(expectedAvailability);
+        } catch (NoSuchElementException nse) {
+            Assertions.assertFalse(expectedAvailability);
+        }
+    }
+
+    public void clickSwitchOrganizationLink() {
+        UIUtils.clickLink(switchOrganizationLink);
     }
 
     public void assertAccountLinkAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.id("account"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
     public void clickAccountLink() {
-        accountLink.click();
+        UIUtils.clickLink(accountLink);
     }
 
     // If false, we don't expect "attempted username" link available on the page. If true, we expect that it is available on the page
@@ -97,17 +140,21 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public static void assertAttemptedUsernameAvailability(WebDriver driver, boolean expectedAvailability) {
         try {
             driver.findElement(By.id("kc-attempted-username"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
+            // make sure the username field is not shown if the attempted username field is present
+            Assertions.assertTrue(driver.findElements(By.id("username")).isEmpty());
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
     public String getAttemptedUsername() {
-        return attemptedUsernameLabel.getText();
+        String text = attemptedUsernameLabel.getAttribute("value");
+        if (text == null) return attemptedUsernameLabel.getText();
+        return text;
     }
 
     public void clickResetLogin() {
-        resetLoginLink.click();
+        UIUtils.clickLink(resetLoginLink);
     }
 }

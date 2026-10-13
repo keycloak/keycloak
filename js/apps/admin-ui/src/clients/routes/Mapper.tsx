@@ -7,6 +7,7 @@ export type MapperParams = {
   realm: string;
   id: string;
   mapperId: string;
+  viewMode: "edit" | "new";
 };
 
 const MappingDetails = lazy(
@@ -14,11 +15,11 @@ const MappingDetails = lazy(
 );
 
 export const MapperRoute: AppRouteObject = {
-  path: "/:realm/clients/:id/clientScopes/dedicated/mappers/:mapperId",
+  path: "/:realm/clients/:id/clientScopes/dedicated/mappers/:mapperId/:viewMode",
   element: <MappingDetails />,
-  breadcrumb: (t) => t("mappingDetails"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("mappingDetails"),
   },
 };
 

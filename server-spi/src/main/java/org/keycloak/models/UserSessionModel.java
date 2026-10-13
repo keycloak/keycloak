@@ -20,7 +20,11 @@ package org.keycloak.models;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+
 import org.keycloak.util.EnumWithStableIndex;
+
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,6 +52,11 @@ public interface UserSessionModel {
 
     String getLoginUsername();
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     String getIpAddress();
 
     String getAuthMethod();
@@ -58,13 +67,20 @@ public interface UserSessionModel {
 
     int getLastSessionRefresh();
 
+    /**
+     * Set the last session refresh timestamp for the user session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     */
     void setLastSessionRefresh(int seconds);
 
     boolean isOffline();
 
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
-     * @return
+     * <p>
+     * Any direct modification via the {@link Map} interface will throw an {@link UnsupportedOperationException}. To add a
+     * new mapping, use a method like {@link UserSessionProvider#createClientSession(RealmModel, ClientModel, UserSessionModel)} or
+     * equivalent. To remove a mapping, use {@link AuthenticatedClientSessionModel#detachFromUserSession()}.
      */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
     /**
@@ -73,7 +89,8 @@ public interface UserSessionModel {
      */
     default AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
         return getAuthenticatedClientSessions().get(clientUUID);
-    };
+    }
+
     /**
      * Removes authenticated client sessions for all clients whose UUID is present in {@code removedClientUUIDS} parameter.
      * @param removedClientUUIDS
@@ -92,6 +109,8 @@ public interface UserSessionModel {
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
+    @ProtoTypeId(65536) // see org.keycloak.Marshalling
+    @Proto
     enum State implements EnumWithStableIndex {
         LOGGED_IN(0),
         LOGGING_OUT(1),

@@ -17,8 +17,10 @@
 
 package org.keycloak.adapters.saml;
 
+import java.io.IOException;
+import java.security.KeyPair;
+
 import org.keycloak.adapters.saml.SamlDeployment.IDP.SingleSignOnService;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -28,8 +30,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 
-import java.io.IOException;
-import java.security.KeyPair;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,10 +41,16 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
 
     protected SamlDeployment deployment;
     protected SamlSessionStore sessionStore;
+    protected boolean saveRequestUri;
 
     public AbstractInitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore) {
+        this(deployment, sessionStore, true);
+    }
+
+    public AbstractInitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore, boolean saveRequestUri) {
         this.deployment = deployment;
         this.sessionStore = sessionStore;
+        this.saveRequestUri = saveRequestUri;
     }
 
     @Override
@@ -56,7 +63,9 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
         try {
             SAML2AuthnRequestBuilder authnRequestBuilder = buildSaml2AuthnRequestBuilder(deployment);
             BaseSAML2BindingBuilder binding = createSaml2Binding(deployment);
-            sessionStore.saveRequest();
+            if (saveRequestUri) {
+                sessionStore.saveRequest();
+            }
 
             sendAuthnRequest(httpFacade, authnRequestBuilder, binding);
             sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_IN);

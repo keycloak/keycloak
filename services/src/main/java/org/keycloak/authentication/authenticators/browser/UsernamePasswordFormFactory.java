@@ -17,6 +17,10 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -24,9 +28,8 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,11 +38,10 @@ import java.util.List;
 public class UsernamePasswordFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-username-password-form";
-    public static final UsernamePasswordForm SINGLETON = new UsernamePasswordForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new UsernamePasswordForm(session);
     }
 
     @Override
@@ -65,6 +67,13 @@ public class UsernamePasswordFormFactory implements AuthenticatorFactory {
     @Override
     public String getReferenceCategory() {
         return PasswordCredentialModel.TYPE;
+    }
+
+    @Override
+    public Set<String> getOptionalReferenceCategories(KeycloakSession session) {
+        return WebAuthnConditionalUIAuthenticator.isPasskeysEnabled(session)
+                ? Collections.singleton(WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                : AuthenticatorFactory.super.getOptionalReferenceCategories(session);
     }
 
     @Override

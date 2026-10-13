@@ -17,13 +17,13 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Collections;
-import java.util.List;
 
 public class UseLightweightAccessTokenExecutorFactory implements ClientPolicyExecutorProviderFactory {
     public static final String PROVIDER_ID = "use-lightweight-access-token";
@@ -64,7 +64,7 @@ public class UseLightweightAccessTokenExecutorFactory implements ClientPolicyExe
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return true;
     }
 }

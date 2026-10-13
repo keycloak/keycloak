@@ -18,7 +18,7 @@
 package org.keycloak.events;
 
 import java.util.Map;
-import java.util.Objects;
+
 import org.keycloak.util.EnumWithStableIndex;
 
 /**
@@ -57,20 +57,29 @@ public enum EventType implements EnumWithStableIndex {
     REMOVE_FEDERATED_IDENTITY(9, true),
     REMOVE_FEDERATED_IDENTITY_ERROR(0x10000 + REMOVE_FEDERATED_IDENTITY.getStableIndex(), true),
 
+
     UPDATE_EMAIL(10, true),
     UPDATE_EMAIL_ERROR(0x10000 + UPDATE_EMAIL.getStableIndex(), true),
     UPDATE_PROFILE(11, true),
     UPDATE_PROFILE_ERROR(0x10000 + UPDATE_PROFILE.getStableIndex(), true),
+
+    @Deprecated
     UPDATE_PASSWORD(12, true),
+    @Deprecated
     UPDATE_PASSWORD_ERROR(0x10000 + UPDATE_PASSWORD.getStableIndex(), true),
+
+    @Deprecated
     UPDATE_TOTP(13, true),
+    @Deprecated
     UPDATE_TOTP_ERROR(0x10000 + UPDATE_TOTP.getStableIndex(), true),
     VERIFY_EMAIL(14, true),
     VERIFY_EMAIL_ERROR(0x10000 + VERIFY_EMAIL.getStableIndex(), true),
     VERIFY_PROFILE(15, true),
     VERIFY_PROFILE_ERROR(0x10000 + VERIFY_PROFILE.getStableIndex(), true),
 
+    @Deprecated
     REMOVE_TOTP(16, true),
+    @Deprecated
     REMOVE_TOTP_ERROR(0x10000 + REMOVE_TOTP.getStableIndex(), true),
 
     GRANT_CONSENT(17, true),
@@ -104,8 +113,8 @@ public enum EventType implements EnumWithStableIndex {
 
     IDENTITY_PROVIDER_LINK_ACCOUNT(29, true),
     IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR(0x10000 + IDENTITY_PROVIDER_LINK_ACCOUNT.getStableIndex(), true),
-    IDENTITY_PROVIDER_LOGIN(30, false),
-    IDENTITY_PROVIDER_LOGIN_ERROR(0x10000 + IDENTITY_PROVIDER_LOGIN.getStableIndex(), false),
+    IDENTITY_PROVIDER_LOGIN(30, true),
+    IDENTITY_PROVIDER_LOGIN_ERROR(0x10000 + IDENTITY_PROVIDER_LOGIN.getStableIndex(), true),
     IDENTITY_PROVIDER_FIRST_LOGIN(31, true),
     IDENTITY_PROVIDER_FIRST_LOGIN_ERROR(0x10000 + IDENTITY_PROVIDER_FIRST_LOGIN.getStableIndex(), true),
     IDENTITY_PROVIDER_POST_LOGIN(32, true),
@@ -120,7 +129,15 @@ public enum EventType implements EnumWithStableIndex {
     CUSTOM_REQUIRED_ACTION_ERROR(0x10000 + CUSTOM_REQUIRED_ACTION.getStableIndex(), true),
     EXECUTE_ACTIONS(37, true),
     EXECUTE_ACTIONS_ERROR(0x10000 + EXECUTE_ACTIONS.getStableIndex(), true),
-    EXECUTE_ACTION_TOKEN(38, true),
+
+    /**
+     * Marks a request to the {@code action-token} endpoint before the token has been parsed and the action
+     * identified. Only {@link #EXECUTE_ACTION_TOKEN_ERROR} is ever emitted, covering failures that occur
+     * before an action-specific type is known. Once the handler is resolved the event is retyped to the type
+     * declared by that handler, so this type itself is never emitted: it reaches neither the event store
+     * nor any {@link EventListenerProvider}.
+     */
+    EXECUTE_ACTION_TOKEN(38, false),
     EXECUTE_ACTION_TOKEN_ERROR(0x10000 + EXECUTE_ACTION_TOKEN.getStableIndex(), true),
 
     CLIENT_INFO(39, false),
@@ -158,14 +175,49 @@ public enum EventType implements EnumWithStableIndex {
     PUSHED_AUTHORIZATION_REQUEST_ERROR(0x10000 + PUSHED_AUTHORIZATION_REQUEST.getStableIndex(), false),
 
     USER_DISABLED_BY_PERMANENT_LOCKOUT(52, true),
-    USER_DISABLED_BY_PERMANENT_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_PERMANENT_LOCKOUT.getStableIndex(), false);
+    USER_DISABLED_BY_PERMANENT_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_PERMANENT_LOCKOUT.getStableIndex(), false),
+
+    USER_DISABLED_BY_TEMPORARY_LOCKOUT(53,true),
+    USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_TEMPORARY_LOCKOUT.getStableIndex(), false),
+
+    OAUTH2_EXTENSION_GRANT(54, true),
+    OAUTH2_EXTENSION_GRANT_ERROR(0x10000 + OAUTH2_EXTENSION_GRANT.getStableIndex(), true),
+
+    FEDERATED_IDENTITY_OVERRIDE_LINK(55, true),
+    FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true),
+
+    UPDATE_CREDENTIAL(56, true),
+    UPDATE_CREDENTIAL_ERROR(0x10000 + UPDATE_CREDENTIAL.getStableIndex(), true),
+
+    REMOVE_CREDENTIAL(57, true),
+    REMOVE_CREDENTIAL_ERROR(0x10000 + REMOVE_CREDENTIAL.getStableIndex(), true),
+
+    INVITE_ORG(60, true),
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true),
+
+    USER_SESSION_DELETED(61, false),
+    USER_SESSION_DELETED_ERROR(0x10000 + USER_SESSION_DELETED.getStableIndex(), false),
+
+    VERIFIABLE_CREDENTIAL_REQUEST(62, true),
+    VERIFIABLE_CREDENTIAL_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST(63, true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_OFFER_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST(64, false),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_NONCE_REQUEST.getStableIndex(), false),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER(65, true),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_CREATE_OFFER.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT(66, true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT.getStableIndex(), true),
+
+    JWT_AUTHORIZATION_GRANT(70, true),
+    JWT_AUTHORIZATION_GRANT_ERROR(0x10000 + JWT_AUTHORIZATION_GRANT.getStableIndex(), true),
+    ;
 
     private final int stableIndex;
     private final boolean saveByDefault;
     private static final Map<Integer, EventType> BY_ID = EnumWithStableIndex.getReverseIndex(values());
 
     EventType(int stableIndex, boolean saveByDefault) {
-        Objects.requireNonNull(stableIndex);
         this.stableIndex = stableIndex;
         this.saveByDefault = saveByDefault;
     }
@@ -177,7 +229,6 @@ public enum EventType implements EnumWithStableIndex {
 
     /**
      * Determines whether this event is stored when the admin has not set a specific set of event types to save.
-     * @return
      */
     public boolean isSaveByDefault() {
         return saveByDefault;

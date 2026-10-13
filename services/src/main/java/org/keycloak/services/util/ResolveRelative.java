@@ -17,11 +17,12 @@
 
 package org.keycloak.services.util;
 
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.UrlType;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -36,14 +37,19 @@ public class ResolveRelative {
     }
 
     public static String resolveRelativeUri(String frontendUrl, String adminUrl, String rootUrl, String url) {
+        String finalUrl;
+
         if (url == null || !url.startsWith("/")) {
-            return url;
+            finalUrl = url;
         } else if (rootUrl != null && !rootUrl.isEmpty()) {
-            return resolveRootUrl(frontendUrl, adminUrl, rootUrl) + url;
+            finalUrl = resolveRootUrl(frontendUrl, adminUrl, rootUrl) + url;
         } else {
-            return UriBuilder.fromUri(frontendUrl).replacePath(url).build().toString();
+            finalUrl = UriBuilder.fromUri(frontendUrl).replacePath(url).build().toString();
         }
+
+        return StringPropertyReplacer.replaceProperties(finalUrl);
     }
+
     public static String resolveRootUrl(KeycloakSession session, String rootUrl) {
         String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
         String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();

@@ -1,0 +1,80 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Taking a site offline"
+summary="Take a site offline so that it no longer processes client requests."
+tileVisible="false" >
+
+== When to use this procedure
+
+During the deployment lifecycle it might be required that one of the sites is temporarily taken offline
+for maintenance or to allow for software upgrades. To ensure that no user requests are routed to the site requiring
+maintenance, it is necessary for the site to be removed from your load balancer configuration.
+
+== Procedure
+
+Follow these steps to remove a site from the load balancer so that no traffic can be routed to it.
+
+=== Global Accelerator
+
+. Determine the ARN of the Network Load Balancer (NLB) associated with the site to be kept online
++
+<#include "/high-availability/partials/accelerator/nlb-arn.adoc" />
++
+. Update the Accelerator EndpointGroup to only include a single cluster
++
+<#include "/high-availability/partials/accelerator/endpoint-group.adoc" />
++
+.Output:
+[source,bash]
+----
+{
+    "EndpointGroups": [
+        {
+            "EndpointGroupArn": "arn:aws:globalaccelerator::606671647913:accelerator/d280fc09-3057-4ab6-9330-6cbf1f450748/listener/8769072f/endpoint-group/a30b64ec1700",
+            "EndpointGroupRegion": "eu-west-1",
+            "EndpointDescriptions": [
+                {
+                    "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a49e56e51e16843b9a3bc686327c907b/9b786f80ed4eba3d",
+                    "Weight": 128,
+                    "HealthState": "HEALTHY",
+                    "ClientIPPreservationEnabled": false
+                },
+                {
+                    "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a3c75f239541c4a6e9c48cf8d48d602f/5ba333e87019ccf0",
+                    "Weight": 128,
+                    "HealthState": "HEALTHY",
+                    "ClientIPPreservationEnabled": false
+                }
+            ],
+            "TrafficDialPercentage": 100.0,
+            "HealthCheckPort": 443,
+            "HealthCheckProtocol": "TCP",
+            "HealthCheckIntervalSeconds": 30,
+            "ThresholdCount": 3
+        }
+    ]
+}
+----
++
+.. Update the EndpointGroup to only include the NLB retrieved in step 1.
++
+.Command:
+[source,bash]
+----
+aws globalaccelerator update-endpoint-group \
+  --endpoint-group-arn arn:aws:globalaccelerator::606671647913:accelerator/d280fc09-3057-4ab6-9330-6cbf1f450748/listener/8769072f/endpoint-group/a30b64ec1700 \
+  --region us-west-2 \
+  --endpoint-configurations '
+  [
+    {
+        "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a49e56e51e16843b9a3bc686327c907b/9b786f80ed4eba3d",
+        "Weight": 128,
+        "ClientIPPreservationEnabled": false
+    }
+  ]
+'
+----
+
+</@tmpl.guide>

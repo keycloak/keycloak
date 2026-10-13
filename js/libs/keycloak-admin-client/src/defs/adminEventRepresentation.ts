@@ -9,4 +9,5 @@ export default interface AdminEventRepresentation {
   resourcePath?: string;
   resourceType?: string;
   time?: number;
+  details?: Record<string, any>;
 }

@@ -3,7 +3,7 @@
     <#if section="header">
         ${msg("doLogIn")}
     <#elseif section="form">
-        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}"
+        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
             method="post">
             <#if otpLogin.userOtpCredentials?size gt 1>
                 <div class="${properties.kcFormGroupClass!}">
@@ -29,8 +29,9 @@
                 </div>
 
             <div class="${properties.kcInputWrapperClass!}">
-                <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
-                       autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"/>
+                <input id="otp" name="otp" autocomplete="one-time-code" type="text" class="${properties.kcInputClass!}"
+                       autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                       dir="ltr" />
 
                 <#if messagesPerField.existsError('totp')>
                     <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}"

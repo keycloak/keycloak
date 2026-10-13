@@ -35,7 +35,7 @@ public class PushButtonAuthenticator implements Authenticator {
         String accessCode = context.generateAccessCode();
         String actionUrl = context.getActionUrl(accessCode).toString();
 
-        StringBuilder response = new StringBuilder("<html><head><title>PushTheButton</title></head><body>");
+        StringBuilder response = new StringBuilder("<html><head><title>PushTheButton</title></head><body data-page-id=\"push-the-button\">");
 
         UserModel user = context.getUser();
         if (user == null) {

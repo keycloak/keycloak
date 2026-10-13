@@ -8,3 +8,4 @@ org.keycloak.validate.validators.DoubleValidator
 org.keycloak.validate.validators.IntegerValidator
 org.keycloak.validate.validators.LocalDateValidator
 org.keycloak.validate.validators.OptionsValidator
+org.keycloak.validate.validators.IsoDateValidator

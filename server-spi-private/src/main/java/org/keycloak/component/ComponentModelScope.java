@@ -1,13 +1,13 @@
 /*
  * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,13 +17,15 @@
 package org.keycloak.component;
 
 import java.util.Set;
+
+import org.keycloak.Config.AbstractScope;
 import org.keycloak.Config.Scope;
 
 /**
  *
  * @author hmlnarik
  */
-public class ComponentModelScope implements Scope {
+public class ComponentModelScope extends AbstractScope {
 
     private final Scope origScope;
     private final ComponentModel componentConfig;
@@ -61,52 +63,8 @@ public class ComponentModelScope implements Scope {
 
     @Override
     public String get(String key) {
-        return get(key, null);
-    }
-
-    @Override
-    public String get(String key, String defaultValue) {
         final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.get(key, defaultValue) : res;
-    }
-
-    @Override
-    public String[] getArray(String key) {
-        final String[] res = get(prefix + key, "").split("\\s*,\\s*");
-        return (res == null) ? origScope.getArray(key) : res;
-    }
-
-    @Override
-    public Integer getInt(String key) {
-        return getInt(key, null);
-    }
-
-    @Override
-    public Integer getInt(String key, Integer defaultValue) {
-        final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getInt(key, defaultValue) : Integer.valueOf(res);
-    }
-
-    @Override
-    public Long getLong(String key) {
-        return getLong(key, null);
-    }
-
-    @Override
-    public Long getLong(String key, Long defaultValue) {
-        final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getLong(key, defaultValue) : Long.valueOf(res);
-    }
-
-    @Override
-    public Boolean getBoolean(String key) {
-        return getBoolean(key, null);
-    }
-
-    @Override
-    public Boolean getBoolean(String key, Boolean defaultValue) {
-        final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getBoolean(key, defaultValue) : Boolean.valueOf(res);
+        return (res == null) ? origScope.get(key) : res;
     }
 
     @Override
@@ -121,6 +79,11 @@ public class ComponentModelScope implements Scope {
 
     public ComponentModel getComponentModel() {
         return componentConfig;
+    }
+
+    @Override
+    public Scope root() {
+        return this.origScope.root();
     }
 
 }

@@ -17,16 +17,14 @@
 
 package org.keycloak.theme;
 
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import com.google.common.base.Predicate;
-
 /**
  * Based on the EbayPolicyExample in owasp java-html-sanitizer.
- *
  */
 public class KeycloakSanitizerPolicy {
 
@@ -63,6 +61,8 @@ public class KeycloakSanitizerPolicy {
       "[+-]?(?:(?:[0-9]+(?:\\.[0-9]*)?)|\\.[0-9]+)");
 
   private static final Pattern NAME = Pattern.compile("[a-zA-Z0-9\\-_\\$]+");
+
+  private static final Pattern TARGET = Pattern.compile("_blank");
 
   private static final Pattern ALIGN = Pattern.compile(
       "(?i)center|left|right|justify|char");
@@ -104,6 +104,7 @@ public class KeycloakSanitizerPolicy {
           .allowStandardUrlProtocols()
           .allowAttributes("nohref").onElements("a")
           .allowAttributes("name").matching(NAME).onElements("a")
+          .allowAttributes("target").matching(TARGET).onElements("a")
           .allowAttributes(
               "onfocus", "onblur", "onclick", "onmousedown", "onmouseup")
               .matching(HISTORY_BACK).onElements("a")
@@ -166,12 +167,7 @@ public class KeycloakSanitizerPolicy {
               "table", "td", "th", "tr", "colgroup", "fieldset", "legend")
           .toFactory();
 
-  private static Predicate<String> matchesEither(
-      final Pattern a, final Pattern b) {
-    return new Predicate<String>() {
-      public boolean apply(String s) {
-        return a.matcher(s).matches()|| b.matcher(s).matches();
-      }
-    };
+  private static Predicate<String> matchesEither(final Pattern a, final Pattern b) {
+    return s -> a.matcher(s).matches() || b.matcher(s).matches();
   }
 }

@@ -1,20 +1,21 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button } from "@patternfly/react-core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
+import { useAdminClient } from "../admin-client";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toCustomUserFederation } from "../user-federation/routes/CustomUserFederation";
-import { useFetch } from "../utils/useFetch";
 
 type FederatedUserLinkProps = {
   user: UserRepresentation;
 };
 
 export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
+  const { adminClient } = useAdminClient();
+
   const access = useAccess();
   const { realm } = useRealm();
 
@@ -23,11 +24,13 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
   useFetch(
     () =>
       access.hasAccess("view-realm")
-        ? adminClient.components.findOne({
-            id: (user.federationLink || user.origin)!,
-          })
+        ? adminClient.components
+            .findOne({
+              id: user.federationLink!,
+            })
+            .then((component) => component ?? undefined)
         : adminClient.userStorageProvider.name({
-            id: (user.federationLink || user.origin)!,
+            id: user.federationLink!,
           }),
     setComponent,
     [],

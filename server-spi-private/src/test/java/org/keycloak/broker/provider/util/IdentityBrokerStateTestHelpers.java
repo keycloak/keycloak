@@ -1,13 +1,34 @@
 package org.keycloak.broker.provider.util;
 
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OAuth2DeviceConfig;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 public class IdentityBrokerStateTestHelpers {
 
@@ -679,6 +700,26 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public int getMaxTemporaryLockouts() {
+            return 0;
+        }
+
+        @Override
+        public void setMaxTemporaryLockouts(int val) {
+
+        }
+
+        @Override
+        public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+            return RealmRepresentation.BruteForceStrategy.MULTIPLE;
+        }
+
+        @Override
+        public void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy val) {
+
+        }
+
+        @Override
         public int getMaxFailureWaitSeconds() {
             return 0;
         }
@@ -735,6 +776,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setFailureFactor(int failureFactor) {
+
+        }
+
+        @Override
+        public int getMaxSecondaryAuthFailures() {
+            return 100;
+        }
+
+        @Override
+        public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
 
         }
 
@@ -1235,6 +1286,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+            return null;
+        }
+
+        @Override
+        public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+
+        }
+
+        @Override
         public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
             return null;
         }
@@ -1590,6 +1651,15 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public ClientModel getAdminPermissionsClient() {
+            return null;
+        }
+
+        @Override
+        public void setAdminPermissionsClient(ClientModel client) {
+        }
+
+        @Override
         public boolean isIdentityFederationEnabled() {
             return false;
         }
@@ -1753,6 +1823,67 @@ public class IdentityBrokerStateTestHelpers {
         public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
 
         }
-    }
 
+        @Override
+        public Stream<RequiredActionConfigModel> getRequiredActionConfigsStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigByAlias(String alias) {
+            return null;
+        }
+
+        @Override
+        public RequiredActionConfigModel getRequiredActionConfigById(String id) {
+            return null;
+        }
+
+        @Override
+        public void removeRequiredActionProviderConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public void updateRequiredActionConfig(RequiredActionConfigModel model) {
+
+        }
+
+        @Override
+        public boolean isOrganizationsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        }
+
+        @Override
+        public boolean isAdminPermissionsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        }
+
+        @Override
+        public boolean isVerifiableCredentialsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        }
+
+        @Override
+        public void setScimApiEnabled(boolean enabled) {
+
+        }
+
+        @Override
+        public boolean isScimApiEnabled() {
+            return false;
+        }
+    }
 }

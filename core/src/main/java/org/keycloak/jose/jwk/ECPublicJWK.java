@@ -17,6 +17,7 @@
 
 package org.keycloak.jose.jwk;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -61,5 +62,27 @@ public class ECPublicJWK extends JWK {
 
     public void setY(String y) {
         this.y = y;
+    }
+
+    @JsonIgnore
+    @Override
+    public <T> T getOtherClaim(String claimName, Class<T> claimType) {
+        Object claim = null;
+        switch (claimName) {
+            case CRV:
+                claim = getCrv();
+                break;
+            case X:
+                claim = getX();
+                break;
+            case Y:
+                claim = getY();
+                break;
+        }
+        if (claim != null) {
+            return claimType.cast(claim);
+        } else {
+            return super.getOtherClaim(claimName, claimType);
+        }
     }
 }

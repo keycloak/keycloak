@@ -17,32 +17,21 @@
 
 package org.keycloak.testsuite.page;
 
-import org.keycloak.testsuite.util.ServerURLs;
-
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  *
  * @author tkyjovsk
  */
+@Deprecated
 public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
 
     public abstract URL getInjectedUrl();
 
-    //EAP6 URL fix
     protected URL createInjectedURL(String url) {
-        if (!System.getProperty("app.server","").startsWith("eap6")) {
-            return null;
-        }
-        try {
-            return new URL(ServerURLs.getAppServerContextRoot() + "/" + url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
         return null;
     }
 

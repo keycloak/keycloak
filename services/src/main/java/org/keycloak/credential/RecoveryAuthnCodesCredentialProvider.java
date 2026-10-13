@@ -1,20 +1,26 @@
 package org.keycloak.credential;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodeRepresentation;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.RequiredActionHelper;
 
-import java.io.IOException;
-import java.util.Objects;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
-import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.*;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_GENERATE_NEW_CODES;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_REMAINING;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_USED;
 
 public class RecoveryAuthnCodesCredentialProvider
         implements CredentialProvider<RecoveryAuthnCodesCredentialModel>, CredentialInputValidator {
@@ -58,7 +64,6 @@ public class RecoveryAuthnCodesCredentialProvider
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR).displayName("recovery-authn-codes-display-name")
                 .helpText("recovery-authn-codes-help-text").iconCssClass("kcAuthenticatorRecoveryAuthnCodesClass")
                 .removeable(true);
-        UserModel user = metadataContext.getUser();
         builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         return builder.build(session);
     }
@@ -119,6 +124,12 @@ public class RecoveryAuthnCodesCredentialProvider
     }
 
     protected int getWarningThreshold() {
-        return session.getContext().getRealm().getPasswordPolicy().getRecoveryCodesWarningThreshold();
+        RealmModel realm = session.getContext().getRealm();
+        RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, RecoveryAuthnCodesAction.PROVIDER_ID);
+        if (requiredAction != null && requiredAction.getConfig().containsKey(RecoveryAuthnCodesAction.WARNING_THRESHOLD)) {
+            return Integer.parseInt(requiredAction.getConfig().get(RecoveryAuthnCodesAction.WARNING_THRESHOLD));
+        } else {
+            return session.getContext().getRealm().getPasswordPolicy().getRecoveryCodesWarningThreshold();
+        }
     }
 }

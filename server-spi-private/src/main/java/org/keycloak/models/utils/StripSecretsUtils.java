@@ -17,23 +17,39 @@
 
 package org.keycloak.models.utils;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
+import org.keycloak.authentication.FormAction;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import static org.keycloak.models.Constants.PRIVATE_KEY_ATTR_SUFFIX;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,7 +58,41 @@ public class StripSecretsUtils {
 
     private static final Pattern VAULT_VALUE = Pattern.compile("^\\$\\{vault\\.(.+?)}$");
 
-    private static String maskNonVaultValue(String value) {
+    private static final Map<Class<?>, BiConsumer<KeycloakSession, Object>> REPRESENTATION_FORMATTER = new HashMap<>();
+
+    /** interface to encapsulate the getComponentProperties() function in order to make the code unit-testable
+     */
+    protected interface GetComponentPropertiesFn {
+        Map<String, ProviderConfigProperty> getComponentProperties(KeycloakSession session, String providerType, String providerId);
+    }
+
+    static {
+        REPRESENTATION_FORMATTER.put(RealmRepresentation.class, (session, o) -> StripSecretsUtils.stripRealm(session, (RealmRepresentation) o));
+        REPRESENTATION_FORMATTER.put(UserRepresentation.class, (session, o) -> StripSecretsUtils.stripUser((UserRepresentation) o));
+        REPRESENTATION_FORMATTER.put(ClientRepresentation.class, (session, o) -> StripSecretsUtils.stripClient((ClientRepresentation) o));
+        REPRESENTATION_FORMATTER.put(IdentityProviderRepresentation.class, (session, o) -> StripSecretsUtils.stripBroker((IdentityProviderRepresentation) o));
+        REPRESENTATION_FORMATTER.put(ComponentRepresentation.class, (session, o) -> StripSecretsUtils.stripComponent(session, (ComponentRepresentation) o));
+        REPRESENTATION_FORMATTER.put(CredentialRepresentation.class, (session, o) -> StripSecretsUtils.stripCredentials((CredentialRepresentation) o));
+        REPRESENTATION_FORMATTER.put(AuthenticatorConfigRepresentation.class, (session, o) -> StripSecretsUtils.stripAuthenticatorConfig(session, (AuthenticatorConfigRepresentation) o));
+    }
+
+    public static <T> T stripSecrets(KeycloakSession session, T representation) {
+        return stripSecrets(session, representation, REPRESENTATION_FORMATTER);
+    }
+
+    protected static <T> T stripSecrets(KeycloakSession session, T representation, Map<Class<?>, BiConsumer<KeycloakSession, Object>> formatters) {
+        BiConsumer<KeycloakSession, Object> formatter = formatters.get(representation.getClass());
+
+        if (formatter == null) {
+            return representation;
+        }
+
+        formatter.accept(session, representation);
+
+        return representation;
+    }
+
+    protected static String maskNonVaultValue(String value) {
         return value == null
           ? null
           : (VAULT_VALUE.matcher(value).matches()
@@ -51,13 +101,25 @@ public class StripSecretsUtils {
             );
     }
 
-    public static ComponentRepresentation strip(KeycloakSession session, ComponentRepresentation rep) {
-        Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, rep);
-        if (rep.getConfig() == null) {
-            return rep;
-        }
+    protected static CredentialRepresentation stripCredentials(CredentialRepresentation rep) {
+        rep.setValue(ComponentRepresentation.SECRET_VALUE);
+        return rep;
+    }
 
-        Iterator<Map.Entry<String, List<String>>> itr = rep.getConfig().entrySet().iterator();
+    private static ComponentRepresentation stripComponent(KeycloakSession session, ComponentRepresentation rep) {
+        Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, rep);
+        return stripComponent(configProperties, rep);
+    }
+
+    protected static ComponentRepresentation stripComponent( Map<String, ProviderConfigProperty> configProperties, ComponentRepresentation rep) {
+        if (rep.getConfig() != null) {
+            stripComponentConfigMap(rep.getConfig(), configProperties);
+        }
+        return rep;
+
+    }
+    private static void stripComponentConfigMap(MultivaluedHashMap<String, String> configMap, Map<String, ProviderConfigProperty> configProperties) {
+        Iterator<Map.Entry<String, List<String>>> itr = configMap.entrySet().iterator();
         while (itr.hasNext()) {
             Map.Entry<String, List<String>> next = itr.next();
             ProviderConfigProperty configProperty = configProperties.get(next.getKey());
@@ -73,110 +135,137 @@ public class StripSecretsUtils {
                 itr.remove();
             }
         }
+    }
+
+    private static Map<String, String> stripFromMap(Map<String, String> map, String key) {
+        if ((map != null) && map.containsKey(key)) {
+            map.put(key, maskNonVaultValue(map.get(key)));
+        }
+        return map;
+    }
+
+    private static AuthenticatorConfigRepresentation stripAuthenticatorConfig(KeycloakSession session, AuthenticatorConfigRepresentation rep) {
+        return stripAuthenticatorConfig(collectNonSecretAuthenticatorPropertyNames(session), rep);
+    }
+
+    protected static AuthenticatorConfigRepresentation stripAuthenticatorConfig(Set<String> nonSecretPropertyNames, AuthenticatorConfigRepresentation rep) {
+        Map<String, String> config = rep.getConfig();
+        if (config == null || config.isEmpty()) {
+            return rep;
+        }
+        Map<String, String> sanitized = new HashMap<>(config);
+        sanitized.replaceAll((key, value) ->
+                nonSecretPropertyNames.contains(key) ? value : maskNonVaultValue(value));
+        rep.setConfig(sanitized);
         return rep;
     }
 
-    public static RealmRepresentation strip(RealmRepresentation rep) {
-        if (rep.getSmtpServer() != null && rep.getSmtpServer().containsKey("password")) {
-            rep.getSmtpServer().put("password", maskNonVaultValue(rep.getSmtpServer().get("password")));
-        }
+    private static Set<String> collectNonSecretAuthenticatorPropertyNames(KeycloakSession session) {
+        return collectNonSecretAuthenticatorPropertyNames(Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class)
+                .flatMap(providerClass -> session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass))
+                .filter(ConfigurableAuthenticatorFactory.class::isInstance)
+                .map(ConfigurableAuthenticatorFactory.class::cast)
+                .map(ConfigurableAuthenticatorFactory::getConfigProperties)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream));
+    }
+
+    protected static Set<String> collectNonSecretAuthenticatorPropertyNames(Stream<ProviderConfigProperty> factoryProperties) {
+        Set<String> nonSecretNames = new HashSet<>();
+        Set<String> secretNames = new HashSet<>();
+        Stream.concat(ConfigurableAuthenticatorFactory.COMMON_CONFIG_PROPERTIES.stream(), factoryProperties)
+                .forEach(p -> {
+                    if (p.isSecret()) {
+                        secretNames.add(p.getName());
+                    } else {
+                        nonSecretNames.add(p.getName());
+                    }
+                });
+        nonSecretNames.removeAll(secretNames);
+        return nonSecretNames;
+    }
+
+    protected static IdentityProviderRepresentation stripBroker(IdentityProviderRepresentation rep) {
+        stripFromMap(rep.getConfig(), "clientSecret");
         return rep;
     }
 
-    public static IdentityProviderRepresentation strip(IdentityProviderRepresentation rep) {
-        if (rep.getConfig() != null && rep.getConfig().containsKey("clientSecret")) {
-            rep.getConfig().put("clientSecret", maskNonVaultValue(rep.getConfig().get("clientSecret")));
-        }
+    private static RealmRepresentation stripRealm(RealmRepresentation rep) {
+        stripFromMap(rep.getSmtpServer(), "password");
+        stripFromMap(rep.getSmtpServer(), "authTokenClientSecret");
         return rep;
     }
 
-    public static void stripForExport(KeycloakSession session, RealmRepresentation rep) {
-        strip(rep);
+    private static void stripRealm(KeycloakSession session, RealmRepresentation rep) {
+        stripRealm(session, rep, ComponentUtil::getComponentConfigProperties);
+    }
+    protected static void stripRealm(KeycloakSession session, RealmRepresentation rep, GetComponentPropertiesFn fnGetConfigProperties) {
+        stripRealm(rep);
 
-        List<ClientRepresentation> clients = rep.getClients();
-        if (clients != null) {
-            for (ClientRepresentation c : clients) {
-                strip(c);
-            }
-        }
-        List<IdentityProviderRepresentation> providers = rep.getIdentityProviders();
-        if (providers != null) {
-            for (IdentityProviderRepresentation r : providers) {
-                strip(r);
-            }
-        }
+        Optional.ofNullable(rep.getClients())
+                .ifPresent(clients -> clients.forEach(StripSecretsUtils::stripClient));
 
-        MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
-        if (components != null) {
-            for (Map.Entry<String, List<ComponentExportRepresentation>> ent : components.entrySet()) {
-                for (ComponentExportRepresentation c : ent.getValue()) {
-                    strip(session, ent.getKey(), c);
-                }
-            }
-        }
+        Optional.ofNullable(rep.getIdentityProviders())
+                .ifPresent(providers -> providers.forEach(StripSecretsUtils::stripBroker));
 
-        List<UserRepresentation> users = rep.getUsers();
-        if (users != null) {
-            for (UserRepresentation u: users) {
-                strip(u);
-            }
-        }
+        Optional.ofNullable(rep.getComponents())
+                .ifPresent(components -> components
+                        .forEach((providerType, componentList)-> componentList
+                                .forEach(component -> stripComponentExport(session, providerType, component, fnGetConfigProperties))));
 
-        users = rep.getFederatedUsers();
-        if (users != null) {
-            for (UserRepresentation u: users) {
-                strip(u);
-            }
-        }
+        Optional.ofNullable(rep.getUsers())
+                .ifPresent(users -> users.forEach(StripSecretsUtils::stripUser));
+
+        Optional.ofNullable(rep.getFederatedUsers())
+                .ifPresent(users -> users.forEach(StripSecretsUtils::stripUser));
+
+        Optional.ofNullable(rep.getAuthenticatorConfig())
+                .ifPresent(configs -> {
+                    Set<String> nonSecretNames = collectNonSecretAuthenticatorPropertyNames(session);
+                    configs.forEach(config -> stripAuthenticatorConfig(nonSecretNames, config));
+                });
     }
 
-    public static UserRepresentation strip(UserRepresentation user) {
+    protected static UserRepresentation stripUser(UserRepresentation user) {
         user.setCredentials(null);
         return user;
     }
 
-    public static ClientRepresentation strip(ClientRepresentation rep) {
+    public static ClientRepresentation stripClient(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }
-        if (rep.getAttributes() != null && rep.getAttributes().containsKey(ClientSecretConstants.CLIENT_ROTATED_SECRET)) {
-            rep.getAttributes().put(
-                    ClientSecretConstants.CLIENT_ROTATED_SECRET,
-                    maskNonVaultValue(rep.getAttributes().get(ClientSecretConstants.CLIENT_ROTATED_SECRET))
-            );
+        if (rep.getRegistrationAccessToken() != null) {
+            rep.setRegistrationAccessToken(maskNonVaultValue(rep.getRegistrationAccessToken()));
         }
+
+        stripFromMap(rep.getAttributes(), ClientSecretConstants.CLIENT_ROTATED_SECRET);
+
+        if (rep.getAttributes() != null) {
+            Map<String, String> clientAttrsCopy = new HashMap<>(rep.getAttributes());
+            for (Map.Entry<String, String> entry : clientAttrsCopy.entrySet()) {
+                if (entry.getKey().endsWith(PRIVATE_KEY_ATTR_SUFFIX)) {
+                    rep.getAttributes().put(entry.getKey(), maskNonVaultValue(entry.getValue()));
+                }
+            }
+        }
+
         return rep;
     }
 
-    public static ComponentExportRepresentation strip(KeycloakSession session, String providerType, ComponentExportRepresentation rep) {
-        Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, providerType, rep.getProviderId());
-        if (rep.getConfig() == null) {
-            return rep;
+    private static ComponentExportRepresentation stripComponentExport(KeycloakSession session, String providerType, ComponentExportRepresentation rep) {
+        return stripComponentExport(session, providerType, rep, ComponentUtil::getComponentConfigProperties);
+    }
+    private static ComponentExportRepresentation stripComponentExport(KeycloakSession session, String providerType, ComponentExportRepresentation rep, GetComponentPropertiesFn fnGetConfigProperties) {
+        Map<String, ProviderConfigProperty> configProperties = fnGetConfigProperties.getComponentProperties(session, providerType, rep.getProviderId());
+
+        if (rep.getConfig() != null) {
+            stripComponentConfigMap(rep.getConfig(), configProperties);
         }
 
-        Iterator<Map.Entry<String, List<String>>> itr = rep.getConfig().entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<String, List<String>> next = itr.next();
-            ProviderConfigProperty configProperty = configProperties.get(next.getKey());
-            if (configProperty != null) {
-                if (configProperty.isSecret()) {
-                    if (next.getValue() == null || next.getValue().isEmpty()) {
-                        next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
-                    } else {
-                        next.setValue(next.getValue().stream().map(StripSecretsUtils::maskNonVaultValue).collect(Collectors.toList()));
-                    }
-                }
-            } else {
-                itr.remove();
-            }
-        }
-
-        MultivaluedHashMap<String, ComponentExportRepresentation> sub = rep.getSubComponents();
-        for (Map.Entry<String, List<ComponentExportRepresentation>> ent: sub.entrySet()) {
-            for (ComponentExportRepresentation c: ent.getValue()) {
-                strip(session, ent.getKey(), c);
-            }
-        }
+        rep.getSubComponents()
+                    .forEach((subCompProviderType, subCompProviders) ->
+                            subCompProviders.forEach(subComp -> stripComponentExport(session, subCompProviderType, subComp)));
         return rep;
     }
 

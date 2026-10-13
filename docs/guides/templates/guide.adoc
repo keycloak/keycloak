@@ -1,14 +1,16 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
+<#macro guide title summary priority=999 deniedCategories="" includedOptions="" excludedOptions="" preview="" tileVisible="true" levelOffset=1 previewDiscussionLink="">
 :guide-id: ${id}
+:guide-parent: ${parent}
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
 :guide-tile-visible: ${tileVisible}
+:guide-level-offset: ${levelOffset}
 :version: ${version}
 
-include::../attributes.adoc[]
+include::${attributes}
 
 [[${id}]]
 = ${title}
@@ -26,8 +28,6 @@ endif::[]
 <#nested>
 
 <#if includedOptions?has_content>
-== Relevant options
-
-<@opts.list options=ctx.options.getOptions(includedOptions) anchor=false></@opts.list>
+<@opts.printRelevantOptions includedOptions=includedOptions excludedOptions=excludedOptions deniedCategories=deniedCategories></@>
 </#if>
 </#macro>

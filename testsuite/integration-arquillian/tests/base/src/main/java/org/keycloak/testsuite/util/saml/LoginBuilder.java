@@ -16,17 +16,20 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.util.SamlClient.Step;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.util.SamlClient.Step;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -40,10 +43,12 @@ import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
+
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 /**
  *
@@ -66,7 +71,7 @@ public class LoginBuilder implements Step {
             return null;    // skip this step
         } else {
             assertThat(currentResponse, statusCodeIsHC(Response.Status.OK));
-            String loginPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
+            String loginPageText = EntityUtils.toString(currentResponse.getEntity(), StandardCharsets.UTF_8);
             assertThat(loginPageText, containsString("login"));
 
             return handleLoginPage(loginPageText, currentURI);
@@ -150,12 +155,7 @@ public class LoginBuilder implements Step {
             if (isPost) {
                 HttpPost res = new HttpPost(action);
 
-                UrlEncodedFormEntity formEntity;
-                try {
-                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
                 res.setEntity(formEntity);
 
                 return res;

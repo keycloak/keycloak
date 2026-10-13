@@ -7,6 +7,7 @@ export interface ComponentQuery {
   name?: string;
   parent?: string;
   type?: string;
+  providerId?: string;
 }
 
 export class Components extends Resource<{ realm?: string }> {
@@ -26,7 +27,7 @@ export class Components extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ComponentRepresentation | undefined
+    ComponentRepresentation | null
   >({
     method: "GET",
     path: "/{id}",

@@ -16,8 +16,13 @@
  */
 package org.keycloak.representations.idm;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * @author Pedro Igor
@@ -41,22 +46,25 @@ public class IdentityProviderRepresentation {
      * <li><code>missing</code> - update profile page is presented for users with missing some of mandatory user profile fields
      * <li><code>off</code> - update profile page is newer shown after first login
      * </ul>
-     * 
+     *
      * @see #UPFLM_ON
      * @see #UPFLM_MISSING
      * @see #UPFLM_OFF
      */
     @Deprecated
-    protected String updateProfileFirstLoginMode = UPFLM_ON;
+    protected String updateProfileFirstLoginMode;
 
-    protected boolean trustEmail;
-    protected boolean storeToken;
-    protected boolean addReadTokenRoleOnCreate;
-    protected boolean authenticateByDefault;
-    protected boolean linkOnly;
+    protected Boolean trustEmail;
+    protected Boolean storeToken;
+    protected Boolean addReadTokenRoleOnCreate;
+    protected Boolean authenticateByDefault;
+    protected Boolean linkOnly;
+    protected Boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
+    protected List<OrganizationIdentityProviderLinkRepresentation> organizationLinks;
     protected Map<String, String> config = new HashMap<>();
+    protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
     public String getInternalId() {
         return this.internalId;
@@ -98,23 +106,31 @@ public class IdentityProviderRepresentation {
         this.enabled = enabled;
     }
 
-    public boolean isLinkOnly() {
+    public Boolean isLinkOnly() {
         return linkOnly;
     }
 
-    public void setLinkOnly(boolean linkOnly) {
+    public void setLinkOnly(Boolean linkOnly) {
         this.linkOnly = linkOnly;
     }
 
+    public Boolean isHideOnLogin() {
+        return this.hideOnLogin;
+    }
+
+    public void setHideOnLogin(Boolean hideOnLogin) {
+        this.hideOnLogin = hideOnLogin;
+    }
+
     /**
-     * 
+     *
      * Deprecated because replaced by {@link #updateProfileFirstLoginMode}. Kept here to allow import of old realms.
-     * 
+     *
      * @deprecated {@link #setUpdateProfileFirstLoginMode(String)}
      */
     @Deprecated
-    public void setUpdateProfileFirstLogin(boolean updateProfileFirstLogin) {
-        this.updateProfileFirstLoginMode = updateProfileFirstLogin ? UPFLM_ON : UPFLM_OFF;
+    public void setUpdateProfileFirstLogin(Boolean updateProfileFirstLogin) {
+        this.updateProfileFirstLoginMode = updateProfileFirstLogin == null ? null : (updateProfileFirstLogin ? UPFLM_ON : UPFLM_OFF);
     }
 
     /**
@@ -137,12 +153,12 @@ public class IdentityProviderRepresentation {
      * @deprecated Replaced by configuration option in identity provider authenticator
      */
     @Deprecated
-    public boolean isAuthenticateByDefault() {
+    public Boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
     @Deprecated
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+    public void setAuthenticateByDefault(Boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
 
@@ -162,27 +178,27 @@ public class IdentityProviderRepresentation {
         this.postBrokerLoginFlowAlias = postBrokerLoginFlowAlias;
     }
 
-    public boolean isStoreToken() {
+    public Boolean isStoreToken() {
         return this.storeToken;
     }
 
-    public void setStoreToken(boolean storeToken) {
+    public void setStoreToken(Boolean storeToken) {
         this.storeToken = storeToken;
     }
 
-    public boolean isAddReadTokenRoleOnCreate() {
+    public Boolean isAddReadTokenRoleOnCreate() {
         return addReadTokenRoleOnCreate;
     }
 
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+    public void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 
-    public boolean isTrustEmail() {
+    public Boolean isTrustEmail() {
         return trustEmail;
     }
 
-    public void setTrustEmail(boolean trustEmail) {
+    public void setTrustEmail(Boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
 
@@ -192,6 +208,38 @@ public class IdentityProviderRepresentation {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public List<OrganizationIdentityProviderLinkRepresentation> getOrganizationLinks() {
+        return organizationLinks;
+    }
+
+    public void setOrganizationLinks(List<OrganizationIdentityProviderLinkRepresentation> organizationLinks) {
+        this.organizationLinks = organizationLinks;
+    }
+
+    @Deprecated
+    @JsonIgnore
+    public String getOrganizationId() {
+        if (organizationLinks == null || organizationLinks.isEmpty()) return null;
+        return organizationLinks.get(0).getOrganizationId();
+    }
+
+    @Deprecated
+    @JsonSetter("organizationId")
+    public void setOrganizationId(String organizationId) {
+        if (organizationId != null) {
+            this.organizationLinks = Collections.singletonList(new OrganizationIdentityProviderLinkRepresentation(organizationId));
+        } else {
+            this.organizationLinks = null;
+        }
+    }
+
+    public List<String> getTypes() {
+        return this.types;
+    }
+    public void setTypes(List<String> types) {
+        this.types = types;
     }
 
 }

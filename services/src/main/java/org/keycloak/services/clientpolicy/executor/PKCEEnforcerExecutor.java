@@ -99,7 +99,7 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
                 break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
-                executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
+                executeOnAuthorizationRequest(authorizationRequestContext.getParsedResponseType(),
                     authorizationRequestContext.getAuthorizationEndpointRequest(),
                     authorizationRequestContext.getRedirectUri());
                 return;
@@ -144,7 +144,7 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
 
         // check whether specified code challenge method is configured one in advance
         if (pkceCodeChallengeMethod != null && !codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not configured one");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not matching the configured one");
         }
 
         // check whether code challenge is specified

@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.oidc.representations;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -73,6 +73,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("subject_types_supported")
     private List<String> subjectTypesSupported;
 
+    @JsonProperty("prompt_values_supported")
+    private List<String> promptValuesSupported;
+
     @JsonProperty("id_token_signing_alg_values_supported")
     private List<String> idTokenSigningAlgValuesSupported;
 
@@ -111,6 +114,12 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("client_attestation_signing_alg_values_supported")
+    private List<String> clientAttestationSigningAlgValuesSupported;
+
+    @JsonProperty("client_attestation_pop_signing_alg_values_supported")
+    private List<String> clientAttestationPopSigningAlgValuesSupported;
 
     @JsonProperty("introspection_endpoint_auth_methods_supported")
     private List<String> introspectionEndpointAuthMethodsSupported;
@@ -198,6 +207,12 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("authorization_response_iss_parameter_supported")
     private Boolean authorizationResponseIssParameterSupported;
+
+    @JsonProperty("authorization_details_types_supported")
+    private List<String> authorizationDetailsTypesSupported;
+
+    @JsonProperty("client_id_metadata_document_supported")
+    private Boolean clientIdMetadataDocumentSupported;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -399,6 +414,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getClientAttestationSigningAlgValuesSupported() {
+        return clientAttestationSigningAlgValuesSupported;
+    }
+
+    public void setClientAttestationSigningAlgValuesSupported(List<String> clientAttestationSigningAlgValuesSupported) {
+        this.clientAttestationSigningAlgValuesSupported = clientAttestationSigningAlgValuesSupported;
+    }
+
+    public List<String> getClientAttestationPopSigningAlgValuesSupported() {
+        return clientAttestationPopSigningAlgValuesSupported;
+    }
+
+    public void setClientAttestationPopSigningAlgValuesSupported(List<String> clientAttestationPopSigningAlgValuesSupported) {
+        this.clientAttestationPopSigningAlgValuesSupported = clientAttestationPopSigningAlgValuesSupported;
     }
 
     public List<String> getIntrospectionEndpointAuthMethodsSupported() {
@@ -635,8 +666,16 @@ public class OIDCConfigurationRepresentation {
         return frontChannelLogoutSessionSupported;
     }
 
+    public void setFrontChannelLogoutSessionSupported(Boolean frontChannelLogoutSessionSupported) {
+        this.frontChannelLogoutSessionSupported = frontChannelLogoutSessionSupported;
+    }
+
     public Boolean getFrontChannelLogoutSupported() {
         return frontChannelLogoutSupported;
+    }
+
+    public void setFrontChannelLogoutSupported(Boolean frontChannelLogoutSupported) {
+        this.frontChannelLogoutSupported = frontChannelLogoutSupported;
     }
 
     public Boolean getAuthorizationResponseIssParameterSupported() {
@@ -647,4 +686,27 @@ public class OIDCConfigurationRepresentation {
         this.authorizationResponseIssParameterSupported = authorizationResponseIssParameterSupported;
     }
 
+    public List<String> getPromptValuesSupported() {
+        return promptValuesSupported;
+    }
+
+    public void setPromptValuesSupported(List<String> promptValuesSupported) {
+        this.promptValuesSupported = promptValuesSupported;
+    }
+
+    public List<String> getAuthorizationDetailsTypesSupported() {
+        return authorizationDetailsTypesSupported;
+    }
+
+    public void setAuthorizationDetailsTypesSupported(List<String> authorizationDetailsTypesSupported) {
+        this.authorizationDetailsTypesSupported = authorizationDetailsTypesSupported;
+    }
+
+    public Boolean getClientIdMetadataDocumentSupported() {
+        return clientIdMetadataDocumentSupported;
+    }
+
+    public void setClientIdMetadataDocumentSupported(Boolean clientIdMetadataDocumentSupported) {
+        this.clientIdMetadataDocumentSupported = clientIdMetadataDocumentSupported;
+    }
 }

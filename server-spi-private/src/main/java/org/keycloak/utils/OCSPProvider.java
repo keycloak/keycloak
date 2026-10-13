@@ -19,6 +19,7 @@
 package org.keycloak.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CRLReason;
 import java.security.cert.CertPathValidatorException;
@@ -29,8 +30,11 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
+import org.keycloak.models.KeycloakSession;
+
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -38,8 +42,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.KeycloakSession;
 
 
 /**
@@ -52,7 +54,6 @@ public abstract class OCSPProvider {
 
     private final static Logger logger = Logger.getLogger(OCSPProvider.class);
 
-    protected static int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
     protected static final int TIME_SKEW = 900000;
 
     public enum RevocationStatus {
@@ -123,16 +124,10 @@ public abstract class OCSPProvider {
 
     protected byte[] getEncodedOCSPResponse(KeycloakSession session, byte[] encodedOCSPReq, URI responderUri) throws IOException {
 
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+        CloseableHttpClient httpClient = httpClientProvider.getHttpClient();
         HttpPost post = new HttpPost(responderUri);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
-
-        final RequestConfig params = RequestConfig.custom()
-                .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
-                .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
-                .build();
-        post.setConfig(params);
-
         post.setEntity(new ByteArrayEntity(encodedOCSPReq));
 
         //Get Response
@@ -144,8 +139,10 @@ public abstract class OCSPProvider {
                     throw new IOException(errorMessage);
                 }
 
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return data;
+                try (InputStream content = new SafeInputStream(response.getEntity().getContent(),
+                        httpClientProvider.getMaxConsumedResponseSize())) {
+                    return content.readAllBytes();
+                }
             } finally {
                 EntityUtils.consumeQuietly(response.getEntity());
             }

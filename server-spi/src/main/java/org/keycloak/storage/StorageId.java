@@ -16,12 +16,12 @@
  */
 package org.keycloak.storage;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
-
-import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

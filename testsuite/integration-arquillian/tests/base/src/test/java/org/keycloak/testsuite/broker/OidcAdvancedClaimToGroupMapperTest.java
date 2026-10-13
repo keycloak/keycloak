@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
-import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
-
+import java.util.HashMap;
 import java.util.List;
-import org.junit.Test;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.mappers.AdvancedClaimToGroupMapper;
@@ -18,8 +19,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 
-import jakarta.ws.rs.core.Response;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 
 /**
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
@@ -41,13 +44,14 @@ public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMappe
         IdentityProviderMapperRepresentation advancedClaimToGroupMapper = new IdentityProviderMapperRepresentation();
         advancedClaimToGroupMapper.setName("advanced-claim-to-group-mapper");
         advancedClaimToGroupMapper.setIdentityProviderMapper(AdvancedClaimToGroupMapper.PROVIDER_ID);
-        advancedClaimToGroupMapper.setConfig(ImmutableMap.<String, String> builder()
-                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-                .put(AdvancedClaimToGroupMapper.CLAIM_PROPERTY_NAME, claimsOrAttributeRepresentation)
-                .put(AdvancedClaimToGroupMapper.ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME,
-                        Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString())
-                .put(ConfigConstants.GROUP, groupPath)
-                .build());
+
+        final Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString());
+        config.put(AdvancedClaimToGroupMapper.CLAIM_PROPERTY_NAME, claimsOrAttributeRepresentation);
+        config.put(AdvancedClaimToGroupMapper.ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME,
+                Boolean.valueOf(areClaimsOrAttributeValuesRegexes).toString());
+        config.put(ConfigConstants.GROUP, groupPath);
+        advancedClaimToGroupMapper.setConfig(config);
 
         IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
         advancedClaimToGroupMapper.setIdentityProviderAlias(bc.getIDPAlias());

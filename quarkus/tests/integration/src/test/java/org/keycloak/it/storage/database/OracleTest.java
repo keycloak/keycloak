@@ -34,4 +34,5 @@ public class OracleTest extends BasicDatabaseTest {
     protected void assertWrongPassword(CLIResult cliResult) {
         cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
     }
+
 }

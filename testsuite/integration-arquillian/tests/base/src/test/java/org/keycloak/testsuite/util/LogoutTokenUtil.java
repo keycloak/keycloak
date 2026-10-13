@@ -1,15 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.Time;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.representations.LogoutToken;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.TokenUtil;
-
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,6 +9,16 @@ import java.security.SignatureException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.UUID;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.representations.LogoutToken;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 public class LogoutTokenUtil {
 
@@ -54,4 +54,28 @@ public class LogoutTokenUtil {
             return null;
         }
     }
+
+    public static String generateUnsignedLogoutToken(
+            String issuer, String clientId, String userId, String sessionId, boolean revokeOfflineSessions)
+            throws IOException {
+        JWSHeader jwsHeader =
+                new JWSHeader(Algorithm.none, OAuth2Constants.JWT, null, null);
+        String logoutTokenHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
+
+        LogoutToken logoutToken = new LogoutToken();
+        logoutToken.setSid(sessionId);
+        logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, new HashMap<>());
+        logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, revokeOfflineSessions);
+        logoutToken.setSubject(userId);
+        logoutToken.issuer(issuer);
+        logoutToken.id(UUID.randomUUID().toString());
+        logoutToken.issuedNow();
+        logoutToken.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
+        logoutToken.audience(clientId);
+
+        String logoutTokenPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(logoutToken));
+
+        return logoutTokenHeaderEncoded + "." + logoutTokenPayloadEncoded + ".";
+    }
+    
 }

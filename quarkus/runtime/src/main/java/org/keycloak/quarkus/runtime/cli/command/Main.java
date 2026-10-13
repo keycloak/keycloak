@@ -17,7 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
@@ -27,6 +28,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
+
+import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 @Command(name = "keycloak",
         header = {
@@ -63,7 +66,9 @@ import picocli.CommandLine.ScopeType;
                 Export.class,
                 Import.class,
                 ShowConfig.class,
-                Tools.class
+                Tools.class,
+                BootstrapAdmin.class,
+                UpdateCompatibility.class
         })
 public final class Main {
 
@@ -75,11 +80,6 @@ public final class Main {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    @Option(names = { "-h", "--help" },
-            description = "This help message.",
-            usageHelp = true)
-    boolean help;
-
     @Option(names = { "-V", "--version" },
             description = "Show version information",
             versionHelp = true)
@@ -88,7 +88,8 @@ public final class Main {
     @Option(names = { "-v", "--verbose" },
             description = "Print out error details when running this command.",
             paramLabel = NO_PARAM_LABEL,
-            scope = ScopeType.INHERIT)
+            scope = ScopeType.INHERIT,
+            defaultValue = "${env:KC_VERBOSE}")
     public void setVerbose(boolean verbose) {
         ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) spec.commandLine().getExecutionExceptionHandler();
         exceptionHandler.setVerbose(verbose);
@@ -106,6 +107,14 @@ public final class Main {
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
+        if (!path.endsWith(".conf")) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("Configuration file specified via '%s' or '%s' must have the '.conf' extension.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
+        if (Files.notExists(Path.of(path))) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }

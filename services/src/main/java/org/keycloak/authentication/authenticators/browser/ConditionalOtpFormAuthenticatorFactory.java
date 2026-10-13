@@ -17,18 +17,23 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.List;
-
 import static java.util.Arrays.asList;
+
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
@@ -59,7 +64,7 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
 
     @Override
     public void init(Config.Scope config) {
-        //NOOP
+        SINGLETON.setProxyConfigured(config.root().get(ProxyOptions.PROXY_HEADERS.getKey()) != null);
     }
 
     @Override
@@ -135,9 +140,11 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         skipOtpForHttpHeader.setType(STRING_TYPE);
         skipOtpForHttpHeader.setName(SKIP_OTP_FOR_HTTP_HEADER);
         skipOtpForHttpHeader.setLabel("Skip OTP for Header");
-        skipOtpForHttpHeader.setHelpText("OTP is skipped if a HTTP request header does matches the given pattern." +
-                "Can be used to specify trusted networks via: X-Forwarded-Host: (1.2.3.4|1.2.3.5)." +
-                "In this case requests from 1.2.3.4 and 1.2.3.5 come from a trusted source.");
+        skipOtpForHttpHeader.setHelpText("OTP is skipped if a HTTP request header matches the given pattern. " +
+                "Can be used to specify trusted networks via: X-Forwarded-Host: (1.2.3.4|1.2.3.5). " +
+                "In this case requests from 1.2.3.4 and 1.2.3.5 come from a trusted source. " +
+                "The OTP is only skipped if proxy mode is configured (--proxy-headers is set) and request is from a trusted " +
+                "proxy address (--proxy-trusted-addresses).");
         skipOtpForHttpHeader.setDefaultValue("");
 
         ProviderConfigProperty forceOtpForHttpHeader = new ProviderConfigProperty();
@@ -155,5 +162,10 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         defaultOutcome.setHelpText("What to do in case of every check abstains. Defaults to force OTP authentication.");
 
         return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, skipOtpForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(AlternativeLookupProvider.class); //for caching
     }
 }

@@ -21,8 +21,9 @@ package org.keycloak.testsuite.util;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Utility for comparing JSON objects
@@ -41,7 +42,7 @@ public class JsonTestUtils {
         try {
             String o1Stripped = JsonSerialization.writeValueAsString(o1);
             String o2Stripped = JsonSerialization.writeValueAsString(o2);
-            Assert.assertEquals(o1Stripped, o2Stripped);
+            Assertions.assertEquals(o1Stripped, o2Stripped);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

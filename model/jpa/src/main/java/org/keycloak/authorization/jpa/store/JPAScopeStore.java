@@ -23,6 +23,7 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -35,9 +36,7 @@ import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import jakarta.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 
@@ -79,7 +78,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public void delete(RealmModel realm, String id) {
+    public void delete(String id) {
         ScopeEntity scope = entityManager.find(ScopeEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
         if (scope != null) {
@@ -88,13 +87,16 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(RealmModel realm, ResourceServer resourceServer, String id) {
+    public Scope findById(ResourceServer resourceServer, String id) {
         if (id == null) {
             return null;
         }
 
         ScopeEntity entity = entityManager.find(ScopeEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || !entity.getResourceServer().getId().equals(resourceServer.getId())) {
+            return null;
+        }
 
         return new ScopeAdapter(entity, entityManager, provider.getStoreFactory());
     }
@@ -109,7 +111,7 @@ public class JPAScopeStore implements ScopeStore {
             query.setParameter("name", name);
 
             String id = query.getSingleResult();
-            return provider.getStoreFactory().getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            return provider.getStoreFactory().getScopeStore().findById(resourceServer, id);
         } catch (NoResultException nre) {
             return null;
         }
@@ -125,7 +127,7 @@ public class JPAScopeStore implements ScopeStore {
         List<String> result = query.getResultList();
         List<Scope> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, id));
         }
         return list;
     }
@@ -146,7 +148,8 @@ public class JPAScopeStore implements ScopeStore {
                     predicates.add(root.get(filterOption.getName()).in(value));
                     break;
                 case NAME:
-                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    String escapedValue = value[0].toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + escapedValue + "%", '\\'));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
@@ -160,7 +163,7 @@ public class JPAScopeStore implements ScopeStore {
         List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Scope> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, id));
         }
         return list;
 

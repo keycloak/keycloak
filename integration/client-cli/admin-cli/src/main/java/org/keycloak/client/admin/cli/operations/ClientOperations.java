@@ -16,14 +16,12 @@
  */
 package org.keycloak.client.admin.cli.operations;
 
-import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
-
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class ClientOperations {
 
     public static String getIdFromClientId(String rootUrl, String realm, String auth, String clientId) {
-        return getIdForType(rootUrl, realm, auth, "clients", "clientId", clientId, "clientId");
+        return OperationUtils.getIdForType(rootUrl, realm, auth, "clients", "clientId", clientId, "clientId");
     }
 }

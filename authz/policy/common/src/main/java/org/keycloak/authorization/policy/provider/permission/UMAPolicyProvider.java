@@ -16,11 +16,12 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -31,7 +32,7 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugv("UMA policy {} evaluating using parent class", evaluation.getPolicy().getName());
+        logger.debugf("UMA policy %s evaluating using parent class", evaluation.getPolicy().getName());
         ResourcePermission permission = evaluation.getPermission();
         Resource resource = permission.getResource();
 

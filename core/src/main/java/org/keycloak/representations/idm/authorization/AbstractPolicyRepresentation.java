@@ -38,6 +38,7 @@ public class AbstractPolicyRepresentation {
     private Logic logic = Logic.POSITIVE;
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
     private String owner;
+    private String resourceType;
     
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<ResourceRepresentation> resourcesData;
@@ -186,4 +187,13 @@ public class AbstractPolicyRepresentation {
     public Set<ScopeRepresentation> getScopesData() {
         return scopesData;
     }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
 }

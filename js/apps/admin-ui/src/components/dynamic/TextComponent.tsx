@@ -1,11 +1,8 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
+import { KeycloakTextArea, HelpItem } from "@keycloak/keycloak-ui-shared";
 import type { ComponentProps } from "./components";
-import { convertToName } from "./DynamicComponents";
 
 export const TextComponent = ({
   name,
@@ -14,6 +11,7 @@ export const TextComponent = ({
   defaultValue,
   required,
   isDisabled = false,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { register } = useFormContext();

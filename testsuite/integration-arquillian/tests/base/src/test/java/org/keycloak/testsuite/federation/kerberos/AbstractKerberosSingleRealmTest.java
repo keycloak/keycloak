@@ -17,16 +17,14 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.ietf.jgss.GSSCredential;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
@@ -40,15 +38,20 @@ import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.junit.Assume;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 
 /**
  * Contains just test methods
@@ -57,18 +60,15 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  */
 public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
 
-    @Page
-    protected AppPage appPage;
-
     @Test
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
-        String kcLoginPageLocation = oauth.getLoginFormUrl();
+        String kcLoginPageLocation = oauth.loginForm().build();
 
         Response response = client.target(kcLoginPageLocation).request().get();
-        Assert.assertEquals(401, response.getStatus());
-        Assert.assertEquals(KerberosConstants.NEGOTIATE, response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
+        Assertions.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(KerberosConstants.NEGOTIATE, response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE));
         String responseText = response.readEntity(String.class);
         response.close();
     }
@@ -97,13 +97,35 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
             */
             Response spnegoResponse = spnegoLogin("hnelson", "secret");
 
-            Assert.assertEquals(200, spnegoResponse.getStatus());
+            Assertions.assertEquals(200, spnegoResponse.getStatus());
             String context = spnegoResponse.readEntity(String.class);
             spnegoResponse.close();
 
-            org.junit.Assert.assertTrue(context.contains("Sign in to test"));
+            Assertions.assertTrue(context.contains("Sign in to test"));
 
             events.clear();
+        } finally {
+            // Revert keytab configuration
+            updateUserStorageProvider(kerberosProviderRep -> kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, origKeytab.get()));
+        }
+    }
+
+    @Test
+    public void spnegoWithInvalidKeytabTest() throws Exception {
+        // Update kerberos configuration with the keytab with invalid credentials
+        AtomicReference<String> origKeytab = new AtomicReference<>();
+        updateUserStorageProvider(kerberosProviderRep -> {
+            String keytab = kerberosProviderRep.getConfig().getFirst(KerberosConstants.KEYTAB);
+            origKeytab.set(keytab);
+            kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB,
+                    Paths.get(keytab).getParent().resolve("http-invalid.keytab").toString());
+        });
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
+        try {
+            testAppHelper.startLogin("jduke", "theduke");
+            loginPage.assertCurrent();
+            Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         } finally {
             // Revert keytab configuration
             updateUserStorageProvider(kerberosProviderRep -> kerberosProviderRep.getConfig().putSingle(KerberosConstants.KEYTAB, origKeytab.get()));
@@ -118,7 +140,52 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Response response = spnegoLogin("hnelson", "secret");
         updateKerberosAuthExecutionRequirement(oldRequirement);
 
-        Assert.assertEquals(302, response.getStatus());
+        Assertions.assertEquals(302, response.getStatus());
+    }
+
+    @Test
+    public void spnegoMutualAuthenticationTest() throws Exception {
+        ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper("SPNEGO response token",
+                KerberosConstants.RESPONSE_TOKEN, KerberosConstants.RESPONSE_TOKEN, "String",
+                true, false, true, true);
+        ProtocolMapperRepresentation protocolMapperRep = ModelToRepresentation.toRepresentation(protocolMapper);
+        ClientResource clientResource = findClientByClientId(testRealmResource(), "kerberos-app");
+        Response mapperResponse = clientResource.getProtocolMappers().createMapper(protocolMapperRep);
+        String protocolMapperId = ApiUtil.getCreatedId(mapperResponse);
+        mapperResponse.close();
+
+        try {
+            Response response = spnegoLoginWithoutRedirect("hnelson", "secret");
+            String codeUrl;
+            try {
+                Assertions.assertEquals(302, response.getStatus());
+                codeUrl = response.getLocation().toString();
+
+                String negotiatePrefix = KerberosConstants.NEGOTIATE + " ";
+                String negotiateHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                Assertions.assertNotNull(negotiateHeader);
+                Assertions.assertTrue(negotiateHeader.startsWith(negotiatePrefix));
+
+                byte[] responseToken = Base64.getDecoder().decode(negotiateHeader.substring(negotiatePrefix.length()));
+                GSSContext gssContext = spnegoSchemeFactory.getGssContext();
+                Assertions.assertNotNull(gssContext);
+                try {
+                    gssContext.initSecContext(responseToken, 0, responseToken.length);
+                    Assertions.assertTrue(gssContext.isEstablished());
+                    Assertions.assertTrue(gssContext.getMutualAuthState());
+                } finally {
+                    gssContext.dispose();
+                }
+            } finally {
+                response.close();
+            }
+
+            AccessTokenResponse tokenResponse = assertAuthenticationSuccess(codeUrl);
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            Assertions.assertFalse(token.getOtherClaims().containsKey(KerberosConstants.RESPONSE_TOKEN));
+        } finally {
+            clientResource.getProtocolMappers().delete(protocolMapperId);
+        }
     }
 
 
@@ -134,39 +201,42 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         // Change editMode to READ_ONLY
         updateProviderEditMode(UserStorageProvider.EditMode.READ_ONLY);
 
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
 
-        Assert.assertTrue(testAppHelper.login("jduke", "theduke"));
-        Assert.assertTrue(testAppHelper.logout());
+        testAppHelper.login("jduke", "theduke");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        Assertions.assertTrue(testAppHelper.logout());
 
         // Change password is not possible as editMode is READ_ONLY
-        Assert.assertFalse(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
+        Assertions.assertFalse(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
 
-        Assert.assertFalse(testAppHelper.login("jduke", "newPass"));
+        // login will fail
+        testAppHelper.login("jduke", "newPass");
+        loginPage.assertCurrent();
 
         // Change editMode to UNSYNCED
         updateProviderEditMode(UserStorageProvider.EditMode.UNSYNCED);
 
         // Successfully change password now
-        Assert.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
+        Assertions.assertTrue(AccountHelper.updatePassword(testRealmResource(), "jduke", "newPass"));
 
         // Login with old password doesn't work, but with new password works
-        Assert.assertFalse(testAppHelper.login("jduke", "theduke"));
-        Assert.assertTrue(testAppHelper.login("jduke", "newPass"));
-
+        testAppHelper.login("jduke", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke", "newPass");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         testAppHelper.logout();
 
         // Assert SPNEGO login still with the old password as mode is unsynced
         events.clear();
         Response spnegoResponse = spnegoLogin("jduke", "theduke");
-        Assert.assertEquals(302, spnegoResponse.getStatus());
+        Assertions.assertEquals(302, spnegoResponse.getStatus());
         List<UserRepresentation> users = testRealmResource().users().search("jduke", 0, 1);
         String userId = users.get(0).getId();
-        events.expectLogin()
-                .client("kerberos-app")
-                .user(userId)
-                .detail(Details.USERNAME, "jduke")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("kerberos-app")
+                .userId(userId)
+                .details(Details.USERNAME, "jduke");
 
         String codeUrl = spnegoResponse.getLocation().toString();
 
@@ -174,6 +244,8 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     }
 
 
+    @Ignore("Credential delegation not supported: embedded Kerby KDC lacks FORWARDED flag (DIRKRB-458), " +
+            "and invokeLdap hardcodes localhost — needs rework for external KDCs")
     @Test
     public void credentialDelegationTest() throws Exception {
         Assume.assumeTrue("Ignoring test as the embedded server is not started", getKerberosRule().isStartEmbeddedLdapServer());
@@ -189,24 +261,24 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         response.close();
 
         // SPNEGO login
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         // Assert kerberos ticket in the accessToken can be re-used to authenticate against other 3rd party kerberos service (ApacheDS Server in this case)
         String serializedGssCredential = (String) token.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL);
-        Assert.assertNotNull(serializedGssCredential);
+        Assertions.assertNotNull(serializedGssCredential);
         GSSCredential gssCredential = KerberosSerializationUtils.deserializeCredential(serializedGssCredential);
         String ldapResponse = invokeLdap(gssCredential, token.getPreferredUsername());
-        Assert.assertEquals("Horatio Nelson", ldapResponse);
+        Assertions.assertEquals("Horatio Nelson", ldapResponse);
 
         // Assert kerberos ticket also in userinfo endpoint
-        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
-        Assert.assertEquals(serializedGssCredential, userInfo.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
+        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
+        Assertions.assertEquals(serializedGssCredential, userInfo.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
         // Clear USER_INFO_REQUEST event
         events.poll();
 
         // Logout
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         events.poll();
 
         // Remove protocolMapper
@@ -215,9 +287,9 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         // Login and assert delegated credential not anymore
         tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertFalse(token.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
-        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
-        Assert.assertFalse(userInfo.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
+        Assertions.assertFalse(token.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
+        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
+        Assertions.assertFalse(userInfo.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
 
         events.clear();
     }

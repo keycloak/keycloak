@@ -1,64 +1,40 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import environment from "../../environment";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 type LoginSettingsProps = {
   protocol?: string;
-  isDisabled?: boolean;
 };
 
 export const LoginSettings = ({
   protocol = "openid-connect",
-  ...rest
 }: LoginSettingsProps) => {
   const { t } = useTranslation();
-  const { register, watch } = useFormContext<FormFields>();
-  const { realm } = useRealm();
-
-  const idpInitiatedSsoUrlName: string = watch(
-    "attributes.saml_idp_initiated_sso_url_name",
-  );
+  const { watch } = useFormContext<FormFields>();
 
   const standardFlowEnabled = watch("standardFlowEnabled");
+  const implicitFlowEnabled = watch("implicitFlowEnabled");
+
   return (
     <>
-      <FormGroup
+      <TextControl
+        type="url"
+        name="rootUrl"
         label={t("rootUrl")}
-        fieldId="kc-root-url"
-        labelIcon={
-          <HelpItem helpText={t("rootURLHelp")} fieldLabelId="rootUrl" />
-        }
-      >
-        <KeycloakTextInput
-          id="kc-root-url"
-          type="url"
-          {...register("rootUrl")}
-          {...rest}
-        />
-      </FormGroup>
-      <FormGroup
+        labelIcon={t("rootURLHelp")}
+      />
+      <TextControl
+        type="url"
+        name="baseUrl"
         label={t("homeURL")}
-        fieldId="kc-home-url"
-        labelIcon={
-          <HelpItem helpText={t("homeURLHelp")} fieldLabelId="homeURL" />
-        }
-      >
-        <KeycloakTextInput
-          id="kc-home-url"
-          type="url"
-          {...register("baseUrl")}
-          {...rest}
-        />
-      </FormGroup>
-      {standardFlowEnabled && (
+        labelIcon={t("homeURLHelp")}
+      />
+      {(standardFlowEnabled || implicitFlowEnabled) && (
         <>
           <FormGroup
             label={t("validRedirectUri")}
@@ -75,7 +51,6 @@ export const LoginSettings = ({
               name="redirectUris"
               aria-label={t("validRedirectUri")}
               addButtonLabel="addRedirectUri"
-              {...rest}
             />
           </FormGroup>
           <FormGroup
@@ -96,71 +71,28 @@ export const LoginSettings = ({
               aria-label={t("validPostLogoutRedirectUri")}
               addButtonLabel="addPostLogoutRedirectUri"
               stringify
-              {...rest}
             />
-          </FormGroup>{" "}
+          </FormGroup>
         </>
       )}
       {protocol === "saml" && (
         <>
-          <FormGroup
+          <TextControl
+            name="attributes.saml_idp_initiated_sso_url_name"
             label={t("idpInitiatedSsoUrlName")}
-            fieldId="idpInitiatedSsoUrlName"
-            labelIcon={
-              <HelpItem
-                helpText={t("idpInitiatedSsoUrlNameHelp")}
-                fieldLabelId="idpInitiatedSsoUrlName"
-              />
-            }
-            helperText={
-              idpInitiatedSsoUrlName !== "" &&
-              t("idpInitiatedSsoUrlNameHelp", {
-                url: `${environment.authServerUrl}/realms/${realm}/protocol/saml/clients/${idpInitiatedSsoUrlName}`,
-              })
-            }
-          >
-            <KeycloakTextInput
-              id="idpInitiatedSsoUrlName"
-              data-testid="idpInitiatedSsoUrlName"
-              {...register("attributes.saml_idp_initiated_sso_url_name")}
-              {...rest}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("idpInitiatedSsoUrlNameHelp")}
+          />
+          <TextControl
+            name="attributes.saml_idp_initiated_sso_relay_state"
             label={t("idpInitiatedSsoRelayState")}
-            fieldId="idpInitiatedSsoRelayState"
-            labelIcon={
-              <HelpItem
-                helpText={t("idpInitiatedSsoRelayStateHelp")}
-                fieldLabelId="idpInitiatedSsoRelayState"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="idpInitiatedSsoRelayState"
-              data-testid="idpInitiatedSsoRelayState"
-              {...register("attributes.saml_idp_initiated_sso_relay_state")}
-              {...rest}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("idpInitiatedSsoRelayStateHelp")}
+          />
+          <TextControl
+            type="url"
+            name="adminUrl"
             label={t("masterSamlProcessingUrl")}
-            fieldId="masterSamlProcessingUrl"
-            labelIcon={
-              <HelpItem
-                helpText={t("masterSamlProcessingUrlHelp")}
-                fieldLabelId="masterSamlProcessingUrl"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="masterSamlProcessingUrl"
-              type="url"
-              data-testid="masterSamlProcessingUrl"
-              {...register("adminUrl")}
-              {...rest}
-            />
-          </FormGroup>
+            labelIcon={t("masterSamlProcessingUrlHelp")}
+          />
         </>
       )}
       {protocol !== "saml" && standardFlowEnabled && (
@@ -179,7 +111,6 @@ export const LoginSettings = ({
             name="webOrigins"
             aria-label={t("webOrigins")}
             addButtonLabel="addWebOrigins"
-            {...rest}
           />
         </FormGroup>
       )}

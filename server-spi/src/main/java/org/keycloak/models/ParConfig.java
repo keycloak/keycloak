@@ -16,6 +16,9 @@
  */
 package org.keycloak.models;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.keycloak.utils.StringUtil;
 
 public class ParConfig extends AbstractConfig {
@@ -26,21 +29,34 @@ public class ParConfig extends AbstractConfig {
     // default value
     public static final int DEFAULT_PAR_REQUEST_URI_LIFESPAN = 60; // sec
 
-    private int requestUriLifespan = DEFAULT_PAR_REQUEST_URI_LIFESPAN;
+    private int requestUriLifespan;
 
     // client attribute names
     public static final String REQUIRE_PUSHED_AUTHORIZATION_REQUESTS = "require.pushed.authorization.requests";
 
+    /**
+     * @deprecated use {@link #fromCache(Supplier, Map)} or {@link #fromModel(RealmModel)} factory methods
+     */
+    @Deprecated(since = "26.6", forRemoval = true)
     public ParConfig(RealmModel realm) {
-        this.realm = () -> realm;
-
-        String requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN);
-
-        if (StringUtil.isNotBlank(requestUriLifespan)) {
-            setRequestUriLifespan(Integer.parseInt(requestUriLifespan));
-        }
+        this.requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
 
         this.realmForWrite = () -> realm;
+    }
+
+    private ParConfig(Supplier<RealmModel> realmForWrite, int requestUriLifespan) {
+        this.requestUriLifespan = requestUriLifespan;
+        this.realmForWrite = realmForWrite;
+    }
+
+    public static ParConfig fromModel(RealmModel realm) {
+        var requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
+        return new ParConfig(() -> realm, requestUriLifespan);
+    }
+
+    public static ParConfig fromCache(Supplier<RealmModel> realmForWrite, Map<String, String> realmAttributes) {
+        var requestUriLifespan = getIntAttribute(realmAttributes, PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
+        return new ParConfig(realmForWrite, requestUriLifespan);
     }
 
     public int getRequestUriLifespan() {
@@ -48,7 +64,7 @@ public class ParConfig extends AbstractConfig {
     }
 
     public void setRequestUriLifespan(String requestUriLifespan) {
-        if (requestUriLifespan == null) {
+        if (StringUtil.isBlank(requestUriLifespan)) {
             setRequestUriLifespan((Integer) null);
         } else {
             setRequestUriLifespan(Integer.parseInt(requestUriLifespan));

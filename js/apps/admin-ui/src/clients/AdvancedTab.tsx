@@ -4,9 +4,10 @@ import { AlertVariant, PageSection, Text } from "@patternfly/react-core";
 import type { TFunction } from "i18next";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { ScrollForm } from "ui-shared";
-import type { AddAlertFunction } from "../components/alert/Alerts";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
+import type { AddAlertFunction } from "@keycloak/keycloak-ui-shared";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
@@ -14,7 +15,9 @@ import { ClusteringPanel } from "./advanced/ClusteringPanel";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
-import { RevocationPanel } from "./advanced/RevocationPanel";
+import { OpenIdVerifiableCredentials } from "./advanced/OpenIdVerifiableCredentials";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { PROTOCOL_OIDC } from "./constants";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -51,7 +54,8 @@ export type AdvancedProps = {
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   const { t } = useTranslation();
-  const openIdConnect = "openid-connect";
+  const { realmRepresentation } = useRealm();
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const { setValue } = useFormContext();
   const {
@@ -71,15 +75,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   };
 
   return (
-    <PageSection variant="light" className="pf-u-py-0">
+    <PageSection variant="light" className="pf-v5-u-py-0">
       <ScrollForm
         label={t("jumpToSection")}
         sections={[
-          {
-            title: t("revocation"),
-            isHidden: protocol !== openIdConnect,
-            panel: <RevocationPanel client={client} save={save} />,
-          },
           {
             title: t("clustering"),
             isHidden: !publicClient,
@@ -87,10 +86,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("fineGrainOpenIdConnectConfiguration"),
-            isHidden: protocol !== openIdConnect,
+            isHidden: protocol !== PROTOCOL_OIDC,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Text>
                 <FineGrainOpenIdConnect
@@ -101,9 +100,11 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "policyUri",
                       "tosUri",
                       "access.token.signed.response.alg",
+                      "access.token.header.type.rfc9068",
                       "id.token.signed.response.alg",
                       "id.token.encrypted.response.alg",
                       "id.token.encrypted.response.enc",
+                      "id.token.as.detached.signature",
                       "user.info.response.signature.alg",
                       "user.info.encrypted.response.alg",
                       "user.info.encrypted.response.enc",
@@ -123,10 +124,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("openIdConnectCompatibilityModes"),
-            isHidden: protocol !== openIdConnect,
+            isHidden: protocol !== PROTOCOL_OIDC,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("openIdConnectCompatibilityModesHelp")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
@@ -137,6 +138,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "use.refresh.tokens",
                       "client_credentials.use_refresh_token",
                       "token.response.type.bearer.lower-case",
+                      "oauth2.jwt.authorization.grant.audience",
                     ])
                   }
                 />
@@ -145,10 +147,10 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
           },
           {
             title: t("fineGrainSamlEndpointConfig"),
-            isHidden: protocol === openIdConnect,
+            isHidden: protocol === PROTOCOL_OIDC,
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("fineGrainSamlEndpointConfigHelp")}
                 </Text>
                 <FineGrainSamlEndpointConfig
@@ -175,7 +177,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("advancedSettings"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Text>
                 <AdvancedSettings
@@ -185,10 +187,45 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                     resetFields([
                       "saml.assertion.lifespan",
                       "access.token.lifespan",
+                      "session.idle.timeout",
+                      "client.session.max.lifespan",
+                      "client.offline.session.idle.timeout",
+                      "client.offline.session.max.lifespan",
+                      "dpop.bound.access.tokens",
                       "tls.client.certificate.bound.access.tokens",
+                      "require.pushed.authorization.requests",
+                      "client.use.lightweight.access.token.enabled",
+                      "client.introspection.response.allow.jwt.claim.enabled",
                       "pkce.code.challenge.method",
+                      "acr.loa.map",
+                      "default.acr.values",
+                      "minimum.acr.value",
                     ]);
                   }}
+                />
+              </>
+            ),
+          },
+          {
+            title: t("openIdVerifiableCredentials"),
+            isHidden:
+              protocol !== PROTOCOL_OIDC ||
+              !isFeatureEnabled(Feature.OpenId4VCI) ||
+              !realmRepresentation.verifiableCredentialsEnabled,
+            panel: (
+              <>
+                <Text className="pf-v5-u-pb-lg">
+                  {t("openIdVerifiableCredentialsHelp")}
+                </Text>
+                <OpenIdVerifiableCredentials
+                  client={client}
+                  save={save}
+                  reset={() =>
+                    resetFields([
+                      "oid4vci.enabled",
+                      "oid4vci.attester_trust_idps",
+                    ])
+                  }
                 />
               </>
             ),
@@ -197,7 +234,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("authenticationOverrides"),
             panel: (
               <>
-                <Text className="pf-u-pb-lg">
+                <Text className="pf-v5-u-pb-lg">
                   {t("authenticationOverridesHelp")}
                 </Text>
                 <AuthenticationOverrides

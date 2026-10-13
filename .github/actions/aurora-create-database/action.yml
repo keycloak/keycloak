@@ -1,0 +1,32 @@
+name: Create Aurora Database
+description: Create AWS Aurora Database
+
+inputs:
+  name:
+    description: 'The name of the Aurora DB cluster to deploy'
+    required: true
+  region:
+    description: 'The AWS region used to host the Aurora DB'
+    required: true
+  password:
+    description: 'The master password of the Aurora DB cluster'
+    required: false
+
+outputs:
+  endpoint:
+    description: 'The Endpoint URL for Aurora clients to connect to'
+    value: ${{ steps.create.outputs.endpoint }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: create
+      shell: bash
+      run: |
+        source ./aurora_create.sh
+        echo "endpoint=${AURORA_ENDPOINT}" >> $GITHUB_OUTPUT
+      working-directory: .github/scripts/aws/rds
+      env:
+        AURORA_CLUSTER: ${{ inputs.name }}
+        AURORA_PASSWORD: ${{ inputs.password }}
+        AURORA_REGION: ${{ inputs.region }}

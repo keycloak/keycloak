@@ -20,8 +20,8 @@ package org.keycloak.representations.idm;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+import org.keycloak.json.RawJsonValue;
 
 /**
  * Client Policies' (the set of all Client Policy) external representation class
@@ -30,6 +30,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class ClientPoliciesRepresentation {
     protected List<ClientPolicyRepresentation> policies = new ArrayList<>();
+    private List<ClientPolicyRepresentation> globalPolicies;
 
     public List<ClientPolicyRepresentation> getPolicies() {
         return policies;
@@ -39,17 +40,25 @@ public class ClientPoliciesRepresentation {
         this.policies = policies;
     }
 
+    public List<ClientPolicyRepresentation> getGlobalPolicies() {
+        return globalPolicies;
+    }
+
+    public void setGlobalPolicies(List<ClientPolicyRepresentation> globalPolicies) {
+        this.globalPolicies = globalPolicies;
+    }
+
     @Override
     public int hashCode() {
-        return JsonSerialization.mapper.convertValue(this, JsonNode.class).hashCode();
+        return KeycloakJsonMapperFactory.mapper().convertValue(this, RawJsonValue.class).hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ClientPoliciesRepresentation)) return false;
-        JsonNode jsonNode = JsonSerialization.mapper.convertValue(this, JsonNode.class);
-        JsonNode jsonNodeThat = JsonSerialization.mapper.convertValue(obj, JsonNode.class);
-        return jsonNode.equals(jsonNodeThat);
+        RawJsonValue thisNode = KeycloakJsonMapperFactory.mapper().convertValue(this, RawJsonValue.class);
+        RawJsonValue thatNode = KeycloakJsonMapperFactory.mapper().convertValue(obj, RawJsonValue.class);
+        return thisNode.equals(thatNode);
     }
 
 }

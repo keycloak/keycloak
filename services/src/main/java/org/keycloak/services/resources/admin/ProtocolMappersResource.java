@@ -16,18 +16,27 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.stream.Stream;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -40,24 +49,24 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperRegisterContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperRemoveContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperUpdateContext;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
 /**
  * Base resource for managing users
@@ -127,11 +136,18 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
     @Operation(summary = "Create a mapper")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response createMapper(ProtocolMapperRepresentation rep) {
         managePermission.require();
 
         ProtocolMapperModel model = null;
         try {
+            if (client instanceof ClientModel) {
+                triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
+            }
             model = RepresentationToModel.toModel(rep);
             validateModel(model);
             model = client.addProtocolMapper(model);
@@ -157,11 +173,22 @@ public class ProtocolMappersResource {
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
 
-        ProtocolMapperModel model = null;
-        for (ProtocolMapperRepresentation rep : reps) {
-            model = RepresentationToModel.toModel(rep);
+        if (!reps.isEmpty()) {
+            if (client instanceof ClientModel) {
+                triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
+            }
+        }
+
+        List<ProtocolMapperModel> models = reps.stream()
+                .map(RepresentationToModel::toModel)
+                .toList();
+
+        for (ProtocolMapperModel model : models) {
             validateModel(model);
-            model = client.addProtocolMapper(model);
+        }
+
+        for (ProtocolMapperModel model : models) {
+            client.addProtocolMapper(model);
         }
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(reps).success();
     }
@@ -206,14 +233,17 @@ public class ProtocolMappersResource {
     }
 
     private ProtocolMapperRepresentation toEffectiveProtocolMapperRep(ProtocolMapperModel model) {
+        return ModelToRepresentation.toRepresentation(toEffectiveProtocolMapperModel(model));
+    }
+
+    private ProtocolMapperModel toEffectiveProtocolMapperModel(ProtocolMapperModel model) {
         ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
         if (mapper == null) {
             logger.warnf("Protocol mapper provider '%s' not found. Configured on mapper with ID '%s'", model.getProtocolMapper(), model.getId());
             throw new NotFoundException("Protocol mapper provider not found");
         }
 
-        model = mapper.getEffectiveModel(session, realm, model);
-        return ModelToRepresentation.toRepresentation(model);
+        return mapper.getEffectiveModel(session, realm, model);
     }
 
     /**
@@ -231,13 +261,23 @@ public class ProtocolMappersResource {
     public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, ProtocolMapperRepresentation rep) {
         managePermission.require();
 
-        ProtocolMapperModel model = client.getProtocolMapperById(id);
-        if (model == null) throw new NotFoundException("Model not found");
-        model = RepresentationToModel.toModel(rep);
+        ProtocolMapperModel existing = client.getProtocolMapperById(id);
+        if (existing == null) throw new NotFoundException("Model not found");
+        if (rep.getId() != null && !id.equals(rep.getId())) {
+            throw ErrorResponse.error("Protocol mapper id does not match path id", Response.Status.BAD_REQUEST);
+        }
+        rep.setId(id);
 
-        validateModel(model);
+        ProtocolMapperModel proposed = RepresentationToModel.toModel(rep);
 
-        client.updateProtocolMapper(model);
+        if (client instanceof ClientModel) {
+            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
+        }
+
+        proposed = RepresentationToModel.toModel(rep);
+        validateModel(proposed);
+
+        client.updateProtocolMapper(proposed);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
     }
 
@@ -256,9 +296,22 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        if (client instanceof ClientModel) {
+            triggerClientPolicy(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
+        }
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
+    }
+
+    private void triggerClientPolicy(ClientPolicyContext context) {
+        if (!(client instanceof ClientModel)) return;
+
+        try {
+            session.clientPolicy().triggerOnEvent(context);
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
     }
 
     private void validateModel(ProtocolMapperModel model) {

@@ -19,9 +19,10 @@ package org.keycloak.quarkus.runtime.integration.web;
 
 import java.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

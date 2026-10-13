@@ -16,7 +16,7 @@ describe("User federation using component api", () => {
     await kcAdminClient.auth(credentials);
 
     // create user fed
-    const name = faker.internet.userName();
+    const name = faker.internet.username();
     const component = await kcAdminClient.components.create({
       name,
       parentId: "master",

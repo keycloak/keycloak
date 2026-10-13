@@ -16,11 +16,11 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 

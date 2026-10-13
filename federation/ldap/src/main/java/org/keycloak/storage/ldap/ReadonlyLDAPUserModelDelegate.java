@@ -17,7 +17,6 @@
 
 package org.keycloak.storage.ldap;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -25,6 +24,8 @@ import java.util.stream.Collectors;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ReadOnlyException;
+
+import static org.keycloak.storage.ldap.LDAPStorageProvider.INTERNAL_ATTRIBUTES;
 
 /**
  * Will be good to get rid of this class and use ReadOnlyUserModelDelegate, but it can't be done now due the backwards compatibility.
@@ -69,13 +70,15 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        if (!Objects.equals(getAttributeStream(name).collect(Collectors.toList()), Collections.singletonList(value))) {
-            throw new ReadOnlyException("Federated storage is not writable");
-        }
+        setAttribute(name, value != null ? List.of(value) : null);
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        if (INTERNAL_ATTRIBUTES.contains(name)) {
+            super.setAttribute(name, values);
+            return;
+        }
         if (!Objects.equals(getAttributeStream(name).collect(Collectors.toList()), values)) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -83,6 +86,10 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void removeAttribute(String name) {
+        if (INTERNAL_ATTRIBUTES.contains(name)) {
+            super.removeAttribute(name);
+            return;
+        }
         if (getAttributeStream(name).count() > 0) {
             throw new ReadOnlyException("Federated storage is not writable");
         }

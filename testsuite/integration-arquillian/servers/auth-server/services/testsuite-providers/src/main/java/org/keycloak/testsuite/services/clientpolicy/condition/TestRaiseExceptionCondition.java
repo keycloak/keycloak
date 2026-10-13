@@ -19,11 +19,11 @@ package org.keycloak.testsuite.services.clientpolicy.condition;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProvider;
-import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

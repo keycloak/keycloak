@@ -16,28 +16,30 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.testsuite.util.DroneUtils;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class OAuthGrant extends RequiredActions {
-    @FindBy(css = "input[name=\"accept\"]")
+    @FindBy(css = "button[name=\"accept\"]")
     private WebElement acceptButton;
 
-    @FindBy(css = "input[name=\"cancel\"]")
+    @FindBy(css = "button[name=\"cancel\"]")
     private WebElement cancelButton;
 
     @FindBy(xpath = "//div[@id='kc-oauth']/ul/li/span")
@@ -66,7 +68,7 @@ public class OAuthGrant extends RequiredActions {
 
     public void assertClientScopes(List<String> expectedScopes) {
         List<String> actualScopes = scopesToApprove.stream().map(WebElement::getText).collect(Collectors.toList());
-        assertTrue("Expected and actual Client Scopes to approve don't match",
-                CollectionUtil.collectionEquals(expectedScopes, actualScopes)); // order of scopes doesn't matter
+        assertTrue(CollectionUtil.collectionEquals(expectedScopes, actualScopes),
+                "Expected and actual Client Scopes to approve don't match"); // order of scopes doesn't matter
     }
 }

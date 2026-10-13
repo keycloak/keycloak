@@ -1,13 +1,13 @@
 package org.keycloak.locale;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.util.Arrays;
+import java.util.Locale;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Locale;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DefaultLocaleSelectorProviderTest {
 

@@ -1,0 +1,26 @@
+- name: 'Delete EC2 instances'
+  amazon.aws.ec2_instance:
+    state: absent
+    region: '{{ region }}'
+    filters:
+      "tag:Name": '{{ cluster_name }}*'
+
+- name: 'Delete EC2 security group'
+  amazon.aws.ec2_group:
+    state: absent
+    region: '{{ region }}'
+    name: '{{ cluster_name }}'
+
+- name: 'Delete Key'
+  amazon.aws.ec2_key:
+    state: absent
+    region: '{{ region }}'
+    name: '{{ cluster_name }}'
+
+- name: 'Delete inventory, key, and log'
+  file:
+    state: absent
+    path: '{{ item }}'
+  with_items:
+    - '{{ cluster_name }}_{{ region }}_inventory.yml'
+    - '{{ cluster_name }}_{{ region }}.pem'

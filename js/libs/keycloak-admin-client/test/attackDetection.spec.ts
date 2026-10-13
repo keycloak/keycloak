@@ -15,7 +15,7 @@ describe("Attack Detection", () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
 
-    const username = faker.internet.userName();
+    const username = faker.internet.username();
     currentUser = await kcAdminClient.users.create({
       username,
     });
@@ -31,9 +31,12 @@ describe("Attack Detection", () => {
     });
     expect(attackDetection).to.deep.equal({
       numFailures: 0,
+      numSecondaryAuthFailures: 0,
       disabled: false,
       lastIPFailure: "n/a",
       lastFailure: 0,
+      numTemporaryLockouts: 0,
+      failedLoginNotBefore: 0,
     });
   });
 

@@ -16,14 +16,12 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.storage.client.ClientLookupProvider;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.Provider;
+import org.keycloak.storage.client.ClientLookupProvider;
 
 /**
  * Provider of the client records.
@@ -105,24 +103,36 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     void removeClients(RealmModel realm);
 
     /**
-     * Assign clientScopes to the client. Add as default scopes (if parameter 'defaultScope' is true) 
+     * Assign clientScopes to the client. Add as default scopes (if parameter 'defaultScope' is true)
      * or optional scopes (if parameter 'defaultScope' is false)
-     * 
+     *
      * @param realm Realm.
      * @param client Client.
      * @param clientScopes to be assigned
-     * @param defaultScope if true the scopes are assigned as default, or optional in case of false 
+     * @param defaultScope if true the scopes are assigned as default, or optional in case of false
      */
     void addClientScopes(RealmModel realm, ClientModel client, Set<ClientScopeModel> clientScopes, boolean defaultScope);
 
     /**
-     * Unassign clientScope from the client. 
-     * 
+     * Unassign clientScope from the client.
+     *
      * @param realm Realm.
      * @param client Client.
      * @param clientScope to be unassigned
      */
     void removeClientScope(RealmModel realm, ClientModel client, ClientScopeModel clientScope);
+
+    /**
+     * Add specified client scope to all non bearer-only clients in the realm, which have same protocol as specified client scope.
+     *
+     * Method may be used just for new client scopes, which are not yet assigned to any clients as if specified clientScope is already assigned
+     * to some client, there might be issues related to duplicate entries.
+     *
+     * @param realm Realm
+     * @param clientScope client scope from the specified realm, which would be added to all clients
+     * @param defaultClientScope If true, then it will be added as "default" client scope. If false, then it will be added as "optional" client scope
+     */
+    void addClientScopeToAllClients(RealmModel realm, ClientScopeModel clientScope, boolean defaultClientScope);
 
     /**
      * Returns a map of (rootUrl, {validRedirectUris}) for all enabled clients.
@@ -132,4 +142,5 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
      */
     @Deprecated
     Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm);
+
 }

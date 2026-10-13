@@ -27,7 +27,7 @@
     <artifactId>keycloak-dist-downloads</artifactId>
     <packaging>jar</packaging>
     <name>Keycloak Release Downloads</name>
-    <description/>
+    <description>Keycloak Release Downloads</description>
 
     <build>
         <plugins>

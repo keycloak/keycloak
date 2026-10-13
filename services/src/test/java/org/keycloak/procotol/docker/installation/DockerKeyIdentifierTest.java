@@ -1,15 +1,14 @@
 package org.keycloak.procotol.docker.installation;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.models.utils.Base32;
-import org.keycloak.protocol.docker.DockerKeyIdentifier;
-
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+
+import org.keycloak.protocol.docker.DockerKeyIdentifier;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;

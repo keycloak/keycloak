@@ -2,41 +2,49 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { DirectionType } from "@keycloak/keycloak-admin-client/lib/resources/userStorageProvider";
 import {
+  HelpItem,
+  KeycloakSelect,
+  KeycloakSpinner,
+  SelectVariant,
+  TextControl,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
   DropdownItem,
-  Form,
   FormGroup,
   PageSection,
-  Select,
   SelectOption,
-  SelectVariant,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
-import { useAlerts } from "../../../components/alert/Alerts";
+import { useAdminClient } from "../../../admin-client";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
+import {
+  convertToName,
+  DynamicComponents,
+} from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../../util";
-import { useFetch } from "../../../utils/useFetch";
+import {
+  beerify,
+  convertFormValuesToObject,
+  convertToFormValues,
+} from "../../../util";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
 
 export default function LdapMapperDetails() {
+  const { adminClient } = useAdminClient();
+
   const form = useForm<ComponentRepresentation>();
   const [mapping, setMapping] = useState<ComponentRepresentation>();
   const [components, setComponents] = useState<ComponentTypeRepresentation[]>();
@@ -48,6 +56,7 @@ export default function LdapMapperDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
+  const [mapperTypeFilter, setMapperTypeFilter] = useState("");
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -66,7 +75,7 @@ export default function LdapMapperDetails() {
       return { components };
     },
     ({ components, fetchedMapper }) => {
-      setMapping(fetchedMapper);
+      setMapping(fetchedMapper ?? undefined);
       setComponents(components);
       if (mapperId !== "new" && !fetchedMapper) throw new Error(t("notFound"));
 
@@ -96,7 +105,7 @@ export default function LdapMapperDetails() {
     try {
       if (mapperId === "new") {
         await adminClient.components.create(map);
-        navigate(
+        void navigate(
           toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" }),
         );
       } else {
@@ -148,7 +157,7 @@ export default function LdapMapperDetails() {
           id: mapping!.id!,
         });
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
+        void navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
       } catch (error) {
         addError("mappingDeletedError", error);
       }
@@ -160,12 +169,36 @@ export default function LdapMapperDetails() {
     name: "providerId",
   });
 
+  const config = useWatch({
+    control: form.control,
+    name: "config",
+  });
+
+  const mapper = components?.find((c) => c.id === mapperType);
+
+  const realmRolesValue = config?.[beerify("use.realm.roles.mapping")];
+  const isRealmMapping =
+    realmRolesValue === undefined || realmRolesValue === "true";
+  const visibleProperties =
+    mapperType === "role-ldap-mapper" && isRealmMapping
+      ? (mapper?.properties ?? []).filter((p) => p.name !== "client.id")
+      : (mapper?.properties ?? []);
+
+  const selectItems = () =>
+    (components || [])
+      .filter((c) => c.id.includes(mapperTypeFilter))
+      .map((c) => (
+        <SelectOption key={c.id} value={c.id}>
+          {c.id}
+        </SelectOption>
+      ));
+
   if (!components) {
     return <KeycloakSpinner />;
   }
 
   const isNew = mapperId === "new";
-  const mapper = components.find((c) => c.id === mapperType);
+
   return (
     <>
       <DeleteConfirm />
@@ -193,8 +226,8 @@ export default function LdapMapperDetails() {
                   ? [
                       <DropdownItem
                         key="ldapSync"
-                        onClick={() => {
-                          sync("keycloakToFed");
+                        onClick={async () => {
+                          await sync("keycloakToFed");
                         }}
                       >
                         {t(mapper.metadata.keycloakToFedSyncMessage)}
@@ -205,151 +238,126 @@ export default function LdapMapperDetails() {
         }
       />
       <PageSection variant="light" isFilled>
-        <FormAccess role="manage-realm" isHorizontal>
-          {!isNew && (
-            <FormGroup label={t("id")} fieldId="kc-ldap-mapper-id">
-              <KeycloakTextInput
-                isDisabled
-                id="kc-ldap-mapper-id"
-                data-testid="ldap-mapper-id"
-                {...form.register("id")}
-              />
-            </FormGroup>
-          )}
-          <FormGroup
-            label={t("name")}
-            labelIcon={
-              <HelpItem helpText={t("nameHelp")} fieldLabelId="name" />
-            }
-            fieldId="kc-ldap-mapper-name"
-            isRequired
+        <FormProvider {...form}>
+          <FormAccess
+            role="manage-realm"
+            isHorizontal
+            onSubmit={form.handleSubmit(() => save(form.getValues()))}
           >
-            <KeycloakTextInput
+            {!isNew && <TextControl name="id" label={t("id")} isDisabled />}
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("mapperNameHelp")}
               isDisabled={!isNew}
-              isRequired
-              id="kc-ldap-mapper-name"
-              data-testid="ldap-mapper-name"
-              validated={
-                form.formState.errors.name
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              {...form.register("name", { required: true })}
+              rules={{ required: t("required") }}
             />
-            <KeycloakTextInput
-              hidden
+            <input
+              type="hidden"
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
-              id="kc-ldap-parentId"
               data-testid="ldap-mapper-parentId"
               {...form.register("parentId")}
             />
-            <KeycloakTextInput
-              hidden
+            <input
+              type="hidden"
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
-              id="kc-ldap-provider-type"
               data-testid="ldap-mapper-provider-type"
               {...form.register("providerType")}
             />
-          </FormGroup>
-          {!isNew ? (
-            <FormGroup
-              label={t("mapperType")}
-              labelIcon={
-                <HelpItem
-                  helpText={
-                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
-                  }
-                  fieldLabelId="mapperType"
-                />
-              }
-              fieldId="kc-ldap-mapper-type"
-              isRequired
-            >
-              <KeycloakTextInput
-                isDisabled={!isNew}
-                isRequired
-                id="kc-ldap-mapper-type"
-                data-testid="ldap-mapper-type-fld"
-                {...form.register("providerId")}
-              />
-            </FormGroup>
-          ) : (
-            <FormGroup
-              label={t("mapperType")}
-              labelIcon={
-                <HelpItem
-                  helpText={
-                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
-                  }
-                  fieldLabelId="mapperType"
-                />
-              }
-              fieldId="kc-providerId"
-              isRequired
-            >
-              <Controller
+            {!isNew ? (
+              <TextControl
                 name="providerId"
-                defaultValue=""
-                control={form.control}
-                data-testid="ldap-mapper-type-select"
-                render={({ field }) => (
-                  <Select
-                    toggleId="kc-providerId"
-                    typeAheadAriaLabel={t("mapperType")}
-                    required
-                    onToggle={() =>
-                      setIsMapperDropdownOpen(!isMapperDropdownOpen)
+                label={t("mapperType")}
+                labelIcon={
+                  mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
+                }
+                rules={{ required: t("required") }}
+                isDisabled={!isNew}
+              />
+            ) : (
+              <FormGroup
+                label={t("mapperType")}
+                labelIcon={
+                  <HelpItem
+                    helpText={
+                      mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
                     }
-                    isOpen={isMapperDropdownOpen}
-                    onSelect={(_, value) => {
-                      field.onChange(value as string);
-                      setIsMapperDropdownOpen(false);
-                    }}
-                    selections={field.value}
-                    variant={SelectVariant.typeahead}
-                  >
-                    {components.map((c) => (
-                      <SelectOption key={c.id} value={c.id} />
-                    ))}
-                  </Select>
-                )}
-              ></Controller>
-            </FormGroup>
-          )}
-          <FormProvider {...form}>
-            {!!mapperType && (
-              <DynamicComponents properties={mapper?.properties!} />
+                    fieldLabelId="mapperType"
+                  />
+                }
+                fieldId="kc-providerId"
+                isRequired
+              >
+                <Controller
+                  name="providerId"
+                  defaultValue=""
+                  control={form.control}
+                  data-testid="ldap-mapper-type-select"
+                  render={({ field }) => (
+                    <KeycloakSelect
+                      toggleId="kc-providerId"
+                      typeAheadAriaLabel={t("mapperType")}
+                      onToggle={setIsMapperDropdownOpen}
+                      isOpen={isMapperDropdownOpen}
+                      onFilter={(search) => {
+                        setMapperTypeFilter(search);
+                        return selectItems();
+                      }}
+                      onSelect={(value) => {
+                        setupForm({
+                          providerId: value as string,
+                          ...Object.fromEntries(
+                            components
+                              .find((c) => c.id === value)
+                              ?.properties.filter((m) => m.type === "List")
+                              .map((m) => [
+                                convertToName(m.name!),
+                                m.options?.[0],
+                              ]) || [],
+                          ),
+                        });
+                      }}
+                      selections={field.value}
+                      variant={SelectVariant.typeahead}
+                      aria-label={t("selectMapperType")}
+                    >
+                      {selectItems()}
+                    </KeycloakSelect>
+                  )}
+                ></Controller>
+              </FormGroup>
             )}
-          </FormProvider>
-        </FormAccess>
 
-        <Form onSubmit={form.handleSubmit(() => save(form.getValues()))}>
-          <ActionGroup>
-            <Button
-              isDisabled={!form.formState.isDirty}
-              variant="primary"
-              type="submit"
-              data-testid="ldap-mapper-save"
-            >
-              {t("save")}
-            </Button>
-            <Button
-              variant="link"
-              onClick={() =>
-                isNew
-                  ? navigate(-1)
-                  : navigate(
-                      `/${realm}/user-federation/ldap/${
-                        mapping!.parentId
-                      }/mappers`,
-                    )
-              }
-              data-testid="ldap-mapper-cancel"
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </Form>
+            {!!mapperType && (
+              <DynamicComponents properties={visibleProperties} />
+            )}
+            <ActionGroup>
+              <Button
+                isDisabled={!form.formState.isDirty}
+                variant="primary"
+                type="submit"
+                data-testid="ldap-mapper-save"
+              >
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                onClick={() =>
+                  isNew
+                    ? void navigate(-1)
+                    : void navigate(
+                        `/${realm}/user-federation/ldap/${
+                          mapping!.parentId
+                        }/mappers`,
+                      )
+                }
+                data-testid="ldap-mapper-cancel"
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

@@ -16,6 +16,14 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
@@ -25,7 +33,9 @@ import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
+import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -35,22 +45,11 @@ import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
-import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Base Class for the Stax writers for SAML
@@ -162,15 +161,14 @@ public class BaseWriter {
         if (otherAttribs != null) {
             List<String> nameSpacesDealt = new ArrayList<>();
 
-            Iterator<QName> keySet = otherAttribs.keySet().iterator();
-            while (keySet != null && keySet.hasNext()) {
-                QName qname = keySet.next();
+            for (var entry : otherAttribs.entrySet()) {
+                QName qname = entry.getKey();
                 String ns = qname.getNamespaceURI();
                 if (!nameSpacesDealt.contains(ns)) {
                     StaxUtil.writeNameSpace(writer, qname.getPrefix(), ns);
                     nameSpacesDealt.add(ns);
                 }
-                String attribValue = otherAttribs.get(qname);
+                String attribValue = entry.getValue();
                 StaxUtil.writeAttribute(writer, qname, attribValue);
             }
         }
@@ -230,11 +228,11 @@ public class BaseWriter {
 
         StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
         StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
-        StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
 
         if (attributeValue == null) {
             StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
         } else {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
             StaxUtil.writeCharacters(writer, attributeValue.toString());
         }
 

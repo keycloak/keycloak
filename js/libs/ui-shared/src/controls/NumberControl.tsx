@@ -11,7 +11,28 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
+
+import { getRuleValue } from "../utils/getRuleValue";
 import { FormLabel } from "./FormLabel";
+
+/**
+ * The form holds whatever the representation carries, and a config or attribute
+ * map carries its numbers as strings. That breaks both steppers: PatternFly
+ * substitutes 0 for a value that is not a number when deciding whether they are
+ * in range, leaving minus permanently disabled against a `min` of 0, and
+ * `value + 1` on a string appends rather than increments.
+ *
+ * Anything that is not a numeric string is handed on untouched, so an empty or
+ * unparseable field still renders the way it did. The prop type does not cover
+ * a stray string, but one could reach the input before this conversion too.
+ */
+const toNumber = (value: NumberInputProps["value"] | string) => {
+  const converted =
+    typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+  return Number.isNaN(converted)
+    ? (value as NumberInputProps["value"])
+    : converted;
+};
 
 export type NumberControlOption = {
   key: string;
@@ -21,7 +42,7 @@ export type NumberControlOption = {
 export type NumberControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = Omit<NumberInputProps, "name"> &
+> = Omit<NumberInputProps, "name" | "isRequired" | "required"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
@@ -43,6 +64,7 @@ export const NumberControl = <
     control,
     formState: { errors },
   } = useFormContext();
+
   return (
     <FormLabel
       name={name}
@@ -57,11 +79,13 @@ export const NumberControl = <
         control={control}
         render={({ field }) => {
           const required = !!controller.rules?.required;
-          const min = controller.rules?.min;
-          const value =
-            field.value === 0 ? controller.defaultValue : field.value;
+          const min = getRuleValue(controller.rules?.min);
+          const value = toNumber(field.value ?? controller.defaultValue);
           const setValue = (newValue: number) =>
-            field.onChange(min ? Math.max(newValue, Number(min)) : newValue);
+            field.onChange(
+              min !== undefined ? Math.max(newValue, Number(min)) : newValue,
+            );
+          const step = (by: number) => setValue(Number(value) + by);
 
           return (
             <NumberInput
@@ -74,8 +98,8 @@ export const NumberControl = <
               required={required}
               min={Number(min)}
               max={Number(controller.rules?.max)}
-              onPlus={() => setValue(value + 1)}
-              onMinus={() => setValue(value - 1)}
+              onPlus={() => step(1)}
+              onMinus={() => step(-1)}
               onChange={(event) => {
                 const newValue = Number(event.currentTarget.value);
                 setValue(!isNaN(newValue) ? newValue : controller.defaultValue);

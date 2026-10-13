@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.utils.EncryptionConstants;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import java.security.PublicKey;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
@@ -38,21 +38,23 @@ import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
+
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.utils.EncryptionConstants;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
-import jakarta.ws.rs.core.Response;
-import java.security.PublicKey;
-import java.util.concurrent.atomic.AtomicReference;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.broker.saml.SAMLEndpoint.ENCRYPTION_DEPRECATED_MODE_PROPERTY;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
-import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBrokerTest {
 
@@ -84,24 +86,6 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
             KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
             assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
             sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, false);
-        }
-
-        @Test
-        public void testEncryptedElementIsReadableInDeprecatedMode() throws ConfigurationException, ParsingException, ProcessingException {
-            try {
-                // Set flag that enabled deprecated mode for encryption
-                testingClient.server().run(session -> {
-                    System.setProperty(ENCRYPTION_DEPRECATED_MODE_PROPERTY, "true");
-                });
-                KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
-                assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
-                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, true);
-            } finally {
-                // Clear flag
-                testingClient.server().run(session -> {
-                    System.clearProperty(ENCRYPTION_DEPRECATED_MODE_PROPERTY);
-                });
-            }
         }
 
         @Test
@@ -170,5 +154,3 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
 
         }
     }
-
-

@@ -23,6 +23,7 @@ describe("Client Scopes", () => {
     currentClientScopeName = "best-of-the-bests-scope";
     await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
     currentClientScope = (await kcAdminClient.clientScopes.findOneByName({
       name: currentClientScopeName,
@@ -35,7 +36,7 @@ describe("Client Scopes", () => {
       await kcAdminClient.clientScopes.delDefaultClientScope({
         id: currentClientScope.id!,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
 
@@ -44,7 +45,7 @@ describe("Client Scopes", () => {
       await kcAdminClient.clientScopes.delDefaultOptionalClientScope({
         id: currentClientScope.id!,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
 
@@ -53,7 +54,7 @@ describe("Client Scopes", () => {
       await kcAdminClient.clientScopes.delByName({
         name: currentClientScopeName,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
   });
@@ -69,12 +70,13 @@ describe("Client Scopes", () => {
       await kcAdminClient.clientScopes.delByName({
         name: currentClientScopeName,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
 
     await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
 
     const scope = (await kcAdminClient.clientScopes.findOneByName({
@@ -90,12 +92,13 @@ describe("Client Scopes", () => {
       await kcAdminClient.clientScopes.delByName({
         name: currentClientScopeName,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
 
     const { id } = await kcAdminClient.clientScopes.create({
       name: currentClientScopeName,
+      protocol: "openid-connect",
     });
 
     const scope = (await kcAdminClient.clientScopes.findOne({
@@ -273,7 +276,7 @@ describe("Client Scopes", () => {
           id: id!,
           mapperId: mapperId!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -581,7 +584,7 @@ describe("Client Scopes", () => {
           await kcAdminClient.roles.delByName({
             name: dummyRoleName,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       });

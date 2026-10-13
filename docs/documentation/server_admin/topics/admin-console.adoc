@@ -1,4 +1,5 @@
 
+[#_configuring-realms]
 == Configuring realms
 
 Once you have an administrative account for the Admin Console, you can configure realms. A realm is a space where you manage objects, including users, applications, roles, and groups.  A user belongs to and logs into a realm.   One {project_name} deployment can define, store, and manage as many realms as there is space for in the database.

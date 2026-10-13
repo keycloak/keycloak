@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.undertow.Undertow;
 import io.undertow.io.Sender;
@@ -50,17 +52,21 @@ public class CRLRule extends ExternalResource {
     public static final String CRL_RESPONDER_ORIGIN = "http://" + CRL_RESPONDER_HOST + ":" + CRL_RESPONDER_PORT;
 
     private Undertow crlResponder;
+    private Map<String, CRLHandler> handlers;
+    private PathHandler pathHandler;
 
     @Override
     protected void before() throws Throwable {
         log.info("Starting CRL Responder");
 
-        PathHandler pathHandler = new PathHandler();
-        pathHandler.addExactPath(AbstractX509AuthenticationTest.EMPTY_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.EMPTY_CRL_PATH));
-        pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH));
-        pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH));
-        pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH));
-        pathHandler.addExactPath(AbstractX509AuthenticationTest.INVALID_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INVALID_CRL_PATH));
+        handlers = new HashMap<>();
+        pathHandler = new PathHandler();
+        addHandler(AbstractX509AuthenticationTest.EMPTY_CRL_PATH, AbstractX509AuthenticationTest.EMPTY_CRL_PATH);
+        addHandler(AbstractX509AuthenticationTest.EMPTY_EXPIRED_CRL_PATH, AbstractX509AuthenticationTest.EMPTY_EXPIRED_CRL_PATH);
+        addHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH, AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH);
+        addHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH, AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH);
+        addHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH, AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH);
+        addHandler(AbstractX509AuthenticationTest.INVALID_CRL_PATH, AbstractX509AuthenticationTest.INVALID_CRL_PATH);
 
         crlResponder = Undertow.builder().addHttpListener(CRL_RESPONDER_PORT, CRL_RESPONDER_HOST)
                 .setHandler(
@@ -76,15 +82,50 @@ public class CRLRule extends ExternalResource {
         crlResponder.stop();
     }
 
+    public void addHandler(String path, String crlFileName) {
+        CRLHandler handler = new CRLHandler(crlFileName);
+        handlers.put(path, handler);
+        pathHandler.addExactPath(path, handler);
+    }
+
+    public void removeHandler(String path) {
+        handlers.remove(path);
+        pathHandler.removeExactPath(path);
+    }
+
+    public void setCrlForHandler(String path, String crlFileName) {
+        handlers.get(path).SetFileName(crlFileName);
+    }
+
+    public int getCounter(String path) {
+        return handlers.get(path).getCounter();
+    }
+
+    public void resetCounter(String path) {
+        handlers.get(path).resetCounter();
+    }
 
     private class CRLHandler implements HttpHandler {
 
         private String crlFileName;
+        private int counter;
 
         public CRLHandler(String crlFileName) {
             this.crlFileName = crlFileName;
+            counter = 0;
         }
 
+        public void SetFileName(String crlFileName) {
+            this.crlFileName = crlFileName;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
+
+        public void resetCounter() {
+            counter = 0;
+        }
 
         @Override
         public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -93,6 +134,7 @@ public class CRLRule extends ExternalResource {
                 return;
             }
 
+            counter++;
             String fullFile = AbstractX509AuthenticationTest.getAuthServerHome() + File.separator + crlFileName;
             InputStream is = new FileInputStream(new File(fullFile));
 

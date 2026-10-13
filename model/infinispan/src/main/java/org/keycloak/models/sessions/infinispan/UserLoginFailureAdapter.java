@@ -81,6 +81,25 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     }
 
     @Override
+    public int getNumTemporaryLockouts() {
+        return entity.getNumTemporaryLockouts();
+    }
+
+    @Override
+    public void incrementTemporaryLockouts() {
+        LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity entity) {
+                entity.setNumTemporaryLockouts(entity.getNumTemporaryLockouts() + 1);
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
     public void clearFailures() {
         LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
 
@@ -141,4 +160,38 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
         return key.toString();
     }
 
+    @Override
+    public int getNumSecondaryAuthFailures() {
+        return entity.getNumSecondaryAuthFailures();
+    }
+
+    @Override
+    public void incrementSecondaryAuthFailures() {
+        LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity entity) {
+                entity.setNumSecondaryAuthFailures(entity.getNumSecondaryAuthFailures() + 1);
+            }
+
+        };
+
+        update(task);
+
+    }
+
+    @Override
+    public void clearPrimaryAndSecondaryAuthFailures() {
+        LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity entity) {
+                entity.clearPrimaryAndSecondaryAuthFailures();
+            }
+
+        };
+
+        update(task);
+
+    }
 }

@@ -1,20 +1,19 @@
 package org.keycloak.models.credential;
 
+import java.io.IOException;
+import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodeRepresentation;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesSecretData;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.List;
 
 public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
 
@@ -64,10 +63,10 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
         try {
             List<RecoveryAuthnCodeRepresentation> recoveryCodes = IntStream.range(0, originalGeneratedCodes.size())
                     .mapToObj(i -> new RecoveryAuthnCodeRepresentation(i + 1,
-                            RecoveryAuthnCodesUtils.hashRawCode(originalGeneratedCodes.get(i))))
+                            Base64.getEncoder().encodeToString(RecoveryAuthnCodesUtils.hashRawCode(originalGeneratedCodes.get(i)))))
                     .collect(Collectors.toList());
             secretData = new RecoveryAuthnCodesSecretData(recoveryCodes);
-            credentialData = new RecoveryAuthnCodesCredentialData(RecoveryAuthnCodesUtils.NUM_HASH_ITERATIONS,
+            credentialData = new RecoveryAuthnCodesCredentialData(null,
                     RecoveryAuthnCodesUtils.NOM_ALGORITHM_TO_HASH, recoveryCodes.size(), recoveryCodes.size());
             model = new RecoveryAuthnCodesCredentialModel(credentialData, secretData);
             model.setCredentialData(JsonSerialization.writeValueAsString(credentialData));

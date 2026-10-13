@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.model.transaction;
 
-import org.junit.Test;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -25,6 +24,8 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.util.TransactionController;
+
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,6 +38,7 @@ public class StorageTransactionTest extends KeycloakModelTest {
     @Override
     protected void createEnvironment(KeycloakSession s) {
         RealmModel r = s.realms().createRealm("1");
+        s.getContext().setRealm(r);
         r.setDefaultRole(s.roles().addRealmRole(r, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + r.getName()));
         r.setAttribute("k1", "v1");
         r.setSsoSessionIdleTimeout(1000);
@@ -47,6 +49,8 @@ public class StorageTransactionTest extends KeycloakModelTest {
 
     @Override
     protected void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 

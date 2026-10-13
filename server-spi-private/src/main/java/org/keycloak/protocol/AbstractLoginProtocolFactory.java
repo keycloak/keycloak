@@ -17,19 +17,21 @@
 
 package org.keycloak.protocol;
 
-import org.keycloak.Config;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
-
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,7 +59,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
 
     @Override
-    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+    public void createDefaultClientScopes(KeycloakSession session, RealmModel newRealm, boolean addScopesToExistingClients) {
         createDefaultClientScopesImpl(newRealm);
 
         // Create default client scopes for realm built-in clients too
@@ -96,7 +98,12 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
             newClients.forEach(addNonDefault);
     }
 
-    protected abstract void addDefaults(ClientModel realm);
+    protected abstract void addDefaults(ClientModel clientModel);
+
+    @Override
+    public void addClientScopeDefaults(ClientScopeRepresentation clientModel) {
+        // do nothing
+    }
 
     @Override
     public void close() {

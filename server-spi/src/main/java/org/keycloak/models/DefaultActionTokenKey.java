@@ -16,14 +16,16 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.util.Base64;
-import org.keycloak.representations.JsonWebToken;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
@@ -46,7 +48,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
         this.subject = userId;
         this.type = actionId;
         this.exp = Long.valueOf(absoluteExpirationInSecs);
-        this.actionVerificationNonce = actionVerificationNonce == null ? UUID.randomUUID() : actionVerificationNonce;
+        this.actionVerificationNonce = actionVerificationNonce == null ? SecretGenerator.getInstance().generateSecureUUID() : actionVerificationNonce;
     }
 
     @JsonIgnore
@@ -79,8 +81,8 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
 
         String userId;
         try {
-            userId = new String(Base64.decode(parsed[0]), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
+            userId = new String(Base64.getMimeDecoder().decode(parsed[0]), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
             userId = parsed[0];
         }
         return new DefaultActionTokenKey(userId, parsed[3], Integer.parseInt(parsed[1]), UUID.fromString(parsed[2]));

@@ -24,28 +24,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.keys.PublicKeyLoader;
+
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.crypto.PublicKeysWrapper;
-import org.keycloak.keys.PublicKeyLoader;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanKeyStorageProviderTest {
 
-    private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
     Cache<String, PublicKeysEntry> keys = getKeysCache();
     Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
@@ -157,14 +157,13 @@ public class InfinispanKeyStorageProviderTest {
     protected Cache<String, PublicKeysEntry> getKeysCache() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
         gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
-        final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
+        DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.memory()
-                .evictionStrategy(EvictionStrategy.REMOVE)
-                .evictionType(EvictionType.COUNT)
-                .size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
-        cb.jmxStatistics().enabled(true);
+                .whenFull(EvictionStrategy.REMOVE)
+                .maxCount(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+        cb.statistics().enabled(true);
         Configuration cfg = cb.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, cfg);
 

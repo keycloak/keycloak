@@ -16,10 +16,10 @@
  */
 package org.keycloak.credential;
 
+import java.util.stream.Stream;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,4 +39,24 @@ public interface CredentialInputUpdater {
      * @return a non-null {@link Stream} of credential types.
      */
     Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user);
+
+    /**
+     * Returns a stream of {@link CredentialModel} instances managed by this provider for the given {@code user}.
+     *
+     * @param realm the realm
+     * @param user the user
+     * @return the credentials managed by this provider for the given {@code user}
+     */
+    default Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
+        return Stream.empty();
+    }
+
+    /**
+     * Updates a credential of the user with the given input, reporting the credential written to the Keycloak
+     * credential store. The default implementation delegates to
+     * {@link #updateCredential(RealmModel, UserModel, CredentialInput)} and reports no credential.
+     */
+    default CredentialUpdate updateCredentialAndGet(RealmModel realm, UserModel user, CredentialInput input) {
+        return new CredentialUpdate(updateCredential(realm, user, input), null);
+    }
 }

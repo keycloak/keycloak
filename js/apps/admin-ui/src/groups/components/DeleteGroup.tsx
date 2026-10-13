@@ -1,9 +1,8 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { ButtonVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 
 type DeleteConfirmProps = {
@@ -19,13 +18,15 @@ export const DeleteGroup = ({
   toggleDialog,
   refresh,
 }: DeleteConfirmProps) => {
+  const groups = useGroupResource();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const multiDelete = async () => {
     try {
       for (const group of selectedRows) {
-        await adminClient.groups.del({
+        await groups.del({
           id: group.id!,
         });
       }
