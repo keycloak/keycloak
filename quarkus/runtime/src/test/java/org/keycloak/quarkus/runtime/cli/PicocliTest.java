@@ -2151,6 +2151,36 @@ Environment.setHomeDir(tmp);
     }
     
     @Test
+    public void failDbUrlCombinedWithDbUrlProperties() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-url=jdbc:h2:mem:test", "--db-url-properties=;AUTO_SERVER=TRUE");
+        assertError(nonRunningPicocli, "'db-url' can't be combined with 'db-url-properties'");
+    }
+
+    @Test
+    public void failDbUrlCombinedWithDbUrlHostAndPort() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db=postgres", "--db-url=jdbc:postgresql://localhost/keycloak", "--db-url-host=db", "--db-url-port=5432");
+        assertError(nonRunningPicocli, "'db-url' can't be combined with 'db-url-host', 'db-url-port'");
+    }
+
+    @Test
+    public void failNamedDatasourceDbUrlCombinedWithDbUrlProperties() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-kind-user-store=postgres", "--db-url-full-user-store=jdbc:postgresql://localhost/keycloak", "--db-url-properties-user-store=?foo=bar");
+        assertError(nonRunningPicocli, "'db-url-full-user-store' can't be combined with 'db-url-properties-user-store'");
+    }
+
+    @Test
+    public void namedDatasourceDbUrlPropertiesAllowedWithoutDbUrl() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-kind-user-store=postgres", "--db-url-host-user-store=myhost", "--db-url-properties-user-store=?foo=bar");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void dbUrlPropertiesAllowedWithoutDbUrl() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
     public void commandSuggestions() {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
             @Override

@@ -82,18 +82,18 @@ Database:
                        selected database vendor. For instance, if using 'postgres', the default
                        JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
 --db-url-database <dbname>
-                     Sets the database name of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the database name of the default JDBC URL of the chosen vendor. Can't be
+                       combined with the `db-url` option.
 --db-url-host <hostname>
-                     Sets the hostname of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
---db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
-                       option is set, this option is ignored.
+                     Sets the hostname of the default JDBC URL of the chosen vendor. Can't be
+                       combined with the `db-url` option.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. Can't be combined
+                       with the `db-url` option.
 --db-url-properties <properties>
                      Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
                        set the properties accordingly to the format expected by the database
                        vendor, as well as appending the right character at the beginning of this
-                       property value. If the `db-url` option is set, this option is ignored.
+                       property value. Can't be combined with the `db-url` option.
 --db-username <username>
                      The username of the database user.
 
@@ -165,7 +165,7 @@ Database - additional datasources:
                        driver's default.
 --db-url-database-<datasource> <dbname>
                      Used for named <datasource>. Sets the database name of the default JDBC URL of
-                       the chosen vendor. If the `db-url` option is set, this option is ignored.
+                       the chosen vendor. Can't be combined with the `db-url` option.
 --db-url-full-<datasource> <jdbc-url>
                      Used for named <datasource>. The full database JDBC URL. If not provided, a
                        default URL is set based on the selected database vendor. For instance, if
@@ -173,16 +173,16 @@ Database - additional datasources:
                        //localhost/keycloak'.
 --db-url-host-<datasource> <hostname>
                      Used for named <datasource>. Sets the hostname of the default JDBC URL of the
-                       chosen vendor. If the `db-url` option is set, this option is ignored.
+                       chosen vendor. Can't be combined with the `db-url` option.
 --db-url-port-<datasource> <port>
                      Used for named <datasource>. Sets the port of the default JDBC URL of the
-                       chosen vendor. If the `db-url` option is set, this option is ignored.
+                       chosen vendor. Can't be combined with the `db-url` option.
 --db-url-properties-<datasource> <properties>
                      Used for named <datasource>. Sets the properties of the default JDBC URL of
                        the chosen vendor. Make sure to set the properties accordingly to the format
                        expected by the database vendor, as well as appending the right character at
-                       the beginning of this property value. If the `db-url` option is set, this
-                       option is ignored.
+                       the beginning of this property value. Can't be combined with the `db-url`
+                       option.
 --db-username-<datasource> <username>
                      Used for named <datasource>. The username of the database user.
 

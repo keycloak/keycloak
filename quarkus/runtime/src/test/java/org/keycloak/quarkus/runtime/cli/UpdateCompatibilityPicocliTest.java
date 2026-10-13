@@ -36,6 +36,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -294,7 +295,7 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
         assertEquals(CompatibilityResult.ExitCode.RECREATE.value(), result.exitCode);
 
         // Assert that db-url-* options are not written to metadata when db-url is present
-        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloakdb", "--db-url-host", "localhost", "--db-url-port", "9999", "--db-url-database", "keycloak");
+        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloakdb");
         assertThat(result.getOutString(), containsString("Metadata:"));
         assertEquals(0, result.exitCode);
 
@@ -309,6 +310,11 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
 
         info.remove(FeatureCompatibilityMetadataProvider.ID);
         assertEquals(expectedMeta, info);
+
+        // Assert that combining db-url with db-url-* options is rejected
+        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloakdb", "--db-url-host", "localhost");
+        assertThat(result.getErrString(), containsString("'db-url' can't be combined with 'db-url-host'"));
+        assertNotEquals(0, result.exitCode);
 
         // Assert that changes to the db-url does not trigger a recreate
         result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--db-url", "jdbc:h2:mem:keycloak");
