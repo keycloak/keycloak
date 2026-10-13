@@ -22,6 +22,6 @@ public class ProxyOptions {
 
     public static final Option<List<String>> PROXY_TRUSTED_ADDRESSES = OptionBuilder.listOptionBuilder("proxy-trusted-addresses", String.class)
             .category(OptionCategory.PROXY)
-            .description("A comma separated list of trusted proxy addresses. If set, then proxy headers from other addresses will be ignored. By default all addresses are trusted. A trusted proxy address is specified as an IP address (IPv4 or IPv6) or Classless Inter-Domain Routing (CIDR) notation.")
+            .description("A comma separated list of trusted proxy addresses. If set, then proxy headers from other addresses will be ignored. By default all addresses are trusted. A trusted proxy address is specified as an IP address (IPv4 or IPv6), hostname, or Classless Inter-Domain Routing (CIDR) notation. IPv6 addresses should use square brackets (e.g. [::1]). An optional port can be specified (e.g. 127.0.0.1:8084). Using hostnames is not recommended as it requires a DNS lookup on every request.")
             .build();
 }
