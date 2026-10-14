@@ -18,6 +18,7 @@ package org.keycloak.models.utils;
 
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -31,6 +32,8 @@ import org.keycloak.utils.StringUtil;
  * @author rmartinc
  */
 public class SessionExpirationUtils {
+
+    private static final Logger logger = Logger.getLogger(SessionExpirationUtils.class);
 
     /**
      * Session note key for storing the upstream IdP's session expiry timestamp (in seconds).
@@ -248,6 +251,8 @@ public class SessionExpirationUtils {
      * @return the effective lifespan, capped by upstream expiry if applicable
      */
     public static long applyUpstreamSessionExpiry(long lifespan, UserSessionModel userSession, boolean offline) {
+        // Offline sessions represent long-lived grants (e.g. offline_access) that are designed to outlive
+        // the SSO session and are governed by their own lifespan settings, so skip the upstream cap.
         if (userSession == null || offline) {
             return lifespan;
         }
@@ -258,7 +263,9 @@ public class SessionExpirationUtils {
                 if (lifespan == -1L || upstreamExpiryMillis < lifespan) {
                     return upstreamExpiryMillis;
                 }
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                logger.warnf(e, "Invalid value for session note %s in session %s",
+                        FEDERATED_SESSION_NOT_ON_OR_AFTER, userSession.getId());
             }
         }
         return lifespan;

@@ -141,11 +141,6 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
  * @version $Revision: 1 $
  */
 public class AuthenticationManager {
-    /**
-     * @deprecated Use {@link SessionExpirationUtils#FEDERATED_SESSION_NOT_ON_OR_AFTER} instead.
-     */
-    @Deprecated
-    public static final String FEDERATED_SESSION_NOT_ON_OR_AFTER = SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER;
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";

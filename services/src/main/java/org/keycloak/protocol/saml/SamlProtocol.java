@@ -497,7 +497,7 @@ public class SamlProtocol implements LoginProtocol {
         String nameIdFormat = getNameIdFormat(samlClient, authSession);
 
         int assertionLifespan = samlClient.getAssertionLifespan();
-        int sessionExpiration = realm.getSsoSessionMaxLifespan();
+        int sessionExpiration = SessionExpirationUtils.getSsoSessionMaxLifespan(realm);
         String upstreamExpiry = userSession.getNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER);
         if (upstreamExpiry != null && !userSession.isOffline()) {
             try {
@@ -510,7 +510,9 @@ public class SamlProtocol implements LoginProtocol {
                 if (remainingSeconds < sessionExpiration) {
                     sessionExpiration = remainingSeconds <= Integer.MAX_VALUE ? (int) remainingSeconds : Integer.MAX_VALUE;
                 }
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                logger.warnf(e, "Invalid value for session note %s in session %s",
+                        SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER, userSession.getId());
             }
         }
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
