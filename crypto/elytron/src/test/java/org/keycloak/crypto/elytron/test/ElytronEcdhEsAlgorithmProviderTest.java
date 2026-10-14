@@ -126,12 +126,9 @@ public class ElytronEcdhEsAlgorithmProviderTest {
                 .ephemeralPublicKey(jwk)
                 .build();
         PrivateKey decryptionKey = getPrivateKey("P-256", "VEmDZpDXXK8p8N0Cndsxs924q6nS1RXFASRl6BfUqdw");
-        try {
-            new ElytronEcdhEsAlgorithmProvider().decodeCek(new byte[0], decryptionKey, header, null);
-            Assert.fail("Expected IllegalArgumentException for invalid EPK point");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains(expectedMessage));
-        }
+        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class,
+                () -> new ElytronEcdhEsAlgorithmProvider().decodeCek(new byte[0], decryptionKey, header, null));
+        Assert.assertTrue(e.getMessage().contains(expectedMessage));
     }
 
     private String encodeCoordinate(BigInteger value) {
