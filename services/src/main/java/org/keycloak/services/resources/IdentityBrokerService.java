@@ -1161,17 +1161,22 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return false;
         }
 
+        String expectedNotePrefix = authSession.getParentSession().getId() + authSession.getClient().getClientId();
         boolean linkingValid;
+        String resolvedAlias;
         if (checkProviderAlias) {
-            String expectedNote = authSession.getParentSession().getId() + authSession.getClient().getClientId() + providerAlias;
-            linkingValid = expectedNote.equals(noteFromSession);
+            linkingValid = (expectedNotePrefix + providerAlias).equals(noteFromSession);
+            resolvedAlias = providerAlias;
         } else {
-            String expectedNotePrefix = authSession.getParentSession().getId() + authSession.getClient().getClientId();
             linkingValid = noteFromSession.startsWith(expectedNotePrefix);
+            resolvedAlias = noteFromSession.substring(expectedNotePrefix.length());
         }
 
         if (linkingValid) {
             authSession.removeAuthNote(LINKING_IDENTITY_PROVIDER);
+            if (session.identityProviders().getByAlias(resolvedAlias) != null) {
+                this.event.detail(Details.IDENTITY_PROVIDER, resolvedAlias);
+            }
             return true;
         } else {
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.BROKER_LINKING_SESSION_EXPIRED);
