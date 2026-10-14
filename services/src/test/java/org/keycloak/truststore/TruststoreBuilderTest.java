@@ -19,6 +19,8 @@ package org.keycloak.truststore;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -170,6 +172,19 @@ public class TruststoreBuilderTest {
 
         assertThrows(RuntimeException.class, () -> TruststoreBuilder
                 .createMergedTruststore(new String[] { new File(url.getPath()).getAbsolutePath() }, false));
+    }
+
+    @Test
+    public void testFailsWithMalformedPemInDirectory() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        File directory = temporaryFolder.newFolder();
+        File bundle = new File(directory, "bundle.pem");
+        Files.copy(new File(url.toURI()).toPath(), bundle.toPath());
+        Files.writeString(bundle.toPath(), "\n-----BEGIN CERTIFICATE-----\nnot-base64\n-----END CERTIFICATE-----\n",
+                StandardOpenOption.APPEND);
+
+        assertThrows(RuntimeException.class, () -> TruststoreBuilder
+                .createMergedTruststore(new String[] { directory.getAbsolutePath() }, false));
     }
 
     @Test
