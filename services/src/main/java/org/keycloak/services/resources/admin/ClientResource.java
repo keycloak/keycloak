@@ -70,6 +70,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -296,6 +297,28 @@ public class ClientResource {
         }
     }
 
+    /**
+     * Revoke all issued verifiable credentials, which were issued by this client (wallet), for all users
+     */
+    @Path("vc/issued-credentials")
+    @DELETE
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Revoke all issued verifiable credentials of this client (wallet) for all users")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public void revokeIssuedVerifiableCredentials() {
+        auth.clients().requireManage(client);
+        OID4VCUtil.checkOid4VCIEnabled(realm);
+
+        session.users().removeIssuedVerifiableCredentialsByClient(client.getId());
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+    }
 
     /**
      * Generate a new secret for the client

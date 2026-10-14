@@ -1218,6 +1218,13 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public int removeIssuedVerifiableCredentialsByClient(String clientId) {
+        return em.createNamedQuery("deleteFederatedIssuedVcsByClient")
+                .setParameter("clientId", clientId)
+                .executeUpdate();
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         long currentTime = Time.currentTimeMillis();
         int deletedCount = em.createNamedQuery("deleteExpiredFederatedIssuedVcs")
