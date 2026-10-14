@@ -1083,6 +1083,18 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  /**
+   * Revoke all issued verifiable credentials issued through this client (wallet).
+   */
+  public revokeIssuedVerifiableCredentials = this.makeRequest<
+    { id: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{id}/vc/issued-credentials",
+    urlParamKeys: ["id"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/clients",

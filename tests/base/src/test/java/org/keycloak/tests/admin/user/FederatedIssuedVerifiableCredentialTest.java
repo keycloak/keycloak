@@ -277,6 +277,40 @@ public class FederatedIssuedVerifiableCredentialTest extends AbstractUserTest {
         });
     }
 
+    @Test
+    @DatabaseTest
+    public void testRemoveIssuedCredentialsByClientForFederatedUser() {
+        String federatedUserId = createFederatedUser("fed-user-remove-by-client");
+        String clientId = createTestClient("wallet-to-revoke");
+        String otherClientId = createTestClient("wallet-to-keep");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel addedVc = session.users().addVerifiableCredential(federatedUserId, new UserVerifiableCredentialModel("vc-001", scopeId));
+
+            IssuedVerifiableCredentialModel vc1 = new IssuedVerifiableCredentialModel(federatedUserId, addedVc.getId(), clientId);
+            vc1.setRevision("rev-001");
+            session.users().addIssuedVerifiableCredential(vc1);
+
+            IssuedVerifiableCredentialModel vc2 = new IssuedVerifiableCredentialModel(federatedUserId, addedVc.getId(), clientId);
+            vc2.setRevision("rev-002");
+            session.users().addIssuedVerifiableCredential(vc2);
+
+            IssuedVerifiableCredentialModel otherVc = new IssuedVerifiableCredentialModel(federatedUserId, addedVc.getId(), otherClientId);
+            otherVc.setRevision("rev-003");
+            session.users().addIssuedVerifiableCredential(otherVc);
+        });
+
+        int removed = runOnServer.fetch(session -> session.users().removeIssuedVerifiableCredentialsByClient(clientId), Integer.class);
+        assertEquals(2, removed);
+
+        runOnServer.run(session -> {
+            List<IssuedVerifiableCredentialModel> remaining = session.users().getIssuedVerifiableCredentialsStreamByUser(federatedUserId).toList();
+            assertEquals(1, remaining.size());
+            assertEquals(otherClientId, remaining.get(0).getClientId());
+        });
+    }
+
     private String createTestClient(String clientName) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientName);
