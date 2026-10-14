@@ -88,6 +88,12 @@ public class UserAttributeWorkflowConditionProviderTest {
     }
 
     @Test
+    public void rejectsTheSameKeyGivenTwice() {
+        // Previously resolved to the last value, Properties keeping one entry per key
+        assertThat(rejectionKeyOf("plan=gold\nplan=silver"), is("workflowConditionAttributeInvalid"));
+    }
+
+    @Test
     public void toleratesATrailingNewline() {
         assertParsesTo("plan=gold\n", "plan", "gold");
     }

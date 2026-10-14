@@ -155,7 +155,7 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
      * @throws WorkflowInvalidStateException if the string does not parse to exactly one pair.
      */
     public static String[] parseKeyValuePair(String keyValuePair) {
-        Properties props = new Properties();
+        EntryCountingProperties props = new EntryCountingProperties();
         try {
             props.load(new StringReader(keyValuePair));
         } catch (java.io.IOException e) {
@@ -165,14 +165,26 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
         // Input parsing to no entry, because it is empty or its key reads as a '#' or '!'
         // comment, would reach the iterator below and raise NoSuchElementException instead of
         // the exception above. Input parsing to several, from multiple lines, would resolve to
-        // an arbitrary one because Properties is a Hashtable. Both leave the condition
-        // matching a resource set that was never configured.
-        if (props.size() != 1) {
+        // an arbitrary one because Properties is a Hashtable, or to the last value when a key
+        // repeats. Both leave the condition matching a resource set that was never configured.
+        // Entries are counted as they load because size() counts a repeated key once.
+        if (props.entries != 1) {
             throw new WorkflowInvalidStateException("workflowConditionAttributeInvalid", keyValuePair);
         }
 
         String key = props.stringPropertyNames().iterator().next();
         String value = props.getProperty(key);
         return new String[]{key, value};
+    }
+
+    private static final class EntryCountingProperties extends Properties {
+
+        private int entries;
+
+        @Override
+        public synchronized Object put(Object key, Object value) {
+            entries++;
+            return super.put(key, value);
+        }
     }
 }
