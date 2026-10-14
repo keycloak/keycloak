@@ -20,6 +20,8 @@ package org.keycloak.encoding;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
@@ -35,6 +37,7 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class GzipResourceEncodingProviderTest {
 
@@ -44,11 +47,30 @@ public class GzipResourceEncodingProviderTest {
     public TemporaryFolder cacheDir = new TemporaryFolder();
 
     @Test
-    public void concurrentRequestsForUncachedResourceAllGetEncodedStream() throws Exception {
+    public void failedAtomicMoveReturnsEncodedStreamAndCleansTemporaryFile() throws Exception {
+        GzipResourceEncodingProvider provider = new GzipResourceEncodingProvider(cacheDir.getRoot());
+        byte[] content = "body { color: red; }".getBytes(StandardCharsets.UTF_8);
+        Path target = cacheDir.getRoot().toPath().resolve("style.css.gz");
+        try (InputStream encoded = provider.getEncodedStream(() -> {
+            // A directory at the destination prevents publishing the completed file
+            Files.createDirectory(target);
+            return new ByteArrayInputStream(content);
+        }, "style.css")) {
+            assertNotNull("encoded stream missing after failed move", encoded);
+            try (GZIPInputStream gzip = new GZIPInputStream(encoded)) {
+                assertArrayEquals(content, gzip.readAllBytes());
+            }
+        }
+        assertArrayEquals(new String[]{"style.css.gz"}, cacheDir.getRoot().list());
+    }
+
+    @Test
+    public void concurrentRequestsForUncachedResourceReturnValidEncodedStreams() throws Exception {
         GzipResourceEncodingProvider provider = new GzipResourceEncodingProvider(cacheDir.getRoot());
         byte[] content = "body { color: red; }\n".repeat(4096).getBytes(StandardCharsets.UTF_8);
         ExecutorService executor = Executors.newFixedThreadPool(THREADS);
         try {
+            int encodedResponses = 0;
             // Each round uses a new resource name, so all threads race on a cold cache
             for (int round = 0; round < 100; round++) {
                 String resource = "style-" + round + ".css";
@@ -62,11 +84,23 @@ public class GzipResourceEncodingProviderTest {
                 }
                 for (Future<InputStream> result : results) {
                     try (InputStream encoded = result.get(30, TimeUnit.SECONDS)) {
-                        assertNotNull("encoded stream missing for " + resource, encoded);
-                        assertArrayEquals(content, new GZIPInputStream(encoded).readAllBytes());
+                        // ThemeResource serves the original resource when encoding fails
+                        if (encoded != null) {
+                            encodedResponses++;
+                            assertArrayEquals(content, new GZIPInputStream(encoded).readAllBytes());
+                        }
+                    }
+                }
+                try (InputStream cached = provider.getEncodedStream(() -> {
+                    throw new AssertionError("Cached resource should not be encoded again");
+                }, "login", "test", resource)) {
+                    assertNotNull("cached stream missing for " + resource, cached);
+                    try (GZIPInputStream gzip = new GZIPInputStream(cached)) {
+                        assertArrayEquals(content, gzip.readAllBytes());
                     }
                 }
             }
+            assertTrue("No encoded streams returned", encodedResponses > 0);
         } finally {
             executor.shutdownNow();
         }
