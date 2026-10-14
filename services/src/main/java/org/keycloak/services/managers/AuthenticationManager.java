@@ -141,7 +141,11 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
  * @version $Revision: 1 $
  */
 public class AuthenticationManager {
-    public static final String FEDERATED_SESSION_NOT_ON_OR_AFTER = "FEDERATED_SESSION_NOT_ON_OR_AFTER";
+    /**
+     * @deprecated Use {@link SessionExpirationUtils#FEDERATED_SESSION_NOT_ON_OR_AFTER} instead.
+     */
+    @Deprecated
+    public static final String FEDERATED_SESSION_NOT_ON_OR_AFTER = SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER;
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
@@ -213,25 +217,7 @@ public class AuthenticationManager {
             }
         }
         long currentTime = Time.currentTimeMillis();
-        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm);
-        // Offline sessions represent long-lived grants (offline_access) that intentionally outlive the SSO session;
-        // they have their own lifespan controls (offlineSessionMaxLifespan), so the upstream limit does not apply.
-        if (!userSession.isOffline()) {
-            String brokerSessionNotAfter = userSession.getNote(FEDERATED_SESSION_NOT_ON_OR_AFTER);
-            if (brokerSessionNotAfter != null) {
-                try {
-                    long upstreamExpiry = TimeUnit.SECONDS.toMillis(Long.parseLong(brokerSessionNotAfter));
-                    if (lifespan == -1L || upstreamExpiry < lifespan) {
-                        lifespan = upstreamExpiry;
-                    }
-                } catch (NumberFormatException e) {
-                    logger.warnf("Session %s: unable to parse session note %s",
-                            userSession.getId(), FEDERATED_SESSION_NOT_ON_OR_AFTER);
-                    lifespan = currentTime;
-                }
-            }
-        }
+        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession, realm);
         long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()), realm);
 

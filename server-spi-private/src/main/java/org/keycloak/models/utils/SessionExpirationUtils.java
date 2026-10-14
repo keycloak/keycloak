@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.utils.StringUtil;
 
@@ -30,6 +31,12 @@ import org.keycloak.utils.StringUtil;
  * @author rmartinc
  */
 public class SessionExpirationUtils {
+
+    /**
+     * Session note key for storing the upstream IdP's session expiry timestamp (in seconds).
+     * Used by federated identity providers (e.g., SAML) to enforce the upstream session deadline.
+     */
+    public static final String FEDERATED_SESSION_NOT_ON_OR_AFTER = "FEDERATED_SESSION_NOT_ON_OR_AFTER";
 
     /**
      * Calculates the time in which the session is expired via max lifetime
@@ -45,6 +52,23 @@ public class SessionExpirationUtils {
         return offline ?
                 expiration.calculateOfflineLifespanTimestamp(created) :
                 expiration.calculateRegularLifespanTimestamp(created, isRememberMe);
+    }
+
+    /**
+     * Calculates the time in which the session is expired via max lifetime configuration,
+     * including any upstream (federated) session expiry cap.
+     * @param userSession the user session
+     * @param realm The realm model
+     * @return The time when the user session is expired or -1 if does not expire
+     */
+    public static long calculateUserSessionMaxLifespanTimestamp(UserSessionModel userSession, RealmModel realm) {
+        long lifespan = calculateUserSessionMaxLifespanTimestamp(
+                userSession.isOffline(),
+                userSession.isRememberMe(),
+                TimeUnit.SECONDS.toMillis(userSession.getStarted()),
+                realm
+        );
+        return applyUpstreamSessionExpiry(lifespan, userSession);
     }
 
     /**
@@ -196,6 +220,31 @@ public class SessionExpirationUtils {
         int offset = Math.floorMod(createdOn, granularity);
         int aligned = lastSessionRefresh - offset;
         return (aligned / granularity) * granularity + offset;
+    }
+
+    /**
+     * Applies an upstream (federated) session expiry cap to the calculated lifespan.
+     * Reads the upstream expiry from the user session note if present.
+     *
+     * @param lifespan    the calculated session lifespan timestamp in milliseconds, or -1 if unlimited
+     * @param userSession the user session to read the upstream expiry from
+     * @return the effective lifespan, capped by upstream expiry if applicable
+     */
+    public static long applyUpstreamSessionExpiry(long lifespan, UserSessionModel userSession) {
+        if (userSession == null || userSession.isOffline()) {
+            return lifespan;
+        }
+        String brokerSessionNotAfter = userSession.getNote(FEDERATED_SESSION_NOT_ON_OR_AFTER);
+        if (brokerSessionNotAfter != null) {
+            try {
+                long upstreamExpiryMillis = TimeUnit.SECONDS.toMillis(Long.parseLong(brokerSessionNotAfter));
+                if (lifespan == -1L || upstreamExpiryMillis < lifespan) {
+                    return upstreamExpiryMillis;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return lifespan;
     }
 
     private static long getClientAttributeTimeout(ClientModel client, String attr) {
