@@ -1102,6 +1102,66 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void testAddChildToDescendantRejected() {
+        RealmResource realm = managedRealm.admin();
+
+        // Create the hierarchy parent -> child -> grandchild
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("move-descendant-parent");
+        try (Response response = realm.groups().add(parent)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            parent.setId(ApiUtil.getCreatedId(response));
+        }
+        managedRealm.cleanup().add(r -> r.groups().group(parent.getId()).remove());
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("move-descendant-child");
+        try (Response response = realm.groups().group(parent.getId()).subGroup(child)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            child.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation grandChild = new GroupRepresentation();
+        grandChild.setName("move-descendant-grandchild");
+        try (Response response = realm.groups().group(child.getId()).subGroup(grandChild)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            grandChild.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Moving a group under itself is rejected with a client error
+        GroupRepresentation selfMove = new GroupRepresentation();
+        selfMove.setId(parent.getId());
+        selfMove.setName(parent.getName());
+        try (Response response = realm.groups().group(parent.getId()).subGroup(selfMove)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Moving a group under its direct child is rejected with a client error
+        try (Response response = realm.groups().group(child.getId()).subGroup(parent)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Cannot move group 'move-descendant-parent' under itself or its descendants", error.getErrorMessage());
+        }
+
+        // Moving a group under a deeper descendant is rejected too
+        try (Response response = realm.groups().group(grandChild.getId()).subGroup(parent)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // The hierarchy is unchanged after the rejected moves
+        List<GroupRepresentation> parentSubGroups = realm.groups().group(parent.getId()).getSubGroups(null, null, null, null);
+        assertEquals(1, parentSubGroups.size());
+        assertEquals("move-descendant-child", parentSubGroups.get(0).getName());
+
+        // Moving a group under an ancestor (here the grandchild back under its grandparent) is still allowed
+        try (Response response = realm.groups().group(parent.getId()).subGroup(grandChild)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        List<GroupRepresentation> movedSubGroups = realm.groups().group(parent.getId()).getSubGroups(null, null, null, null);
+        assertEquals(2, movedSubGroups.size());
+    }
+
+    @Test
     public void testAddChildNullRepresentation() {
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group-parent");
