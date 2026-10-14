@@ -32,6 +32,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -192,7 +193,10 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
      * and cofactor one, so this check is sufficient to reject invalid-curve attacks.
      */
     private static void validatePointOnCurve(BigInteger x, BigInteger y, ECParameterSpec spec) {
-        BigInteger p = ((java.security.spec.ECFieldFp) spec.getCurve().getField()).getP();
+        if (!(spec.getCurve().getField() instanceof ECFieldFp)) {
+            throw new IllegalArgumentException("Only prime-field (Fp) curves are supported for EPK validation");
+        }
+        BigInteger p = ((ECFieldFp) spec.getCurve().getField()).getP();
         BigInteger a = spec.getCurve().getA();
         BigInteger b = spec.getCurve().getB();
 
