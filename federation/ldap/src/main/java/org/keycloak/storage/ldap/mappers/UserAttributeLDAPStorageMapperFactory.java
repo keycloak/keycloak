@@ -30,6 +30,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -122,6 +123,24 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute", config);
         checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, "LDAP Attribute", config);
+
+		String mapping = config.getConfig().getFirst(
+			UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
+
+		if (LDAPUtils.matchVariableInString(mapping).find()) {
+			ComponentModel parent = realm.getComponent(config.getParentId());
+
+			if (parent == null) {
+				throw new ComponentValidationException("Cannot validate LDAP attribute template: parent LDAP provider was not found.");
+			}
+
+			LDAPConfig parentConfig = new LDAPConfig(parent.getConfig());
+
+			if (parentConfig.getEditMode()
+				!= UserStorageProvider.EditMode.READ_ONLY) {
+				throw new ComponentValidationException("LDAP attribute templates are supported only for providers with edit mode READ_ONLY.");
+			}
+		}
 
         boolean isBinaryAttribute = config.get(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, false);
         boolean alwaysReadValueFromLDAP = config.get(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, false);

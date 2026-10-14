@@ -343,6 +343,41 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             // This prevents credentials from being silently sent to a different server.
             validateBindCredentialOnUrlChange(session, realm, config, cfg);
         }
+
+		String rdnAttribute = cfg.getRdnLdapAttribute();
+
+		if (rdnAttribute == null
+			|| rdnAttribute.trim().isEmpty()
+			|| LDAPUtils.matchVariableInString(rdnAttribute).find()) {
+			throw new ComponentValidationException(
+				"RDN LDAP attribute must be a real LDAP attribute name, "
+					+ "for example uid or cn. "
+					+ "When using a username template, configure it explicitly.");
+		}
+
+		if (cfg.getEditMode() != UserStorageProvider.EditMode.READ_ONLY) {
+			boolean usernameHasTemplate = LDAPUtils.matchVariableInString(
+				cfg.getUsernameLdapAttribute()).find();
+
+			boolean mapperHasTemplate = realm.getComponentsStream(
+					config.getId(),
+					LDAPStorageMapper.class.getName())
+				.filter(mapper -> UserAttributeLDAPStorageMapperFactory.PROVIDER_ID
+					.equals(mapper.getProviderId()))
+				.anyMatch(mapper -> {
+					String mapping = mapper.getConfig().getFirst(
+						UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
+
+					return mapping != null
+						&& LDAPUtils.matchVariableInString(mapping).find();
+				});
+
+			if (usernameHasTemplate || mapperHasTemplate) {
+				throw new ComponentValidationException(
+					"LDAP attribute templates are supported only "
+						+ "for providers with edit mode READ_ONLY.");
+			}
+		}
     }
 
     @SuppressWarnings("unchecked")
