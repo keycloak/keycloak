@@ -501,3 +501,18 @@ Once you have a JAR file with a descriptor and the scripts you want to deploy, y
 === Available SPIs
 
 If you want to see list of all available SPIs at runtime, you can check `Provider Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.
+
+=== Supported SPIs
+
+Support for {project_name} SPIs is limited to what is documented in this guide. Moreover, SPI can be considered supported only if the method `isInternal` of the `Spi` described above returns `false` for the
+particular SPI.
+
+It is possible to implement any internal SPI in your extensions, but it is not officially supported and backwards compatibility regarding behaviour or method signatures is not guaranteed.
+This means your SPI implementation may stop working without notice once you upgrade to the newer version of the {project_name} server.
+
+Moreover it is recommended that your SPI implementation has dependency just on the {project_name} supported modules `keycloak-server-spi` and `keycloak-model-storage`.
+The method signatures in the classes or methods inside those modules should not change without notice and without the particular method/class being deprecated first, which is
+usually announced in the {project_name} release notes or upgrading guide. These modules have few other third-party dependencies and also have dependencies on other {project_name}
+modules `keycloak-common` and `keycloak-core`, which do not contain any providers, but rather some utility methods. It is recommended to use the utility methods with care as
+signature on them can change. Other modules (for instance `keycloak-server-spi-private` or `keycloak-services`) are considered internal and method signatures here can change
+without further notice.
