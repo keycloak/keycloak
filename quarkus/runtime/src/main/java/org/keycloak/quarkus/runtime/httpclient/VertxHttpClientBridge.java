@@ -4,10 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.NoRouteToHostException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,17 +76,40 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         URI uri = resolveUri(target, request);
         // Resolved once, outside the retry loop: a rejected or unknown host is not retried and
         // keeps its exception type, as with the Apache client.
-        SocketAddress server = directResolver != null ? resolveDirectServer(uri) : null;
-        return provider.executeWithRetry(() -> doExecuteInternal(uri, server, request));
+        if (directResolver == null) {
+            return provider.executeWithRetry(() -> doExecuteInternal(uri, null, request));
+        }
+        List<SocketAddress> servers = resolveDirectServers(uri);
+        return provider.executeWithRetry(() -> executeWithFailover(uri, servers, request));
     }
 
-    private SocketAddress resolveDirectServer(URI uri) throws IOException {
+    private List<SocketAddress> resolveDirectServers(URI uri) throws IOException {
         InetAddress[] addresses = directResolver.resolve(uri.getHost());
         if (addresses == null || addresses.length == 0) {
             throw new UnknownHostException(uri.getHost());
         }
         int port = uri.getPort() != -1 ? uri.getPort() : "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
-        return SocketAddress.inetSocketAddress(port, addresses[0].getHostAddress());
+        List<SocketAddress> servers = new ArrayList<>(addresses.length);
+        for (InetAddress address : addresses) {
+            servers.add(SocketAddress.inetSocketAddress(port, address.getHostAddress()));
+        }
+        return servers;
+    }
+
+    /**
+     * Tries each resolved address in turn, like the Apache client, moving on only when the
+     * connection itself fails, so nothing has been sent to the previous address.
+     */
+    private CloseableHttpResponse executeWithFailover(URI uri, List<SocketAddress> servers, HttpRequest request) throws IOException {
+        IOException lastFailure = null;
+        for (SocketAddress server : servers) {
+            try {
+                return doExecuteInternal(uri, server, request);
+            } catch (ConnectException | NoRouteToHostException e) {
+                lastFailure = e;
+            }
+        }
+        throw lastFailure;
     }
 
     private CloseableHttpResponse doExecuteInternal(URI uri, SocketAddress server, HttpRequest request) throws IOException {

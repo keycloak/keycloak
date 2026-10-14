@@ -201,7 +201,7 @@ matching the receiver's endpoint.
 
 Receiver-supplied URLs are validated against the per-receiver `ssf.validPushUrls` allow-list, and after a
 successful match the URL itself must use the `https` scheme and must not resolve to a loopback/link-local/
-site-local/unique-local/multicast address. Rejections are reported as HTTP `400` with a generic message;
+site-local/unique-local/multicast address, or to `0.0.0.0/8` or the carrier-grade NAT range `100.64.0.0/10`. Rejections are reported as HTTP `400` with a generic message;
 the operator-facing log entry contains the rejected URL and a suggested allow-list entry.
 
 The address check is applied again on every delivery, to the addresses the connection is actually made to, so a

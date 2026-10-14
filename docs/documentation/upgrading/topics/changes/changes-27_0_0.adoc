@@ -147,7 +147,14 @@ This prevents a receiver from changing its DNS records after the stream is creat
 
 To make that check possible, push deliveries connect to receivers directly, without the proxy configured through the `proxy-mappings` option of the outgoing HTTP client or the `HTTPS_PROXY` and `HTTP_PROXY` environment variables.
 They also no longer follow redirects.
-A delivery whose host resolves to a loopback, link-local, private-network, or other non-routable address fails, and is retried and eventually dead-lettered like any other failed delivery.
+A delivery fails, and is retried and eventually dead-lettered like any other failed delivery, when its host resolves to any of these addresses:
+
+* loopback
+* `0.0.0.0/8`
+* link-local, including the cloud metadata address `169.254.169.254`
+* private networks: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and `fc00::/7`
+* carrier-grade NAT: `100.64.0.0/10`
+* multicast
 
 After upgrading, deployments that can reach receivers only through an outgoing proxy see push deliveries fail with connection errors.
 The server log names the proxy as the likely cause.

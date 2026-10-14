@@ -74,6 +74,19 @@ public class VertxHttpClientDirectTest {
     }
 
     @Test
+    public void failsOverToNextAddressWhenConnectionFails() throws Exception {
+        // The server listens on 127.0.0.1 only, so connecting to 127.0.0.2 is refused.
+        int port = startServer(new HttpServerOptions());
+        DnsResolver twoAddresses = host -> new InetAddress[]{
+                InetAddress.getByName("127.0.0.2"), InetAddress.getByName("127.0.0.1")};
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), twoAddresses);
+             CloseableHttpResponse res = client.execute(new HttpGet("http://" + HOST + ":" + port + "/hello"))) {
+            assertEquals(200, res.getStatusLine().getStatusCode());
+        }
+        assertEquals(1, requests.get());
+    }
+
+    @Test
     public void doesNotFollowRedirects() throws Exception {
         int port = startServer(new HttpServerOptions());
         try (CloseableHttpClient client = directClient(new WebClientOptions().setFollowRedirects(true), loopback());
