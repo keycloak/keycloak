@@ -26,6 +26,9 @@ import java.security.Signature;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 
@@ -35,6 +38,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -106,6 +110,16 @@ public class ServerJWKTest {
         byte[] data = "Some test string".getBytes(StandardCharsets.UTF_8);
         byte[] sign = sign(data, JavaAlgorithm.Ed448, keyPair.getPrivate());
         verify(data, sign, JavaAlgorithm.Ed448, publicKeyFromJwk);
+    }
+
+    @Test
+    public void akpRequiresAlgorithm() {
+        KeyWrapper key = new KeyWrapper();
+        key.setType(KeyType.AKP);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> JWKSServerUtils.toJwk(key));
+        assertEquals("An algorithm is required for AKP keys", exception.getMessage());
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {

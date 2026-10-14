@@ -89,7 +89,7 @@ public class JWSHeader implements JOSEHeader {
     @JsonIgnore
     @Override
     public String getRawAlgorithm() {
-        return getAlgorithm().name();
+        return getAlgorithm().getName();
     }
 
     public String getType() {
