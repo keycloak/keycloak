@@ -503,7 +503,11 @@ public class SamlProtocol implements LoginProtocol {
             try {
                 long upstreamExpirySeconds = Long.parseLong(upstreamExpiry);
                 long remainingSeconds = upstreamExpirySeconds - Time.currentTime();
-                if (remainingSeconds > 0 && remainingSeconds < sessionExpiration) {
+                if (remainingSeconds <= 0) {
+                    event.error(Errors.SESSION_EXPIRED);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+                }
+                if (remainingSeconds < sessionExpiration) {
                     sessionExpiration = remainingSeconds <= Integer.MAX_VALUE ? (int) remainingSeconds : Integer.MAX_VALUE;
                 }
             } catch (NumberFormatException ignored) {
