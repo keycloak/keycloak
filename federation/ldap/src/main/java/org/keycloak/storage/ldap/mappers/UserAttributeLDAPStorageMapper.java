@@ -25,6 +25,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -95,7 +97,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         if (userModelProperty != null) {
 
             // we have java property on UserModel
-            String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
+            String ldapAttrValue = resolveLdapAttributeValue(ldapUser, ldapAttrName);
 
             checkDuplicateEmail(userModelAttrName, ldapAttrValue, realm, ldapProvider.getSession(), user);
 
@@ -174,6 +176,32 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public Set<String> getUserAttributes() {
         return Collections.singleton(getUserModelAttribute());
     }
+
+	protected String resolveLdapAttributeValue(LDAPObject ldapUser, String mapping) {
+		Matcher matcher = LDAPUtils.matchVariableInString(mapping);
+		StringBuilder resolved = new StringBuilder();
+		boolean hasPlaceholders = false;
+
+		while (matcher.find()) {
+			hasPlaceholders = true;
+
+			String attributeName = matcher.group(1);
+			String attributeValue = ldapUser.getAttributeAsString(attributeName);
+
+			if (attributeValue == null) {
+				throw new ModelException("Cannot resolve LDAP attribute placeholder {" + attributeName + "} in mapping: " + mapping);
+			}
+
+			matcher.appendReplacement(resolved, Matcher.quoteReplacement(attributeValue));
+		}
+
+		if (!hasPlaceholders) {
+			return ldapUser.getAttributeAsString(mapping);
+		}
+
+		matcher.appendTail(resolved);
+		return resolved.toString();
+	}
 
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
