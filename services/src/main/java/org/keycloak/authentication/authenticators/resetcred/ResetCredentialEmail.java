@@ -217,16 +217,16 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 .label("Force login after reset")
                 .helpText(
                         """
-                        If this property is true, the user needs to login again after the reset credentials.
-                        If this property is false, the user will be automatically logged in after the succesful
+                        If this property is true (default), the user needs to login again after the reset credentials.
+                        If this property is false, the user will be automatically logged in after the successful
                         reset credentials when the same authentication session is used.
-                        If this property is only-federated (default), only federated users will be forced to login again,
+                        If this property is only-federated, only federated users will be forced to login again,
                         users stored in the internal database will be logged in if using the same authentication session.
                         """
                 )
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
-                .defaultValue(FEDERATED_OPTION)
+                .defaultValue(Boolean.TRUE.toString())
                 .add()
                 .build();
     }
@@ -258,11 +258,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     private boolean forceLogin(AuthenticatorConfigModel config, UserModel user) {
         final String forceLogin = config != null? config.getConfig().get(FORCE_LOGIN) : null;
-        if (forceLogin == null || FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
-            // default is only-federated, return true only for federated users
-            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
-        } else if (Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+        if (forceLogin == null || Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+            // default is to force login for everyone
             return Boolean.TRUE;
+        } else if (FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
+            // return true only for federated users
+            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
         } else if (Boolean.FALSE.toString().equalsIgnoreCase(forceLogin)) {
             return Boolean.FALSE;
         } else {

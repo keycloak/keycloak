@@ -6,10 +6,14 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -25,6 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.FlowUtil;
 
 /**
  * Created by st on 26.01.17.
@@ -207,6 +212,25 @@ public class RunHelpers {
             Class<? extends Provider> providerClass = (Class<? extends Provider>) Class.forName(providerType);
             ProviderFactory<?> factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
             factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
+        };
+    }
+
+    public static RunOnServer configureBrowserFlowWithAlternativeCredentials() {
+        final String newFlowAlias = "browser - alternative";
+        return session -> {
+            FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias);
+            FlowUtil.inCurrentRealm(session)
+                    .selectFlow(newFlowAlias)
+                    .inForms(forms -> forms
+                            .clear()
+                            .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                            .addSubFlowExecution(AuthenticationExecutionModel.Requirement.REQUIRED, altSubFlow -> altSubFlow
+                                    // Add 2 basic authenticator executions
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, PasswordFormFactory.PROVIDER_ID)
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                            )
+                    )
+                    .defineAsBrowserFlow();
         };
     }
 
