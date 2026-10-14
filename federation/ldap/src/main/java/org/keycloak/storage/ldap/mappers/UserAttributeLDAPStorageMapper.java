@@ -97,7 +97,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         if (userModelProperty != null) {
 
             // we have java property on UserModel
-            String ldapAttrValue = resolveLdapAttributeValue(ldapUser, ldapAttrName);
+            String ldapAttrValue = LDAPUtils.resolveLdapAttributeValue(ldapUser, ldapAttrName);
 
             checkDuplicateEmail(userModelAttrName, ldapAttrValue, realm, ldapProvider.getSession(), user);
 
@@ -177,33 +177,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return Collections.singleton(getUserModelAttribute());
     }
 
-	protected String resolveLdapAttributeValue(LDAPObject ldapUser, String mapping) {
-		Matcher matcher = LDAPUtils.matchVariableInString(mapping);
-		StringBuilder resolved = new StringBuilder();
-		boolean hasPlaceholders = false;
-
-		while (matcher.find()) {
-			hasPlaceholders = true;
-
-			String attributeName = matcher.group(1);
-			String attributeValue = ldapUser.getAttributeAsString(attributeName);
-
-			if (attributeValue == null) {
-				throw new ModelException("Cannot resolve LDAP attribute placeholder {" + attributeName + "} in mapping: " + mapping);
-			}
-
-			matcher.appendReplacement(resolved, Matcher.quoteReplacement(attributeValue));
-		}
-
-		if (!hasPlaceholders) {
-			return ldapUser.getAttributeAsString(mapping);
-		}
-
-		matcher.appendTail(resolved);
-		return resolved.toString();
-	}
-
-    // throw ModelDuplicateException if there is different user in model with same email
+	// throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;
         if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -196,35 +197,15 @@ public class LDAPUtils {
     }
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
-        String usernameAttr = config.getUsernameLdapAttribute();
+		String ldapUsername = resolveLdapAttributeValue(
+			ldapUser,
+			config.getUsernameLdapAttribute());
 
-        Matcher matcher = matchVariableInString(usernameAttr);
-        String ldapUsername;
-        if (matcher.find()) {
-            ldapUsername = usernameAttr;
+		if (config.isImportEnabled() && ldapUsername != null) {
+			return ldapUsername.toLowerCase();
+		}
 
-            for (String attributeKey : ldapUser.getAttributes().keySet())
-            {
-                if (ldapUsername == null) {
-                    throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                        config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
-                }
-
-                Set<String> attributes = ldapUser.getAttributes().get(attributeKey);
-                if (attributes != null && !attributes.isEmpty()) {
-                    ldapUsername = ldapUsername.replace("{" + attributeKey + "}", attributes.stream().findFirst().get());
-                }
-            }
-        }
-        else {
-            ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
-        }
-
-        if (config.isImportEnabled()) {
-            return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
-        }
-
-        return  ldapUsername;
+		return ldapUsername;
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {
@@ -234,6 +215,32 @@ public class LDAPUtils {
                     "Mapped UUID LDAP attribute: " + config.getUuidLDAPAttributeName() + ", user DN: " + ldapUser.getDn());
         }
     }
+
+	public static String resolveLdapAttributeValue(LDAPObject ldapUser, String mapping) {
+		Matcher matcher = LDAPUtils.matchVariableInString(mapping);
+		StringBuilder resolved = new StringBuilder();
+		boolean hasPlaceholders = false;
+
+		while (matcher.find()) {
+			hasPlaceholders = true;
+
+			String attributeName = matcher.group(1);
+			String attributeValue = ldapUser.getAttributeAsString(attributeName);
+
+			if (attributeValue == null) {
+				throw new ModelException("Cannot resolve LDAP attribute placeholder {" + attributeName + "} in mapping: " + mapping);
+			}
+
+			matcher.appendReplacement(resolved, Matcher.quoteReplacement(attributeValue));
+		}
+
+		if (!hasPlaceholders) {
+			return ldapUser.getAttributeAsString(mapping);
+		}
+
+		matcher.appendTail(resolved);
+		return resolved.toString();
+	}
 
 
     // roles & groups
