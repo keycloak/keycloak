@@ -226,7 +226,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 )
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
-                .defaultValue(FEDERATED_OPTION)
+                .defaultValue(Boolean.TRUE.toString())
                 .add()
                 .build();
     }
@@ -258,11 +258,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     private boolean forceLogin(AuthenticatorConfigModel config, UserModel user) {
         final String forceLogin = config != null? config.getConfig().get(FORCE_LOGIN) : null;
-        if (forceLogin == null || FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
-            // default is only-federated, return true only for federated users
-            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
-        } else if (Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+        if (forceLogin == null || Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+            // default is to force login for everyone
             return Boolean.TRUE;
+        } else if (FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
+            // return true only for federated users
+            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
         } else if (Boolean.FALSE.toString().equalsIgnoreCase(forceLogin)) {
             return Boolean.FALSE;
         } else {
