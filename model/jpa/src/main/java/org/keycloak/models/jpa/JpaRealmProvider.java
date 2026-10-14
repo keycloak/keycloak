@@ -590,6 +590,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             return;
         }
 
+        // Enforce the group hierarchy invariant: a group can never be moved under itself or one of its descendants
+        if (toParent != null && KeycloakModelUtils.isDescendantOfOrSelf(toParent, group)) {
+            throw new ModelValidationException("Cannot move group '" + group.getName() + "' under itself or its descendants");
+        }
+
         GroupModel previousParent = group.getParent();
 
         if (group.getParentId() != null) {
