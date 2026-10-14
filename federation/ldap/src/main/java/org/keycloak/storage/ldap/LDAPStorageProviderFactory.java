@@ -18,6 +18,8 @@
 package org.keycloak.storage.ldap;
 
 import java.net.URI;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -102,6 +104,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     private static final boolean SECURE_REFERRAL_DEFAULT = true;
 
     private static final String METRICS_ENABLED = "metricsEnabled";
+    private static final String METRICS_HISTOGRAMS_ENABLED = "metricsHistogramsEnabled";
+    private static final String METRICS_HISTOGRAM_SLOTS = "metricsHistogramSlots";
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
     private Meter.MeterProvider<Timer> ldapRequestTimer; // null when disabled
     private boolean disableKerberosAuthenticationRoundTrip;
@@ -405,11 +409,49 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         boolean metricsEnabled = ldapMetricsFeature && metricsEnabledConfig && globalMetricsEnabled;
 
         if (metricsEnabled) {
-            this.ldapRequestTimer = Timer.builder("keycloak.ldap.requests")
-                    .description("Time taken for LDAP requests")
-                    .withRegistry(Metrics.globalRegistry);
+            Timer.Builder builder = Timer.builder("keycloak.ldap.requests")
+                    .description("Time taken for LDAP requests");
+            configureLdapRequestTimer(builder,
+                    config.getBoolean(METRICS_HISTOGRAMS_ENABLED, false), config.get(METRICS_HISTOGRAM_SLOTS));
+            this.ldapRequestTimer = builder.withRegistry(Metrics.globalRegistry);
         }
 
+    }
+
+    static Timer.Builder configureLdapRequestTimer(Timer.Builder builder, boolean histogramsEnabled, String histogramSlots) {
+        if (histogramsEnabled) {
+            builder.publishPercentileHistogram();
+        }
+
+        if (histogramSlots != null && !histogramSlots.isBlank()) {
+            Duration[] slos = Arrays.stream(histogramSlots.split(","))
+                    .map(String::trim)
+                    .filter(slot -> !slot.isEmpty())
+                    .map(LDAPStorageProviderFactory::parseHistogramSlot)
+                    .toArray(Duration[]::new);
+            if (slos.length > 0) {
+                builder.serviceLevelObjectives(slos);
+            }
+        }
+        return builder;
+    }
+
+    private static Duration parseHistogramSlot(String slot) {
+        long milliseconds;
+        try {
+            milliseconds = Long.parseLong(slot);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid LDAP metrics histogram slot: " + slot, e);
+        }
+        if (milliseconds <= 0) {
+            throw new IllegalArgumentException("LDAP metrics histogram slots must be positive: " + slot);
+        }
+        try {
+            Math.multiplyExact(milliseconds, 1_000_000L);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("LDAP metrics histogram slot is too large: " + slot, e);
+        }
+        return Duration.ofMillis(milliseconds);
     }
 
     @Override
@@ -429,6 +471,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type("boolean")
                 .helpText("Boolean to disable the local Kerberos service-ticket round trip in username/password authentication (deprecated).")
                 .defaultValue("false")
+                .add()
+                .property()
+                .name(METRICS_HISTOGRAMS_ENABLED)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .helpText("Publish a percentile histogram with default buckets for LDAP request durations.")
+                .defaultValue("false")
+                .add()
+                .property()
+                .name(METRICS_HISTOGRAM_SLOTS)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .helpText("Comma-separated service level objective buckets for LDAP request durations, in milliseconds. Specify this instead of or in addition to the default histogram.")
                 .add();
 
         return builder.build();
