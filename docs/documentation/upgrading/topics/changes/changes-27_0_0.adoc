@@ -109,6 +109,22 @@ Previously, the Redirect URL was used without validation, which could allow an o
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
 
+=== Reset password emails are sent in the background
+
+The *Forgot password* form now responds without waiting for the mail server, and the reset password email is sent in the background. Before, the form responded more slowly for users that exist and have an email, which made it possible to find out which usernames exist. The form now also does the same work for every username, whether or not an email is sent.
+
+The `SEND_RESET_PASSWORD` event now means that the email was accepted to be sent, and it is still recorded during the request. When sending the email fails afterwards, a `SEND_RESET_PASSWORD_ERROR` event is recorded in addition, from a background thread without the context of the HTTP request. An email is not sent, and an error event is recorded, when its link expires before it is sent, or when the user is deleted or disabled in the meantime.
+
+The number of emails waiting to be sent is limited. When the limit is reached, for example because the mail server is slow, further reset password emails are not sent, and a `SEND_RESET_PASSWORD_ERROR` event is recorded. A single realm can use at most half of the limit and half of the threads, so a realm with a slow mail server does not hold up the emails of the other realms. You can change the limits with these options:
+
+* `spi-email-template--freemarker--delivery-threads`: number of emails sent at the same time, 4 by default.
+* `spi-email-template--freemarker--delivery-queue-size`: number of emails that can wait to be sent, 500 by default.
+
+When the server stops, it tries for up to 10 seconds to send the waiting emails. Emails that are still waiting after that are not sent.
+
+Custom email template providers, including ones that extend the default `FreeMarkerEmailTemplateProvider`, send the email right away, as before.
+To send it in the background, providers that extend `FreeMarkerEmailTemplateProvider` can override `supportsQueuedDelivery()` to return `true`, when their factory extends `FreeMarkerEmailTemplateProviderFactory` and passes its delivery queue to them. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `EmailTemplateProvider.queue`.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

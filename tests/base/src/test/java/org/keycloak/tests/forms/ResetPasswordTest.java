@@ -1,6 +1,10 @@
 package org.keycloak.tests.forms;
 
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.Objects;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -40,11 +44,13 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest
 public class ResetPasswordTest {
@@ -129,6 +135,9 @@ public class ResetPasswordTest {
         );
         loginPage.assertCurrent();
         assertDoesNotThrow(() -> loginPage.findSocialButton(IDP_ALIAS));
+
+        // the email is sent in the background, wait for it so it doesn't arrive during the next test
+        assertTrue(mailServer.waitForIncomingEmail(1));
     }
 
     @Test
@@ -148,6 +157,9 @@ public class ResetPasswordTest {
         driver.driver().navigate().back();
 
         registerPage.assertCurrent();
+
+        // the email is sent in the background, wait for it so it doesn't arrive during the next test
+        assertTrue(mailServer.waitForIncomingEmail(1));
     }
 
     @Test
@@ -175,6 +187,7 @@ public class ResetPasswordTest {
             .details(Details.EMAIL, USER_EMAIL);
 
 
+        assertTrue(mailServer.waitForIncomingEmail(1));
         MimeMessage message = mailServer.getReceivedMessages()[0];
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
@@ -243,6 +256,45 @@ public class ResetPasswordTest {
                 .sessionId(null)
                 .error(Errors.USER_NOT_FOUND)
                 .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
+    }
+
+    // Issue 26625: the response must not wait for the mail server
+    @Test
+    public void resetPasswordResponseDoesNotWaitForEmailDelivery() throws IOException {
+        // a mail server that accepts connections but never answers
+        try (ServerSocket unresponsiveMailServer = new ServerSocket(0)) {
+            // long timeout, so the email is still being sent when the response is checked
+            consumerRealm.updateWithCleanup(r -> {
+                r.smtp(MailServerConfiguration.HOST, unresponsiveMailServer.getLocalPort(), MailServerConfiguration.FROM);
+                r.build().getSmtpServer().put("timeout", "60000");
+                return r;
+            });
+
+            oauth.openLoginForm();
+            loginPage.resetPassword();
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword(USER_LOGIN);
+
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.SEND_RESET_PASSWORD)
+                    .details(Details.USERNAME, USER_LOGIN);
+
+            unresponsiveMailServer.setSoTimeout(10000);
+            try (Socket delivery = unresponsiveMailServer.accept()) {
+                delivery.setSoTimeout(1000);
+                assertThrows(SocketTimeoutException.class, () -> delivery.getInputStream().read(),
+                        "The response was sent only after the delivery of the email gave up");
+            }
+        }
+
+        // closing the mail server makes sending fail
+        EventRepresentation deliveryFailedEvent = Awaitility.await().until(events::poll, Objects::nonNull);
+        EventAssertion.assertError(deliveryFailedEvent)
+                .type(EventType.SEND_RESET_PASSWORD_ERROR)
+                .error(Errors.EMAIL_SEND_FAILED)
+                .details(Details.USERNAME, USER_LOGIN);
     }
 
     static class ConsumerRealmConfig implements RealmConfig {

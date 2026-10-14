@@ -801,6 +801,11 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword("test-user@localhost");
 
+        // there is no mail server, so sending fails in the background. Wait for that error, so it doesn't mix with the events below
+        EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_RESET_PASSWORD);
+        EventAssertion.assertError(events.pollWithWait())
+                .type(EventType.SEND_RESET_PASSWORD_ERROR)
+                .error(Errors.EMAIL_SEND_FAILED);
         events.clear();
 
         driver.navigate().to(registrationUrl);

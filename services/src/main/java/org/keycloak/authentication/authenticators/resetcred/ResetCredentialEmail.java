@@ -37,10 +37,13 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProviderFactory;
+import org.keycloak.email.EmailDeliveryListener;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.email.RenderedEmail;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -51,6 +54,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
@@ -59,6 +63,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.adapter.InMemoryUserAdapter;
 
 import org.jboss.logging.Logger;
 
@@ -80,64 +85,92 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
         String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
-        // we don't want people guessing usernames, so if there was a problem obtaining the user, the user will be null.
-        // just reset login for with a success message
-        if (user == null) {
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
-            return;
-        }
-
-        String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
-        if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
-            logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
-            if (forceLogin(context.getAuthenticatorConfig(), user)) {
-                // force end of auth session after the required actions
-                context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        if (user != null) {
+            String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+            if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
+                logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
+                if (forceLogin(context.getAuthenticatorConfig(), user)) {
+                    // force end of auth session after the required actions
+                    context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+                }
+                context.success();
+                return;
             }
-            context.success();
-            return;
         }
 
-
+        // we don't want people guessing usernames, so every request does the same work and gets the same response,
+        // even when no email is sent
         EventBuilder event = context.getEvent();
-        // we don't want people guessing usernames, so if there is a problem, just continuously challenge
-        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
+        boolean deliverable = user != null && user.getEmail() != null && user.getEmail().trim().length() != 0;
+        if (user != null && !deliverable) {
             event.user(user)
                     .detail(Details.USERNAME, username)
                     .error(Errors.INVALID_EMAIL);
-
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
-            return;
         }
+        UserModel recipient = deliverable ? user : dummyUser(context, username);
 
         int validityInSecs = context.getRealm().getActionTokenGeneratedByUserLifespan(ResetCredentialsActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
         // We send the secret in the email in a link as a query param.
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authenticationSession).getEncodedId();
-        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), user.getEmail(), absoluteExpirationInSecs, authSessionEncodedId, authenticationSession.getClient().getClientId());
+        ResetCredentialsActionToken token = new ResetCredentialsActionToken(recipient.getId(), recipient.getEmail(), absoluteExpirationInSecs, authSessionEncodedId, authenticationSession.getClient().getClientId());
         String link = UriBuilder
           .fromUri(context.getActionTokenUrl(token.serialize(context.getSession(), context.getRealm(), context.getUriInfo())))
           .build()
           .toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
         try {
-            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).setAuthenticationSession(authenticationSession).sendPasswordReset(link, expirationInMinutes);
-
-            event.clone().event(EventType.SEND_RESET_PASSWORD)
-                         .user(user)
-                         .detail(Details.USERNAME, username)
-                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId()).success();
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+            EmailTemplateProvider emailTemplateProvider = context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(recipient).setAuthenticationSession(authenticationSession);
+            RenderedEmail email = emailTemplateProvider.renderPasswordReset(link, expirationInMinutes);
+            if (deliverable) {
+                if (email == null) {
+                    // a custom provider that can only send right away
+                    emailTemplateProvider.sendPasswordReset(link, expirationInMinutes);
+                    sentEvent(event, user, username, authenticationSession).success();
+                } else if (emailTemplateProvider.queue(email, absoluteExpirationInSecs, failedListener(event, user, username))) {
+                    // stored right away like the events of the other cases, so all cases take the same time
+                    sentEvent(event, user, username, authenticationSession).storeImmediately(true).success();
+                } else {
+                    failedEvent(event, user, username).detail(Details.REASON, "Too many emails are waiting to be sent").error(Errors.EMAIL_SEND_FAILED);
+                }
+            }
         } catch (EmailException e) {
-            event.clone().event(EventType.SEND_RESET_PASSWORD)
-                    .detail(Details.REASON, e.getMessage())
-                    .detail(Details.USERNAME, username)
-                    .user(user)
-                    .error(Errors.EMAIL_SEND_FAILED);
-            ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+            if (deliverable) {
+                failedEvent(event, user, username).detail(Details.REASON, e.getMessage()).error(Errors.EMAIL_SEND_FAILED);
+                ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
+            }
         }
+        context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+    }
+
+    private static UserModel dummyUser(AuthenticationFlowContext context, String username) {
+        UserModel user = new InMemoryUserAdapter(context.getSession(), context.getRealm(), KeycloakModelUtils.generateId());
+        user.setUsername(username == null ? "unknown" : username);
+        user.setEmail("unknown@invalid");
+        return user;
+    }
+
+    private static EventBuilder sentEvent(EventBuilder event, UserModel user, String username, AuthenticationSessionModel authenticationSession) {
+        return event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .user(user)
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId());
+    }
+
+    private static EventBuilder failedEvent(EventBuilder event, UserModel user, String username) {
+        return event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .detail(Details.USERNAME, username)
+                .user(user);
+    }
+
+    private static EmailDeliveryListener failedListener(EventBuilder event, UserModel user, String username) {
+        // runs later with another session, so keep only the event data
+        Event failedEvent = failedEvent(event, user, username).getEvent();
+        return (session, e) -> {
+            new EventBuilder(session.getContext().getRealm(), session, failedEvent).detail(Details.REASON, e.getMessage()).error(Errors.EMAIL_SEND_FAILED);
+            ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
+        };
     }
 
     public static Long getLastChangedTimestamp(KeycloakSession session, RealmModel realm, UserModel user) {

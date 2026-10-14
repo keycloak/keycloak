@@ -1095,6 +1095,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
+        assertTrue(mail.waitForIncomingEmail(1));
         MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
 
