@@ -25,6 +25,45 @@ zero, one, or multiple domains.
 When no domain is assigned, members are not validated against domain restrictions and email-based redirection to
 identity providers is unavailable. A domain-less organization can still use auto-membership through a linked identity provider -- see <<authenticating-members_{context},Authenticating members>> for details.
 
+== Linking a domain to an identity provider
+
+Each domain can optionally be linked to one of the organization's identity providers.
+This linking is configured from the *Domains* tab when editing a domain, using the following settings:
+
+Identity provider::
+The identity provider to associate with this domain. Linking a domain to an identity provider has two effects:
++
+* *Login routing*: Determines which identity provider is offered or used when a user enters an email matching this domain. See <<authenticating-members_{context},Authenticating members>> for details on the identity-first login flow.
+* *Email enforcement*: During the first broker login flow, users authenticating through the linked identity provider are required to use an email address that matches this domain. This prevents a user from changing their email on the profile review page to a domain that is not associated with the identity provider.
++
+When no identity provider is linked, users with a matching email see the organization's available identity providers listed for manual selection, and no email domain restriction is enforced during profile review.
+
+Auto redirect::
+When enabled and an identity provider is linked, users with a matching email domain are automatically redirected to the identity provider without seeing a selection page. When disabled, the linked identity provider is still available for manual selection, and email enforcement remains active.
++
+This setting has no effect when no identity provider is linked to the domain.
+
+The following table summarizes the behavior for each configuration:
+
+[cols="1,1,1", options="header"]
+|===
+| Configuration | Login screen | Email enforcement during first broker login
+
+| Identity provider linked, auto redirect ON
+| User is automatically redirected to the identity provider
+| User's email must match this domain
+
+| Identity provider linked, auto redirect OFF
+| Organization's identity providers are shown for manual selection
+| User's email must match this domain
+
+| No identity provider linked
+| Organization's identity providers are shown for manual selection
+| No email domain restriction is enforced
+|===
+
+NOTE: Auto-membership is independent of domain-to-identity-provider linking. It is controlled by the *Auto membership* setting on the identity provider link (configured from the *Identity providers* tab) and requires that the user's email domain matches one of the organization's domains. An organization without any domains skips this check entirely. See <<_managing_identity_provider_,Managing identity providers>> for details.
+
 == Domain types
 
 Exact::
@@ -50,31 +89,14 @@ organization membership mapper.
 
 == Configuring domain routing
 
-Each domain can optionally be configured to route users to a specific identity provider
-linked to the organization. This determines which identity provider handles authentication
-for users whose email matches the domain.
-
-Domain routing replaces the identity provider-level settings that were previously used to configure email domain matching.
-The routing configuration is now on the domain itself, giving administrators fine-grained control over how each domain is handled.
+To configure identity provider routing and auto-redirect for a domain:
 
 .Procedure
 
 . Navigate to the organization.
 . Click the *Domains* tab.
 . Click the domain name in the list, or click the action button and select *Edit*.
-. In the edit dialog:
-+
-Identity provider::
-Select the identity provider to route users to when their email matches this domain. The dropdown shows identity providers
-linked to this organization, plus a *None* option. Selecting *None* means no routing is configured -- users with this email domain
-will not be redirected to any identity provider and will see the standard login form instead.
-
-Auto redirect::
-When enabled, users whose email domain matches this domain are automatically redirected to the selected identity provider
-without being shown the login form. When disabled, the identity provider is available for selection on the login page but
-no automatic redirect occurs.
-+
-This setting has no effect when no identity provider is selected.
+. Select the *Identity provider* and configure *Auto redirect* as described in <<linking-a-domain-to-an-identity-provider,Linking a domain to an identity provider>>.
 +
 If a user has first-factor credentials configured (for example, a password), the user is not automatically redirected but asked to authenticate using their credentials.
 
