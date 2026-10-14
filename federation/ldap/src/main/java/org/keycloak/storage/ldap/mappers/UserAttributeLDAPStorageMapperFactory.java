@@ -20,6 +20,8 @@ package org.keycloak.storage.ldap.mappers;
 import java.util.Arrays;
 import java.util.List;
 
+import java.util.regex.Matcher;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -128,7 +130,12 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
 		String mapping = config.getConfig().getFirst(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
 		boolean isBinaryAttribute = config.get(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, false);
 
-		if (LDAPUtils.matchVariableInString(mapping).find()) {
+		Matcher placeholder = LDAPUtils.matchVariableInString(mapping);
+
+		if (placeholder.find()) {
+			if (placeholder.find()) {
+				throw new ComponentValidationException("LDAP username templates support only one attribute placeholder with optional static prefix and suffix.");
+			}
 			String userModelAttribute = config.getConfig().getFirst(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE);
 
 			if (!UserModel.USERNAME.equalsIgnoreCase(userModelAttribute)) {

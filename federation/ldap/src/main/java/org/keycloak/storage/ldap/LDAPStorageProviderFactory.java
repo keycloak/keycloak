@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import javax.naming.NamingException;
 import javax.naming.spi.NamingManager;
@@ -273,6 +274,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         LDAPConfig cfg = new LDAPConfig(config.getConfig());
+		Matcher usernamePlaceholder = LDAPUtils.matchVariableInString(cfg.getUsernameLdapAttribute());
+		if (usernamePlaceholder.find() && usernamePlaceholder.find()) {
+			throw new ComponentValidationException("LDAP username templates support only one attribute placeholder with optional static prefix and suffix.");
+		}
+
         UserStorageProviderModel userStorageModel = new UserStorageProviderModel(config);
         String customFilter = cfg.getCustomUserSearchFilter();
         LDAPUtils.validateCustomLdapFilter(customFilter);
