@@ -20,10 +20,13 @@ package org.keycloak.storage.ldap.mappers.membership;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.util.regex.Matcher;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.LDAPUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -66,10 +69,33 @@ public abstract class CommonLDAPGroupMapperConfig {
         return (membershipType!=null && !membershipType.isEmpty()) ? Enum.valueOf(MembershipType.class, membershipType) : MembershipType.DN;
     }
 
-    public String getMembershipUserLdapAttribute(LDAPConfig ldapConfig) {
-        String membershipUserAttrName = mapperModel.getConfig().getFirst(MEMBERSHIP_USER_LDAP_ATTRIBUTE);
-        return membershipUserAttrName!=null ? membershipUserAttrName : ldapConfig.getUsernameLdapAttribute();
-    }
+	public String getMembershipUserLdapAttribute(LDAPConfig ldapConfig) {
+		String membershipUserAttrName = mapperModel.getConfig().getFirst(MEMBERSHIP_USER_LDAP_ATTRIBUTE);
+
+		if (membershipUserAttrName != null) {
+			if (membershipUserAttrName.trim().isEmpty()
+				|| LDAPUtils.matchVariableInString(membershipUserAttrName).find()) {
+				throw new ModelException("Membership user LDAP attribute must be a real LDAP attribute name, for example uid.");
+			}
+
+			return membershipUserAttrName;
+		}
+
+		String usernameMapping = ldapConfig.getUsernameLdapAttribute();
+		Matcher matcher = LDAPUtils.matchVariableInString(usernameMapping);
+
+		if (!matcher.find()) {
+			return usernameMapping;
+		}
+
+		String backingAttribute = matcher.group(1);
+
+		if (matcher.find()) {
+			throw new ModelException("Username templates with multiple placeholders require an explicit membership user LDAP attribute.");
+		}
+
+		return backingAttribute;
+	}
 
     public String getMemberOfLdapAttribute() {
         String memberOfLdapAttrName = mapperModel.getConfig().getFirst(MEMBEROF_LDAP_ATTRIBUTE);
