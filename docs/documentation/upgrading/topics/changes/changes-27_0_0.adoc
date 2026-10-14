@@ -158,6 +158,14 @@ After upgrading, requests that update the `admin-permissions` client are rejecte
 Requests that delete it are also rejected with a 403 status, where previously they were rejected with a 400 status.
 Configuring the permissions and the policies of the realm is not affected, as it requires the `manage-realm` role rather than a permission on the client.
 
+=== User storage periodic sync runs at the configured period again
+
+Periodic full and changed-users synchronization for a user storage provider now starts every `fullSyncPeriod` or `changedSyncPeriod` seconds, as documented.
+A regression caused a sync to run only on every other scheduled tick, so the effective interval was about twice the configured period, whenever a single sync took longer than roughly one second.
+The provider's last-sync time is now recorded when a sync starts rather than when it finishes, so the schedule no longer drifts by the sync duration.
+
+If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
