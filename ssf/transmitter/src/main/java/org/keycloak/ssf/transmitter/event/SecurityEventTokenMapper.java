@@ -85,6 +85,12 @@ public class SecurityEventTokenMapper {
     // what separates them; see isUserPurgeAdminEvent.
     protected static final Pattern USER_DELETED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)$");
 
+    // "sessions/{sessionId}" — admin deletion of a single user session
+    // (RealmAdminResource.deleteSession, ResourceType.USER_SESSION). Unlike the
+    // users/... paths this carries no user id; RealmAdminResource attaches it as
+    // the Details.USER_ID admin event detail. See isUserSessionDeleteAdminEvent.
+    protected static final Pattern USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^sessions/([^/]+)$");
+
     public static final String KC_CREDENTIAL_ID = "kc_credential_id";
 
     public static final String KC_CREDENTIAL_TYPE = "kc_credential_type";
@@ -909,16 +915,23 @@ public class SecurityEventTokenMapper {
      * "log out all user sessions" ({@code users/{userId}/logout}),
      * admin-initiated password reset / credential management, an
      * enable/disable transition on the generic user update endpoint (see
-     * {@link #isEnabledStateChangeAdminEvent}), and deletion of the user
-     * itself (see {@link #isUserPurgeAdminEvent}); everything else returns
+     * {@link #isEnabledStateChangeAdminEvent}), deletion of the user
+     * itself (see {@link #isUserPurgeAdminEvent}), and deletion of a single
+     * user session ({@code sessions/{sessionId}}, see
+     * {@link #isUserSessionDeleteAdminEvent}); everything else returns
      * null and should short-circuit before any stream lookup happens.
      *
-     * <p>The last two share the bare {@code users/{id}} resource path and are
-     * told apart by operation type, so both gates check it explicitly.
+     * <p>Enable/disable and purge share the bare {@code users/{id}} resource
+     * path and are told apart by operation type, so both gates check it
+     * explicitly. Session deletion is the only mapped path that is not a
+     * {@link ResourceType#USER} event.
      */
     public boolean canConvert(AdminEvent adminEvent) {
         if (adminEvent == null) {
             return false;
+        }
+        if (ResourceType.USER_SESSION.equals(adminEvent.getResourceType())) {
+            return isUserSessionDeleteAdminEvent(adminEvent);
         }
         if (!ResourceType.USER.equals(adminEvent.getResourceType())) {
             return false;
@@ -958,6 +971,31 @@ public class SecurityEventTokenMapper {
         }
         String path = adminEvent.getResourcePath();
         return path != null && USER_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path).matches();
+    }
+
+    /**
+     * True when {@code adminEvent} is an admin deletion of a single user session —
+     * {@code DELETE /admin/realms/{realm}/sessions/{sessionId}} as fired by
+     * {@code RealmAdminResource.deleteSession} with {@link ResourceType#USER_SESSION}.
+     * This is what the per-session "Sign out" action in the admin console
+     * (realm Sessions page and user Sessions tab) calls; "Sign out all sessions"
+     * goes through {@code users/{id}/logout} instead.
+     *
+     * <p>The session is already gone when the event fires and the path only
+     * names the session, so the user id must come from the
+     * {@link Details#USER_ID} detail the admin resource attaches. Without it
+     * there is no subject to build and the event is not convertible.
+     */
+    protected boolean isUserSessionDeleteAdminEvent(AdminEvent adminEvent) {
+        if (!ResourceType.USER_SESSION.equals(adminEvent.getResourceType())
+                || adminEvent.getOperationType() != OperationType.DELETE) {
+            return false;
+        }
+        String path = adminEvent.getResourcePath();
+        if (path == null || !USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path).matches()) {
+            return false;
+        }
+        return SsfUtil.userIdFromAdminEvent(adminEvent) != null;
     }
 
     protected List<Pattern> supportedAdminPathPatters() {
@@ -1217,12 +1255,20 @@ public class SecurityEventTokenMapper {
 
     public SsfSecurityEventToken toSecurityEventToken(AdminEvent adminEvent, StreamConfig stream) {
 
-        String userId = SsfUtil.userIdFromAdminEventPath(adminEvent);
+        String userId = SsfUtil.userIdFromAdminEvent(adminEvent);
         if (userId == null) {
             return null;
         }
 
         String path = adminEvent.getResourcePath();
+
+        if (isUserSessionDeleteAdminEvent(adminEvent)) {
+            Matcher sessionMatcher = USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path);
+            // isUserSessionDeleteAdminEvent already verified the match; matches() must run again to populate the group.
+            sessionMatcher.matches();
+            return generateLogoutEventForAdminUserSessionDelete(userId, sessionMatcher.group(1), adminEvent, stream);
+        }
+
         Matcher matcher = USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path);
         if (matcher.matches()) {
             return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent, stream);
@@ -1341,6 +1387,39 @@ public class SecurityEventTokenMapper {
         event.getDetails().put("admin", "true");
         event.getDetails().put(Details.REASON, "logout_all_user_sessions");
 
-        return toSecurityEventToken(event, stream);
+        // Pass the admin event through so initiating_entity reports ADMIN rather than USER.
+        return toSecurityEventToken(event, adminEvent, stream);
+    }
+
+    /**
+     * Builds a synthetic {@link EventType#LOGOUT} {@link Event} for an admin
+     * deletion of a single user session ({@code DELETE sessions/{sessionId}}),
+     * mirroring {@link #generateLogoutEventForAdminLogoutAllUserSessions} — but
+     * with the concrete session id from the resource path rather than the
+     * {@code "ALL"} placeholder, so the resulting {@link CaepSessionRevoked}
+     * SET names exactly the session that was revoked.
+     *
+     * <p>Deliberately no store lookup here, unlike the {@code REVOKE_GRANT}
+     * path (see {@link #shouldIgnoreRevokeGrant}): that check exists because a
+     * token revocation usually only detaches one client and leaves the session
+     * alive, so the stores are the only way to tell whether anything ended.
+     * Deleting a user session through the admin API always ends the online
+     * session, exactly like a user-initiated {@link EventType#LOGOUT}, which
+     * is mapped without consulting the stores either. An offline session that
+     * may survive under the same id is a per-client grant rather than the SSO
+     * session a receiver correlates by {@code sid}, and the logout path
+     * already announces session-revoked regardless of such a survivor.
+     */
+    protected SsfSecurityEventToken generateLogoutEventForAdminUserSessionDelete(String userId, String sessionId, AdminEvent adminEvent, StreamConfig stream) {
+
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        event.setUserId(userId);
+        event.setSessionId(sessionId);
+        event.setDetails(new HashMap<>());
+        event.getDetails().put("admin", "true");
+        event.getDetails().put(Details.REASON, "user_session_deleted");
+
+        return toSecurityEventToken(event, adminEvent, stream);
     }
 }

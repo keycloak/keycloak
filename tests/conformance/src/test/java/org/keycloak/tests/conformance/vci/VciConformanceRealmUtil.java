@@ -142,13 +142,12 @@ public final class VciConformanceRealmUtil {
                 // random offsets occasionally coincide, leaving an iat delta that matches the real inter-issuance
                 // gap and intermittently tripping the check (see keycloak/keycloak#53787). Rounding quantizes iat to
                 // unit boundaries, so the delta between two credentials issued ~1-2s apart is either 0 or a full
-                // unit - never approximately the real gap - which makes the check deterministic. MINUTE is the
-                // coarsest usable unit here: exp is computed from the already-normalized iat and the credential
-                // scopes use a 300s (5 min) expiry, so MINUTE keeps exp exactly 300s after iat; the coarser HOUR
-                // and DAY units would truncate exp back onto iat. MINUTE backdates iat by <= 60s, well inside the
-                // backdating the rest of the suite already tolerates.
+                // unit - never approximately the real gap. The batch unlinkability check accepts shared
+                // hour-aligned timestamps, but treats minute rounding as too precise. The credential scopes
+                // use a 7200s (2 hour) expiry: exp is computed from the normalized iat, so both remain on hour
+                // boundaries and credentials retain at least an hour of validity at issuance.
                 .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.ROUND.name())
-                .attribute(OID4VCIConstants.TIME_ROUND_UNIT, TimeClaimNormalizer.RoundUnit.MINUTE.name())
+                .attribute(OID4VCIConstants.TIME_ROUND_UNIT, TimeClaimNormalizer.RoundUnit.HOUR.name())
                 .defaultSignatureAlgorithm(Algorithm.ES256)
                 .clientScopes(createCredentialScope(mdoc))
                 .users(createUserRepWithVc(mdoc));
@@ -247,7 +246,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createSdJwtCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(SD_JWT_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.SD_JWT_VC)
@@ -271,7 +270,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createMdocCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(MDOC_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.MSO_MDOC)
