@@ -150,6 +150,17 @@ public class UserSessionClientVisibilityTest {
         assertEquals(200, response.getStatusCode(), response.getErrorDescription());
     }
 
+    private void createHiddenOnlySessions() {
+        removeSessions(managedRealm.admin().users().get(targetUserId));
+
+        oauth.scope(null);
+        oauth.client(HIDDEN_CLIENT, CLIENT_SECRET);
+        exchangeCode(oauth.doLogin(TARGET_USER, "password"));
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        joinSsoSession(HIDDEN_CLIENT);
+    }
+
     private static void removeSessions(UserResource user) {
         user.logout();
         // logout leaves offline sessions in place
@@ -186,6 +197,18 @@ public class UserSessionClientVisibilityTest {
         Set<String> clients = sessionClients(fullViewer.realm(managedRealm.getName()).users().get(targetUserId).getUserSessions());
 
         assertTrue(clients.containsAll(Set.of(visibleClientUuid, hiddenClientUuid)));
+    }
+
+    @Test
+    public void sessionsOmitHiddenOnlySession() {
+        createHiddenOnlySessions();
+
+        UserResource fullUser = fullViewer.realm(managedRealm.getName()).users().get(targetUserId);
+        assertEquals(Set.of(hiddenClientUuid), sessionClients(fullUser.getUserSessions()));
+
+        UserResource delegatedUser = fgapViewer.realm(managedRealm.getName()).users().get(targetUserId);
+        assertTrue(delegatedUser.getUserSessions().isEmpty(),
+                "a session used only by a hidden client must not reveal its existence");
     }
 
     @Test
@@ -266,6 +289,28 @@ public class UserSessionClientVisibilityTest {
         Set<String> clients = uiExtSessionClients(fullViewer);
 
         assertTrue(clients.containsAll(Set.of(visibleClientUuid, hiddenClientUuid)));
+    }
+
+    @Test
+    public void uiExtRegularSessionsOmitHiddenOnlySession() throws IOException {
+        createHiddenOnlySessions();
+
+        JsonNode fullSessions = uiExtSessions(fullViewer, null, "REGULAR", null);
+        assertEquals(1, targetSessionCount(fullSessions));
+        assertEquals(Set.of(hiddenClientUuid), uiExtSessionClients(fullSessions));
+        assertEquals(0, targetSessionCount(uiExtSessions(fgapViewer, null, "REGULAR", null)),
+                "a hidden-only regular session must not appear in the realm session list");
+    }
+
+    @Test
+    public void uiExtOfflineSessionsOmitHiddenOnlySession() throws IOException {
+        createHiddenOnlySessions();
+
+        JsonNode fullSessions = uiExtSessions(fullViewer, null, "OFFLINE", null);
+        assertEquals(1, targetSessionCount(fullSessions));
+        assertEquals(Set.of(hiddenClientUuid), uiExtSessionClients(fullSessions));
+        assertEquals(0, targetSessionCount(uiExtSessions(fgapViewer, null, "OFFLINE", null)),
+                "a hidden-only offline session must not disclose an inaccessible client's offline grant");
     }
 
     @Test
@@ -378,6 +423,16 @@ public class UserSessionClientVisibilityTest {
             }
         }
         return clients;
+    }
+
+    private int targetSessionCount(JsonNode sessions) {
+        int count = 0;
+        for (JsonNode session : sessions) {
+            if (targetUserId.equals(session.get("userId").asText())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private JsonNode uiExtSessions(Keycloak admin, String clientUuid, String type, String search) throws IOException {
