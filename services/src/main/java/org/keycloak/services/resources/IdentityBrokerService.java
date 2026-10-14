@@ -1297,8 +1297,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
 
     private Response redirectToErrorWhenLinkingFailed(AuthenticationSessionModel authSession, String eventError, String error, Object... parameters) {
+        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
+        this.event.client(authSession.getClient());
+        UserModel user = authSession.getAuthenticatedUser();
+        if (user != null) {
+            this.event.user(user);
+            this.event.detail(Details.USERNAME, user.getUsername());
+        }
         this.event.detail(Details.REASON, error);
         this.event.error(eventError);
+        this.errorEventSent = true;
 
         FormMessage errorMessage = new FormMessage(error, parameters);
         String serializedError;

@@ -40,6 +40,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
@@ -306,6 +307,39 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
             Assertions.assertNull(events.poll());
         });
+    }
+
+    @Test
+    public void testAccountLinkingIdpReturnsError() throws Exception {
+        loginToConsumer();
+
+        // Configure IDP to use prompt=none so the provider returns login_required
+        // immediately (user has no session at the provider)
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderRepresentation idp = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put("prompt", "none");
+        consumerRealm.identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        try {
+            String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+            oauth.loginForm().kcAction(kcAction).open();
+
+            events.clear();
+            confirmIdpLinking();
+
+            // Provider returns login_required since user has no provider session and prompt=none.
+            // This triggers IdentityBrokerService.error() during the linking flow.
+            errorPage.assertCurrent();
+
+            assertUserLinkedToIDP(false);
+
+            assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+                assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.IDENTITY_PROVIDER_LOGIN_FAILURE, false);
+            });
+        } finally {
+            idp.getConfig().put("prompt", "login");
+            consumerRealm.identityProviders().get(bc.getIDPAlias()).update(idp);
+        }
     }
 
 
