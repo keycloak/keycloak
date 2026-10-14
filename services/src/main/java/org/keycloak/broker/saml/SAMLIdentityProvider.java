@@ -45,6 +45,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -278,6 +279,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
                         .toGregorianCalendar().getTimeInMillis() / 1000;
                 sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
+                if (sessionNotOnOrAfterSeconds <= Time.currentTime()) {
+                    throw new IdentityBrokerException("Upstream session has already expired (SessionNotOnOrAfter)");
+                }
                 authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER,
                         Long.toString(sessionNotOnOrAfterSeconds));
             } else {
