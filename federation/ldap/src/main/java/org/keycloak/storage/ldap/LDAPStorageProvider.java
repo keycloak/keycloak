@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.naming.AuthenticationException;
@@ -1089,22 +1091,71 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
-    public LDAPObject loadLDAPUserByUsername(RealmModel realm, String username) {
-        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+	protected String[] resolveUsernameLookup(String mapping, String username) {
+		if (username == null) {
+			return null;
+		}
 
-            String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
-            Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username);
-            ldapQuery.addWhereCondition(usernameCondition);
+		Matcher placeholder = Pattern.compile("\\{([^{}]+)\\}").matcher(mapping);
 
-            LDAPObject ldapUser = ldapQuery.getFirstResult();
-            if (ldapUser == null) {
-                return null;
-            }
+		if (!placeholder.find()) {
+			return new String[] { mapping, username };
+		}
 
-            return ldapUser;
-        }
-    }
+		String attribute = placeholder.group(1);
+		String prefix = mapping.substring(0, placeholder.start());
+		String suffix = mapping.substring(placeholder.end());
+
+		if (placeholder.find()) {
+			throw new ModelException("Username lookup supports only one LDAP attribute placeholder: " + mapping);
+		}
+
+		Matcher matcher = Pattern.compile(
+				Pattern.quote(prefix) + "(.+)" + Pattern.quote(suffix),
+				Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
+			.matcher(username);
+
+		if (!matcher.matches()) {
+			return null;
+		}
+
+		return new String[] { attribute, matcher.group(1) };
+	}
+
+	public LDAPObject loadLDAPUserByUsername(RealmModel realm, String username) {
+		if (username == null) {
+			return null;
+		}
+
+		LDAPConfig config = ldapIdentityStore.getConfig();
+		String mapping = config.getUsernameLdapAttribute();
+
+		String[] lookup = resolveUsernameLookup(mapping, username);
+		if (lookup == null) {
+			return null;
+		}
+
+		try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+			LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+			ldapQuery.addWhereCondition(conditionsBuilder.equal(lookup[0], lookup[1]));
+
+			LDAPObject ldapUser = ldapQuery.getFirstResult();
+			if (ldapUser == null) {
+				return null;
+			}
+
+			boolean derivedUsername = !mapping.equals(lookup[0]);
+			if (derivedUsername) {
+				String resolvedUsername = LDAPUtils.getUsername(ldapUser, config);
+				if (!username.equalsIgnoreCase(resolvedUsername)) {
+					return null;
+				}
+			}
+
+			return ldapUser;
+		}
+	}
 
     public LDAPObject loadLDAPUserByUuid(RealmModel realm, String uuid) {
         if(uuid == null){
