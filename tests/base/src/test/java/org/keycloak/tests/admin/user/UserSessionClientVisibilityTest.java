@@ -61,6 +61,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -87,6 +88,7 @@ public class UserSessionClientVisibilityTest {
     private static final String TARGET_USER = "session-owner";
     private static final String VISIBLE_CLIENT = "visible-app";
     private static final String HIDDEN_CLIENT = "hidden-app";
+    private static final String REMOVED_CLIENT = "removed-app";
     private static final String CLIENT_SECRET = "secret";
     // served by the test framework's callback app, and registered on both clients in the realm config
     private static final String OAUTH_CALLBACK_URL = "http://localhost:8500/callback/oauth";
@@ -311,6 +313,39 @@ public class UserSessionClientVisibilityTest {
         assertEquals(Set.of(hiddenClientUuid), uiExtSessionClients(fullSessions));
         assertEquals(0, targetSessionCount(uiExtSessions(fgapViewer, null, "OFFLINE", null)),
                 "a hidden-only offline session must not disclose an inaccessible client's offline grant");
+    }
+
+    /**
+     * Removing a client leaves the sessions it was used in without clients. Such a session reveals no client, so it
+     * must stay listed for every admin that can view the user, rather than disappear along with hidden-only sessions.
+     */
+    @Test
+    public void sessionWithoutClientsStaysListed() throws IOException {
+        createSessionWithoutClients();
+
+        for (Keycloak admin : List.of(fullViewer, fgapViewer)) {
+            List<UserSessionRepresentation> sessions = admin.realm(managedRealm.getName()).users().get(targetUserId).getUserSessions();
+            assertEquals(1, sessions.size());
+            assertTrue(sessions.get(0).getClients().isEmpty());
+
+            JsonNode uiExtSessions = uiExtSessions(admin, null, "REGULAR", null);
+            assertEquals(1, targetSessionCount(uiExtSessions));
+            assertTrue(uiExtSessionClients(uiExtSessions).isEmpty());
+        }
+    }
+
+    private void createSessionWithoutClients() {
+        removeSessions(managedRealm.admin().users().get(targetUserId));
+
+        String clientUuid = ApiUtil.getCreatedId(managedRealm.admin().clients().create(ClientBuilder.create(REMOVED_CLIENT)
+                .secret(CLIENT_SECRET)
+                .redirectUris(OAUTH_CALLBACK_URL)
+                .build()));
+        oauth.scope(null);
+        oauth.client(REMOVED_CLIENT, CLIENT_SECRET);
+        exchangeCode(oauth.doLogin(TARGET_USER, "password"));
+
+        managedRealm.admin().clients().get(clientUuid).remove();
     }
 
     @Test

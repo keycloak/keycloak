@@ -1,5 +1,6 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -124,11 +125,13 @@ public class SessionsResource {
 
     private Stream<SessionRepresentation> streamRegular() {
         return session.sessions().readOnlyStreamUserSessions(realm)
+                .filter(this::hasVisibleClientOrNone)
                 .map(s -> toRepresentation(s, REGULAR));
     }
 
     private Stream<SessionRepresentation> streamOffline() {
         return session.sessions().readOnlyStreamOfflineUserSessions(realm)
+                .filter(this::hasVisibleClientOrNone)
                 .map(s -> toRepresentation(s, OFFLINE));
     }
 
@@ -163,5 +166,14 @@ public class SessionsResource {
 
     private boolean canViewClient(ClientModel client) {
         return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
+    }
+
+    /**
+     * A session used only by clients the caller cannot view would reveal that the user uses a hidden client, so it is
+     * left out. A session without any clients, e.g. after its clients were removed, reveals nothing and stays listed.
+     */
+    private boolean hasVisibleClientOrNone(UserSessionModel userSession) {
+        Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+        return clientSessions.isEmpty() || clientSessions.stream().anyMatch(cs -> canViewClient(cs.getClient()));
     }
 }
