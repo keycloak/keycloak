@@ -509,11 +509,29 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         String userModelAttrName = getUserModelAttribute();
         String ldapAttrName = getLdapAttributeName();
 
-        // Add mapped attribute to returning ldap attributes
-        query.addReturningLdapAttribute(ldapAttrName);
-        if (isReadOnly()) {
-            query.addReturningReadOnlyLdapAttribute(ldapAttrName);
-        }
+		// Request the LDAP attributes referenced by the mapping.
+		Matcher matcher = LDAPUtils.matchVariableInString(ldapAttrName);
+		boolean hasPlaceholders = false;
+
+		while (matcher.find()) {
+			hasPlaceholders = true;
+
+			String attributeName = matcher.group(1);
+			query.addReturningLdapAttribute(attributeName);
+
+			if (isReadOnly()) {
+				query.addReturningReadOnlyLdapAttribute(attributeName);
+			}
+		}
+
+		// Preserve the existing behavior for ordinary attribute mappings.
+		if (!hasPlaceholders) {
+			query.addReturningLdapAttribute(ldapAttrName);
+
+			if (isReadOnly()) {
+				query.addReturningReadOnlyLdapAttribute(ldapAttrName);
+			}
+		}
 
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
