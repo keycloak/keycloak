@@ -23,6 +23,7 @@ import org.keycloak.protocol.oauth2.cimd.provider.AbstractPersistentClientIdMeta
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.representations.AccessToken;
@@ -48,9 +49,11 @@ import org.keycloak.testframework.oauth.CimdProvider;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.OIDCClientRepresentationBuilder;
+import org.keycloak.testframework.oauth.SectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.oauth.annotations.InjectCimdProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.oauth.annotations.InjectSectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -102,6 +105,9 @@ public class ClientIdMetadataDocumentTest {
 
     @InjectCimdProvider(config = CimdClientConfig.class, lifecycle = LifeCycle.METHOD)
     CimdProvider cimd;
+
+    @InjectSectorIdentifierRedirectUrisProvider
+    SectorIdentifierRedirectUrisProvider sectorIdentifierRedirectUrisProvider;
 
     @InjectOAuthClient
     OAuthClient oauth;
@@ -1090,6 +1096,37 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
         cimd.getRepresentation().setRequestUris(null);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorTrustedSectorIdentifierUri() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "127.0.0.1"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata
+        setCimdPublicClient();
+        sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(List.of(REDIRECT_URI));
+        cimd.getRepresentation().setSubjectType("pairwise");
+        cimd.getRepresentation().setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted pairwise mapper
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        List<ProtocolMapperRepresentation> pairwiseMappers = clientRepresentation.getProtocolMappers().stream()
+                .filter(m -> PairwiseSubMapperHelper.getSectorIdentifierUri(m) != null)
+                .toList();
+        Assertions.assertEquals(1, pairwiseMappers.size());
+        Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), PairwiseSubMapperHelper.getSectorIdentifierUri(pairwiseMappers.get(0)));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
     @Test
