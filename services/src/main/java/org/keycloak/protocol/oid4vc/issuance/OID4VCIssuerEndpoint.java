@@ -401,6 +401,12 @@ public class OID4VCIssuerEndpoint {
         return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
     }
 
+    public Response createCredentialOffer(String credentialConfigurationId, Boolean preAuthorized, String targetUser,
+                                          Long expiresAt, OfferResponseType responseType, int width, int height) {
+        return createCredentialOffer(credentialConfigurationId, preAuthorized, targetUser, expiresAt, responseType,
+                width, height, null);
+    }
+
     /**
      * Creates a Credential Offer that can be pre-authorized and/or bound to a specific target user.
      * <p>
@@ -459,6 +465,7 @@ public class OID4VCIssuerEndpoint {
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
+     * @param claimsRef     An optional opaque reference to external claim data for this offer
      */
     @GET
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
@@ -470,7 +477,8 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("expire") Long expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
-            @QueryParam("height") @DefaultValue("200") int height
+            @QueryParam("height") @DefaultValue("200") int height,
+            @QueryParam("claims_ref") String claimsRef
     ) {
         configureCors(true);
         EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
@@ -550,6 +558,7 @@ public class OID4VCIssuerEndpoint {
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+            offerState.setClaimsRef(claimsRef);
             if (preAuthorized) {
                 offerState.setOriginatingUserId(loginUserModel.getId());
                 // Bearer authentication reconstructs request-scoped sessions for stateless tokens. Bind the offer to
@@ -1036,7 +1045,7 @@ public class OID4VCIssuerEndpoint {
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+            VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder, offerState);
             vcIssuanceContexts.add(vcIssuanceContext);
             verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
         } else {
@@ -1060,7 +1069,7 @@ public class OID4VCIssuerEndpoint {
                     Proofs proofForIteration = Proofs.create(proofType, currentProof);
                     // Creating credential with keybinding to the current proof
                     credentialRequest.setProofs(proofForIteration);
-                    VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
+                    VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder, offerState);
                     vcIssuanceContexts.add(vcIssuanceContext);
                     verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
                 }
@@ -1719,7 +1728,8 @@ public class OID4VCIssuerEndpoint {
                                                 SupportedCredentialConfiguration credentialConfig,
                                                 OID4VCAuthorizationDetail authDetail,
                                                 CredentialRequest credentialRequestVO,
-                                                EventBuilder eventBuilder
+                                                EventBuilder eventBuilder,
+                                                CredentialOfferState offerState
     ) {
 
         // Get the client scope model from the credential configuration
@@ -1742,7 +1752,12 @@ public class OID4VCIssuerEndpoint {
                 .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
                 .toList();
 
-        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
+        VCIssuanceContext vcIssuanceContext = new VCIssuanceContext()
+                .setAuthResult(authResult)
+                .setCredentialConfig(credentialConfig)
+                .setCredentialRequest(credentialRequestVO)
+                .setClaimsRef(offerState == null ? null : offerState.getClaimsRef());
+        getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder, vcIssuanceContext);
 
         // Enforce key binding prior to signing if necessary
         enforceKeyBindingIfProofProvided(vcIssuanceContext, eventBuilder);
@@ -1817,7 +1832,7 @@ public class OID4VCIssuerEndpoint {
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
                                           AuthenticationManager.AuthResult authResult, OID4VCAuthorizationDetail authDetail, CredentialRequest credentialRequestVO,
-                                          CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder) {
+                                          CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder, VCIssuanceContext vcIssuanceContext) {
 
         // Compute issuance date and apply correlation-mitigation according to realm configuration
         Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
@@ -1858,11 +1873,11 @@ public class OID4VCIssuerEndpoint {
             // claim of a previous mapper with the same name and copy it into the wrong namespace.
             protocolMappers.forEach(mapper -> {
                 Map<String, Object> mapperClaims = new HashMap<>();
-                mapper.setClaim(mapperClaims, authResult.session());
+                mapper.setClaim(mapperClaims, authResult.session(), vcIssuanceContext);
                 mapper.setClaimWithMetadataPrefix(mapperClaims, subjectClaimsWithMetadataPrefix);
             });
         } else {
-            protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
+            protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session(), vcIssuanceContext));
             protocolMappers
                     .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
         }
@@ -1880,7 +1895,7 @@ public class OID4VCIssuerEndpoint {
         // Include all available claims
         credentialSubjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
-        protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
+        protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session(), vcIssuanceContext));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
@@ -1894,11 +1909,7 @@ public class OID4VCIssuerEndpoint {
                     "Could not build credential: " + e.getMessage(), eventBuilder);
         }
 
-        return new VCIssuanceContext()
-                .setAuthResult(authResult)
-                .setCredentialBody(credentialBody)
-                .setCredentialConfig(credentialConfig)
-                .setCredentialRequest(credentialRequestVO);
+        return vcIssuanceContext.setCredentialBody(credentialBody);
     }
 
     /**

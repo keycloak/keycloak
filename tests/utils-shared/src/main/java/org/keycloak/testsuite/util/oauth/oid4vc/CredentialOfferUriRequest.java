@@ -16,6 +16,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     private String credConfigId;
     private Boolean preAuthorized;
     private String targetUser;
+    private String claimsRef;
     private Long expireAt;
     private OfferResponseType responseType;
     private Integer width, height;
@@ -41,6 +42,11 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
 
     public CredentialOfferUriRequest targetUser(String targetUser) {
         this.targetUser = targetUser;
+        return this;
+    }
+
+    public CredentialOfferUriRequest claimsRef(String claimsRef) {
+        this.claimsRef = claimsRef;
         return this;
     }
 
@@ -75,6 +81,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         if (!Strings.isEmpty(credConfigId)) builder.queryParam("credential_configuration_id", credConfigId);
         if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
         if (!Strings.isEmpty(targetUser)) builder.queryParam("target_user", targetUser);
+        if (claimsRef != null) builder.queryParam("claims_ref", claimsRef);
         if (expireAt != null) builder.queryParam("expire", expireAt);
         if (responseType != null) builder.queryParam("type", responseType.getValue());
         if (width != null) builder.queryParam("width", String.valueOf(width));

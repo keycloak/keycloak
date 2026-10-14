@@ -109,6 +109,22 @@ image::images/oid4vci/pre-authorized-code-flow.drawio.svg[Sequence diagram of th
 
 An optional transaction code (`tx_code`) can add a second layer of security. The `tx_code` must be communicated through a separate channel from the pre-authorized code itself.
 
+==== Referencing external claim data
+
+When creating an offer through `/protocol/oid4vc/create-credential-offer`, the issuing application can supply an optional
+`claims_ref` query parameter, for example `claims_ref=booking-42`. The value is a single opaque string identifying an
+external record, not a JSON object containing credential claims. Use URL encoding when the reference contains special characters.
+
+The reference applies to the offer and is stored with its server-side state for both authorization-code and pre-authorized
+offers. It is not included in the credential offer sent to the wallet or automatically copied into the issued credential.
+Existing offer authorization checks still apply. An external data source mapper must ensure that the referenced record is
+appropriate for the credential recipient; the reference alone does not grant access to external data.
+
+Custom `OID4VCMapper` implementations can override the `setClaim` overloads that accept `VCIssuanceContext` and read
+`context.getClaimsRef()` during issuance. Existing mappers that implement the original overloads continue to work.
+The reference is `null` when omitted or when issuance has no stored offer, including re-issuance after the original offer
+has been consumed. Mappers requiring an external reference should handle this case explicitly.
+
 === What This Chapter Covers
 
 The rest of this chapter walks through the practical steps of configuring {project_name} as a Verifiable Credential Issuer.
