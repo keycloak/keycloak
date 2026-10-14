@@ -72,26 +72,24 @@ public abstract class CommonLDAPGroupMapperConfig {
 	public String getMembershipUserLdapAttribute(LDAPConfig ldapConfig) {
 		String membershipUserAttrName = mapperModel.getConfig().getFirst(MEMBERSHIP_USER_LDAP_ATTRIBUTE);
 
-		if (membershipUserAttrName != null) {
-			if (membershipUserAttrName.trim().isEmpty()
-				|| LDAPUtils.matchVariableInString(membershipUserAttrName).find()) {
-				throw new ModelException("Membership user LDAP attribute must be a real LDAP attribute name, for example uid.");
-			}
-
-			return membershipUserAttrName;
+		if (membershipUserAttrName == null) {
+			membershipUserAttrName = ldapConfig.getUsernameLdapAttribute();
 		}
 
-		String usernameMapping = ldapConfig.getUsernameLdapAttribute();
-		Matcher matcher = LDAPUtils.matchVariableInString(usernameMapping);
+		if (membershipUserAttrName.trim().isEmpty()) {
+			throw new ModelException("Membership user LDAP attribute must not be empty.");
+		}
+
+		Matcher matcher = LDAPUtils.matchVariableInString(membershipUserAttrName);
 
 		if (!matcher.find()) {
-			return usernameMapping;
+			return membershipUserAttrName;
 		}
 
 		String backingAttribute = matcher.group(1);
 
 		if (matcher.find()) {
-			throw new ModelException("Username templates with multiple placeholders require an explicit membership user LDAP attribute.");
+			throw new ModelException("Membership user LDAP attribute templates must contain exactly one placeholder. Configure a real LDAP attribute name, for example uid.");
 		}
 
 		return backingAttribute;
