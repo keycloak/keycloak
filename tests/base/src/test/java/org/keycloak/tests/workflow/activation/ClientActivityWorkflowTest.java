@@ -2,6 +2,7 @@ package org.keycloak.tests.workflow.activation;
 
 import java.time.Duration;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.workflow.WorkflowProvider;
@@ -20,6 +21,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests activation of client workflows based on user-driven activity (login) events.
+ * Tests activation of client workflows based on user-driven activity (login, code exchange, token refresh) events.
  */
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class ClientActivityWorkflowTest extends AbstractWorkflowTest {
@@ -72,6 +74,38 @@ public class ClientActivityWorkflowTest extends AbstractWorkflowTest {
         runScheduledSteps(Duration.ofDays(10));
 
         assertClientEnabled(false, "phase3: step due after day 9");
+    }
+
+    @Test
+    public void testTokenRefreshAloneResetsWorkflow() {
+        createWorkflow();
+
+        // an offline session survives the clock moving days ahead, so a refresh can be the only activity
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse tokens;
+        try {
+            login();
+            tokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        } finally {
+            oauth.scope(null);
+        }
+        assertTrue(tokens.isSuccess(), "code to token");
+
+        // 4 days later the client only refreshes - no login, no code exchange
+        timeOffSet.set(Duration.ofDays(4));
+        try {
+            assertTrue(oauth.doRefreshTokenRequest(tokens.getRefreshToken()).isSuccess(), "refresh");
+        } finally {
+            timeOffSet.set(0);
+        }
+
+        runScheduledSteps(Duration.ofDays(6));
+
+        assertClientEnabled(true, "phase1: the refresh moved the step past day 6");
+
+        runScheduledSteps(Duration.ofDays(10));
+
+        assertClientEnabled(false, "phase2: step due after day 9");
     }
 
     @Test
