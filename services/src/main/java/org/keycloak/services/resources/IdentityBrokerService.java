@@ -1169,7 +1169,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             resolvedAlias = providerAlias;
         } else {
             linkingValid = noteFromSession.startsWith(expectedNotePrefix);
-            resolvedAlias = noteFromSession.substring(expectedNotePrefix.length());
+            resolvedAlias = linkingValid ? noteFromSession.substring(expectedNotePrefix.length()) : null;
         }
 
         if (linkingValid) {
