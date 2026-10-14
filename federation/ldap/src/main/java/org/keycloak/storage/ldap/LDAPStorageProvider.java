@@ -507,6 +507,24 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     private Condition createSearchCondition(LDAPQueryConditionsBuilder conditionsBuilder, String name, boolean equals, String value) {
+		if (UserModel.USERNAME.equalsIgnoreCase(name)) {
+			String mapping = ldapIdentityStore.getConfig().getUsernameLdapAttribute();
+
+			if (LDAPUtils.matchVariableInString(mapping).find()) {
+				if (!equals) {
+					throw new ModelException("Partial username searches are not supported when using an LDAP username template.");
+				}
+
+				String[] lookup = resolveUsernameLookup(mapping, value);
+
+				if (lookup == null) {
+					return conditionsBuilder.addCustomLDAPFilter("(&(objectClass=*)(!(objectClass=*)))");
+				}
+
+				return conditionsBuilder.equal(lookup[0], lookup[1]);
+			}
+		}
+
         if (equals) {
             return conditionsBuilder.equal(name, value);
         }
