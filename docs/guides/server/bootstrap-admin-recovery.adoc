@@ -12,7 +12,7 @@ A user or service admin account created using one of the methods described below
 
 == Bootstrapping a temporary admin account at {project_name} startup
 
-{project_name} `start` and `start-dev` commands support options for bootstrapping both temporary admin users and admin service accounts. These options are standard configuration options, so they can be specified in any of the https://www.keycloak.org/server/configuration#_configuring_sources_for_keycloak[configuration sources] such as environment variables or CLI parameters. For instance, the following examples demonstrate how to use the `start` and `start-dev` commands with CLI parameters to bootstrap a temporary admin user and an admin service account, respectively:
+{project_name} `start` and `start-dev` commands support options for bootstrapping both temporary admin users and admin service accounts. These options are standard configuration options, so they can be specified through any of the sources described in <@links.server id="configuration" anchor="_configuring_sources_for_keycloak" />, such as environment variables or CLI parameters. For instance, the following examples demonstrate how to use the `start` and `start-dev` commands with CLI parameters to bootstrap a temporary admin user and an admin service account, respectively:
 
 <@kc.start parameters="--bootstrap-admin-username tmpadm --bootstrap-admin-password pass"/>
 
