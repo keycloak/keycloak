@@ -1198,7 +1198,7 @@ public class TokenManager {
                 TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
                 realm, client);
         expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;
-        expiration = SessionExpirationUtils.applyUpstreamSessionExpiry(expiration, userSession);
+        expiration = SessionExpirationUtils.applyUpstreamSessionExpiry(expiration, userSession, offline);
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
     }

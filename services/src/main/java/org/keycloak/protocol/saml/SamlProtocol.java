@@ -43,6 +43,7 @@ import jakarta.xml.soap.SOAPMessage;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -69,6 +70,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
@@ -495,13 +497,25 @@ public class SamlProtocol implements LoginProtocol {
         String nameIdFormat = getNameIdFormat(samlClient, authSession);
 
         int assertionLifespan = samlClient.getAssertionLifespan();
+        int sessionExpiration = realm.getSsoSessionMaxLifespan();
+        String upstreamExpiry = userSession.getNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER);
+        if (upstreamExpiry != null && !userSession.isOffline()) {
+            try {
+                long upstreamExpirySeconds = Long.parseLong(upstreamExpiry);
+                long remainingSeconds = upstreamExpirySeconds - Time.currentTime();
+                if (remainingSeconds > 0 && remainingSeconds < sessionExpiration) {
+                    sessionExpiration = remainingSeconds <= Integer.MAX_VALUE ? (int) remainingSeconds : Integer.MAX_VALUE;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
         builder.requestID(requestID)
                 .destination(redirectUri)
                 .issuer(responseIssuer)
                 .assertionExpiration(assertionLifespan <= 0? realm.getAccessCodeLifespan() : assertionLifespan)
                 .subjectExpiration(assertionLifespan <= 0? realm.getAccessTokenLifespan() : assertionLifespan)
-                .sessionExpiration(realm.getSsoSessionMaxLifespan())
+                .sessionExpiration(sessionExpiration)
                 .requestIssuer(clientSession.getClient().getClientId())
                 .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
 

@@ -62,6 +62,9 @@ public class SessionExpirationUtils {
      * @return The time when the user session is expired or -1 if does not expire
      */
     public static long calculateUserSessionMaxLifespanTimestamp(UserSessionModel userSession, RealmModel realm) {
+        if (userSession == null) {
+            return -1L;
+        }
         long lifespan = calculateUserSessionMaxLifespanTimestamp(
                 userSession.isOffline(),
                 userSession.isRememberMe(),
@@ -225,13 +228,27 @@ public class SessionExpirationUtils {
     /**
      * Applies an upstream (federated) session expiry cap to the calculated lifespan.
      * Reads the upstream expiry from the user session note if present.
+     * Uses {@code userSession.isOffline()} to determine if the cap should be skipped.
      *
      * @param lifespan    the calculated session lifespan timestamp in milliseconds, or -1 if unlimited
      * @param userSession the user session to read the upstream expiry from
      * @return the effective lifespan, capped by upstream expiry if applicable
      */
     public static long applyUpstreamSessionExpiry(long lifespan, UserSessionModel userSession) {
-        if (userSession == null || userSession.isOffline()) {
+        return applyUpstreamSessionExpiry(lifespan, userSession, userSession != null && userSession.isOffline());
+    }
+
+    /**
+     * Applies an upstream (federated) session expiry cap to the calculated lifespan.
+     * Reads the upstream expiry from the user session note if present.
+     *
+     * @param lifespan    the calculated session lifespan timestamp in milliseconds, or -1 if unlimited
+     * @param userSession the user session to read the upstream expiry from
+     * @param offline     true if this is an offline session or offline token request (skips the cap)
+     * @return the effective lifespan, capped by upstream expiry if applicable
+     */
+    public static long applyUpstreamSessionExpiry(long lifespan, UserSessionModel userSession, boolean offline) {
+        if (userSession == null || offline) {
             return lifespan;
         }
         String brokerSessionNotAfter = userSession.getNote(FEDERATED_SESSION_NOT_ON_OR_AFTER);

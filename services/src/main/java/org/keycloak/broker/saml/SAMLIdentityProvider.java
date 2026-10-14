@@ -273,14 +273,16 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
-        if (authn != null && authn.getSessionNotOnOrAfter() != null) {
-            long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
-                    .toGregorianCalendar().getTimeInMillis() / 1000;
-            sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
-            authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER,
-                    Long.toString(sessionNotOnOrAfterSeconds));
-        } else {
-            authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER, null);
+        if (authn != null) {
+            if (authn.getSessionNotOnOrAfter() != null) {
+                long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
+                        .toGregorianCalendar().getTimeInMillis() / 1000;
+                sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
+                authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER,
+                        Long.toString(sessionNotOnOrAfterSeconds));
+            } else {
+                authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER, null);
+            }
         }
 
         if (context.getContextData().containsKey(FEDERATED_ACCESS_TOKEN)) {
