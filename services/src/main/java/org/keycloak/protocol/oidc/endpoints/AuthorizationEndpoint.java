@@ -357,7 +357,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (request.getMaxAge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
         if (request.getUiLocales() != null) authenticationSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
 
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
 
         if (acrValues.isEmpty()) {
@@ -374,24 +373,24 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
-        acrValues.stream().mapToInt(acr -> {
-            try {
-                Integer loa = acrLoaMap.get(acr);
-                return loa == null ? Integer.parseInt(acr) : loa;
-            } catch (NumberFormatException e) {
-                // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot met the specification requirement. Otherwise fallback to minimum LoA
-                boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
-                if (essential) {
+        boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
+        if (essential) {
+            Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
+            acrValues.stream().mapToInt(acr -> {
+                try {
+                    Integer loa = acrLoaMap.get(acr);
+                    return loa == null ? Integer.parseInt(acr) : loa;
+                } catch (NumberFormatException e) {
                     logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
                     event.detail(Details.REASON, "Invalid requested essential acr value");
                     event.error(Errors.INVALID_REQUEST);
                     throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
-                } else {
-                    logger.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);
-                    return Constants.MINIMUM_LOA;
                 }
-            }
-        }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+            }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        } else {
+            AcrUtils.getLowestLoaForAcrValues(acrValues, authenticationSession.getClient()).ifPresent(loa ->
+                authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        }
 
 
         if (request.getAdditionalReqParams() != null) {

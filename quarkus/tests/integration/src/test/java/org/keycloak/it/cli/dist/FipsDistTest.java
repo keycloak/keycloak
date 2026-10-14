@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 @Tag(DistributionTest.SLOW)
 public class FipsDistTest {
 
-    private static final String BCFIPS_VERSION = "BCFIPS version 2.0102";
+    private static final String BCFIPS_VERSION = "BCFIPS version 2.0103";
 
     @Test
     void testFipsNonApprovedMode(KeycloakRunner runner) {

@@ -59,6 +59,13 @@ Remember this may be the first thing a reviewer of your PR will look at to get a
 and it will also be used by the community in the future to find about what new features and enhancements are included in 
 new releases.
 
+For the best guided experience, use the [issue templates](https://github.com/keycloak/keycloak/issues/new/choose) when creating an issue.
+Pick the right type:
+
+- **Bug Report** -- something is broken or not working as documented
+- **Enhancement Request** -- an improvement to an existing feature
+- **Feature Request** -- a new capability that does not exist today
+
 ### Implementing
 
 Details for building from source and working with the codebase are provided in the 

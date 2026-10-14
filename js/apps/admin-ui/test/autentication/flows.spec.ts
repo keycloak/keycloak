@@ -39,6 +39,7 @@ import {
   goToPoliciesTab,
   goToRequiredActions,
   goToWebAuthnTab,
+  openExecutionConfig,
 } from "./flow.ts";
 
 test.describe("Authentication flows", () => {
@@ -161,6 +162,31 @@ test.describe("Authentication flow details", () => {
     await clickDeleteRow(page, name);
     await confirmModal(page);
     await assertRowExists(page, "Cookie", false);
+  });
+
+  test("clears an execution config", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const name = "Identity Provider Redirector";
+    await openExecutionConfig(page, name);
+    await page.getByTestId("alias").fill("redirector-config");
+    await page.getByTestId("default.reference.value").fill("reference");
+    await page.getByTestId("save").click();
+    await assertNotificationMessage(page, "Successfully saved the config");
+
+    await openExecutionConfig(page, name);
+    await page.getByTestId("clear").click();
+
+    await openExecutionConfig(page, name);
+    await expect(page.getByTestId("alias")).toHaveValue("");
+    await expect(page.getByTestId("alias")).toBeEnabled();
+    await expect(page.getByTestId("default.reference.value")).toHaveValue("");
+    await expect(page.getByTestId("clear")).toBeHidden();
   });
 
   test("sets as default in action menu", async ({ page }) => {
@@ -296,6 +322,52 @@ test.describe("Password policies tab", () => {
     await assertNotificationMessage(
       page,
       "Password policies successfully updated",
+    );
+  });
+
+  test("adds password policies with only view-realm and manage-realm", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({ enabled: true });
+    const user = {
+      username: "realm-manager",
+      password: "realm-manager",
+    };
+    const { id } = await adminClient.createUser({
+      realm: testBed.realm,
+      username: user.username,
+      enabled: true,
+      email: "realm-manager@example.com",
+      firstName: "Realm",
+      lastName: "Manager",
+      credentials: [{ type: "password", value: user.password }],
+    });
+    await adminClient.addClientRoleToUser(
+      id!,
+      "realm-management",
+      ["view-realm", "manage-realm"],
+      testBed.realm,
+    );
+
+    await login(page, { realm: testBed.realm, ...user });
+
+    await expect(page.getByTestId("nav-item-clients")).toBeHidden();
+    await goToAuthentication(page);
+    await goToPoliciesTab(page);
+    await addPolicy(page, "Not Recently Used");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Password policies successfully updated",
+    );
+
+    await goToAuthentication(page);
+    await goToCreateItem(page);
+    await fillCreateForm(page, "Realm manager flow", "", "Basic flow");
+    await assertNotificationMessage(page, "Flow created");
+    // The toast shows on the forbidden page too; the header is the flow's own page.
+    await expect(page.getByTestId("view-header")).toHaveText(
+      "Realm manager flow",
     );
   });
 });

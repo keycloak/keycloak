@@ -56,10 +56,11 @@ public class DeflateUtil {
     public static byte[] encode(byte[] message) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Deflater deflater = new Deflater(Deflater.DEFLATED, true);
-        DeflaterOutputStream deflaterStream = new DeflaterOutputStream(baos, deflater);
-        deflaterStream.write(message);
-        deflaterStream.finish();
-
+        try (DeflaterOutputStream deflaterStream = new DeflaterOutputStream(baos, deflater)) {
+            deflaterStream.write(message);
+        } finally {
+            deflater.end();
+        }
         return baos.toByteArray();
     }
 
@@ -157,6 +158,7 @@ public class DeflateUtil {
 
         @Override
         public void close() throws IOException {
+            inflater.end();
             is.close();
         }
 

@@ -32,6 +32,10 @@ jobs:
             NEXT_MAJOR=$(echo $LAST_RELEASE | cut -d '.' -f 1)
             NEXT_MINOR="$(($LAST_MINOR + 1))"
             LABEL="release/$NEXT_MAJOR.$NEXT_MINOR.0"
+            # There will be no more minor release on the 26.x line; 26.9.0 is actually released as the major bump 27.0.0.
+            if [ "$LABEL" == "release/26.9.0" ]; then
+              LABEL="release/27.0.0"
+            fi
             BACKPORT_LABEL="backport/main"
           elif [[ "$GITHUB_BASE_REF" = release/* ]]; then
             MAJOR_MINOR="$(echo $GITHUB_BASE_REF | cut -d '/' -f 2)"

@@ -455,7 +455,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 //move to next
                 return null;
             }
-            model = finalSelectionOptions.get(0).getAuthenticationExecution();
+            model = resolveSelectedExecution(finalSelectionOptions);
             factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
@@ -525,6 +525,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         return AuthenticationSelectionResolver.createAuthenticationSelectionList(processor, model);
     }
 
+    private AuthenticationExecutionModel resolveSelectedExecution(List<AuthenticationSelectionOption> selectionOptions) {
+        String currentExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return selectionOptions.stream()
+                .filter(option -> Objects.equals(option.getAuthExecId(), currentExecutionId))
+                .map(AuthenticationSelectionOption::getAuthenticationExecution)
+                .findFirst()
+                .orElseGet(() -> selectionOptions.get(0).getAuthenticationExecution());
+    }
 
     public Response processResult(AuthenticationProcessor.Result result, boolean isAction) {
         AuthenticationExecutionModel execution = result.getExecution();

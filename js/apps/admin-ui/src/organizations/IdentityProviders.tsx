@@ -9,61 +9,38 @@ import {
   Button,
   ButtonVariant,
   PageSection,
-  Switch,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { sortBy } from "lodash-es";
-import { BellIcon } from "@patternfly/react-icons";
+import { BellIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { ManageOrderDialog } from "../identity-providers/ManageOrderDialog";
 import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { toUpperCase } from "../util";
 import useToggle from "../utils/useToggle";
 import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
 
-type ShownOnLoginPageCheckProps = {
-  row: IdentityProviderRepresentation;
-  refresh: () => void;
-};
-
-const ShownOnLoginPageCheck = ({
+const OrgLinkProperty = ({
   row,
-  refresh,
-}: ShownOnLoginPageCheckProps) => {
-  const { adminClient } = useAdminClient();
-  const { addAlert, addError } = useAlerts();
+  orgId,
+  property,
+}: {
+  row: IdentityProviderRepresentation;
+  orgId: string;
+  property: "autoMembership" | "membershipType";
+}) => {
   const { t } = useTranslation();
-
-  const toggle = async (value: boolean) => {
-    try {
-      await adminClient.identityProviders.update(
-        { alias: row.alias! },
-        {
-          ...row,
-          hideOnLogin: value,
-        },
-      );
-      addAlert(t("linkUpdatedSuccessful"));
-
-      refresh();
-    } catch (error) {
-      addError("linkUpdatedError", error);
-    }
-  };
-
-  return (
-    <Switch
-      label={t("on")}
-      labelOff={t("off")}
-      isChecked={row.hideOnLogin}
-      onChange={(_, value) => toggle(value)}
-    />
-  );
+  const link = row.organizationLinks?.find((l) => l.organizationId === orgId);
+  if (!link) return "—";
+  if (property === "autoMembership") {
+    return toUpperCase(String(link.autoMembership));
+  }
+  return t(link.membershipType || "UNMANAGED");
 };
 
 export const IdentityProviders = () => {
@@ -76,7 +53,6 @@ export const IdentityProviders = () => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
   const [selectedRow, setSelectedRow] =
     useState<IdentityProviderRepresentation>();
@@ -118,118 +94,123 @@ export const IdentityProviders = () => {
   });
 
   return (
-    <>
-      {manageDisplayDialog && (
-        <ManageOrderDialog
+    <PageSection variant="light">
+      <UnlinkConfirm />
+      {open && (
+        <LinkIdentityProviderModal
           orgId={orgId!}
+          identityProvider={selectedRow}
           onClose={() => {
-            setManageDisplayDialog(false);
+            toggleOpen();
             refresh();
           }}
         />
       )}
-      <PageSection variant="light">
-        <UnlinkConfirm />
-        {open && (
-          <LinkIdentityProviderModal
-            orgId={orgId!}
-            identityProvider={selectedRow}
-            onClose={() => {
-              toggleOpen();
-              refresh();
-            }}
-          />
-        )}
-        {!hasProviders ? (
-          <ListEmptyState
-            icon={BellIcon}
-            message={t("noIdentityProvider")}
-            instructions={t("noIdentityProviderInstructions")}
-          />
-        ) : (
-          <KeycloakDataTable
-            key={key}
-            loader={loader}
-            ariaLabelKey="identityProviders"
-            searchPlaceholderKey="searchProvider"
-            toolbarItem={
-              <>
-                <ToolbarItem>
-                  <Button
-                    onClick={() => {
-                      setSelectedRow(undefined);
-                      toggleOpen();
-                    }}
-                  >
-                    {t("linkIdentityProvider")}
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <Button
-                    data-testid="manageDisplayOrder"
-                    variant="link"
-                    onClick={() => setManageDisplayDialog(true)}
-                  >
-                    {t("manageDisplayOrder")}
-                  </Button>
-                </ToolbarItem>
-              </>
-            }
-            actions={[
-              {
-                title: t("edit"),
-                onRowClick: (row) => {
-                  setSelectedRow(row);
+      {!hasProviders ? (
+        <ListEmptyState
+          icon={BellIcon}
+          message={t("noIdentityProvider")}
+          instructions={t("noIdentityProviderInstructions")}
+        />
+      ) : (
+        <KeycloakDataTable
+          key={key}
+          loader={loader}
+          ariaLabelKey="identityProviders"
+          searchPlaceholderKey="searchProvider"
+          toolbarItem={
+            <ToolbarItem>
+              <Button
+                onClick={() => {
+                  setSelectedRow(undefined);
                   toggleOpen();
-                },
+                }}
+              >
+                {t("linkIdentityProvider")}
+              </Button>
+            </ToolbarItem>
+          }
+          actions={[
+            {
+              title: t("edit"),
+              onRowClick: (row) => {
+                setSelectedRow(row);
+                toggleOpen();
               },
-              {
-                title: t("unLinkIdentityProvider"),
-                onRowClick: (row) => {
-                  setSelectedRow(row);
-                  toggleUnlinkDialog();
-                },
+            },
+            {
+              title: t("unLinkIdentityProvider"),
+              onRowClick: (row) => {
+                setSelectedRow(row);
+                toggleUnlinkDialog();
               },
-            ]}
-            columns={[
-              {
-                name: "alias",
-                cellRenderer: (row) => (
-                  <Link
-                    to={toIdentityProvider({
-                      realm,
-                      providerId: row.providerId!,
-                      alias: row.alias!,
-                      tab: "settings",
-                    })}
-                  >
-                    {row.alias}
-                  </Link>
-                ),
-              },
-              {
-                name: "providerId",
-                displayKey: "providerDetails",
-              },
-              {
-                name: "hideOnLogin",
-                displayKey: "hideOnLoginPage",
-                cellRenderer: (row) => (
-                  <ShownOnLoginPageCheck row={row} refresh={refresh} />
-                ),
-              },
-            ]}
-            emptyState={
-              <ListEmptyState
-                message={t("emptyIdentityProviderLink")}
-                instructions={t("emptyIdentityProviderLinkInstructions")}
-                primaryActionText={t("linkIdentityProvider")}
-                onPrimaryAction={toggleOpen}
-              />
-            }
-          />
-        )}
-      </PageSection>
-    </>
+            },
+          ]}
+          columns={[
+            {
+              name: "alias",
+              cellRenderer: (row) => (
+                <Button
+                  variant="link"
+                  isInline
+                  onClick={() => {
+                    setSelectedRow(row);
+                    toggleOpen();
+                  }}
+                >
+                  {row.alias}
+                </Button>
+              ),
+            },
+            {
+              name: "providerId",
+              displayKey: "providerDetails",
+              cellRenderer: (row) => (
+                <Link
+                  to={toIdentityProvider({
+                    realm,
+                    providerId: row.providerId!,
+                    alias: row.alias!,
+                    tab: "settings",
+                  })}
+                >
+                  {row.providerId} <ExternalLinkAltIcon />
+                </Link>
+              ),
+            },
+            {
+              name: "autoMembership",
+              displayKey: "autoMembership",
+              cellRenderer: (row) => (
+                <OrgLinkProperty
+                  row={row}
+                  orgId={orgId!}
+                  property="autoMembership"
+                />
+              ),
+            },
+            {
+              name: "membershipType",
+              displayKey: "membershipType",
+              cellRenderer: (row) => (
+                <OrgLinkProperty
+                  row={row}
+                  orgId={orgId!}
+                  property="membershipType"
+                />
+              ),
+            },
+          ]}
+          emptyState={
+            <ListEmptyState
+              message={t("emptyIdentityProviderLink")}
+              instructions={t("emptyIdentityProviderLinkInstructions")}
+              primaryActionText={t("linkIdentityProvider")}
+              onPrimaryAction={toggleOpen}
+            />
+          }
+        />
+      )}
+    </PageSection>
   );
 };

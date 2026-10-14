@@ -103,6 +103,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -142,7 +144,8 @@ public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
-    private final static long CLOCK_SKEW_SECONDS = 60;
+    /** Extra retention for action-token revocations to account for clock differences between nodes. */
+    public static final long CLOCK_SKEW_SECONDS = 60;
 
     /**
      * Auth session note, which indicates if user session will be persistent (Saved to real persistent store) or
@@ -1564,9 +1567,12 @@ public class AuthenticationManager {
                 verifier.audience(checkAudience);
             }
 
-            // Check token revocation in case of access token
+            // Check token revocation and additional verifiers in case of access token
             if (checkTokenType) {
                 verifier.withChecks(new TokenManager.TokenRevocationCheck(session));
+
+                TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier, session, realm, uriInfo);
+                new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
             }
 
             String kid = verifier.getHeader().getKeyId();

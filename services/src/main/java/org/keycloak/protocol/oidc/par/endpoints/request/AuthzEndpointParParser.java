@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -68,7 +69,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         RealmModel realm = session.getContext().getRealm();
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
         long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
-        if (System.currentTimeMillis() - created < (expiresIn * 1000L)) {
+        if (Time.currentTimeMillis() - created < (expiresIn * 1000L)) {
             requestParams = retrievedRequest;
         } else {
             throw new RuntimeException("PAR expired.");

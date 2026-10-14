@@ -25,25 +25,25 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
 /**
  * Sends authorization requests with missing or plain PKCE: Keycloak rejects them at the authorization endpoint
  * and redirects the error to the callback without ever presenting a login, where the module validates it.
  */
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerFapi2PkceRejectedTest extends AbstractVciConformanceTest {
 
     private static final List<String> MODULES = List.of(
             "fapi2-security-profile-final-par-ensure-pkce-required",
             "fapi2-security-profile-final-par-plain-pkce-rejected");
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = HaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override

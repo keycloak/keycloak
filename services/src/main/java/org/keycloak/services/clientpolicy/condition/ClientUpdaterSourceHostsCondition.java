@@ -28,6 +28,8 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -70,6 +72,10 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return isHostMatched() ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
@@ -153,7 +159,7 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
                 String hostname = InetAddress.getByName(hostAddress).getHostName();
                 logger.tracev("Trying verify request from address {0} of host {1} by domains", hostAddress, hostname);
                 for (String confDomain : trustedDomains) {
-                    if (hostname.endsWith(confDomain)) {
+                    if (hostname.equals(confDomain) || hostname.endsWith("." + confDomain)) {
                         logger.tracev("Successfully verified host {0} by trusted domain {1}", hostname, confDomain);
                         return hostname;
                     }

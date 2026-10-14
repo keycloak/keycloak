@@ -472,7 +472,6 @@ export const CapabilityConfig = ({
                   IdentityProviderType.JWT_AUTHORIZATION_GRANT
                 }
                 isDisabled={clientAuthentication}
-                realmOnly
                 stringify
               />
             )}

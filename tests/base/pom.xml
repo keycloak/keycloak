@@ -106,6 +106,10 @@
             <artifactId>keycloak-test-framework-remote</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-test-containers</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.tests</groupId>
             <artifactId>keycloak-tests-utils</artifactId>
             <version>${project.version}</version>
@@ -330,7 +334,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client-jackson3</artifactId>
+                    <artifactId>keycloak-admin-client-jackson3-internal</artifactId>
                     <version>${project.version}</version>
                     <scope>test</scope>
                 </dependency>

@@ -5,6 +5,7 @@ import java.util.List;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.JavascriptExecutor;
 
@@ -28,8 +29,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void tamperedAuthenticatorAttachment() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAuthenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.authenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM)
+        ));
 
         registerAndExpectError("attach-tamper",
                 tamperFormField("authenticatorAttachment", "platform"),
@@ -38,9 +40,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void invalidAuthenticatorAttachmentValue() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAuthenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM));
-
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.authenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM)
+        ));
         registerAndExpectError("attach-invalid",
                 tamperFormField("authenticatorAttachment", "not-a-real-value"),
                 "Your organization requires a different type of security key (invalid Authenticator Attachment 'not-a-real-value'). Please use the correct type.");
@@ -48,8 +50,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void omittedAuthenticatorAttachment() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAuthenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.authenticatorAttachment(AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM)
+        ));
 
         registerAndExpectError("attach-omit",
                 tamperFormField("authenticatorAttachment", ""),
@@ -59,8 +62,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void tamperedSignatureAlgorithm() {
         // Policy: ES512 only. Tamper pubKeyCredParams to ES256.
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicySignatureAlgorithms(List.of("ES512")));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.signatureAlgorithms(List.of("ES512"))
+        ));
 
         registerAndExpectError("alg-tamper",
                 tamperCreateOptions("opts.publicKey.pubKeyCredParams = [{type: 'public-key', alg: -7}];"),
@@ -70,8 +74,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void tamperedUserVerification() {
         // Policy: UV required. Tamper to "discouraged" — default virtual authenticator has isUserVerified=false.
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyUserVerificationRequirement("required"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.userVerificationRequirement("required")
+        ));
 
         registerAndExpectError("uv-tamper",
                 tamperCreateOptions(
@@ -83,8 +88,9 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void tamperedAttestationConveyance() {
         // Policy: "direct" attestation. Tamper to "none" — server has no verifier for fmt:"none".
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAttestationConveyancePreference("direct"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.attestationConveyancePreference("direct")
+        ));
 
         registerAndExpectError("att-tamper",
                 tamperCreateOptions("opts.publicKey.attestation = 'none';"),
@@ -109,6 +115,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(SecretGenerator.getInstance().randomString(24));
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         logout();
 
         // Replay the captured credential data in a new registration session
@@ -132,9 +139,10 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void acceptableAaguidWithNoneAttestation() {
-        managedRealm.updateWithCleanup(r -> r
-                .webAuthnPolicyAcceptableAaguids(List.of(ALL_ZERO_AAGUID))
-                .webAuthnPolicyAttestationConveyancePreference("none"));
+        managedRealm.updateWithCleanup(r -> r.webAuthn(false, builder ->
+                builder.acceptableAaguids(List.of(ALL_ZERO_AAGUID))
+                        .attestationConveyancePreference("none"))
+        );
 
         registerAndExpectError("aaguid-none-attestation",
                 "Your organization requires verified security keys. Attestation format 'none' is not accepted; please use a key that provides attestation.");

@@ -338,7 +338,7 @@ public class RoleByIdResource extends RoleResource {
     public ManagementPermissionReference getManagementPermissions(final @PathParam("role-id") String id) {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         RoleModel role = getRoleModel(id);
-        auth.roles().requireView(role);
+        auth.roles().requireView(role.getContainer());
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         if (!permissions.roles().isPermissionsEnabled(role)) {

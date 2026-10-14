@@ -20,6 +20,9 @@ http://node12:8080*
 http://node21:8080*
 http://node22:8080*
 http://web.example.com*
+https://example.com*
+HTTPS://example.com*
+https://Example.COM*
 https://keycloak.example.com*
 https://openshift.example.com:8443/console
 https://accounts.google.com/o/oauth2/revoke
@@ -48,5 +51,7 @@ https://www.h2database.com/*
 https://www.iso.org/*
 
 # Remove after 26.8 release
-https://www.keycloak.org/server/db#mariadb-galera-cluster-considerations
+https://www.keycloak.org/server/db#galera-cluster-considerations
 https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level-in-stateless-mode
+https://www.keycloak.org/high-availability/multi-cluster-v2/migrate-from-v1-to-v2
+https://www.keycloak.org/securing-apps/token-exchange#_token-exchange-delegation

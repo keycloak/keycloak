@@ -29,19 +29,27 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
@@ -51,6 +59,7 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.SelectOrganizationPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -61,6 +70,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -74,6 +85,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
+
+    @InjectRealm(ref = "provider", config = AbstractOrganizationTest.ProviderRealmConf.class)
+    ManagedRealm providerRealm;
 
     @InjectWebDriver
     ManagedWebDriver driver;
@@ -92,6 +106,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @InjectPage
     ErrorPage errorPage;
+
+    @InjectPage
+    OAuthGrantPage oauthGrantPage;
 
     @InjectPage
     SelectOrganizationPage selectOrganizationPage;
@@ -168,6 +185,49 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         assertNull(loginUsernamePage.getUsernameInputError());
         assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"user@neworg;org", "user@neworg org", "user@neworg.org.", "user@new_org.org", "user@2802@neworg.org"})
+    public void testMalformedDomainInUsernameContinuesToPasswordStep(String username) {
+        createOrganization();
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(username);
+        loginUsernamePage.submit();
+
+        // a malformed domain matches no organization, so the flow continues to the password step
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
+    }
+
+    @Test
+    public void testMalformedDomainInUsernameWhenOrganizationHasNoDomain() {
+        createOrganization(organizationName, new String[0]);
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("user@neworg;org");
+        loginUsernamePage.submit();
+
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
+    }
+
+    @Test
+    public void testMalformedDomainInLoginHintContinuesToPasswordStep() {
+        createOrganization();
+
+        oauth.loginForm().loginHint("user@neworg;org").open();
+
+        // the login_hint bypasses the username form, but a malformed domain must still match no organization
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword("password");
+        loginPage.submit();
+        assertThat(loginPage.getPasswordInputError().orElse(null), is("Invalid username or password."));
     }
 
     @Test
@@ -570,6 +630,39 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testConsentScreenRendersForMultiOrgUser() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource, memberEmail, "John", "Doe");
+        orgBResource.members().addMember(member.getId()).close();
+
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.setConsentRequired(true);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(r -> {
+            clientRep.setConsentRequired(false);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        loginUsernamePage.submit();
+
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+
+        oauthGrantPage.assertCurrent();
+        oauthGrantPage.accept();
+        assertLoginSuccess();
+    }
+
+    @Test
     public void testSwitchOrganizationNotAvailableForSingleOrgUser() {
         OrganizationRepresentation org = createOrganization();
         OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
@@ -694,6 +787,30 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         assertThat(loginPage.getAttemptedUsername(), is(member.getEmail()));
     }
 
+    @Test
+    // See issue #52268
+    public void testFallThroughToDefaultIdpForwardsLoginHint() {
+        IdentityProviderRepresentation defaultIdp = IdentityProviderBuilder.update(createOrgBroker(organizationName))
+                .attribute(IdentityProviderModel.LOGIN_HINT, "true")
+                .attribute("authorizationUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/auth")
+                .attribute("tokenUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/token")
+                .attribute("userInfoUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/userinfo")
+                .build();
+        createOrganization(realm, organizationName, defaultIdp, organizationName + ".org");
+        configureDefaultIdpRedirector(defaultIdp.getAlias());
+        providerRealm.dirty();
+
+        // Type an email whose domain does NOT match "neworg.org" — triggers fall-through
+        String nonMatchingEmail = "alice@other.example";
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(nonMatchingEmail);
+        loginUsernamePage.submit();
+
+        // The username field must be pre-filled with the entered email.
+        assertTrue(driver.getCurrentUrl().startsWith(providerRealm.getBaseUrl()), "typed username doesn't match the organization which should cause a redirect to the IdP (provider realm)");
+        assertEquals(nonMatchingEmail, loginPage.getUsername(), "login_hint must be forwarded and pre-filled on the IdP login page");
+    }
+
     // --- Helper methods ---
 
     private void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
@@ -752,5 +869,199 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 return;
             }
         }
+    }
+
+    private void configureDefaultIdpRedirector(String idpAlias) {
+        String copyAlias = "browser-with-default-idp";
+        Response response = realm.admin().flows().copy(DefaultAuthenticationFlows.BROWSER_FLOW, Map.of("newName", copyAlias));
+        // set the copied flow as default
+        realm.updateWithCleanup(r -> r.browserFlow(copyAlias));
+        String flowId = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.flows().deleteFlow(flowId));
+
+        List<AuthenticationExecutionInfoRepresentation> executions = realm.admin().flows().getExecutions(copyAlias);
+        AuthenticationExecutionInfoRepresentation redirectorExecution = executions.stream()
+                .filter(e -> e.getLevel() == 0
+                        && IdentityProviderAuthenticatorFactory.PROVIDER_ID.equals(e.getProviderId()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("top-level identity-provider-redirector not found in copied browser flow"));
+
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias("default-idp-config");
+        config.setConfig(new HashMap<>(Map.of(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER, idpAlias)));
+        realm.admin().flows().newExecutionConfig(redirectorExecution.getId(), config).close();
+
+        // Move the redirector below the forms subflow so OrganizationAuthenticator
+        // shows the username page before the redirector fires.
+        long topLevelCount = executions.stream().filter(e -> e.getLevel() == 0).count();
+        for (long i = redirectorExecution.getIndex(); i < topLevelCount - 2; i++) {
+            realm.admin().flows().lowerPriority(redirectorExecution.getId());
+        }
+    }
+
+    @Test
+    public void testGenericFormForNonOrgDomain() {
+        createOrganization();
+
+        submitUsername("user@noorg.org");
+
+        assertTrue(loginPage.isPasswordInputPresent(), "generic form must present the password field");
+        assertTrue(loginPage.getErrorMessage().isEmpty(), "no error message expected for a non-org domain");
+        assertFalse(loginPage.isSocialButtonPresent(orgBrokerAlias()), "no org broker button expected for a non-org domain");
+    }
+
+    @Test
+    public void testNoLeakForUnknownUserMatchingOrgDomain() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+
+        assertTrue(loginPage.getErrorMessage().isEmpty(),
+                "must not leak the 'email domain matches an organization' message");
+        assertTrue(loginPage.isPasswordInputPresent(),
+                "password field must be shown regardless of whether the user exists");
+    }
+
+    @Test
+    public void testPublicOrgBrokerShownForUnknownUserIsIntentional() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization(organizationName, true).getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+
+        assertTrue(loginPage.isSocialButtonPresent(orgBrokerAlias()),
+                "a public org broker is shown by admin configuration (hideOnLogin=false)");
+        assertTrue(loginPage.getErrorMessage().isEmpty(),
+                "must not leak the 'email domain matches an organization' message");
+        assertTrue(loginPage.isPasswordInputPresent(),
+                "password field must be shown regardless of whether the user exists");
+    }
+
+    @Test
+    public void testResponseIndistinguishableFromNonOrgDomain() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+        boolean orgPasswordPresent = loginPage.isPasswordInputPresent();
+        boolean orgErrorPresent = loginPage.getErrorMessage().isPresent();
+        boolean orgBrokerPresent = loginPage.isSocialButtonPresent(orgBrokerAlias());
+        boolean orgRegisterPresent = loginPage.isRegisterLinkPresent();
+
+        submitUsername("user@noorg.org");
+        boolean nonOrgPasswordPresent = loginPage.isPasswordInputPresent();
+        boolean nonOrgErrorPresent = loginPage.getErrorMessage().isPresent();
+        boolean nonOrgBrokerPresent = loginPage.isSocialButtonPresent(orgBrokerAlias());
+        boolean nonOrgRegisterPresent = loginPage.isRegisterLinkPresent();
+
+        assertEquals(nonOrgPasswordPresent, orgPasswordPresent, "password field presence must match");
+        assertEquals(nonOrgErrorPresent, orgErrorPresent, "error message presence must match");
+        assertEquals(nonOrgBrokerPresent, orgBrokerPresent, "org broker button presence must match");
+        assertEquals(nonOrgRegisterPresent, orgRegisterPresent, "registration link presence must match");
+    }
+
+    @Test
+    public void testGenericInvalidCredentialsForUnknownOrgUser() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+        assertTrue(loginPage.isPasswordInputPresent(), "password field must be shown to allow submission");
+
+        loginPage.fillPassword("some-password");
+        loginPage.submit();
+
+        assertEquals("Invalid username or password.", loginPage.getPasswordInputError().orElse(null),
+                "must return the generic invalid-credentials error");
+    }
+
+    @Test
+    public void testKnownMemberWrongPasswordShowsGenericInvalidCredentialsError() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        // the member is created with a password credential, so the password form is offered
+        addMember(organization);
+
+        submitUsername(memberEmail);
+        assertTrue(loginPage.isPasswordInputPresent(), "password field must be shown for a known member");
+
+        loginPage.fillPassword("wrong-password");
+        loginPage.submit();
+
+        assertEquals("Invalid username or password.", loginPage.getPasswordInputError().orElse(null),
+                "known member with a wrong password must get the same generic error as an unknown user");
+    }
+
+    @Test
+    public void testPublicOrgBrokerShownOnInvalidPasswordForKnownAndUnknownUser() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization(organizationName, true).getId());
+        clearDomainRouting(organization);
+        // known member with a domain-matching email and a password credential
+        addMember(organization);
+
+        // unknown user: submit a wrong password and capture the broker visibility on the error response
+        submitUsername("nobody@neworg.org");
+        assertTrue(loginPage.isPasswordInputPresent(), "password field must be shown for an unknown org user");
+        loginPage.fillPassword("wrong-password");
+        loginPage.submit();
+        boolean unknownBrokerPresent = loginPage.isSocialButtonPresent(orgBrokerAlias());
+
+        // known member: submit a wrong password and capture the broker visibility on the error response
+        submitUsername(memberEmail);
+        assertTrue(loginPage.isPasswordInputPresent(), "password field must be shown for a known member");
+        loginPage.fillPassword("wrong-password");
+        loginPage.submit();
+        boolean knownBrokerPresent = loginPage.isSocialButtonPresent(orgBrokerAlias());
+
+        assertTrue(knownBrokerPresent, "public org broker must remain visible on a known member's invalid-password response");
+        assertEquals(knownBrokerPresent, unknownBrokerPresent,
+                "public org broker visibility on the invalid-password response must be identical for known and unknown users");
+    }
+
+    @Test
+    public void testSelfRegistrationSuppressedWithPublicOrgBroker() {
+        realm.updateWithCleanup(r -> r.registrationAllowed(true));
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization(organizationName, true).getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+
+        assertFalse(loginPage.isRegisterLinkPresent(),
+                "self-registration link must be suppressed when the org has a public broker");
+        assertTrue(loginPage.isSocialButtonPresent(orgBrokerAlias()),
+                "the org public broker button must be shown");
+    }
+
+    @Test
+    public void testSelfRegistrationShownWithoutPublicOrgBroker() {
+        realm.updateWithCleanup(r -> r.registrationAllowed(true));
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        clearDomainRouting(organization);
+
+        submitUsername("nobody@neworg.org");
+
+        assertTrue(loginPage.isRegisterLinkPresent(),
+                "self-registration link must be shown when there is no public org broker");
+        assertFalse(loginPage.isSocialButtonPresent(orgBrokerAlias()),
+                "no org broker button expected when the broker is hidden");
+    }
+
+    private void submitUsername(String username) {
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(username);
+        loginUsernamePage.submit();
+    }
+
+    private String orgBrokerAlias() {
+        return organizationName + "-identity-provider";
+    }
+
+    private void clearDomainRouting(OrganizationResource organization) {
+        OrganizationRepresentation orgRep = organization.toRepresentation();
+        orgRep.getDomains().forEach(domain -> {
+            domain.setIdentityProviderAlias(null);
+            domain.setAutoRedirect(false);
+        });
+        organization.update(orgRep).close();
     }
 }

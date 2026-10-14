@@ -89,6 +89,9 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     protected void redirect(AuthenticationFlowContext context, String providerId) {
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (loginHint == null) {
+            loginHint = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+        }
         redirect(context, providerId, loginHint);
     }
 

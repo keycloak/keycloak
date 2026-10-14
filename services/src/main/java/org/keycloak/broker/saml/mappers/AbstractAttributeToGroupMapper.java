@@ -35,25 +35,25 @@ public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityPro
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
         if (group == null) {
             return;
         }
 
-        if (this.applies(mapperModel, context)) {
+        if (this.applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
             user.joinGroup(group);
         }
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
         if (group == null) {
             return;
         }
 
         String groupId = group.getId();
-        if (!context.hasMapperAssignedGroup(groupId)) {
+        if (!context.hasMapperAssignedGroup(groupId) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
             if (this.applies(mapperModel, context)) {
                 context.addMapperAssignedGroup(groupId);
                 user.joinGroup(group);

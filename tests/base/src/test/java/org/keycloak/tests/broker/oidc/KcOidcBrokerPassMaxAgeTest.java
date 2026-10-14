@@ -119,6 +119,31 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractKcOidcBrokerTest {
                 errorPage.getError());
     }
 
+    @Test
+    void testNoRejectionWhenMaxAgeIsIntegerMaxValue() {
+        logInAsUserInIDP();
+        updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
+
+        oauth.openLoginForm();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), "Should be logged in");
+        logoutFromConsumerRealm();
+        AccountHelper.logout(providerRealm.admin(), getUserLogin());
+
+        // max_age close to Integer.MAX_VALUE must not overflow the authTime+maxAge sum on the
+        // consumer side and incorrectly reject a genuinely fresh authentication at the provider
+        oauth.loginForm().maxAge(Integer.MAX_VALUE).open();
+        loginPage.assertCurrent();
+
+        logInWithBroker();
+
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(),
+                "Should be logged in; a huge max_age must not overflow and wrongly reject the response");
+    }
+
     static class PassMaxAgeConsumerRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

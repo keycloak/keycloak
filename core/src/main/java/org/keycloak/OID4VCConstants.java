@@ -1,5 +1,10 @@
 package org.keycloak;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Constants related to the OID4VC and related specifications (like sd-jwt)
  */
@@ -26,6 +31,7 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_SUB = "sub";
     public static final String CLAIM_NAME_VC = "vc";
     public static final String CLAIM_NAME_VCT = "vct";
+    public static final String CLAIM_NAME_STATUS = "status";
 
     // The JWT identifier uniquely identifies a SD_JWT credential
     // It is useful for:
@@ -39,6 +45,14 @@ public class OID4VCConstants {
     //   * A stable identifier for the VC subject
     //   * Can be mapped to user attributes
     public static final String CLAIM_NAME_SUBJECT_ID = "id";
+
+    // JWT/SD-JWT claims that are issuer-controlled and must not be overridable by arbitrary protocol mappers.
+    // A mapper configured to write one of these claims (e.g. a user-attribute mapper targeting "exp") could let
+    // a user-controlled value bypass the issuer-configured credential lifetime (see keycloak/keycloak#52667).
+    public static final Set<String> RESERVED_CLAIM_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            CLAIM_NAME_EXP, CLAIM_NAME_IAT, CLAIM_NAME_NBF, CLAIM_NAME_ISSUER, CLAIM_NAME_SUB, CLAIM_NAME_JTI,
+            CLAIM_NAME_VCT, CLAIM_NAME_CNF, CLAIM_NAME_STATUS, CLAIM_NAME_SD, CLAIM_NAME_SD_HASH_ALGORITHM, CLAIM_NAME_SD_UNDISCLOSED_ARRAY
+    )));
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
 

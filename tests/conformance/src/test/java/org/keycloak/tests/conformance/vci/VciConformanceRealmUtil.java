@@ -25,6 +25,8 @@ import java.util.UUID;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
@@ -43,8 +45,10 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCStaticClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -79,11 +83,17 @@ public final class VciConformanceRealmUtil {
     public static final String CREDENTIAL_CONFIGURATION_ID = "conformance_sd_jwt_vc";
     public static final String MDOC_SCOPE = "conformance_mso_mdoc";
     public static final String MDOC_CREDENTIAL_CONFIGURATION_ID = "conformance_mso_mdoc";
-    public static final String MDOC_DOC_TYPE = "org.iso.18013.5.1.mDL";
-    public static final String MDOC_NAMESPACE = "org.iso.18013.5.1";
+    // An example doctype rather than org.iso.18013.5.1.mDL because Keycloak does not issue real mDLs
+    // and the suite would otherwise require all mandatory mDL data elements from ISO 18013 chapter 5
+    public static final String MDOC_DOC_TYPE = "org.example.conformance.mdoc";
+    public static final String MDOC_NAMESPACE = "org.example.conformance";
     // The credential_format plan variant value the conformance suite uses for ISO mdoc, see VCI1FinalCredentialFormat
     public static final String MDOC_CREDENTIAL_FORMAT_VARIANT = "mdoc";
     public static final String CONFORMANCE_CALLBACK = OpenIdConformanceServer.INTERNAL_BASE_URI + "/test/a/keycloak/callback";
+    // Key attestations carry an x5c chain, so Keycloak validates them against this X.509 trust domain.
+    public static final String X509_TRUST_IDP_ALIAS = "conformance-attester-x509";
+    // The attester leaf certificate is generated with the emailProtection extended key usage.
+    private static final String ATTESTER_ATTESTATION_EKU = "1.3.6.1.5.5.7.3.4";
 
     // FAPI2 requires the TLS layer to only offer BCP195 (RFC 9325) recommended cipher suites for TLS 1.2. The
     // default JVM cipher list includes non-recommended suites, which the conformance suite TLS checks reject, so
@@ -115,11 +125,10 @@ public final class VciConformanceRealmUtil {
     }
 
     /**
-     * Applies the realm configuration shared by every OID4VCI conformance variant: realm-level attributes, the two
-     * credential scopes with their protocol mappers, and the holder user. Callers add the clients, client policies,
+     * Applies the realm configuration shared by every OID4VCI conformance variant: realm-level attributes, the holder user. Callers add the clients, client policies,
      * trust anchors and key providers that differ per variant.
      */
-    public static RealmBuilder applyCommon(RealmBuilder realm) {
+    public static RealmBuilder applyCommon(RealmBuilder realm, boolean mdoc) {
         return realm.name(REALM)
                 .eventsEnabled(true)
                 .eventsListeners("jboss-logging")
@@ -127,39 +136,74 @@ public final class VciConformanceRealmUtil {
                 .attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true")
                 // The conformance suite wallet requests DEF-compressed encrypted credential responses
                 .attribute(OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS, "DEF")
-                // Randomize credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
+                // Round credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
                 // carry the precise issuance time, which the suite's unlinkability check (RFC 9901 10.1) warns on.
-                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.RANDOMIZE.name())
-                .attribute(OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS, "300")
+                // ROUND is used instead of RANDOMIZE because RANDOMIZE is probabilistic: the two independent
+                // random offsets occasionally coincide, leaving an iat delta that matches the real inter-issuance
+                // gap and intermittently tripping the check (see keycloak/keycloak#53787). Rounding quantizes iat to
+                // unit boundaries, so the delta between two credentials issued ~1-2s apart is either 0 or a full
+                // unit - never approximately the real gap. The batch unlinkability check accepts shared
+                // hour-aligned timestamps, but treats minute rounding as too precise. The credential scopes
+                // use a 7200s (2 hour) expiry: exp is computed from the normalized iat, so both remain on hour
+                // boundaries and credentials retain at least an hour of validity at issuance.
+                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.ROUND.name())
+                .attribute(OID4VCIConstants.TIME_ROUND_UNIT, TimeClaimNormalizer.RoundUnit.HOUR.name())
                 .defaultSignatureAlgorithm(Algorithm.ES256)
-                .clientScopes(createSdJwtCredentialScope(), createMdocCredentialScope())
-                .users(UserBuilder.create()
-                        .username(HOLDER)
-                        .enabled(true)
-                        .email("alice@example.test")
-                        .emailVerified(true)
-                        .firstName("Alice")
-                        .lastName("Wonderland")
-                        .password(PASSWORD)
-                        .attribute("did", "did:key:alice")
-                        .attribute("address_street_address", "221B Baker Street")
-                        .attribute("address_locality", "London")
-                        .realmRoles(DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM)
-                        .verifiableCredential(SD_JWT_SCOPE)
-                        .verifiableCredential(MDOC_SCOPE)
-                        .build());
+                .clientScopes(createCredentialScope(mdoc))
+                .users(createUserRepWithVc(mdoc));
+    }
+
+    private static UserRepresentation createUserRepWithVc(boolean mdoc) {
+        if (mdoc) {
+            return createUserRepWithVC(MDOC_SCOPE);
+        } else {
+            return createUserRepWithVC(SD_JWT_SCOPE);
+        }
+    }
+
+    private static UserRepresentation createUserRepWithVC(String verifiableCredential) {
+        return UserBuilder.create()
+                .username(HOLDER)
+                .enabled(true)
+                .email("alice@example.test")
+                .emailVerified(true)
+                .firstName("Alice")
+                .lastName("Wonderland")
+                .password(PASSWORD)
+                .attribute("did", "did:key:alice")
+                .attribute("address_street_address", "221B Baker Street")
+                .attribute("address_locality", "London")
+                .realmRoles(DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM)
+                .verifiableCredential(verifiableCredential)
+                .build();
     }
 
     /**
      * Common conformance client shape without any client authentication. HAIP and non-HAIP configs add their own
      * authentication (attestation-based vs public + PKCE) on top of this.
      */
-    public static ClientBuilder baseConformanceClient(String clientId, boolean wildcardRedirect) {
+    public static ClientBuilder baseConformanceClient(String clientId, boolean wildcardRedirect, boolean mdoc) {
+        if (mdoc) {
+            return baseConformanceClient(clientId, wildcardRedirect, MDOC_SCOPE);
+        } else {
+            return baseConformanceClient(clientId, wildcardRedirect, SD_JWT_SCOPE);
+        }
+    }
+
+    private static CredentialScopeRepresentation createCredentialScope(boolean mdoc) {
+        if (mdoc) {
+            return createMdocCredentialScope();
+        } else {
+            return createSdJwtCredentialScope();
+        }
+    }
+
+    private static ClientBuilder baseConformanceClient(String clientId, boolean wildcardRedirect, String clientScope) {
         return ClientBuilder.create(clientId)
                 .serviceAccountsEnabled(false)
                 .directAccessGrantsEnabled(false)
                 .defaultClientScopes("basic", "profile", "roles")
-                .optionalClientScopes(SD_JWT_SCOPE, MDOC_SCOPE, "email")
+                .optionalClientScopes(clientScope, "email")
                 .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                 .redirectUris(CONFORMANCE_CALLBACK + (wildcardRedirect ? "*" : ""))
                 .webOrigins(OpenIdConformanceServer.INTERNAL_BASE_URI.toString());
@@ -172,6 +216,18 @@ public final class VciConformanceRealmUtil {
                 .directAccessGrantsEnabled(false)
                 .redirectUris(OpenIdConformanceServer.KEYCLOAK_BASE_URI + "/realms/" + REALM + "/account/*")
                 .defaultClientScopes("basic", "profile", "roles");
+    }
+    
+    public static IdentityProviderRepresentation attesterX509TrustIdentityProvider() {
+        IdentityProviderRepresentation trust = new IdentityProviderRepresentation();
+        trust.setAlias(X509_TRUST_IDP_ALIAS);
+        trust.setProviderId(DefaultTrustIdentityProviderFactory.PROVIDER_ID);
+        trust.setEnabled(true);
+        trust.setConfig(Map.of(
+                DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, VciAttesterKey.caCertificatePem(),
+                DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
+        return trust;
     }
 
     /**
@@ -190,7 +246,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createSdJwtCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(SD_JWT_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.SD_JWT_VC)
@@ -214,7 +270,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createMdocCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(MDOC_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.MSO_MDOC)
@@ -288,10 +344,7 @@ public final class VciConformanceRealmUtil {
                         OID4VCIssuedAtTimeClaimMapper.VALUE_SOURCE, "COMPUTE")));
     }
 
-    // mDoc claims are organised into namespaces, so every mapper pins the ISO 18013-5 namespace. ISO/IEC
-    // 18013-5 marks a fixed set of org.iso.18013.5.1 data elements mandatory for an mDL, so a conformant
-    // issuer must emit all of them (the suite's EnsureMdocMdlMandatoryDataElementsPresent check enforces this).
-    // The holder-specific ones come from user attributes; the rest are static document values.
+    // mDoc claims are organised into namespaces, so every mapper pins the example namespace
     private static List<ProtocolMapperRepresentation> mdocProtocolMappers() {
         return List.of(
                 mdocMapper("did-mapper", "oid4vc-subject-id-mapper", "id", "did"),

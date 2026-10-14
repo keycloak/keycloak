@@ -5,8 +5,7 @@
 title="Migrating from multi-cluster v1 to v2"
 summary="Migrate an existing multi-cluster v1 deployment to v2 (stateless mode)."
 tileVisible="false"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+>
 
 This {section} describes how to migrate an existing <@links.ha id="multi-cluster-introduction" /> deployment to <@links.ha id="multi-cluster-v2-introduction" />.
 

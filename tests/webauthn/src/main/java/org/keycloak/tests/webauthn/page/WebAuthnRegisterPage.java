@@ -18,6 +18,8 @@
 package org.keycloak.tests.webauthn.page;
 
 import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.keycloak.testframework.ui.page.AbstractLoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -93,6 +95,13 @@ public class WebAuthnRegisterPage extends AbstractLoginPage {
         }
     }
 
+    private static final Pattern CHALLENGE_PATTERN = Pattern.compile("challenge\\s*:\\s*\"([^\"]+)\"");
+
+    public String getChallenge() {
+        String pageSource = driver.driver().getPageSource();
+        Matcher matcher = CHALLENGE_PATTERN.matcher(pageSource);
+        return matcher.find() ? matcher.group(1) : null;
+    }
 
     public boolean isAIA() {
         try {

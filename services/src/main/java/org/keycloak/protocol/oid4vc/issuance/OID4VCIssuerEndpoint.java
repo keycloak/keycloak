@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -295,7 +296,7 @@ public class OID4VCIssuerEndpoint {
      * @throws CorsErrorResponseException if the client is not enabled for OID4VCI.
      */
     private void checkClientEnabled(EventBuilder eventBuilder) {
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(eventBuilder);
         ClientModel client = clientSession.getClient();
 
         boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
@@ -472,14 +473,14 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("height") @DefaultValue("200") int height
     ) {
         configureCors(true);
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
+                .event(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(eventBuilder);
         UserSessionModel userSession = clientSession.getUserSession();
         UserModel loginUserModel = userSession.getUser();
         ClientModel clientModel = clientSession.getClient();
-        RealmModel realmModel = clientModel.getRealm();
 
-        EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
+        eventBuilder
                 .client(clientModel)
                 .user(loginUserModel)
                 .session(userSession.getId())
@@ -555,7 +556,7 @@ public class OID4VCIssuerEndpoint {
                 // a session only when the access token identifies a persistent online or offline origin.
                 AccessTokenContext.SessionType originatingSessionType = session
                         .getProvider(TokenContextEncoderProvider.class)
-                        .getTokenContextFromTokenId(getAuthResult().token().getId())
+                        .getTokenContextFromTokenId(getAuthResult(eventBuilder).token().getId())
                         .getSessionType();
                 boolean transientUserSession = originatingSessionType == AccessTokenContext.SessionType.TRANSIENT;
                 boolean originatingSessionOffline = switch (originatingSessionType) {
@@ -724,14 +725,14 @@ public class OID4VCIssuerEndpoint {
                 .entity(credOffer));
     }
 
-    private void checkScope(CredentialScopeModel requestedCredential) {
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+    private void checkScope(CredentialScopeModel requestedCredential, EventBuilder event) {
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession(event);
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PRE_AUTH_GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
-            AccessToken accessToken = getAuthResult().token();
+            AccessToken accessToken = getAuthResult(event).token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -803,13 +804,13 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        // Authenticate before any processing of the payload
+        AuthenticationManager.AuthResult authResult = getAuthResult(eventBuilder);
+
         CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-
-        // Authenticate first to fail fast on auth errors
-        AuthenticationManager.AuthResult authResult = getAuthResult();
 
         // Set client and user info in event
         ClientModel clientModel = session.getContext().getClient();
@@ -1014,7 +1015,7 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Found credential scope for credential_configuration_id: %s", authorizedCredentialConfigurationId);
         eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
-        checkScope(authorizedCredentialScope);
+        checkScope(authorizedCredentialScope, eventBuilder);
         checkUserHasVerifiableCredential(userModel, authorizedCredentialScope, eventBuilder);
         checkUserHasIssuedVerifiableCredential(userModel, authorizedCredentialScope, tokenAuthDetail.getIssuedCredentialId(), clientModel, eventBuilder);
 
@@ -1167,7 +1168,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Encryption is required but request is not a valid JWE."));
                 }
                 if (contentTypeIsJwt) {
                     String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
@@ -1176,7 +1178,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Request has JWT content-type but is not a valid JWE."));
                 }
             }
         }
@@ -1311,8 +1314,8 @@ public class OID4VCIssuerEndpoint {
     // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
-            try {
-                return IOUtils.toByteArray(DeflateUtil.decode(content));
+            try (InputStream decoded = DeflateUtil.decode(content)) {
+                return IOUtils.toByteArray(decoded);
             } catch (IOException e) {
                 throw new JWEException("Failed to decompress: " + e.getMessage());
             }
@@ -1644,14 +1647,15 @@ public class OID4VCIssuerEndpoint {
         }
     }
 
-    private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
-        AuthenticationManager.AuthResult authResult = getAuthResult();
+    private AuthenticatedClientSessionModel getAuthenticatedClientSession(EventBuilder event) {
+        AuthenticationManager.AuthResult authResult = getAuthResult(event);
         UserSessionModel userSessionModel = authResult.session();
 
         AuthenticatedClientSessionModel clientSession = userSessionModel.
                 getAuthenticatedClientSessionByClient(
                         authResult.client().getId());
         if (clientSession == null) {
+            event.detail(Details.REASON, "Missing client session on the user session").error(ErrorType.INVALID_TOKEN.getValue());
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_TOKEN.getValue(),
@@ -1661,13 +1665,14 @@ public class OID4VCIssuerEndpoint {
         return clientSession;
     }
 
-    private AuthenticationManager.AuthResult getAuthResult() {
+    private AuthenticationManager.AuthResult getAuthResult(EventBuilder event) {
         if (cachedAuthResult != null) {
             return cachedAuthResult;
         }
 
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
+            event.detail(Details.REASON, "Invalid or missing token").error(ErrorType.INVALID_TOKEN.getValue());
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_TOKEN.getValue(),
@@ -1693,6 +1698,7 @@ public class OID4VCIssuerEndpoint {
                     );
                 } catch (VerificationException e) {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
+                    event.detail(Details.REASON, "Invalid or missing token. DPoP nonce validation failed").error(ErrorType.INVALID_TOKEN.getValue());
                     throw new CorsErrorResponseException(
                             cors,
                             ErrorType.INVALID_TOKEN.getValue(),
@@ -1834,17 +1840,19 @@ public class OID4VCIssuerEndpoint {
         Map<String, Object> subjectClaims = new HashMap<>();
         Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
 
-        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
-            // A scope switched to mso_mdoc after its claim mappers were created is not revalidated by the admin API,
-            // so guard here against a claim mapper without a namespace that would otherwise emit a flat claim path.
-            for (OID4VCMapper mapper : protocolMappers) {
-                try {
-                    mapper.validateMdocNamespace(credentialConfig.getFormat());
-                } catch (ProtocolMapperConfigException e) {
-                    throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
-                }
+        // A scope whose format was switched, or whose mappers were created via scope update/import, is not
+        // revalidated by the admin API. Guard here against misconfigured mappers (a missing mdoc namespace, or
+        // user-controlled data mapped to a reserved claim) so they fail the request instead of emitting broken
+        // or overridden claims.
+        for (OID4VCMapper mapper : protocolMappers) {
+            try {
+                mapper.validate();
+            } catch (ProtocolMapperConfigException e) {
+                throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
             }
+        }
 
+        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
             // mDoc data element identifiers may repeat across namespaces while sharing one raw claim key, so each
             // mapper writes into its own scratch map. A shared map would let a mapper without a value pick up the
             // claim of a previous mapper with the same name and copy it into the wrong namespace.

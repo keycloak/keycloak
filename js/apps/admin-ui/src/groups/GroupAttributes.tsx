@@ -37,7 +37,7 @@ export const GroupAttributes = () => {
       form.reset({
         attributes: arrayToKeyValue(group?.attributes!),
       });
-      setCurrentGroup(group);
+      setCurrentGroup(group ?? undefined);
     },
     [id],
   );

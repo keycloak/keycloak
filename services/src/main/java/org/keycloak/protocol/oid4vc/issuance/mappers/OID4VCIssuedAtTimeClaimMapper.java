@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -36,6 +37,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 import static org.keycloak.VCFormat.MSO_MDOC;
 
 /**
@@ -47,6 +50,10 @@ import static org.keycloak.VCFormat.MSO_MDOC;
  * bearing other claims. Default is the value in the verifiable credential.
  * <p>
  * We will use the java.time.temporal.ChronoUnit enum values to help flatten down the time.
+ * <p>
+ * NOTE: For SD-JWT credentials, this mapper has no effect on `iat` and `exp` claims, which are
+ * always sourced from the normalized issuance and expiration date values computed by the Issuer
+ * Endpoint.
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
@@ -111,6 +118,13 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     public boolean supportsCredentialFormat(String credentialFormat) {
         // mDoc carries issuance timing in the MSO validityInfo instead of a VC-level iat claim.
         return !MSO_MDOC.equals(credentialFormat);
+    }
+
+    @Override
+    protected Set<String> getAllowedReservedClaims() {
+        // The value is the issuer's issuance time, not user-controlled;
+        // the claim name may legitimately target the reserved "iat" and "nbf" claims.
+        return Set.of(CLAIM_NAME_IAT, CLAIM_NAME_NBF);
     }
 
     public void setClaim(VerifiableCredential verifiableCredential,

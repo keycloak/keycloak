@@ -38,9 +38,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.page.AbstractLoginPage;
 import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
@@ -48,8 +47,6 @@ import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
@@ -77,7 +74,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     private final TimeBasedOTP totp = new TimeBasedOTP();
 
     @InjectPage
-    private LoginConfigTotpConfigPage loginConfigTotpPage;
+    private LoginConfigTotpPage loginConfigTotpPage;
 
     @InjectPage
     private LoginTotpPage loginTotpPage;
@@ -466,7 +463,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     }
 
     @Test
-    public void conditionalOTPRequestHeaderSkip() {
+    public void conditionalOTPRequestHeaderSkipIgnoredWithoutProxy() {
         //prepare config - request header skip, default to force
         Map<String, String> config = new HashMap<>();
         String port = authServerPort();
@@ -475,10 +472,10 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         setConditionalOTPForm(config);
 
-        //test OTP is skipped
+        //test OTP is not skipped because proxy is not configured.
         oauth.openLoginForm();
         testRealmLoginPage.login(testUser.getUsername(), PASSWORD);
-        assertTrue(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()));
+        assertEquals("Mobile Authenticator Setup", driver.findElement(By.id("kc-page-title")).getText());
     }
 
     @Test
@@ -576,44 +573,4 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
             }
         }
     }
-
-    public static class LoginConfigTotpConfigPage extends LoginConfigTotpPage {
-        public LoginConfigTotpConfigPage(ManagedWebDriver driver) {
-            super(driver);
-        }
-
-        public void configure(String totp) {
-            WebElement totpInput = driver.findElement(org.openqa.selenium.By.id("totp"));
-            totpInput.clear();
-            totpInput.sendKeys(totp);
-
-            driver.findElement(org.openqa.selenium.By.cssSelector("input[type=\"submit\"], #saveTOTPBtn")).click();
-        }
-    }
-
-    public static class LoginTotpPage extends AbstractLoginPage {
-        @FindBy(id = "otp")
-        private WebElement otpInput;
-
-        @FindBy(css = "[type=\"submit\"]")
-        private WebElement submitButton;
-
-        public LoginTotpPage(ManagedWebDriver driver) {
-            super(driver);
-        }
-
-        public void login(String totp) {
-            otpInput.clear();
-            if (totp != null) {
-                otpInput.sendKeys(totp);
-            }
-            submitButton.click();
-        }
-
-        @Override
-        public String getExpectedPageId() {
-            return "login-login-otp";
-        }
-    }
-
 }

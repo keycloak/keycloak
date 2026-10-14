@@ -114,20 +114,21 @@ public class TokenRevocationEndpoint {
 
         checkToken();
         checkIssuedFor();
+        boolean refreshTokenType = TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) ||
+                TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType());
+        RefreshTokenProvider refreshTokenProvider = refreshTokenType ? resolveRefreshTokenProvider() : null;
+
+        if (refreshTokenType) {
+            // Must run before checkUser(), which is the first read of session state. Taking the lock afterwards
+            // would leave the read outside the serialized region and defeat the purpose.
+            refreshTokenProvider.lockForRevocation((RefreshToken) token);
+        }
         checkUser();
 
-        if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
-            String providerClaim = (String)token.getOtherClaims().get(RefreshToken.PROVIDER);
-            String providerId = (providerClaim != null) ? providerClaim : DefaultRefreshTokenProviderFactory.PROVIDER_ID;
-            RefreshTokenProvider refreshTokenProvider = session.getProvider(RefreshTokenProvider.class, providerId);
-
-            if (refreshTokenProvider == null) {
-                // Fallback for unknown provider ID
-                refreshTokenProvider = session.getProvider(RefreshTokenProvider.class, DefaultRefreshTokenProviderFactory.PROVIDER_ID);
-            }
-
+        if (refreshTokenType) {
             refreshTokenProvider.revokeToken(token, user, client, event);
 
+            String providerClaim = ((RefreshToken) token).getProvider();
             event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerClaim != null ? providerClaim : refreshTokenProvider.getProviderId());
             event.detail(Details.REVOKED_CLIENT, client.getClientId());
             event.session(token.getSessionId());
@@ -143,15 +144,24 @@ public class TokenRevocationEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(client, formParams));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
+            event.clone()
+                    .detail(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .detail(Details.CLIENT_POLICY_ERROR, cpe.getError())
+                    .detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail())
+                    .error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.add(Response.ok());
+    }
+
+    private RefreshTokenProvider resolveRefreshTokenProvider() {
+        String providerClaim = ((RefreshToken) token).getProvider();
+        String providerId = (providerClaim != null) ? providerClaim : DefaultRefreshTokenProviderFactory.PROVIDER_ID;
+        RefreshTokenProvider provider = session.getProvider(RefreshTokenProvider.class, providerId);
+
+        return provider != null ? provider : session.getProvider(RefreshTokenProvider.class, DefaultRefreshTokenProviderFactory.PROVIDER_ID);
     }
 
     @OPTIONS
@@ -210,6 +220,12 @@ public class TokenRevocationEndpoint {
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_TOKEN_TYPE, "Unsupported token type",
                 Response.Status.BAD_REQUEST);
+        }
+
+        if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
+            // The refresh path keys its serialization lock on RefreshToken#getSessionId(), which falls back to the
+            // legacy "session_state" claim. Decode into the same type so both paths compute the same lock id.
+            token = session.tokens().decode(encodedToken, RefreshToken.class);
         }
     }
 

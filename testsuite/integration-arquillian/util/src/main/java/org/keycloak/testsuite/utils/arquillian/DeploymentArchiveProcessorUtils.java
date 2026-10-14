@@ -162,7 +162,7 @@ public class DeploymentArchiveProcessorUtils {
                     log.infof("Appending '%s' tag with Jakarta application class to '%s'\n", SERVLET_CLASS_TAG, archive.getName());
                 } else if (servletClassCount == 1) {
                     modifyDocElementValue(doc, SERVLET_CLASS_TAG, JAVAX_APPLICATION, JAKARTA_APPLICATION);
-                    log.infof("Modifying 'servlet-class' tag to use Jakarta application class in '%s'\n", SERVLET_CLASS_TAG, archive.getName());
+                    log.infof("Modifying '%s' tag to use Jakarta application class in '%s'\n", SERVLET_CLASS_TAG, archive.getName());
                 } else {
                     log.error(String.format("Invalid count of '%s' tags for '%s'\n", SERVLET_CLASS_TAG, archive.getName()));
                     return;

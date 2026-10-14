@@ -34,7 +34,6 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -50,6 +49,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.WebAuthnRealmData;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -408,17 +408,12 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
     }
 
     protected void checkWebAuthnConfiguration(String residentKey, String userVerification) {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        assertThat(realmRep, notNullValue());
-        if(!isPasswordless()) {
-            assertThat(realmRep.getWebAuthnPolicyRpEntityName(), is("localhost"));
-            assertThat(realmRep.getWebAuthnPolicyResidentKey(), is(residentKey));
-            assertThat(realmRep.getWebAuthnPolicyUserVerificationRequirement(), is(userVerification));
-        } else {
-            assertThat(realmRep.getWebAuthnPolicyPasswordlessRpEntityName(), is("localhost"));
-            assertThat(realmRep.getWebAuthnPolicyPasswordlessResidentKey(), is(residentKey));
-            assertThat(realmRep.getWebAuthnPolicyPasswordlessUserVerificationRequirement(), is(userVerification));
-        }
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+        assertThat(realmData, notNullValue());
+        assertThat(realmData.getRpEntityName(), is("localhost"));
+        assertThat(realmData.getResidentKey(), is(residentKey));
+        assertThat(realmData.getUserVerificationRequirement(), is(userVerification));
+
     }
 
     protected static String generatePassword() {
@@ -503,23 +498,27 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
             builder.requiredActions(actionRep2);
 
-            builder.webAuthnPolicySignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
-                .webAuthnPolicyAttestationConveyancePreference("not specified")
-                .webAuthnPolicyAuthenticatorAttachment("not specified")
-                .webAuthnPolicyResidentKey("not specified")
-                .webAuthnPolicyUserVerificationRequirement("not specified")
-                .webAuthnPolicyRpEntityName("keycloak-webauthn-2FA")
-                .webAuthnPolicyCreateTimeout(60)
-                .webAuthnPolicyAvoidSameAuthenticatorRegister(true);
+            builder.webAuthn(false, bldr ->
+                    bldr.signatureAlgorithms(List.of("ES256", "RS256", "RS1"))
+                            .attestationConveyancePreference("not specified")
+                            .authenticatorAttachment("not specified")
+                            .residentKey("not specified")
+                            .userVerificationRequirement("not specified")
+                            .rpEntityName("keycloak-webauthn-2FA")
+                            .timeout(60)
+                            .avoidSameAuthenticatorRegister(true)
+            );
 
-            builder.webAuthnPolicyPasswordlessSignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
-                .webAuthnPolicyPasswordlessAttestationConveyancePreference("not specified")
-                .webAuthnPolicyPasswordlessAuthenticatorAttachment("not specified")
-                .webAuthnPolicyPasswordlessResidentKey("not specified")
-                .webAuthnPolicyPasswordlessUserVerificationRequirement("not specified")
-                .webAuthnPolicyPasswordlessRpEntityName("keycloak-webauthn-passwordless-2FA")
-                .webAuthnPolicyPasswordlessCreateTimeout(60)
-                .webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(true);
+            builder.webAuthn(true, bldr ->
+                    bldr.signatureAlgorithms(List.of("ES256", "RS256", "RS1"))
+                            .attestationConveyancePreference("not specified")
+                            .authenticatorAttachment("not specified")
+                            .residentKey("not specified")
+                            .userVerificationRequirement("not specified")
+                            .rpEntityName("keycloak-webauthn-passwordless-2FA")
+                            .timeout(60)
+                            .avoidSameAuthenticatorRegister(true)
+            );
 
             builder.browserFlow("browser-webauthn");
 

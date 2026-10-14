@@ -80,7 +80,10 @@ tests faster.
 
 To enable re-use use the `KC_TEST_DATABASE_REUSE=true` option. 
 
-For containers, you also have to [enable reuse for Testcontainers](https://java.testcontainers.org/features/reuse/) (`TESTCONTAINERS_REUSE_ENABLE=true`). 
+For containers, you also have to [enable reuse for Testcontainers](https://java.testcontainers.org/features/reuse/).
+Add `testcontainers.reuse.enable=true` to `~/.testcontainers.properties`, or set the environment variable
+`TESTCONTAINERS_REUSE_ENABLE=true`. Note that this must be a real environment variable — putting it in `.env.test`
+has no effect because Testcontainers reads `System.getenv()` directly.
 
 ### Remote Database
 

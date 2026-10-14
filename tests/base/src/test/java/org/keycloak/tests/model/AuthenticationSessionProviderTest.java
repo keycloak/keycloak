@@ -19,7 +19,11 @@ package org.keycloak.tests.model;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.keycloak.authentication.jpa.AuthenticationSessionExpirationAction;
+import org.keycloak.authentication.jpa.RootAuthenticationSessionEntity;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -51,6 +55,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -330,6 +335,103 @@ public class AuthenticationSessionProviderTest {
             assertThat(authSession.getAction(), nullValue());
         } else {
             assertThat(authSession.getAction(), is(expectedAction));
+        }
+    }
+
+    @TestOnServer
+    public void testNearMissAuthSessionSurvivesCoarseExpiration(KeycloakSession session) {
+        assumeTrue(Profile.isFeatureEnabled(Profile.Feature.STATELESS));
+        InfinispanTimeUtil.enableTestingTimeService(session);
+
+        try {
+            AtomicReference<String> authSessionID = new AtomicReference<>();
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                // lifespan = 100 → granularity = 50
+                realm.setAccessCodeLifespan(10);
+                realm.setAccessCodeLifespanUserAction(10);
+                realm.setAccessCodeLifespanLogin(100);
+            });
+
+            // Step 1: Create session at base time
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                Time.setOffset(0);
+                authSessionID.set(s.authenticationSessions().createRootAuthenticationSession(realm).getId());
+            });
+
+            // Step 2: Refresh timestamp at +25 (middle of first 50-second coarse bucket).
+            // The coarse value stays at the original value.
+            Time.setOffset(25);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                RootAuthenticationSessionModel rootAuth = s.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get());
+                assertThat(rootAuth, notNullValue());
+                rootAuth.setTimestamp(Time.currentTime());
+            });
+
+            // Verify precondition: coarse < timestamp (the near-miss setup)
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                var em = s.getProvider(JpaConnectionProvider.class).getEntityManager();
+                var entity = em.find(RootAuthenticationSessionEntity.class, authSessionID.get());
+                assertThat("Entity should exist", entity, notNullValue());
+                assertThat("Precondition: timestampCoarse should be less than timestamp",
+                        entity.getTimestampCoarse() < entity.getTimestamp(), is(true));
+            });
+
+            // Step 3: At +112, threshold = T0+12. coarse = T0 < T0+12 (candidate), but
+            // timestamp = T0+25 > T0+12 (near-miss). Session survives, coarse corrected.
+            Time.setOffset(112);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                AuthenticationSessionExpirationAction.INSTANCE.removeExpired(s, realm.getId(), Time.currentTime(), Integer.MAX_VALUE, removed -> {});
+            });
+
+            // Verify: session survived, and coarse was corrected to equal timestamp
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                var em = s.getProvider(JpaConnectionProvider.class).getEntityManager();
+                var entity = em.find(RootAuthenticationSessionEntity.class, authSessionID.get());
+                assertThat("Near-miss session should survive the first expiration pass", entity, notNullValue());
+                assertThat("Coarse should be corrected to equal timestamp",
+                        entity.getTimestampCoarse(), is(entity.getTimestamp()));
+            });
+
+            // Step 4: Run expiration again at the same time. Coarse is now corrected to the
+            // exact timestamp, which is above the threshold. Session still survives.
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                AuthenticationSessionExpirationAction.INSTANCE.removeExpired(s, realm.getId(), Time.currentTime(), Integer.MAX_VALUE, removed -> {});
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                assertThat("Session should still exist after second expiration pass",
+                        s.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get()), notNullValue());
+            });
+
+            // Step 5: At +135, threshold = T0+35 > timestamp T0+25. Truly expired. Deleted.
+            Time.setOffset(135);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                AuthenticationSessionExpirationAction.INSTANCE.removeExpired(s, realm.getId(), Time.currentTime(), Integer.MAX_VALUE, removed -> {});
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                assertThat("Session should be deleted after truly expiring",
+                        s.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get()), nullValue());
+            });
+        } finally {
+            Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                RealmModel realm = s.realms().getRealmByName("test");
+                realm.setAccessCodeLifespan(60);
+                realm.setAccessCodeLifespanUserAction(300);
+                realm.setAccessCodeLifespanLogin(1800);
+            });
+            InfinispanTimeUtil.disableTestingTimeService(session);
         }
     }
 

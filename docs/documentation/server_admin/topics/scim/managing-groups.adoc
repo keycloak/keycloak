@@ -4,7 +4,7 @@
 = Managing groups
 [role="_abstract"]
 
-The SCIM `/Groups` endpoint allows you to create, read, update, and delete group resources in {project_name}. Group resources
+The SCIM `/Groups` endpoint allows you to create, read, update, and delete realm group resources in {project_name}. Group resources
 conform to the `urn:ietf:params:scim:schemas:core:2.0:Group` schema as defined in RFC 7643.
 
 == Group attributes
@@ -44,7 +44,7 @@ curl -X POST http://localhost:8080/realms/myrealm/scim/v2/Groups \
 
 A successful response returns the created group with a `201 Created` status.
 
-IMPORTANT: Group members cannot be specified during group creation. Attempting to include members in the `POST`
+NOTE: Group members cannot be specified during group creation. Attempting to include members in the `POST`
 request results in a `400 Bad Request` error. Use the `PATCH` method to add members after creating the group.
 
 If a group with the same `displayName` already exists, the API returns a `409 Conflict` response with
@@ -91,7 +91,7 @@ curl -X PUT http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
   }'
 ----
 
-IMPORTANT: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
+NOTE: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
 request results in a `400 Bad Request` error. Use the `PATCH` method to manage group members.
 
 == Partially updating a group

@@ -105,11 +105,15 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     }
 
     public int getLastSync(SyncMode syncMode) {
-        String val = getConfig().getFirst(LAST_SYNC + "_" + syncMode.name());
+        String val = syncMode == null
+                ? null
+                : getConfig().getFirst(LAST_SYNC + "_" + syncMode.name());
+
         if (val == null) {
-            return 0;
+            val = getConfig().getFirst(LAST_SYNC);
         }
-        return Integer.parseInt(val);
+
+        return val == null ? 0 : Integer.parseInt(val);
     }
 
     public void setLastSync(int lastSync, SyncMode syncMode) {

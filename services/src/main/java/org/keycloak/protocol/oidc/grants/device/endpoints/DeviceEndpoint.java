@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
-import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
@@ -57,6 +57,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.OAuth2DeviceAuthorizationResponse;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -75,7 +76,6 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
-import org.jboss.resteasy.reactive.server.core.CurrentRequestManager;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.OAUTH2_DEVICE_USER_CODE;
 
@@ -104,9 +104,6 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // per https://datatracker.ietf.org/doc/html/rfc8628#section-3.2
         // if you need to narrow this response to only specific endpoint, extract this mapper with 'handleDeviceRequest'
         // into a dedicated resource
-
-        // FIXME: drop when https://github.com/quarkusio/quarkus/issues/55818 is fixed
-        CurrentRequestManager.get().setAllAnnotations(new Annotation[]{});
 
         return Response.status(400)
                 .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_REQUEST, "Invalid Content-Type header"))
@@ -163,10 +160,13 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
                 .client(client)
-                .request(request);
+                .realm(realm)
+                .request(request)
+                .session(session);
 
         try {
             checker.checkPKCEParams();
+            checker.checkValidScope();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             throw new ErrorResponseException(ex.getError(), ex.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
@@ -464,6 +464,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         if ( scope != null)
             authenticationSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+
+        List<String> acrValues = AcrUtils.getAcrValues(null, null, client);
+        AcrUtils.getLowestLoaForAcrValues(acrValues, client).ifPresent(loa ->
+            authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
         return authenticationSession;
     }

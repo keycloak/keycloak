@@ -174,7 +174,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
             * Install Keycloak to a namespace
             * Import Keycloak Realms
-            * Manage Keycloak Clients (experimental)
+            * Manage Keycloak Clients (preview)
             """,
     icon = @CSVMetadata.Icon(
         fileName = "KeycloakController.icon.png",

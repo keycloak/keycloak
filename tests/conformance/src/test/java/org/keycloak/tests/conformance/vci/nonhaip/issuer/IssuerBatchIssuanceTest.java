@@ -25,18 +25,18 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.tests.conformance.vci.nonhaip.AbstractNonHaipVciConformanceTest;
-import org.keycloak.tests.conformance.vci.nonhaip.NonHaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.nonhaip.NonHaipVciConformanceRealmConfig.NON_HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig.NON_HAIP_PLAN;
 
-@KeycloakIntegrationTest(config = NonHaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = NonHaipVciServerConfig.class)
 public class IssuerBatchIssuanceTest extends AbstractNonHaipVciConformanceTest {
 
-    @InjectRealm(config = BatchIssuanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = BatchIssuanceRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -49,7 +49,7 @@ public class IssuerBatchIssuanceTest extends AbstractNonHaipVciConformanceTest {
                 BrowserInteraction.LOGIN);
     }
 
-    public static class BatchIssuanceRealmConfig extends NonHaipVciConformanceRealmConfig {
+    public static class BatchIssuanceRealmConfig extends NonHaipVciRealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {

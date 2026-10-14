@@ -42,7 +42,7 @@ export default function NewOrganization() {
       <PageSection variant="light">
         <FormAccess role="anyone" onSubmit={handleSubmit(save)} isHorizontal>
           <FormProvider {...form}>
-            <OrganizationForm />
+            <OrganizationForm showDomains />
             <ActionGroup>
               <FormSubmitButton
                 formState={formState}

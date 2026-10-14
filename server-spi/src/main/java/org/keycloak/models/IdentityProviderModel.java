@@ -63,6 +63,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
     public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
+    public static final String ALLOW_ADMIN_ROLE_MAPPING = "allowAdminRoleMapping";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -272,6 +273,19 @@ public class IdentityProviderModel implements Serializable {
         return organizationIds.contains(orgId);
     }
 
+    @Deprecated(forRemoval = true, since = "26.8")
+    public String getOrganizationId() {
+        return organizationIds.isEmpty() ? null : organizationIds.iterator().next();
+    }
+
+    @Deprecated(forRemoval = true, since = "26.8")
+    public void setOrganizationId(String organizationId) {
+        this.organizationIds = new LinkedHashSet<>();
+        if (organizationId != null) {
+            this.organizationIds.add(organizationId);
+        }
+    }
+
     /**
      * <p>Validates this configuration.
      *
@@ -280,6 +294,22 @@ public class IdentityProviderModel implements Serializable {
      * @param realm the realm
      */
     public void validate(RealmModel realm) {
+    }
+
+    /**
+     * Whether a masked {@code clientSecret} from an admin update may be replaced with the
+     * already-stored secret. Sub-classes (typically provider-specific configs from
+     * {@code IdentityProviderFactory#createConfig()}) override this to reject reuse when
+     * fields that determine where/how the secret is sent have changed.
+     * <p>
+     * Callers should invoke this on the typed model from {@code createConfig()} /
+     * {@code RepresentationToModel}, not on a cached plain {@link IdentityProviderModel}.
+     *
+     * @param other the other model to compare destination/auth fields against (usually the stored IdP)
+     * @return {@code true} if the stored secret may be reused; default allows reuse
+     */
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel other) {
+        return true;
     }
 
     public IdentityProviderSyncMode getSyncMode() {
@@ -425,6 +455,14 @@ public class IdentityProviderModel implements Serializable {
         if (!(obj instanceof IdentityProviderModel)) return false;
         return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
                Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
+    }
+
+    public boolean isAllowAdminRoleMapping() {
+        return getBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING);
+    }
+
+    public void setAllowAdminRoleMapping(boolean allow) {
+        setBooleanConfig(ALLOW_ADMIN_ROLE_MAPPING, allow);
     }
 
     private boolean getBooleanConfig(String key) {

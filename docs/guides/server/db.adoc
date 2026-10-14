@@ -300,7 +300,7 @@ Default: `10s`.
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
 Logouts will still force a synchronous commit.
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
@@ -316,6 +316,22 @@ You can override this behavior by setting your own value for `targetServerType` 
 ====
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
+
+==== Using PgBouncer
+
+When {project_name} connects to PostgreSQL through PgBouncer, connections can fail after a failover or switchover.
+PgBouncer caches the `in_hot_standby` value it reports to new client connections, and it can keep reporting `in_hot_standby=on` after the switch.
+Because `targetServerType` is set to `primary`, the PostgreSQL JDBC driver then treats the connection as a reader instance and refuses it with the error `Could not find a server with specified targetServerType: primary`.
+
+This is a known PgBouncer issue, tracked in https://github.com/pgbouncer/pgbouncer/issues/859[pgbouncer/pgbouncer#859].
+Reloading PgBouncer after a failover or switchover makes it report the current value again.
+
+Setting `targetServerType` to `any` avoids the error, but it also removes the protection described above, so {project_name} might connect to a reader instance.
+Only use it if your routing in PgBouncer sends database connections exclusively to the writable primary database.
+
+Set `targetServerType=any` via `db-url-properties`:
+
+<@kc.start parameters="--db postgres --db-url-properties='?targetServerType=any'"/>
 
 === Permissions of the database user
 
@@ -424,12 +440,12 @@ SET GLOBAL binlog_format = 'ROW';
 
 Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
 
-[#mariadb-galera-cluster-considerations]
-=== MariaDB Galera Cluster
+[#galera-cluster-considerations]
+=== Galera Cluster
 
-WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+WARNING: Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
 
-MariaDB Galera Cluster uses certification-based replication.
+Galera Cluster uses certification-based replication.
 The `transaction_isolation` setting configured by {project_name} has no practical effect on Galera, as Galera internally operates under its own Snapshot Isolation model regardless of the configured isolation level.
 
 On a multi-writer Galera setup, concurrent write transactions on different nodes that modify the same row can trigger certification failures.
@@ -474,7 +490,7 @@ In the output, look for the row where the option is `isolation level`. The value
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events can use MS SQL Server's delayed durability feature.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events can use MS SQL Server's delayed durability feature.
 Logouts will still force a durable commit.
 
 To enable this optimization, set the database to allow delayed durability:
@@ -494,7 +510,7 @@ You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--asy
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
 Logouts will still force a synchronous commit.
 
 NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).
@@ -721,7 +737,7 @@ In the same way the migrationExport to point to a specific file and location:
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
 <@kc.start parameters="--spi-connections-jpa--quarkus--migration-export=<path>/<file.sql>"/>
 
-For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
+For more information, see link:{migrate_db}[Migrating the database].
 
 == Configuring the connection pool
 

@@ -37,6 +37,10 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
         return new IdentityProviderBuilder(new IdentityProviderRepresentation());
     }
 
+    public static IdentityProviderBuilder update(IdentityProviderRepresentation rep) {
+        return new IdentityProviderBuilder(rep);
+    }
+
     public IdentityProviderBuilder alias(String alias) {
         rep.setAlias(alias);
         return this;

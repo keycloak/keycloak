@@ -17,7 +17,11 @@ import {
   goToPermissions,
   openSearchPanel,
   pickGroup,
+  pickOrganization,
+  pickRole,
   removeGroup,
+  removeOrganization,
+  removeRole,
   selectClient,
   selectResource,
 } from "./main.ts";
@@ -27,7 +31,10 @@ test.describe.serial("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm(realmName, { adminPermissionsEnabled: true });
+    await adminClient.createRealm(realmName, {
+      adminPermissionsEnabled: true,
+      organizationsEnabled: true,
+    });
     await adminClient.createUser({
       realm: realmName,
       username: "test-user",
@@ -35,6 +42,21 @@ test.describe.serial("Permissions section tests", () => {
     });
     await adminClient.createGroup("one", realmName);
     await adminClient.createGroup("two", realmName);
+    await adminClient.createOrganization({
+      name: "one",
+      realm: realmName,
+      enabled: true,
+    });
+    await adminClient.createOrganization({
+      name: "two",
+      realm: realmName,
+      enabled: true,
+    });
+    // Named like the account client's own role, to tell the two apart.
+    await adminClient.createRealmRole({
+      realm: realmName,
+      name: "view-profile",
+    });
   });
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
@@ -115,6 +137,100 @@ test.describe.serial("Permissions section tests", () => {
       page,
       "Successfully updated the permission",
     );
+    await goToPermissions(page);
+    await deletePermission(page, "test-group-permission");
+  });
+
+  test("should edit organization permission", async ({ page }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Organizations");
+    await fillPermissionForm(page, {
+      name: "test-organization-permission",
+      scopes: ["view"],
+      enforcementMode: "specificResources",
+    });
+    await pickOrganization(page, "one");
+    await pickOrganization(page, "two");
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-organization-policy",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await removeOrganization(page, "one");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
+    await goToPermissions(page);
+    await deletePermission(page, "test-organization-permission");
+  });
+
+  test("should edit role permission", async ({ page }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Roles");
+    await fillPermissionForm(page, {
+      name: "test-role-permission",
+      scopes: ["map-role"],
+      enforcementMode: "specificResources",
+    });
+    await pickRole(page, "roles", "view-profile");
+    await pickRole(page, "client", "view-profile account");
+
+    // A realm role and a client role of the same name are told apart.
+    await expect(
+      page.getByRole("button", {
+        name: "Remove role view-profile",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: "Remove role account view-profile",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-role-policy",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await removeRole(page, "account view-profile");
+    await expect(
+      page.getByRole("button", {
+        name: "Remove role account view-profile",
+        exact: true,
+      }),
+    ).toBeHidden();
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
+    await goToPermissions(page);
+    await deletePermission(page, "test-role-permission");
   });
 
   test.describe.serial("evaluate permissions", () => {

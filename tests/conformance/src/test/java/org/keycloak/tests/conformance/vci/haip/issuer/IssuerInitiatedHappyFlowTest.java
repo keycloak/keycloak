@@ -24,22 +24,22 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
-import org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig;
+import org.keycloak.tests.conformance.vci.haip.configs.HaipVciServerConfig;
 
-import static org.keycloak.tests.conformance.vci.haip.HaipVciConformanceRealmConfig.HAIP_PLAN;
+import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig.HAIP_PLAN;
 
 /**
  * The issuer_initiated flow: Keycloak creates a credential offer through the verifiable_credential_offer
  * application initiated action and the suite receives it, fetches the offer from its credential_offer_uri and
  * completes the authorization code flow with its own wallet client.
  */
-@KeycloakIntegrationTest(config = HaipVciConformanceRealmConfig.ServerConfig.class)
+@KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerInitiatedHappyFlowTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = HaipVciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = HaipVciRealmConfig.class)
     ManagedRealm realm;
 
     @Override
@@ -49,11 +49,6 @@ public class IssuerInitiatedHappyFlowTest extends AbstractVciConformanceTest {
                 issuerInitiated(),
                 "oid4vci-1_0-issuer-happy-flow",
                 ConformanceResult.PASSED,
-                BrowserInteraction.LOGIN)
-                // TODO (#50889): include the encrypted variant once Keycloak keeps the credential offer state for the
-                //  lifetime of the authorized session. Keycloak removes the offer state after the first
-                //  successful issuance (OID4VCIssuerEndpoint), so the encrypted variant's second credential
-                //  request (encryption + DEFLATE compression check) fails with "No credential offer state".
-                .filter(module -> "plain".equals(module.moduleVariant().get("vci_credential_encryption")));
+                BrowserInteraction.LOGIN);
     }
 }

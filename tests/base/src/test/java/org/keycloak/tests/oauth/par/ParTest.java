@@ -20,27 +20,38 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ParConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.client.policies.AbstractClientPoliciesTest;
+import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.models.ParConfig.DEFAULT_PAR_REQUEST_URI_LIFESPAN;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -63,6 +74,12 @@ public class ParTest extends AbstractClientPoliciesTest {
 
     @InjectWebDriver
     ManagedWebDriver driver;
+
+    @InjectUser(config = TestRealmUserConfig.class)
+    protected ManagedUser user;
+
+    @InjectTimeOffSet(enableForCaches = true)
+    TimeOffSet timeOffSet;
 
     @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
@@ -109,6 +126,41 @@ public class ParTest extends AbstractClientPoliciesTest {
         loginPage.assertCurrent();
     }
 
+    // PAR object needs to be valid for the time of PAR lifespan together with the authenticationSession time as
+    // (See https://github.com/keycloak/keycloak/issues/48072 for the details)
+    @Test
+    public void requestUriLifetimeDoesNotLimitAuthenticationSessionLength() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        // Pushed Authorization Request
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+        assertEquals(DEFAULT_PAR_REQUEST_URI_LIFESPAN, pResp.getExpiresIn()); // This time is still just requestUri lifespan (60 seconds). Attempt to use PAR after longer time tested elsewhere (in testFailureParExpired())
+
+        // Authorization Request with request_uri of PAR
+        // remove parameters as query strings of uri
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        String state = "testSuccessfulSinglePar";
+        oauth.loginForm().requestUri(requestUri).state(state).open();
+        loginPage.assertCurrent();
+
+        // make sure interactive login waits longer than requestUriLifespan
+        timeOffSet.set(DEFAULT_PAR_REQUEST_URI_LIFESPAN * 2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        assertEquals(state, loginResponse.getState());
+        String code = loginResponse.getCode();
+
+        // For this test it's enough to check that Code2Token succeeds
+        oauth.redirectUri(origRedirectUri); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+    }
+
     /**
      * Test that a PAR {@code request_uri} issued for client-A is rejected when client-B presents it at
      * the authorization endpoint.  Without the {@code par.client.id} validation the server would silently
@@ -146,6 +198,48 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertThat(driver.getCurrentUrl(),
                 not(startsWith(realmA.getBaseUrl() + "/login-actions/authenticate")));
         errorPage.assertCurrent();
+    }
+
+    /**
+     * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
+     * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
+     *
+     * Regression test for CVE-2026-96446: without the fix in OIDCLoginProtocol.authenticated(),
+     * the PAR entry survives the silent auth flow and can be replayed to mint additional authorization codes.
+     */
+    @Test
+    public void testParSingleUseEnforcedOnSilentAuthentication() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        // Step 1: Interactive login to establish an SSO session
+        oauth.doLogin(user.getUsername(), user.getPassword());
+        assertThat(oauth.parseLoginResponse().isSuccess(), is(true));
+
+        // Step 2: Push a new PAR request
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        // Step 3: First use of request_uri with prompt=none — must succeed via silent auth
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Step 4: Replay the same request_uri — must be rejected (PAR already consumed)
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        errorPage.assertCurrent();
+
+        // Step 5: Verify the code from the first (legitimate) use is still valid
+        oauth.redirectUri(origRedirectUri);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+
+        // Clean up SSO session so it does not leak into other tests via the class-scoped WebDriver
+        driver.cookies().deleteAll();
     }
 
     // -------------------------------------------------------------------------

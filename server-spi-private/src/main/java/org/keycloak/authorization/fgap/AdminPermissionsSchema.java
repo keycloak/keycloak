@@ -88,7 +88,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     // common scopes
     public static final String MANAGE = "manage";
     public static final String VIEW = "view";
-    public static String QUERY = "query";
+    public static final String QUERY = "query";
 
     // client specific scopes
     public static final String MAP_ROLES = "map-roles";
@@ -539,6 +539,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         return partialEvaluator.getPredicates(session, resourceType, evaluator, realm, builder, queryBuilder, path);
+    }
+
+    public boolean isPartialEvaluationActive(KeycloakSession session, ResourceType resourceType) {
+        return partialEvaluator.isActive(session, resourceType);
     }
 
     public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {

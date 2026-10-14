@@ -17,6 +17,7 @@ Support for test suites:
 Useful guides:
 * [_Keycloak Test Framework_](../../test-framework/docs/README.md)
 * [_FIPS_ tests execution](FIPS_104-2.md) - how to set up a local machine to successfully execute the _FIPS_ tests.
+* [_Docker Authentication test_](DOCKER_AUTHENTICATION_TEST.md) - how to run `DockerClientTest` locally.
 
 ## Utilities
 

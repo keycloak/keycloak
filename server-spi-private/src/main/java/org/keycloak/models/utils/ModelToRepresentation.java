@@ -76,6 +76,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.ProtocolMapperModel;
@@ -93,6 +94,7 @@ import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -988,8 +990,7 @@ public class ModelToRepresentation {
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
-        Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
-        providerRep.setConfig(config);
+        providerRep.setConfig(new HashMap<>(identityProviderModel.getConfig()));
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
@@ -1013,8 +1014,20 @@ public class ModelToRepresentation {
         if (!export) {
             Set<String> orgIds = identityProviderModel.getOrganizationIds();
             if (orgIds != null && !orgIds.isEmpty()) {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
                 providerRep.setOrganizationLinks(orgIds.stream()
-                        .map(OrganizationIdentityProviderLinkRepresentation::new)
+                        .map(orgId -> {
+                            OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(orgId);
+                            OrganizationModel org = orgProvider.getById(orgId);
+                            if (org != null) {
+                                OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(org, identityProviderModel);
+                                if (link != null) {
+                                    linkRep.setAutoMembership(link.isAutoMembership());
+                                    linkRep.setMembershipType(link.getMembershipType().name());
+                                }
+                            }
+                            return linkRep;
+                        })
                         .collect(Collectors.toList()));
             }
         }
@@ -1522,8 +1535,8 @@ public class ModelToRepresentation {
         rep.setEnabled(model.isEnabled());
         rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());
-        model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
-                .forEach(rep::addDomain);
+        rep.setDomains(model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
+                .collect(Collectors.toSet()));
         return rep;
     }
 

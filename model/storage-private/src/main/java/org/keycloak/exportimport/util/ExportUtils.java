@@ -42,6 +42,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -55,6 +56,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -281,6 +283,13 @@ public class ExportUtils {
                         .map(b -> {
                             IdentityProviderRepresentation broker = new IdentityProviderRepresentation();
                             broker.setAlias(b.getAlias());
+                            OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(model, b);
+                            if (link != null) {
+                                OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(model.getId());
+                                linkRep.setAutoMembership(link.isAutoMembership());
+                                linkRep.setMembershipType(link.getMembershipType().name());
+                                broker.setOrganizationLinks(List.of(linkRep));
+                            }
                             return broker;
                         }).forEach(org::addIdentityProvider);
 

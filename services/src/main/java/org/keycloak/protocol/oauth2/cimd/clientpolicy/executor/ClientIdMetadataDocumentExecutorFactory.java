@@ -27,6 +27,7 @@ public class ClientIdMetadataDocumentExecutorFactory extends AbstractClientIdMet
     public static final String PROVIDER_ID = "client-id-metadata-document";
 
     public static final String ONLY_ALLOW_CONFIDENTIAL_CLIENT = "only-allow-confidential-client";
+    public static final String ACCEPT_PUBLIC_CLIENT_WITH_CONFIDENTIAL_CLIENT_ONLY_GRANT = "accept-public-client-with-confidential-client-only-grant";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -39,6 +40,15 @@ public class ClientIdMetadataDocumentExecutorFactory extends AbstractClientIdMet
                 ONLY_ALLOW_CONFIDENTIAL_CLIENT,
                 "Only Allow Confidential Client",
                 "If ON, then the executor only accept a Client Metadata showing a confidential client.",
+                ProviderConfigProperty.BOOLEAN_TYPE,
+                false);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                ACCEPT_PUBLIC_CLIENT_WITH_CONFIDENTIAL_CLIENT_ONLY_GRANT,
+                "Accept Public Client with Confidential-only Grant Types",
+                "If ON, then the executor accepts Client Metadata for a public client even if it includes grant types that require a confidential client. " +
+                "The executor overwrites the Client Metadata by excluding such grants.",
                 ProviderConfigProperty.BOOLEAN_TYPE,
                 false);
         configProperties.add(property);

@@ -18,8 +18,11 @@
 package org.keycloak.common.util;
 
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -79,6 +82,26 @@ public class CertificateUtils {
 
     public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
         return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, truncateCN(subject), serialNumber, validityEndDate);
+    }
+
+    /**
+     * Checks whether the certificate is self signed, meaning it is self issued with matching subject and
+     * issuer names and its signature verifies with its own public key.
+     *
+     * @param certificate the certificate to check
+     * @return true if the certificate is self issued and signed by its own key
+     * @throws GeneralSecurityException if the signature cannot be verified at all
+     */
+    public static boolean isSelfSigned(X509Certificate certificate) throws GeneralSecurityException {
+        if (!certificate.getSubjectX500Principal().equals(certificate.getIssuerX500Principal())) {
+            return false;
+        }
+        try {
+            certificate.verify(certificate.getPublicKey());
+            return true;
+        } catch (SignatureException | InvalidKeyException e) {
+            return false;
+        }
     }
 
     private static String truncateCN(String cn) {

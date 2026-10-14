@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,7 +27,9 @@ import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -139,7 +142,7 @@ public class ClientHostUtilsTest {
         assertTrue(ClientHostUtils.isHostAllowedForClient("[::1]", client, session));
         client.setManagementUrl("http://[fe80::1]/auth");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::1]", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("fe80::1", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("fe80::1", client, session));
     }
 
     @Test
@@ -147,7 +150,7 @@ public class ClientHostUtilsTest {
         TestClientModel client = new TestClientModel("test-client");
         client.setManagementUrl("http://[2001:db8:85a3::8a2e:370:7334]/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8:85a3::8a2e:370:7334]", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("2001:db8:85a3::8a2e:370:7334", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("2001:db8:85a3::8a2e:370:7334", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8:85a3::8a2e:370:7334]:443", client, session));
     }
 
@@ -157,16 +160,30 @@ public class ClientHostUtilsTest {
         client.setManagementUrl("http://[fe80::a00:27ff:fe4e:66a1]:3000/callback");
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::a00:27ff:fe4e:66a1]:3000", client, session));
         assertTrue(ClientHostUtils.isHostAllowedForClient("[fe80::a00:27ff:fe4e:66a1]", client, session));
-        assertFalse(ClientHostUtils.isHostAllowedForClient("fe80::a00:27ff:fe4e:66a1", client, session));
+        assertTrue(ClientHostUtils.isHostAllowedForClient("fe80::a00:27ff:fe4e:66a1", client, session));
     }
 
     @Test
     public void testIPv6DoesNotMatchDifferentAddress() {
         TestClientModel client = new TestClientModel("test-client");
         client.setManagementUrl("http://[::1]/callback");
-        assertFalse(ClientHostUtils.isHostAllowedForClient("::1", client, session)); // brackets required
         assertFalse(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("2001:db8::1", client, session));
+    }
+
+    @Test
+    public void testBareIpv6RegisteredNode_matchesClientSessionHost_bothBareAndBracketed() {
+        TestClientModel client = new TestClientModel("test-client");
+        // SecureClientNodeExecutor persists the original (bare) input as the node key.
+        client.registerNode("2001:db8::1", (int) java.time.Instant.now().getEpochSecond());
+
+        // Bare IPv6 as client_session_host: extractHostname must bracket before URI construction.
+        assertTrue(ClientHostUtils.isHostAllowedForClient("2001:db8::1", client, session),
+                "Bare client_session_host '2001:db8::1' must match stored node key '2001:db8::1'");
+
+        // Bracketed IPv6 as client_session_host: extractHostname must strip brackets from URI.getHost().
+        assertTrue(ClientHostUtils.isHostAllowedForClient("[2001:db8::1]", client, session),
+                "Bracketed client_session_host '[2001:db8::1]' must match stored node key '2001:db8::1'");
     }
 
     @Test
@@ -294,6 +311,66 @@ public class ClientHostUtilsTest {
         assertTrue(ClientHostUtils.isHostAllowedForClient("10.0.0.5", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("evil.com", client, session));
         assertFalse(ClientHostUtils.isHostAllowedForClient("192.168.1.101", client, session));
+    }
+
+    @Test
+    public void testFormatAsUriHost() {
+        assertNull(ClientHostUtils.formatAsUriHost(null));
+        assertEquals("", ClientHostUtils.formatAsUriHost(""));
+        assertEquals("app.example.com", ClientHostUtils.formatAsUriHost("app.example.com"));
+        assertEquals("192.168.1.1", ClientHostUtils.formatAsUriHost("192.168.1.1"));
+        assertEquals("192.168.1.1:8080", ClientHostUtils.formatAsUriHost("192.168.1.1:8080"));
+        assertEquals("[2001:db8::1]", ClientHostUtils.formatAsUriHost("2001:db8::1"));
+        assertEquals("[2001:db8::1]", ClientHostUtils.formatAsUriHost("[2001:db8::1]"));
+        assertEquals("[::1]", ClientHostUtils.formatAsUriHost("::1"));
+        assertEquals("[::1]", ClientHostUtils.formatAsUriHost("[::1]"));
+    }
+
+    @Test
+    public void testBareIpv6ProducesValidUriWhenFormatted() throws Exception {
+        String template = "http://${application.session.host}/callback";
+        String bareIpv6 = "2001:db8::1";
+        String resolvedUrl = template.replace("${application.session.host}", ClientHostUtils.formatAsUriHost(bareIpv6));
+
+        URI uri = new URI(resolvedUrl);
+        assertEquals("[2001:db8::1]", uri.getHost());
+        assertEquals("http://[2001:db8::1]/callback", uri.toString());
+    }
+    
+    @Test
+    public void testBareIpv6ClusterNodeProducesValidManagementUrl() throws Exception {
+        String baseMgmtUrl = "http://app.example.com/k_logout";
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(baseMgmtUrl);
+
+        // bare IPv6 — the form always stored in registeredNodes after normalisation
+        String bareIpv6Node = "2001:db8::1";
+        String nodeUrl = uriBuilder.clone()
+                .host(ClientHostUtils.formatAsUriHost(bareIpv6Node))
+                .build().toString();
+
+        URI uri = new URI(nodeUrl);
+        assertEquals("[2001:db8::1]", uri.getHost(), "IPv6 host must be bracketed in the built URI");
+        assertEquals("http://[2001:db8::1]/k_logout", nodeUrl);
+    }
+
+    @Test
+    public void testIpv4ClusterNodeUnaffectedByFormatAsUriHost() throws Exception {
+        String baseMgmtUrl = "http://app.example.com/k_logout";
+        String nodeUrl = KeycloakUriBuilder.fromUri(baseMgmtUrl)
+                .host(ClientHostUtils.formatAsUriHost("192.0.2.1"))
+                .build().toString();
+        assertEquals("192.0.2.1", new URI(nodeUrl).getHost());
+        assertEquals("http://192.0.2.1/k_logout", nodeUrl);
+    }
+
+    @Test
+    public void testDnsClusterNodeUnaffectedByFormatAsUriHost() throws Exception {
+        String baseMgmtUrl = "http://app.example.com/k_logout";
+        String nodeUrl = KeycloakUriBuilder.fromUri(baseMgmtUrl)
+                .host(ClientHostUtils.formatAsUriHost("app.internal.example.com"))
+                .build().toString();
+        assertEquals("app.internal.example.com", new URI(nodeUrl).getHost());
+        assertEquals("http://app.internal.example.com/k_logout", nodeUrl);
     }
 
     /**

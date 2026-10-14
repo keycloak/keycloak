@@ -85,6 +85,7 @@
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
 :grafanadashboards_link: https://www.keycloak.org/observability/grafana-dashboards
+:highavailabilityguide_base_link: https://www.keycloak.org/high-availability
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :loggingguide_name: Logging Guide
@@ -159,5 +160,5 @@
 :securing_apps_token_exchange_name: Token exchange Documentation
 
 :ui_customization_guide_name: UI Customization Guide
-:ui_customization_guide_link: {project_doc_base_url}/ui-customization/
+:ui_customization_guide_link: https://www.keycloak.org/ui-customization/
 :ui_customization_deploying_themes: https://www.keycloak.org/ui-customization/themes#_deploying_themes

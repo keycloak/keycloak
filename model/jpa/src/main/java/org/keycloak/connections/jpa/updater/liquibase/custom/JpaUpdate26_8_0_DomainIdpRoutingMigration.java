@@ -83,6 +83,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                     try (PreparedStatement domLookup = connection.prepareStatement(
                             "SELECT dom.ID FROM " + getTableName(orgDomainTable) + " dom" +
                                     " JOIN " + getTableName(idpTable) + " ip ON dom.REALM_ID = ip.REALM_ID" +
+                                    " AND dom.ORG_ID = ip.ORGANIZATION_ID" +
                                     " WHERE dom.NAME = ? AND ip.INTERNAL_ID = ?")) {
                         domLookup.setString(1, domainValue);
                         domLookup.setString(2, idpInternalId);

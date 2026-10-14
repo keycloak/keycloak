@@ -34,6 +34,12 @@ import org.keycloak.services.clientregistration.AbstractClientRegistrationProvid
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+
+/**
+ *  @deprecated This provider is deprecated for removal since Keycloak 26.8.
+ *  Use the Admin REST API to create SAML clients from an entity descriptor instead.
+ */
+@Deprecated(forRemoval = true, since = "26.8")
 public class EntityDescriptorClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     public EntityDescriptorClientRegistrationProvider(KeycloakSession session) {
