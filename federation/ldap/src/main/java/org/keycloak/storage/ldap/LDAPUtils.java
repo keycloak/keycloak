@@ -201,6 +201,16 @@ public class LDAPUtils {
 			ldapUser,
 			config.getUsernameLdapAttribute());
 
+		if (ldapUsername == null) {
+			throw new ModelException(
+				"User returned from LDAP has null username! "
+					+ "Check configuration of your LDAP mappings. "
+					+ "Mapped username LDAP attribute: "
+					+ config.getUsernameLdapAttribute()
+					+ ", user DN: " + ldapUser.getDn()
+					+ ", attributes from LDAP: " + ldapUser.getAttributes());
+		}
+
 		if (config.isImportEnabled() && ldapUsername != null) {
 			return ldapUsername.toLowerCase();
 		}
