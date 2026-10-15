@@ -398,13 +398,7 @@ public class OID4VCIssuerEndpoint {
      * Creates a Credential Offer that is bound to a specific user.
      */
     public Response createCredentialOffer(String credConfigId, boolean preAuthorized, String targetUser) {
-        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
-    }
-
-    public Response createCredentialOffer(String credentialConfigurationId, Boolean preAuthorized, String targetUser,
-                                          Long expiresAt, OfferResponseType responseType, int width, int height) {
-        return createCredentialOffer(credentialConfigurationId, preAuthorized, targetUser, expiresAt, responseType,
-                width, height, null);
+        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0, null);
     }
 
     /**
@@ -1830,9 +1824,9 @@ public class OID4VCIssuerEndpoint {
     }
 
     // builds the unsigned credential by applying all protocol mappers.
-    private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
-                                          AuthenticationManager.AuthResult authResult, OID4VCAuthorizationDetail authDetail, CredentialRequest credentialRequestVO,
-                                          CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder, VCIssuanceContext vcIssuanceContext) {
+    private void getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
+                             AuthenticationManager.AuthResult authResult, OID4VCAuthorizationDetail authDetail, CredentialRequest credentialRequestVO,
+                             CredentialScopeModel credentialScopeModel, EventBuilder eventBuilder, VCIssuanceContext vcIssuanceContext) {
 
         // Compute issuance date and apply correlation-mitigation according to realm configuration
         Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
@@ -1909,7 +1903,7 @@ public class OID4VCIssuerEndpoint {
                     "Could not build credential: " + e.getMessage(), eventBuilder);
         }
 
-        return vcIssuanceContext.setCredentialBody(credentialBody);
+        vcIssuanceContext.setCredentialBody(credentialBody);
     }
 
     /**
