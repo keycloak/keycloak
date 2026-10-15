@@ -7,4 +7,3 @@ org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory
 org.keycloak.testsuite.federation.sync.SyncDummyUserFederationProviderFactory
 org.keycloak.testsuite.federation.sync.IgnoredDummyUserFederationProviderFactory
 org.keycloak.testsuite.federation.FailingUserStorageProviderFactory
-org.keycloak.testsuite.federation.NoCredentialUserStorageProviderFactory
