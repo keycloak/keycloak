@@ -309,8 +309,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                     try {
                         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
                                 (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
-                                        password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId(),
-                                        validatedSecretData));
+                                        password.getId(), user.getId(), validatedSecretData));
                     } catch (ModelException e) {
                         logger.info("Error re-hashing the password in a different transaction", e);
                     }
@@ -325,7 +324,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private static void refreshPassword(KeycloakSession s, String hashAlgorithm, int iterations, String challenge,
-            String passwordId, Long passwordDate, String passwordLabel, String userId, String validatedSecretData) {
+            String passwordId, String userId, String validatedSecretData) {
         RealmModel realm = s.getContext().getRealm();
         UserModel userModel = s.users().getUserById(realm, userId);
         if (userModel == null) {
@@ -336,8 +335,6 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 : s.getProvider(PasswordHashProvider.class))
                 .encodedCredential(challenge, iterations);
         newPassword.setId(passwordId);
-        newPassword.setCreatedDate(passwordDate);
-        newPassword.setUserLabel(passwordLabel);
 
         // The credential may have been changed after it was validated, e.g. by a password change in the same request
         // or by a concurrent request. Re-hashing the validated password would revert that change.
@@ -355,6 +352,9 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             logger.debugf("Skipping re-hash of password credential %s of user %s, it changed after it was validated", passwordId, userId);
             return;
         }
+        // Preserve current metadata, including changes made while re-hashing.
+        newPassword.setCreatedDate(current.getCreatedDate());
+        newPassword.setUserLabel(current.getUserLabel());
         userModel.credentialManager().updateStoredCredential(newPassword);
     }
 
