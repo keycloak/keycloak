@@ -226,7 +226,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 )
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
-                .defaultValue(FEDERATED_OPTION)
+                .defaultValue(FORCE_LOGIN)
                 .add()
                 .build();
     }
