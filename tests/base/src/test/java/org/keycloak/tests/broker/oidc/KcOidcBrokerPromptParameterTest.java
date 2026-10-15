@@ -7,7 +7,11 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -22,6 +26,9 @@ public class KcOidcBrokerPromptParameterTest extends AbstractKcOidcBrokerTest {
     @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
             config = PromptConsumerRealmConfig.class)
     ManagedRealm consumerRealm;
+
+    @InjectPage
+    RegisterPage registerPage;
 
     @Override
     protected void loginUser() {
@@ -42,14 +49,47 @@ public class KcOidcBrokerPromptParameterTest extends AbstractKcOidcBrokerTest {
         assertUserCreatedInConsumerRealm();
     }
 
+    @Test
+    public void testPromptCreateNotForwardedToIdp() {
+        oauth.loginForm()
+                .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_CREATE)
+                .open();
+
+        // The prompt stays in the authentication session after going back to the login page
+        registerPage.assertCurrent();
+        registerPage.clickBackToLogin();
+        logInWithBroker();
+
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertThat(OIDCLoginProtocol.PROMPT_PARAM + " should not be part of the url",
+                webDriver.getCurrentUrl(), not(containsString(OIDCLoginProtocol.PROMPT_PARAM + "=")));
+    }
+
+    @Test
+    public void testPromptCreateRemovedFromForwardedPrompt() {
+        oauth.loginForm()
+                .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_CREATE + " " + PROMPT_CONSENT)
+                .open();
+
+        logInWithBroker();
+
+        webDriver.waiting().until(d -> webDriver.getCurrentUrl().contains("/realms/" + PROVIDER_REALM + "/"));
+        assertThat(OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_CONSENT + " should be part of the url",
+                webDriver.getCurrentUrl(), containsString(OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_CONSENT));
+        assertThat(OIDCLoginProtocol.PROMPT_PARAM + "=" + OIDCLoginProtocol.PROMPT_VALUE_CREATE + " should not be part of the url",
+                webDriver.getCurrentUrl(), not(containsString(OIDCLoginProtocol.PROMPT_PARAM + "=" + OIDCLoginProtocol.PROMPT_VALUE_CREATE)));
+    }
+
     // The shared createOidcIdentityProvider() sets prompt=login, which the broker always prefers over the
-    // client-forwarded prompt. This test needs the client's prompt=consent to pass through, so it clears the
+    // client-forwarded prompt. This test needs the client's prompt to pass through, so it clears the
     // IDP-configured prompt - mirroring the legacy KcOidcBrokerConfiguration2, which removed the attribute.
+    // Registration is enabled so that prompt=create is accepted.
     static class PromptConsumerRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             return configureConsumerRealm(realm,
-                    createOidcIdentityProvider().attribute("prompt", null));
+                    createOidcIdentityProvider().attribute("prompt", null))
+                    .registrationAllowed(true);
         }
     }
 }
