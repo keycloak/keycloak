@@ -9,11 +9,13 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
@@ -28,6 +30,7 @@ import org.keycloak.userprofile.UserProfileProvider;
  */
 public abstract class AbstractUserProfileBean {
 
+    private static final Pattern VALID_ANNOTATION_KEY = Pattern.compile("^[a-zA-Z0-9_.\\-]+$");
 
     private static final Comparator<Attribute> ATTRIBUTE_COMPARATOR = (a1, a2) -> {
         AttributeGroup g1 = a1.getGroup();
@@ -129,7 +132,27 @@ public abstract class AbstractUserProfileBean {
     }
 
     /**
-     * Info about user profile attribute available in Freemarker template. 
+     * Sanitizes HTML5 data annotation entries by filtering out keys with invalid characters
+     * and escaping values to prevent HTML attribute injection.
+     */
+    private static Map<String, Object> sanitizeAnnotations(Map<String, Object> annotations) {
+        Map<String, Object> sanitized = new HashMap<>();
+        for (Entry<String, Object> entry : annotations.entrySet()) {
+            String key = entry.getKey();
+            if (key != null && VALID_ANNOTATION_KEY.matcher(key).matches()) {
+                Object value = entry.getValue();
+                if (value instanceof String) {
+                    sanitized.put(key, HtmlUtils.escapeAttribute((String) value));
+                } else {
+                    sanitized.put(key, value);
+                }
+            }
+        }
+        return sanitized;
+    }
+
+    /**
+     * Info about user profile attribute available in Freemarker template.
      */
     public class Attribute implements Comparable<Attribute> {
 
@@ -214,7 +237,7 @@ public abstract class AbstractUserProfileBean {
                 annotations.put("kcMultivalued", "");
             }
 
-            return annotations;
+            return sanitizeAnnotations(annotations);
         }
       
         /**
@@ -271,8 +294,9 @@ public abstract class AbstractUserProfileBean {
         }
 
         public Map<String, Object> getHtml5DataAnnotations() {
-            return getAnnotations().entrySet().stream()
+            Map<String, Object> annotations = getAnnotations().entrySet().stream()
                     .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            return sanitizeAnnotations(annotations);
         }
 
         @Override
