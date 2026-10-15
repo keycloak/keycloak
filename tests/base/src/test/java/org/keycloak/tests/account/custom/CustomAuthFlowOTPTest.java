@@ -491,7 +491,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //test OTP is required
         oauth.openLoginForm();
         testRealmLoginPage.login(testUser.getUsername(), PASSWORD);
-        assertEquals("Mobile Authenticator Setup", driver.findElement(By.id("kc-page-title")).getText());
+        assertEquals("Mobile authenticator setup", driver.findElement(By.id("kc-page-title")).getText());
 
         configureOTP();
         oauth.openLoginForm();

@@ -461,7 +461,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         changePasswordOnUpdatePage(driver2);
         assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Back to application"));
 
         // Updating the password in the first browser should now fail.
         updatePasswordPage.changePassword("invalid-new-password", "invalid-new-password");
@@ -1312,7 +1312,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             // when
             driver.navigate().to(resetUri);
             // then
-            assertThat(PageUtils.getPageTitle(driver), is("Forgot Your Password?"));
+            assertThat(PageUtils.getPageTitle(driver), is("Forgot your password?"));
 
             // when
             driver.manage().deleteAllCookies();
@@ -1380,7 +1380,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
         // Link "back to application" not present due the fact we use system client
-        assertThat(driver.getPageSource(), Matchers.not(Matchers.containsString("Back to Application")));
+        assertThat(driver.getPageSource(), Matchers.not(Matchers.containsString("Back to application")));
     }
 
 
@@ -1423,7 +1423,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
 
         assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Back to Application"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Back to application"));
     }
 
 

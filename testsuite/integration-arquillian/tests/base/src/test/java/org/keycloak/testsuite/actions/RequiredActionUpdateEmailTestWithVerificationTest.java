@@ -143,7 +143,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("The account email has been successfully updated to new@localhost.", infoPage.getInfo());
 		infoPage.clickBackToApplicationLink();
 		WaitUtils.waitForPageToLoad();
-		// "Back to Application" uses client baseUrl instead of redirect URI
+		// "Back to application" uses client baseUrl instead of redirect URI
 		String expectedUrl = getAuthServerContextRoot() + "/auth/realms/test/app/auth";
 		assertEquals(expectedUrl, driver.getCurrentUrl());
 

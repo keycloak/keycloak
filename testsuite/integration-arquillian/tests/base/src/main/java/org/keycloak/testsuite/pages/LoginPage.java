@@ -69,7 +69,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-    @FindBy(linkText = "Forgot Password?")
+    @FindBy(linkText = "Forgot password?")
     private WebElement resetPasswordLink;
 
     @FindBy(className = "pf-m-danger")

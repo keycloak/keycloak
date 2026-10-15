@@ -77,7 +77,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
     @FindBy(className = "instruction")
     private WebElement loginInstructionMessage;
 
-    @FindBy(linkText = "« Back to Login")
+    @FindBy(linkText = "« Back to login")
     private WebElement backToLoginLink;
 
     public void register(String firstName, String lastName, String email, String username, String password) {

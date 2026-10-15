@@ -50,7 +50,7 @@ public class LoginForm extends Form {
 
     @FindBy(xpath = "//div[@id='kc-registration']/span/a")
     private WebElement registerLink;
-    @FindBy(linkText = "Forgot Password?")
+    @FindBy(linkText = "Forgot password?")
     private WebElement forgottenPassword;
 
     @FindBy(id = "rememberMe")

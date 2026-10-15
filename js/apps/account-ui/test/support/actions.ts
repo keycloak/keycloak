@@ -23,7 +23,7 @@ export async function login(
   await page
     .getByRole("textbox", { name: "Password", exact: true })
     .fill(password);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
 }
 
 export async function assertLastAlert(
