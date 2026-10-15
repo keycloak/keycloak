@@ -28,7 +28,7 @@ export const OpenIdConnectCompatibilityModes = ({
       "attributes.standard.token.exchange.enabled",
     ),
   );
-  const useRefreshTokens = watch(
+  const refreshTokensEnabled = watch(
     convertAttributeNameToForm<FormFields>("attributes.use.refresh.tokens"),
     "true",
   );
@@ -265,7 +265,7 @@ export const OpenIdConnectCompatibilityModes = ({
           }}
           isDisabled={
             tokenExchangeEnabled?.toString() !== "true" ||
-            useRefreshTokens?.toString() !== "true"
+            refreshTokensEnabled?.toString() !== "true"
           }
           options={[
             { key: "", value: t("choose") },
