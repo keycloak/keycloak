@@ -18,7 +18,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -57,14 +57,14 @@ public class CredentialOfferState {
      * @param clientId    The target client_id
      * @param userId      The target user id
      * @param expiresAt    The expiry date of the offer in seconds
-     * @param authDetailsProvider A provider function for authorization details, (optionally) one for each credential_configuration_id
+     * @param authDetailsProvider A provider for authorization details
      */
     public CredentialOfferState(
             CredentialsOffer credOffer,
             String clientId,
             String userId,
             long expiresAt,
-            Function<String, List<OID4VCAuthorizationDetail>> authDetailsProvider
+            Supplier<List<OID4VCAuthorizationDetail>> authDetailsProvider
     ) {
         this.credentialsOfferId = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.credentialsOffer = credOffer;
@@ -75,7 +75,7 @@ public class CredentialOfferState {
         String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
         if (authDetailsProvider != null) {
-            this.authDetails = authDetailsProvider.apply(credentialsOfferId);
+            this.authDetails = authDetailsProvider.get();
         }
     }
 
@@ -160,26 +160,6 @@ public class CredentialOfferState {
                 .findFirst()
                 .map(OID4VCAuthorizationDetail::clone)
                 .orElse(null);
-    }
-
-    public boolean matchAuthorizationDetails(List<OID4VCAuthorizationDetail> otherAuthDetails) {
-        if (authDetails == null && otherAuthDetails == null) { return true; }
-        if (authDetails == null || otherAuthDetails == null) { return false; }
-        if (authDetails.size() != otherAuthDetails.size()) { return false; }
-        for (int i = 0; i < authDetails.size(); i++) {
-            var authDetail = authDetails.get(i);
-            var otherDetail = otherAuthDetails.get(i);
-            if (otherDetail.getIssuedCredentialId() != null) {
-                otherDetail = otherDetail.clone();
-                otherDetail.setIssuedCredentialId(null);
-            }
-            // Unexpected issued_credential_id in authorization_details
-            assert authDetail.getIssuedCredentialId() == null;
-            if (!authDetail.equals(otherDetail)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @JsonIgnore

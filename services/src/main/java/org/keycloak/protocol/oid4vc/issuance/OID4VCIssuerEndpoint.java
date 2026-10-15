@@ -163,7 +163,7 @@ public class OID4VCIssuerEndpoint {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
     /**
-     * AccessToken claim attribute for storing a potential credentials offer id
+     * Internal client-session context attribute for storing a credential-offer identifier.
      */
     public static final String CREDENTIALS_OFFER_ID_ATTR = "CREDENTIALS_OFFER_ID";
 
@@ -908,61 +908,6 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        // Retrieve the optional credential offer state
-        // In case of credential request by scope, it will not be available
-        //
-        CredentialOfferState offerState = null;
-        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-
-        String credOfferId = tokenAuthDetail.getCredentialsOfferId();
-        if (credOfferId != null) {
-
-            offerState = offerStorage.getOfferStateById(credOfferId);
-            if (offerState == null) {
-                if (tokenAuthDetail.getIssuedCredentialId() == null) {
-                    var errorMessage = "No credential offer state for: " + credOfferId;
-                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-                }
-                LOGGER.debugf("Credential offer '%s' no longer present in storage — skipping offer validation for re-issuance (issuedCredentialId: %s)",
-                        credOfferId, tokenAuthDetail.getIssuedCredentialId());
-            } else {
-
-                if (offerState.isExpired()) {
-                    var errorMessage = "Credential offer has already expired";
-                    LOGGER.errorf(errorMessage);
-                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-                }
-
-                if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
-                    var errorMessage = "Unexpected login user: " + userModel.getUsername();
-                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
-                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-                }
-
-                if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
-                    var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-                    LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
-                    eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-                }
-            }
-        }
-
-        // Validate that authorization_details from the token matches the offer state
-        // This ensures the correct access token is being used for the credential request
-        LOGGER.debugf("Validating authorization_details: offerState=%s, credOfferId=%s, issuedCredentialId=%s",
-                offerState != null ? "present" : "null", credOfferId, tokenAuthDetail.getIssuedCredentialId());
-        if (offerState != null && !offerState.matchAuthorizationDetails(List.of(tokenAuthDetail))) {
-            var errorMessage = "Authorization details in access token do not match the credential offer state. " +
-                    "The access token may not be the one issued for this credential offer.";
-            LOGGER.debug(errorMessage);
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-        }
-
         // Verify that the requested credential_configuration_id in the request matches one in the authorization_details
         //
         if (!Strings.isEmpty(requestedCredentialConfigurationId)) {
@@ -1104,13 +1049,6 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
 
         eventBuilder.success();
-
-        // Clean up offer state after successful credential issuance
-        // This prevents memory leaks while ensuring the state remains available during the request
-        if (offerState != null) {
-            offerStorage.removeOfferState(offerState);
-            LOGGER.debugf("Removed credential offer state after successful issuance");
-        }
 
         return response;
     }

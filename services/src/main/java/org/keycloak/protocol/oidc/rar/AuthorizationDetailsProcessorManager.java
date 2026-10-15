@@ -71,6 +71,21 @@ public class AuthorizationDetailsProcessorManager {
         }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void afterTokenResponseCreated(ClientSessionContext clientSessionCtx,
+                                          List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
+        if (authorizationDetailsResponse == null) {
+            return;
+        }
+
+        Map<String, AuthorizationDetailsProcessor<?>> processors = getAuthorizationDetailsProcessorMap();
+        for (AuthorizationDetailsJSONRepresentation authzDetailResponse : authorizationDetailsResponse) {
+            AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetailResponse);
+            processor.afterTokenResponseCreated(clientSessionCtx,
+                    authzDetailResponse.asSubtype(processor.getSupportedResponseJavaType()));
+        }
+    }
+
     /**
      * Sanitize authorization details before they are sent as part of the Token Response
      * https://github.com/keycloak/keycloak/issues/50079
