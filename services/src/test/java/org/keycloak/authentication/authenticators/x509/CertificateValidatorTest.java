@@ -3,12 +3,18 @@ package org.keycloak.authentication.authenticators.x509;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.rule.CryptoInitRule;
+import org.keycloak.utils.OCSPProvider;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -325,6 +331,122 @@ public class CertificateValidatorTest {
     @Test
     public void testCertificatePolicyModeAnyTwoRequestedAndTwoPresent() throws GeneralSecurityException {
         testCertificatePolicyValidation("1.3.76.16.2.1,1.2.3.4.5.6", CERTIFICATE_POLICY_MODE_ANY, "1.3.76.16.2.1", "1.2.3.4.5.6");
+    }
+
+    // SSRF guard tests (issue #53546)
+    // Admin-configured URLs (static CRL, OCSP responder URI) always proceed.
+    // Certificate-derived URLs (CRL-DP, OCSP AIA) are blocked when trust is not validated.
+
+    private static class RecordingCRLLoader extends CertificateValidator.CRLLoaderImpl {
+        final AtomicBoolean wasCalled = new AtomicBoolean(false);
+
+        @Override
+        public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
+            wasCalled.set(true);
+            return Collections.emptyList();
+        }
+    }
+
+    private static class RecordingOCSPChecker extends CertificateValidator.OCSPChecker {
+        final AtomicBoolean wasCalled = new AtomicBoolean(false);
+        private final boolean configuredResponder;
+
+        RecordingOCSPChecker() {
+            this(false);
+        }
+
+        RecordingOCSPChecker(boolean configuredResponder) {
+            this.configuredResponder = configuredResponder;
+        }
+
+        @Override
+        public boolean hasConfiguredResponder() {
+            return configuredResponder;
+        }
+
+        @Override
+        public OCSPProvider.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate)
+                throws CertPathValidatorException {
+            wasCalled.set(true);
+            return null;
+        }
+    }
+
+    private X509Certificate createSelfSignedCert() throws GeneralSecurityException {
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(KeyType.RSA);
+        kpg.initialize(512);
+        KeyPair keyPair = kpg.generateKeyPair();
+        return CryptoIntegration.getProvider().getCertificateUtils()
+                .createServicesTestCertificate("CN=keycloak-test",
+                        new Date(System.currentTimeMillis() - 1000L * 60),
+                        new Date(System.currentTimeMillis() + 1000L * 60 * 60),
+                        keyPair);
+    }
+
+    private CertificateValidator buildValidator(X509Certificate[] certs,
+                                                boolean crlEnabled, boolean crldpEnabled, RecordingCRLLoader crlLoader,
+                                                boolean ocspEnabled, RecordingOCSPChecker ocspChecker) {
+        return new CertificateValidator(
+                certs,
+                0, Collections.emptyList(), Collections.emptyList(), null,
+                crlEnabled, false, crldpEnabled, crlLoader,
+                ocspEnabled, false, ocspChecker,
+                null, false, false, Collections.emptyList());
+    }
+
+    @Test
+    public void testHasConfiguredResponder() {
+        Assert.assertTrue(new CertificateValidator.BouncyCastleOCSPChecker(null, "http://ocsp.company.com", null)
+                .hasConfiguredResponder());
+        Assert.assertFalse(new CertificateValidator.BouncyCastleOCSPChecker(null, null, null)
+                .hasConfiguredResponder());
+        Assert.assertFalse(new CertificateValidator.BouncyCastleOCSPChecker(null, "", null)
+                .hasConfiguredResponder());
+    }
+
+    @Test
+    public void testStaticCrlRunsWithoutTrust() throws Exception {
+        X509Certificate cert = createSelfSignedCert();
+        RecordingCRLLoader crlLoader = new RecordingCRLLoader();
+        CertificateValidator validator = buildValidator(
+                new X509Certificate[]{cert}, true, false, crlLoader, false, new RecordingOCSPChecker());
+
+        try { validator.checkRevocationStatus(); } catch (Exception ignored) { }
+
+        Assert.assertTrue("Static CRL (admin-configured) must run without trust", crlLoader.wasCalled.get());
+    }
+
+    @Test
+    public void testCrlDistributionPointsBlockedWithoutTrust() throws Exception {
+        X509Certificate cert = createSelfSignedCert();
+        CertificateValidator validator = buildValidator(
+                new X509Certificate[]{cert}, true, true, new RecordingCRLLoader(), false, new RecordingOCSPChecker());
+
+        validator.checkRevocationStatus();
+    }
+
+    @Test
+    public void testOcspAiaBlockedWithoutTrust() throws Exception {
+        X509Certificate cert = createSelfSignedCert();
+        RecordingOCSPChecker ocspChecker = new RecordingOCSPChecker(false);
+        CertificateValidator validator = buildValidator(
+                new X509Certificate[]{cert, cert}, false, false, new RecordingCRLLoader(), true, ocspChecker);
+
+        try { validator.checkRevocationStatus(); } catch (Exception ignored) { }
+
+        Assert.assertFalse("AIA OCSP (from certificate) must be blocked without trust", ocspChecker.wasCalled.get());
+    }
+
+    @Test
+    public void testOcspConfiguredResponderRunsWithoutTrust() throws Exception {
+        X509Certificate cert = createSelfSignedCert();
+        RecordingOCSPChecker ocspChecker = new RecordingOCSPChecker(true);
+        CertificateValidator validator = buildValidator(
+                new X509Certificate[]{cert, cert}, false, false, new RecordingCRLLoader(), true, ocspChecker);
+
+        try { validator.checkRevocationStatus(); } catch (Exception ignored) { }
+
+        Assert.assertTrue("OCSP with admin-configured responder must run without trust", ocspChecker.wasCalled.get());
     }
 
     // Helper to test various certificate policy validation combinations

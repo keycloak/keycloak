@@ -293,6 +293,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
                         .setCRLEnabled(true)
                         .setCrlAbortIfNonUpdated(true)
                         .setCRLDistributionPointEnabled(true)
+                        .setRevalidateCertificateEnabled(true)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setUserIdentityMapperType(USERNAME_EMAIL);
