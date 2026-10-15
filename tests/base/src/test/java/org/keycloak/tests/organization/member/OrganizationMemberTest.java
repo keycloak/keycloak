@@ -712,11 +712,12 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
     @Test
     public void testManagedMemberOnlyRemovedFromHomeOrganization() {
+        aliceFromProviderRealm.updateWithCleanup(user -> user.email("managed-org-a@org-a.org").emailVerified(true));
         OrganizationResource orga = realm.admin().organizations().get(
                 createOrganization(realm, "org-a", createRealOrgBroker("org-a-identity-provider", providerRealm), "org-a.org").getId());
-        loginViaBroker("alice@org-a.org", aliceFromProviderRealm.getUsername(),
-                aliceFromProviderRealm.getPassword(), "managed-org-a@org-a.org",
-                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+        loginViaBroker("managed-org-a@org-a.org", aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(),
+                oauth, loginUsernamePage, loginPage, providerRealm);
         UserRepresentation memberOrgA = orga.members().list(-1, -1).get(0);
         realm.admin().users().get(memberOrgA.getId()).logout();
         providerRealm.admin().logoutAll();
@@ -726,6 +727,9 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         UserRepresentation memberOrgB = UserBuilder.create()
                 .username("managed-org-b")
                 .password("password")
+                .email("managed-org-b@org-b.org")
+                .emailVerified(true)
+                .name("Firstname", "Lastname")
                 .enabled(true)
                 .build();
         try (Response response = providerRealm.admin().users().create(memberOrgB)) {
@@ -735,8 +739,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         providerRealm.cleanup().add(r -> r.users().get(memberOrgBProviderId).remove());
 
         loginViaBroker("managed-org-b@org-b.org", memberOrgB.getUsername(),
-                "password", "managed-org-b@org-b.org",
-                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
+                "password", oauth, loginUsernamePage, loginPage, providerRealm);
         memberOrgB = orgb.members().list(-1, -1).get(0);
 
         orga.members().addMember(memberOrgB.getId()).close();

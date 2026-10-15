@@ -35,6 +35,28 @@ If a SAML client uses back-channel SLO with `SessionIndex` and has *Client signa
 
 Newly created SAML clients already default to requiring client signatures. Deployments that import realm JSON may still have unsigned clients and are the primary group affected by this change.
 
+=== Email verification before domain-based organization membership
+
+Automatic membership through a linked identity provider now requires a verified email address when the organization has configured domains.
+Previously, a matching email domain could grant membership before email verification. The first broker login flow now verifies an unverified address before granting membership, even when the realm's *Verify email* setting is disabled.
+If email delivery is unavailable, users whose addresses require local verification cannot complete onboarding.
+
+Before upgrading:
+
+. Configure and test the realm's outgoing SMTP settings under *Realm settings* -> *Email* so users can receive verification links. Test first login with an unverified address matching an organization domain.
+. Review each linked identity provider's *Trust Email* setting. Enable it only if the provider establishes ownership of the email addresses it supplies; do not enable it just to bypass verification.
+
+An OpenID Connect provider returning `email_verified=false` still requires local verification even with *Trust Email* enabled. An address changed during first-login profile review also requires verification, so email delivery must work for these cases.
+
+Existing memberships are not removed or revalidated. Review memberships previously granted from unverified addresses and remove any that should not have been granted.
+Organizations without domains and invitation-based membership are unaffected. The verification requirement applies to both managed and unmanaged automatic membership, including through shared identity providers.
+
+If verification is completed in another browser or the original authentication session is lost, users must sign in through the same identity provider account again and follow the account-linking prompts.
+Verification of an unchanged address is preserved for the next onboarding retry within the configured email-verification lifespan, including with `FORCE` synchronization. If that temporary state expires or is lost, verification may be requested again; a different unverified address still requires verification.
+Identity provider mappers using `IMPORT` are not replayed on this retry. Check any attributes, roles, or group assignments that onboarding relies on those mappers to supply.
+
+Custom identity providers that synchronize email outside `AbstractIdentityProvider` should implement `UserAuthenticationIdentityProvider.updateBrokeredEmail` to expose their email verification policy before organization membership is granted.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

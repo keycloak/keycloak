@@ -59,6 +59,9 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
+    // Email verified locally during this first-broker login, before the provider imports the user.
+    public static final String BROKER_VERIFIED_EMAIL = "BROKER_VERIFIED_EMAIL";
+
     public static final String ACCOUNT_LINK_URL = "account-link-url";
     protected final KeycloakSession session;
     private final C config;
@@ -179,6 +182,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+        updateBrokeredEmail(session, realm, user, context);
+    }
+
+    @Override
+    public void updateBrokeredEmail(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
         updateEmail(user, context);
     }
 
@@ -194,6 +202,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
         if (email == null) {
             // do not set email if not provided by the IdP
+            return;
+        }
+
+        if (user.isEmailVerified() && email.equalsIgnoreCase(user.getEmail())
+                && email.equalsIgnoreCase(authSession.getAuthNote(BROKER_VERIFIED_EMAIL))) {
+            // Do not undo verification completed locally while the first-broker flow was running.
             return;
         }
 
