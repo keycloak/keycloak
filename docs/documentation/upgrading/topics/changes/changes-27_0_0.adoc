@@ -166,6 +166,17 @@ The provider's last-sync time is now recorded when a sync starts rather than whe
 
 If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
 
+=== Reset password emails are sent in the background
+
+The *Forgot password* form no longer waits for the mail server. It responds right away and sends the email in the background. Before, the form was slower for users that exist and have an email, so someone could find out which usernames exist. Now every username takes the same path, whether an email is sent or not.
+
+The `SEND_RESET_PASSWORD` event is still recorded during the request. It now means the email was accepted for sending. If sending fails later, a `SEND_RESET_PASSWORD_ERROR` event is recorded too, from a background thread without the HTTP request context. The email is also not sent, and an error event is recorded, if the link expired or the user was deleted or disabled before it could be sent.
+
+The emails are sent by the `email` executor, which has 4 threads by default. You can change this with `spi-executors--default--email-min`. The `max` setting has no effect here. When all threads are busy, the email is sent during the request, as before.
+
+Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away.
+To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`, if its factory extends `FreeMarkerEmailTemplateProviderFactory`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and the matching `sendPasswordReset`.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
