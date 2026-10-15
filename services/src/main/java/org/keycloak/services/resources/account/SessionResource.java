@@ -195,7 +195,7 @@ public class SessionResource {
         sessionRep.setIpAddress(s.getIpAddress());
         sessionRep.setStarted(s.getStarted());
         sessionRep.setLastAccess(s.getLastSessionRefresh());
-        long expires = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(s, realm);
+        long expires = SessionExpirationUtils.calculateCappedUserSessionMaxLifespanTimestamp(s, realm);
         if (expires == -1) {
             // Offline sessions can have no expiry time. If that is the case, use the idle timestamp instead
             expires = SessionExpirationUtils.calculateUserSessionIdleTimestamp(

@@ -212,7 +212,7 @@ public class AuthenticationManager {
             }
         }
         long currentTime = Time.currentTimeMillis();
-        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession, realm);
+        long lifespan = SessionExpirationUtils.calculateCappedUserSessionMaxLifespanTimestamp(userSession, realm);
         long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession.isOffline(),
                 userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()), realm);
 

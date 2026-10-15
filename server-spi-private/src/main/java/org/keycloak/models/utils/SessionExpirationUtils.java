@@ -64,7 +64,7 @@ public class SessionExpirationUtils {
      * @param realm The realm model
      * @return The time when the user session is expired or -1 if does not expire
      */
-    public static long calculateUserSessionMaxLifespanTimestamp(UserSessionModel userSession, RealmModel realm) {
+    public static long calculateCappedUserSessionMaxLifespanTimestamp(UserSessionModel userSession, RealmModel realm) {
         if (userSession == null) {
             return -1L;
         }
