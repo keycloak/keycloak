@@ -4,6 +4,7 @@
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
     --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+    --keycloak-form-padding: var(--pf-v5-global--spacer--xl);
 }
 
 .pf-v5-c-login__container {
@@ -12,8 +13,20 @@
                          "main"
 }
 
+.gray-text {
+    color: var(--pf-v5-global--Color--200);
+}
+
 .pf-v5-c-login__main-header {
     border-top: 4px solid var(--keycloak-card-top-color);
+    --pf-v5-c-form__label-required--Color: var(--pf-v5-global--danger-color--100);
+    --pf-v5-c-login__main-header--RowGap: 0;
+    --pf-v5-c-login__main-header--PaddingTop: var(--keycloak-form-padding);
+    --pf-v5-c-login__main-header--PaddingBottom: var(--pf-v5-global--gutter--md);
+}
+
+.pf-v5-c-login__main-body {
+    --pf-v5-c-login__main-body--PaddingBottom: var(--keycloak-form-padding);
 }
 
 /* Info section - top margin + bottom padding */
