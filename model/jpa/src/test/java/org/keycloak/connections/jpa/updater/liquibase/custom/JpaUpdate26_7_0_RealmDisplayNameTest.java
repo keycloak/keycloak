@@ -64,6 +64,12 @@ public class JpaUpdate26_7_0_RealmDisplayNameTest {
             insertRealmAttribute(connection, "realm-at-limit", displayNameAtColumnLimit);
             insertRealm(connection, "realm-short");
             insertRealmAttribute(connection, "realm-short", "short-display-name");
+            insertRealm(connection, "realm-literal-null");
+            insertRealmAttribute(connection, "realm-literal-null", "Null");
+            insertRealm(connection, "realm-literal-null-upper");
+            insertRealmAttribute(connection, "realm-literal-null-upper", "NULL");
+            insertRealm(connection, "realm-literal-null-lower");
+            insertRealmAttribute(connection, "realm-literal-null-lower", "null");
             insertRealm(connection, "realm-null");
             insertRealmAttribute(connection, "realm-null", null);
             insertRealm(connection, "realm-without-attribute");
@@ -83,6 +89,9 @@ public class JpaUpdate26_7_0_RealmDisplayNameTest {
             Assert.assertEquals(EMOJI.repeat(127), displayName(connection, "realm-astral"));
             Assert.assertEquals(displayNameAtColumnLimit, displayName(connection, "realm-at-limit"));
             Assert.assertEquals("short-display-name", displayName(connection, "realm-short"));
+            Assert.assertEquals("Null", displayName(connection, "realm-literal-null"));
+            Assert.assertEquals("NULL", displayName(connection, "realm-literal-null-upper"));
+            Assert.assertEquals("null", displayName(connection, "realm-literal-null-lower"));
             Assert.assertNull(displayName(connection, "realm-null"));
             Assert.assertNull(displayName(connection, "realm-without-attribute"));
 

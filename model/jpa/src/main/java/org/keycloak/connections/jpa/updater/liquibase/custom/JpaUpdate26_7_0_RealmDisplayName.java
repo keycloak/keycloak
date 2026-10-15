@@ -21,7 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.UpdateStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.structure.core.Table;
 
 public class JpaUpdate26_7_0_RealmDisplayName extends CustomKeycloakTask {
@@ -48,10 +48,17 @@ public class JpaUpdate26_7_0_RealmDisplayName extends CustomKeycloakTask {
                 if (displayName != null && !displayName.equals(truncatedDisplayName)) {
                     truncated++;
                 }
-                statements.add(new UpdateStatement(null, null, realmTable)
-                        .addNewColumnValue("DISPLAY_NAME", truncatedDisplayName)
-                        .setWhereClause("ID=?")
-                        .addWhereParameter(realmId));
+                if (truncatedDisplayName == null) {
+                    // The column was added by the change set 26.7.0-45292-realm-display-name-add-column and starts
+                    // out NULL, so there is nothing to write for a realm without a display name.
+                    continue;
+                }
+                // The value is bound as a JDBC parameter: an UpdateStatement would serialize a display name equal to
+                // "NULL" (case-insensitively) as the SQL NULL keyword and erase it, and the change set
+                // 26.7.0-45292-realm-display-name-remove-attribute then deletes the attribute it was copied from.
+                statements.add(new RawParameterizedSqlStatement(
+                        "UPDATE " + getTableName(realmTable) + " SET DISPLAY_NAME = ? WHERE ID = ?",
+                        truncatedDisplayName, realmId));
             }
             confirmationMessage.append("Migrated displayName from REALM_ATTRIBUTE to REALM.DISPLAY_NAME");
             if (truncated > 0) {
