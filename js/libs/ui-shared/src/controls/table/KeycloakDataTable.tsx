@@ -338,6 +338,8 @@ export type LoaderFunction<T> = (
   search?: string,
 ) => Promise<T[]>;
 
+export type CountLoaderFunction = (search?: string) => Promise<number>;
+
 export type SignaledLoader<T> = {
   readonly signal: any;
   loader: LoaderFunction<T>;
@@ -348,6 +350,7 @@ export type DataListProps<T> = Omit<
   "rows" | "cells" | "onSelect"
 > & {
   loader: T[] | LoaderFunction<T> | SignaledLoader<T>;
+  countLoader?: CountLoaderFunction;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
   detailColumns?: DetailField<T>[];
@@ -402,6 +405,7 @@ export function KeycloakDataTable<T>({
   detailColumns,
   isRowDisabled,
   loader,
+  countLoader,
   columns,
   actions,
   actionResolver,
@@ -418,6 +422,7 @@ export function KeycloakDataTable<T>({
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
   const [loading, setLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
 
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
@@ -565,6 +570,28 @@ export function KeycloakDataTable<T>({
     ],
   );
 
+  useEffect(() => {
+    setTotalCount(undefined);
+  }, [search]);
+
+  useFetch(
+    async () => {
+      if (!countLoader) return undefined;
+      try {
+        return await countLoader(search);
+      } catch (error) {
+        console.error(error);
+        return undefined;
+      }
+    },
+    (count) => {
+      if (count !== undefined) {
+        setTotalCount(count);
+      }
+    },
+    [key, search],
+  );
+
   const convertAction = () =>
     actions &&
     cloneDeep(actions).map((action: Action<T>, index: number) => {
@@ -601,6 +628,7 @@ export function KeycloakDataTable<T>({
         <PaginatingTableToolbar
           id={id}
           count={rowLength}
+          totalCount={totalCount}
           first={first}
           max={max}
           onNextClick={setFirst}
