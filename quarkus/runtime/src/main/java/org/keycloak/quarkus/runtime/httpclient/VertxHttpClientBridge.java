@@ -188,12 +188,12 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
 
             HttpClientRequest clientReq = reqAr.result();
             requestRef.set(clientReq);
-            // Also covers a connection that arrives after its wait timed out.
-            if (future.isDone()) {
+            // Completing `connected` is what allows sending: if a connection timeout completed it
+            // first, the caller fails over, so this attempt must not send anything.
+            if (!connected.complete(null) || future.isDone()) {
                 clientReq.reset();
                 return;
             }
-            connected.complete(null);
 
             for (Header header : request.getAllHeaders()) {
                 clientReq.headers().add(header.getName(), header.getValue());
@@ -267,17 +267,42 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         }
     }
 
-    private static void awaitConnection(CompletableFuture<Void> connected, long timeoutMs, SocketAddress server) throws IOException {
+    /**
+     * Waits for the connection. Any failure is reported as a connection failure, so the caller fails
+     * over: {@code connected} only fails before a connection is established, when nothing has been
+     * sent. A timeout of this wait counts only if it wins the race against the connection callback
+     * for {@code connected}; the callback then sees {@code connected} already completed and does not
+     * send. If the connection completed at the same moment, its outcome stands instead.
+     */
+    static void awaitConnection(CompletableFuture<Void> connected, long timeoutMs, SocketAddress server) throws IOException {
         try {
             VertxHttpClientProvider.awaitResult(connected, timeoutMs);
+            return;
         } catch (IOException e) {
-            if (e.getCause() instanceof TimeoutException) {
-                ConnectException timeout = new ConnectException("Timed out connecting to " + server);
-                timeout.initCause(e.getCause());
+            if (!(e.getCause() instanceof TimeoutException)) {
+                throw asConnectFailure(e, server);
+            }
+            ConnectException timeout = new ConnectException("Timed out connecting to " + server);
+            timeout.initCause(e.getCause());
+            if (connected.completeExceptionally(timeout)) {
                 throw timeout;
             }
-            throw e;
         }
+        // The connection completed as the wait expired: proceed with it, or report its failure.
+        try {
+            VertxHttpClientProvider.awaitResult(connected, 0);
+        } catch (IOException e) {
+            throw asConnectFailure(e, server);
+        }
+    }
+
+    private static IOException asConnectFailure(IOException failure, SocketAddress server) {
+        if (failure instanceof ConnectException || failure instanceof NoRouteToHostException) {
+            return failure;
+        }
+        ConnectException connectFailure = new ConnectException("Failed to connect to " + server);
+        connectFailure.initCause(failure.getCause() != null ? failure.getCause() : failure);
+        return connectFailure;
     }
 
     private record RequestBody(Buffer buffer, Header contentType, Header contentEncoding) {

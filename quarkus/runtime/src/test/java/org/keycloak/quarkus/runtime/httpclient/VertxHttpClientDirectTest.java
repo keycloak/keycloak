@@ -18,12 +18,15 @@ package org.keycloak.quarkus.runtime.httpclient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.connections.httpclient.ProxyMappings;
@@ -33,6 +36,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.http.client.config.RequestConfig;
@@ -48,6 +52,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 
 /**
@@ -126,6 +131,38 @@ public class VertxHttpClientDirectTest {
                 assertEquals(200, res.getStatusLine().getStatusCode());
             }
         }
+    }
+
+    @Test
+    public void connectionCompletingAsWaitExpiresIsNotFailedOver() throws Exception {
+        // The connection callback completes `connected` just as the wait times out.
+        CompletableFuture<Void> connected = new CompletableFuture<>() {
+            @Override
+            public Void get(long timeout, TimeUnit unit) throws TimeoutException {
+                complete(null);
+                throw new TimeoutException();
+            }
+        };
+        // Must not report a connection failure: the request may already be sent on this connection.
+        VertxHttpClientBridge.awaitConnection(connected, 100, SocketAddress.inetSocketAddress(443, "127.0.0.1"));
+    }
+
+    @Test
+    public void connectionTimeoutStopsLateConnectionFromSending() {
+        CompletableFuture<Void> connected = new CompletableFuture<>();
+        assertThrows(ConnectException.class, () -> VertxHttpClientBridge.awaitConnection(connected, 50,
+                SocketAddress.inetSocketAddress(443, "127.0.0.1")));
+        // The connection callback only sends after completing `connected` itself.
+        assertFalse(connected.complete(null));
+    }
+
+    @Test
+    public void anyConnectionFailureIsReportedAsConnectFailure() {
+        // Vert.x reports its own connection timeout with an exception that is not an IOException.
+        CompletableFuture<Void> connected = new CompletableFuture<>();
+        connected.completeExceptionally(new IllegalStateException("timeout getting a connection"));
+        assertThrows(ConnectException.class, () -> VertxHttpClientBridge.awaitConnection(connected, 50,
+                SocketAddress.inetSocketAddress(443, "127.0.0.1")));
     }
 
     @Test
