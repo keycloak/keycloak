@@ -41,8 +41,8 @@ public class TestUtils {
 
     public static String readFileAsString(Class<?> klass, String filePath) {
         StringBuilder stringBuilder = new StringBuilder();
-        try (InputStream inputStream = Objects.requireNonNull(klass.getClassLoader().getResourceAsStream(filePath));
-             InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        try (InputStream inputStream = klass.getClassLoader().getResourceAsStream(filePath);
+             InputStreamReader inputStreamReader = new InputStreamReader(Objects.requireNonNull(inputStream));
              BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {

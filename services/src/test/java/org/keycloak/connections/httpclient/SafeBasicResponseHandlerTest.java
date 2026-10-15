@@ -50,6 +50,7 @@ public class SafeBasicResponseHandlerTest {
 
                     @Override
                     public void close() throws IOException {
+                        delegate.close();
                         super.close();
                         inputStreamHasBeenClosed.set(true);
                     }

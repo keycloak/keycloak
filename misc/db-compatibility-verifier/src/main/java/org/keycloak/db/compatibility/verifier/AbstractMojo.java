@@ -28,6 +28,7 @@ abstract class AbstractMojo extends org.apache.maven.plugin.AbstractMojo {
     @Parameter(property = "db.verify.skip", defaultValue = "false")
     protected boolean skip;
 
+    @SuppressWarnings("return") // ClassLoader lifecycle managed by caller
     ClassLoader classLoader() throws DependencyResolutionRequiredException, MalformedURLException {
         List<String> elements = project.getRuntimeClasspathElements();
         URL[] urls = new URL[elements.size()];

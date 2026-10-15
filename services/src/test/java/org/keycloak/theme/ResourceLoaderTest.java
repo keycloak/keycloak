@@ -83,11 +83,12 @@ public class ResourceLoaderTest {
     }
 
     private void assertResourceAsStream(String parent, String resource, boolean expectValid, boolean expectResourceToExist) throws IOException {
-        InputStream verified = ResourceLoader.getResourceAsStream(parent, resource);
-        if (expectValid) {
-            Assert.assertNotNull(verified);
-        } else {
-            Assert.assertNull(verified);
+        try (InputStream verified = ResourceLoader.getResourceAsStream(parent, resource)) {
+            if (expectValid) {
+                Assert.assertNotNull(verified);
+            } else {
+                Assert.assertNull(verified);
+            }
         }
 
         if (expectResourceToExist) {
@@ -96,11 +97,12 @@ public class ResourceLoaderTest {
     }
 
     private void assertFileAsStream(File parent, String resource, boolean expectValid, boolean expectFileToExist) throws IOException {
-        InputStream verified = ResourceLoader.getFileAsStream(parent, resource);
-        if (expectValid) {
-            Assert.assertNotNull(verified);
-        } else {
-            Assert.assertNull(verified);
+        try (InputStream verified = ResourceLoader.getFileAsStream(parent, resource)) {
+            if (expectValid) {
+                Assert.assertNotNull(verified);
+            } else {
+                Assert.assertNull(verified);
+            }
         }
 
         if (expectFileToExist) {

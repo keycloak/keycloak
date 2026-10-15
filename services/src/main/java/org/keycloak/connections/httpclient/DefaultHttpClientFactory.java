@@ -45,6 +45,11 @@ import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.checkerframework.checker.calledmethods.qual.EnsuresCalledMethods;
+import org.checkerframework.checker.mustcall.qual.CreatesMustCallFor;
+import org.checkerframework.checker.mustcall.qual.MustCall;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+import org.checkerframework.checker.mustcall.qual.Owning;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
@@ -59,6 +64,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * }
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@MustCall("close")
 public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
@@ -70,7 +76,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
     public static final String ALLOW_REDIRECTS = "allow-redirects";
 
-    private volatile CloseableHttpClient httpClient;
+    @Owning private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -78,6 +84,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
     private long maxConsumedResponseSize;
 
+    @SuppressWarnings("type.argument") // Checker Framework false positive on generic type argument
     private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
 
         @Override
@@ -86,7 +93,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         }
 
         @Override
-        public InputStream handleResponse(HttpResponse response) throws IOException {
+        public InputStream handleResponse(@Owning HttpResponse response) throws IOException {
             return super.handleResponse(response);
         }
     }
@@ -97,7 +104,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
 
         return new HttpClientProvider() {
             @Override
-            public CloseableHttpClient getHttpClient() {
+            public @NotOwning CloseableHttpClient getHttpClient() {
                 return httpClient;
             }
 
@@ -153,6 +160,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     }
 
     @Override
+    @EnsuresCalledMethods(value = "httpClient", methods = "close")
     public void close() {
         try {
             if (httpClient != null) {
@@ -173,6 +181,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         this.config = config;
     }
 
+    @CreatesMustCallFor("this")
     private void lazyInit(KeycloakSession session) {
         if (httpClient == null) {
             synchronized(this) {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,8 @@ class DirectoryCopyVisitorTest {
 	}
 
 	private List<String> listDirContent(Path path) throws IOException {
-		return Files.list(path).map(Path::getFileName).map(Path::toString).sorted().toList();
+		try (Stream<Path> entries = Files.list(path)) {
+			return entries.map(Path::getFileName).map(Path::toString).sorted().toList();
+		}
 	}
 }

@@ -82,12 +82,12 @@ public class DockerComposeYamlInstallationProviderTest {
         final Response response = fireInstallationProvider();
         assertThat("compose YAML returned non-ok response", response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
 
-        shouldIncludeDockerComposeYamlInZip(getZipResponseFromInstallProvider(response));
-        shouldIncludeReadmeInZip(getZipResponseFromInstallProvider(response));
-        shouldWriteBlankDataDirectoryInZip(getZipResponseFromInstallProvider(response));
-        shouldWriteCertDirectoryInZip(getZipResponseFromInstallProvider(response));
-        shouldWriteSslCertificateInZip(getZipResponseFromInstallProvider(response));
-        shouldWritePrivateKeyInZip(getZipResponseFromInstallProvider(response));
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldIncludeDockerComposeYamlInZip(zip); }
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldIncludeReadmeInZip(zip); }
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldWriteBlankDataDirectoryInZip(zip); }
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldWriteCertDirectoryInZip(zip); }
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldWriteSslCertificateInZip(zip); }
+        try (ZipInputStream zip = getZipResponseFromInstallProvider(response)) { shouldWritePrivateKeyInZip(zip); }
     }
 
     public void shouldIncludeDockerComposeYamlInZip(ZipInputStream zipInput) throws Exception {

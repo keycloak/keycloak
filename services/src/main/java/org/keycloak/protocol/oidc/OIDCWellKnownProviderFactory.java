@@ -62,8 +62,7 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
     }
 
     protected void initConfigOverrideFromFile(String openidConfigurationOverrideFile) {
-        try {
-            InputStream is = FindFile.findFile(openidConfigurationOverrideFile);
+        try (InputStream is = FindFile.findFile(openidConfigurationOverrideFile)) {
             this.openidConfigOverride = JsonSerialization.readValue(is, Map.class);
             logger.infof("Overriding default OIDC well-known endpoint configuration with the options from file '%s'", openidConfigurationOverrideFile);
         } catch (RuntimeException re) {

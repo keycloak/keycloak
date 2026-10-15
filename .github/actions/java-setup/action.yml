@@ -19,4 +19,4 @@ runs:
       uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
       with:
         distribution: ${{ inputs.distribution }}
-        java-version: ${{ inputs.java-version }}
+        java-version: ${{ inputs.java-version || '25' }}

@@ -44,6 +44,7 @@ public class Ed255192018SuiteTest {
     private static String contextUrl;
     private static final AtomicInteger contextRequests = new AtomicInteger();
 
+    @SuppressWarnings("required.method.not.called") // client is closed in @AfterClass stopServer()
     @BeforeClass
     public static void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);

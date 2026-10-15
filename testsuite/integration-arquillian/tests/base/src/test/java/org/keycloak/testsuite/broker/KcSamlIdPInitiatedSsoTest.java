@@ -105,8 +105,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     }
 
     private RealmRepresentation loadFromClasspath(String fileName, Properties properties) {
-        InputStream is = KcSamlIdPInitiatedSsoTest.class.getResourceAsStream(fileName);
-        try {
+        try (InputStream is = KcSamlIdPInitiatedSsoTest.class.getResourceAsStream(fileName)) {
             String template = StreamUtil.readString(is, Charset.defaultCharset());
             String realmString = StringPropertyReplacer.replaceProperties(template, properties::getProperty);
             return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes(StandardCharsets.UTF_8)));

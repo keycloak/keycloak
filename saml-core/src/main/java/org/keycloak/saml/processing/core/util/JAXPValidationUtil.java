@@ -19,6 +19,7 @@ package org.keycloak.saml.processing.core.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
@@ -152,15 +153,20 @@ public class JAXPValidationUtil {
                 SecurityActions.setTCCL(prevTCCL);
             }
         }
+        List<InputStream> streams = new ArrayList<>();
         try {
-            schema = schemaFactory.newSchema(sources());
+            schema = schemaFactory.newSchema(sources(streams));
         } catch (SAXException e) {
             logger.xmlCouldNotGetSchema(e);
+        } finally {
+            for (InputStream stream : streams) {
+                stream.close();
+            }
         }
         return schema;
     }
 
-    private static Source[] sources() throws IOException {
+    private static Source[] sources(List<InputStream> streams) throws IOException {
         List<String> schemas = SchemaManagerUtil.getSchemas();
 
         Source[] sourceArr = new Source[schemas.size()];
@@ -170,7 +176,9 @@ public class JAXPValidationUtil {
             URL url = SecurityActions.loadResource(JAXPValidationUtil.class, schema);
             if (url == null)
                 throw logger.nullValueError("schema url:" + schema);
-            sourceArr[i++] = new StreamSource(url.openStream());
+            InputStream is = url.openStream();
+            streams.add(is);
+            sourceArr[i++] = new StreamSource(is);
         }
         return sourceArr;
     }

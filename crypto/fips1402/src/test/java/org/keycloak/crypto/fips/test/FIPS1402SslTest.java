@@ -114,8 +114,9 @@ public class FIPS1402SslTest {
 
     private KeyStore loadKeystore(String type, String password) throws Exception {
         KeyStore keystore = KeyStore.getInstance(type);
-        InputStream in = FIPS1402SslTest.class.getClassLoader().getResourceAsStream("bcfips-keystore." + type.toLowerCase());
-        keystore.load(in, password != null ? password.toCharArray() : null);
+        try (InputStream in = FIPS1402SslTest.class.getClassLoader().getResourceAsStream("bcfips-keystore." + type.toLowerCase())) {
+            keystore.load(in, password != null ? password.toCharArray() : null);
+        }
         logger.infof("Keystore loaded successfully. Type: %s, provider: %s", type, keystore.getProvider().getName());
         return keystore;
     }

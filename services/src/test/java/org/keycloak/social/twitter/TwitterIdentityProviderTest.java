@@ -19,6 +19,7 @@ package org.keycloak.social.twitter;
 import java.io.ByteArrayOutputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -66,7 +67,8 @@ public class TwitterIdentityProviderTest {
 
     private static String serialize(Serializable value) throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try (ObjectOutputStream objectOutput = new ObjectOutputStream(Base64.getEncoder().wrap(output))) {
+        try (OutputStream wrapped = Base64.getEncoder().wrap(output);
+             ObjectOutputStream objectOutput = new ObjectOutputStream(wrapped)) {
             objectOutput.writeObject(value);
         }
         return output.toString(StandardCharsets.US_ASCII);

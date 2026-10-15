@@ -1,0 +1,69 @@
+import org.checkerframework.checker.mustcall.qual.MustCall;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+import org.checkerframework.checker.mustcall.qual.Owning;
+
+package org.infinispan.manager;
+
+@MustCall({})
+interface EmbeddedCacheManager extends CacheContainer {}
+
+package org.jgroups;
+
+@MustCall({})
+class JChannel extends Channel {}
+
+package org.hibernate.engine.jdbc.connections.spi;
+
+interface JdbcConnectionAccess {
+    void releaseConnection(@Owning Connection connection) throws SQLException;
+}
+
+package jakarta.persistence;
+
+interface ConnectionFunction<C, T> {
+    T apply(@NotOwning C connection) throws Exception;
+}
+
+interface ConnectionConsumer<C> {
+    void accept(@NotOwning C connection) throws Exception;
+}
+
+package liquibase.database;
+
+interface Database {
+    @NotOwning DatabaseConnection getConnection();
+}
+
+package liquibase.database.jvm;
+
+class JdbcConnection {
+    @NotOwning Connection getWrappedConnection();
+}
+
+package org.apache.http.impl.client;
+
+class AbstractResponseHandler<T> implements ResponseHandler<T> {
+    T handleResponse(@Owning HttpResponse response) throws HttpResponseException, IOException;
+}
+
+package com.fasterxml.jackson.core;
+
+abstract class JsonGenerator {
+    @NotOwning JsonGenerator useDefaultPrettyPrinter();
+}
+
+package com.fasterxml.jackson.databind;
+
+class JsonSerializer<T> {
+    void serialize(T value, @NotOwning JsonGenerator gen, SerializerProvider serializers) throws IOException;
+}
+
+class SerializerProvider {
+    @NotOwning JsonGenerator getGenerator();
+}
+
+package tools.jackson.databind;
+
+class ValueSerializer<T> {
+    void serialize(T value, @NotOwning JsonGenerator gen, SerializationContext ctxt);
+}

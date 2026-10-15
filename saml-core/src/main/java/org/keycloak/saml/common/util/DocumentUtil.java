@@ -287,7 +287,7 @@ public class DocumentUtil {
      * @throws TransformerFactoryConfigurationError
      * @throws TransformerException
      */
-    public static InputStream getNodeAsStream(Node node) throws ConfigurationException, ProcessingException {
+    public static ByteArrayInputStream getNodeAsStream(Node node) throws ConfigurationException, ProcessingException {
         return getSourceAsStream(new DOMSource(node));
     }
 
@@ -301,7 +301,7 @@ public class DocumentUtil {
      * @throws ConfigurationException
      * @throws ProcessingException
      */
-    public static InputStream getSourceAsStream(Source source) throws ConfigurationException, ProcessingException {
+    public static ByteArrayInputStream getSourceAsStream(Source source) throws ConfigurationException, ProcessingException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Result streamResult = new StreamResult(baos);
         // Write the DOM document to the stream
