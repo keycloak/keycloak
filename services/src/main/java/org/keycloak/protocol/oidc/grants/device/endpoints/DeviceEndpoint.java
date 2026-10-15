@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
@@ -55,6 +56,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.OAuth2DeviceAuthorizationResponse;
 import org.keycloak.saml.common.util.StringUtil;
@@ -442,6 +444,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         if ( scope != null)
             authenticationSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+
+        List<String> acrValues = AcrUtils.getAcrValues(null, null, client);
+        AcrUtils.getLowestLoaForAcrValues(acrValues, client).ifPresent(loa ->
+            authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
         return authenticationSession;
     }
