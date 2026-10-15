@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -462,6 +463,62 @@ public class RequiredActionUpdateProfileTest {
             Assertions.assertTrue(userRep.getAttributes().containsKey("custom"));
         } finally {
             upConfig.setUnmanagedAttributePolicy(null);
+            upResource.update(upConfig);
+        }
+    }
+
+    @Test
+    public void updateProfilePhoneNumberResetsPhoneNumberVerified() {
+        UserProfileResource upResource = realm.admin().users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        UPConfig testUpConfig = upConfig.clone();
+        testUpConfig.addOrReplaceAttribute(new UPAttribute("phoneNumber", new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN))));
+        testUpConfig.addOrReplaceAttribute(new UPAttribute("phoneNumberVerified", new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_ADMIN))));
+        upResource.update(testUpConfig);
+
+        try {
+            UserResource user = testUser.admin();
+            UserRepresentation userRep = user.toRepresentation();
+            userRep.singleAttribute("phoneNumber", "+15555550123");
+            userRep.singleAttribute("phoneNumberVerified", "true");
+            user.update(userRep);
+
+            oauth.openLoginForm();
+
+            loginPage.fillLogin("test-user@localhost", PASSWORD);
+            loginPage.submit();
+
+            updateProfilePage.assertCurrent();
+            updateProfilePage.prepareUpdate().firstName("New first").lastName("New last").otherProfileAttribute(Map.of("phoneNumber", "+15555550199")).submit();
+
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
+                    .details(Details.PREF_PREVIOUS + "phoneNumber", "+15555550123").details(Details.PREF_UPDATED + "phoneNumber", "+15555550199")
+                    .details(Details.PREF_PREVIOUS + "phoneNumberVerified", "true").details(Details.PREF_UPDATED + "phoneNumberVerified", "false");
+
+            EventAssertion.expectLoginSuccess(events.poll());
+
+            // phone number changed so verify that phoneNumberVerified flag is reset
+            userRep = user.toRepresentation();
+            Assertions.assertEquals(List.of("+15555550199"), userRep.getAttributes().get("phoneNumber"));
+            Assertions.assertEquals(List.of("false"), userRep.getAttributes().get("phoneNumberVerified"));
+
+            // phone number removed so verify that phoneNumberVerified flag is reset
+            userRep.singleAttribute("phoneNumberVerified", "true");
+            userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+            user.update(userRep);
+
+            oauth.openLoginForm();
+            updateProfilePage.assertCurrent();
+            updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("phoneNumber", "")).submit();
+
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+            userRep = user.toRepresentation();
+            Assertions.assertNull(userRep.getAttributes().get("phoneNumber"));
+            Assertions.assertEquals(List.of("false"), userRep.getAttributes().get("phoneNumberVerified"));
+        } finally {
             upResource.update(upConfig);
         }
     }
