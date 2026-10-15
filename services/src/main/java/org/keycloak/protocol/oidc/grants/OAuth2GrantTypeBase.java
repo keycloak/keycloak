@@ -215,15 +215,14 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (clientSessionCtx.isOfflineTokenRequested()
                 && !userSession.isOffline()
                 && !UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
-            UserSessionManager sessionManager = new UserSessionManager(session);
-            if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
-                event.detail(Details.REASON, "Offline tokens not allowed for the user or client");
+            try {
+                return new UserSessionManager(session).createOrUpdateOfflineSession(
+                        clientSessionCtx.getClientSession(), userSession, clientSessionCtx);
+            } catch (UserSessionManager.OfflineTokensNotAllowedException e) {
+                event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors, Errors.NOT_ALLOWED,
-                        "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors, Errors.NOT_ALLOWED, e.getMessage(), Response.Status.BAD_REQUEST);
             }
-            return sessionManager.createOrUpdateOfflineSession(
-                    clientSessionCtx.getClientSession(), userSession);
         }
         return userSession;
     }

@@ -1365,13 +1365,14 @@ public class TokenManager {
         }
 
         public UserSessionModel createOrUpdateOfflineSession() {
-            UserSessionManager sessionManager = new UserSessionManager(session);
-            if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
-                event.detail(REASON, "Offline tokens not allowed for the user or client");
+            try {
+                return new UserSessionManager(session).createOrUpdateOfflineSession(
+                        clientSessionCtx.getClientSession(), userSession, clientSessionCtx);
+            } catch (UserSessionManager.OfflineTokensNotAllowedException e) {
+                event.detail(REASON, e.getMessage());
                 event.error(Errors.NOT_ALLOWED);
-                throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException(Errors.NOT_ALLOWED, e.getMessage(), Response.Status.BAD_REQUEST);
             }
-            return sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
         private AccessToken.Confirmation getRefreshTokenConfirmation(AuthenticatedClientSessionModel clientSession, AccessToken accessToken) {
