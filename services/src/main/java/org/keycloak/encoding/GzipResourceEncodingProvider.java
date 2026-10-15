@@ -1,5 +1,6 @@
 package org.keycloak.encoding;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,7 +14,7 @@ import org.keycloak.theme.ResourceLoader;
 import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
@@ -32,11 +33,11 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
                 return null;
             }
 
-            if (!encodedFile.exists()) {
-                encodedFile = createEncodedFile(producer, encodedFile);
+            if (encodedFile.exists()) {
+                return new FileInputStream(encodedFile);
             }
 
-            return encodedFile != null ? new FileInputStream(encodedFile) : null;
+            return createEncodedStream(producer, encodedFile);
         } catch (Exception e) {
             logger.warn("Failed to encode resource", e);
             return null;
@@ -47,7 +48,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
         return "gzip";
     }
 
-    private File createEncodedFile(StreamSupplier producer, File target) throws IOException {
+    private InputStream createEncodedStream(StreamSupplier producer, File target) throws IOException {
         InputStream is = producer.getInputStream();
         if (is == null) {
             return null;
@@ -65,13 +66,24 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
             IOUtils.copy(is, gos);
         }
 
+        // Publish only by atomic rename, so a cached file that exists is always complete
         try {
-            Files.move(tmpEncodedFile.toPath(), target.toPath(), REPLACE_EXISTING);
-            return target;
+            Files.move(tmpEncodedFile.toPath(), target.toPath(), ATOMIC_MOVE);
         } catch (IOException io) {
-            logger.warnf(io, "Fail to move temporary file to %s", target.toString());
-            return null;
+            try {
+                if (!target.isFile()) {
+                    logger.warnf(io, "Failed to move temporary file to %s, serving it uncached", target.toString());
+                    return new ByteArrayInputStream(Files.readAllBytes(tmpEncodedFile.toPath()));
+                }
+                // An existing target that could not be replaced (e.g. on Windows while another
+                // request reads it) holds the same content
+                logger.debugf(io, "Failed to replace %s, serving the existing file", target.toString());
+            } finally {
+                // File.delete() does not throw, so a failed cleanup cannot fail the request
+                tmpEncodedFile.delete();
+            }
         }
+        return new FileInputStream(target);
     }
 
 }
