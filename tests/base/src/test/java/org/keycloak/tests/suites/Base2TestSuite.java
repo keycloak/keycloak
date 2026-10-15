@@ -24,6 +24,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.oid4vc",
         "org.keycloak.tests.securityprofile",
         "org.keycloak.tests.sessions",
+        "org.keycloak.tests.theme",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.transactions",
         "org.keycloak.tests.welcomepage",
