@@ -12,6 +12,7 @@ import groupsRoutes from "./groups/routes";
 import identityProviders from "./identity-providers/routes";
 import organizationRoutes from "./organizations/routes";
 import pageRoutes from "./page/routes";
+import uiScriptRoutes from "./ui-script/routes";
 import permissionsConfigurationRoute from "./permissions-configuration/routes";
 import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
@@ -57,5 +58,6 @@ export const routes: AppRouteObject[] = [
   ...groupsRoutes,
   ...dashboardRoutes,
   ...pageRoutes,
+  ...uiScriptRoutes,
   NotFoundRoute,
 ];
