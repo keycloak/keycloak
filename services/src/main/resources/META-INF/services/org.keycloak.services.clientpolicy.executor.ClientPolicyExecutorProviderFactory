@@ -37,5 +37,6 @@ org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory
 org.keycloak.services.clientpolicy.executor.TlsClientAuthCASubjectDNExecutorFactory
 org.keycloak.services.clientpolicy.executor.AllowedProtocolMappersExecutorFactory
 org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutorFactory
+org.keycloak.services.clientpolicy.executor.ClientDelegationExecutorFactory
 org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureClientNodeExecutorFactory

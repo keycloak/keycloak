@@ -272,7 +272,7 @@ public class ClientAgentDelegationTest {
                 .type(EventType.TOKEN_EXCHANGE_ERROR)
                 .clientId(ACTOR_CLIENT_ID)
                 .error(Errors.INVALID_TOKEN)
-                .details(Details.REASON, "Invalid may_act claim in the subject_token")
+                .details(Details.REASON, "The subject_token carries no may_act claim, so the user did not consent to this delegation")
                 .details(Details.ACTOR_TYPE, clientActor.type())
                 .details(Details.ACTOR, clientActor.actor())
                 .details(Details.ACTOR_ID, clientActor.id());
