@@ -147,7 +147,7 @@ class FGAPPolicyEvaluationResponseBuilder {
 
         policyResultRep.setPolicy(representation);
 
-        if (result.getEffect() == Effect.DENY) {
+        if (result.getEffect() != Effect.PERMIT) {
             policyResultRep.setStatus(DecisionEffect.DENY);
             policyResultRep.setScopes(representation.getScopes());
         } else {
