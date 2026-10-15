@@ -65,10 +65,17 @@ import static org.keycloak.models.UserModel.DISABLED_REASON;
 public class DefaultBruteForceProtector implements BruteForceProtector {
     private static final Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
+    /**
+     * Passed on a successful login completed through an identity provider that is configured to reset
+     * login failures (see {@link org.keycloak.models.IdentityProviderModel#isResetLoginFailures()}).
+     */
+    public static final String IDENTITY_PROVIDER_CATEGORY = "identity-provider";
+
     public static final Set<String> ALLOWED_AUTHENTICATION_CATEGORIES = Set.of(
             PasswordCredentialModel.TYPE,
             OTPCredentialModel.TYPE,
-            RecoveryAuthnCodesCredentialModel.TYPE
+            RecoveryAuthnCodesCredentialModel.TYPE,
+            IDENTITY_PROVIDER_CATEGORY
     );
 
     public static final String OTP_CATEGORY = OTPCredentialModel.TYPE;

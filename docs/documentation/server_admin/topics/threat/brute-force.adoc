@@ -6,6 +6,8 @@ A brute force attack attempts to guess a user's password by trying to log in mul
 
 The protection is applied only to authentication mechanisms prone to the brute force attacks. {project_name} applies it only to password, OTP and recovery codes.
 
+A successful login through an identity provider does not reset the user's login failures unless *Reset brute force failures on login* is enabled for that identity provider. See <<_general-idp-config, General configuration>> for more information.
+
 [NOTE]
 ====
 When a user is locked and attempts to log in, {project_name} displays the default `Invalid username or password` error message. This message is the same error message as the message displayed for an invalid username or invalid password to ensure the attacker is unaware the account is disabled.
