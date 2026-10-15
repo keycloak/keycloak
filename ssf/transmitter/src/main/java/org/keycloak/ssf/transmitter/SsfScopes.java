@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.ssf.Ssf;
 
 import org.jboss.logging.Logger;
@@ -30,10 +31,12 @@ public class SsfScopes {
         ClientScopeModel existingScope = KeycloakModelUtils.getClientScopeByName(realm, scopeName);
         if (existingScope != null) {
             log.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", scopeName, realm.getName());
+            ensureProtocol(realm, existingScope);
             return;
         }
 
         ClientScopeModel scope = realm.addClientScope(scopeName);
+        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         scope.setDescription(description);
         scope.setDisplayOnConsentScreen(false);
         scope.setIncludeInTokenScope(includeInTokenScope);
@@ -41,5 +44,17 @@ public class SsfScopes {
         realm.addDefaultClientScope(scope, false);
 
         log.debugf("Client scope '%s' created in realm '%s'.", scopeName, realm.getName());
+    }
+
+    /**
+     * Scopes created by earlier versions were missing the protocol, which hides them from the
+     * admin console's "Add client scope" dialog. Backfill the protocol on existing scopes.
+     */
+    private static void ensureProtocol(RealmModel realm, ClientScopeModel scope) {
+        if (scope.getProtocol() != null) {
+            return;
+        }
+        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        log.debugf("Set missing protocol on client scope '%s' in realm '%s'.", scope.getName(), realm.getName());
     }
 }
