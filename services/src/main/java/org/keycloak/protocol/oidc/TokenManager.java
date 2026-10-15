@@ -1285,9 +1285,6 @@ public class TokenManager {
         }
 
         public AccessTokenResponseBuilder generateAccessToken() {
-            if (clientSessionCtx.isOfflineTokenRequested() && !userSession.isOffline()) {
-                userSession = createOrUpdateOfflineSession();
-            }
             UserModel user = userSession.getUser();
             accessToken = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
             responseTokenType = tokenManager.formatTokenType(client, accessToken);

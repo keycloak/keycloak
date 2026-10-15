@@ -45,6 +45,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -120,8 +121,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
 
+        UserSessionModel effectiveUserSession = ensureOfflineSessionIfRequested(userSession, clientSessionCtx);
+
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+                .responseBuilder(realm, client, event, session, effectiveUserSession, clientSessionCtx).generateAccessToken();
         boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
@@ -201,6 +204,21 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession,
                 clientSessionCtx, scopeParam, clientPolicyContextGenerator);
         return createTokenResponse(responseBuilder, clientSessionCtx, code);
+    }
+
+    /**
+     * If offline access is requested and the session is not already offline,
+     * creates a persistent offline session so that token expiration uses offline settings.
+     * Transient sessions are not converted because offline sessions are inherently persistent.
+     */
+    protected UserSessionModel ensureOfflineSessionIfRequested(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        if (clientSessionCtx.isOfflineTokenRequested()
+                && !userSession.isOffline()
+                && !UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
+            return new UserSessionManager(session).createOrUpdateOfflineSession(
+                    clientSessionCtx.getClientSession(), userSession);
+        }
+        return userSession;
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
