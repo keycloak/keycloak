@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
@@ -68,6 +69,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.services.ErrorResponseException;
 
 import org.jboss.logging.Logger;
 
@@ -115,14 +117,25 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response buildPost() {
         logger.trace("Processing @POST request");
-        return process(httpRequest.getDecodedFormParameters());
+        try{
+            return process(httpRequest.getDecodedFormParameters());
+        } catch (IllegalArgumentException e) {
+            if ("File form values are not supported".equals(e.getMessage())) {
+                throw new ErrorResponseException(
+                    OAuthErrorException.INVALID_REQUEST,
+                    "File form values are not supported",
+                    Response.Status.BAD_REQUEST
+                );
+            }
+            throw e;
+        }
     }
 
     @GET
     public Response buildGet() {
         logger.trace("Processing @GET request");
         return process(session.getContext().getUri().getQueryParameters());
-    }
+    }   
 
     /**
      * OAuth 2.0 Device Authorization endpoint
