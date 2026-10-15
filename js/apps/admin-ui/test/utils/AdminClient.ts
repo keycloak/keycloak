@@ -41,6 +41,25 @@ class AdminClient {
     await this.#client.realms.update({ realm }, payload);
   }
 
+  async isFeatureEnabled(
+    featureName: string,
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const features = (await this.#client.serverInfo.find({ realm })).features;
+    const normalizeServerFeatureName = (name?: string) =>
+      name?.replace(/_V\d+$/, "");
+
+    return (
+      features?.some(
+        (feature) =>
+          feature.enabled &&
+          (feature.name === featureName ||
+            normalizeServerFeatureName(feature.name) === featureName),
+      ) ?? false
+    );
+  }
+
   async getRealm(realm: string) {
     await this.#login();
     return await this.#client.realms.findOne({ realm });
