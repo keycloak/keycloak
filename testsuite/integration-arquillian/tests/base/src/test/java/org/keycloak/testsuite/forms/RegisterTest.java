@@ -595,6 +595,41 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void registerUserNotEmailPasswordPolicyWithUsername() throws IOException {
+        try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notEmail").update()) {
+            oauth.openLoginForm();
+
+            loginPage.assertCurrent();
+
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            // Password equals username but not email - It must succeed because notEmail compares against email
+            registerPage.register("firstName", "lastName", "bob@example.com", "alice12345", "alice12345", "alice12345");
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+            String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
+                    .details(Details.USERNAME, "alice12345").details(Details.EMAIL, "bob@example.com").getEvent().getUserId();
+            EventAssertion.expectLoginSuccess(events.poll()).details("username", "alice12345").userId(userId);
+            managedRealm.admin().users().get(userId).remove();
+
+            oauth.openLoginForm();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            // Password equals email - It must fail because notEmail compares against email
+            registerPage.register("firstName", "lastName", "bob@example.com", "alice12345", "bob@example.com", "bob@example.com");
+            registerPage.assertCurrent();
+            assertEquals("Invalid password: must not be equal to the email.", registerPage.getInputPasswordErrors().getPasswordError());
+
+            // Case-sensitivity - still must not allow password equal to email
+            registerPage.register("firstName", "lastName", "bob@example.com", "alice12345", "BOB@EXAMPLE.COM", "BOB@EXAMPLE.COM");
+            registerPage.assertCurrent();
+            assertEquals("Invalid password: must not be equal to the email.", registerPage.getInputPasswordErrors().getPasswordError());
+        }
+    }
+
     private UserRepresentation getUser(String userId) {
         return managedRealm.admin().users().get(userId).toRepresentation();
     }
