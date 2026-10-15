@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.NoRouteToHostException;
@@ -268,9 +269,10 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
     }
 
     /**
-     * Waits for the connection. Any failure is reported as a connection failure, so the caller fails
-     * over: {@code connected} only fails before a connection is established, when nothing has been
-     * sent. A timeout of this wait counts only if it wins the race against the connection callback
+     * Waits for the connection. An interrupted wait is reported as an {@link InterruptedIOException},
+     * which does not fail over. Any other failure is reported as a connection failure, so the caller
+     * fails over: {@code connected} only fails before a connection is established, when nothing has
+     * been sent. A timeout of this wait counts only if it wins the race against the connection callback
      * for {@code connected}; the callback then sees {@code connected} already completed and does not
      * send. If the connection completed at the same moment, its outcome stands instead.
      */
@@ -279,6 +281,14 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             VertxHttpClientProvider.awaitResult(connected, timeoutMs);
             return;
         } catch (IOException e) {
+            if (e.getCause() instanceof InterruptedException) {
+                // Stop without failing over; claiming `connected` keeps a pending connection from
+                // sending. The interrupt flag is already restored.
+                InterruptedIOException interrupted = new InterruptedIOException("Interrupted while connecting to " + server);
+                interrupted.initCause(e.getCause());
+                connected.completeExceptionally(interrupted);
+                throw interrupted;
+            }
             if (!(e.getCause() instanceof TimeoutException)) {
                 throw asConnectFailure(e, server);
             }

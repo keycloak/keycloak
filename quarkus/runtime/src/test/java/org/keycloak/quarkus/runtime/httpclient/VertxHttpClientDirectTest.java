@@ -18,6 +18,7 @@ package org.keycloak.quarkus.runtime.httpclient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -54,6 +55,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link VertxHttpClientProvider#createHttpClient(DnsResolver, boolean)}: direct requests
@@ -154,6 +156,44 @@ public class VertxHttpClientDirectTest {
                 SocketAddress.inetSocketAddress(443, "127.0.0.1")));
         // The connection callback only sends after completing `connected` itself.
         assertFalse(connected.complete(null));
+    }
+
+    @Test
+    public void interruptedConnectionWaitStopsWithoutFailover() {
+        CompletableFuture<Void> connected = new CompletableFuture<>() {
+            @Override
+            public Void get(long timeout, TimeUnit unit) throws InterruptedException {
+                throw new InterruptedException();
+            }
+        };
+        try {
+            assertThrows(InterruptedIOException.class, () -> VertxHttpClientBridge.awaitConnection(connected, 100,
+                    SocketAddress.inetSocketAddress(443, "127.0.0.1")));
+            assertTrue(Thread.currentThread().isInterrupted());
+            // The connection callback only sends after completing `connected` itself.
+            assertFalse(connected.complete(null));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    public void interruptedConnectionWaitDoesNotFailOverWhenConnectionCompletes() {
+        // The connection completes just as the wait is interrupted.
+        CompletableFuture<Void> connected = new CompletableFuture<>() {
+            @Override
+            public Void get(long timeout, TimeUnit unit) throws InterruptedException {
+                complete(null);
+                throw new InterruptedException();
+            }
+        };
+        try {
+            IOException failure = assertThrows(IOException.class, () -> VertxHttpClientBridge.awaitConnection(
+                    connected, 100, SocketAddress.inetSocketAddress(443, "127.0.0.1")));
+            assertTrue(failure instanceof InterruptedIOException);
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test
