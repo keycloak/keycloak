@@ -63,7 +63,7 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         String method = request.getRequestLine().getMethod();
         long maxSize = provider.getMaxConsumedResponseSize();
 
-        long idleTimeoutMs = provider.getEffectiveTimeoutMs();
+        long idleTimeoutMs = provider.getIdleTimeoutMs();
         long connectTimeoutMs = -1;
         if (request instanceof HttpRequestBase) {
             RequestConfig rc = ((HttpRequestBase) request).getConfig();
