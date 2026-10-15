@@ -1073,6 +1073,89 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         });
     }
 
+    // https://github.com/keycloak/keycloak/issues/50984
+    @Test
+    public void test10a_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInLdapOnlyMode() {
+        leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode.LDAP_ONLY, "LdapOnly");
+    }
+
+    // https://github.com/keycloak/keycloak/issues/50984
+    @Test
+    public void test10b_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInReadOnlyMode() {
+        leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode.READ_ONLY, "ReadOnly");
+    }
+
+    // The realm is reimported before every test method (see isImportAfterEachMethod), but the embedded
+    // LDAP server (a @ClassRule) is shared for the whole class, so each variant needs its own OU/mapper/
+    // group names to avoid clashing with LDAP entries left behind by an earlier test method.
+    private void leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode mode, String suffix) {
+        String mapperName = "group-mapper-" + suffix;
+        String groupName = "Group" + suffix;
+        String groupsPath = "/ldap-groups-" + suffix;
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            realm.removeComponent(LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper"));
+            realm.createGroup(groupsPath.substring(1));
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            String baseDn = ldapModel.getConfig().getFirst(LDAPConstants.BASE_DN);
+            String descriptionName = getGroupDescriptionLDAPAttrName(ldapProvider);
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OU" + suffix);
+            LDAPTestUtils.addOrUpdateGroupMapper(mapperName, realm, ldapModel, mode, descriptionName,
+                    GroupMapperConfig.GROUPS_DN, "ou=OU" + suffix + "," + baseDn, GroupMapperConfig.LDAP_GROUPS_PATH, groupsPath);
+            LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName, descriptionName, groupName + " Description");
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+            GroupModel managedGroup = KeycloakModelUtils.findGroupByPath(session, realm, groupsPath + "/" + groupName);
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+
+            // John becomes a genuine LDAP-backed member of the mapper-managed group, same as a real
+            // pre-existing LDAP membership would be (the mapper itself may be configured READ_ONLY).
+            if (mode == LDAPGroupMapperMode.LDAP_ONLY) {
+                john.joinGroup(managedGroup);
+            } else {
+                groupMapper.addGroupMappingInLDAP(realm, managedGroup, ldapProvider.loadLDAPUserByUsername(realm, "johnkeycloak"));
+            }
+
+            // Out-of-path local group with the same name; this membership is stored only in the local DB.
+            GroupModel localGroup = realm.createGroup(groupName);
+            john.joinGroup(localGroup);
+
+            Assertions.assertTrue(john.isMemberOf(localGroup));
+            Assertions.assertTrue(john.isMemberOf(managedGroup));
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            GroupModel managedGroup = KeycloakModelUtils.findGroupByPath(session, realm, groupsPath + "/" + groupName);
+            GroupModel localGroup = KeycloakModelUtils.findGroupByPath(session, realm, "/" + groupName);
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+
+            // Leaving the out-of-path local group must not revoke John's membership in the
+            // LDAP-managed group of the same name, nor fail because of the unrelated LDAP group.
+            john.leaveGroup(localGroup);
+
+            Assertions.assertFalse(john.isMemberOf(localGroup));
+            Assertions.assertTrue(john.isMemberOf(managedGroup));
+        });
+    }
+
     @Test
     public void test11_fetchUsersGroupsWithPaginationAndInvalidBatchSize() {
         // Add some groups to Keycloak
