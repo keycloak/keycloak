@@ -244,6 +244,7 @@ public final class Constants {
 
     // Note in transient userSession specifying that it was created from "persistent" user session for the temporary purpose. The values of this note could be "online" and "offline"
     public static final String CREATED_FROM_PERSISTENT = "created_from_persistent";
+    public static final String CREATED_FROM_PERSISTENT_STARTED = "created_from_persistent_started";
     public static final String CREATED_FROM_PERSISTENT_ONLINE = "online";
     public static final String CREATED_FROM_PERSISTENT_OFFLINE = "offline";
 
