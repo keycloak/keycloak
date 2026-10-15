@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('recoveryCodeInput'); section>
 
     <#if section = "header">
@@ -36,9 +37,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input
-                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                            name="login" id="kc-login" type="submit" value="${msg("doLogIn")}" />
+                    <@buttons.button name="login" id="kc-login" label="doLogIn" class=["kcButtonLargeClass"] value=msg("doLogIn") />
                 </div>
             </div>
         </form>

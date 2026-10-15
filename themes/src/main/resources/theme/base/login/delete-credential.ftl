@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         ${msg("deleteCredentialTitle", credentialLabel)}
@@ -7,8 +8,8 @@
         ${msg("deleteCredentialMessage", credentialLabel)}
     </div>
     <form class="form-actions" action="${url.loginAction}" method="POST">
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-accept" type="submit" value="${msg("doConfirmDelete")}"/>
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel-aia" value="${msg("doCancel")}" id="kc-decline" type="submit" />
+        <@buttons.button name="accept" id="kc-accept" label="doConfirmDelete" fullWidth=false class=["kcButtonLargeClass"] value=msg("doConfirmDelete") />
+        <@buttons.button name="cancel-aia" id="kc-decline" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value=msg("doCancel") />
     </form>
     <div class="clearfix"></div>
     </#if>

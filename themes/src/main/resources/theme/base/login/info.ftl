@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         <#if messageHeader??>
@@ -12,11 +13,11 @@
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>
-                <p><a href="${pageRedirectUri}">${msg("backToApplication")}</a></p>
+                <p><@buttons.buttonLink id="backToApplication" href=pageRedirectUri label="backToApplication"/></p>
             <#elseif actionUri?has_content>
-                <p><a href="${actionUri}">${msg("proceedWithAction")}</a></p>
+                <p><@buttons.buttonLink id="proceedWithAction" href=actionUri label="proceedWithAction"/></p>
             <#elseif (client.baseUrl)?has_content>
-                <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                <p><@buttons.buttonLink id="backToApplication" href=client.baseUrl label="backToApplication"/></p>
             </#if>
         </#if>
     </div>
