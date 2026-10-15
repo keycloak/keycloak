@@ -25,16 +25,14 @@ export default function UsersSection() {
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
 
-  const useTab = (tab: UserTab) =>
-    useRoutableTab(
-      toUsers({
-        realm: realmName,
-        tab,
-      }),
-    );
+  const tab = (tab: UserTab) =>
+    toUsers({
+      realm: realmName,
+      tab,
+    });
 
-  const listTab = useTab("list");
-  const permissionsTab = useTab("permissions");
+  const listTab = useRoutableTab(tab("list"));
+  const permissionsTab = useRoutableTab(tab("permissions"));
 
   return (
     <>

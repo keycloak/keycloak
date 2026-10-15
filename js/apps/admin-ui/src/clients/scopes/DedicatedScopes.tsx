@@ -45,11 +45,11 @@ export default function DedicatedScopes() {
     [],
   );
 
-  const useTab = (tab: DedicatedScopeTab) =>
-    useRoutableTab(toDedicatedScope({ realm, clientId, tab }));
+  const tab = (tab: DedicatedScopeTab) =>
+    toDedicatedScope({ realm, clientId, tab });
 
-  const mappersTab = useTab("mappers");
-  const scopeTab = useTab("scope");
+  const mappersTab = useRoutableTab(tab("mappers"));
+  const scopeTab = useRoutableTab(tab("scope"));
 
   if (!client) {
     return <KeycloakSpinner />;
