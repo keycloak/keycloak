@@ -87,11 +87,16 @@ public class SubjectConfirmationDataValidator {
     }
 
     public boolean isValid() {
+        // Per the SAML 2.0 Web Browser SSO Profile, a Bearer SubjectConfirmation MUST carry a
+        // SubjectConfirmationData element with a bounded validity window and a Recipient; both
+        // are the anti-replay/anti-redirection properties the Bearer method relies on, so a
+        // missing element must be treated as invalid rather than skipped.
         if (subjectConfirmationData == null) {
-            return true;
+            logger.tracef("Response Validation Error: assertion '%s' is missing the mandatory Bearer SubjectConfirmationData element", assertionId);
+            return false;
         }
 
-        if (!ConditionsValidator.validateExpiration(assertionId, subjectConfirmationData.getNotBefore(), subjectConfirmationData.getNotOnOrAfter(), now, clockSkewInMillis)) {
+        if (!validateExpiration()) {
             return false;
         }
 
@@ -102,9 +107,24 @@ public class SubjectConfirmationDataValidator {
         return validateInResponseTo();
     }
 
+    private boolean validateExpiration() {
+        if (subjectConfirmationData.getNotOnOrAfter() == null) {
+            logger.tracef("Response Validation Error: SubjectConfirmationData of assertion '%s' is missing the mandatory NotOnOrAfter attribute", assertionId);
+            return false;
+        }
+
+        return ConditionsValidator.validateExpiration(assertionId, subjectConfirmationData.getNotBefore(), subjectConfirmationData.getNotOnOrAfter(), now, clockSkewInMillis);
+    }
+
     private boolean validateRecipient() {
-        if (subjectConfirmationData.getRecipient() == null || allowedRecipients.isEmpty()) {
+        if (allowedRecipients.isEmpty()) {
+            // caller did not supply any recipient to check against, so the check cannot be performed
             return true;
+        }
+
+        if (subjectConfirmationData.getRecipient() == null) {
+            logger.tracef("Response Validation Error: SubjectConfirmationData of assertion '%s' is missing the mandatory Recipient attribute", assertionId);
+            return false;
         }
 
         for (String allowedRecipient : allowedRecipients) {
@@ -119,8 +139,15 @@ public class SubjectConfirmationDataValidator {
     }
 
     private boolean validateInResponseTo() {
-        if (inResponseTo == null || subjectConfirmationData.getInResponseTo() == null) {
+        if (inResponseTo == null) {
+            // caller is not expecting a specific request id (e.g. IdP-initiated flow), so the check cannot be performed
             return true;
+        }
+
+        if (subjectConfirmationData.getInResponseTo() == null) {
+            logger.tracef("Response Validation Error: SubjectConfirmationData of assertion '%s' is missing the expected InResponseTo '%s'",
+                    assertionId, inResponseTo);
+            return false;
         }
 
         // Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo does not match request ID
