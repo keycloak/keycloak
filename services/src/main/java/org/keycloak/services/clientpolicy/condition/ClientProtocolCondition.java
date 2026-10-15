@@ -79,6 +79,7 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
             return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
+            if (client == null) return ClientPolicyVote.ABSTAIN;
             if (isCorrectClientProtocol(client)) {
                 return ClientPolicyVote.YES;
             } else {
