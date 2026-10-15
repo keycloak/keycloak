@@ -14,29 +14,71 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.RawParameterizedSqlStatement;
+import liquibase.statement.core.UpdateStatement;
+import liquibase.structure.core.Table;
 
 public class JpaUpdate26_7_0_RealmDisplayName extends CustomKeycloakTask {
 
+    // Matches the REALM.DISPLAY_NAME column added by the change set 26.7.0-45292-realm-display-name-add-column
+    // (NVARCHAR(255)). REALM_ATTRIBUTE.VALUE has no length limit and older Keycloak releases accepted display names
+    // longer than this column, so values are truncated during the migration as documented in the upgrading guide.
+    private static final int DISPLAY_NAME_MAX_LENGTH = 255;
+
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
-        String realmTable = getTableName("REALM");
-        String realmAttributeTable = getTableName("REALM_ATTRIBUTE");
+        String realmTable = database.correctObjectName("REALM", Table.class);
+        String realmAttributeTable = database.correctObjectName("REALM_ATTRIBUTE", Table.class);
 
-        statements.add(new RawParameterizedSqlStatement("""
-                UPDATE %s
-                SET DISPLAY_NAME = (
-                    SELECT VALUE FROM %s
-                    WHERE REALM_ID = %s.ID AND NAME = 'displayName'
-                )
-                WHERE EXISTS (
-                    SELECT 1 FROM %s
-                    WHERE REALM_ID = %s.ID AND NAME = 'displayName'
-                )"""
-                .formatted(realmTable, realmAttributeTable, realmTable, realmAttributeTable, realmTable)));
+        try (PreparedStatement ps = connection.prepareStatement(
+                     "SELECT REALM_ID, VALUE FROM " + getTableName(realmAttributeTable) + " WHERE NAME = 'displayName'");
+             ResultSet rs = ps.executeQuery()) {
+
+            int truncated = 0;
+            while (rs.next()) {
+                String realmId = rs.getString(1);
+                String displayName = rs.getString(2);
+                String truncatedDisplayName = truncateDisplayName(displayName);
+                if (displayName != null && !displayName.equals(truncatedDisplayName)) {
+                    truncated++;
+                }
+                statements.add(new UpdateStatement(null, null, realmTable)
+                        .addNewColumnValue("DISPLAY_NAME", truncatedDisplayName)
+                        .setWhereClause("ID=?")
+                        .addWhereParameter(realmId));
+            }
+            confirmationMessage.append("Migrated displayName from REALM_ATTRIBUTE to REALM.DISPLAY_NAME");
+            if (truncated > 0) {
+                confirmationMessage.append(", " + truncated + " value(s) were truncated to fit the column");
+            }
+            confirmationMessage.append(". ");
+        } catch (Exception e) {
+            throw new CustomChangeException(getTaskId() + ": Exception when migrating displayName", e);
+        }
+    }
+
+    /**
+     * Truncates the value to fit the DISPLAY_NAME column on every database supported by Keycloak. The column accepts
+     * at most 255 characters, and none of the supported databases accepts more than 255 UTF-16 code units there
+     * (SQL Server counts UTF-16 code units while the other databases count code points). Truncating at 255 code units
+     * without splitting a surrogate pair therefore fits both counting conventions.
+     */
+    private String truncateDisplayName(String displayName) {
+        if (displayName == null || displayName.length() <= DISPLAY_NAME_MAX_LENGTH) {
+            return displayName;
+        }
+        int endIndex = DISPLAY_NAME_MAX_LENGTH;
+        if (Character.isLowSurrogate(displayName.charAt(endIndex))) {
+            // The code unit at the limit is the low half of a surrogate pair; drop the whole pair instead of splitting it.
+            endIndex--;
+        }
+        return displayName.substring(0, endIndex);
     }
 
     @Override
