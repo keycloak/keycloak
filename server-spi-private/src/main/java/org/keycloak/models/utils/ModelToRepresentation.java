@@ -804,6 +804,7 @@ public class ModelToRepresentation {
         rep.setSecretData(cred.getSecretData());
         rep.setCredentialData(cred.getCredentialData());
         rep.setFederationLink(cred.getFederationLink());
+        rep.setPriority(cred.getPriority());
         return rep;
     }
 
