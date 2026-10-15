@@ -95,8 +95,8 @@ The per-receiver `ssf.validPushUrls` allow-list still applies.
 |`push-delivery-via-proxy`
 |`false`
 |Sends PUSH deliveries through the outgoing HTTP proxy. Use it when receivers are reachable only through an
-egress proxy. Push URLs are still checked when a stream is created, but the address check at delivery time is
-left to the proxy (see <<push-delivery-and-proxies, PUSH delivery and proxies>>).
+egress proxy. Push URLs are still checked when a stream is created, but for deliveries through the proxy the
+address check at delivery time is left to the proxy (see <<push-delivery-and-proxies, PUSH delivery and proxies>>).
 |===
 
 == Enabling the SSF Transmitter for a realm
@@ -226,9 +226,11 @@ proxy configured through the `proxy-mappings` option or the `HTTPS_PROXY` and `H
 
 If receivers are reachable only through an egress proxy, set `push-delivery-via-proxy` to `true`. Push URLs are
 still checked against the allow-list, the `https` requirement, and the address check when a stream is created or
-updated. At delivery time, preventing a receiver from reaching internal addresses by changing its DNS records is then
-up to the proxy, so make sure the proxy does not forward requests to internal destinations. Deliveries then also
-follow redirects if the outgoing HTTP client's `allow-redirects` option is enabled.
+updated. Deliveries that the proxy settings route through the proxy are resolved by the proxy, so preventing a
+receiver from reaching internal addresses by changing its DNS records is then up to the proxy: make sure it does not
+forward requests to internal destinations. Deliveries to hosts that the proxy settings exclude from the proxy, for
+example through `NO_PROXY` or a `proxy-mappings` entry without a proxy, still connect directly and are still checked.
+Redirects are not followed in either case.
 
 Do not use `allow-insecure-push-targets` for this purpose: it also turns off the checks on push URLs.
 

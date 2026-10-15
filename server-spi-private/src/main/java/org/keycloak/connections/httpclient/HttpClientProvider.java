@@ -106,18 +106,24 @@ public interface HttpClientProvider extends Provider {
 
     /**
      * Creates a new client with this provider's configuration, such as timeouts, trust and client
-     * key material, retries and instrumentation, except that it connects directly to the target
-     * without any configured proxy, does not follow redirects, and resolves hosts with the given
-     * {@code dnsResolver}. Use it to apply a policy to the addresses that are actually connected to.
+     * key material, retries and instrumentation, except that it does not follow redirects and
+     * resolves the host of every request it connects to directly with {@code targetResolver}. Use it
+     * to apply a policy to the addresses that are actually connected to.
+     * <p>
+     * With {@code useProxy} {@code false}, every request connects directly, ignoring any configured
+     * proxy. With {@code useProxy} {@code true}, requests that the configured proxy settings route
+     * through a proxy still go through it, and the proxy resolves their host; requests that the
+     * settings exclude from the proxy connect directly using {@code targetResolver}.
      * <p>
      * <b>The caller owns the returned client and must {@code close()} it.</b>
      *
-     * @param dnsResolver resolver used for every connection the client opens
+     * @param targetResolver resolver for the host of every direct connection to a request's target
+     * @param useProxy whether to keep routing requests through the configured proxy
      * @return a new client
      * @throws UnsupportedOperationException if this provider does not support creating such a client
      */
-    default CloseableHttpClient createDirectHttpClient(DnsResolver dnsResolver) {
-        throw new UnsupportedOperationException(getClass().getName() + " does not support creating a direct HTTP client");
+    default CloseableHttpClient createHttpClient(DnsResolver targetResolver, boolean useProxy) {
+        throw new UnsupportedOperationException(getClass().getName() + " does not support creating a restricted HTTP client");
     }
 
 }

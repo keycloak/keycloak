@@ -159,7 +159,8 @@ A delivery fails, and is retried and eventually dead-lettered like any other fai
 After upgrading, deployments that can reach receivers only through an outgoing proxy see push deliveries fail with connection errors.
 The server log names the proxy as the likely cause.
 To keep delivering through the proxy, set the new `push-delivery-via-proxy` option of the SSF transmitter to `true`, for example with `--spi-ssf-transmitter--default--push-delivery-via-proxy=true`.
-Push URLs are still checked when a stream is created, but the proxy resolves the receiver's host at delivery time, so make sure the proxy does not forward requests to internal destinations.
+Push URLs are still checked when a stream is created, and deliveries to hosts excluded from the proxy are still checked when they connect.
+For deliveries through the proxy, the proxy resolves the receiver's host, so make sure it does not forward requests to internal destinations.
 
 === Organization Redirect URL now validated against the account client
 

@@ -52,19 +52,24 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
     private final HttpClient httpClient;
     private final VertxHttpClientProvider provider;
     private final DnsResolver directResolver;
+    private final boolean useProxy;
 
     VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider) {
-        this(httpClient, provider, null);
+        this(httpClient, provider, null, true);
     }
 
     /**
-     * @param directResolver when set, requests resolve their host with it and connect to the
-     *                       resolved address directly, without proxy or redirects
+     * @param directResolver when set, redirects are not followed, and requests that connect
+     *                       directly resolve their host with it and connect to the resolved address
+     * @param useProxy       whether requests that the proxy settings route through a proxy go
+     *                       through it; otherwise every request connects directly
      */
-    VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider, DnsResolver directResolver) {
+    VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider, DnsResolver directResolver,
+                          boolean useProxy) {
         this.httpClient = httpClient;
         this.provider = provider;
         this.directResolver = directResolver;
+        this.useProxy = useProxy;
     }
 
     @Override
@@ -77,8 +82,10 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         URI uri = resolveUri(target, request);
         // Read once, so a body that can only be read once is sent intact on every attempt.
         RequestBody body = readBody(request);
-        if (directResolver == null) {
-            return provider.executeWithRetry(() -> doExecuteInternal(uri, null, request, body));
+        ProxyOptions proxy = useProxy ? provider.resolveProxyForHost(uri.getHost()) : null;
+        if (directResolver == null || proxy != null) {
+            // Either an unrestricted request, or one the proxy resolves the host for.
+            return provider.executeWithRetry(() -> doExecuteInternal(uri, null, proxy, request, body));
         }
         // Resolved once, outside the retry loop: a rejected or unknown host is not retried and
         // keeps its exception type, as with the Apache client.
@@ -118,7 +125,7 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         IOException lastFailure = null;
         for (SocketAddress server : servers) {
             try {
-                return doExecuteInternal(uri, server, request, body);
+                return doExecuteInternal(uri, server, null, request, body);
             } catch (ConnectException | NoRouteToHostException e) {
                 lastFailure = e;
             }
@@ -126,7 +133,7 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         throw lastFailure;
     }
 
-    private CloseableHttpResponse doExecuteInternal(URI uri, SocketAddress server, HttpRequest request,
+    private CloseableHttpResponse doExecuteInternal(URI uri, SocketAddress server, ProxyOptions proxy, HttpRequest request,
                                                     RequestBody body) throws IOException {
         String method = request.getRequestLine().getMethod();
         long maxSize = provider.getMaxConsumedResponseSize();
@@ -156,12 +163,13 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         }
         if (server != null) {
             // The URI host still drives the Host header, SNI and certificate verification.
-            reqOptions.setServer(server).setFollowRedirects(false);
-        } else {
-            ProxyOptions proxy = provider.resolveProxyForHost(uri.getHost());
-            if (proxy != null) {
-                reqOptions.setProxyOptions(proxy);
-            }
+            reqOptions.setServer(server);
+        }
+        if (proxy != null) {
+            reqOptions.setProxyOptions(proxy);
+        }
+        if (directResolver != null) {
+            reqOptions.setFollowRedirects(false);
         }
 
         CompletableFuture<CloseableHttpResponse> future = new CompletableFuture<>();

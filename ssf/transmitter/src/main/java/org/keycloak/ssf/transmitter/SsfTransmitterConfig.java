@@ -85,9 +85,10 @@ public class SsfTransmitterConfig {
      *
      * <p>Set to {@code true} when receivers are reachable only through an
      * egress proxy. The checks on receiver-supplied push URLs when a stream
-     * is created stay in place, but the proxy resolves the receiver's host
-     * at delivery time, so blocking internal destinations at that point is
-     * left to the proxy's egress policy.
+     * is created stay in place, and deliveries the proxy settings exclude
+     * from the proxy are still checked when they connect. For deliveries
+     * through the proxy, the proxy resolves the receiver's host, so blocking
+     * internal destinations at that point is left to its egress policy.
      */
     public static final String CONFIG_PUSH_DELIVERY_VIA_PROXY = "push-delivery-via-proxy";
 

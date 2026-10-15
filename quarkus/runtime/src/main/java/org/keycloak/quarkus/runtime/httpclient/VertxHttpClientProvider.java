@@ -222,12 +222,13 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     }
 
     /**
-     * Returns a bridge over the shared Vert.x client that pins each request to the address
-     * {@code dnsResolver} returns. Closing it does not close the shared client.
+     * Returns a bridge over the shared Vert.x client that pins each direct request to an address
+     * {@code targetResolver} returns, and with {@code useProxy} sends requests the proxy settings
+     * route through a proxy to it. Closing it does not close the shared client.
      */
     @Override
-    public CloseableHttpClient createDirectHttpClient(DnsResolver dnsResolver) {
-        return new VertxHttpClientBridge(httpClient, this, dnsResolver);
+    public CloseableHttpClient createHttpClient(DnsResolver targetResolver, boolean useProxy) {
+        return new VertxHttpClientBridge(httpClient, this, targetResolver, useProxy);
     }
 
     @Override

@@ -51,9 +51,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 /**
- * Tests for {@link VertxHttpClientProvider#createDirectHttpClient(DnsResolver)}: requests connect to
- * the address the resolver returns, without proxy or redirects, while TLS still verifies the
- * URL's hostname.
+ * Tests for {@link VertxHttpClientProvider#createHttpClient(DnsResolver, boolean)}: direct requests
+ * connect to the address the resolver returns, while TLS still verifies the URL's hostname; requests
+ * go through the proxy only when it is enabled and the proxy settings route them to it; redirects
+ * are not followed.
  */
 public class VertxHttpClientDirectTest {
 
@@ -137,12 +138,32 @@ public class VertxHttpClientDirectTest {
     @Test
     public void rejectedResolutionOpensNoConnection() throws Exception {
         int port = startServer(new HttpServerOptions());
-        DnsResolver rejecting = host -> {
-            throw new UnknownHostException("rejected " + host);
-        };
-        try (CloseableHttpClient client = directClient(new WebClientOptions(), rejecting)) {
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), rejecting())) {
             assertThrows(UnknownHostException.class,
                     () -> client.execute(new HttpGet("http://" + HOST + ":" + port + "/hello")));
+        }
+        assertEquals(0, requests.get());
+    }
+
+    @Test
+    public void withProxySendsProxiedRequestsThroughProxy() throws Exception {
+        // The test server stands in for a proxy on a private address; the target never resolves.
+        int port = startServer(new HttpServerOptions());
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(".*proxied.*;http://127.0.0.1:" + port);
+        try (CloseableHttpClient client = restrictedClient(new WebClientOptions(), rejecting(), proxyMappings, true);
+             CloseableHttpResponse res = client.execute(new HttpGet("http://push.proxied.test/hello"))) {
+            assertEquals(200, res.getStatusLine().getStatusCode());
+        }
+        assertEquals(1, requests.get());
+    }
+
+    @Test
+    public void withProxyChecksRequestsExcludedFromProxy() throws Exception {
+        int port = startServer(new HttpServerOptions());
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(".*proxied.*;http://127.0.0.1:" + port);
+        try (CloseableHttpClient client = restrictedClient(new WebClientOptions(), rejecting(), proxyMappings, true)) {
+            assertThrows(UnknownHostException.class,
+                    () -> client.execute(new HttpGet("http://direct.example.test:" + port + "/hello")));
         }
         assertEquals(0, requests.get());
     }
@@ -167,12 +188,22 @@ public class VertxHttpClientDirectTest {
     }
 
     private CloseableHttpClient directClient(WebClientOptions options, DnsResolver resolver) {
-        HttpClient httpClient = vertx.createHttpClient(options);
         // A proxy mapping to an unreachable port: any request routed through it would fail.
-        ProxyMappings proxyMappings = ProxyMappings.valueOf(".*;http://127.0.0.1:1");
+        return restrictedClient(options, resolver, ProxyMappings.valueOf(".*;http://127.0.0.1:1"), false);
+    }
+
+    private CloseableHttpClient restrictedClient(WebClientOptions options, DnsResolver resolver,
+                                                 ProxyMappings proxyMappings, boolean useProxy) {
+        HttpClient httpClient = vertx.createHttpClient(options);
         VertxHttpClientProvider provider = new VertxHttpClientProvider(WebClient.wrap(httpClient, options), httpClient,
                 10_000_000L, 5000L, 0, 1000L, 2.0, false, 0.5, proxyMappings);
-        return provider.createDirectHttpClient(resolver);
+        return provider.createHttpClient(resolver, useProxy);
+    }
+
+    private static DnsResolver rejecting() {
+        return host -> {
+            throw new UnknownHostException("rejected " + host);
+        };
     }
 
     private int startServer(HttpServerOptions options) throws Exception {

@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
@@ -45,6 +47,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
@@ -152,8 +155,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
             }
 
             @Override
-            public CloseableHttpClient createDirectHttpClient(DnsResolver dnsResolver) {
-                return DefaultHttpClientFactory.this.createDirectHttpClient(session, dnsResolver);
+            public CloseableHttpClient createHttpClient(DnsResolver targetResolver, boolean useProxy) {
+                return DefaultHttpClientFactory.this.createHttpClient(session, targetResolver, useProxy);
             }
         };
     }
@@ -183,25 +186,54 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    httpClient = configureHttpClientBuilder(session).build();
+                    httpClient = configureHttpClientBuilder(session, resolveProxyMappings()).build();
                 }
             }
         }
     }
 
-    private CloseableHttpClient createDirectHttpClient(KeycloakSession session, DnsResolver dnsResolver) {
-        HttpClientBuilder builder = configureHttpClientBuilder(session)
-                .proxyMappings(null)
+    private CloseableHttpClient createHttpClient(KeycloakSession session, DnsResolver targetResolver, boolean useProxy) {
+        ProxyMappings proxyMappings = useProxy ? resolveProxyMappings() : null;
+        HttpClientBuilder builder = configureHttpClientBuilder(session, proxyMappings)
                 .disableRedirectHandling();
+        DnsResolver dnsResolver = targetResolver;
+        if (proxyMappings != null && !proxyMappings.isEmpty()) {
+            // The client also resolves the proxies' own host names, which are configured by the
+            // operator and commonly private, so only the targets of direct connections are checked.
+            Set<String> proxyHostNames = proxyMappings.getProxyHostNames();
+            dnsResolver = host -> proxyHostNames.contains(host.toLowerCase(Locale.ROOT))
+                    ? SystemDefaultDnsResolver.INSTANCE.resolve(host)
+                    : targetResolver.resolve(host);
+        }
         builder.getApacheHttpClientBuilder().setDnsResolver(dnsResolver);
         return builder.build();
     }
 
     /**
-     * Returns a builder with this factory's configuration applied, ready to build the shared
-     * client or a client derived from it.
+     * Returns the configured proxy mappings. Direct SPI config (e.g. via standalone.xml) takes
+     * precedence over env vars, and lower case env vars take precedence over upper case env vars.
      */
-    private HttpClientBuilder configureHttpClientBuilder(KeycloakSession session) {
+    private ProxyMappings resolveProxyMappings() {
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+        if (proxyMappings == null || proxyMappings.isEmpty()) {
+            logger.debug("Trying to use proxy mapping from env vars");
+            String httpProxy = getEnvVarValue(HTTPS_PROXY);
+            if (isBlank(httpProxy)) {
+                httpProxy = getEnvVarValue(HTTP_PROXY);
+            }
+            String noProxy = getEnvVarValue(NO_PROXY);
+
+            logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+            proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+        }
+        return proxyMappings;
+    }
+
+    /**
+     * Returns a builder with this factory's configuration and the given proxy mappings applied,
+     * ready to build the shared client or a client derived from it.
+     */
+    private HttpClientBuilder configureHttpClientBuilder(KeycloakSession session, ProxyMappings proxyMappings) {
         long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
         long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
         long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
@@ -217,22 +249,6 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
 
         boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
         boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
-
-        // optionally configure proxy mappings
-        // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
-        // lower case env vars take precedence over upper case env vars
-        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
-        if (proxyMappings == null || proxyMappings.isEmpty()) {
-            logger.debug("Trying to use proxy mapping from env vars");
-            String httpProxy = getEnvVarValue(HTTPS_PROXY);
-            if (isBlank(httpProxy)) {
-                httpProxy = getEnvVarValue(HTTP_PROXY);
-            }
-            String noProxy = getEnvVarValue(NO_PROXY);
-
-            logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
-            proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
-        }
 
         HttpClientBuilder builder = newHttpClientBuilder(session);
 

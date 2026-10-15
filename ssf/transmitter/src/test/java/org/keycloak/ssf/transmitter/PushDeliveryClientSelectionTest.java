@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,16 +49,16 @@ class PushDeliveryClientSelectionTest {
     void defaultUsesDirectClientWithAddressCheck() {
         HttpClientProvider httpClientProvider = createDelivery(config(false, false));
 
-        verify(httpClientProvider).createDirectHttpClient(any(PrivateAddressDenyingDnsResolver.class));
+        verify(httpClientProvider).createHttpClient(any(PrivateAddressDenyingDnsResolver.class), eq(false));
         verify(httpClientProvider, never()).getHttpClient();
     }
 
     @Test
-    void pushDeliveryViaProxyUsesSharedClient() {
+    void pushDeliveryViaProxyKeepsAddressCheckOnDirectRoutes() {
         HttpClientProvider httpClientProvider = createDelivery(config(false, true));
 
-        verify(httpClientProvider).getHttpClient();
-        verify(httpClientProvider, never()).createDirectHttpClient(any());
+        verify(httpClientProvider).createHttpClient(any(PrivateAddressDenyingDnsResolver.class), eq(true));
+        verify(httpClientProvider, never()).getHttpClient();
     }
 
     @Test
@@ -64,7 +66,7 @@ class PushDeliveryClientSelectionTest {
         HttpClientProvider httpClientProvider = createDelivery(config(true, false));
 
         verify(httpClientProvider).getHttpClient();
-        verify(httpClientProvider, never()).createDirectHttpClient(any());
+        verify(httpClientProvider, never()).createHttpClient(any(), anyBoolean());
     }
 
     @Test
@@ -83,7 +85,7 @@ class PushDeliveryClientSelectionTest {
 
     private static HttpClientProvider createDelivery(SsfTransmitterConfig config) {
         HttpClientProvider httpClientProvider = mock(HttpClientProvider.class);
-        when(httpClientProvider.createDirectHttpClient(any())).thenReturn(mock(CloseableHttpClient.class));
+        when(httpClientProvider.createHttpClient(any(), anyBoolean())).thenReturn(mock(CloseableHttpClient.class));
         when(httpClientProvider.getHttpClient()).thenReturn(mock(CloseableHttpClient.class));
         KeycloakSession session = mock(KeycloakSession.class);
         when(session.getProvider(HttpClientProvider.class)).thenReturn(httpClientProvider);
