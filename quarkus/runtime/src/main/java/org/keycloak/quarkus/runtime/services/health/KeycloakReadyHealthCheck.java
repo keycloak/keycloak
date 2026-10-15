@@ -16,21 +16,14 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
-import org.keycloak.common.util.DurationConverter;
-import org.keycloak.config.DatabaseOptions;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.smallrye.context.api.ManagedExecutorConfig;
@@ -68,37 +61,18 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     @Inject
     @ManagedExecutorConfig
     ManagedExecutor executor;
-    
-    @Inject
-    @ManagedExecutorConfig(maxAsync = 1, maxQueued = 20)
-    ManagedExecutor taskExecutor;
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
-    private volatile Duration timeout;
 
     @Override
     public Uni<HealthCheckResponse> call() {
-        // add a fail-safe to complete the health check operation
-        if (timeout == null) {
-            Duration duration = DurationConverter.parseDuration(Configuration
-                    .getOptionalKcValue(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT.getKey()).orElseThrow());
-            // if duration is 0 we don't want to fail immediately, instead a default of 10 seconds is used
-            // agroal in the duration 0 case will wait up to 1 second to obtain a connection from the pool before trying
-            // to create a new connection
-            timeout = duration.isZero() ? Duration.ofSeconds(10) : duration.multipliedBy(2);
-        }
-        Uni<HealthCheckResponse> uni = Uni.createFrom().item(dataSourceHealthCheck::call).ifNoItem().after(timeout)
-                // don't worry about updating failingSince in the failWith case - this is indicative of a larger problem
-                .failWith(() -> new TimeoutException("Health check did not complete in " + timeout))
-                .map(this::decorateCheck).runSubscriptionOn(executor);
-
-        // run the task as blocking on an intermediate executor. Should the health check hang past the timeout, the intermediate executor will
-        // be free run more checks
-        return Uni.createFrom().completionStage(() -> CompletableFuture.supplyAsync(() -> uni.await().indefinitely(), taskExecutor));
+        Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
+        return uni.runSubscriptionOn(executor);
     }
 
-    private HealthCheckResponse decorateCheck(HealthCheckResponse activeCheckResult) {
+    private HealthCheckResponse syncCheck() {
         HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
+        HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
         if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
             builder.down();
             Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);

@@ -16,6 +16,9 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
@@ -59,29 +62,39 @@ public class KeycloakNegativeHealthCheckTest {
     }
 
     @Test
-    public void testReadinessTimeout() throws InterruptedException {
+    public void testReadinessTimeout() throws InterruptedException, ExecutionException {
         Semaphore wait = new Semaphore(0);
+        Semaphore answering = new Semaphore(0);
         Mockito.when(dataSourceHealthCheck.call()).thenAnswer(invocation -> {
+            answering.release();
             wait.acquire();
             return HealthCheckResponse.up("up");
         }).thenReturn(HealthCheckResponse.up("up"));
 
         RestAssured.port = 9001;
+        ExecutorService exec = Executors.newSingleThreadExecutor();
         try {
-            given()
+            var hung = exec.submit(() -> given()
                     .when().get("/health/ready")
                     .then()
-                    .statusCode(503)
-                    .body(Matchers.allOf(Matchers.containsString("DOWN"), Matchers.containsString("Health check did not complete")));
-
+                    .statusCode(200)
+                    .body(Matchers.not(Matchers.containsString(KeycloakReadyHealthCheck.FAILING_SINCE))));
+            
+            answering.acquire();
+            
             // should be able to complete a second request with the first one held
             given()
                 .when().get("/health/ready")
                 .then()
                 .statusCode(200)
                 .body(Matchers.not(Matchers.containsString(KeycloakReadyHealthCheck.FAILING_SINCE)));
+            
+            wait.release();
+            
+            hung.get();
         } finally {
             wait.release();
+            exec.shutdownNow();
         }
     }
 }

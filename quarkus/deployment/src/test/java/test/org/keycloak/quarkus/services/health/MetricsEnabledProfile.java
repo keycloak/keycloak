@@ -17,7 +17,6 @@
 
 package test.org.keycloak.quarkus.services.health;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -26,19 +25,16 @@ public class MetricsEnabledProfile implements QuarkusTestProfile {
 
     @Override
     public Map<String, String> getConfigOverrides() {
-        Map<String, String> config = new HashMap<>();
-        config.put("kc.http-enabled", "true");
-        config.put("kc.cluster", "local");
-        config.put("kc.hostname-strict", "false");
-        config.put("kc.db", "dev-mem");
-        config.put("kc.db-connect-timeout", "250ms");
-        config.put("kc.health-enabled", "true");
-        config.put("kc.metrics-enabled", "true");
-        config.put("kc.cache", "local");
-        config.put("kc.server-async-bootstrap", "false");
-        config.put("quarkus.micrometer.export.prometheus.path", "/prom/metrics");
-        config.put("quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
-        return config;
+        return Map.of("kc.http-enabled", "true",
+                "kc.cluster", "local",
+                "kc.hostname-strict", "false",
+                "kc.db", "dev-mem",
+                "kc.health-enabled","true",
+                "kc.metrics-enabled", "true",
+                "kc.cache", "local",
+                "kc.server-async-bootstrap", "false",
+                "quarkus.micrometer.export.prometheus.path", "/prom/metrics",
+                "quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment"); // config works a bit odd in unit tests, so this is to ensure we exclude Oracle to avoid ClassNotFound ex
     }
 
 }
