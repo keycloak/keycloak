@@ -46,6 +46,8 @@ public class ProxyRouteAwareDnsResolverTest {
 
     @Before
     public void startProxy() throws IOException {
+        // Proxy mappings are cached by host name across instances.
+        ProxyMappings.clearCache();
         // Bound to 127.0.0.1 only, so connecting to the same port on 127.0.0.2 is refused.
         proxy = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         proxy.createContext("/hello", exchange -> {
@@ -72,7 +74,7 @@ public class ProxyRouteAwareDnsResolverTest {
             return new InetAddress[]{InetAddress.getByName("127.0.0.2"), InetAddress.getByName("127.0.0.1")};
         };
         try (CloseableHttpClient client = client(proxyResolver);
-             CloseableHttpResponse res = client.execute(new HttpGet("http://push.proxied.test/hello"))) {
+             CloseableHttpResponse res = client.execute(new HttpGet("http://failover.proxied.test/hello"))) {
             Assert.assertEquals(200, res.getStatusLine().getStatusCode());
         }
     }

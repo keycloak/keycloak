@@ -46,6 +46,7 @@ import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -99,6 +100,12 @@ public class DefaultHttpClientFactoryTest {
         @AfterClass
         public static void stopHttpServer() {
             server.stop(0);
+        }
+
+        @Before
+        public void clearProxyMappingsCache() {
+            // Proxy mappings are cached by host name across instances.
+            ProxyMappings.clearCache();
         }
 
 	/**

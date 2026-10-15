@@ -66,6 +66,8 @@ public class VertxHttpClientDirectTest {
     @Before
     public void startVertx() {
         vertx = Vertx.vertx();
+        // Proxy mappings are cached by host name across instances.
+        ProxyMappings.clearCache();
     }
 
     @After
