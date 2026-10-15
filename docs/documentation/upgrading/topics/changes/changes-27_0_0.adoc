@@ -4,6 +4,19 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Deleting required client scopes
+// https://github.com/keycloak/keycloak/issues/51248
+
+Deleting a required client scope now retains the requirement.
+The policy and any enclosing aggregated policies deny access while the scope is missing, regardless of positive or negative logic.
+A warning identifies affected policies; an authorization administrator can remove or replace the missing reference to resume normal evaluation.
+Requirements removed before upgrading cannot be restored automatically.
+
+The Java authorization SPI adds `Decision.Effect.INVALID` for invalid policy configuration.
+The partial-evaluation SPI adds the equivalent `Outcome.INVALID`.
+Custom extensions must handle these new enum values: aggregated policies propagate them unchanged, while permission decision strategies count them as a denial.
+Admin REST API evaluation responses continue to report only `PERMIT` or `DENY`.
+
 === Realm client session statistics respect client visibility
 // https://github.com/keycloak/keycloak/issues/50917
 
