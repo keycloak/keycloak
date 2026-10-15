@@ -1,7 +1,13 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
-import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
-import { MinusCircleIcon } from "@patternfly/react-icons";
+import {
+  Button,
+  Checkbox,
+  FormGroup,
+  Label,
+  Tooltip,
+} from "@patternfly/react-core";
+import { MinusCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -36,7 +42,9 @@ export const ClientScope = () => {
     (scopes) => {
       const clientScopes = getValues("clientScopes");
       setSelectedScopes(
-        clientScopes.map((s) => scopes.find((c) => c.id === s.id)!),
+        clientScopes.map(
+          (s) => scopes.find((c) => c.id === s.id) ?? { id: s.id },
+        ),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },
@@ -109,7 +117,19 @@ export const ClientScope = () => {
           <Tbody>
             {selectedScopes.map((scope, index) => (
               <Tr key={scope.id}>
-                <Td>{scope.name}</Td>
+                <Td>
+                  {scope.name ?? (
+                    <Tooltip content={scope.id}>
+                      <Label
+                        color="orange"
+                        icon={<WarningTriangleIcon />}
+                        tabIndex={0}
+                      >
+                        {t("missingClientScope")}
+                      </Label>
+                    </Tooltip>
+                  )}
+                </Td>
                 <Td>
                   <Controller
                     name={`clientScopes.${index}.required`}
