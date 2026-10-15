@@ -308,7 +308,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         log.debugf("Attempting to import the client-sessions for user-session with sessionId=%s offline=true", sessionId);
 
         var clientSessionsById = computeClientSessionsToImport(persistentUserSession, userSessionEntityToImport);
-        getClientSessionTransaction(true).importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+        getClientSessionTransaction(true).importSessionsConcurrently(realm, clientSessionsById, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleUpperBoundMs);
 
         return userSessionEntityToImport;
     }
@@ -471,7 +471,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
-        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTimeMillis());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, true)
                 .filter(Predicate.not(expiration::isUserSessionExpired))
                 .filter(s -> s.getUser() != null);
@@ -484,7 +484,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
-        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTimeMillis());
         return paginatedStream(session.getProvider(UserSessionPersisterProvider.class)
                         .readOnlyUserSessionStream(realm, client, true, -1, -1)
                         .filter(Predicate.not(expiration::isUserSessionExpired))
@@ -501,7 +501,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         if (maxResults == 0) {
             return Stream.empty();
         }
-        var predicates = new SessionExpirationPredicates(realm, false, Time.currentTime());
+        var predicates = new SessionExpirationPredicates(realm, false, Time.currentTimeMillis());
         var clientSessionCache = getClientSessionCache(false);
 
         // not great, distributed sort not supported, and we're sorting everything locally
@@ -872,8 +872,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,
-                    offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
+                    offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanUpperBoundMs,
+                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleUpperBoundMs : SessionTimeouts::getClientSessionMaxIdleUpperBoundMs);
         } else {
             Retry.executeWithBackoff((int iteration) -> clientSessCache.putAll(clientSessionsById), 10, 10);
         }
@@ -921,7 +921,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         entity.setTimestamp(sessionToImportInto.getLastSessionRefresh());
 
         if (checkExpiration) {
-            if (SessionTimeouts.getOfflineClientSessionMaxIdleMs(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
+            if (SessionTimeouts.getOfflineClientSessionMaxIdleUpperBoundMs(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
                     || offlineClientSessionCacheEntryLifespanAdjuster.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
                 return null;
             }

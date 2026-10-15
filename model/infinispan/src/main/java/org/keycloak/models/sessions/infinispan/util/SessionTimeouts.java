@@ -98,15 +98,11 @@ public class SessionTimeouts {
 
 
     /**
-     * Get the maximum lifespan, which this clientSession can remain in the infinispan cache.
-     * Returned value will be used as "lifespan" when calling put/replace operation in the infinispan cache for this entity
-     *
-     * @param realm
-     * @param client
-     * @param clientSessionEntity
-     * @return
+     * Upper bound for how long this client session can remain in the infinispan cache.
+     * Does not account for upstream (federated) session expiry because the client session entity
+     * does not carry user session notes.
      */
-    public static long getClientSessionLifespanMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
+    public static long getClientSessionLifespanUpperBoundMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
         return getClientSessionLifespanMs(realm, client, false, clientSessionEntity.isUserSessionRememberMe(),
                 clientSessionEntity.getStarted(), clientSessionEntity.getUserSessionStarted(), null);
     }
@@ -128,15 +124,11 @@ public class SessionTimeouts {
 
 
     /**
-     * Get the maxIdle, which this clientSession will use.
-     * Returned value will be used as "maxIdle" when calling put/replace operation in the infinispan cache for this entity
-     *
-     * @param realm
-     * @param client
-     * @param clientSessionEntity
-     * @return
+     * Upper bound for the max-idle of this client session in the infinispan cache.
+     * Does not account for upstream (federated) session expiry because the client session entity
+     * does not carry user session notes.
      */
-    public static long getClientSessionMaxIdleMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
+    public static long getClientSessionMaxIdleUpperBoundMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity clientSessionEntity) {
         return getClientSessionMaxIdleMs(realm, client, false, clientSessionEntity.isUserSessionRememberMe(),
                 clientSessionEntity.getTimestamp(), null);
     }
@@ -183,29 +175,21 @@ public class SessionTimeouts {
     }
 
     /**
-     * Get the maximum lifespan, which this offline clientSession can remain in the infinispan cache.
-     * Returned value will be used as "lifespan" when calling put/replace operation in the infinispan cache for this entity
-     *
-     * @param realm
-     * @param client
-     * @param authenticatedClientSessionEntity
-     * @return
+     * Upper bound for how long this offline client session can remain in the infinispan cache.
+     * Does not account for upstream (federated) session expiry because the client session entity
+     * does not carry user session notes.
      */
-    public static long getOfflineClientSessionLifespanMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
+    public static long getOfflineClientSessionLifespanUpperBoundMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
         return getClientSessionLifespanMs(realm, client, true, authenticatedClientSessionEntity.isUserSessionRememberMe(),
                 authenticatedClientSessionEntity.getStarted(), authenticatedClientSessionEntity.getUserSessionStarted(), null);
     }
 
     /**
-     * Get the maxIdle, which this offline clientSession will use.
-     * Returned value will be used as "maxIdle" when calling put/replace operation in the infinispan cache for this entity
-     *
-     * @param realm
-     * @param client
-     * @param authenticatedClientSessionEntity
-     * @return
+     * Upper bound for the max-idle of this offline client session in the infinispan cache.
+     * Does not account for upstream (federated) session expiry because the client session entity
+     * does not carry user session notes.
      */
-    public static long getOfflineClientSessionMaxIdleMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
+    public static long getOfflineClientSessionMaxIdleUpperBoundMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
         return getClientSessionMaxIdleMs(realm, client, true, authenticatedClientSessionEntity.isUserSessionRememberMe(),
                 authenticatedClientSessionEntity.getTimestamp(), null);
     }

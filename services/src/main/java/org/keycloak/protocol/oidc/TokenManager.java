@@ -491,8 +491,8 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
-                                               ClientSessionContext clientSessionCtx, boolean isOffline) {
-        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx, isOffline);
+                                               ClientSessionContext clientSessionCtx) {
+        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx);
         token = transformAccessToken(session, token, userSession, clientSessionCtx);
         setActClaimFromImpersonator(token, userSession);
         return token;
@@ -1103,10 +1103,10 @@ public class TokenManager {
     }
 
     protected AccessToken initToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
-                                    ClientSessionContext clientSessionCtx, boolean isOffline) {
+                                    ClientSessionContext clientSessionCtx) {
         AccessToken token = new AccessToken();
         TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
-        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, SecretGenerator.getInstance().generateSecureID(), isOffline);
+        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, SecretGenerator.getInstance().generateSecureID(), userSession.isOffline());
         token.id(encoder.encodeTokenId(tokenCtx));
 
         token.type(formatTokenType(client, token));
@@ -1285,8 +1285,11 @@ public class TokenManager {
         }
 
         public AccessTokenResponseBuilder generateAccessToken() {
+            if (clientSessionCtx.isOfflineTokenRequested() && !userSession.isOffline()) {
+                userSession = createOrUpdateOfflineSession();
+            }
             UserModel user = userSession.getUser();
-            accessToken = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
+            accessToken = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
             responseTokenType = tokenManager.formatTokenType(client, accessToken);
             return this;
         }
