@@ -113,13 +113,13 @@ public class AttestationValidatorUtil {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF,
                         "The x5c certificate chain is not trusted by a configured attester trust provider");
             }
-            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getRawAlgorithm(), keycloakSession);
         } else if (header.getKeyId() != null) {
             JWK resolvedJwk = keyResolver.resolveKey(header.getKeyId(), rawHeader, rawPayload);
             if (resolvedJwk == null) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
             }
-            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getRawAlgorithm(), keycloakSession);
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Neither x5c nor kid present in attestation JWT header");
         }

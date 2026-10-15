@@ -39,6 +39,7 @@ import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -46,7 +47,6 @@ import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
@@ -375,6 +375,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new IllegalArgumentException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_JWT_TYPE + " instead of " + jwsType);
 
         ClientAttestationJwt attestationJwt = jws.readJsonContent(ClientAttestationJwt.class);
+        String algorithm = jws.getHeader().getRawAlgorithm();
+        SignatureProvider signatureProvider = CryptoUtils.getAsymmetricSignatureProvider(session, algorithm);
         String clientId = Optional.ofNullable(clientIdParam).orElse(attestationJwt.getSubject());
 
         // Get the client model from the given client_id
@@ -409,7 +411,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
         //
-        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId(), jws.getHeader().getX5c(), jws.getHeader().getRawAlgorithm(), attestationJwt.getIssuer());
+        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId(), jws.getHeader().getX5c(), algorithm, attestationJwt.getIssuer());
 
         // Client Attestation JWT verification without signature check
         //
@@ -419,11 +421,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // Client Attestation JWT signature check
         //
-        Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
-        if (signatureProvider == null) {
-            throw new TokenVerificationException(attestationJwt, "Signature provider not found for algorithm: " + algorithm);
-        }
         byte[] data = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
         if (!signatureProvider.verifier(attesterKey).verify(data, jws.getSignature())) {
             throw new TokenSignatureInvalidException(attestationJwt, "Invalid token signature");
@@ -431,7 +428,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         abcaResult.setAttestationJwt(attestationJwt);
 
-        // [TODO] The alg JOSE Header Parameter for both JWTs indicates a registered asymmetric digital signature algorithm
         // [TODO] The key contained in the cnf claim of the Client Attestation JWT is not a private key
     }
 
@@ -452,6 +448,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new IllegalArgumentException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE + " instead of " + jwsType);
 
         ClientAttestationPoPJwt attestationPoPJwt = jws.readJsonContent(ClientAttestationPoPJwt.class);
+        String algorithm = jws.getHeader().getRawAlgorithm();
+        SignatureProvider signatureProvider = CryptoUtils.getAsymmetricSignatureProvider(session, algorithm);
 
         // Define a few Client Attestation JWT checks
         //
@@ -496,11 +494,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // Client Attestation PoP JWT signature check
         //
-        Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
-        if (signatureProvider == null) {
-            throw new TokenVerificationException(attestationPoPJwt, "Signature provider not found for algorithm: " + algorithm);
-        }
         byte[] data = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
         if (!signatureProvider.verifier(clientKey).verify(data, jws.getSignature())) {
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
