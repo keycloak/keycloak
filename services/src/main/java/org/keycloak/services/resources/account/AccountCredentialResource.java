@@ -17,6 +17,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -349,27 +350,42 @@ public class AccountCredentialResource {
         }
     }
 
-    // TODO: This is kept here for now and commented.
-//    /**
-//     * Move a credential to a position behind another credential
-//     * @param credentialId The credential to move
-//     */
-//    @Path("{credentialId}/moveToFirst")
-//    @POST
-//    public void moveToFirst(final @PathParam("credentialId") String credentialId){
-//        moveCredentialAfter(credentialId, null);
-//    }
-//
-//    /**
-//     * Move a credential to a position behind another credential
-//     * @param credentialId The credential to move
-//     * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
-//     */
-//    @Path("{credentialId}/moveAfter/{newPreviousCredentialId}")
-//    @POST
-//    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
-//        auth.require(AccountRoles.MANAGE_ACCOUNT);
-//        session.userCredentialManager().moveCredentialTo(realm, user, credentialId, newPreviousCredentialId);
-//    }
+    /**
+     * Move a credential to the first position in the credentials list of current user
+     *
+     * @param credentialId The credential to move
+     */
+    @Path("{credentialId}/moveToFirst")
+    @POST
+    @NoCache
+    public void moveToFirst(final @PathParam("credentialId") String credentialId) {
+        moveCredentialAfter(credentialId, null);
+    }
+
+    /**
+     * Move a credential to a position behind another credential
+     *
+     * @param credentialId The credential to move
+     * @param newPreviousCredentialId The credential that will be the previous element in the list.
+     *                                If set to null, the moved credential will be the first element in the list.
+     */
+    @Path("{credentialId}/moveAfter/{newPreviousCredentialId}")
+    @POST
+    @NoCache
+    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId,
+                                   final @PathParam("newPreviousCredentialId") String newPreviousCredentialId) {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        SubjectCredentialManager credentialManager = user.credentialManager();
+
+        if (credentialManager.getStoredCredentialById(credentialId) == null) {
+            throw new NotFoundException("Credential not found");
+        }
+        if (newPreviousCredentialId != null && credentialManager.getStoredCredentialById(newPreviousCredentialId) == null) {
+            throw new NotFoundException("Credential not found");
+        }
+
+        credentialManager.moveStoredCredentialTo(credentialId, newPreviousCredentialId);
+    }
 
 }
