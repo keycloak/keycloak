@@ -21,10 +21,19 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.KeyStore;
+import java.security.NoSuchProviderException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -41,9 +50,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 
 public class FileTruststoreProviderFactoryTest {
 
@@ -51,13 +64,16 @@ public class FileTruststoreProviderFactoryTest {
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig",
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig",
-            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig"
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig",
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY + ".orig"
     };
 
     private final Map<String, String> originalSystemProperties = new HashMap<>();
     private CryptoProvider originalCryptoProvider;
+    private TruststoreProvider originalTruststoreProvider;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -66,6 +82,7 @@ public class FileTruststoreProviderFactoryTest {
     public void before() {
         originalCryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
         CryptoIntegration.setProvider(new DefaultCryptoProvider());
+        originalTruststoreProvider = TruststoreProviderSingleton.get();
         for (String key : SYSTEM_PROPERTY_KEYS) {
             originalSystemProperties.put(key, System.getProperty(key));
         }
@@ -81,13 +98,14 @@ public class FileTruststoreProviderFactoryTest {
                 System.setProperty(key, value);
             }
         }
+        TruststoreProviderSingleton.set(originalTruststoreProvider);
         CryptoIntegration.setProvider(originalCryptoProvider);
     }
 
     @Test
     public void testFallbackToSystemTruststore() throws IOException {
         FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
-        factory.init(ScopeUtil.createScope(new HashMap<>()));
+        factory.init(rootScope(new HashMap<>()));
         TruststoreProvider provider = factory.create(null);
         assertNotNull(provider.getTruststore());
         assertEquals(HostnameVerificationPolicy.DEFAULT, provider.getPolicy());
@@ -107,22 +125,173 @@ public class FileTruststoreProviderFactoryTest {
 
     @Test
     public void testLoadGeneratedBcfksSystemTruststore() throws Exception {
+        // given
         URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
-        KeyStore bcfksTruststore = TruststoreBuilder.createMergedTruststore(new String[] { url.getPath() }, false,
-                TruststoreFormat.BCFKS);
-        File saved = TruststoreBuilder.saveTruststore(bcfksTruststore, TruststoreFormat.BCFKS,
-                temporaryFolder.getRoot().getAbsolutePath(), TruststoreBuilder.DUMMY_PASSWORD.toCharArray());
 
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, saved.getAbsolutePath());
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, TruststoreBuilder.DUMMY_PASSWORD);
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, TruststoreFormat.BCFKS.name());
+        // when
+        TruststoreBuilder.setSystemTruststore(new String[] { url.getPath() }, false,
+                temporaryFolder.getRoot().getAbsolutePath(), TruststoreFormat.BCFKS);
 
         FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
         factory.init(ScopeUtil.createScope(new HashMap<>()));
         TruststoreProvider provider = factory.create(null);
 
-        assertEquals(2, Collections.list(provider.getTruststore().aliases()).size());
+        // then
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
         assertFalse(provider.getRootCertificates().isEmpty());
+        assertThat(provider.getTruststore().getProvider().getName(), equalTo("BC"));
+    }
+
+    @Test
+    public void testLoadGeneratedPkcs12SystemTruststoreWithConfiguredCryptoProvider() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+
+        // when
+        TruststoreBuilder.setSystemTruststore(new String[] { url.getPath() }, false,
+                temporaryFolder.getRoot().getAbsolutePath());
+
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+        trustManagerFactory.init((KeyStore) null);
+
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(ScopeUtil.createScope(new HashMap<>()));
+        TruststoreProvider provider = factory.create(null);
+
+        // then
+        assertThat(System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY), equalTo(TruststoreFormat.PKCS12.name()));
+        assertThat(System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY), equalTo("BC"));
+        assertThat(provider.getTruststore().getProvider().getName(), equalTo("BC"));
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
+        assertThat(trustManagerCertificates(trustManagerFactory), equalTo(certificates(url)));
+    }
+
+    @Test
+    public void testExplicitFileSettingDoesNotUseGeneratedStoreProvider() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        TruststoreBuilder.setSystemTruststore(new String[] { url.getPath() }, false,
+                temporaryFolder.getRoot().getAbsolutePath());
+        String generatedPath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
+
+        // when
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(rootScope(Map.of(
+                "file", generatedPath,
+                "password", TruststoreBuilder.DUMMY_PASSWORD,
+                "type", TruststoreFormat.PKCS12.name())));
+
+        // then
+        TruststoreProvider provider = factory.create(null);
+        assertThat(provider.getTruststore().getProvider().getName(),
+                equalTo(KeyStore.getInstance(TruststoreFormat.PKCS12.name()).getProvider().getName()));
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
+    }
+
+    @Test
+    public void testExternalSystemTruststoreUsesConfiguredProvider() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        setExternalSystemTruststore(url, "BC");
+
+        // when
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(ScopeUtil.createScope(new HashMap<>()));
+
+        // then
+        TruststoreProvider provider = factory.create(null);
+        assertThat(provider.getTruststore().getProvider().getName(), equalTo("BC"));
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
+    }
+
+    @Test
+    public void testExternalSystemTruststoreWithEmptyProviderUsesDefaultProvider() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        setExternalSystemTruststore(url, "");
+
+        // when
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(rootScope(new HashMap<>()));
+
+        // then
+        TruststoreProvider provider = factory.create(null);
+        assertThat(provider.getTruststore().getProvider().getName(),
+                equalTo(KeyStore.getInstance(TruststoreFormat.PKCS12.name()).getProvider().getName()));
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
+    }
+
+    @Test
+    public void testExternalSystemTruststoreWithoutProviderUsesDefaultProvider() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        setExternalSystemTruststore(url, null);
+
+        // when
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        factory.init(rootScope(new HashMap<>()));
+
+        // then
+        TruststoreProvider provider = factory.create(null);
+        assertThat(provider.getTruststore().getProvider().getName(),
+                equalTo(KeyStore.getInstance(TruststoreFormat.PKCS12.name()).getProvider().getName()));
+        assertThat(certificates(provider.getTruststore()), equalTo(certificates(url)));
+    }
+
+    @Test
+    public void testInvalidSystemTruststoreProviderFailsClosed() throws Exception {
+        // given
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        setExternalSystemTruststore(url, "missing-provider");
+
+        // when / then
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> factory.init(rootScope(new HashMap<>())));
+        assertThat(exception.getCause(), instanceOf(NoSuchProviderException.class));
+    }
+
+    private void setExternalSystemTruststore(URL certificates, String providerName) throws Exception {
+        KeyStore generated = TruststoreBuilder.createMergedTruststore(new String[] { certificates.getPath() }, false);
+        File external = TruststoreBuilder.saveTruststore(generated, TruststoreFormat.PKCS12,
+                temporaryFolder.getRoot().getAbsolutePath(), TruststoreBuilder.DUMMY_PASSWORD.toCharArray());
+        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, external.getAbsolutePath());
+        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, TruststoreBuilder.DUMMY_PASSWORD);
+        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, TruststoreFormat.PKCS12.name());
+        if (providerName == null) {
+            System.clearProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY);
+        } else {
+            System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY, providerName);
+        }
+    }
+
+    private static Set<String> certificates(KeyStore truststore) throws Exception {
+        Set<String> certificates = new HashSet<>();
+        for (String alias : Collections.list(truststore.aliases())) {
+            certificates.add(Base64.getEncoder().encodeToString(truststore.getCertificate(alias).getEncoded()));
+        }
+        return certificates;
+    }
+
+    private static Set<String> certificates(URL url) throws Exception {
+        try (var input = url.openStream()) {
+            Set<String> certificates = new HashSet<>();
+            for (Certificate certificate : CertificateFactory.getInstance("X.509").generateCertificates(input)) {
+                certificates.add(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+            }
+            return certificates;
+        }
+    }
+
+    private static Set<String> trustManagerCertificates(TrustManagerFactory trustManagerFactory) throws Exception {
+        Set<String> certificates = new HashSet<>();
+        for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
+            if (trustManager instanceof X509TrustManager x509TrustManager) {
+                for (X509Certificate certificate : x509TrustManager.getAcceptedIssuers()) {
+                    certificates.add(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+                }
+            }
+        }
+        return certificates;
     }
 
     @Test
