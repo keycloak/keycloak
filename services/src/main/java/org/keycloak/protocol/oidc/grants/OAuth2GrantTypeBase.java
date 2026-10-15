@@ -45,7 +45,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
@@ -62,6 +61,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -215,7 +215,14 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (clientSessionCtx.isOfflineTokenRequested()
                 && !userSession.isOffline()
                 && !UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
-            return new UserSessionManager(session).createOrUpdateOfflineSession(
+            UserSessionManager sessionManager = new UserSessionManager(session);
+            if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
+                event.detail(Details.REASON, "Offline tokens not allowed for the user or client");
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, Errors.NOT_ALLOWED,
+                        "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+            }
+            return sessionManager.createOrUpdateOfflineSession(
                     clientSessionCtx.getClientSession(), userSession);
         }
         return userSession;
