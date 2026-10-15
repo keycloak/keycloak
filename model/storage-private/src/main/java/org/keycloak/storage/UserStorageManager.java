@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -454,7 +455,26 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return pagedQuery.query(provider, firstResult, maxResults);
         }
         try {
-            return pagedQuery.query(provider, firstResult, maxResults);
+            Stream<UserModel> result = pagedQuery.query(provider, firstResult, maxResults);
+
+            if (maxResults == null || maxResults < 0) {
+                // unbounded queries stream lazily to the consumer, and any failure raised
+                // during that consumption propagates to the consumer
+                return result;
+            }
+
+            /*
+             * Bounded queries are materialized so that failures raised lazily while the stream is being consumed
+             * (e.g. an LDAP server failing between the pages of a paginated search) are degraded here as well, and
+             * the provider either contributes all of its results or none. This is consistent with the non-paginated
+             * path, where the whole query runs eagerly and a failure degrades the provider to an empty result.
+             *
+             * The materialized result is capped at firstResult + maxResults elements, so providers that return a
+             * lazy stream ignoring the pagination arguments (e.g. the paginated LDAP search) are not consumed entirely.
+             */
+            int limit = (firstResult == null ? 0 : firstResult) + maxResults;
+
+            return result.limit(limit).collect(Collectors.toList()).stream();
         } catch (Exception e) {
             // Log the failure but continue with other providers for graceful degradation
             logger.warnf(e, "User storage provider %s failed during query operation. " +
