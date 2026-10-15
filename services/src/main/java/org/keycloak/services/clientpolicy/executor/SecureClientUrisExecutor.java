@@ -22,13 +22,16 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -96,7 +99,9 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientCRUDContext crudContext = (ClientCRUDContext)context;
+                    confirmSecureUris(effectiveClientRepresentation(crudContext.getProposedClientRepresentation(),
+                            crudContext.getTargetClient()));
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -171,6 +176,40 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
         // policyUri
         String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.POLICY_URI);
         if (policyUri != null) confirmSecureUris(List.of(policyUri), "policyUri");
+    }
+
+    /**
+     * Returns the client state that is effective for this update: the proposed {@code ClientRepresentation}
+     * merged with the stored client. A partial update only carries the fields being changed, and the fields
+     * absent from it keep their stored value (see {@code RepresentationToModel#updateClient}), so the URI
+     * fields omitted by a partial update are taken from the stored client and validated as well. On register
+     * there is no stored client to merge with and the proposed representation is returned unchanged.
+     */
+    static ClientRepresentation effectiveClientRepresentation(ClientRepresentation proposed, ClientModel storedClient) {
+        if (storedClient == null) {
+            return proposed;
+        }
+
+        ClientRepresentation effective = new ClientRepresentation();
+        effective.setRootUrl(proposed.getRootUrl() != null ? proposed.getRootUrl() : storedClient.getRootUrl());
+        effective.setAdminUrl(proposed.getAdminUrl() != null ? proposed.getAdminUrl() : storedClient.getManagementUrl());
+        effective.setBaseUrl(proposed.getBaseUrl() != null ? proposed.getBaseUrl() : storedClient.getBaseUrl());
+        effective.setRedirectUris(proposed.getRedirectUris() != null ? proposed.getRedirectUris()
+                : new ArrayList<>(storedClient.getRedirectUris()));
+        effective.setWebOrigins(proposed.getWebOrigins() != null ? proposed.getWebOrigins()
+                : new ArrayList<>(storedClient.getWebOrigins()));
+
+        Map<String, String> attributes = new HashMap<>(storedClient.getAttributes());
+        if (proposed.getAttributes() != null) {
+            proposed.getAttributes().forEach((key, value) -> {
+                if (value != null) {
+                    attributes.put(key, value);
+                }
+            });
+        }
+        effective.setAttributes(attributes);
+
+        return effective;
     }
 
     private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {
