@@ -1,6 +1,7 @@
 package org.keycloak.models.sessions.infinispan.util;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
+import java.util.function.LongSupplier;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -21,38 +22,41 @@ import org.keycloak.models.utils.SessionExpirationUtils;
 public record SessionExpirationPredicates(RealmModel realm, boolean offline, int currentTime) {
 
     public boolean isUserSessionExpired(UserSessionModel model) {
-        return isUserSessionExpired(model.isRememberMe(), model.getStarted(), model.getLastSessionRefresh());
-    }
-
-    public boolean isUserSessionExpired(UserSessionEntity entity) {
-        return isUserSessionExpired(entity.isRememberMe(), entity.getStarted(), entity.getLastSessionRefresh());
-    }
-
-    public boolean isUserSessionExpired(RemoteUserSessionEntity entity) {
-        return isUserSessionExpired(entity.isRememberMe(), entity.getStarted(), entity.getLastSessionRefresh());
-    }
-
-    public boolean isClientSessionExpired(AuthenticatedClientSessionModel model) {
-        return isClientSessionExpired(model.getUserSession().isRememberMe(), model.getStarted(), model.getUserSessionStarted(), model.getTimestamp(), model.getClient());
-    }
-
-    public boolean isClientSessionExpired(AuthenticatedClientSessionEntity entity, boolean rememberMe, ClientModel client) {
-        return isClientSessionExpired(rememberMe, entity.getStarted(), entity.getUserSessionStarted(), entity.getTimestamp(), client);
-    }
-
-    public boolean isClientSessionExpired(RemoteAuthenticatedClientSessionEntity entity, int userSessionStarted, boolean rememberMe, ClientModel client) {
-        return isClientSessionExpired(rememberMe, entity.getStarted(), userSessionStarted, entity.getTimestamp(), client);
-    }
-
-    private boolean isUserSessionExpired(boolean rememberMe, long started, long lastRefresh) {
-        var lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(offline, rememberMe, started, realm);
-        var maxIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, rememberMe, lastRefresh, realm);
+        var lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(model, realm);
+        var maxIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(model, realm);
         return isExpired(lifespan, maxIdle);
     }
 
-    private boolean isClientSessionExpired(boolean rememberMe, long started, long userSessionStarted, long lastRefresh, ClientModel client) {
-        var lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(offline, rememberMe, started, userSessionStarted, realm, client);
-        var maxIdle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(offline, rememberMe, lastRefresh, realm, client);
+    public boolean isUserSessionExpired(UserSessionEntity entity) {
+        return isUserSessionExpired(entity.isRememberMe(), entity.getStarted(), entity.getLastSessionRefresh(),
+                SessionExpirationUtils.upstreamSessionExpiry(offline, entity.getNotes()));
+    }
+
+    public boolean isUserSessionExpired(RemoteUserSessionEntity entity) {
+        return isUserSessionExpired(entity.isRememberMe(), entity.getStarted(), entity.getLastSessionRefresh(),
+                SessionExpirationUtils.upstreamSessionExpiry(offline, entity.getNotes()));
+    }
+
+    public boolean isClientSessionExpired(AuthenticatedClientSessionEntity entity, UserSessionModel userSession, ClientModel client) {
+        return isClientSessionExpired(userSession.isRememberMe(), entity.getStarted(), entity.getUserSessionStarted(),
+                entity.getTimestamp(), client, SessionExpirationUtils.upstreamSessionExpiry(offline, userSession.getNotes()));
+    }
+
+    public boolean isClientSessionExpired(RemoteAuthenticatedClientSessionEntity entity, UserSessionModel userSession, ClientModel client) {
+        return isClientSessionExpired(userSession.isRememberMe(), entity.getStarted(), userSession.getStarted(),
+                entity.getTimestamp(), client, SessionExpirationUtils.upstreamSessionExpiry(offline, userSession.getNotes()));
+    }
+
+    private boolean isUserSessionExpired(boolean rememberMe, long started, long lastRefresh, LongSupplier upstreamSessionExpiryMs) {
+        var lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(offline, rememberMe, started, realm, upstreamSessionExpiryMs);
+        var maxIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, rememberMe, lastRefresh, realm, upstreamSessionExpiryMs);
+        return isExpired(lifespan, maxIdle);
+    }
+
+    private boolean isClientSessionExpired(boolean rememberMe, long started, long userSessionStarted, long lastRefresh,
+            ClientModel client, LongSupplier upstreamSessionExpiryMs) {
+        var lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(offline, rememberMe, started, userSessionStarted, realm, client, upstreamSessionExpiryMs);
+        var maxIdle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(offline, rememberMe, lastRefresh, realm, client, upstreamSessionExpiryMs);
         return isExpired(lifespan, maxIdle);
     }
 

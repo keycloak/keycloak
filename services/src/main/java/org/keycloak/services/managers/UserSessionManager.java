@@ -54,7 +54,7 @@ public class UserSessionManager {
         this.kcSession = session;
     }
 
-    public void createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
+    public UserSessionModel createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
 
         // Create and persist offline userSession if we don't have one
@@ -76,6 +76,8 @@ public class UserSessionManager {
             ParameterizedScopeTypeProvider.syncPinnedIdentities(clientSession, offlineClientSession);
             offlineClientSession.setTimestamp(clientSession.getTimestamp());
         }
+
+        return offlineUserSession;
     }
 
 

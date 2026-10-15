@@ -58,10 +58,10 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
         if (initialRefreshTokenCtx.offlineTokenRequested()) {
             refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-            refreshToken.exp(getExpiration(clientSessionCtx, userSession, true));
-            responseBuilder.createOrUpdateOfflineSession();
+            UserSessionModel offlineUserSession = responseBuilder.createOrUpdateOfflineSession();
+            refreshToken.exp(getExpiration(clientSessionCtx, offlineUserSession));
         } else {
-            refreshToken.exp(getExpiration(clientSessionCtx, userSession, false));
+            refreshToken.exp(getExpiration(clientSessionCtx, userSession));
         }
         final ClientModel[] requestedAudienceClients = clientSessionCtx.getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class);
         if (requestedAudienceClients != null) {
@@ -140,25 +140,18 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         }
     }
 
-    private Long getExpiration(ClientSessionContext clientSessionCtx, UserSessionModel userSession, boolean offline) {
+    private Long getExpiration(ClientSessionContext clientSessionCtx, UserSessionModel userSession) {
         ClientModel client = clientSessionCtx.getClientSession().getClient();
         RealmModel realm = client.getRealm();
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+
         long expiration = SessionExpirationUtils.calculateClientSessionIdleTimestamp(
-                offline, userSession.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSessionCtx.getClientSession().getTimestamp()),
-                realm, client);
+                userSession, clientSession, realm, client);
         long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
-                offline, userSession.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSessionCtx.getClientSession().getStarted()),
-                TimeUnit.SECONDS.toMillis(userSession.getStarted()),
-                realm, client);
-        expiration = lifespan > 0? Math.min(expiration, lifespan) : expiration;
-        long userSessionIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(
-                offline, userSession.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()),
-                realm);
+                userSession, clientSession, realm, client);
+        expiration = lifespan > 0 ? Math.min(expiration, lifespan) : expiration;
+        long userSessionIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession, realm);
         expiration = Math.min(expiration, userSessionIdle);
-        expiration = SessionExpirationUtils.applyUpstreamSessionExpiry(expiration, userSession, offline);
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
     }

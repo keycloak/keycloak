@@ -32,7 +32,8 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 
@@ -153,9 +154,11 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
                                     .findFirst().orElseThrow(() -> new RuntimeException("SamlResponse doesn't contain AuthStatement"));
 
                             assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
-                            XMLGregorianCalendar expectedSessionTimeout = XMLTimeUtil.add(authType.getAuthnInstant(), SESSION_LENGTH_IN_SECONDS * 1000);
-                            assertThat(authType.getSessionNotOnOrAfter(), is(expectedSessionTimeout));
-                            sessionNotOnOrAfter.set(expectedSessionTimeout.toString());
+                            long actualMs = authType.getSessionNotOnOrAfter().toGregorianCalendar().getTimeInMillis();
+                            long upperBoundMs = XMLTimeUtil.add(authType.getAuthnInstant(), SESSION_LENGTH_IN_SECONDS * 1000).toGregorianCalendar().getTimeInMillis();
+                            assertThat(actualMs, lessThanOrEqualTo(upperBoundMs));
+                            assertThat(actualMs, greaterThan(upperBoundMs - 60_000L));
+                            sessionNotOnOrAfter.set(authType.getSessionNotOnOrAfter().toString());
 
                             return ob;
                         })

@@ -1128,10 +1128,7 @@ public class TokenManager {
         }
 
         token.setSessionId(userSession.getId());
-        ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
-        boolean offlineTokenRequested = offlineAccessScope == null ? false
-                : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
-        token.exp(getTokenExpiration(realm, client, userSession, clientSession, offlineTokenRequested));
+        token.exp(getTokenExpiration(realm, client, userSession, clientSession));
 
         // Tracing
         var tracing = session.getProvider(TracingProvider.class);
@@ -1160,7 +1157,7 @@ public class TokenManager {
     }
 
     private Long getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
-        AuthenticatedClientSessionModel clientSession, boolean offlineTokenRequested) {
+        AuthenticatedClientSessionModel clientSession) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
@@ -1190,15 +1187,9 @@ public class TokenManager {
             expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }
 
-        final boolean offline = userSession.isOffline() || offlineTokenRequested ||
-                (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT &&
-                Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(userSession.getNote(Constants.CREATED_FROM_PERSISTENT)));
         long sessionExpires = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
-                offline, userSession.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
-                realm, client);
+                userSession, clientSession, realm, client);
         expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;
-        expiration = SessionExpirationUtils.applyUpstreamSessionExpiry(expiration, userSession, offline);
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
     }
@@ -1373,14 +1364,14 @@ public class TokenManager {
             }
         }
 
-        public void createOrUpdateOfflineSession() {
+        public UserSessionModel createOrUpdateOfflineSession() {
             UserSessionManager sessionManager = new UserSessionManager(session);
             if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
                 event.detail(REASON, "Offline tokens not allowed for the user or client");
                 event.error(Errors.NOT_ALLOWED);
                 throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
             }
-            sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
+            return sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
         private AccessToken.Confirmation getRefreshTokenConfirmation(AuthenticatedClientSessionModel clientSession, AccessToken accessToken) {

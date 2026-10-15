@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -497,24 +498,14 @@ public class SamlProtocol implements LoginProtocol {
         String nameIdFormat = getNameIdFormat(samlClient, authSession);
 
         int assertionLifespan = samlClient.getAssertionLifespan();
-        int sessionExpiration = SessionExpirationUtils.getSsoSessionMaxLifespan(realm);
-        String upstreamExpiry = userSession.getNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER);
-        if (upstreamExpiry != null && !userSession.isOffline()) {
-            try {
-                long upstreamExpirySeconds = Long.parseLong(upstreamExpiry);
-                long remainingSeconds = upstreamExpirySeconds - Time.currentTime();
-                if (remainingSeconds <= 0) {
-                    event.error(Errors.SESSION_EXPIRED);
-                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
-                }
-                if (remainingSeconds < sessionExpiration) {
-                    sessionExpiration = remainingSeconds <= Integer.MAX_VALUE ? (int) remainingSeconds : Integer.MAX_VALUE;
-                }
-            } catch (NumberFormatException e) {
-                logger.warnf(e, "Invalid value for session note %s in session %s",
-                        SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER, userSession.getId());
-            }
+        long sessionExpirationMs = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession, realm);
+        long remainingSeconds = TimeUnit.MILLISECONDS.toSeconds(sessionExpirationMs - Time.currentTimeMillis());
+        if (remainingSeconds <= 0) {
+            event.error(Errors.SESSION_EXPIRED);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
         }
+        // TODO: change SAML2LoginResponseBuilder to use long instead of int
+        int sessionExpiration = (int) Math.min(remainingSeconds, Integer.MAX_VALUE);
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
         builder.requestID(requestID)
                 .destination(redirectUri)

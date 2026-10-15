@@ -77,6 +77,7 @@ import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -848,7 +849,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             }
 
             ClientModel client = session.clients().getClientById(realm, clientSession.getClientId());
-            if (isClientSessionExpired(realm, client, clientSession, offline)) {
+            if (isClientSessionExpired(realm, client, clientSession, offline, userSessionEntity)) {
                 continue;
             }
 
@@ -886,10 +887,14 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
-    private boolean isClientSessionExpired(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {
-        SessionFunction<AuthenticatedClientSessionEntity> idleChecker = offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
-        SessionFunction<AuthenticatedClientSessionEntity> lifetimeChecker = offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
-        return idleChecker.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG || lifetimeChecker.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG;
+    private boolean isClientSessionExpired(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity,
+            boolean offline, UserSessionEntity userSessionEntity) {
+        var upstream = SessionExpirationUtils.upstreamSessionExpiry(offline, userSessionEntity.getNotes());
+        long idle = SessionTimeouts.getClientSessionMaxIdleMs(realm, client, offline, entity.isUserSessionRememberMe(),
+                entity.getTimestamp(), upstream);
+        long lifespan = SessionTimeouts.getClientSessionLifespanMs(realm, client, offline, entity.isUserSessionRememberMe(),
+                entity.getStarted(), entity.getUserSessionStarted(), upstream);
+        return idle == SessionTimeouts.ENTRY_EXPIRED_FLAG || lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG;
     }
 
     private boolean isUserSessionExpired(RealmModel realm, UserSessionEntity entity, boolean offline) {
