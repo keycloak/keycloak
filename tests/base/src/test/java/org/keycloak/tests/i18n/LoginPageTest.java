@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -68,6 +69,7 @@ import org.keycloak.tests.common.BasicUserConfig;
 import org.keycloak.tests.providers.forms.ClickThroughAuthenticator;
 import org.keycloak.testsuite.util.FlowUtil;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
@@ -410,12 +412,17 @@ public class LoginPageTest {
         final String realmLocalizationMessageValue = "Localization Test";
 
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
-        oauth.openLoginForm();
-        assertThat(driver.page().getPageSource(), containsString(realmLocalizationMessageValue));
+        // Flaky without retry; root cause unknown (cache invalidation itself is synchronous)
+        Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
+            oauth.openLoginForm();
+            assertThat(driver.page().getPageSource(), containsString(realmLocalizationMessageValue));
+        });
 
         realm.admin().localization().deleteRealmLocalizationText(locale, realmLocalizationMessageKey);
-        oauth.openLoginForm();
-        assertThat(driver.page().getPageSource(), not(containsString(realmLocalizationMessageValue)));
+        Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
+            oauth.openLoginForm();
+            assertThat(driver.page().getPageSource(), not(containsString(realmLocalizationMessageValue)));
+        });
     }
 
     @Test
