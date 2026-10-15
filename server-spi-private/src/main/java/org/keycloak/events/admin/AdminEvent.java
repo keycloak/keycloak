@@ -29,6 +29,11 @@ public class AdminEvent {
 
     private long time;
 
+    /**
+     * Realm associated with this admin event.
+     * It is not necessarily the realm affected by the administrative operation.
+     * It is not always the same as the realm where the user is authenticated {@link AuthDetails#getRealmId()}.
+     */
     private String realmId;
 
     private String realmName;
@@ -103,7 +108,7 @@ public class AdminEvent {
     }
 
     /**
-     * Returns the id of the realm
+     * Returns the id of the event realm
      *
      * @return
      */
@@ -116,7 +121,7 @@ public class AdminEvent {
     }
 
     /**
-     * @return the name of the realm
+     * @return the name of the event realm
      */
     public String getRealmName() {
         return realmName;
