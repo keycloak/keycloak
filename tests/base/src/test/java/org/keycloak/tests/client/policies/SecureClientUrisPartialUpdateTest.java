@@ -63,6 +63,8 @@ public class SecureClientUrisPartialUpdateTest extends AbstractClientPoliciesTes
     private static final String UNTRUSTED_JWKS_URL = "http://untrusted.example.com/jwks";
     private static final String TRUSTED_JWKS_URL = "https://trusted.example.com/jwks";
     private static final String SAFE_PATTERN = "^https://trusted.example.com.*";
+    private static final String TRUSTED_REDIRECT_URL = "https://trusted.example.com/callback";
+    private static final String UNTRUSTED_REDIRECT_URL = "http://untrusted.example.com/callback";
 
     @InjectRealm
     ManagedRealm realm;
@@ -162,6 +164,65 @@ public class SecureClientUrisPartialUpdateTest extends AbstractClientPoliciesTes
         Assertions.assertEquals(TRUSTED_JWKS_URL, stored.getAttributes().get(OIDCConfigAttributes.JWKS_URL));
     }
 
+    @Test
+    public void testPatternPartialUpdateDerivesWebOriginsFromUpdatedRedirectUris() throws Exception {
+        String clientName = generateSuffixedName("partial-update-pattern-weborigins");
+        // the client has no stored web origins - when the update omits webOrigins, persistence derives them
+        // from the updated redirect URIs, see RepresentationToModel#defaultWebOrigins, so the derived origins
+        // have to be validated as well
+        String cId = createClientByAdmin(realm, clientName, OIDCLoginProtocol.LOGIN_PROTOCOL, (ClientRepresentation c) -> {
+            c.setRedirectUris(Collections.singletonList(SECURE_REDIRECT_URL));
+            c.setWebOrigins(Collections.emptyList());
+        });
+
+        setupSecureClientUrisPatternPolicyOnWebOrigins();
+
+        ClientPolicyException cpe = Assertions.assertThrows(ClientPolicyException.class,
+                () -> updateClientPartially(cId, (ClientRepresentation c) ->
+                        c.setRedirectUris(Collections.singletonList(UNTRUSTED_REDIRECT_URL))));
+        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, cpe.getError());
+        Assertions.assertEquals("Invalid webOrigins", cpe.getErrorDetail());
+    }
+
+    @Test
+    public void testPatternPartialUpdateDerivedWebOriginsMatchingPatternAreAccepted() throws Exception {
+        String clientName = generateSuffixedName("partial-update-pattern-weborigins-accepted");
+        String cId = createClientByAdmin(realm, clientName, OIDCLoginProtocol.LOGIN_PROTOCOL, (ClientRepresentation c) -> {
+            c.setRedirectUris(Collections.singletonList(SECURE_REDIRECT_URL));
+            c.setWebOrigins(Collections.emptyList());
+        });
+
+        setupSecureClientUrisPatternPolicyOnWebOrigins();
+
+        updateClientPartially(cId, (ClientRepresentation c) ->
+                c.setRedirectUris(Collections.singletonList(TRUSTED_REDIRECT_URL)));
+
+        ClientRepresentation stored = findByClientIdByAdmin(realm, clientName);
+        Assertions.assertEquals(Collections.singletonList(TRUSTED_REDIRECT_URL), stored.getRedirectUris());
+        // the derived web origins are persisted as part of the update
+        Assertions.assertEquals(Collections.singletonList("https://trusted.example.com"), stored.getWebOrigins());
+    }
+
+
+    @Test
+    public void testPartialUpdateDeletingStoredJwksUriByEmptyValueIsAccepted() throws Exception {
+        String clientName = generateSuffixedName("partial-update-jwks-empty-delete");
+        String cId = createClientByAdmin(realm, clientName, OIDCLoginProtocol.LOGIN_PROTOCOL, (ClientRepresentation c) -> {
+            c.setRedirectUris(Collections.singletonList(SECURE_REDIRECT_URL));
+            c.getAttributes().put(OIDCConfigAttributes.JWKS_URL, INSECURE_JWKS_URL);
+        });
+
+        setupSecureClientUrisPolicy();
+
+        // an empty attribute value removes the stored attribute as well, see ClientAdapter#setAttribute
+        updateClientPartially(cId, (ClientRepresentation c) ->
+                c.setAttributes(Collections.singletonMap(OIDCConfigAttributes.JWKS_URL, "")));
+
+        ClientRepresentation stored = findByClientIdByAdmin(realm, clientName);
+        Assertions.assertNull(stored.getAttributes().get(OIDCConfigAttributes.JWKS_URL));
+    }
+
+
     /**
      * Sends an update that only carries the fields set by {@code op}, leaving the rest of the client
      * representation absent from the request, like a partial update issued by the admin REST API.
@@ -191,6 +252,14 @@ public class SecureClientUrisPartialUpdateTest extends AbstractClientPoliciesTes
         SecureClientUrisPatternExecutor.Configuration config = new SecureClientUrisPatternExecutor.Configuration();
         config.setAllowedPatterns(List.of(SAFE_PATTERN));
         config.setClientUriFields(List.of("jwksUri"));
+        setupPolicy(realm, SecureClientUrisPatternExecutorFactory.PROVIDER_ID, config,
+                AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+    }
+
+    private void setupSecureClientUrisPatternPolicyOnWebOrigins() throws Exception {
+        SecureClientUrisPatternExecutor.Configuration config = new SecureClientUrisPatternExecutor.Configuration();
+        config.setAllowedPatterns(List.of(SAFE_PATTERN));
+        config.setClientUriFields(List.of("webOrigins"));
         setupPolicy(realm, SecureClientUrisPatternExecutorFactory.PROVIDER_ID, config,
                 AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
     }
