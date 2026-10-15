@@ -48,7 +48,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
     }
 
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
-        var builder = new ServiceSpecBuilder().withSelector(Utils.allInstanceLabels(keycloak));
+        var builder = new ServiceSpecBuilder().withSelector(Utils.serverSelectorLabels(keycloak));
 
         boolean tlsConfigured = isTlsConfigured(keycloak);
         boolean httpEnabled = isHttpEnabled(keycloak);
