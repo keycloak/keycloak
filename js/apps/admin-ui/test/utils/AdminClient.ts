@@ -79,6 +79,28 @@ class AdminClient {
     ).at(0);
   }
 
+  /**
+   * Partial update of a client by id. Attributes are merged with the
+   * stored ones so callers can set a single attribute without wiping
+   * the rest.
+   */
+  async updateClient(
+    id: string,
+    payload: ClientRepresentation & { realm: string },
+  ) {
+    await this.#login();
+    const { realm, ...rest } = payload;
+    const client = await this.#client.clients.findOne({ id, realm });
+    return this.#client.clients.update(
+      { id, realm },
+      {
+        ...client,
+        ...rest,
+        attributes: { ...client?.attributes, ...rest.attributes },
+      },
+    );
+  }
+
   async deleteClient(
     clientName: string,
     realmName: string = this.#client.realmName,
