@@ -53,6 +53,45 @@ public class PathMatcherTest {
     }
 
     @Test
+    public void testAboveRootDotSegmentsClampToRoot() {
+        for (String uri : Arrays.asList(
+                "/../api/admin",
+                "/../../api/admin",
+                "/api/../../api/admin",
+                "/%2E%2E/api/admin",
+                "/%2e./api/admin",
+                "/.%2e/api/admin",
+                "/..%2Fapi/admin",
+                "https://my.domain/../api/admin",
+                "https://my.domain/%2E%2E/api/admin"
+        )){
+            // Extra ".." segments stop at the root; the remaining path still matches the resource.
+            String resource = uri.startsWith("https://") ? "https://my.domain/api/admin" : "/api/admin";
+            String wildcard = uri.startsWith("https://") ? "https://my.domain/*" : "/*";
+            PathMatcher<String> matcher = createMatcher(resource, wildcard);
+
+            Assert.assertEquals("Should clamp to the root for: " + uri, resource, matcher.matches(uri));
+      }
+    }
+
+    @Test
+    public void testAboveRootDotSegmentsResolveToRoot() {
+        for (String uri : Arrays.asList(
+                "/..", 
+                "/../", 
+                "/../../", 
+                "/%2E%2E", 
+                "https://my.domain/.."
+        )){
+            // When nothing follows the extra ".." segments, the result is the root itself.
+            String root = uri.startsWith("https://") ? "https://my.domain/" : "/";
+            PathMatcher<String> matcher = createMatcher(root);
+
+            Assert.assertEquals("Should resolve to the root for: " + uri, root, matcher.matches(uri));
+        }
+    }
+
+    @Test
     public void testPercentEncodedUnreservedDecoded() {
         PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
         Assert.assertEquals("/api/admin", matcher.matches("/api/%61dmin"));
@@ -327,6 +366,22 @@ public class PathMatcherTest {
         // must be rejected outright, not fall back to treating "https://" as plain path content
         PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
         Assert.assertNull(matcher.matches("https:///api/admin"));
+    }
+
+    @Test
+    public void testSingleSlashSchemeUriReturnsNoMatch() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+
+        for (String uri : Arrays.asList(
+                "https:/api/admin",
+                "http:/api/admin",
+                "HTTPS:/api/admin",
+                "https:/api/%61dmin",
+                "https:/api/admin?x=1",
+                "https:/api/admin#section"
+        )) {
+            Assert.assertNull("Should reject authority-less scheme URI: " + uri, matcher.matches(uri));
+        }
     }
 
     @Test
