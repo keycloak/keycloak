@@ -140,7 +140,7 @@ public class PushDeliveryService {
             if (bypassesOutgoingProxy && e instanceof IOException
                     && !(e instanceof PrivateAddressDenyingDnsResolver.PrivateAddressException)) {
                 log.errorf(e, "Error delivering event jti=%s to url %s. Push delivery connects directly and does not"
-                        + " use the configured outgoing HTTP proxy; set the allow-insecure-push-targets SPI option"
+                        + " use the configured outgoing HTTP proxy; set the push-delivery-via-proxy SPI option"
                         + " if the receiver is only reachable through the proxy", eventToken.getJti(), endpointUrl);
             } else {
                 log.errorf(e, "Error delivering event jti=%s to url %s", eventToken.getJti(), endpointUrl);

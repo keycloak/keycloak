@@ -91,6 +91,12 @@ only for users that have been explicitly subscribed.
 |Relaxes the scheme/host class check on receiver-supplied PUSH URLs (allows `http://` and loopback/private
 hosts). Intended for closed-network deployments and integration tests; never auto-enabled in `start-dev`.
 The per-receiver `ssf.validPushUrls` allow-list still applies.
+
+|`push-delivery-via-proxy`
+|`false`
+|Sends PUSH deliveries through the outgoing HTTP proxy. Use it when receivers are reachable only through an
+egress proxy. Push URLs are still checked when a stream is created, but the address check at delivery time is
+left to the proxy (see <<push-delivery-and-proxies, PUSH delivery and proxies>>).
 |===
 
 == Enabling the SSF Transmitter for a realm
@@ -206,12 +212,25 @@ the operator-facing log entry contains the rejected URL and a suggested allow-li
 
 The address check is applied again on every delivery, to the addresses the connection is actually made to, so a
 receiver cannot pass validation and then change its DNS records to point at an internal address. A host resolving
-to any private address fails the delivery attempt. Because an HTTP proxy resolves the target host itself, PUSH
-delivery connects to receivers directly and does not use the outgoing HTTP proxy configuration; it also does not
-follow redirects. Deployments that must send PUSH deliveries through a proxy need `allow-insecure-push-targets`.
+to any private address fails the delivery attempt. PUSH delivery does not follow redirects.
 
 PUSH delivery uses exponential backoff (8 attempts by default). After the attempt budget is exhausted, the row
 transitions to `DEAD_LETTER` and is retained for 30 days for inspection in the *Event Search* sub-tab.
+
+[[push-delivery-and-proxies]]
+==== PUSH delivery and proxies
+
+An HTTP proxy resolves the target host itself, so {project_name} cannot check the address a proxied delivery
+connects to. By default, PUSH delivery therefore connects to receivers directly and does not use the outgoing HTTP
+proxy configured through the `proxy-mappings` option or the `HTTPS_PROXY` and `HTTP_PROXY` environment variables.
+
+If receivers are reachable only through an egress proxy, set `push-delivery-via-proxy` to `true`. Push URLs are
+still checked against the allow-list, the `https` requirement, and the address check when a stream is created or
+updated. At delivery time, preventing a receiver from reaching internal addresses by changing its DNS records is then
+up to the proxy, so make sure the proxy does not forward requests to internal destinations. Deliveries then also
+follow redirects if the outgoing HTTP client's `allow-redirects` option is enabled.
+
+Do not use `allow-insecure-push-targets` for this purpose: it also turns off the checks on push URLs.
 
 === POLL delivery (RFC 8936)
 

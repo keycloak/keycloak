@@ -139,14 +139,14 @@ Creating or updating a workflow now fails when `schedule.after` is not a duratio
 Previously, such values caused an internal server error, or they were stored and the scheduled runs failed or did not process any resources.
 Existing workflows with such values must be fixed before they can be updated, including when enabling or disabling them in the Admin Console.
 
-=== SSF push delivery no longer uses the outgoing HTTP proxy
+=== SSF push delivery no longer uses the outgoing HTTP proxy by default
 // https://github.com/keycloak/keycloak/issues/53080
 
 The experimental Shared Signals Framework (SSF) transmitter now checks the address of a receiver's push endpoint each time it delivers an event, not only when the stream is created.
 This prevents a receiver from changing its DNS records after the stream is created to point push deliveries at an internal address.
 
 To make that check possible, push deliveries connect to receivers directly, without the proxy configured through the `proxy-mappings` option of the outgoing HTTP client or the `HTTPS_PROXY` and `HTTP_PROXY` environment variables.
-They also no longer follow redirects.
+They also no longer follow redirects, even when the `allow-redirects` option of the outgoing HTTP client is enabled.
 A delivery fails, and is retried and eventually dead-lettered like any other failed delivery, when its host resolves to any of these addresses:
 
 * loopback
@@ -158,8 +158,8 @@ A delivery fails, and is retried and eventually dead-lettered like any other fai
 
 After upgrading, deployments that can reach receivers only through an outgoing proxy see push deliveries fail with connection errors.
 The server log names the proxy as the likely cause.
-To keep delivering through the proxy, set the `allow-insecure-push-targets` option of the SSF transmitter to `true`, for example with `--spi-ssf-transmitter--default--allow-insecure-push-targets=true`.
-This also turns off the https and address checks on receiver push URLs, so use it only when the proxy itself restricts which destinations can be reached.
+To keep delivering through the proxy, set the new `push-delivery-via-proxy` option of the SSF transmitter to `true`, for example with `--spi-ssf-transmitter--default--push-delivery-via-proxy=true`.
+Push URLs are still checked when a stream is created, but the proxy resolves the receiver's host at delivery time, so make sure the proxy does not forward requests to internal destinations.
 
 === Organization Redirect URL now validated against the account client
 

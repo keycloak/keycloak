@@ -219,9 +219,11 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public PushDeliveryService createPushDelivery(KeycloakSession session, SsfTransmitterContext ctx) {
-        if (ctx.config().isAllowInsecurePushTargets()) {
-            // Closed-network deployments: private targets are allowed, so
-            // the shared client (with its proxy mappings) is used as is.
+        if (ctx.config().isAllowInsecurePushTargets() || ctx.config().isPushDeliveryViaProxy()) {
+            // The shared client, with its proxy mappings: either private
+            // targets are allowed (closed networks), or the operator has
+            // chosen to deliver through the proxy and rely on its egress
+            // policy at delivery time.
             return new PushDeliveryService(session, ctx.config());
         }
         CloseableHttpClient httpClient = getPushHttpClient(session);
@@ -235,7 +237,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                     outgoingProxyConfigured = isOutgoingProxyConfigured();
                     if (outgoingProxyConfigured) {
                         log.info("An outgoing HTTP proxy is configured, but SSF push delivery connects to receivers"
-                                + " directly; set the allow-insecure-push-targets SPI option if receivers are only"
+                                + " directly; set the push-delivery-via-proxy SPI option if receivers are only"
                                 + " reachable through the proxy");
                     }
                     pushHttpClient = createPushHttpClient(session);
@@ -576,6 +578,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .type("int")
                 .helpText("Grace window (seconds) during which the dispatcher continues delivering events for a subject after a receiver-driven /streams/subjects/remove call (SSF 1.0 §9.3 'Malicious Subject Removal' defense). Admin-driven removes always take effect immediately. Default 0 disables the grace entirely. Enabling means accepting that legitimate churn-removes (receiver dropping users that left their service) also get the grace tail.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_PUSH_DELIVERY_VIA_PROXY)
+                .type("boolean")
+                .helpText("Whether PUSH deliveries are sent through the outgoing HTTP proxy. When false (default), deliveries connect to receivers directly and every address they connect to is checked against the private-address deny policy. Set to true when receivers are reachable only through an egress proxy: push URLs are still checked when a stream is created, but at delivery time the proxy resolves the receiver's host, so blocking internal destinations is left to the proxy.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_PUSH_DELIVERY_VIA_PROXY)
                 .add()
                 .build();
     }
