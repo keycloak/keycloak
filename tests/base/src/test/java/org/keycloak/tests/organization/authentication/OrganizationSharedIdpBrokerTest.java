@@ -1,5 +1,6 @@
 package org.keycloak.tests.organization.authentication;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -15,6 +16,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -24,9 +27,11 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
+import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
@@ -67,6 +72,12 @@ public class OrganizationSharedIdpBrokerTest {
 
     @InjectPage
     LoginUpdateProfilePage loginUpdateProfilePage;
+
+    @InjectMailServer
+    MailServer mail;
+
+    @InjectPage
+    VerifyEmailPage verifyEmailPage;
 
     @Test
     @SuppressWarnings("unchecked")
@@ -131,7 +142,7 @@ public class OrganizationSharedIdpBrokerTest {
     }
 
     @Test
-    public void testAuthNotePreservedOverridesEmailDomain() {
+    public void testAuthNotePreservedOverridesEmailDomain() throws IOException {
         createSharedIdpSetup();
         createProviderUser("alice", "alice@" + ORG_A_DOMAIN, "password");
 
@@ -151,6 +162,10 @@ public class OrganizationSharedIdpBrokerTest {
                 "Email domain validation should reject orga.org when org context is org-B");
 
         loginUpdateProfilePage.update("New", "User", "newuser@" + ORG_B_DOMAIN);
+
+        verifyEmailPage.assertCurrent();
+        mail.waitForIncomingEmail(1);
+        driver.open(MailUtils.getPasswordResetEmailLink(mail.getLastReceivedMessage()));
 
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull(code, "Should have received an auth code after profile update");

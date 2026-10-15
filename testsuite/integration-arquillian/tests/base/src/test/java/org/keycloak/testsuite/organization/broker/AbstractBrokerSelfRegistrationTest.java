@@ -286,6 +286,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idpConfirmLinkPage.clickLinkAccount();
         // confirm the link by authenticating
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
+        verifyEmail();
         assertIsMember(bc.getUserEmail(), organization);
     }
 
@@ -311,6 +312,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idpConfirmLinkPage.clickLinkAccount();
         // confirm the link by authenticating
         loginPage.login(bc.getUserEmail(), bc.getUserPassword());
+        verifyEmail();
         assertIsMember(bc.getUserEmail(), organization);
     }
 
@@ -1170,6 +1172,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertIsNotMember(email, organization);
 
         updateAccountInformationPage.updateAccountInformation("external@other.org", "external@other.org", "Firstname", "Lastname");
+        verifyEmail();
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertIsMember("external@other.org", organization);
     }
