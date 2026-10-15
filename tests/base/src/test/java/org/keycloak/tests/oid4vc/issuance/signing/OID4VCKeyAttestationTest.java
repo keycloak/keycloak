@@ -804,7 +804,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
             oauth.client(pubClient.getClientId());
             OID4VCTestContext ctx = new OID4VCTestContext(pubClient, keyAttestationCredentialScope);
-            ctx.setHolder(holder);
+            ctx.withHolder(holder);
 
             PkceGenerator pkce = PkceGenerator.s256();
             AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()

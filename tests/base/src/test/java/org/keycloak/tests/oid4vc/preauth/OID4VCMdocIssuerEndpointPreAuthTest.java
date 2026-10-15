@@ -69,6 +69,7 @@ public class OID4VCMdocIssuerEndpointPreAuthTest extends OID4VCMdocTestBase {
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(oauth.getClientId())
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
