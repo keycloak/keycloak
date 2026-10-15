@@ -16,9 +16,13 @@
  */
 package org.keycloak.quarkus.runtime.httpclient;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,10 +35,14 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.DnsResolver;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,15 +83,46 @@ public class VertxHttpClientDirectTest {
 
     @Test
     public void failsOverToNextAddressWhenConnectionFails() throws Exception {
-        // The server listens on 127.0.0.1 only, so connecting to 127.0.0.2 is refused.
         int port = startServer(new HttpServerOptions());
-        DnsResolver twoAddresses = host -> new InetAddress[]{
-                InetAddress.getByName("127.0.0.2"), InetAddress.getByName("127.0.0.1")};
-        try (CloseableHttpClient client = directClient(new WebClientOptions(), twoAddresses);
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), refusedThenLoopback());
              CloseableHttpResponse res = client.execute(new HttpGet("http://" + HOST + ":" + port + "/hello"))) {
             assertEquals(200, res.getStatusLine().getStatusCode());
         }
         assertEquals(1, requests.get());
+    }
+
+    @Test
+    public void sendsOneShotBodyIntactAfterFailover() throws Exception {
+        int port = startServer(new HttpServerOptions());
+        HttpPost post = new HttpPost("http://" + HOST + ":" + port + "/echo");
+        post.setEntity(new InputStreamEntity(new ByteArrayInputStream("signed-set".getBytes(StandardCharsets.UTF_8))));
+        try (CloseableHttpClient client = directClient(new WebClientOptions(), refusedThenLoopback());
+             CloseableHttpResponse res = client.execute(post)) {
+            assertEquals(200, res.getStatusLine().getStatusCode());
+            assertEquals("signed-set", EntityUtils.toString(res.getEntity(), StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    public void failsOverWhenConnectingTimesOut() throws Exception {
+        // 127.0.0.2 accepts TCP connections but never answers, so the TLS handshake hangs there.
+        try (ServerSocket silent = new ServerSocket()) {
+            silent.bind(new InetSocketAddress("127.0.0.2", 0));
+            SelfSignedCertificate certificate = SelfSignedCertificate.create(HOST);
+            int port = startServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(certificate.keyCertOptions()),
+                    silent.getLocalPort());
+            WebClientOptions options = new WebClientOptions().setTrustOptions(certificate.trustOptions()).setVerifyHost(true);
+
+            HttpGet get = new HttpGet("https://" + HOST + ":" + port + "/hello");
+            // A socket timeout shorter than the connect timeout must not cut the connection wait short.
+            get.setConfig(RequestConfig.custom().setConnectionRequestTimeout(1000).setSocketTimeout(300).build());
+            DnsResolver silentThenLoopback = host -> new InetAddress[]{
+                    InetAddress.getByName("127.0.0.2"), InetAddress.getByName("127.0.0.1")};
+            try (CloseableHttpClient client = directClient(options, silentThenLoopback);
+                 CloseableHttpResponse res = client.execute(get)) {
+                assertEquals(200, res.getStatusLine().getStatusCode());
+            }
+        }
     }
 
     @Test
@@ -137,16 +176,27 @@ public class VertxHttpClientDirectTest {
     }
 
     private int startServer(HttpServerOptions options) throws Exception {
+        return startServer(options, 0);
+    }
+
+    private int startServer(HttpServerOptions options, int port) throws Exception {
         HttpServer server = vertx.createHttpServer(options).requestHandler(req -> {
             requests.incrementAndGet();
             if ("/redirect".equals(req.path())) {
                 req.response().setStatusCode(302).putHeader("Location", "/hello").end();
+            } else if ("/echo".equals(req.path())) {
+                req.body().onSuccess(received -> req.response().end(received));
             } else {
                 req.response().end("Hello world!");
             }
         });
-        return server.listen(0, "127.0.0.1").toCompletionStage().toCompletableFuture()
+        return server.listen(port, "127.0.0.1").toCompletionStage().toCompletableFuture()
                 .get(10, TimeUnit.SECONDS).actualPort();
+    }
+
+    private static DnsResolver refusedThenLoopback() {
+        // Nothing listens on 127.0.0.2, so connecting there is refused.
+        return host -> new InetAddress[]{InetAddress.getByName("127.0.0.2"), InetAddress.getByName("127.0.0.1")};
     }
 
     private static DnsResolver loopback() {
