@@ -287,18 +287,14 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.submit();
         assertLoginSuccess();
 
-        try {
-            timeOffSet.set(10);
-            oauth.loginForm().maxAge(1).kcAction(RequiredAction.UPDATE_PASSWORD.name()).open();
-            loginPage.assertCurrent();
-            assertThat(loginPage.getInfoMessage().orElse(null), is("Please re-authenticate to continue"));
-            loginPage.fillPassword(memberPassword);
-            loginPage.submit();
-            loginPasswordUpdatePage.changePassword(memberPassword, memberPassword);
-            assertLoginSuccess();
-        } finally {
-            timeOffSet.set(0);
-        }
+        timeOffSet.set(10);
+        oauth.loginForm().maxAge(1).kcAction(RequiredAction.UPDATE_PASSWORD.name()).open();
+        loginPage.assertCurrent();
+        assertThat(loginPage.getInfoMessage().orElse(null), is("Please re-authenticate to continue"));
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        loginPasswordUpdatePage.changePassword(memberPassword, memberPassword);
+        assertLoginSuccess();
     }
 
     @Test

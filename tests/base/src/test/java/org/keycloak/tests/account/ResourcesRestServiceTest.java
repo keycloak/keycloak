@@ -43,7 +43,6 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -520,26 +519,19 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         final String permissionsUrl = resourceUrl + "/permissions";
         final String requestsUrl = resourceUrl + "/permissions/requests";
 
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        try {
-            realmRep.setUserManagedAccessAllowed(false);
-            managedRealm.admin().update(realmRep);
+        managedRealm.updateWithCleanup(r -> r.userManagedAccessAllowed(false));
 
-            for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
-                assertEquals(403,
-                        simpleHttp.doGet(url).acceptJson().auth(getToken()).asStatus(),
-                        "UMA disabled GET " + url);
-            }
-
-            List<Permission> permissions = new ArrayList<>();
-            permissions.add(new Permission("jdoe", "Scope A"));
+        for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
             assertEquals(403,
-                    simpleHttp.doPut(permissionsUrl).acceptJson().auth(getToken()).json(permissions).asStatus(),
-                    "UMA disabled PUT " + permissionsUrl);
-        } finally {
-            realmRep.setUserManagedAccessAllowed(true);
-            managedRealm.admin().update(realmRep);
+                    simpleHttp.doGet(url).acceptJson().auth(getToken()).asStatus(),
+                    "UMA disabled GET " + url);
         }
+
+        List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission("jdoe", "Scope A"));
+        assertEquals(403,
+                simpleHttp.doPut(permissionsUrl).acceptJson().auth(getToken()).json(permissions).asStatus(),
+                "UMA disabled PUT " + permissionsUrl);
     }
 
     @Test

@@ -4,8 +4,6 @@ import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -21,10 +19,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
@@ -48,7 +44,6 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.util.TokenUtil;
@@ -102,9 +97,6 @@ public class OfflineTokenSessionManagementTest {
 
     @BeforeEach
     public void clientConfiguration() {
-
-        timeOffSet.set(0);
-
         // Reset OAuth client config to defaults
         oauth.realm("test");
         oauth.client("test-app");  // Reset to default client
@@ -126,9 +118,6 @@ public class OfflineTokenSessionManagementTest {
 
     @AfterEach
     public void cleanup() {
-        // Reset time offset
-        timeOffSet.set(0);
-
         // Clear events
         events.clear();
 
@@ -303,346 +292,290 @@ public class OfflineTokenSessionManagementTest {
         final int IDLE_LIFESPAN = 900;
 
         runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
+        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
-        int[] prev = null;
-        realm.updateWithCleanup(r -> r.ssoSessionIdleTimeout(900));
-        try {
-            prev = changeOfflineSessionSettings(true, MAX_LIFESPAN, IDLE_LIFESPAN, 0, 0);
+        realm.updateWithCleanup(r -> r
+                .ssoSessionIdleTimeout(900)
+                .offlineSessionMaxLifespanEnabled(true)
+                .offlineSessionMaxLifespan(MAX_LIFESPAN)
+                .offlineSessionIdleTimeout(IDLE_LIFESPAN)
+                .clientOfflineSessionMaxLifespan(0)
+                .clientOfflineSessionIdleTimeout(0));
 
-            // Step 1 - online login with "tets-app"
-            oauth.scope(null);
-            oauth.client("test-app", "password");
-            oauth.redirectUri(TEST_APP_REDIRECT_URI);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
+        // Step 1 - online login with "tets-app"
+        oauth.scope(null);
+        oauth.client("test-app", "password");
+        oauth.redirectUri(TEST_APP_REDIRECT_URI);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
 
-            // Clear browser state between logins.
-            driver.driver().manage().deleteAllCookies();
+        // Clear browser state between logins.
+        driver.driver().manage().deleteAllCookies();
 
-            // Step 2 - offline login with "offline-client"
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        // Step 2 - offline login with "offline-client"
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
 
-            oauth.openLoginForm();
-            code = oauth.parseLoginResponse().getCode();
-            tokenResponse = oauth.doAccessTokenRequest(code);
-            assertOfflineToken(tokenResponse);
+        oauth.openLoginForm();
+        code = oauth.parseLoginResponse().getCode();
+        tokenResponse = oauth.doAccessTokenRequest(code);
+        assertOfflineToken(tokenResponse);
 
-            // Step 3 - set some offset to refresh SSO session and offline user session. But use different client, so that we don't refresh offlineClientSession of client "offline-client"
-            timeOffSet.set(800);
-            oauth.client("test-app", "password");
-            oauth.redirectUri(TEST_APP_REDIRECT_URI);
-            oauth.openLoginForm();
+        // Step 3 - set some offset to refresh SSO session and offline user session. But use different client, so that we don't refresh offlineClientSession of client "offline-client"
+        timeOffSet.set(800);
+        oauth.client("test-app", "password");
+        oauth.redirectUri(TEST_APP_REDIRECT_URI);
+        oauth.openLoginForm();
 
-            code = oauth.parseLoginResponse().getCode();
-            tokenResponse = oauth.doAccessTokenRequest(code);
-            assertOfflineToken(tokenResponse);
+        code = oauth.parseLoginResponse().getCode();
+        tokenResponse = oauth.doAccessTokenRequest(code);
+        assertOfflineToken(tokenResponse);
 
-            // Step 4 - set bigger time offset and login with the original client "offline-token". Login should be successful and offline client session for "offline-client" should be re-created now
-            timeOffSet.set(900 + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 20);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.openLoginForm();
+        // Step 4 - set bigger time offset and login with the original client "offline-token". Login should be successful and offline client session for "offline-client" should be re-created now
+        timeOffSet.set(900 + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 20);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.openLoginForm();
 
-            code = oauth.parseLoginResponse().getCode();
-            tokenResponse = oauth.doAccessTokenRequest(code);
-            assertOfflineToken(tokenResponse);
-
-        } finally {
-            runOnServer.run(InfinispanTimeUtil.disableTestingTimeService());
-            changeOfflineSessionSettings(false, prev[0], prev[1], 0, 0);
-        }
+        code = oauth.parseLoginResponse().getCode();
+        tokenResponse = oauth.doAccessTokenRequest(code);
+        assertOfflineToken(tokenResponse);
     }
 
     @Test
     public void testShortOfflineSessionMax() throws Exception {
-        int prevOfflineSession[] = null;
-        int prevSession[] = null;
-        try {
-            prevOfflineSession = changeOfflineSessionSettings(true, 60, 30, 0, 0);
-            prevSession = changeSessionSettings(1800, 300);
+        realm.updateWithCleanup(r -> r
+                .offlineSessionMaxLifespanEnabled(true)
+                .offlineSessionMaxLifespan(60)
+                .offlineSessionIdleTimeout(30)
+                .clientOfflineSessionMaxLifespan(0)
+                .clientOfflineSessionIdleTimeout(0)
+                .ssoSessionIdleTimeout(1800)
+                .accessTokenLifespan(300));
 
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
 
-            EventRepresentation loginEvent = events.poll();
-            EventAssertion.assertSuccess(loginEvent)
-                    .type(EventType.LOGIN)
-                    .clientId("offline-client")
-                    .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .clientId("offline-client")
+                .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
 
-            String code = oauth.parseLoginResponse().getCode();
+        String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            String offlineTokenString = tokenResponse.getRefreshToken();
-            RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
 
-            assertThat(tokenResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
-            assertThat(tokenResponse.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(29), lessThanOrEqualTo(30)));
-            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        assertThat(tokenResponse.getExpiresIn(), allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
+        assertThat(tokenResponse.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(29), lessThanOrEqualTo(30)));
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
 
-            JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asJsonNode();
-            assertTrue(jsonNode.get("active").asBoolean());
-            Assertions.assertEquals("test-user@localhost", jsonNode.get("email").asText());
-            assertThat(jsonNode.get("exp").asInt() - Time.currentTime(),
-                    allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
-
-        } finally {
-            changeOfflineSessionSettings(false, prevOfflineSession[0], prevOfflineSession[1], prevOfflineSession[2], prevOfflineSession[3]);
-            changeSessionSettings(prevSession[0], prevSession[1]);
-        }
+        JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asJsonNode();
+        assertTrue(jsonNode.get("active").asBoolean());
+        Assertions.assertEquals("test-user@localhost", jsonNode.get("email").asText());
+        assertThat(jsonNode.get("exp").asInt() - Time.currentTime(),
+                allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
     }
 
     @Test
     public void testClientOfflineSessionMaxLifespan() {
-        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        int offlineSessionMaxLifespan = this.realm.admin().toRepresentation().getOfflineSessionIdleTimeout() - 100;
 
-        RealmResource realm = adminClient.realm("test");
-        RealmRepresentation rep = realm.toRepresentation();
-        Boolean originalOfflineSessionMaxLifespanEnabled = rep.getOfflineSessionMaxLifespanEnabled();
-        Integer originalOfflineSessionMaxLifespan = rep.getOfflineSessionMaxLifespan();
-        int offlineSessionMaxLifespan = rep.getOfflineSessionIdleTimeout() - 100;
-        Integer originalClientOfflineSessionMaxLifespan = rep.getClientOfflineSessionMaxLifespan();
+        this.realm.updateWithCleanup(r -> r
+                .offlineSessionMaxLifespanEnabled(true)
+                .offlineSessionMaxLifespan(offlineSessionMaxLifespan));
 
-        try {
-            rep.setOfflineSessionMaxLifespanEnabled(true);
-            rep.setOfflineSessionMaxLifespan(offlineSessionMaxLifespan);
-            realm.update(rep);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan);
 
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan);
+        this.realm.updateWithCleanup(r -> r.clientOfflineSessionMaxLifespan(offlineSessionMaxLifespan - 100));
 
-            rep.setClientOfflineSessionMaxLifespan(offlineSessionMaxLifespan - 100);
-            realm.update(rep);
+        String refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan - 100);
 
-            String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan - 100);
+        this.realm.updateClientWithCleanup("offline-client", c -> c.attribute(
+                OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN,
+                Integer.toString(offlineSessionMaxLifespan - 200)));
 
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN,
-                    Integer.toString(offlineSessionMaxLifespan - 200));
-            client.update(clientRepresentation);
-
-            refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan - 200);
-        } finally {
-            rep.setOfflineSessionMaxLifespanEnabled(originalOfflineSessionMaxLifespanEnabled);
-            rep.setOfflineSessionMaxLifespan(originalOfflineSessionMaxLifespan);
-            rep.setClientOfflineSessionMaxLifespan(originalClientOfflineSessionMaxLifespan);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN, "");
-            client.update(clientRepresentation);
-        }
+        refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan - 200);
     }
 
     @Test
     public void testClientOfflineSessionIdleTimeout() {
-        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        int offlineSessionIdleTimeout = this.realm.admin().toRepresentation().getOfflineSessionIdleTimeout();
 
-        RealmResource realm = adminClient.realm("test");
-        RealmRepresentation rep = realm.toRepresentation();
-        Boolean originalOfflineSessionMaxLifespanEnabled = rep.getOfflineSessionMaxLifespanEnabled();
-        int offlineSessionIdleTimeout = rep.getOfflineSessionIdleTimeout();
-        Integer originalClientOfflineSessionIdleTimeout = rep.getClientOfflineSessionIdleTimeout();
+        this.realm.updateWithCleanup(r -> r.offlineSessionMaxLifespanEnabled(true));
 
-        try {
-            rep.setOfflineSessionMaxLifespanEnabled(true);
-            realm.update(rep);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout);
 
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout);
+        this.realm.updateWithCleanup(r -> r.clientOfflineSessionIdleTimeout(offlineSessionIdleTimeout - 100));
 
-            rep.setClientOfflineSessionIdleTimeout(offlineSessionIdleTimeout - 100);
-            realm.update(rep);
+        String refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout - 100);
 
-            String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout - 100);
+        this.realm.updateClientWithCleanup("offline-client", c -> c.attribute(
+                OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT,
+                Integer.toString(offlineSessionIdleTimeout - 200)));
 
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT,
-                    Integer.toString(offlineSessionIdleTimeout - 200));
-            client.update(clientRepresentation);
-
-            refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout - 200);
-        } finally {
-            rep.setOfflineSessionMaxLifespanEnabled(originalOfflineSessionMaxLifespanEnabled);
-            rep.setClientOfflineSessionIdleTimeout(originalClientOfflineSessionIdleTimeout);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "");
-            client.update(clientRepresentation);
-        }
+        refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout - 200);
     }
 
 
     @Test
     public void testClientOfflineSessionIdleTimeoutCappedByUserSessionIdle() {
-        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client");
-        ClientRepresentation clientRepresentation = client.toRepresentation();
+        int realmIdleTimeout = 600;
+        this.realm.updateWithCleanup(r -> r.offlineSessionIdleTimeout(realmIdleTimeout));
+        this.realm.updateClientWithCleanup("offline-client", c -> c.attribute(
+                OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT,
+                Integer.toString(realmIdleTimeout + 600)));
 
-        RealmResource realm = adminClient.realm("test");
-        RealmRepresentation rep = realm.toRepresentation();
-        int originalOfflineSessionIdleTimeout = rep.getOfflineSessionIdleTimeout();
-
-        try {
-            int realmIdleTimeout = 600;
-            rep.setOfflineSessionIdleTimeout(realmIdleTimeout);
-            realm.update(rep);
-
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT,
-                    Integer.toString(realmIdleTimeout + 600));
-            client.update(clientRepresentation);
-
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            assertExpiration(response.getRefreshExpiresIn(), realmIdleTimeout);
-        } finally {
-            rep.setOfflineSessionIdleTimeout(originalOfflineSessionIdleTimeout);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "");
-            client.update(clientRepresentation);
-        }
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        assertExpiration(response.getRefreshExpiresIn(), realmIdleTimeout);
     }
 
     @Test
     public void offlineRefreshWhenNoStartedAtClientNote() {
-        int[] prevOfflineSession = null;
-        try {
-            prevOfflineSession = changeOfflineSessionSettings(true, 3600, 3600, 0, 0);
+        realm.updateWithCleanup(r -> r
+                .offlineSessionMaxLifespanEnabled(true)
+                .offlineSessionMaxLifespan(3600)
+                .offlineSessionIdleTimeout(3600)
+                .clientOfflineSessionMaxLifespan(0)
+                .clientOfflineSessionIdleTimeout(0));
 
-            // login to obtain a refresh token
-            oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        // login to obtain a refresh token
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-            EventRepresentation loginEvent = events.poll();
-            EventAssertion.assertSuccess(loginEvent)
-                    .type(EventType.LOGIN)
-                    .clientId("offline-client")
-                    .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .clientId("offline-client")
+                .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
 
-            // remove the started notes that can be missed in previous versions
-            removeClientSessionStartedAtNote(loginEvent.getSessionId(), loginEvent.getClientId());
+        // remove the started notes that can be missed in previous versions
+        removeClientSessionStartedAtNote(loginEvent.getSessionId(), loginEvent.getClientId());
 
-            // check refresh is successful
-            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            assertEquals(200, response.getStatusCode());
-            assertTrue(0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600, "Invalid ExpiresIn");
+        // check refresh is successful
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(200, response.getStatusCode());
+        assertTrue(0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600, "Invalid ExpiresIn");
 
-            // check refresh a second time
-            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            assertEquals(200, response.getStatusCode());
-            assertTrue(0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600, "Invalid ExpiresIn");
-        } finally {
-            changeOfflineSessionSettings(false, prevOfflineSession[0], prevOfflineSession[1], prevOfflineSession[2], prevOfflineSession[3]);
-        }
+        // check refresh a second time
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(200, response.getStatusCode());
+        assertTrue(0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600, "Invalid ExpiresIn");
     }
 
 
     private void testOfflineSessionExpiration(int idleTime, int maxLifespan, int offsetHalf, int offset) {
-        int[] prev = null;
         runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
+        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
+
+        realm.updateWithCleanup(r -> r
+                .offlineSessionMaxLifespanEnabled(true)
+                .offlineSessionMaxLifespan(maxLifespan)
+                .offlineSessionIdleTimeout(idleTime)
+                .clientOfflineSessionMaxLifespan(0)
+                .clientOfflineSessionIdleTimeout(0));
+
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .clientId("offline-client")
+                .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
+
+        final String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+
+        // obtain the client session ID
+        final String clientSessionId = getOfflineClientSessionUuid(sessionId, loginEvent.getClientId());
+        assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+        // perform a refresh in the half-time
+        timeOffSet.set(offsetHalf);
+
+        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
+        oauth.verifyToken(tokenResponse.getAccessToken());
+        offlineTokenString = tokenResponse.getRefreshToken();
+        oauth.parseRefreshToken(offlineTokenString);
+
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+        // wait to expire
+        timeOffSet.set(offset);
+
+        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
+
+        Assertions.assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("invalid_grant", tokenResponse.getError());
+
+        // Assert userSession expired
+        assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+        runOnServer.run(session -> {
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(session.getContext().getRealm());
+        });
         try {
-            prev = changeOfflineSessionSettings(true, maxLifespan, idleTime, 0, 0);
-
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.doLogin("test-user@localhost", "password");
-
-            EventRepresentation loginEvent = events.poll();
-            EventAssertion.assertSuccess(loginEvent)
-                    .type(EventType.LOGIN)
-                    .clientId("offline-client")
-                    .details(Details.REDIRECT_URI, OFFLINE_CLIENT_APP_URI);
-
-            final String sessionId = loginEvent.getSessionId();
-
-            String code = oauth.parseLoginResponse().getCode();
-
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
-            String offlineTokenString = tokenResponse.getRefreshToken();
-            RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
-
-            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-
-            // obtain the client session ID
-            final String clientSessionId = getOfflineClientSessionUuid(sessionId, loginEvent.getClientId());
-            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
-
-            // perform a refresh in the half-time
-            timeOffSet.set(offsetHalf);
-
-            tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
-            oauth.verifyToken(tokenResponse.getAccessToken());
-            offlineTokenString = tokenResponse.getRefreshToken();
-            oauth.parseRefreshToken(offlineTokenString);
-
-            Assertions.assertEquals(200, tokenResponse.getStatusCode());
-            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
-
-            // wait to expire
-            timeOffSet.set(offset);
-
-            tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
-
-            Assertions.assertEquals(400, tokenResponse.getStatusCode());
-            assertEquals("invalid_grant", tokenResponse.getError());
-
-            // Assert userSession expired
-            assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
             runOnServer.run(session -> {
-                session.getProvider(UserSessionPersisterProvider.class).removeExpired(session.getContext().getRealm());
+                UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), sessionId);
+                if (userSession != null) {
+                    session.sessions().removeUserSession(session.getContext().getRealm(), userSession);
+                }
             });
-            try {
-                runOnServer.run(session -> {
-                    UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), sessionId);
-                    if (userSession != null) {
-                        session.sessions().removeUserSession(session.getContext().getRealm(), userSession);
-                    }
-                });
-            } catch (NotFoundException nfe) {
-                // Ignore
-            }
-
-            timeOffSet.set(0);
-
-        } finally {
-            runOnServer.run(InfinispanTimeUtil.disableTestingTimeService());
-            changeOfflineSessionSettings(false, prev[0], prev[1], prev[2], prev[3]);
+        } catch (NotFoundException nfe) {
+            // Ignore
         }
     }
 
@@ -658,26 +591,6 @@ public class OfflineTokenSessionManagementTest {
             }
             return 0;
         }, Integer.class);
-    }
-
-    // KEYCLOAK-7688 Offline Session Max for Offline Token
-    private int[] changeOfflineSessionSettings(boolean isEnabled, int sessionMax, int sessionIdle, int clientSessionMax, int clientSessionIdle) {
-        int[] prev = new int[5];
-        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
-        prev[0] = rep.getOfflineSessionMaxLifespan();
-        prev[1] = rep.getOfflineSessionIdleTimeout();
-        prev[2] = rep.getClientOfflineSessionMaxLifespan();
-        prev[3] = rep.getClientOfflineSessionIdleTimeout();
-        RealmBuilder realmBuilder = RealmBuilder.create();
-        realmBuilder.update(r -> {
-            r.setOfflineSessionMaxLifespanEnabled(isEnabled);
-            r.setOfflineSessionMaxLifespan(sessionMax);
-            r.setOfflineSessionIdleTimeout(sessionIdle);
-            r.setClientOfflineSessionMaxLifespan(clientSessionMax);
-            r.setClientOfflineSessionIdleTimeout(clientSessionIdle);
-        });
-        adminClient.realm("test").update(realmBuilder.build());
-        return prev;
     }
 
     private String getOfflineClientSessionUuid(final String userSessionId, final String clientId) {
@@ -701,21 +614,6 @@ public class OfflineTokenSessionManagementTest {
         RefreshToken refreshToken = oauth.parseRefreshToken(offlineTokenString);
         assertEquals(tokenType, refreshToken.getType());
         return refreshToken;
-    }
-
-    private int[] changeSessionSettings(int ssoSessionIdle, int accessTokenLifespan) {
-        int[] prev = new int[2];
-        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
-        prev[0] = rep.getOfflineSessionMaxLifespan();
-        prev[1] = rep.getOfflineSessionIdleTimeout();
-
-        RealmBuilder realmBuilder = RealmBuilder.create();
-        realmBuilder.update(r -> {
-            r.setSsoSessionIdleTimeout(ssoSessionIdle);
-            r.setAccessTokenLifespan(accessTokenLifespan);
-        });
-        adminClient.realm("test").update(realmBuilder.build());
-        return prev;
     }
 
     private void removeClientSessionStartedAtNote(final String userSessionId, final String clientId) {

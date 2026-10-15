@@ -113,9 +113,6 @@ public class OfflineTokenBasicFlowTest {
 
     @BeforeEach
     public void clientConfiguration() {
-
-        timeOffSet.set(0);
-
         // Reset OAuth client config to defaults
         oauth.realm("test");
         oauth.client("test-app");  // Reset to default client
@@ -147,34 +144,25 @@ public class OfflineTokenBasicFlowTest {
                 .filter((ClientScopeRepresentation clientScope) -> OAuth2Constants.OFFLINE_ACCESS.equals(clientScope.getName()))
                 .findFirst().orElseThrow();
 
+        realm.updateClientWithCleanup("offline-client", c -> c.fullScopeEnabled(false));
+
         ClientResource clientResource = realm.admin().clients()
                 .get(realm.admin().clients().findByClientId("offline-client").get(0).getId());
-
-        ClientRepresentation client = clientResource.toRepresentation();
-        client.setFullScopeAllowed(false);
-        clientResource.update(client);
         clientResource.removeOptionalClientScope(offlineScope.getId());
+        realm.cleanup().add(r -> r.clients().get(clientResource.toRepresentation().getId()).addOptionalClientScope(offlineScope.getId()));
 
-        try {
-            // Test that offline access is denied
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-            oauth.client("offline-client", "secret1");
-            oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-            oauth.openLoginForm();
+        // Test that offline access is denied
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.openLoginForm();
 
-            EventRepresentation errorEvent = events.poll();
-            EventAssertion.assertError(errorEvent)
-                    .type(EventType.LOGIN_ERROR)
-                    .clientId("offline-client")
-                    .error(Errors.INVALID_REQUEST)
-                    .details(Details.REASON, "Invalid scopes: openid offline_access");
-
-        } finally {
-            // Revert changes
-            client.setFullScopeAllowed(true);
-            clientResource.update(client);
-            clientResource.addOptionalClientScope(offlineScope.getId());
-        }
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .clientId("offline-client")
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, "Invalid scopes: openid offline_access");
     }
 
     @Test
@@ -793,17 +781,11 @@ public class OfflineTokenBasicFlowTest {
     }
 
     private void conductOfflineTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
-        try {
-            /// Realm Setting is used for ID Token Signature Algorithm
-            setupCustomerUserRoles();
-            changeRealmTokenSignatureProvider(expectedIdTokenAlg);
-            changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), expectedAccessAlg);
-            offlineTokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
-            offlineTokenRequestWithScopeParameter(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
-        } finally {
-            changeRealmTokenSignatureProvider(Algorithm.RS256);
-            changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), Algorithm.RS256);
-        }
+        setupCustomerUserRoles();
+        realm.updateWithCleanup(r -> r.defaultSignatureAlgorithm(expectedIdTokenAlg));
+        realm.updateClientWithCleanup("offline-client", c -> c.attribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, expectedAccessAlg));
+        offlineTokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
+        offlineTokenRequestWithScopeParameter(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
     }
 
 
@@ -882,66 +864,51 @@ public class OfflineTokenBasicFlowTest {
         ClientScopeRepresentation phoneScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"phone".equals(clientScope.getName())).findFirst().get();
         ClientResource offlineClientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
         offlineClientResource.addOptionalClientScope(phoneScope.getId());
-        try {
-            oauth.scope(OAuth2Constants.OFFLINE_ACCESS+" phone");
-            oauth.client("offline-client", "secret1");
-            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
+        realm.cleanup().add(r -> offlineClientResource.removeOptionalClientScope(phoneScope.getId()));
 
-            JWSHeader header;
-            String idToken = tokenResponse.getIdToken();
-            String accessToken = tokenResponse.getAccessToken();
-            String refreshToken = tokenResponse.getRefreshToken();
-            if (idToken != null) {
-                header = new JWSInput(idToken).getHeader();
-                assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
-                assertEquals("JWT", header.getType());
-                assertNull(header.getContentType());
-            }
-            if (accessToken != null) {
-                header = new JWSInput(accessToken).getHeader();
-                assertEquals(expectedAccessAlg, header.getAlgorithm().name());
-                assertEquals("JWT", header.getType());
-                assertNull(header.getContentType());
-            }
-            if (refreshToken != null) {
-                header = new JWSInput(refreshToken).getHeader();
-                assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
-                assertEquals("JWT", header.getType());
-                assertNull(header.getContentType());
-            }
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS+" phone");
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
-            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-            String offlineTokenString = tokenResponse.getRefreshToken();
-            RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
-
-            EventRepresentation clientLoginEvent3 = events.poll();
-            EventAssertion.assertSuccess(clientLoginEvent3)
-                    .type(EventType.CLIENT_LOGIN)
-                    .clientId("offline-client")
-                    .userId(serviceAccountUserId)
-                    .sessionId(token.getSessionId())
-                    .details(Details.TOKEN_ID, token.getId())
-                    .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
-                    .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                    .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
-
-            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        } finally {
-            //  remove the phone scope
-            offlineClientResource.removeOptionalClientScope(phoneScope.getId());
+        JWSHeader header;
+        String idToken = tokenResponse.getIdToken();
+        String accessToken = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
+        if (idToken != null) {
+            header = new JWSInput(idToken).getHeader();
+            assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
         }
-    }
+        if (accessToken != null) {
+            header = new JWSInput(accessToken).getHeader();
+            assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+        if (refreshToken != null) {
+            header = new JWSInput(refreshToken).getHeader();
+            assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
 
-    private void changeRealmTokenSignatureProvider(String toSigAlgName) {
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        rep.setDefaultSignatureAlgorithm(toSigAlgName);
-        realm.admin().update(rep);
-    }
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
 
-    private void changeClientAccessTokenSignatureProvider(ClientResource client, String toSigAlgName) {
-        ClientRepresentation clientRep = client.toRepresentation();
-        clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, toSigAlgName);
-        client.update(clientRep);
+        EventRepresentation clientLoginEvent3 = events.poll();
+        EventAssertion.assertSuccess(clientLoginEvent3)
+                .type(EventType.CLIENT_LOGIN)
+                .clientId("offline-client")
+                .userId(serviceAccountUserId)
+                .sessionId(token.getSessionId())
+                .details(Details.TOKEN_ID, token.getId())
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
+
+        Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
     }
 
     public static class OfflineTokenRealmConfig implements RealmConfig {
