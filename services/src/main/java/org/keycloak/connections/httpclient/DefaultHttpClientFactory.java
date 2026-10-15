@@ -192,13 +192,16 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     private CloseableHttpClient createHttpClient(KeycloakSession session, DnsResolver targetResolver, boolean useProxy) {
         HttpClientBuilder builder = configureHttpClientBuilder(session, null)
                 .disableRedirectHandling();
-        builder.getApacheHttpClientBuilder().setDnsResolver(targetResolver);
         ProxyMappings proxyMappings = useProxy ? resolveProxyMappings() : null;
         if (proxyMappings != null && !proxyMappings.isEmpty()) {
-            // Proxies are configured by the operator and commonly private, so they are resolved while
-            // routing, and the resolver above only ever sees the targets of direct connections.
-            builder.getApacheHttpClientBuilder().setRoutePlanner(
-                    new ResolvedProxyRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings)));
+            // Proxies are configured by the operator and commonly private, so only the proxy of the
+            // route being connected skips targetResolver; direct targets, including a proxy's own
+            // host reached directly, are always checked.
+            ProxyRouteAwareDnsResolver routing = new ProxyRouteAwareDnsResolver(
+                    new ProxyMappingsAwareRoutePlanner(proxyMappings), targetResolver);
+            builder.getApacheHttpClientBuilder().setRoutePlanner(routing).setDnsResolver(routing);
+        } else {
+            builder.getApacheHttpClientBuilder().setDnsResolver(targetResolver);
         }
         return builder.build();
     }
