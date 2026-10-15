@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,49 +61,61 @@ public class Claim {
     @JsonProperty("display")
     private List<ClaimDisplay> display;
 
-    public static Optional<Claim> parse(KeycloakSession keycloakSession,
+    /**
+     * Parses the metadata claim(s) contributed by a single protocol mapper. Most mappers produce at most one
+     * claim; a mapper that spreads an external response's fields into individual top-level claims (see
+     * {@link OID4VCMapper#getMetadataAttributePaths()}) can produce several from one mapper instance, all
+     * sharing the same mandatory/display configuration.
+     */
+    public static List<Claim> parseAll(KeycloakSession keycloakSession,
                                         String credentialFormat,
                                         Oid4vcProtocolMapperModel protocolMapper) {
         try {
-            Claim claim = new Claim();
             ProtocolMapper protocolMapperImpl = keycloakSession.getProvider(ProtocolMapper.class,
                                                                             protocolMapper.getProtocolMapper());
             if (!(protocolMapperImpl instanceof OID4VCMapper)) {
-                return Optional.empty();
+                return List.of();
             }
             OID4VCMapper mapper = (OID4VCMapper) protocolMapperImpl;
             mapper.setMapperModel(protocolMapper, credentialFormat);
 
             if (!mapper.supportsCredentialFormat(credentialFormat)) {
-                return Optional.empty();
+                return List.of();
             }
 
             if (!mapper.includeInMetadata()) {
-                return Optional.empty();
+                return List.of();
             }
 
             if (!mapper.passesMappingGuards()) {
-                return Optional.empty();
+                return List.of();
             }
 
-            List<String> attributePath = mapper.getMetadataAttributePath();
-            if (attributePath == null || attributePath.isEmpty()) {
-                return Optional.empty();
+            List<List<String>> attributePaths = mapper.getMetadataAttributePaths();
+            if (attributePaths == null || attributePaths.isEmpty()) {
+                return List.of();
             }
 
-            claim.setName(String.join(".", attributePath));
-
-            claim.setPath(attributePath);
-            claim.setMandatory(protocolMapper.isMandatory());
-
+            List<ClaimDisplay> claimDisplayList = null;
             String displayString = protocolMapper.getDisplay();
             if (StringUtil.isNotBlank(displayString)) {
                 TypeReference<List<ClaimDisplay>> typeReference = new TypeReference<>() {};
-                List<ClaimDisplay> claimDisplayList = JsonSerialization.mapper.readValue(displayString, typeReference);
-                claim.setDisplay(claimDisplayList);
+                claimDisplayList = JsonSerialization.mapper.readValue(displayString, typeReference);
             }
 
-            return Optional.of(claim);
+            List<Claim> claims = new ArrayList<>();
+            for (List<String> attributePath : attributePaths) {
+                if (attributePath == null || attributePath.isEmpty()) {
+                    continue;
+                }
+                Claim claim = new Claim();
+                claim.setName(String.join(".", attributePath));
+                claim.setPath(attributePath);
+                claim.setMandatory(protocolMapper.isMandatory());
+                claim.setDisplay(claimDisplayList);
+                claims.add(claim);
+            }
+            return claims;
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
