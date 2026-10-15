@@ -166,11 +166,21 @@ public abstract class KeycloakLogFilter implements Filter {
 
         // HHH100503 "JDBC batch still contained JDBC statements on release" is logged at INFO after a
         // constraint violation that Keycloak already handles. Logged too loudly for a normal occurrence.
-        // TODO: Remove this suppression once Hibernate addresses HHH-20861 by no longer logging
+        // Remove this suppression once Hibernate addresses HHH-20861 by no longer logging
         // HHH100503 at INFO for this handled condition, or otherwise changes the upstream behavior
         // so this message is no longer emitted in normal operation.
         // https://hibernate.atlassian.net/browse/HHH-20861
+        // Tracking the removal of this code in: https://github.com/keycloak/keycloak/issues/53492
         if (Objects.equals(record.getLevel(), Level.INFO) && record.getLoggerName().equals("org.hibernate.orm.jdbc.batch") && record.getMessage().startsWith("HHH100503:")) {
+            return false;
+        }
+
+        // JGroups 5.5.5.Final added graceful-close processing that calls shutdownInput() before the
+        // peer's TLS close_notify arrives, causing an ERROR with mTLS. The cluster still forms successfully.
+        // Remove once Infinispan upgrades to JGroups >= 5.5.6.Final (upstream fix: JGroups commit 6000d11,
+        // Infinispan upgrade: https://github.com/infinispan/infinispan/pull/18275).
+        // Tracking of the removal of this filter: https://github.com/keycloak/keycloak/issues/54024
+        if (Objects.equals(record.getLevel(), Level.SEVERE) && record.getLoggerName().equals("org.jgroups.protocols.TCP") && record.getMessage() != null && record.getMessage().contains("closing inbound before receiving peer's close_notify")) {
             return false;
         }
 
