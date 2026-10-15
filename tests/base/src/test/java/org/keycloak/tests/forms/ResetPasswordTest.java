@@ -41,8 +41,12 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -190,6 +194,14 @@ public class ResetPasswordTest {
 
         updatePasswordPage.assertCurrent();
         assertEquals("You need to change your password.", updatePasswordPage.getFeedbackMessage());
+
+        // the username is exposed to password managers without being submitted
+        WebElement usernameHint = driver.driver().findElement(By.id("kc-update-password-username"));
+        assertEquals(USER_LOGIN, usernameHint.getDomAttribute("value"));
+        assertEquals("username", usernameHint.getDomAttribute("autocomplete"));
+        assertNotNull(usernameHint.getDomAttribute("hidden"));
+        assertNull(usernameHint.getDomAttribute("name"));
+
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
         EventRepresentation updatePasswordEvent = events.poll();
