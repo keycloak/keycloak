@@ -237,7 +237,8 @@ public final class PartialEvaluator {
 
         String organizationType = resourceType.getOrganizationType();
 
-        if (organizationType != null) {
+        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+        if (organizationType != null && organizationProvider != null) {
             ResourceType organizationResourceType = AdminPermissionsSchema.SCHEMA.getResourceTypes().get(organizationType);
 
             if (organizationResourceType == null) {
@@ -246,24 +247,11 @@ public final class PartialEvaluator {
 
             PartialEvaluationContext evaluateOrganizations = runEvaluation(session, adminUser, organizationResourceType, null, organizationResourceType, storage, builder, queryBuilder, path);
 
-            if (evaluateOrganizations.isResourceTypeAllowed()) {
-                allowedGroups.addAll(evaluateOrganizations.getAllowedResources());
-                deniedGroups.addAll(evaluateOrganizations.getDeniedResources());
-            } else {
-                OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+            final List<String> allowedBackingGroups = getOrganizationsBackingGroupIDs(organizationProvider, organizationType, evaluateOrganizations.getAllowedResources());
+            final List<String> deniedBackingGroups = getOrganizationsBackingGroupIDs(organizationProvider, organizationType, evaluateOrganizations.getDeniedResources());
 
-                final List<String> allowedBackingGroups = evaluateOrganizations.getAllowedResources()
-                        .stream()
-                        .map(organizationId -> getOrganizationBackingGroupId(organizationProvider, organizationId))
-                        .toList();
-                final List<String> deniedBackingGroups = evaluateOrganizations.getDeniedResources()
-                        .stream()
-                        .map(organizationId -> getOrganizationBackingGroupId(organizationProvider, organizationId))
-                        .toList();
-
-                allowedGroups.addAll(allowedBackingGroups);
-                deniedGroups.addAll(deniedBackingGroups);
-            }
+            allowedGroups.addAll(allowedBackingGroups);
+            deniedGroups.addAll(deniedBackingGroups);
         }
 
         if (groupType != null || organizationType != null) {
@@ -358,17 +346,27 @@ public final class PartialEvaluator {
         return false;
     }
 
-    private String getOrganizationBackingGroupId(OrganizationProvider organizationProvider, String organizationId) {
-        OrganizationModel organizationModel = organizationProvider.getById(organizationId);
+    private List<String> getOrganizationsBackingGroupIDs(OrganizationProvider organizationProvider, String resourceType, Set<String> organizationIDs) {
+        return organizationIDs.stream()
+                .map(organizationId -> {
+                    if (organizationId.equals(resourceType)) {
+                        // continue as normal if all organizations are allowed
+                        return organizationId;
+                    } else {
+                        // this is indeed a specific organization, so resolve its organization group ID.
+                        OrganizationModel organizationModel = organizationProvider.getById(organizationId);
 
-        if (organizationModel != null) {
-            GroupModel backingGroup = organizationProvider.getOrganizationGroup(organizationModel);
+                        if (organizationModel != null) {
+                            GroupModel backingGroup = organizationProvider.getOrganizationGroup(organizationModel);
 
-            if (backingGroup != null) {
-                return backingGroup.getId();
-            }
-        }
+                            if (backingGroup != null) {
+                                return backingGroup.getId();
+                            }
+                        }
+                    }
 
-        return null;
+                    return null;
+                })
+                .toList();
     }
 }
