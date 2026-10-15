@@ -99,12 +99,21 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
         EntityManager em = getEntityManager();
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        if (allowedGroups.contains(GROUPS_RESOURCE_TYPE)) {
-            return cb.exists(createUserMembershipSubquery(context));
-        }
+        boolean allowGroups = allowedGroups.contains(GROUPS_RESOURCE_TYPE);
+        boolean allowOrganizations = allowedGroups.contains(ORGANIZATIONS_RESOURCE_TYPE);
 
-        if (allowedGroups.contains(ORGANIZATIONS_RESOURCE_TYPE)) {
-            return cb.exists(createOrganizationMembershipSubquery(context));
+        if (allowGroups || allowOrganizations) {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (allowGroups) {
+                predicates.add(cb.exists(createUserMembershipSubquery(context)));
+            }
+
+            if (allowOrganizations) {
+                predicates.add(cb.exists(createOrganizationMembershipSubquery(context)));
+            }
+
+            return cb.or(predicates);
         }
 
         return cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
@@ -122,9 +131,9 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
             Predicate notMembers;
 
             if (denyGroups) {
-                notMembers = cb.exists(createUserMembershipSubquery(context));
+                notMembers = cb.not(cb.exists(createUserMembershipSubquery(context)));
             } else {
-                notMembers = cb.exists(createOrganizationMembershipSubquery(context));
+                notMembers = cb.not(cb.exists(createOrganizationMembershipSubquery(context)));
             }
 
             // access denied for the group/organization resource type
