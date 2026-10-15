@@ -30,6 +30,7 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome;
 import org.keycloak.authorization.model.Policy;
@@ -101,6 +102,7 @@ public final class PartialEvaluator {
         Set<String> allowedResources = new HashSet<>();
         Set<String> deniedResources = new HashSet<>();
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
             policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
@@ -108,6 +110,13 @@ public final class PartialEvaluator {
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
+                    PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
+
+                    if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
+                        deniedResources.addAll(ids);
+                        continue;
+                    }
+
                     PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
 
                     if (provider == null) {
@@ -120,7 +129,7 @@ public final class PartialEvaluator {
                         continue;
                     }
 
-                    if (Outcome.FORCE_DENY.equals(granted)) {
+                    if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
                         deniedResources.addAll(ids);
                         continue;
                     }
