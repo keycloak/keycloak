@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
@@ -47,7 +45,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
@@ -193,19 +190,16 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     }
 
     private CloseableHttpClient createHttpClient(KeycloakSession session, DnsResolver targetResolver, boolean useProxy) {
-        ProxyMappings proxyMappings = useProxy ? resolveProxyMappings() : null;
-        HttpClientBuilder builder = configureHttpClientBuilder(session, proxyMappings)
+        HttpClientBuilder builder = configureHttpClientBuilder(session, null)
                 .disableRedirectHandling();
-        DnsResolver dnsResolver = targetResolver;
+        builder.getApacheHttpClientBuilder().setDnsResolver(targetResolver);
+        ProxyMappings proxyMappings = useProxy ? resolveProxyMappings() : null;
         if (proxyMappings != null && !proxyMappings.isEmpty()) {
-            // The client also resolves the proxies' own host names, which are configured by the
-            // operator and commonly private, so only the targets of direct connections are checked.
-            Set<String> proxyHostNames = proxyMappings.getProxyHostNames();
-            dnsResolver = host -> proxyHostNames.contains(host.toLowerCase(Locale.ROOT))
-                    ? SystemDefaultDnsResolver.INSTANCE.resolve(host)
-                    : targetResolver.resolve(host);
+            // Proxies are configured by the operator and commonly private, so they are resolved while
+            // routing, and the resolver above only ever sees the targets of direct connections.
+            builder.getApacheHttpClientBuilder().setRoutePlanner(
+                    new ResolvedProxyRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings)));
         }
-        builder.getApacheHttpClientBuilder().setDnsResolver(dnsResolver);
         return builder.build();
     }
 

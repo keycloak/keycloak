@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -137,17 +135,6 @@ public class ProxyMappings {
 
   public boolean isEmpty() {
     return this.entries.isEmpty();
-  }
-
-  /**
-   * @return the lower-cased host names of the proxies these mappings route requests through
-   */
-  public Set<String> getProxyHostNames() {
-    return entries.stream() //
-            .map(ProxyMapping::getProxyHost) //
-            .filter(Objects::nonNull) //
-            .map(proxyHost -> proxyHost.getHostName().toLowerCase(Locale.ROOT)) //
-            .collect(Collectors.toSet());
   }
 
   /**

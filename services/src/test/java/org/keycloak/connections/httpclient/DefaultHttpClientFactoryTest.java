@@ -244,6 +244,18 @@ public class DefaultHttpClientFactoryTest {
             }
         }
 
+        @Test
+        public void testProxiedHttpClientChecksDirectRequestsToProxyHost() throws IOException {
+            // Not matched by the mapping, so this goes directly to the proxy's host and must be checked.
+            HttpClientProvider provider = createProviderWithProperties(Map.of(
+                    "proxy-mappings", ".*proxied.*;http://127.0.0.1:8280"));
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(rejectingResolver(), true)) {
+                Assert.assertThrows(UnknownHostException.class,
+                        () -> httpClient.execute(new HttpGet("http://127.0.0.1:8280/hello")));
+            }
+        }
+
         private static DnsResolver rejectingResolver() {
             return host -> {
                 throw new UnknownHostException("rejected " + host);
