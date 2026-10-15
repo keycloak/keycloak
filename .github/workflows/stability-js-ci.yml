@@ -32,6 +32,7 @@ jobs:
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
+          retention-days: 1
 
   account-ui-e2e:
     name: Account UI E2E
@@ -68,9 +69,9 @@ jobs:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
@@ -129,9 +130,9 @@ jobs:
           KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
           KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
