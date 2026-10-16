@@ -32,3 +32,13 @@ You can import a configuration file for a resource server.
 image:images/resource-server/authz-settings.png[Import Settings]
 
 . Click *Import* and choose a file containing the configuration that you want to import.
+
+== Importing configuration through the Admin REST API
+
+You can also import authorization configuration when creating or updating a client through the Admin REST API.
+Include the configuration in the `authorizationSettings` field of the client representation.
+For an existing client, send the representation to `PUT /admin/realms/{realm}/clients/{client-uuid}`.
+
+The supplied configuration enables Authorization Services and creates or updates its resources, scopes, policies, and permissions.
+Existing entities omitted from the configuration are retained.
+To update other client settings while retaining the authorization configuration, set `authorizationServicesEnabled` to `true` and omit `authorizationSettings`.
