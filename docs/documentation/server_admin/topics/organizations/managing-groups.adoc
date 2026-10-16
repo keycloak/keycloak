@@ -160,7 +160,7 @@ Notice:
 
 - Groups appear within the organization claim, not as a separate top-level claim
 - Group paths are relative to the organization
-- Multiple organizations can be included if the user is a member of multiple organizations and uses `scope=organization:*`
+- Multiple organizations can be included if the user is a member of multiple organizations and uses `+scope=organization:*+`
 
 === SAML: Organization groups in assertions
 
