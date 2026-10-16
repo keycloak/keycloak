@@ -98,6 +98,10 @@ The `default` client registration provider can be used to create, retrieve, upda
 It uses {project_name} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
 console, including for example configuring protocol mappers.
 
+Attributes that grant a client access beyond its own configuration, currently `ssf.*` and `external.token.*`, are reserved for administrators.
+They are ignored when the request is authenticated with an initial access token or a registration access token, or when the registration is anonymous.
+Set them with a bearer token of an administrator or through the Admin REST API instead.
+
 To create a client create a Client Representation (JSON) then perform an HTTP POST request to `/realms/<realm>/clients-registrations/default`.
 
 It will return a Client Representation that also includes the registration access token.

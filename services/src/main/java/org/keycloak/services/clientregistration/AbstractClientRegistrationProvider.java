@@ -71,6 +71,12 @@ import org.keycloak.validation.ValidationUtil;
  */
 public abstract class AbstractClientRegistrationProvider implements ClientRegistrationProvider {
 
+    /**
+     * Prefixes of client attributes that grant the client access beyond its own configuration and are therefore
+     * reserved for the Admin API.
+     */
+    private static final Set<String> PRIVILEGED_ATTRIBUTE_PREFIXES = Set.of("ssf.", "external.token.");
+
     protected KeycloakSession session;
     protected EventBuilder event;
     protected ClientRegistrationAuth auth;
@@ -401,9 +407,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     /**
-     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     * Strips privileged attributes from non-Admin representations.
      *
-     * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
+     * <p>Reserved for the Admin API; silently removed for DCR callers (anonymous/IAT/RAT)
      * without throwing an error.
      */
     private void stripPrivilegedAttributes(ClientRepresentation rep) {
@@ -414,6 +420,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             return;
         }
         rep.getAttributes().entrySet()
-                .removeIf(e -> e.getKey().startsWith("ssf."));
+                .removeIf(e -> isPrivilegedAttribute(e.getKey()));
+    }
+
+    private static boolean isPrivilegedAttribute(String name) {
+        return PRIVILEGED_ATTRIBUTE_PREFIXES.stream().anyMatch(name::startsWith);
     }
 }
