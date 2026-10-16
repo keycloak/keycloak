@@ -13,6 +13,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -27,6 +28,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -178,6 +180,88 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertTrue(secret.getClientRoles() == null || secret.getClientRoles().isEmpty(),
                     "client role mapping the caller cannot view must be filtered from the group representation");
         });
+    }
+
+    @Test
+    public void testScopeMappingsFilterRolesCallerCannotView() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+
+        Map<String, List<String>> parentRoleAttributes = Map.of("cost-center", List.of("CONFIDENTIAL-4471"));
+        testRealm.roles().create(RoleBuilder.create().name("child-role").build());
+        testRealm.roles().create(RoleBuilder.create().name("parent-role").attributes(parentRoleAttributes).build());
+        RoleRepresentation childRole = testRealm.roles().get("child-role").toRepresentation();
+        testRealm.roles().get("parent-role").addComposites(List.of(childRole));
+        RoleRepresentation parentRole = testRealm.roles().get("parent-role").toRepresentation();
+
+        ClientRepresentation appClient = createClient(testRealm, "app1");
+        testRealm.clients().get(appClient.getId()).roles().create(RoleBuilder.create().name("app-role").build());
+        RoleRepresentation appRole = testRealm.clients().get(appClient.getId()).roles().get("app-role").toRepresentation();
+
+        ClientRepresentation scopedClient = createRestrictedScopeClient(testRealm, "scoped-client");
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("scoped-client-scope");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        try (Response response = testRealm.clientScopes().create(clientScope)) {
+            clientScope.setId(ApiUtil.getCreatedId(response));
+        }
+        for (RoleMappingResource scopeMappings : scopeMappingEndpoints(testRealm, scopedClient.getId(), clientScope.getId()).values()) {
+            scopeMappings.realmLevel().add(List.of(parentRole));
+            scopeMappings.clientLevel(appClient.getId()).add(List.of(appRole));
+        }
+
+        createDelegatedAdmin(testRealm, "view-clients-admin", AdminRoles.VIEW_CLIENTS);
+        createDelegatedAdmin(testRealm, "view-realm-admin", AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_REALM);
+        createDelegatedAdmin(testRealm, "manage-users-admin", AdminRoles.VIEW_CLIENTS, AdminRoles.MANAGE_USERS);
+
+        runAs(realmName, "view-clients-admin", userClient -> {
+            RealmResource realm = userClient.realm(realmName);
+            assertForbidden("view-clients admin must not view a realm role directly",
+                    () -> realm.rolesById().getRole(childRole.getId()));
+
+            scopeMappingEndpoints(realm, scopedClient.getId(), clientScope.getId()).forEach((endpoint, scopeMappings) -> {
+                assertEquals(Set.of(), toNames(scopeMappings.realmLevel().listAll()), endpoint);
+                assertEquals(Set.of(), toNames(scopeMappings.realmLevel().listEffective()), endpoint);
+                assertEquals(Set.of(), toNames(scopeMappings.realmLevel().listEffective(false)), endpoint);
+                assertEquals(Set.of("app-role"), toNames(scopeMappings.clientLevel(appClient.getId()).listAll()), endpoint);
+                assertEquals(Set.of("app-role"), toNames(scopeMappings.clientLevel(appClient.getId()).listEffective()), endpoint);
+
+                MappingsRepresentation mappings = scopeMappings.getAll();
+                assertEquals(Set.of(), toNames(mappings.getRealmMappings()), endpoint);
+                assertEquals(Set.of("app1"), mappings.getClientMappings().keySet(), endpoint);
+            });
+        });
+
+        for (String admin : List.of("view-realm-admin", "manage-users-admin")) {
+            runAs(realmName, admin, userClient -> {
+                scopeMappingEndpoints(userClient.realm(realmName), scopedClient.getId(), clientScope.getId()).forEach((endpoint, scopeMappings) -> {
+                    String message = admin + " on " + endpoint;
+                    assertEquals(Set.of("parent-role"), toNames(scopeMappings.realmLevel().listAll()), message);
+                    assertEquals(Set.of("parent-role", "child-role"), toNames(scopeMappings.realmLevel().listEffective()), message);
+                    assertEquals(Set.of("parent-role"), toNames(scopeMappings.getAll().getRealmMappings()), message);
+
+                    RoleRepresentation parent = scopeMappings.realmLevel().listEffective(false).stream()
+                            .filter(role -> "parent-role".equals(role.getName())).findFirst().orElseThrow();
+                    assertEquals(parentRoleAttributes, parent.getAttributes(), message);
+                });
+            });
+        }
+    }
+
+    private void createDelegatedAdmin(RealmResource realm, String username, String... adminRoles) {
+        createUser(realm, username);
+        for (String adminRole : adminRoles) {
+            grantRealmManagementRole(realm, username, adminRole);
+        }
+    }
+
+    private static Map<String, RoleMappingResource> scopeMappingEndpoints(RealmResource realm, String clientUuid, String clientScopeId) {
+        return Map.of("clients/{id}/scope-mappings", realm.clients().get(clientUuid).getScopeMappings(),
+                "client-scopes/{id}/scope-mappings", realm.clientScopes().get(clientScopeId).getScopeMappings());
+    }
+
+    private static Set<String> toNames(List<RoleRepresentation> roles) {
+        return roles == null ? Set.of() : roles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
     }
 
     @Test

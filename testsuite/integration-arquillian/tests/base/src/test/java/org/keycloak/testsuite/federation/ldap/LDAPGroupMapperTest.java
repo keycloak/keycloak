@@ -39,6 +39,7 @@ import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
@@ -80,6 +81,16 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
+        // Pagination is not the subject of this test and the embedded ApacheDS is unreliable with paged searches,
+        // which intermittently caused incomplete group lookups
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ctx.getLdapModel().put(LDAPConstants.PAGINATION, "false");
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
         runOnServer.run(LdapHelper.prepareGroupsLDAPTest());
     }
 
@@ -1062,6 +1073,89 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         });
     }
 
+    // https://github.com/keycloak/keycloak/issues/50984
+    @Test
+    public void test10a_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInLdapOnlyMode() {
+        leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode.LDAP_ONLY, "LdapOnly");
+    }
+
+    // https://github.com/keycloak/keycloak/issues/50984
+    @Test
+    public void test10b_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInReadOnlyMode() {
+        leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode.READ_ONLY, "ReadOnly");
+    }
+
+    // The realm is reimported before every test method (see isImportAfterEachMethod), but the embedded
+    // LDAP server (a @ClassRule) is shared for the whole class, so each variant needs its own OU/mapper/
+    // group names to avoid clashing with LDAP entries left behind by an earlier test method.
+    private void leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroup(LDAPGroupMapperMode mode, String suffix) {
+        String mapperName = "group-mapper-" + suffix;
+        String groupName = "Group" + suffix;
+        String groupsPath = "/ldap-groups-" + suffix;
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            realm.removeComponent(LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper"));
+            realm.createGroup(groupsPath.substring(1));
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            String baseDn = ldapModel.getConfig().getFirst(LDAPConstants.BASE_DN);
+            String descriptionName = getGroupDescriptionLDAPAttrName(ldapProvider);
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OU" + suffix);
+            LDAPTestUtils.addOrUpdateGroupMapper(mapperName, realm, ldapModel, mode, descriptionName,
+                    GroupMapperConfig.GROUPS_DN, "ou=OU" + suffix + "," + baseDn, GroupMapperConfig.LDAP_GROUPS_PATH, groupsPath);
+            LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName, descriptionName, groupName + " Description");
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+            GroupModel managedGroup = KeycloakModelUtils.findGroupByPath(session, realm, groupsPath + "/" + groupName);
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+
+            // John becomes a genuine LDAP-backed member of the mapper-managed group, same as a real
+            // pre-existing LDAP membership would be (the mapper itself may be configured READ_ONLY).
+            if (mode == LDAPGroupMapperMode.LDAP_ONLY) {
+                john.joinGroup(managedGroup);
+            } else {
+                groupMapper.addGroupMappingInLDAP(realm, managedGroup, ldapProvider.loadLDAPUserByUsername(realm, "johnkeycloak"));
+            }
+
+            // Out-of-path local group with the same name; this membership is stored only in the local DB.
+            GroupModel localGroup = realm.createGroup(groupName);
+            john.joinGroup(localGroup);
+
+            Assertions.assertTrue(john.isMemberOf(localGroup));
+            Assertions.assertTrue(john.isMemberOf(managedGroup));
+        });
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            GroupModel managedGroup = KeycloakModelUtils.findGroupByPath(session, realm, groupsPath + "/" + groupName);
+            GroupModel localGroup = KeycloakModelUtils.findGroupByPath(session, realm, "/" + groupName);
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+
+            // Leaving the out-of-path local group must not revoke John's membership in the
+            // LDAP-managed group of the same name, nor fail because of the unrelated LDAP group.
+            john.leaveGroup(localGroup);
+
+            Assertions.assertFalse(john.isMemberOf(localGroup));
+            Assertions.assertTrue(john.isMemberOf(managedGroup));
+        });
+    }
+
     @Test
     public void test11_fetchUsersGroupsWithPaginationAndInvalidBatchSize() {
         // Add some groups to Keycloak
@@ -1106,9 +1200,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
+            // pagination is disabled for this test class, enable it here as the fallback is what is tested
             // batch size 0 effectively disables pagination, code must fall back to non-paginated search
             ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
-            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.PAGINATION, "true", LDAPConstants.BATCH_SIZE_FOR_SYNC, "0");
             appRealm.updateComponent(mapperModel);
         });
 
@@ -1127,9 +1222,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            // revert batch size change
+            // revert pagination and batch size changes
             ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
-            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
+            LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.PAGINATION, "false", LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
             appRealm.updateComponent(mapperModel);
         });
     }
@@ -1249,5 +1344,66 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             assertThat("User should be in default group 11", groups.contains(defaultGroup11), equalTo(true));
             assertThat("User should be in default group 12", groups.contains(defaultGroup12), equalTo(true));
         });
+    }
+
+    // Regression test for the customUserSearchFilter leaking into group lookups.
+    //
+    // Resolving a group by its id goes through LDAPOperationManager.lookupById - the same path the
+    // admin console's group "Members" tab relies on, and the path that actually triggers when the
+    // configured UUID attribute is also a group's naming attribute (e.g. cn in eDirectory, the
+    // setup that originally reported the bug). Before the fix this path unconditionally appended
+    // the User LDAP filter, so the group entry - which has none of the user attributes the filter
+    // matches on, such as mail - was filtered out and the Members tab came back empty.
+    //
+    // Only user searches (LDAPUtils.createQueryForUserSearch) flag the query as a user query, so a
+    // group query built here must resolve the group even while a custom User LDAP filter is set.
+    @Test
+    public void test15_groupLookupByIdIgnoresCustomUserFilter() {
+        // Capture the LDAP id (uuid) of an existing group while no custom filter is configured.
+        String group1Uuid = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+            LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group1");
+            Assertions.assertNotNull(ldapGroup);
+            return ldapGroup.getUuid();
+        }, String.class);
+
+        // Configure a User LDAP filter that matches user entries but never a group entry.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(mail=*@email.org)");
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+                GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+
+                String uuidAttrName = ldapProvider.getLdapIdentityStore().getConfig().getUuidLDAPAttributeName();
+
+                // Querying by the uuid attribute drives the lookupById path. The group must still
+                // be found - if the custom User LDAP filter leaks in, getFirstResult() is null.
+                try (LDAPQuery query = groupMapper.createGroupQuery(false)) {
+                    query.addWhereCondition(new LDAPQueryConditionsBuilder().equal(uuidAttrName, group1Uuid));
+                    LDAPObject ldapGroup = query.getFirstResult();
+                    Assertions.assertNotNull(ldapGroup, "Group lookup by id must not apply the custom User LDAP filter");
+                    Assertions.assertEquals(group1Uuid, ldapGroup.getUuid());
+                }
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+                ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+                appRealm.updateComponent(ctx.getLdapModel());
+            });
+        }
     }
 }

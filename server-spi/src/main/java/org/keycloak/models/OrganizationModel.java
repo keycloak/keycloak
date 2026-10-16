@@ -118,8 +118,16 @@ public interface OrganizationModel {
 
     void setDescription(String description);
 
+    /**
+     * @deprecated Use {@code client_id} on invitation endpoints instead.
+     */
+    @Deprecated(forRemoval = true, since = "27.0")
     String getRedirectUrl();
 
+    /**
+     * @deprecated Use {@code client_id} on invitation endpoints instead.
+     */
+    @Deprecated(forRemoval = true, since = "27.0")
     void setRedirectUrl(String redirectUrl);
 
     Map<String, List<String>> getAttributes();

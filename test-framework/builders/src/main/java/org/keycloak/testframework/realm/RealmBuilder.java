@@ -744,6 +744,11 @@ public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> a
         return this;
     }
 
+    public RealmBuilder defaultClientScopes(String... clientScopes) {
+        rep.setDefaultDefaultClientScopes(combine(rep.getDefaultDefaultClientScopes(), clientScopes));
+        return this;
+    }
+
     public RealmBuilder addClientScopeRealmRoleMapping(String clientScopeName, String... roleNames) {
         ScopeMappingRepresentation mapping = rep.clientScopeScopeMapping(clientScopeName);
         for (String roleName : roleNames) {

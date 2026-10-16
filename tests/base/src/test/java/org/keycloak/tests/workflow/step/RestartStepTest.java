@@ -349,4 +349,22 @@ public class RestartStepTest extends AbstractWorkflowTest {
         });
         mailServer.runCleanup();
     }
+
+    @Test
+    public void testRestartFromNonNumericPosition() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
+                                .withConfig(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "x")
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), is("Workflow restart step has invalid position: x."));
+        }
+    }
 }

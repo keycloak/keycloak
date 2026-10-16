@@ -136,10 +136,18 @@ public final class VciConformanceRealmUtil {
                 .attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true")
                 // The conformance suite wallet requests DEF-compressed encrypted credential responses
                 .attribute(OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS, "DEF")
-                // Randomize credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
+                // Round credential time claims (iat/exp/nbf) so two credentials from the same dataset do not
                 // carry the precise issuance time, which the suite's unlinkability check (RFC 9901 10.1) warns on.
-                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.RANDOMIZE.name())
-                .attribute(OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS, "300")
+                // ROUND is used instead of RANDOMIZE because RANDOMIZE is probabilistic: the two independent
+                // random offsets occasionally coincide, leaving an iat delta that matches the real inter-issuance
+                // gap and intermittently tripping the check (see keycloak/keycloak#53787). Rounding quantizes iat to
+                // unit boundaries, so the delta between two credentials issued ~1-2s apart is either 0 or a full
+                // unit - never approximately the real gap. The batch unlinkability check accepts shared
+                // hour-aligned timestamps, but treats minute rounding as too precise. The credential scopes
+                // use a 7200s (2 hour) expiry: exp is computed from the normalized iat, so both remain on hour
+                // boundaries and credentials retain at least an hour of validity at issuance.
+                .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.ROUND.name())
+                .attribute(OID4VCIConstants.TIME_ROUND_UNIT, TimeClaimNormalizer.RoundUnit.HOUR.name())
                 .defaultSignatureAlgorithm(Algorithm.ES256)
                 .clientScopes(createCredentialScope(mdoc))
                 .users(createUserRepWithVc(mdoc));
@@ -238,7 +246,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createSdJwtCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(SD_JWT_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.SD_JWT_VC)
@@ -262,7 +270,7 @@ public final class VciConformanceRealmUtil {
     private static CredentialScopeRepresentation createMdocCredentialScope() {
         CredentialScopeRepresentation scope = new CredentialScopeRepresentation(MDOC_SCOPE)
                 .setIncludeInTokenScope(true)
-                .setExpiryInSeconds(300)
+                .setExpiryInSeconds(7200)
                 .setCredentialConfigurationId(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setCredentialIdentifier(MDOC_CREDENTIAL_CONFIGURATION_ID)
                 .setFormat(VCFormat.MSO_MDOC)

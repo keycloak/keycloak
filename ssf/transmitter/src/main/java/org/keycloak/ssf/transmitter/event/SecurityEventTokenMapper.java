@@ -85,6 +85,12 @@ public class SecurityEventTokenMapper {
     // what separates them; see isUserPurgeAdminEvent.
     protected static final Pattern USER_DELETED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)$");
 
+    // "sessions/{sessionId}" — admin deletion of a single user session
+    // (RealmAdminResource.deleteSession, ResourceType.USER_SESSION). Unlike the
+    // users/... paths this carries no user id; RealmAdminResource attaches it as
+    // the Details.USER_ID admin event detail. See isUserSessionDeleteAdminEvent.
+    protected static final Pattern USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^sessions/([^/]+)$");
+
     public static final String KC_CREDENTIAL_ID = "kc_credential_id";
 
     public static final String KC_CREDENTIAL_TYPE = "kc_credential_type";
@@ -105,6 +111,16 @@ public class SecurityEventTokenMapper {
     protected final KeycloakSession session;
 
     protected final SsfTransmitterConfig transmitterConfig;
+
+    /**
+     * Single-entry memo for {@link #isRevokedSessionAlive(Event)}. The mapper
+     * lives for one transmitter provider, i.e. one {@link KeycloakSession},
+     * and the listener maps one event for every matching stream, so
+     * remembering the last event's answer collapses the per-stream store
+     * lookups into one per revocation.
+     */
+    private Event livenessCheckedEvent;
+    private boolean livenessCheckedSessionAlive;
 
     public SecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig, Function<KeycloakSession, String> issuerGenerator) {
         this.session = session;
@@ -204,18 +220,27 @@ public class SecurityEventTokenMapper {
 
 
     /**
-     * Generates a session revoked event.
+     * Generates a session revoked event for a user- or admin-initiated
+     * revocation, see {@link #applyInitiatingEntity(Event, AdminEvent, InitiatingEntityAware)}.
      *
-     * @param event
-     * @param sessionId            The ID of the revoked session
-     * @param userId               The ID of the user
-     * @param eventTokenCustomizer
-     * @param adminEvent
-     * @param stream
-     * @param reason               The reason for the revocation
+     * @param userEvent  The user event carrying the revoked session id and the user id
+     * @param adminEvent The admin event, if the revocation was admin-initiated
+     * @param stream     The stream configuration
+     * @param reason     The reason for the revocation
      * @return The session revoked event as a SecurityEventToken
      */
     public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream, String reason) {
+        return generateSessionRevokedEvent(userEvent, adminEvent, stream, reason, InitiatingEntity.USER);
+    }
+
+    /**
+     * Variant of {@link #generateSessionRevokedEvent(Event, AdminEvent, StreamConfig, String)} for
+     * revocations where "not admin-initiated" does not mean "user-initiated", see
+     * {@link #applyInitiatingEntity(AdminEvent, InitiatingEntityAware, InitiatingEntity)}.
+     *
+     * @param nonAdminEntity The initiating entity to report when {@code adminEvent} is null
+     */
+    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream, String reason, InitiatingEntity nonAdminEntity) {
         try {
 
             String sessionId = userEvent.getSessionId();
@@ -242,7 +267,7 @@ public class SecurityEventTokenMapper {
             // Set events
             Map<String, Object> events = new HashMap<>();
             CaepSessionRevoked sessionRevokedEvent = new CaepSessionRevoked();
-            applyInitiatingEntity(userEvent, adminEvent, sessionRevokedEvent);
+            applyInitiatingEntity(adminEvent, sessionRevokedEvent, nonAdminEntity);
 
             if (reason != null) {
                 sessionRevokedEvent.setReasonAdmin(Map.of("en", reason));
@@ -856,7 +881,10 @@ public class SecurityEventTokenMapper {
      * <p>The check deliberately mirrors the {@code switch} in
      * {@link #toSecurityEventToken(Event, StreamConfig)} so the two stay in
      * sync. New event types added to the mapper must be reflected here
-     * too, otherwise the listener will silently drop them.
+     * too, otherwise the listener will silently drop them. Conditions that
+     * need a store lookup (currently only the session liveness check for
+     * {@code REVOKE_GRANT}) are left to the mapping itself, so a
+     * {@code true} here may still end in a {@code null} SET.
      */
     public boolean canConvert(Event event) {
         if (event == null || shouldIgnoreEvent(event)) {
@@ -864,6 +892,10 @@ public class SecurityEventTokenMapper {
         }
         return switch (event.getType()) {
             case LOGOUT -> !shouldIgnoreLogout(event);
+            // Only the shape check here; whether the revocation actually ended
+            // the session needs store lookups, which toSecurityEventToken does
+            // (once per event, see isRevokedSessionAlive) before yielding null.
+            case REVOKE_GRANT -> carriesSessionId(event);
             case UPDATE_CREDENTIAL,
                  REMOVE_CREDENTIAL,
                  RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
@@ -883,16 +915,23 @@ public class SecurityEventTokenMapper {
      * "log out all user sessions" ({@code users/{userId}/logout}),
      * admin-initiated password reset / credential management, an
      * enable/disable transition on the generic user update endpoint (see
-     * {@link #isEnabledStateChangeAdminEvent}), and deletion of the user
-     * itself (see {@link #isUserPurgeAdminEvent}); everything else returns
+     * {@link #isEnabledStateChangeAdminEvent}), deletion of the user
+     * itself (see {@link #isUserPurgeAdminEvent}), and deletion of a single
+     * user session ({@code sessions/{sessionId}}, see
+     * {@link #isUserSessionDeleteAdminEvent}); everything else returns
      * null and should short-circuit before any stream lookup happens.
      *
-     * <p>The last two share the bare {@code users/{id}} resource path and are
-     * told apart by operation type, so both gates check it explicitly.
+     * <p>Enable/disable and purge share the bare {@code users/{id}} resource
+     * path and are told apart by operation type, so both gates check it
+     * explicitly. Session deletion is the only mapped path that is not a
+     * {@link ResourceType#USER} event.
      */
     public boolean canConvert(AdminEvent adminEvent) {
         if (adminEvent == null) {
             return false;
+        }
+        if (ResourceType.USER_SESSION.equals(adminEvent.getResourceType())) {
+            return isUserSessionDeleteAdminEvent(adminEvent);
         }
         if (!ResourceType.USER.equals(adminEvent.getResourceType())) {
             return false;
@@ -932,6 +971,31 @@ public class SecurityEventTokenMapper {
         }
         String path = adminEvent.getResourcePath();
         return path != null && USER_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path).matches();
+    }
+
+    /**
+     * True when {@code adminEvent} is an admin deletion of a single user session —
+     * {@code DELETE /admin/realms/{realm}/sessions/{sessionId}} as fired by
+     * {@code RealmAdminResource.deleteSession} with {@link ResourceType#USER_SESSION}.
+     * This is what the per-session "Sign out" action in the admin console
+     * (realm Sessions page and user Sessions tab) calls; "Sign out all sessions"
+     * goes through {@code users/{id}/logout} instead.
+     *
+     * <p>The session is already gone when the event fires and the path only
+     * names the session, so the user id must come from the
+     * {@link Details#USER_ID} detail the admin resource attaches. Without it
+     * there is no subject to build and the event is not convertible.
+     */
+    protected boolean isUserSessionDeleteAdminEvent(AdminEvent adminEvent) {
+        if (!ResourceType.USER_SESSION.equals(adminEvent.getResourceType())
+                || adminEvent.getOperationType() != OperationType.DELETE) {
+            return false;
+        }
+        String path = adminEvent.getResourcePath();
+        if (path == null || !USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path).matches()) {
+            return false;
+        }
+        return SsfUtil.userIdFromAdminEvent(adminEvent) != null;
     }
 
     protected List<Pattern> supportedAdminPathPatters() {
@@ -988,6 +1052,27 @@ public class SecurityEventTokenMapper {
                 }
 
                 yield generateSessionRevokedEvent(event, adminEvent, stream, "User logout");
+            }
+
+            case REVOKE_GRANT -> {
+
+                // Token revocation via the OAuth2 /revoke endpoint that
+                // actually ended the user session, see shouldIgnoreRevokeGrant
+                // for the cases that must NOT map: access-token revocation
+                // is excluded by shape (no session id today, and by liveness
+                // should that change), consent revocation and partial
+                // revocation with a surviving SSO session are both excluded
+                // by the liveness check. Future revoke-grant
+                // flavors (e.g. consent revocation → RISC opt-out) need a
+                // discriminator of their own here, mirrored in canConvert.
+                if (shouldIgnoreRevokeGrant(event)) {
+                    yield null;
+                }
+
+                // /revoke is called by the relying party with client
+                // credentials; no end user is involved, so the RP's system
+                // is the initiating entity rather than the user.
+                yield generateSessionRevokedEvent(event, adminEvent, stream, "Token revoked", InitiatingEntity.SYSTEM);
             }
 
             case UPDATE_CREDENTIAL -> {
@@ -1077,18 +1162,113 @@ public class SecurityEventTokenMapper {
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
     }
 
+    /**
+     * {@code REVOKE_GRANT} covers two very different flows: OAuth2 token
+     * revocation ({@code POST /protocol/openid-connect/revoke} with a
+     * refresh or offline token, where the endpoint puts the revoked token's
+     * session id on the event) and account-console consent revocation.
+     * Only the former is mapped. Consent revocation does carry a session id
+     * as well, but it is the account-console caller's own session (set by
+     * {@code AccountLoader} on the event builder), unrelated to the
+     * revocation, so it must never end up as the subject of a
+     * session-revoked SET. It is not kept out by shape; it is suppressed
+     * only because that session is necessarily alive inside its own
+     * request: consent revocation revokes the client's offline token (which
+     * may remove an offline session once no client remains on it) and
+     * backchannel-logs the client out of its online client sessions, which
+     * only detaches them and never removes the online user session the
+     * event names. Any future change that narrows the liveness check or
+     * uses the session id to tell the two flows apart must add an explicit
+     * discriminator for consent revocation (e.g. the absence of
+     * {@code Details.REFRESH_TOKEN_TYPE}).
+     * Consent revocation itself is knowingly out of scope here, pending a
+     * dedicated mapping (e.g. RISC opt-out).
+     *
+     * <p>Even a token revocation only detaches the revoking client's
+     * client-session; Keycloak removes the user session itself only when
+     * no other client sessions remain. We therefore emit CAEP
+     * session-revoked only when the session is gone from both the online
+     * and the offline store, because announcing a session as revoked while
+     * other clients still legitimately use it would let receivers kill a
+     * live SSO session. Both stores are consulted regardless of the revoked
+     * token's type: online and offline sessions share the session id and
+     * the SET subject cannot say which of the two ended, so a surviving
+     * counterpart in either store (another client's offline token, or
+     * another client's online client session) means the id is still in
+     * legitimate use and must not be announced. The revocation ran earlier
+     * in this same transaction, so the lookups observe its result.
+     *
+     * <p>The store lookups are deliberately not part of {@link #canConvert(Event)},
+     * which must stay an in-memory check; {@link #isRevokedSessionAlive(Event)}
+     * makes the per-stream calls of this method share one lookup.
+     */
+    protected boolean shouldIgnoreRevokeGrant(Event event) {
+        return !carriesSessionId(event) || isRevokedSessionAlive(event);
+    }
+
+    /**
+     * Cheap shape check used by {@link #canConvert(Event)}: whether the event
+     * names a session at all. Access-token revocation currently sets no
+     * session id (only the refresh/offline branch of
+     * {@code TokenRevocationEndpoint} does, even though access tokens carry a
+     * {@code sid} claim) and is excluded here; should that change, the
+     * liveness check still keeps it out, since revoking an access token never
+     * ends a session. Refresh and offline token revocation carry the revoked
+     * token's session id, consent revocation carries the caller's own live
+     * session id, so a {@code true} here says nothing about whether a session
+     * was revoked; that is what {@link #isRevokedSessionAlive(Event)} decides.
+     */
+    protected boolean carriesSessionId(Event event) {
+        return event.getSessionId() != null;
+    }
+
+    /**
+     * Whether the session named by the event still exists in the online or
+     * the offline store. Memoized per event instance, see {@link #livenessCheckedEvent}.
+     */
+    protected boolean isRevokedSessionAlive(Event event) {
+        if (event != livenessCheckedEvent) {
+            livenessCheckedSessionAlive = lookupRevokedSessionAlive(event);
+            livenessCheckedEvent = event;
+        }
+        return livenessCheckedSessionAlive;
+    }
+
+    private boolean lookupRevokedSessionAlive(Event event) {
+        if (session == null) {
+            // No session to verify liveness against, therefore we err on emitting:
+            // a REVOKE_GRANT carrying a session id is a revocation.
+            return false;
+        }
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            return false;
+        }
+        String sessionId = event.getSessionId();
+        return session.sessions().getUserSession(realm, sessionId) != null
+                || session.sessions().getOfflineUserSession(realm, sessionId) != null;
+    }
+
     protected SsfSecurityEventToken generateSecurityEventTokenFromEvent(Event event, StreamConfig stream) {
         return null;
     }
 
     public SsfSecurityEventToken toSecurityEventToken(AdminEvent adminEvent, StreamConfig stream) {
 
-        String userId = SsfUtil.userIdFromAdminEventPath(adminEvent);
+        String userId = SsfUtil.userIdFromAdminEvent(adminEvent);
         if (userId == null) {
             return null;
         }
 
         String path = adminEvent.getResourcePath();
+
+        if (isUserSessionDeleteAdminEvent(adminEvent)) {
+            Matcher sessionMatcher = USER_SESSION_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path);
+            // isUserSessionDeleteAdminEvent already verified the match; matches() must run again to populate the group.
+            sessionMatcher.matches();
+            return generateLogoutEventForAdminUserSessionDelete(userId, sessionMatcher.group(1), adminEvent, stream);
+        }
+
         Matcher matcher = USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path);
         if (matcher.matches()) {
             return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent, stream);
@@ -1207,6 +1387,39 @@ public class SecurityEventTokenMapper {
         event.getDetails().put("admin", "true");
         event.getDetails().put(Details.REASON, "logout_all_user_sessions");
 
-        return toSecurityEventToken(event, stream);
+        // Pass the admin event through so initiating_entity reports ADMIN rather than USER.
+        return toSecurityEventToken(event, adminEvent, stream);
+    }
+
+    /**
+     * Builds a synthetic {@link EventType#LOGOUT} {@link Event} for an admin
+     * deletion of a single user session ({@code DELETE sessions/{sessionId}}),
+     * mirroring {@link #generateLogoutEventForAdminLogoutAllUserSessions} — but
+     * with the concrete session id from the resource path rather than the
+     * {@code "ALL"} placeholder, so the resulting {@link CaepSessionRevoked}
+     * SET names exactly the session that was revoked.
+     *
+     * <p>Deliberately no store lookup here, unlike the {@code REVOKE_GRANT}
+     * path (see {@link #shouldIgnoreRevokeGrant}): that check exists because a
+     * token revocation usually only detaches one client and leaves the session
+     * alive, so the stores are the only way to tell whether anything ended.
+     * Deleting a user session through the admin API always ends the online
+     * session, exactly like a user-initiated {@link EventType#LOGOUT}, which
+     * is mapped without consulting the stores either. An offline session that
+     * may survive under the same id is a per-client grant rather than the SSO
+     * session a receiver correlates by {@code sid}, and the logout path
+     * already announces session-revoked regardless of such a survivor.
+     */
+    protected SsfSecurityEventToken generateLogoutEventForAdminUserSessionDelete(String userId, String sessionId, AdminEvent adminEvent, StreamConfig stream) {
+
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        event.setUserId(userId);
+        event.setSessionId(sessionId);
+        event.setDetails(new HashMap<>());
+        event.getDetails().put("admin", "true");
+        event.getDetails().put(Details.REASON, "user_session_deleted");
+
+        return toSecurityEventToken(event, adminEvent, stream);
     }
 }

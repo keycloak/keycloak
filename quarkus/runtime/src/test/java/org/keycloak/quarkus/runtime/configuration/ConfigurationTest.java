@@ -719,6 +719,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testSemicolonQueryParamDelimiterDisabledByDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("false",
+                config.getConfigValue("quarkus.http.use-semicolon-as-query-param-delimiter").getValue());
+    }
+
+    @Test
     public void testQuarkusPropertyTakesPrecedenceOverDefault() {
         putEnvVar("QUARKUS_HTTP_PORT", "9090");
         ConfigArgsConfigSource.setCliArgs("");

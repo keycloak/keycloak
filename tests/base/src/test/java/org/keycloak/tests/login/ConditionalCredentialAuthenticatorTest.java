@@ -36,18 +36,20 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.ui.page.LogoutConfirmPage;
+import org.keycloak.tests.common.UserWithOneConfiguredOtp;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.AfterEach;
@@ -64,6 +66,9 @@ public class ConditionalCredentialAuthenticatorTest {
     @InjectRealm(config = ConditionalCredentialAuthenticatorRealmConfig.class)
     ManagedRealm managedRealm;
 
+    @InjectUser(config = UserWithOneConfiguredOtp.class)
+    ManagedUser managedUser;
+
     @InjectOAuthClient
     OAuthClient oauth;
 
@@ -75,9 +80,6 @@ public class ConditionalCredentialAuthenticatorTest {
 
     @InjectPage
     protected LoginTotpPage loginTotpPage;
-
-    private static final String USERNAME = "user-with-one-configured-otp";
-    private static final String PASSWORD = "password";
 
     @AfterEach
     void logoutUser() {
@@ -91,7 +93,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
@@ -105,7 +107,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should not be displayed
         checkLoginOk();
@@ -117,7 +119,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
@@ -131,7 +133,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should not be displayed
         checkLoginOk();
@@ -143,7 +145,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
@@ -157,7 +159,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should not be displayed
         checkLoginOk();
@@ -169,7 +171,7 @@ public class ConditionalCredentialAuthenticatorTest {
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm(USERNAME, PASSWORD);
+        oauth.fillLoginForm(managedUser.getUsername(), managedUser.getPassword());
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
@@ -228,7 +230,7 @@ public class ConditionalCredentialAuthenticatorTest {
         if (EventType.valueOf(event.getType()) != EventType.LOGIN) {
             event = events.poll();
         }
-        EventAssertion.expectLoginSuccess(event).hasUserId().details(Details.USERNAME, USERNAME);
+        EventAssertion.expectLoginSuccess(event).hasUserId().details(Details.USERNAME, managedUser.getUsername());
     }
 
 
@@ -237,20 +239,13 @@ public class ConditionalCredentialAuthenticatorTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             // setup normal otp policy but with reusable tokens
-            realm.otpAlgorithm("HmacSHA1")
+            return realm.otpAlgorithm("HmacSHA1")
                     .otpDigits(6)
                     .otpInitialCounter(0)
                     .otpLookAheadWindow(1)
                     .otpPeriod(30)
                     .otpType("totp")
                     .otpCodeReusable(Boolean.TRUE);
-            
-            return realm.users(UserBuilder.create(USERNAME)
-                    .password(PASSWORD)
-                            .name("John", "Doe")
-                    .email("otp1@redhat.com")
-                    .totpSecret("DJmQfC73VGFhw7D4QJ8A")
-            );
         }
     }
 }

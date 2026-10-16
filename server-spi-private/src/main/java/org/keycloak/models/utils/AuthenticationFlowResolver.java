@@ -38,7 +38,7 @@ public class AuthenticationFlowResolver {
         ClientModel client = authSession.getClient();
 
         // check if specific flow has been requested
-        String requestedFlowAlias = authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        String requestedFlowAlias = getRequestedFlowAlias(authSession);
         if (requestedFlowAlias != null){
             flow = authSession.getRealm().getFlowByAlias(requestedFlowAlias);
             // validate flow exists
@@ -60,7 +60,7 @@ public class AuthenticationFlowResolver {
         ClientModel client = authSession.getClient();
 
         // check if specific flow has been requested
-        String requestedFlowAlias = authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        String requestedFlowAlias = getRequestedFlowAlias(authSession);
         if (requestedFlowAlias != null){
             flow = authSession.getRealm().getFlowByAlias(requestedFlowAlias);
             // validate flow exists
@@ -76,6 +76,12 @@ public class AuthenticationFlowResolver {
             return flow;
         }
         return authSession.getRealm().getDirectGrantFlow();
+    }
+
+    private static String getRequestedFlowAlias(AuthenticationSessionModel authSession) {
+        // Prefer the client note; fall back to the auth note for logins started on an older server.
+        String requestedFlowAlias = authSession.getClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
+        return requestedFlowAlias != null ? requestedFlowAlias : authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
     }
 
     public static AuthenticationFlowModel resolveBindingOverrideFlowForClient(ClientModel client, String flowBindingType) {

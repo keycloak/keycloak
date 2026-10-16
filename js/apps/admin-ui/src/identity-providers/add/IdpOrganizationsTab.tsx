@@ -44,7 +44,7 @@ export const IdpOrganizationsTab = ({
 
   const loader = async (): Promise<OrgWithLink[]> => {
     const idp = await adminClient.identityProviders.findOne({ alias });
-    idpRef.current = idp;
+    idpRef.current = idp ?? undefined;
     const links = idp?.organizationLinks ?? [];
 
     const results = await Promise.all(

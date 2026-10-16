@@ -17,6 +17,8 @@
 package org.keycloak.tests.sessionlimits;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -62,6 +64,7 @@ import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -74,6 +77,7 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertClien
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -115,6 +119,8 @@ public class UserSessionLimitsTest {
     private static final String password = "password";
     private static final String directGrant1 = "direct-grant-1";
     private static final String directGrant2 = "direct-grant-2";
+    private static final int BRUTE_FORCE_FAILURE_FACTOR = 3;
+    private static final String testUsername2 = "test-user-2@localhost";
 
     @BeforeEach
     public void setup() {
@@ -772,6 +778,55 @@ public class UserSessionLimitsTest {
         }
     }
 
+    @Test
+    public void testSessionLimitDenialDoesNotTriggerBruteForceLockout() throws Exception {
+        managedRealm.updateWithCleanup(r -> r.bruteForceProtected(true)
+                .failureFactor(BRUTE_FORCE_FAILURE_FACTOR));
+
+        String userId = managedRealm.admin().users().search(username).get(0).getId();
+        runOnServer.run(assertSessionCount(realmName, username, 0));
+        events.clear();
+
+        oauth.doLogin(username, password);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).userId(userId);
+
+        // verifying session count is 1
+        runOnServer.run(assertSessionCount(realmName, username, 1));
+
+        for (int i = 0; i <= BRUTE_FORCE_FAILURE_FACTOR + 3; i++) {
+            deleteAllCookiesForRealm(driver);
+            oauth.openLoginForm();
+            oauth.fillLoginForm(username, password);
+            errorPage.assertCurrent();
+            assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null)
+                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+        }
+
+        // Force one real failure for a different user and wait for it to be recorded.
+        // As Brute-force processing is async, so this confirms the queue has caught up
+        // with the LOGIN_ERROR events from the loop above before we check `userId`.
+        String testUsername2UserId = managedRealm.admin().users().search(testUsername2).get(0).getId();
+        oauth.doPasswordGrantRequest(testUsername2, "wrong-password");
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(testUsername2UserId);
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Map<String, Object> markerStatus =
+                            managedRealm.admin().attackDetection().bruteForceUserStatus(testUsername2UserId);
+                    assertEquals(1, markerStatus.get("numFailures"), "Waiting for brute-force queue to drain");
+                });
+
+        // Check If the user got locked out or not.
+        assertUserNotBruteForceLocked(userId);
+
+        // logout all sessions of test user
+        AccountHelper.logout(managedRealm.admin(), username);
+
+        // Test login of the same user again
+        oauth.doLogin(username, password);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+    }
 
     private void restoreAndRemoveFlow(String realmName) {
         // Cleanup: restore original browser flow and remove custom flow
@@ -805,6 +860,12 @@ public class UserSessionLimitsTest {
         });
     }
 
+    private void assertUserNotBruteForceLocked(String userId){
+        Map<String, Object> status = managedRealm.admin().attackDetection().bruteForceUserStatus(userId);
+        assertEquals(Boolean.FALSE, status.get("disabled"), "User should not be brute force locked out");
+        assertEquals(0, status.get("numFailures"), "No Failures should be recorded");
+    }
+
     private void deleteAllCookiesForRealm(ManagedWebDriver driver) {
         // Navigate to a blank page in the realm to ensure cookies are properly scoped
         driver.driver().navigate().to(managedRealm.getBaseUrl());
@@ -817,6 +878,12 @@ public class UserSessionLimitsTest {
             realm.users(UserBuilder.create(username)
                     .email(username)
                     .name("Test", "User")
+                    .emailVerified(true)
+                    .password(password)
+                    .enabled(true));
+            realm.users(UserBuilder.create(testUsername2)
+                    .email(testUsername2)
+                    .name("Test", "User2")
                     .emailVerified(true)
                     .password(password)
                     .enabled(true));

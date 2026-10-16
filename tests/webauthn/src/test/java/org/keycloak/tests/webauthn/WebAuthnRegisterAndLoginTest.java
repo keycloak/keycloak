@@ -119,7 +119,9 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
-                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
+                // the credential ID is reported on UPDATE_CREDENTIAL only, the deprecated event keeps the details it carried before
+                .withoutDetails(Details.CREDENTIAL_ID);
 
         String regPubKeyCredentialId1 = event.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
 
@@ -129,7 +131,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
-                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
+                .details(Details.CREDENTIAL_ID, storedCredentialId(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR));
 
         String regPubKeyCredentialId2 = event2.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
 
@@ -470,6 +473,14 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
     private List<CredentialRepresentation> getCredentials(String userId) {
         return managedRealm.admin().users().get(userId).credentials();
+    }
+
+    private String storedCredentialId(String userId, String credentialType) {
+        return getCredentials(userId).stream()
+                .filter(credential -> credentialType.equals(credential.getType()))
+                .map(CredentialRepresentation::getId)
+                .findFirst()
+                .orElseThrow();
     }
 
     private void updateRealmWithDefaultWebAuthnSettings() {

@@ -632,9 +632,11 @@ Proxy:
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.
-                       A trusted proxy address is specified as an IP address (IPv4 or IPv6) or
-                       Classless Inter-Domain Routing (CIDR) notation. Available only when
-                       proxy-headers is set.
+                       A trusted proxy address is specified as an IP address (IPv4 or IPv6),
+                       hostname, or Classless Inter-Domain Routing (CIDR) notation. IPv6 addresses
+                       should use square brackets (e.g. [::1]). An optional port can be specified
+                       (e.g. 127.0.0.1:8084). Using hostnames is not recommended as it requires a
+                       DNS lookup on every request. Available only when proxy-headers is set.
 
 Vault:
 

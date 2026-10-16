@@ -541,6 +541,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         return partialEvaluator.getPredicates(session, resourceType, evaluator, realm, builder, queryBuilder, path);
     }
 
+    public boolean isPartialEvaluationActive(KeycloakSession session, ResourceType resourceType) {
+        return partialEvaluator.isActive(session, resourceType);
+    }
+
     public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {
         if (resourceServer == null) {
             return null;

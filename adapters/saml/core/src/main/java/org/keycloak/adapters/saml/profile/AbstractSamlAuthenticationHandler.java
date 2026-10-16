@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -384,21 +385,18 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                     : AssertionUtil.getAssertionElement(responseHolder);
             assertion = responseType.getAssertions().get(0).getAssertion();
             ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
-            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), getSubjectConfirmationData(assertion), destinationValidator)
-                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
             try {
                 cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
                 if (responseType.getDestination() != null) {
                   // getDestination has been validated to match request URL already so it matches SAML endpoint
                   cvb.addAllowedAudience(URI.create(responseType.getDestination()));
-                  scdvb.allowedRecipient(responseType.getDestination());
                 }
 
             } catch (IllegalArgumentException ex) {
                 // warning has been already emitted in DeploymentBuilder
             }
-            if (!cvb.build().isValid() || !scdvb.build().isValid()) {
+            if (!cvb.build().isValid() || !isSubjectConfirmationDataValid(assertion, responseType)) {
                 // initiate the login but do not save the request cos it's /saml
                 return initiateLogin(false);
             }
@@ -534,17 +532,36 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return failed(null);
     }
 
-    private SubjectConfirmationDataType getSubjectConfirmationData(AssertionType assertion) {
+    private List<SubjectConfirmationDataType> getSubjectConfirmationDataElements(AssertionType assertion) {
         if (assertion != null
                 && assertion.getSubject() != null
                 && assertion.getSubject().getConfirmation() != null) {
             return assertion.getSubject().getConfirmation().stream()
                     .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
-                    .findFirst()
                     .map(SubjectConfirmationType::getSubjectConfirmationData)
-                    .orElse(null);
+                    .collect(Collectors.toList());
         }
-        return null;
+        return Collections.emptyList();
+    }
+
+    /**
+     * Multiple Bearer confirmations are alternatives per the SAML 2.0 spec, so the assertion is valid
+     * if any one of them passes validation.
+     */
+    private boolean isSubjectConfirmationDataValid(AssertionType assertion, ResponseType responseType) {
+        List<SubjectConfirmationDataType> subjectConfirmationDataElements = getSubjectConfirmationDataElements(assertion);
+        if (subjectConfirmationDataElements.isEmpty()) {
+            subjectConfirmationDataElements = Collections.singletonList(null);
+        }
+
+        return subjectConfirmationDataElements.stream().anyMatch(subjectConfirmationDataElement -> {
+            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
+                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
+            if (responseType.getDestination() != null) {
+                scdvb.allowedRecipient(responseType.getDestination());
+            }
+            return scdvb.build().isValid();
+        });
     }
 
     private boolean isSuccessfulSamlResponse(ResponseType responseType) {

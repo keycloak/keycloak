@@ -330,10 +330,20 @@ public class LoginPageTest {
 
         errorPage.selectLanguage("Deutsch");
         Assertions.assertEquals("Ungültiger Parameter: redirect_uri", errorPage.getError());
+        Assertions.assertNotNull(driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()));
+        Assertions.assertEquals("de", driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()).getValue());
 
-        // Add incorrect state checker parameter. Error page should be shown about expired action. Language won't be changed
+        // change to an invalid locale, cookie remains the same, language not changed
         String currentUrl = driver.getCurrentUrl();
         String newUrl = KeycloakUriBuilder.fromUri(new URI(currentUrl))
+                .replaceQueryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "invalid language").buildAsString();
+        driver.open(newUrl);
+        Assertions.assertEquals("Ungültiger Parameter: redirect_uri", errorPage.getError());
+        Assertions.assertEquals("de", driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()).getValue());
+
+        // Add incorrect state checker parameter. Error page should be shown about expired action. Language won't be changed
+        currentUrl = driver.getCurrentUrl();
+        newUrl = KeycloakUriBuilder.fromUri(new URI(currentUrl))
                 .replaceQueryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "en")
                 .replaceQueryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM, "invalid").buildAsString();
         driver.open(newUrl);

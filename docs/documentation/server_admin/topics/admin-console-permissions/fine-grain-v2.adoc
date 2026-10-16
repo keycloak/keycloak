@@ -106,8 +106,11 @@ the target user currently belongs to.
 
 [NOTE]
 ====
-This feature does not support enforcing access to federated resource, however, this limitation is being considered
-for future improvement.
+This feature does not support enforcing access to federated resources.
+Users from external storage providers (such as LDAP with import disabled) are not visible
+in search results when access is controlled through fine-grained permissions.
+To include federated users in search results, grant the administrator the `view-users` role,
+or enable user import on the federation provider.
 ====
 
 ===== Groups Resource Type
