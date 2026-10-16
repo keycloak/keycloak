@@ -31,6 +31,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
@@ -72,6 +73,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openqa.selenium.JavascriptExecutor;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -348,6 +350,185 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         } finally {
             setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString());
         }
+    }
+
+    @Test
+    public void testRequiresUserMembershipNotBypassedBySubmittedOrganization() {
+        setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
+
+        try {
+            OrganizationRepresentation orgA = createOrganization();
+            OrganizationRepresentation orgB = createOrganization("org-b");
+            // the user is a member of orgA only
+            UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+            // the client requests authentication in the scope of org-b, where the user is not a member
+            oauth.scope("organization:" + orgB.getAlias());
+            oauth.openLoginForm();
+            loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+
+            // the organization is resolved from a form parameter, and select-organization.ftl only ever renders the
+            // organizations the user belongs to. Submitting an organization the form never offered must not decide
+            // the membership check for a request scoped to a different organization.
+            submitIdentityFirstFormWithOrganization(orgA.getAlias());
+
+            assertFalse(loginPage.isPasswordInputPresent(),
+                    "Membership requirement bypassed: a non-member of " + orgB.getName()
+                            + " was prompted for a password by naming an organization they do belong to");
+            assertThat(errorPage.getError(),
+                    Matchers.containsString("User is not a member of the organization " + orgB.getName()));
+        } finally {
+            setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString());
+        }
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredForSpecificScope() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        // the user is a member of orgA only
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // membership is not required, the client requests a specific organization
+        oauth.scope("organization:" + orgB.getAlias());
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+
+        // the parameter is ignored: the user is not treated as having selected an organization
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertLoginSuccess();
+
+        // the submitted organization must not be mapped to the token, and the requested one is not granted as the user is not a member
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+        assertThat(accessToken.getScope(), not(Matchers.containsString("organization")));
+    }
+
+    @Test
+    public void testSelectedOrganizationIgnoredWhenNotMember() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        // the user is a member of orgA and orgB only
+        UserRepresentation member = addMember(orgAResource, memberEmail, "John", "Doe");
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        loginUsernamePage.submit();
+
+        selectOrganizationPage.assertCurrent();
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        assertFalse(selectOrganizationPage.isOrganizationButtonPresent(orgC.getAlias()));
+
+        // tamper the selection to submit an organization the user is not a member of
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "document.getElementById(arguments[0]).value = arguments[1];",
+                "organization-" + orgA.getAlias(), orgC.getAlias());
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        // membership is not required: the tampered selection is ignored and the user is asked to select an organization again
+        selectOrganizationPage.assertCurrent();
+        assertFalse(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredWhenNotMember() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        // the user is a member of orgA only, so the selection page is never shown
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // membership is not required, the request maps to the scope that allows selecting an organization
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+
+        // the organization the user is not a member of is ignored and the login proceeds as if it was not sent
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredForUnknownUser() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // an existing user that is not a member of the selected organization
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        // an existing user that is a member of the selected organization must not be distinguishable either,
+        // switching is only enabled for users that belong to multiple organizations
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        // an unknown user must get the same response so that the selected organization cannot be used to probe for accounts
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("unknown@example.com");
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("unknown@example.com");
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredWhenDisabled() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        orgB.setEnabled(false);
+        realm.admin().organizations().get(orgB.getId()).update(orgB).close();
+
+        // a disabled organization is treated as if no organization was selected, so the user is resolved
+        // to the only enabled organization they are a member of
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertTrue(oauth.parseLoginResponse().isRedirected());
+        realm.admin().users().get(member.getId()).logout();
+
+        // when the user is a member of multiple enabled organizations, a disabled selection results in the selection prompt
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        realm.admin().organizations().get(orgC.getId()).members().addMember(member.getId()).close();
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        selectOrganizationPage.assertCurrent();
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgC.getAlias()));
+        assertFalse(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
     }
 
     @Test
@@ -812,6 +993,18 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     }
 
     // --- Helper methods ---
+
+    private void submitIdentityFirstFormWithOrganization(String alias) {
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "var form = document.getElementById('kc-form-login');"
+                        + "var input = document.createElement('input');"
+                        + "input.type = 'hidden';"
+                        + "input.name = arguments[0];"
+                        + "input.value = arguments[1];"
+                        + "form.appendChild(input);",
+                OrganizationModel.ORGANIZATION_ATTRIBUTE, alias);
+        loginUsernamePage.submit();
+    }
 
     private void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.openLoginForm();
