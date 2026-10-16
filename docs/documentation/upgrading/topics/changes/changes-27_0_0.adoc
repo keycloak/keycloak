@@ -20,6 +20,23 @@ Client visibility follows the same permission checks as the client-specific sess
 
 Counts for visible clients continue to include all their sessions, independently of the caller's permission to view the associated users.
 
+=== SAML logins require a valid Bearer SubjectConfirmationData
+// https://github.com/keycloak/keycloak/issues/53475
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when none of the assertion's Bearer `SubjectConfirmation` elements carries a valid `SubjectConfirmationData` element, as required by the SAML 2.0 Web Browser SSO Profile.
+This affects both SAML identity provider brokering and applications secured with the {project_name} SAML adapter.
+
+The following conditions are now enforced:
+
+* The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
+* `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
+* For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
+
+After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
+Broker logins fail with an invalid response error; adapter logins restart the login flow.
+If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
+
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
 

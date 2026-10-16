@@ -110,6 +110,22 @@ public class SubjectConfirmationDataValidatorTest {
         Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
     }
 
+    @Test
+    public void testBlankRecipientWithAllowedRecipientsConfigured() {
+        // caller expects the recipient to be checked but the assertion carries a blank Recipient
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().recipient("   ").notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
+    }
+
+    @Test
+    public void testBlankInResponseToWhenExpected() {
+        // caller expects a specific request id but the assertion carries a blank InResponseTo
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("   ").notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-123").build().isValid());
+    }
+
     private static class SubjectConfirmationDataTypeBuilder {
         private final SubjectConfirmationDataType scd;
 
