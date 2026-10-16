@@ -88,7 +88,7 @@ If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses b
 
 === Identity provider client secret must be re-entered when changing its destination (CVE-2026-15943)
 
-When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `**********`.
+When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `+**********+`.
 Previously, an update that sent this masked value back always kept the stored secret, even if the request also changed where that secret is sent.
 A user with the `manage-identity-providers` role could therefore point the identity provider at an attacker-controlled token endpoint and have {project_name} send the real client secret there.
 
