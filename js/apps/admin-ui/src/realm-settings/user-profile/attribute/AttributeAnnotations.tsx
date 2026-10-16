@@ -83,6 +83,7 @@ export const AttributeAnnotations = () => {
                   <ValueSelect
                     selectItems={[
                       "text",
+                      "hidden",
                       "textarea",
                       "select",
                       "select-radiobuttons",

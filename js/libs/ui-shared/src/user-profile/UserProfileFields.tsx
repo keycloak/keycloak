@@ -9,6 +9,7 @@ import { ReactNode, useMemo, type JSX } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 
 import { ScrollForm } from "../main";
+import { HiddenComponent } from "./HiddenComponent";
 import { LocaleSelector } from "./LocaleSelector";
 import { MultiInputComponent } from "./MultiInputComponent";
 import { OptionComponent } from "./OptionsComponent";
@@ -27,6 +28,7 @@ export type Options = {
 
 export type InputType =
   | "text"
+  | "hidden"
   | "textarea"
   | "select"
   | "select-radiobuttons"
@@ -57,6 +59,7 @@ export const FIELDS: {
   [type in InputType]: (props: UserProfileFieldProps) => JSX.Element;
 } = {
   text: TextComponent,
+  hidden: HiddenComponent,
   textarea: TextAreaComponent,
   select: SelectComponent,
   "select-radiobuttons": OptionComponent,
@@ -81,6 +84,7 @@ export type UserProfileFieldsProps = {
   supportedLocales: string[];
   currentLocale: string;
   hideReadOnly?: boolean;
+  isAdminContext?: boolean;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
   ) => JSX.Element | undefined;
@@ -98,6 +102,7 @@ export const UserProfileFields = ({
   supportedLocales,
   currentLocale,
   hideReadOnly = false,
+  isAdminContext = false,
   renderer,
 }: UserProfileFieldsProps) => {
   // Group attributes by group, for easier rendering.
@@ -132,35 +137,71 @@ export const UserProfileFields = ({
     return null;
   }
 
+  // In user context, groups whose every attribute is hidden are excluded from
+  // the visible sections. Their hidden inputs must still render so the values
+  // are retained on form submission.
+  const hiddenOnlyGroupAttributes = !isAdminContext
+    ? groupsWithAttributes
+        .filter(
+          ({ attributes }) =>
+            attributes.length > 0 &&
+            attributes.every(
+              (attribute) => determineInputType(attribute) === "hidden",
+            ),
+        )
+        .flatMap(({ attributes }) => attributes)
+    : [];
+
   return (
-    <ScrollForm
-      label={t("jumpToSection")}
-      sections={groupsWithAttributes
-        .filter((group) => group.attributes.length > 0)
-        .map(({ group, attributes }) => ({
-          title: label(t, group.displayHeader, group.name) || t("general"),
-          panel: (
-            <div className="pf-v5-c-form">
-              {group.displayDescription && (
-                <Text className="pf-v5-u-pb-lg">
-                  {label(t, group.displayDescription, "")}
-                </Text>
-              )}
-              {attributes.map((attribute) => (
-                <FormField
-                  key={attribute.name}
-                  t={t}
-                  form={form}
-                  supportedLocales={supportedLocales}
-                  currentLocale={currentLocale}
-                  renderer={renderer}
-                  attribute={attribute}
-                />
-              ))}
-            </div>
-          ),
-        }))}
-    />
+    <>
+      {hiddenOnlyGroupAttributes.map((attribute) => (
+        <FormField
+          key={attribute.name}
+          t={t}
+          form={form}
+          supportedLocales={supportedLocales}
+          currentLocale={currentLocale}
+          renderer={renderer}
+          attribute={attribute}
+          isAdminContext={false}
+        />
+      ))}
+      <ScrollForm
+        label={t("jumpToSection")}
+        sections={groupsWithAttributes
+          .filter((group) => group.attributes.length > 0)
+          .filter((group) =>
+            isAdminContext ||
+            group.attributes.some(
+              (attribute) => determineInputType(attribute) !== "hidden",
+            ),
+          )
+          .map(({ group, attributes }) => ({
+            title: label(t, group.displayHeader, group.name) || t("general"),
+            panel: (
+              <div className="pf-v5-c-form">
+                {group.displayDescription && (
+                  <Text className="pf-v5-u-pb-lg">
+                    {label(t, group.displayDescription, "")}
+                  </Text>
+                )}
+                {attributes.map((attribute) => (
+                  <FormField
+                    key={attribute.name}
+                    t={t}
+                    form={form}
+                    supportedLocales={supportedLocales}
+                    currentLocale={currentLocale}
+                    renderer={renderer}
+                    attribute={attribute}
+                    isAdminContext={isAdminContext}
+                  />
+                ))}
+              </div>
+            ),
+          }))}
+      />
+    </>
   );
 };
 
@@ -170,6 +211,7 @@ type FormFieldProps = {
   supportedLocales: string[];
   currentLocale: string;
   attribute: UserProfileAttributeMetadata;
+  isAdminContext: boolean;
   renderer?: (
     attribute: UserProfileAttributeMetadata,
   ) => JSX.Element | undefined;
@@ -182,19 +224,24 @@ const FormField = ({
   supportedLocales,
   currentLocale,
   attribute,
+  isAdminContext,
 }: FormFieldProps) => {
   const value = form.watch(
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
-  const inputType = useMemo(() => determineInputType(attribute), [attribute]);
+  const inputType = useMemo(
+    () => determineInputType(attribute, isAdminContext),
+    [attribute, isAdminContext],
+  );
 
   const Component =
-    attribute.multivalued ||
-    (isMultiValue(value) && attribute.annotations?.inputType === undefined)
+    inputType !== "hidden" &&
+    (attribute.multivalued ||
+      (isMultiValue(value) && attribute.annotations?.inputType === undefined))
       ? FIELDS["multi-input"]
       : FIELDS[inputType];
 
-  if (attribute.name === "locale")
+  if (attribute.name === "locale" && inputType !== "hidden")
     return (
       <LocaleSelector
         form={form}
@@ -217,22 +264,28 @@ const FormField = ({
 
 const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
-function determineInputType(
+export function determineInputType(
   attribute: UserProfileAttributeMetadata,
+  isAdminContext = false,
 ): InputType {
-  // Always treat the root attributes as a text field.
+  const inputType = attribute.annotations?.inputType;
+
+  // Admins can always see and edit hidden fields; for users, honour the annotation.
+  if (inputType === "hidden") {
+    return isAdminContext ? DEFAULT_INPUT_TYPE : "hidden";
+  }
+
+  // Root attributes always render as text — other annotations are ignored.
   if (isRootAttribute(attribute.name)) {
     return "text";
   }
 
-  const inputType = attribute.annotations?.inputType;
-
-  // if we have an valid input type use that to render
+  // For non-root attributes, honour any valid annotation.
   if (isValidInputType(inputType)) {
     return inputType;
   }
 
-  // In all other cases use the default
+  // In all other cases use the default.
   return DEFAULT_INPUT_TYPE;
 }
 

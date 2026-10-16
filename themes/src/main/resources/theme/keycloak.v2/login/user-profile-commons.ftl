@@ -6,6 +6,18 @@
 
 		<#if attribute.name=='locale' && realm.internationalizationEnabled && locale.currentLanguageTag?has_content>
 			<input type="hidden" id="${attribute.name}" name="${attribute.name}" value="${locale.currentLanguageTag}"/>
+		<#elseif attribute.annotations.inputType! == 'hidden'>
+			<#nested "beforeField" attribute>
+			<#if attribute.multivalued && attribute.values?has_content>
+				<#list attribute.values as v>
+					<input type="hidden" name="${attribute.name}" value="${v!''}"
+						<#list attribute.html5DataAnnotations as key, val>data-${key}="${val}" </#list>/>
+				</#list>
+			<#else>
+				<input type="hidden" id="${attribute.name}" name="${attribute.name}" value="${attribute.value!attribute.defaultValue!''}"
+					<#list attribute.html5DataAnnotations as key, val>data-${key}="${val}" </#list>/>
+			</#if>
+			<#nested "afterField" attribute>
 		<#else>
 
 			<#assign group = (attribute.group)!"">

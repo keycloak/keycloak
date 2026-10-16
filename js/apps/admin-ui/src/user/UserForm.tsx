@@ -326,6 +326,7 @@ export const UserForm = ({
                 ),
               }}
               hideReadOnly={!user}
+              isAdminContext
               supportedLocales={realm.supportedLocales || []}
               currentLocale={whoAmI.locale}
               t={

@@ -440,6 +440,10 @@ You can change the `type` of a HTML5 input element by setting the `inputType` an
 |Single line text input.
 |input
 
+|hidden
+|Carries a pre-configured value through a user-facing form without showing any visible control or label. The field is submitted with the form so the server receives the value automatically. The value remains readable and modifiable through browser developer tools; do not use this annotation to protect sensitive data client-side. Administrators can view and edit the attribute in the Admin Console. Enforce the value server-side through read-only permissions when the value must not be changed by the user.
+|input
+
 |textarea
 |Multiple line text input.
 |textarea

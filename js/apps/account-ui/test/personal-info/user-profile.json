@@ -68,6 +68,18 @@
       }
     },
     {
+      "name": "tenantId",
+      "displayName": "Tenant ID",
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin", "user"]
+      },
+      "annotations": {
+        "inputType": "hidden"
+      },
+      "validations": {}
+    },
+    {
       "name": "select",
       "displayName": "Select",
       "selector": {

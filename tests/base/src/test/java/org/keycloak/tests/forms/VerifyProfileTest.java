@@ -1020,7 +1020,8 @@ public class VerifyProfileTest {
                 options("selectWithOptionsFromCustomValidatorAndLabels", "dummyOptions", VALIDATOR_OPTIONS, Map.of("inputType", "select", "inputOptionsFromValidation", "dummyOptions", "inputOptionLabels", VALIDATOR_OPTION_LABELS)),
                 options("selectRadiobuttons", "options", OPTIONS, Map.of("inputType", "select-radiobuttons", "inputOptionLabels", OPTION_LABELS)),
                 options("selectRadiobuttonsWithOptionsFromCustomValidatorAndLabels", "dummyOptions", VALIDATOR_OPTIONS, Map.of("inputType", "select-radiobuttons", "inputOptionsFromValidation", "dummyOptions", "inputOptionLabels", VALIDATOR_OPTION_LABELS)),
-                options("multiselectCheckboxes", "options", OPTIONS, Map.of("inputType", "multiselect-checkboxes", "inputOptionLabels", OPTION_LABELS))
+                options("multiselectCheckboxes", "options", OPTIONS, Map.of("inputType", "multiselect-checkboxes", "inputOptionLabels", OPTION_LABELS)),
+                input("hiddenAttribute", Map.of("inputType", "hidden"))
         );
     }
 
@@ -1099,6 +1100,46 @@ public class VerifyProfileTest {
         assertChoices("selectRadiobuttonsWithOptionsFromCustomValidatorAndLabels", "radio", Map.of("vopt1", "Option 1", "vopt2", "Username", "vopt3", "vopt3"));
 
         assertChoices("multiselectCheckboxes", "checkbox", Map.of("opt1", "Option 1", "opt2", "Username", "opt3", "opt3"));
+
+        // Hidden inputType: rendered as <input type="hidden">, no visible label
+        assertAttributes("input#hiddenAttribute", Map.of("type", "hidden"));
+        assertTrue(driver.driver().findElements(By.cssSelector("label[for='hiddenAttribute']")).isEmpty(),
+                "hidden attribute must have no visible label");
+    }
+
+    @Test
+    public void testHiddenAttributeValueSurvivesSubmission() {
+        final String HIDDEN_VALUE = "preset-value";
+
+        prepareUser("login-test5", user -> {
+            user.setFirstName("ExistingFirst");
+            user.setLastName("ExistingLast");
+            user.singleAttribute("hiddenAttribute", HIDDEN_VALUE);
+        });
+
+        UPConfig config = config(required(ATTRIBUTE_DEPARTMENT, ALL));
+        config.addOrReplaceAttribute(input("hiddenAttribute", Map.of("inputType", "hidden")));
+        setUserProfileConfiguration(config);
+
+        oauth.openLoginForm();
+        login("login-test5");
+
+        verifyProfilePage.assertCurrent();
+
+        // Hidden input is present in the DOM and carries the preset value
+        WebElement hiddenInput = driver.driver().findElement(By.cssSelector("input#hiddenAttribute"));
+        assertEquals("hidden", hiddenInput.getAttribute("type"), "type of hiddenAttribute");
+        assertEquals(HIDDEN_VALUE, hiddenInput.getAttribute("value"), "value of hiddenAttribute");
+
+        // Submit the form; the hidden value must survive the round-trip
+        verifyProfilePage.prepareUpdate().department("Sales").submit();
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        driver.waiting().waitForOAuthCallback();
+
+        List<String> saved = getUserResource("login-test5").toRepresentation()
+                .getAttributes().get("hiddenAttribute");
+        assertTrue(saved != null && !saved.isEmpty(), "hiddenAttribute must still be set after submission");
+        assertEquals(HIDDEN_VALUE, saved.get(0), "hiddenAttribute value must survive form submission");
     }
 
     // The selector carries the tag on purpose, the attribute must be rendered as that element
