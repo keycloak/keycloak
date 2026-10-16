@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
@@ -35,6 +36,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
@@ -214,6 +216,64 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         reg.oidc().update(client);
     }
 
+
+
+    @Test
+    public void testAnonCreateWithClientUris() throws Exception {
+        setTrustedHost("localhost");
+
+        assertOidcCreateFail(c -> c.setPostLogoutRedirectUris(List.of("http://untrusted.host/logout")), "URI doesn't match");
+        assertOidcCreateFail(c -> c.setRequestUris(List.of("http://untrusted.host/request")), "URI doesn't match");
+        assertOidcCreateFail(c -> c.setBackchannelLogoutUri("http://untrusted.host/backchannel-logout"), "URL doesn't match");
+        assertOidcCreateFail(c -> c.setFrontChannelLogoutUri("http://untrusted.host/frontchannel-logout"), "URL doesn't match");
+
+        // A protocol-relative URI carries its own authority, so it must not be resolved against the
+        // root URL. The front-channel logout iframe renders it as is, reaching the untrusted host
+        assertOidcCreateFail(c -> c.setFrontChannelLogoutUri("//untrusted.host/frontchannel-logout"), "URL is malformed");
+
+        // Trusted URIs are accepted, "+" just refers to the redirect URIs
+        OIDCClientRepresentation client = createRepOidc();
+        client.setPostLogoutRedirectUris(Collections.singletonList("+"));
+        client.setRequestUris(List.of("http://localhost:8080/request"));
+        client.setBackchannelLogoutUri("http://localhost:8080/backchannel-logout");
+        client.setFrontChannelLogoutUri("http://localhost:8080/frontchannel-logout");
+        OIDCClientRepresentation oidcClientRep = reg.oidc().create(client);
+        reg.auth(Auth.token(oidcClientRep));
+
+        // Fail update as well
+        oidcClientRep.setPostLogoutRedirectUris(List.of("http://untrusted.host/logout"));
+        assertOidcFail(ClientRegOp.UPDATE, oidcClientRep, 403, "URI doesn't match");
+
+        oidcClientRep.setPostLogoutRedirectUris(List.of("http://localhost:8080/logout"));
+        reg.oidc().update(oidcClientRep);
+    }
+
+
+    @Test
+    public void testAnonCreateWithClientUrisDefaultProvider() throws Exception {
+        setTrustedHost("localhost");
+
+        // The default provider sets the attributes directly, without going through the OIDC converter
+        ClientRepresentation client = createRep("client-uris-client");
+        client.setRootUrl("http://localhost:8080");
+
+        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##http://untrusted.host/logout"));
+        assertFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+
+        // The authority of a protocol-relative URI must not be hidden behind the trusted root URL
+        client.setAttributes(Map.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "//untrusted.host/frontchannel-logout"));
+        assertFail(ClientRegOp.CREATE, client, 403, "URL is malformed");
+
+        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##http://localhost:8080/logout"));
+        reg.create(client);
+    }
+
+
+    private void assertOidcCreateFail(Consumer<OIDCClientRepresentation> uriSetter, String expectedErrorContains) {
+        OIDCClientRepresentation client = createRepOidc();
+        uriSetter.accept(client);
+        assertOidcFail(ClientRegOp.CREATE, client, 403, expectedErrorContains);
+    }
 
 
     @Test

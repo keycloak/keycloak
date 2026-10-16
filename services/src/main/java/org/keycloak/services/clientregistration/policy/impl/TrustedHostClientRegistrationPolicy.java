@@ -26,11 +26,14 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -38,6 +41,7 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -228,7 +232,10 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
         baseUrl = relativeToAbsoluteURI(rootUrl, baseUrl);
         adminUrl = relativeToAbsoluteURI(rootUrl, adminUrl);
+        String backchannelLogoutUrl = relativeToAbsoluteURI(rootUrl, getAttribute(client, OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+        String frontChannelLogoutUrl = relativeToAbsoluteURI(rootUrl, getAttribute(client, OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI));
         Set<String> resolvedRedirects = PairwiseSubMapperUtils.resolveValidRedirectUris(rootUrl, redirectUris);
+        Set<String> resolvedPostLogoutRedirects = PairwiseSubMapperUtils.resolveValidRedirectUris(rootUrl, getPostLogoutRedirectUris(client));
 
         if (rootUrl != null) {
             checkURLTrusted(rootUrl, trustedHosts, trustedDomains);
@@ -240,10 +247,54 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         if (adminUrl != null) {
             checkURLTrusted(adminUrl, trustedHosts, trustedDomains);
         }
+        if (backchannelLogoutUrl != null) {
+            checkURLTrusted(backchannelLogoutUrl, trustedHosts, trustedDomains);
+        }
+        if (frontChannelLogoutUrl != null) {
+            checkURLTrusted(frontChannelLogoutUrl, trustedHosts, trustedDomains);
+        }
         for (String redirect : resolvedRedirects) {
             checkURITrusted(redirect, trustedHosts, trustedDomains);
         }
+        for (String postLogoutRedirect : resolvedPostLogoutRedirects) {
+            checkURITrusted(postLogoutRedirect, trustedHosts, trustedDomains);
+        }
+        for (String requestUri : getMultivaluedAttribute(client, OIDCConfigAttributes.REQUEST_URIS)) {
+            String resolvedRequestUri = relativeToAbsoluteURI(rootUrl, requestUri);
+            if (resolvedRequestUri != null) {
+                checkURITrusted(resolvedRequestUri, trustedHosts, trustedDomains);
+            }
+        }
 
+    }
+
+    private List<String> getPostLogoutRedirectUris(ClientRepresentation client) {
+        // "+" and "-" just refer to the redirect URIs, which are validated separately
+        return getMultivaluedAttribute(client, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS).stream()
+                .filter(uri -> !"+".equals(uri) && !"-".equals(uri))
+                .toList();
+    }
+
+    private List<String> getMultivaluedAttribute(ClientRepresentation client, String attributeName) {
+        String attribute = getAttribute(client, attributeName);
+        if (attribute == null) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(Constants.CFG_DELIMITER_PATTERN.split(attribute))
+                .filter(StringUtil::isNotBlank)
+                .toList();
+    }
+
+    private String getAttribute(ClientRepresentation client, String attributeName) {
+        Map<String, String> attributes = client.getAttributes();
+        if (attributes == null) {
+            return null;
+        }
+
+        // a blank value means the attribute is not set
+        String attribute = attributes.get(attributeName);
+        return StringUtil.isBlank(attribute) ? null : attribute;
     }
 
     protected void checkURLTrusted(String url, List<String> trustedHosts, List<String> trustedDomains) throws ClientRegistrationPolicyException {
@@ -279,6 +330,10 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
     }
 
     private boolean checkHostTrusted(String host, List<String> trustedHosts, List<String> trustedDomains) {
+        if (host == null) {
+            return false;
+        }
+
         for (String trustedHost : trustedHosts) {
             if (host.equals(trustedHost)) {
                 return true;
@@ -300,7 +355,7 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
             return null;
         }
 
-        if (!relative.startsWith("/")) {
+        if (!relative.startsWith("/") || relative.startsWith("//")) {
             return relative;
         } else if (rootUrl == null || rootUrl.isEmpty()) {
             return null;
