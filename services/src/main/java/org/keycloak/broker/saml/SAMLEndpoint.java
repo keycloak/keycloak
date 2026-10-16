@@ -1105,6 +1105,7 @@ public class SAMLEndpoint {
                     }
 
                     if (!scdvb.build().isValid()) {
+                        logger.error("Response Validation Error: SubjectConfirmationData validation failed");
                         return false;
                     }
                 }
