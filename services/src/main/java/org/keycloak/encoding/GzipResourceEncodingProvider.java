@@ -60,19 +60,25 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
         }
         File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
 
-        try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
-            IOUtils.copy(is, gos);
-        }
-
-        // Avoid REPLACE_EXISTING: on Windows, replacing a file that another thread is currently
-        // streaming would fail because Windows locks open files. Instead, let the first thread to
-        // move win; if another thread already created the target, discard the temp file and use theirs.
         try {
-            Files.move(tmpEncodedFile.toPath(), target.toPath());
-        } catch (FileAlreadyExistsException e) {
+            try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
+                IOUtils.copy(is, gos);
+            }
+
+            // Avoid REPLACE_EXISTING: on Windows, replacing a file that another thread is currently
+            // streaming would fail because Windows locks open files. Instead, let the first thread to
+            // move win; if another thread already created the target, discard the temp file and use theirs.
+            try {
+                Files.move(tmpEncodedFile.toPath(), target.toPath());
+            } catch (FileAlreadyExistsException e) {
+                Files.deleteIfExists(tmpEncodedFile.toPath());
+            }
+            return target;
+        } catch (IOException e) {
+            // any other failure to copy or move must not leave the tmp file behind
             Files.deleteIfExists(tmpEncodedFile.toPath());
+            throw e;
         }
-        return target;
     }
 
 }
