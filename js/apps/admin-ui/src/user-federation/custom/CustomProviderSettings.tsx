@@ -24,7 +24,7 @@ import { useParams } from "../../utils/useParams";
 import type { CustomUserFederationRouteParams } from "../routes/CustomUserFederation";
 import { toUserFederation } from "../routes/UserFederation";
 import { ExtendedHeader } from "../shared/ExtendedHeader";
-import { SettingsCache } from "../shared/SettingsCache";
+import { SettingsCache, setupCacheForm } from "../shared/SettingsCache";
 import { SyncSettings } from "./SyncSettings";
 
 import "./custom-provider-settings.css";
@@ -66,6 +66,7 @@ export default function CustomProviderSettings() {
     (fetchedComponent) => {
       if (fetchedComponent) {
         convertToFormValues(fetchedComponent, setValue);
+        setupCacheForm(fetchedComponent, setValue);
       } else if (id) {
         throw new Error(t("notFound"));
       }
