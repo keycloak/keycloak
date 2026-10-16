@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -111,6 +112,13 @@ public abstract class RoleResource {
             attrsToRemove.removeAll(rep.getAttributes().keySet());
 
             for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
+                if (attr.getValue() != null) {
+                    for (String value : attr.getValue()) {
+                        if (value != null && value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
+                            throw new BadRequestException("Attribute value must not exceed " + Constants.MAX_ATTRIBUTE_VALUE_LENGTH + " characters");
+                        }
+                    }
+                }
                 role.setAttribute(attr.getKey(), attr.getValue());
             }
 

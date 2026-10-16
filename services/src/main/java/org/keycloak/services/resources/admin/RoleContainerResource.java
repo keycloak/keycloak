@@ -193,6 +193,13 @@ public class RoleContainerResource extends RoleResource {
         Map<String, List<String>> attributes = rep.getAttributes();
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
+                if (attr.getValue() != null) {
+                    for (String value : attr.getValue()) {
+                        if (value != null && value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
+                            throw new BadRequestException("Attribute value must not exceed " + Constants.MAX_ATTRIBUTE_VALUE_LENGTH + " characters");
+                        }
+                    }
+                }
                 role.setAttribute(attr.getKey(), attr.getValue());
             }
         }
