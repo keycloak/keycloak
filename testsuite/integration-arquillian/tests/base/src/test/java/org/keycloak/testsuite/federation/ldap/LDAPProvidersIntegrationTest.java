@@ -1126,6 +1126,76 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
+    public void testSearchWithCustomAttributes() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "combinedsearch1", "Combined1", "Search1", "combined1@email.org", null, "13101");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "combinedsearch2", "Combined2", "Search2", "combined2@email.org", null, "13102");
+
+            Map<String, String> matching = Map.of(UserModel.SEARCH, "combinedsearch", "postal_code", "13101");
+            Assertions.assertEquals(1, session.users().searchForUserStream(appRealm, matching).count());
+
+            Map<String, String> disjoint = Map.of(UserModel.SEARCH, "combinedsearch2", "postal_code", "13101");
+            Assertions.assertEquals(0, session.users().searchForUserStream(appRealm, disjoint).count());
+        });
+    }
+
+    @Test
+    public void testSearchWithNonLDAPStandardAttributes() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ctx.getLdapModel().put(LDAPConstants.TRUST_EMAIL, "true");
+            appRealm.updateComponent(ctx.getLdapModel());
+
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelverifiedmatch", "Model", "Verified", "verified-match@email.org", null, "13201");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelverifiedmismatch", "Model", "Verified", "verified-mismatch@email.org", null, "13202");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelcreatedafter", "Model", "Created", "created-after@email.org", null, "13203");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelcreatedbefore", "Model", "Created", "created-before@email.org", null, "13204");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            Map<String, String> verifiedMatch = Map.of(UserModel.SEARCH, "modelverifiedmatch", UserModel.EMAIL_VERIFIED, "true");
+            Assertions.assertEquals(1, ctx.getLdapProvider().searchForUserStream(appRealm, verifiedMatch, 0, 1).count());
+
+            Map<String, String> verifiedMismatch = Map.of(UserModel.SEARCH, "modelverifiedmismatch", UserModel.EMAIL_VERIFIED, "false");
+            Assertions.assertEquals(0, ctx.getLdapProvider().searchForUserStream(appRealm, verifiedMismatch, 0, 1).count());
+
+            Map<String, String> createdAfter = Map.of(UserModel.SEARCH, "modelcreatedafter", UserModel.CREATED_AFTER, "0");
+            Assertions.assertEquals(1, ctx.getLdapProvider().searchForUserStream(appRealm, createdAfter, 0, 1).count());
+
+            Map<String, String> createdBefore = Map.of(UserModel.SEARCH, "modelcreatedbefore", UserModel.CREATED_BEFORE, "0");
+            Assertions.assertEquals(0, ctx.getLdapProvider().searchForUserStream(appRealm, createdBefore, 0, 1).count());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ctx.getLdapModel().put(LDAPConstants.TRUST_EMAIL, "false");
+            appRealm.updateComponent(ctx.getLdapModel());
+
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelunverifiedmatch", "Model", "Unverified", "unverified-match@email.org", null, "13205");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "modelunverifiedmismatch", "Model", "Unverified", "unverified-mismatch@email.org", null, "13206");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            Map<String, String> unverifiedMatch = Map.of(UserModel.SEARCH, "modelunverifiedmatch", UserModel.EMAIL_VERIFIED, "false");
+            Assertions.assertEquals(1, ctx.getLdapProvider().searchForUserStream(appRealm, unverifiedMatch, 0, 1).count());
+
+            Map<String, String> unverifiedMismatch = Map.of(UserModel.SEARCH, "modelunverifiedmismatch", UserModel.EMAIL_VERIFIED, "true");
+            Assertions.assertEquals(0, ctx.getLdapProvider().searchForUserStream(appRealm, unverifiedMismatch, 0, 1).count());
+        });
+    }
+
+    @Test
     public void testSearchWithCustomLDAPFilter() {
         // Add custom filter for searching users
         testingClient.server().run(session -> {
