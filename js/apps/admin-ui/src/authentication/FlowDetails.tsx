@@ -39,6 +39,7 @@ import { FlowRow } from "./components/FlowRow";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
+  containsOrphan,
   ExecutionList,
   ExpandableExecution,
   IndexChange,
@@ -104,6 +105,14 @@ export default function FlowDetails() {
     try {
       let id = ex.id!;
       if ("parent" in change) {
+        // Cross-flow drag runs delete + re-create; re-create fails on an unavailable provider, which would silently drop the row.
+        if (containsOrphan(ex)) {
+          addError(
+            "updateFlowError",
+            new Error(t("providerUnavailableMoveBlocked")),
+          );
+          return;
+        }
         let config: AuthenticatorConfigRepresentation = {};
         if ("authenticationConfig" in ex) {
           config = await adminClient.authenticationManagement.getConfig({
@@ -127,13 +136,14 @@ export default function FlowDetails() {
               type: "basic-flow",
             });
           id = result.id!;
-          ex.executionList?.forEach((e, i) =>
-            executeChange(e, {
+          const children = ex.executionList ?? [];
+          for (let i = 0; i < children.length; i++) {
+            await executeChange(children[i], {
               parent: { ...ex, id: result.id },
               newIndex: i,
               oldIndex: i,
-            }),
-          );
+            });
+          }
         } else {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({
