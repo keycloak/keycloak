@@ -371,4 +371,10 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
+    <!-- Store the current key size of aes-generated key providers that predate the 26.7.0 secretSize default
+         change, so the admin console shows their real size and saving them does not rotate the key (#54016). -->
+    <changeSet author="keycloak" id="26.8.0-54016-aes-generated-secret-size">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_AesGeneratedSecretSize"/>
+    </changeSet>
+
 </databaseChangeLog>
