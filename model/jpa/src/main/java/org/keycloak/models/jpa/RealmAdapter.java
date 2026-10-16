@@ -901,8 +901,18 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public long searchClientByClientIdCount(String clientId) {
+        return session.clients().searchClientsByClientIdCount(this, clientId);
+    }
+
+    @Override
     public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    public long searchClientByAttributesCount(Map<String, String> attributes) {
+        return session.clients().searchClientsByAttributesCount(this, attributes);
     }
 
     @Override
