@@ -41,6 +41,7 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -74,6 +75,7 @@ public class StripSecretsUtils {
         REPRESENTATION_FORMATTER.put(ComponentRepresentation.class, (session, o) -> StripSecretsUtils.stripComponent(session, (ComponentRepresentation) o));
         REPRESENTATION_FORMATTER.put(CredentialRepresentation.class, (session, o) -> StripSecretsUtils.stripCredentials((CredentialRepresentation) o));
         REPRESENTATION_FORMATTER.put(AuthenticatorConfigRepresentation.class, (session, o) -> StripSecretsUtils.stripAuthenticatorConfig(session, (AuthenticatorConfigRepresentation) o));
+        REPRESENTATION_FORMATTER.put(CertificateRepresentation.class, (session, o) -> StripSecretsUtils.stripCertificate((CertificateRepresentation) o));
     }
 
     public static <T> T stripSecrets(KeycloakSession session, T representation) {
@@ -183,6 +185,12 @@ public class StripSecretsUtils {
                 });
         nonSecretNames.removeAll(secretNames);
         return nonSecretNames;
+    }
+
+    protected static CertificateRepresentation stripCertificate(CertificateRepresentation rep) {
+        rep.setPrivateKey(maskNonVaultValue(rep.getPrivateKey()));
+        rep.setJwks(maskNonVaultValue(rep.getJwks()));
+        return rep;
     }
 
     protected static IdentityProviderRepresentation stripBroker(IdentityProviderRepresentation rep) {

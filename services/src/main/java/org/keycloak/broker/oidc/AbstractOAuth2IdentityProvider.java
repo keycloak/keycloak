@@ -44,6 +44,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -810,7 +811,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM, session.getContext().resolveLocale(null).toLanguageTag());
         }
 
-        String prompt = getConfig().getPrompt();
+        boolean forwardedPassiveLogin = "true".equals(
+                authenticationSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN));
+        String prompt = forwardedPassiveLogin ? "none" : getConfig().getPrompt();
         if (prompt == null || prompt.isEmpty()) {
             prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
         }
