@@ -17,6 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -130,13 +132,20 @@ public class ClientScopeResource {
         if (rep.getProtocol() == null) {
             rep.setProtocol(clientScope.getProtocol());
         }
-        ClientScopeResource.validateClientScope(session, rep);
-        validateParameterizedScopeUpdate(rep);
+        if (rep.getName() == null) {
+            // a partial update may omit the name; the protocol defaults and the name validation below need it
+            rep.setName(clientScope.getName());
+        }
+        LoginProtocolFactory loginProtocolFactory = //
+                (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
+                                                                                              rep.getProtocol());
+        // Fill the protocol defaults into the submission first, then validate the exact state the write below
+        // produces: stored attributes overlaid with the defaulted submission (an explicit null clears the attribute).
+        Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
+        ClientScopeRepresentation effective = mergeEffectiveAttributes(rep, clientScope);
+        ClientScopeResource.validateClientScope(session, effective);
+        validateParameterizedScopeUpdate(effective);
         try {
-            LoginProtocolFactory loginProtocolFactory = //
-                    (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
-                                                                                                  rep.getProtocol());
-            Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -270,9 +279,33 @@ public class ClientScopeResource {
     }
 
     /**
+     * Builds the representation of the client scope as the update will leave it: stored attributes overlaid with
+     * the defaulted submission. An explicit {@code null} is kept as a null value; both validation and
+     * {@code RepresentationToModel#updateClientScope} treat it as clearing the attribute.
+     */
+    private static ClientScopeRepresentation mergeEffectiveAttributes(ClientScopeRepresentation rep, ClientScopeModel clientScope) {
+        ClientScopeRepresentation effective = new ClientScopeRepresentation();
+        // validateCredentialConfigurationId excludes this scope from its uniqueness check by id, so carry it over
+        effective.setId(rep.getId() != null ? rep.getId() : clientScope.getId());
+        effective.setName(rep.getName() != null ? rep.getName() : clientScope.getName());
+        effective.setDescription(rep.getDescription() != null ? rep.getDescription() : clientScope.getDescription());
+        effective.setProtocol(rep.getProtocol());
+
+        Map<String, String> attributes = new HashMap<>();
+        if (clientScope.getAttributes() != null) {
+            attributes.putAll(clientScope.getAttributes());
+        }
+        if (rep.getAttributes() != null) {
+            attributes.putAll(rep.getAttributes());
+        }
+        effective.setAttributes(attributes);
+        return effective;
+    }
+
+    /**
      * Makes sure that an update that makes a Client Scope Parameterized is rejected if the Client Scope is assigned
      * as a default scope — either to a client or as a realm-level default.
-     * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
+     * @param rep the effective {@link ClientScopeRepresentation} the update will persist.
      */
     public void validateParameterizedScopeUpdate(ClientScopeRepresentation rep) {
         validateClientScopeName(rep.getName());

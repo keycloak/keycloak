@@ -405,6 +405,10 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 | `604800` seconds (7 days), or credential lifetime if shorter
 | How often the wallet should refresh the credential. This sets the expiration (`exp` claim) of the issued VC JWT. If not explicitly set, defaults to 7 days or the credential lifetime, whichever is smaller. The credential can be refreshed using the refresh token as long as the credential lifetime has not expired. Must not exceed the credential lifetime.
 
+| Credential Refresh Idle Timeout
+| `2592000` seconds (30 days), or credential lifetime if shorter
+| How long the refresh token may go unused before it expires. Every refresh restarts this window, so an actively refreshing wallet is never affected. If the wallet does not refresh within this timeout, the refresh token expires and the wallet must re-authenticate, even if the credential lifetime has not been reached. Must not exceed the credential lifetime and must not be smaller than the credential refresh interval.
+
 | Supported Format
 | SD-JWT VC (`dc+sd-jwt`)
 | The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`). There is also experimental support for the mdoc format, which is available just if the {project_name} server is started with the feature `oid4vc-mdoc` (Not recommended to use in the production environments).
@@ -474,25 +478,28 @@ For an SD-JWT VC, issuance fails with a `CredentialSignerException` if the resol
 
 * **Credential Refresh Interval** (`vc.refresh_interval_in_seconds`) — Controls the `exp` (expiration) claim in the actual VC JWT returned to the wallet. Default: 7 days (604800 seconds), or the credential lifetime if shorter.
 
+* **Credential Refresh Idle Timeout** (`vc.refresh_idle_timeout_in_seconds`) — Controls how long the refresh token may go unused before it expires. Every refresh restarts this window. Default: 30 days (2592000 seconds), or the credential lifetime if shorter, and never below the credential refresh interval.
+
 This separation enables a periodic refresh cycle:
 
 . The wallet receives a VC with a 7-day expiration
-. The wallet also receives a refresh token valid for 1 year
+. The wallet also receives a refresh token that expires after 30 days without use, and no later than after 1 year
 . After 7 days, the VC expires (wallet can verify this locally)
-. The wallet uses the refresh token to obtain a new access token
+. The wallet uses the refresh token to obtain a new access token, which restarts the 30-day idle window
 . The wallet requests a new VC, which is valid for another 7 days
-. This cycle continues until the refresh token expires (after 1 year)
+. This cycle continues as long as the wallet keeps refreshing within the idle timeout
+. If the wallet stops refreshing for 30 days, the refresh token expires and the wallet must re-authenticate
 . After 1 year, both the refresh token and the database record expire, requiring re-authentication
 
 This design provides:
 
-* **Enhanced security** — Regular credential rotation reduces the impact of credential theft
+* **Enhanced security** — Regular credential rotation reduces the impact of credential theft, and an unused refresh token expires quickly instead of staying valid for the full credential lifetime
 * **Privacy protection** — Fresh credentials with updated timestamps prevent long-term correlation
 * **User convenience** — Automatic refresh without re-authentication for up to 1 year
 
 [IMPORTANT]
 ====
-The credential refresh interval must not exceed the credential lifetime. {project_name} validates this constraint when creating or updating credential scopes. If you set a credential lifetime shorter than 7 days without explicitly configuring the refresh interval, the refresh interval automatically adjusts to match the credential lifetime.
+The credential refresh interval must not exceed the credential lifetime, and the refresh idle timeout must lie between the refresh interval and the credential lifetime. {project_name} validates these constraints when creating or updating credential scopes. If you set a credential lifetime shorter than 7 days without explicitly configuring the refresh interval, the refresh interval automatically adjusts to match the credential lifetime.
 ====
 
 ==== Adding Protocol Mappers

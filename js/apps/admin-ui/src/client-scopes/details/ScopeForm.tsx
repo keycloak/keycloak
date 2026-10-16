@@ -51,6 +51,7 @@ const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 const VC_EXPIRY_DEFAULT_SECONDS = 31536000; // 1 year (matches VC_EXPIRY_IN_SECONDS_DEFAULT)
 const VC_REFRESH_INTERVAL_DEFAULT_SECONDS = 604800; // 7 days (matches VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT)
+const VC_REFRESH_IDLE_TIMEOUT_DEFAULT_SECONDS = 2592000; // 30 days (matches VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT)
 const VC_FORMAT_OPTIONS = [
   {
     key: VC_FORMAT_SD_JWT,
@@ -214,6 +215,36 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
       "attributes.vc.cryptographic_binding_methods_supported",
     );
+  const expiryFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.expiry_in_seconds",
+    );
+  const refreshIntervalFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.refresh_interval_in_seconds",
+    );
+  const refreshIdleTimeoutFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.refresh_idle_timeout_in_seconds",
+    );
+
+  const credentialLifetime = useWatch({ control, name: expiryFieldName });
+  const credentialRefreshInterval = useWatch({
+    control,
+    name: refreshIntervalFieldName,
+  });
+
+  // The refresh interval and idle timeout rules read other fields' values, so
+  // re-validate them whenever the lifetime or the interval changes.
+  useEffect(() => {
+    void trigger([refreshIntervalFieldName, refreshIdleTimeoutFieldName]);
+  }, [
+    credentialLifetime,
+    credentialRefreshInterval,
+    refreshIntervalFieldName,
+    refreshIdleTimeoutFieldName,
+    trigger,
+  ]);
 
   const selectedFormat = useWatch({
     control,
@@ -263,31 +294,62 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   }, [credentialBuilderProviders, isMdocEnabled]);
   const isNotSaml = selectedProtocol != "saml";
 
-  const computeRefreshIntervalDefault = () => {
+  const readFormSeconds = (attribute: string) => {
+    const value = form.getValues(
+      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(attribute),
+    );
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : undefined;
+    }
+    if (typeof value === "string" && value !== "") {
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  };
+
+  const resolveCredentialLifetime = () => {
+    const rawLifetime = form.getValues(
+      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+        "attributes.vc.expiry_in_seconds",
+      ),
+    );
+    // A cleared field is submitted as null, so the backend falls back to its one-year
+    // default; only an untouched (undefined) field may still read the saved attribute.
+    if (typeof rawLifetime === "string" && rawLifetime.trim() === "") {
+      return VC_EXPIRY_DEFAULT_SECONDS;
+    }
+    const lifetimeFromForm = readFormSeconds("attributes.vc.expiry_in_seconds");
+    if (lifetimeFromForm !== undefined) {
+      return lifetimeFromForm;
+    }
     const expiryAttr = clientScope?.attributes?.["vc.expiry_in_seconds"];
     const lifetimeFromAttr =
       typeof expiryAttr === "string" && expiryAttr !== ""
         ? parseInt(expiryAttr, 10)
         : undefined;
 
-    const lifetimeFieldName = convertAttributeNameToForm(
-      "attributes.vc.expiry_in_seconds",
-    );
-    const lifetimeValue = form.getValues(lifetimeFieldName);
-    const lifetimeFromForm =
-      typeof lifetimeValue === "number"
-        ? lifetimeValue
-        : typeof lifetimeValue === "string" && lifetimeValue !== ""
-          ? parseInt(lifetimeValue, 10)
-          : undefined;
-
-    const lifetime =
+    return (
       (Number.isFinite(lifetimeFromAttr) ? lifetimeFromAttr : undefined) ??
-      (Number.isFinite(lifetimeFromForm) ? lifetimeFromForm : undefined) ??
-      VC_EXPIRY_DEFAULT_SECONDS;
-
-    return Math.min(VC_REFRESH_INTERVAL_DEFAULT_SECONDS, lifetime);
+      VC_EXPIRY_DEFAULT_SECONDS
+    );
   };
+
+  const computeRefreshIntervalDefault = () =>
+    Math.min(VC_REFRESH_INTERVAL_DEFAULT_SECONDS, resolveCredentialLifetime());
+
+  const resolveRefreshInterval = () =>
+    readFormSeconds("attributes.vc.refresh_interval_in_seconds") ??
+    computeRefreshIntervalDefault();
+
+  const computeRefreshIdleTimeoutDefault = () =>
+    Math.max(
+      Math.min(
+        VC_REFRESH_IDLE_TIMEOUT_DEFAULT_SECONDS,
+        resolveCredentialLifetime(),
+      ),
+      resolveRefreshInterval(),
+    );
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
       ? VC_FORMAT_SD_JWT_TYP
@@ -656,9 +718,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               labelIcon={t("issuerDidHelp")}
             />
             <TimeSelectorControl
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.expiry_in_seconds",
-              )}
+              name={expiryFieldName}
               label={t("credentialLifetime")}
               labelIcon={t("credentialLifetimeHelp")}
               units={["second", "minute", "hour", "day"]}
@@ -669,9 +729,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               }}
             />
             <TimeSelectorControl
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.refresh_interval_in_seconds",
-              )}
+              name={refreshIntervalFieldName}
               label={t("credentialRefreshInterval")}
               labelIcon={t("credentialRefreshIntervalHelp")}
               units={["second", "minute", "hour", "day"]}
@@ -685,20 +743,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                       if (value === "" || value == null) {
                         return true;
                       }
-                      // Use beerified field name to read from form
-                      const lifetimeFieldName =
-                        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                          "attributes.vc.expiry_in_seconds",
-                        );
-                      const lifetimeStr =
-                        form.getValues(lifetimeFieldName) ||
-                        String(VC_EXPIRY_DEFAULT_SECONDS);
-
-                      const lifetime = parseInt(String(lifetimeStr), 10);
+                      const lifetime =
+                        readFormSeconds("attributes.vc.expiry_in_seconds") ??
+                        VC_EXPIRY_DEFAULT_SECONDS;
                       const interval =
                         typeof value === "number" ? value : parseInt(value, 10);
 
-                      if (isNaN(interval) || isNaN(lifetime)) {
+                      if (isNaN(interval)) {
                         return true;
                       }
                       return (
@@ -707,6 +758,64 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                           interval: toHumanFormat(interval, i18n.language),
                           lifetime: toHumanFormat(lifetime, i18n.language),
                         })
+                      );
+                    },
+                  },
+                },
+              }}
+            />
+            <TimeSelectorControl
+              name={refreshIdleTimeoutFieldName}
+              label={t("credentialRefreshIdleTimeout")}
+              labelIcon={t("credentialRefreshIdleTimeoutHelp")}
+              units={["second", "minute", "hour", "day"]}
+              min={1}
+              controller={{
+                defaultValue: computeRefreshIdleTimeoutDefault(),
+                rules: {
+                  min: 1,
+                  validate: {
+                    notGreaterThanLifetime: (value) => {
+                      if (value === "" || value == null) {
+                        return true;
+                      }
+                      const lifetime =
+                        readFormSeconds("attributes.vc.expiry_in_seconds") ??
+                        VC_EXPIRY_DEFAULT_SECONDS;
+                      const idle =
+                        typeof value === "number" ? value : parseInt(value, 10);
+
+                      if (isNaN(idle)) {
+                        return true;
+                      }
+                      return (
+                        idle <= lifetime ||
+                        t("refreshIdleTimeoutCannotExceedLifetime", {
+                          idle: toHumanFormat(idle, i18n.language),
+                          lifetime: toHumanFormat(lifetime, i18n.language),
+                        })
+                      );
+                    },
+                    notSmallerThanRefreshInterval: (value) => {
+                      if (value === "" || value == null) {
+                        return true;
+                      }
+                      const idle =
+                        typeof value === "number" ? value : parseInt(value, 10);
+                      const interval = resolveRefreshInterval();
+
+                      if (isNaN(idle)) {
+                        return true;
+                      }
+                      return (
+                        idle >= interval ||
+                        t(
+                          "refreshIdleTimeoutMustNotBeSmallerThanRefreshInterval",
+                          {
+                            idle: toHumanFormat(idle, i18n.language),
+                            interval: toHumanFormat(interval, i18n.language),
+                          },
+                        )
                       );
                     },
                   },
