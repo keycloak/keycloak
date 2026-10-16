@@ -18,6 +18,11 @@ public class KcOidcBrokerClientSecretJwtCustomSignAlgTest extends AbstractKcOidc
     // BCFIPS approved mode requires at least 112 bits (14 characters) for client-secret-jwt
     private static final String CLIENT_SECRET_JWT = "atleast-14chars-password";
 
+    @Override
+    protected String getBrokerClientSecret() {
+        return CLIENT_SECRET_JWT;
+    }
+
     @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
             config = JwtSecretCustomAlgProviderRealmConfig.class)
     ManagedRealm providerRealm;

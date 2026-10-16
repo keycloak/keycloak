@@ -69,6 +69,14 @@ public interface UserAuthenticationIdentityProvider<C extends IdentityProviderMo
     void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
 
     /**
+     * Applies the provider's email synchronization and verification policy before an authentication
+     * execution relies on the user's email. Does not import the user or run identity provider mappers.
+     * Providers that synchronize email should apply the same policy here as in {@link #updateBrokeredUser}.
+     */
+    default void updateBrokeredEmail(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+    }
+
+    /**
      * JAXRS callback endpoint for when the remote IDP wants to callback to keycloak.
      *
      * @return

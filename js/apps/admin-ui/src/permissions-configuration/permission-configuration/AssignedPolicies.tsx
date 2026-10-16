@@ -78,11 +78,7 @@ export const AssignedPolicies = ({
       return Promise.resolve([]);
     },
     (policies) => {
-      setSelectedPolicies(
-        (policies as (PolicyRepresentation | undefined)[]).filter(
-          (p): p is PolicyRepresentation => p !== undefined,
-        ),
-      );
+      setSelectedPolicies(policies.filter((p) => p !== null));
     },
     [policies],
   );

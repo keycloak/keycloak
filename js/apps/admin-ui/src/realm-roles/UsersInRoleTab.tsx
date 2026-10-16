@@ -36,12 +36,13 @@ export const UsersInRoleTab = () => {
       });
     }
 
-    return adminClient.roles.findUsersWithRole({
+    const users = await adminClient.roles.findUsersWithRole({
       name: role.name!,
       briefRepresentation: true,
       first,
       max,
     });
+    return users ?? [];
   };
 
   const { enabled } = useHelp();

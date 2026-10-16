@@ -35,7 +35,7 @@ As this is an evolving draft, Keycloak's implementation of ID-JAG is being deliv
 
 == Use Case Example: MCP (Model Context Protocol)
 
-A primary use case for ID-JAG is securing interactions in AI ecosystems, such as those using the **Model Context Protocol (MCP)**. 
+A primary use case for ID-JAG is securing interactions in AI ecosystems, such as those using the **Model Context Protocol (MCP)**.
 In this scenario, an AI Assistant (Client App A / MCP Client) needs to access a backend resource or tool (Client App B / MCP Authorization Server and MCP Resource Server) on behalf of an authenticated user. Instead of sharing credentials or prompting the user again, the MCP Client uses ID-JAG to seamlessly securely exchange its identity assertion for an access token scoped for the MCP Resource Server.
 
 == Architecture Flow (ID-JAG / Cross-App Access)
@@ -187,6 +187,6 @@ A successful response will return a JSON object containing the newly issued loca
 * https://oauth.net/cross-app-access/[oauth.net: Cross-App Access (XAA) Overview]
 * https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/[IETF draft: Identity Assertion JWT Authorization Grant (ID-JAG)]
 * https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523: JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization Grants]
-* https://www.keycloak.org/securing-apps/oauth-identity-authorization-chaining-across-domains[Keycloak Documentation: OAuth Identity and Authorization Chaining Across Domains]
+* <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" />
 
 </@tmpl.guide>

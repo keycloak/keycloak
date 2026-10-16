@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -164,6 +165,8 @@ public class UserResource {
     protected final KeycloakSession session;
 
     protected final HttpHeaders headers;
+
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
 
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -461,7 +464,9 @@ public class UserResource {
     })
     public Stream<UserSessionRepresentation> getSessions() {
         auth.users().requireView(user);
-        return session.sessions().getUserSessionsStream(realm, user).map(ModelToRepresentation::toRepresentation);
+        return session.sessions().getUserSessionsStream(realm, user)
+                .filter(this::hasVisibleClientOrNone)
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -484,8 +489,11 @@ public class UserResource {
         auth.users().requireView(user);
         ClientModel client = realm.getClientById(clientUuid);
         if (client == null) {
-            throw new NotFoundException("Client not found");
+            // we do this to make sure somebody can't phish ids
+            if (auth.clients().canList()) throw new NotFoundException("Client not found");
+            else throw new ForbiddenException();
         }
+        auth.clients().requireView(client);
         return new UserSessionManager(session).findOfflineSessionsStream(realm, user)
                 .map(session -> toUserSessionRepresentation(session, clientUuid))
                 .filter(Objects::nonNull);
@@ -592,10 +600,13 @@ public class UserResource {
     public Stream<Map<String, Object>> getConsents() {
         auth.users().requireView(user);
 
-        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user).stream()
+                .filter(this::canViewClient)
+                .collect(Collectors.toSet());
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
         List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
+                .filter(ucm -> canViewClient(ucm.getClient()))
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());
@@ -1314,14 +1325,30 @@ public class UserResource {
      * client.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, final String clientUuid) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
-        // Update lastSessionRefresh with the timestamp from clientSession
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
         if (clientSession == null) {
             return null;
         }
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
+        // Update lastSessionRefresh with the timestamp from clientSession
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
+    }
+
+    /**
+     * A session used only by clients the caller cannot view would reveal that the user uses a hidden client, so it is
+     * left out. A session without any clients, e.g. after its clients were removed, reveals nothing and stays listed.
+     */
+    private boolean hasVisibleClientOrNone(UserSessionModel userSession) {
+        Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+        return clientSessions.isEmpty() || clientSessions.stream().anyMatch(cs -> canViewClient(cs.getClient()));
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {

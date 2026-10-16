@@ -99,6 +99,23 @@ Web origins used for CORS and login-status iframe checks compare only scheme, ho
 
 Realms that previously listed multiple redirect URIs that differed only by hostname or scheme case can keep a single entry.
 
+=== JavaScript Admin Client lookups declare `null` for a missing resource
+// https://github.com/keycloak/keycloak/issues/43371
+
+The JavaScript Admin Client methods that look up a single resource and tolerate a 404, such as `users.findOne()`, `clients.findOne()`, `groups.findOne()` and `roles.findOneById()`, now declare `null` instead of `undefined` as their result when the resource does not exist.
+The methods already returned `null` at runtime, so only the TypeScript types change.
+
+If your TypeScript code assigns these results to a variable typed as `T | undefined`, it no longer compiles.
+Change the type to `T | null`, or convert the result with `?? undefined`, and check for `null` where the code checked for `undefined`.
+
+Some methods that tolerate a 404 did not declare it at all, and now do:
+
+* `roles.findUsersWithRole()`, `clients.findProtocolMappersByProtocol()`, `clientScopes.findProtocolMappersByProtocol()` and `workflows.scheduled()` return an array or `null`.
+* `authenticationManagement.getRequiredActionForAlias()` returns `RequiredActionProviderRepresentation | null` instead of `any`.
+* `clients.findOnePolicy()` and `clients.findOnePolicyWithType()` return `PolicyRepresentation | null` instead of `void`.
+
+Code that uses these results without checking for `null` no longer compiles.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
