@@ -4,9 +4,12 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,12 +31,14 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionLookup;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -41,6 +46,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.DefaultKeycloakTransactionManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.TokenUtil;
 
@@ -51,6 +57,11 @@ import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvider {
 
     private static final Logger logger = Logger.getLogger(AbstractRefreshTokenProvider.class);
+    private static final long REFRESH_LOCK_LIFESPAN_SECONDS = 15;
+    private static final long COMPENSATION_LOCK_LIFESPAN_SECONDS = 30;
+    private static final long DIRECT_COMPENSATION_MAX_LOCK_AGE_SECONDS = 4;
+    private static final String TOKEN_REUSE_ROLLBACK_ATTRIBUTE =
+            AbstractRefreshTokenProvider.class.getName() + ".tokenReuseRollback";
 
     protected final KeycloakSession session;
 
@@ -168,7 +179,13 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
-            responseBuilder.generateRefreshToken(oldRefreshToken, clientSession);
+            try {
+                responseBuilder.generateRefreshToken(oldRefreshToken, clientSession);
+            } finally {
+                if (realm.isRevokeRefreshToken()) {
+                    recordTokenReuseState(session, clientSession, tokenManager.getReuseIdKey(oldRefreshToken));
+                }
+            }
         }
 
         if (newToken.getAuthorization() != null
@@ -185,6 +202,10 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         responseBuilder.requestRefreshToken(oldRefreshToken);
 
         afterRefreshTokenGenerated(ctx, responseBuilder);
+
+        if (realm.isRevokeRefreshToken()) {
+            recordTokenReuseState(session, clientSession, tokenManager.getReuseIdKey(oldRefreshToken));
+        }
 
         return responseBuilder;
     }
@@ -245,23 +266,27 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
     private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RealmModel realm, RefreshToken refreshToken, TokenManager tokenManager) {
         String lockId = getRefreshTokenLockId(realm, refreshToken, tokenManager);
         Retry.executeWithBackoff((int iteration) -> {
+            long lockAttemptStarted = System.nanoTime();
             // This assumes that 15 seconds is the maximum time this operation will take.
             // When this operation fails with a ISPN000427, it might leave a stale entry in the cache.
             // Until we have additional APIs to identify it is our own entry that is there, we wait until it expires
             // to then retry. Lifespan (15s) < Retry timeout (30s)
-            if (!session.singleUseObjects().putIfAbsent(lockId, 15)) {
+            if (!session.singleUseObjects().putIfAbsent(lockId, REFRESH_LOCK_LIFESPAN_SECONDS)) {
                 throw new RuntimeException("Unable to acquire serialization lock for token refresh " + lockId);
             }
 
             // Trigger the session provider, to ensure that it enlists first for enlistAfterCompletion
             session.sessions();
 
+            // Restore the token rotation state before the lock-release callback runs.
+            getOrEnlistTokenReuseRollback(session).markLock(lockId, lockAttemptStarted);
+
             KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
             session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
                 @Override
                 protected void commitImpl() {
                     try {
-                        KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                        releaseLockIfUnexpired();
                     } catch (Exception e) {
                         // If it fails, the entry will need to expire.
                         // The call was still successful overall, so do not propagate the error.
@@ -272,11 +297,19 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                 @Override
                 protected void rollbackImpl() {
                     try {
-                        KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                        releaseLockIfUnexpired();
                     } catch (Exception e) {
                         // If it fails, the entry will need to expire.
                         // The original error will be propagated as usual.
                         logger.warn("Unable to clear entry for " + lockId, e);
+                    }
+                }
+
+                private void releaseLockIfUnexpired() {
+                    // After the 15-second lease, the key may belong to another refresh.
+                    // Measure from before acquisition so a slow putIfAbsent is safe too.
+                    if (System.nanoTime() - lockAttemptStarted < TimeUnit.SECONDS.toNanos(REFRESH_LOCK_LIFESPAN_SECONDS)) {
+                        KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
                     }
                 }
             });
@@ -299,11 +332,11 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                                                 TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
         if (realm.isRevokeRefreshToken()) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
+            String key = tokenManager.getReuseIdKey(refreshToken);
             try {
+                captureTokenReuseState(session, clientSession, key);
                 tokenManager.validateTokenReuse(session, realm, refreshToken, clientSession, true);
-                String key = tokenManager.getReuseIdKey(refreshToken);
-                int currentCount = clientSession.getRefreshTokenUseCount(key);
-                clientSession.setRefreshTokenUseCount(key, currentCount + 1);
+                incrementTokenReuseCount(session, clientSession, key);
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
@@ -315,9 +348,172 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     if (cs != null) cs.detachFromUserSession();
                 });
                 throw oee;
+            } finally {
+                recordTokenReuseState(session, clientSession, key);
             }
         }
     }
+
+    private static TokenReuseRollback getOrEnlistTokenReuseRollback(KeycloakSession session) {
+        TokenReuseRollback rollback = session.getAttribute(TOKEN_REUSE_ROLLBACK_ATTRIBUTE, TokenReuseRollback.class);
+        if (rollback == null) {
+            rollback = new TokenReuseRollback();
+            TokenReuseRollback captured = rollback;
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            var context = session.getContext();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    if (session.getAttribute(DefaultKeycloakTransactionManager.AFTER_COMPLETION_FAILURE_ATTRIBUTE) != null) {
+                        restore();
+                    }
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    restore();
+                }
+
+                private void restore() {
+                    captured.restoreWithinLocks(factory, context);
+                }
+            });
+            session.setAttribute(TOKEN_REUSE_ROLLBACK_ATTRIBUTE, rollback);
+        }
+        return rollback;
+    }
+
+    static void captureTokenReuseState(KeycloakSession session,
+                                       AuthenticatedClientSessionModel clientSession, String key) {
+        TokenReuseRollback rollback = getOrEnlistTokenReuseRollback(session);
+        rollback.capture(clientSession, key);
+    }
+
+    static void incrementTokenReuseCount(KeycloakSession session,
+                                         AuthenticatedClientSessionModel clientSession, String key) {
+        captureTokenReuseState(session, clientSession, key);
+        int currentCount = clientSession.getRefreshTokenUseCount(key);
+        clientSession.setRefreshTokenUseCount(key, currentCount + 1);
+        recordTokenReuseState(session, clientSession, key);
+    }
+
+    static void recordTokenReuseState(KeycloakSession session,
+                                      AuthenticatedClientSessionModel clientSession, String key) {
+        TokenReuseRollback rollback = session.getAttribute(TOKEN_REUSE_ROLLBACK_ATTRIBUTE, TokenReuseRollback.class);
+        if (rollback != null) {
+            rollback.recordAttemptedState(clientSession, key);
+        }
+    }
+
+    private static class TokenReuseRollback {
+
+        private final Map<TokenReuseStateKey, TokenReuseState> originalStates = new LinkedHashMap<>();
+        private final Map<String, Long> lockStartTimes = new LinkedHashMap<>();
+
+        private void markLock(String lockId, long started) {
+            lockStartTimes.put(lockId, started);
+        }
+
+        private void capture(AuthenticatedClientSessionModel clientSession, String key) {
+            TokenReuseStateKey stateKey = new TokenReuseStateKey(clientSession.getId(), key);
+            originalStates.computeIfAbsent(stateKey, ignored -> {
+                Map<String, String> notes = snapshot(clientSession, key);
+                return new TokenReuseState(clientSession, notes, new LinkedHashMap<>(notes));
+            });
+        }
+
+        private void recordAttemptedState(AuthenticatedClientSessionModel clientSession, String key) {
+            TokenReuseState state = originalStates.get(new TokenReuseStateKey(clientSession.getId(), key));
+            if (state != null) {
+                state.attemptedNotes().putAll(snapshot(clientSession, key));
+            }
+        }
+
+        private static Map<String, String> snapshot(AuthenticatedClientSessionModel clientSession, String key) {
+            Map<String, String> notes = new LinkedHashMap<>();
+            for (String prefix : List.of(AuthenticatedClientSessionModel.REFRESH_TOKEN_PREFIX,
+                    AuthenticatedClientSessionModel.REFRESH_TOKEN_USE_PREFIX,
+                    AuthenticatedClientSessionModel.REFRESH_TOKEN_LAST_REFRESH_PREFIX,
+                    AuthenticatedClientSessionModel.REFRESH_TOKEN_LATEST_GENERATED_PREFIX)) {
+                String name = prefix + key;
+                notes.put(name, clientSession.getNote(name));
+            }
+            return notes;
+        }
+
+        private void restoreWithinLocks(KeycloakSessionFactory factory, KeycloakContext context) {
+            for (Map.Entry<TokenReuseStateKey, TokenReuseState> entry : originalStates.entrySet()) {
+                TokenReuseState state = entry.getValue();
+                String lockId = "refreshLock:" + state.clientSession().getUserSession().getId()
+                        + ":" + entry.getKey().reuseKey();
+                Long originalStart = lockStartTimes.get(lockId);
+                long[] acquiredAt = {0L};
+                if (originalStart != null
+                        && System.nanoTime() - originalStart
+                        >= TimeUnit.SECONDS.toNanos(DIRECT_COMPENSATION_MAX_LOCK_AGE_SECONDS)) {
+                    // A database update can retry for ten seconds. If the original
+                    // lease has less than eleven seconds left, wait for its expiry
+                    // and reacquire before reading or restoring the four-note state.
+                    Retry.executeWithBackoff((int iteration) -> {
+                        long started = System.nanoTime();
+                        boolean[] acquired = {false};
+                        KeycloakModelUtils.runJobInTransaction(factory,
+                                sub -> acquired[0] = sub.singleUseObjects().putIfAbsent(lockId,
+                                        COMPENSATION_LOCK_LIFESPAN_SECONDS));
+                        if (!acquired[0]) {
+                            throw new IllegalStateException("Unable to reacquire refresh lock before compensation");
+                        }
+                        acquiredAt[0] = started;
+                    }, Duration.of(30, ChronoUnit.SECONDS), 10);
+                }
+                try {
+                    KeycloakModelUtils.runJobInTransaction(factory, context,
+                            sub -> restoreState(new SessionLookup(sub), state));
+                } finally {
+                    if (acquiredAt[0] != 0
+                            && System.nanoTime() - acquiredAt[0]
+                            < TimeUnit.SECONDS.toNanos(COMPENSATION_LOCK_LIFESPAN_SECONDS)) {
+                        try {
+                            KeycloakModelUtils.runJobInTransaction(factory,
+                                    sub -> sub.singleUseObjects().remove(lockId));
+                        } catch (Exception e) {
+                            logger.warn("Unable to clear compensation lock for " + lockId, e);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void restoreState(SessionLookup ctx, TokenReuseState state) {
+            AuthenticatedClientSessionModel rollbackClientSession = ctx.findClientSession(state.clientSession());
+            if (rollbackClientSession == null) {
+                return;
+            }
+            // A later successful refresh has a new rotation state. Compare the
+            // whole group so an old callback never restores only some notes.
+            boolean superseded = state.originalNotes().entrySet().stream().anyMatch(note -> {
+                String current = rollbackClientSession.getNote(note.getKey());
+                return !Objects.equals(current, note.getValue())
+                        && !Objects.equals(current, state.attemptedNotes().get(note.getKey()));
+            });
+            if (superseded) {
+                logger.warn("Skipping token reuse rollback because rotation state changed after capture");
+                return;
+            }
+            for (Map.Entry<String, String> note : state.originalNotes().entrySet()) {
+                if (note.getValue() == null) {
+                    rollbackClientSession.removeNote(note.getKey());
+                } else {
+                    rollbackClientSession.setNote(note.getKey(), note.getValue());
+                }
+            }
+        }
+    }
+
+    private record TokenReuseStateKey(String clientSessionId, String reuseKey) {}
+
+    private record TokenReuseState(AuthenticatedClientSessionModel clientSession, Map<String, String> originalNotes,
+                                   Map<String, String> attemptedNotes) {}
 
     @Override
     public void lockForRevocation(RefreshToken refreshToken) {

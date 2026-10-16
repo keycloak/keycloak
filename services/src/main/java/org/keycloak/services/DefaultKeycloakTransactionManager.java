@@ -33,6 +33,9 @@ import org.keycloak.transaction.JtaTransactionWrapper;
  */
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
 
+    public static final String AFTER_COMPLETION_FAILURE_ATTRIBUTE =
+            DefaultKeycloakTransactionManager.class.getName() + ".afterCompletionFailure";
+
     private final List<KeycloakTransaction> prepare = new LinkedList<>();
     private final List<KeycloakTransaction> transactions = new LinkedList<>();
     private final List<KeycloakTransaction> afterCompletion = new LinkedList<>();
@@ -170,7 +173,14 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                     try {
                         commitWithTracing(tx, tracing);
                     } catch (RuntimeException e) {
-                        exception = exception == null ? e : exception;
+                        if (exception == null) {
+                            exception = e;
+                            // A compensating callback can observe this failure without
+                            // rolling back unrelated callbacks after the main commit.
+                            session.setAttribute(AFTER_COMPLETION_FAILURE_ATTRIBUTE, Boolean.TRUE);
+                        } else if (e != exception) {
+                            exception.addSuppressed(e);
+                        }
                     }
                 }
             } else {
