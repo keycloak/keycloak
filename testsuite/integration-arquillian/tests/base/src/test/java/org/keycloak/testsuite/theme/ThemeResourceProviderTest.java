@@ -136,8 +136,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    // the gzip cache directory is named "<resourcesVersion>-<timestamp>-<uuid>" rather than just
-    // "<resourcesVersion>", so the generation directory has to be located by its prefix. More than one
+    // the directory name has a generation suffix, so match by prefix instead of an exact name. More than one
     // generation can share that prefix (clearCache() keeps the previous one around too), and listFiles()
     // order is unspecified, so every matching generation is checked for the actual cache file.
     private static File findGzipCacheFile(String tmpDir, String resourcesVersion) {
