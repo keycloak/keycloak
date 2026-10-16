@@ -165,16 +165,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     public boolean removeUser(RealmModel realm, UserModel user) {
         UserEntity userEntity = em.find(UserEntity.class, user.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (userEntity == null) return false;
-        removeUser(userEntity);
+        removeUser(realm, userEntity);
         return true;
     }
 
-    private void removeUser(UserEntity user) {
+    private void removeUser(RealmModel realm, UserEntity user) {
         em.createNamedQuery("deleteUserRoleMappingsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("deleteIssuedVcsByUser").setParameter("userId", user.getId()).executeUpdate();
+        removeIssuedVerifiableCredentials(realm, user.getId());
         em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
 
         em.remove(user);
@@ -1207,6 +1207,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.remove(entity);
         em.flush();
         return true;
+    }
+
+    @Override
+    public void removeIssuedVerifiableCredentials(RealmModel realm, String userId) {
+        em.createNamedQuery("deleteIssuedVcsByUser")
+                .setParameter("userId", userId)
+                .executeUpdate();
     }
 
     // Could override this to provide a custom behavior.
