@@ -57,7 +57,7 @@ export const RoleComponent = ({
             {openModal && (
               <AddRoleMappingModal
                 id="id"
-                type="roles"
+                type="realms"
                 filterType={filterType}
                 name={name}
                 onAssign={(rows) => field.onChange(parseRow(rows[0]))}

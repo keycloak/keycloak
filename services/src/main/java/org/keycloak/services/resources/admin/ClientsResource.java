@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -42,14 +43,17 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -67,7 +71,10 @@ import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -87,7 +94,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
-public class ClientsResource {
+public class ClientsResource implements RoleMappingAwareResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -101,6 +108,16 @@ public class ClientsResource {
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
+    }
+
+    @Override
+    public KeycloakSession getSession() {
+        return session;
+    }
+
+    @Override
+    public AdminPermissionEvaluator getAuth() {
+        return auth;
     }
 
     /**
@@ -274,6 +291,31 @@ public class ClientsResource {
         catch (ClientTypeException cte) {
             throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Path("roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
+    @Operation(summary = "Get the client roles of all clients of the realm, grouped by client.",
+        description = "Only the roles the caller is allowed to view are returned. Pagination is applied to roles, not clients.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientMappingsRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public List<ClientMappingsRepresentation> getClientRoles(@Parameter(description = "filter by role name or client id") @QueryParam("search") String search,
+                                                              @Parameter(description = "the first result") @QueryParam("first") Integer firstResult,
+                                                              @Parameter(description = "the max results to return") @QueryParam("max") Integer maxResults) {
+        // consistent with canView(RoleModel): an admin that can list clients or map any role may see client roles
+        if (!auth.clients().canList() && !auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            throw new ForbiddenException();
+        }
+
+        Stream<RoleModel> roles = searchClientRoles(AdminPermissionsSchema.VIEW, search, null, firstResult, maxResults);
+        Map<String, ClientMappingsRepresentation> byClient = ModelToRepresentation.toMappingsRepresentation(roles).getClientMappings();
+
+        return byClient == null ? List.of() : new ArrayList<>(byClient.values());
     }
 
     /**

@@ -74,7 +74,7 @@ export const Role = () => {
               {open && (
                 <AddRoleMappingModal
                   id="role"
-                  type="roles"
+                  type="realms"
                   title={t("assignRole")}
                   filterType={filterType}
                   onAssign={(rows) => {

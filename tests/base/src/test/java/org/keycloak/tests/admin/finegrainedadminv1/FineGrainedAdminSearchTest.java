@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -17,7 +18,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
@@ -391,6 +394,76 @@ public class FineGrainedAdminSearchTest extends AbstractFineGrainedAdminTest {
             result = client.realm(REALM_NAME).clients().findAll("client-search-", true, true, 20, 10);
             clients.addAll(result);
             Assertions.assertTrue(result.isEmpty());
+        }
+    }
+
+    @Test
+    public void testClientRolesSearchWithManageAndConfigurePermissions() {
+        // in V1, manage and configure permissions on a client imply view on it (ClientPermissions.canView), so the
+        // roles of such clients are visible through GET /clients/{id}/roles and must also be listed by GET /clients/roles
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
+
+            session.getContext().setRealm(realm);
+
+            ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            UserModel admin = session.users().addUser(realm, "client-roles-admin");
+            admin.setFirstName("Client");
+            admin.setLastName("Roles");
+            admin.setEmail("client-roles@admin");
+            admin.credentialManager().updateCredential(UserCredentialModel.password("password"));
+            admin.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_CLIENTS));
+            admin.setEnabled(true);
+
+            UserPolicyRepresentation userPolicyRepresentation = new UserPolicyRepresentation();
+            userPolicyRepresentation.setName("Only " + admin.getUsername());
+            userPolicyRepresentation.addUser(admin.getId());
+
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            ClientPermissionManagement clientPermission = management.clients();
+
+            ClientModel viewable = realm.addClient("client-viewable");
+            viewable.addRole("viewable-role");
+            clientPermission.setPermissionsEnabled(viewable, true);
+
+            ClientModel manageable = realm.addClient("client-manageable");
+            manageable.addRole("manageable-role");
+            clientPermission.setPermissionsEnabled(manageable, true);
+
+            ClientModel configurable = realm.addClient("client-configurable");
+            configurable.addRole("configurable-role");
+            clientPermission.setPermissionsEnabled(configurable, true);
+
+            ClientModel hidden = realm.addClient("client-hidden");
+            hidden.addRole("hidden-role");
+
+            // the realm resource server only exists once permissions are enabled on some resource
+            AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+            Policy userPolicy = RepresentationToModel.toModel(userPolicyRepresentation, provider,
+                    provider.getStoreFactory().getPolicyStore().create(management.realmResourceServer(), userPolicyRepresentation));
+
+            clientPermission.viewPermission(viewable).addAssociatedPolicy(userPolicy);
+            clientPermission.managePermission(manageable).addAssociatedPolicy(userPolicy);
+            clientPermission.configurePermission(configurable).addAssociatedPolicy(userPolicy);
+        });
+
+        try (Keycloak client = adminClientFactory.create().realm(REALM_NAME)
+                .username("client-roles-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
+            RealmResource realm = client.realm(REALM_NAME);
+
+            // the per-client endpoint lists the roles of every client the admin can view
+            for (String clientId : List.of("client-viewable", "client-manageable", "client-configurable")) {
+                String id = realm.clients().findByClientId(clientId).get(0).getId();
+                assertThat(realm.clients().get(id).roles().list().stream().map(RoleRepresentation::getName).collect(Collectors.toList()),
+                        Matchers.contains(clientId.substring("client-".length()) + "-role"));
+            }
+
+            // ...and so does the realm-wide client role listing
+            List<ClientMappingsRepresentation> roles = realm.clients().findRoles(null, null, null);
+            assertThat(roles.stream().map(ClientMappingsRepresentation::getClient).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder("client-viewable", "client-manageable", "client-configurable"));
+            assertThat(roles.stream().flatMap(c -> c.getMappings().stream()).map(RoleRepresentation::getName).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder("viewable-role", "manageable-role", "configurable-role"));
         }
     }
 

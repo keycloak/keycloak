@@ -26,6 +26,12 @@ export async function pickRole(
   await clickSelectRow(page, name, roleName);
 }
 
+// client roles are paginated and sorted by client, so a role is not necessarily on the first page
+export async function searchRoleInDialog(page: Page, search: string) {
+  await page.getByRole("dialog").getByPlaceholder("Search").fill(search);
+  await page.keyboard.press("Enter");
+}
+
 export async function confirmModalAssign(page: Page) {
   await page.getByTestId("assign").click();
 }

@@ -1,6 +1,7 @@
 import type { KeycloakAdminClient } from "../client.js";
 import { NetworkError } from "../utils/fetchWithError.js";
 import type CertificateRepresentation from "../defs/certificateRepresentation.js";
+import type ClientMappingsRepresentation from "../defs/clientMappingsRepresentation.js";
 import type ClientRepresentation from "../defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "../defs/clientScopeRepresentation.js";
 import type CredentialRepresentation from "../defs/credentialRepresentation.js";
@@ -118,6 +119,14 @@ export class Clients extends Resource<{ realm?: string }> {
     method: "GET",
     path: "/{id}/roles",
     urlParamKeys: ["id"],
+  });
+
+  public findRoles = this.makeRequest<
+    { search?: string; first?: number; max?: number },
+    ClientMappingsRepresentation[]
+  >({
+    method: "GET",
+    path: "/roles",
   });
 
   public findRole = this.makeRequest<
@@ -349,6 +358,33 @@ export class Clients extends Resource<{ realm?: string }> {
   >({
     method: "GET",
     path: "/{id}/scope-mappings",
+    urlParamKeys: ["id"],
+  });
+
+  public listScopeMappingsComposite = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/scope-mappings/composite",
+    urlParamKeys: ["id"],
+  });
+
+  public listScopeMappingsInherited = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/scope-mappings/inherited",
+    urlParamKeys: ["id"],
+  });
+
+  public listScopeMappingsAvailable = this.makeRequest<
+    { id: string; search?: string; first?: number; max?: number },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/scope-mappings/available",
     urlParamKeys: ["id"],
   });
 

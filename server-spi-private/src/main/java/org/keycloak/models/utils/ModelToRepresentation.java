@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -104,6 +106,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentat
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -114,6 +117,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -474,6 +478,36 @@ public class ModelToRepresentation {
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
         return rep;
+    }
+
+    /**
+     * Groups the given roles into a {@link MappingsRepresentation}: realm roles go to {@code realmMappings} and
+     * client roles are grouped by client in {@code clientMappings}, keyed by the client's {@code clientId}.
+     * Empty sections are left {@code null}.
+     */
+    public static MappingsRepresentation toMappingsRepresentation(Stream<RoleModel> roles) {
+        List<RoleRepresentation> realmMappings = new ArrayList<>();
+        Map<String, ClientMappingsRepresentation> clientMappings = new LinkedHashMap<>();
+
+        roles.forEach(role -> {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                realmMappings.add(toBriefRepresentation(role));
+            } else if (container instanceof ClientModel client) {
+                clientMappings.computeIfAbsent(client.getClientId(), clientId -> {
+                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+                    mappings.setId(client.getId());
+                    mappings.setClient(clientId);
+                    mappings.setMappings(new ArrayList<>());
+                    return mappings;
+                }).getMappings().add(toBriefRepresentation(role));
+            }
+        });
+
+        MappingsRepresentation all = new MappingsRepresentation();
+        if (!realmMappings.isEmpty()) all.setRealmMappings(realmMappings);
+        if (!clientMappings.isEmpty()) all.setClientMappings(clientMappings);
+        return all;
     }
 
     public static RealmRepresentation toBriefRepresentation(RealmModel realm) {

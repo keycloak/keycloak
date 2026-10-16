@@ -183,6 +183,33 @@ export class ClientScopes extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  public listScopeMappingsComposite = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/client-scopes/{id}/scope-mappings/composite",
+    urlParamKeys: ["id"],
+  });
+
+  public listScopeMappingsInherited = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/client-scopes/{id}/scope-mappings/inherited",
+    urlParamKeys: ["id"],
+  });
+
+  public listScopeMappingsAvailable = this.makeRequest<
+    { id: string; search?: string; first?: number; max?: number },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/client-scopes/{id}/scope-mappings/available",
+    urlParamKeys: ["id"],
+  });
+
   public addClientScopeMappings = this.makeUpdateRequest<
     { id: string; client: string },
     RoleRepresentation[],
