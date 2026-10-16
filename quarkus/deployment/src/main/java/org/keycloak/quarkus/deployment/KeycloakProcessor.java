@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -802,8 +803,8 @@ class KeycloakProcessor {
     @Consume(CryptoProviderInitBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
     SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<AdditionalPersistenceUnitBuildItem> additionalPUs) {
-        Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
-        Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
+        Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new LinkedHashMap<>();
+        Map<Class<? extends Provider>, String> defaultProviders = new LinkedHashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
 
         for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
@@ -815,7 +816,7 @@ class KeycloakProcessor {
             for (Entry<Class<? extends Provider>, Map<String, ProviderFactory>> value : entry.getValue().entrySet()) {
                 for (ProviderFactory factory : value.getValue().values()) {
                     factories.computeIfAbsent(spi,
-                            key -> new HashMap<>())
+                            key -> new LinkedHashMap<>())
                             .computeIfAbsent(spi.getProviderClass(), aClass -> new HashMap<>()).put(factory.getId(),factory.getClass());
                 }
             }
@@ -859,7 +860,7 @@ class KeycloakProcessor {
 
             if (resources.hasMoreElements()) {
                 // make sure theme resources are loaded using a flat classpath. if no resources are available the provider is not registered
-                factories.computeIfAbsent(spi, key -> new HashMap<>()).computeIfAbsent(spi.getProviderClass(), aClass -> new HashMap<>()).put(FlatClasspathThemeResourceProviderFactory.ID, FlatClasspathThemeResourceProviderFactory.class);
+                factories.computeIfAbsent(spi, key -> new LinkedHashMap<>()).computeIfAbsent(spi.getProviderClass(), aClass -> new HashMap<>()).put(FlatClasspathThemeResourceProviderFactory.ID, FlatClasspathThemeResourceProviderFactory.class);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to install default theme resource provider", e);
@@ -1076,10 +1077,10 @@ class KeycloakProcessor {
             Map<String, ProviderFactory> preConfiguredProviders) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ProviderManager pm = getProviderManager(classLoader);
-        Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
+        Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new LinkedHashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
-            Map<Class<? extends Provider>, Map<String, ProviderFactory>> providers = new HashMap<>();
+            Map<Class<? extends Provider>, Map<String, ProviderFactory>> providers = new LinkedHashMap<>();
             List<ProviderFactory> loadedFactories = new ArrayList<>();
             String provider = Config.getProvider(spi.getName());
 
