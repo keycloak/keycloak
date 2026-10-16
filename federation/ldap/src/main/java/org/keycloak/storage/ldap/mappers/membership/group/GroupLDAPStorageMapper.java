@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -379,8 +380,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         if (config.isPreserveGroupsInheritance()) {
             // Override if better effectivity or different algorithm is needed
-            return getAllKcGroups(realm, parent)
-                    .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null);
+            // Membership resolution must see existing groups regardless of the user's administrative permissions.
+            return AdminPermissionsSchema.runWithoutAuthorization(getSession(), () -> getAllKcGroups(realm, parent)
+                    .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null));
         } else {
             // Without preserved inheritance, it's always at groups path
             return getSession().groups().getGroupByName(realm, parent, groupName);
@@ -396,7 +398,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
                 // Better to sync all groups from LDAP with preserved inheritance
                 if (!syncFromLDAPPerformedInThisTransaction) {
-                    syncDataFromFederationProviderToKeycloak(realm);
+                    AdminPermissionsSchema.runWithoutAuthorization(getSession(), () -> syncDataFromFederationProviderToKeycloak(realm));
                     kcGroup = findKcGroupByLDAPGroup(realm, parent, ldapGroup);
                 }
             } else {

@@ -559,6 +559,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        // Resolving a known group is also needed during authentication. Administrative callers must check access themselves.
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
         Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
@@ -571,7 +572,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
         predicates.add(builder.equal(root.get("parentId"), parent != null ? parent.getId() : GroupEntity.TOP_PARENT_ID));
         predicates.add(builder.equal(root.get("name"), name));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, null, realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));
