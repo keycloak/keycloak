@@ -334,17 +334,18 @@ def classify_issue(title, body, valid_areas, need_kind, need_area,
     kind_result = None
     area_result = None
 
-    if parsed:
+    if isinstance(parsed, dict):
         print(f"  Copilot response: {json.dumps(parsed)}")
 
         if need_kind:
             k = parsed.get("kind", "")
-            if k in ("bug", "enhancement"):
+            if isinstance(k, str) and k in ("bug", "enhancement"):
                 kind_result = k
 
         if need_area:
             a = parsed.get("area", "")
-            a_normalized = normalize_area(a, valid_areas)
+            a_normalized = (normalize_area(a, valid_areas)
+                            if isinstance(a, str) else None)
             if a_normalized:
                 area_result = a_normalized
             else:
@@ -379,9 +380,10 @@ def add_labels(issue_number, labels):
     )
     if result.returncode == 0:
         print(f"  Applied labels: {label_str}")
-    else:
-        print(f"  WARN: failed to apply labels — {result.stderr.strip()}",
-              file=sys.stderr)
+        return True
+    print(f"  WARN: failed to apply labels — {result.stderr.strip()}",
+          file=sys.stderr)
+    return False
 
 
 def main():
@@ -492,10 +494,16 @@ def main():
             triage_note = "" if from_label else ", +status/triage, +status/labeled-by-bot"
             print(f"  -> DRY RUN: type={kind}{triage_note}")
         else:
+            # Apply labels first so a failure leaves the issue untyped and retryable
+            if not from_label and not add_labels(
+                    number, ["status/triage", "status/labeled-by-bot"]):
+                continue
             set_issue_type(number, kind)
-            if not from_label:
-                add_labels(number, ["status/triage", "status/labeled-by-bot"])
             step1_modified = True
+            if (args.issue and kind == "bug" and not issue.get("has_area")
+                    and step2_issues is not None
+                    and issue not in step2_issues):
+                step2_issues.append(issue)
 
     # Step 2: assign area to bug issues with status/triage
     if step2_issues is None:
