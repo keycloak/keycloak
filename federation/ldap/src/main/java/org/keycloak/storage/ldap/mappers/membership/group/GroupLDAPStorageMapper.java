@@ -28,9 +28,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -383,7 +385,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                     .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null);
         } else {
             // Without preserved inheritance, it's always at groups path
-            return getSession().groups().getGroupByName(realm, parent, groupName);
+            return runWithoutAuthorization(() -> getSession().groups().getGroupByName(realm, parent, groupName));
         }
     }
 
@@ -819,7 +821,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
      * Provides KC group defined as groups path or null (top-level group) if corresponding group is not available.
      */
     protected GroupModel getKcGroupsPathGroup(RealmModel realm) {
-        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(getSession(), realm, config.getGroupsPath());
+        return config.isTopLevelGroupsPath() ? null : findGroupsPathGroup(realm);
     }
 
     protected boolean isGroupInGroupPath(RealmModel realm, GroupModel group) {
@@ -829,7 +831,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (config.isTopLevelGroupsPath()) {
             return true; // any group is in the path of the top level path.
         }
-        GroupModel groupPathGroup = KeycloakModelUtils.findGroupByPath(getSession(), realm, config.getGroupsPath());
+        GroupModel groupPathGroup = findGroupsPathGroup(realm);
         if (groupPathGroup != null) {
             while(!groupPathGroup.getId().equals(group.getId())) {
                 group = group.getParent();
@@ -863,15 +865,19 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (parentGroup == null) {
             parentGroup = getKcGroupsPathGroup(realm);
         }
-        return parentGroup == null ? getSession().groups().getTopLevelGroupsStream(realm) :
-            parentGroup.getSubGroupsStream();
+        if (parentGroup != null) {
+            return parentGroup.getSubGroupsStream();
+        }
+        // collected here so the query runs without the authorization filters, not later when the stream is consumed
+        return runWithoutAuthorization(() -> getSession().groups().getTopLevelGroupsStream(realm).toList()).stream();
     }
 
     /**
      * Provides a stream of all KC groups (with their sub groups) from groups path configured by the "Groups Path" configuration property.
      */
     protected Stream<GroupModel> getAllKcGroups(RealmModel realm, GroupModel topParentGroup) {
-        Stream<GroupModel> allGroups = realm.getGroupsStream();
+        // collected here so the query runs without the authorization filters, not later when the stream is consumed
+        Stream<GroupModel> allGroups = runWithoutAuthorization(() -> realm.getGroupsStream().toList()).stream();
         if (topParentGroup == null) return allGroups;
 
         return allGroups.filter(group -> {
@@ -885,5 +891,20 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             }
             return false;
         });
+    }
+
+    private GroupModel findGroupsPathGroup(RealmModel realm) {
+        return runWithoutAuthorization(() -> KeycloakModelUtils.findGroupByPath(getSession(), realm, config.getGroupsPath()));
+    }
+
+    /**
+     * Group lookups done by this mapper are internal: they resolve the groups that LDAP says a user belongs to, or
+     * reconcile groups during a sync. They must see every group in the realm, whatever admin permissions the user in
+     * the current session context has. Otherwise, a user holding a {@code query-*} admin role but not
+     * {@code view-users} gets the fine-grained admin permission filters applied to these lookups, an existing group
+     * is not found, and the mapper tries to create it again.
+     */
+    private <T> T runWithoutAuthorization(Supplier<T> supplier) {
+        return AdminPermissionsSchema.runWithoutAuthorization(getSession(), supplier);
     }
 }
