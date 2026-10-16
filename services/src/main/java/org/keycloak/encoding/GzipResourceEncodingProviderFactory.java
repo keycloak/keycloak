@@ -31,7 +31,11 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
     @Override
     public ResourceEncodingProvider create(KeycloakSession session) {
         if (cacheDir == null) {
-            cacheDir = initCacheDir();
+            synchronized (this) {
+                if (cacheDir == null) {
+                    cacheDir = initCacheDir();
+                }
+            }
         }
 
         return new GzipResourceEncodingProvider(cacheDir);
@@ -81,11 +85,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
                 .build();
     }
 
-    private synchronized File initCacheDir() {
-        if (cacheDir != null) {
-            return cacheDir;
-        }
-
+    private File initCacheDir() {
         // clean up all directories from previous runs or clearCache() generations
         File cacheRoot = cacheRoot();
         if (cacheRoot.isDirectory()) {
