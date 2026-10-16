@@ -26,11 +26,14 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -229,6 +232,7 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         baseUrl = relativeToAbsoluteURI(rootUrl, baseUrl);
         adminUrl = relativeToAbsoluteURI(rootUrl, adminUrl);
         Set<String> resolvedRedirects = PairwiseSubMapperUtils.resolveValidRedirectUris(rootUrl, redirectUris);
+        Set<String> resolvedPostLogoutRedirects = PairwiseSubMapperUtils.resolveValidRedirectUris(rootUrl, getPostLogoutRedirectUris(client));
 
         if (rootUrl != null) {
             checkURLTrusted(rootUrl, trustedHosts, trustedDomains);
@@ -243,7 +247,27 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         for (String redirect : resolvedRedirects) {
             checkURITrusted(redirect, trustedHosts, trustedDomains);
         }
+        for (String postLogoutRedirect : resolvedPostLogoutRedirects) {
+            checkURITrusted(postLogoutRedirect, trustedHosts, trustedDomains);
+        }
 
+    }
+
+    private List<String> getPostLogoutRedirectUris(ClientRepresentation client) {
+        Map<String, String> attributes = client.getAttributes();
+        if (attributes == null) {
+            return Collections.emptyList();
+        }
+
+        String postLogoutRedirectUris = attributes.get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if (postLogoutRedirectUris == null) {
+            return Collections.emptyList();
+        }
+
+        // "+" and "-" just refer to the redirect URIs, which are validated separately
+        return Arrays.stream(Constants.CFG_DELIMITER_PATTERN.split(postLogoutRedirectUris))
+                .filter(uri -> !"+".equals(uri) && !"-".equals(uri))
+                .toList();
     }
 
     protected void checkURLTrusted(String url, List<String> trustedHosts, List<String> trustedDomains) throws ClientRegistrationPolicyException {
@@ -279,6 +303,10 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
     }
 
     private boolean checkHostTrusted(String host, List<String> trustedHosts, List<String> trustedDomains) {
+        if (host == null) {
+            return false;
+        }
+
         for (String trustedHost : trustedHosts) {
             if (host.equals(trustedHost)) {
                 return true;
