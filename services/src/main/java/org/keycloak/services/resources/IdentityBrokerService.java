@@ -1136,14 +1136,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     @Override
-    public Response error(IdentityProviderModel idpConfig, String message) {
+    public Response error(IdentityProviderModel idpConfig, String eventError, String message) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
         event.detail(Details.IDENTITY_PROVIDER, idpConfig.getAlias());
 
         // Check if linking was requested (for example by kc_action) or if we're authenticating
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
         if (isDoingAccountLinking(authSession, true, idpConfig.getAlias())) {
-            return redirectToErrorWhenLinkingFailed(authSession, Errors.IDENTITY_PROVIDER_LOGIN_FAILURE, message);
+            return redirectToErrorWhenLinkingFailed(authSession, eventError, message);
         }
 
         Response passiveLoginErrorReturned = checkPassiveLoginError(authSession, message);
@@ -1213,7 +1213,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
         if (!Organizations.resolveHomeBroker(session, authenticatedUser).isEmpty()) {
-            return redirectToErrorWhenLinkingFailed(authSession, Errors.IDENTITY_PROVIDER_ERROR, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
+            return redirectToErrorWhenLinkingFailed(authSession, Errors.NOT_ALLOWED, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
         }
 
         if (federatedUser != null) {
