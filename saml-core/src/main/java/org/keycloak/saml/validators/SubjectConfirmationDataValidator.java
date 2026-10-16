@@ -22,6 +22,7 @@ import java.util.Set;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
 import org.jboss.logging.Logger;
@@ -122,7 +123,7 @@ public class SubjectConfirmationDataValidator {
             return true;
         }
 
-        if (subjectConfirmationData.getRecipient() == null) {
+        if (!StringUtil.isNotNull(subjectConfirmationData.getRecipient())) {
             logger.tracef("Response Validation Error: SubjectConfirmationData of assertion '%s' is missing the mandatory Recipient attribute", assertionId);
             return false;
         }
@@ -144,7 +145,7 @@ public class SubjectConfirmationDataValidator {
             return true;
         }
 
-        if (subjectConfirmationData.getInResponseTo() == null) {
+        if (!StringUtil.isNotNull(subjectConfirmationData.getInResponseTo())) {
             logger.tracef("Response Validation Error: SubjectConfirmationData of assertion '%s' is missing the expected InResponseTo '%s'",
                     assertionId, inResponseTo);
             return false;
