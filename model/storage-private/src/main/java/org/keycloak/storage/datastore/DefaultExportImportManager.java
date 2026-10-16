@@ -312,6 +312,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         deviceConfig.setOAuth2DeviceCodeLifespan(newRealm, rep.getOAuth2DeviceCodeLifespan());
         deviceConfig.setOAuth2DevicePollingInterval(newRealm, rep.getOAuth2DevicePollingInterval());
+        deviceConfig.setMaxFailedVerificationAttempts(newRealm, rep.getOAuth2DeviceMaxFailedVerificationAttempts());
 
         if (rep.getSslRequired() != null)
             newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
@@ -866,6 +867,9 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         deviceConfig.setOAuth2DeviceCodeLifespan(realm, rep.getOAuth2DeviceCodeLifespan());
         deviceConfig.setOAuth2DevicePollingInterval(realm, rep.getOAuth2DevicePollingInterval());
+        if (rep.getOAuth2DeviceMaxFailedVerificationAttempts() != null) {
+            deviceConfig.setMaxFailedVerificationAttempts(realm, rep.getOAuth2DeviceMaxFailedVerificationAttempts());
+        }
 
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());

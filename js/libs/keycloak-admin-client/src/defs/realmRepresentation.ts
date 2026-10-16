@@ -81,6 +81,7 @@ export default interface RealmRepresentation {
   minimumQuickLoginWaitSeconds?: number;
   notBefore?: number;
   oauth2DeviceCodeLifespan?: number;
+  oauth2DeviceMaxFailedVerificationAttempts?: number;
   oauth2DevicePollingInterval?: number;
   offlineSessionIdleTimeout?: number;
   offlineSessionMaxLifespan?: number;
