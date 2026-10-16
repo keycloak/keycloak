@@ -45,6 +45,9 @@ public class GroupsPartialImport extends AbstractPartialImport<GroupRepresentati
     }
 
     private GroupModel findGroupModel(KeycloakSession session, RealmModel realm, GroupRepresentation groupRep) {
+        if (groupRep.getPath() == null) {
+            return session.groups().getGroupByName(realm, null, groupRep.getName());
+        }
         return KeycloakModelUtils.findGroupByPath(session, realm, groupRep.getPath());
     }
 
