@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -183,7 +182,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         UserModel user = resolveUser(context, username);
         RealmModel realm = context.getRealm();
         String domain = getEmailDomain(username);
-        OrganizationModel organization = resolveOrganization(user, domain);
+        OrganizationModel organization = resolveOrganization(context, user, domain);
+
+        if (FlowStatus.FAILED.equals(context.getStatus())) {
+            return;
+        }
 
         if (organization == null) {
             // remember the username before the org selection challenge so it can be preserved
@@ -243,20 +246,39 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         return realm.isOrganizationsEnabled();
     }
 
-    private OrganizationModel resolveOrganization(UserModel user, String domain) {
-        KeycloakContext context = session.getContext();
-        HttpRequest request = context.getHttpRequest();
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+    private OrganizationModel resolveOrganization(AuthenticationFlowContext context, UserModel user, String domain) {
+        KeycloakContext kcContext = session.getContext();
+        HttpRequest request = kcContext.getHttpRequest();
+        AuthenticationSessionModel authSession = kcContext.getAuthenticationSession();
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         // parameter from the organization selection page
-        List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
-        OrganizationModel organization;
+        List<String> alias = OrganizationScope.ANY.equals(OrganizationScope.valueOfScope(session))
+                ? parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of())
+                : List.of();
+        OrganizationModel organization = null;
+
+        if (!alias.isEmpty()) {
+            organization = getOrganizationProvider().getByAlias(alias.get(0));
+
+            if (organization != null && !organization.isEnabled()) {
+                organization = null;
+            }
+
+            if (organization != null && user != null && !organization.isMember(user)) {
+                if (isRequiresMembership(context)) {
+                    notMemberError(context, organization, user);
+                    return null;
+                }
+                organization = null;
+            }
+
+            if (organization == null || user == null) {
+                alias = List.of();
+            }
+        }
 
         if (alias.isEmpty()) {
             organization = Organizations.resolveOrganization(session, user, domain);
-        } else {
-            OrganizationProvider provider = getOrganizationProvider();
-            organization = provider.getByAlias(alias.get(0));
         }
 
         if (organization == null || !organization.isEnabled()) {
@@ -268,12 +290,16 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
         }
 
-        if (!alias.isEmpty()) {
-            // user explicitly selected an organization, allow switching later in the flow
+        if (!alias.isEmpty() && hasMultipleOrganizations(user)) {
+            // user explicitly selected one of several organizations, allow switching later in the flow
             authSession.setAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE, Boolean.TRUE.toString());
         }
 
         return organization;
+    }
+
+    private boolean hasMultipleOrganizations(UserModel user) {
+        return getOrganizationProvider().getByMember(user).filter(OrganizationModel::isEnabled).count() > 1;
     }
 
     private boolean shouldUserSelectOrganization(AuthenticationFlowContext context, UserModel user) {
@@ -288,10 +314,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
-        OrganizationProvider provider = getOrganizationProvider();
-        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
-
-        if (organizations.count() > 1) {
+        if (hasMultipleOrganizations(user)) {
             LoginFormsProvider form = context.form();
             form.setAttribute("user", new ProfileBean(user, session));
             form.setAttributeMapper(new Function<Map<String, Object>, Map<String, Object>>() {
@@ -537,6 +560,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
+        notMemberError(context, organization, user);
+
+        return true;
+    }
+
+    private static void notMemberError(AuthenticationFlowContext context, OrganizationModel organization, UserModel user) {
         // do not show try another way
         context.setAuthenticationSelections(List.of());
 
@@ -557,7 +586,5 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
                 form.createErrorPage(Response.Status.FORBIDDEN),
                 failureMessage, errorMessage);
-
-        return true;
     }
 }
