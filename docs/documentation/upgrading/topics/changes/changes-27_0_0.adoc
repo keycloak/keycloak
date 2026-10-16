@@ -111,6 +111,15 @@ Providers extending `OAuth2IdentityProviderConfig` can instead override `getClie
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Group lookups and administrative permissions
+// https://github.com/keycloak/keycloak/issues/54054
+
+The JPA implementation of `GroupProvider#getGroupByName` no longer applies fine-grained admin permission filters.
+This fixes LDAP authentication and group membership resolution incorrectly treating existing groups as missing when a user has limited administrative permissions.
+Custom extensions using this method, or `KeycloakModelUtils.findGroupByPath`, for administrative operations must explicitly check the appropriate permissions before exposing or modifying the resolved group.
+A successful group lookup does not authorize access to the group; previously, filtering also depended on whether the lookup was served from the cache.
+No realm configuration changes are required.
+
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 
