@@ -135,6 +135,12 @@ Updates that change other settings, or that use a `${vault.<key>}` expression as
 Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
 Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
 
+=== CIBA requires client authentication (CVE-2026-109082)
+// https://github.com/keycloak/keycloak/issues/53937
+
+The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
+Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
