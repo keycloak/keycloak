@@ -1,0 +1,11 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== CIBA requires client authentication (CVE-2026-109082)
+// https://github.com/keycloak/keycloak/issues/53937
+
+The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
+Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
