@@ -248,8 +248,12 @@ info or permission of user unless user approves it.
 or updated if it contains some non-whitelisted protocol mapper. Note that this policy is used for authenticated requests as well, so
 even for authenticated request there are some limitations which protocol mappers can be used.
 
-* Client Scope Policy - Allow to whitelist `Client Scopes`, which can be used with newly registered or updated clients.
-There are no whitelisted scopes by default; only the client scopes, which are defined as `Realm Default Client Scopes` are whitelisted by default.
+* Client Scope Policy - Allows you to specify `Client Scopes` that can be used with newly registered or updated clients.
+There are no allowed scopes by default; only the client scopes defined as `Realm Default Client Scopes` are allowed by default.
++
+WARNING: Realm administrators should take care before adding `Allowed Client Scopes` to this client registration policy.
+Client scopes can contain role scope mappings and various protocol mappers, which can modify issued tokens or assertions.
+When a client is assigned an allowed client scope, all of those role scope mappings and protocol mappers will be applied.
 
 * Full Scope Policy - Newly registered clients will have `Full Scope Allowed` switch disabled. This means they won't have any scoped
 realm roles or client roles of other clients.
