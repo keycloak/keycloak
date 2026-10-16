@@ -210,6 +210,11 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     }
 
     @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of("/secret");
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }
