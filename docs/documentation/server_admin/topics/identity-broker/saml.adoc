@@ -66,7 +66,7 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 
 |Signature Algorithm
 |If *Want AuthnRequests Signed* is *ON*, the signature algorithm to use. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
-We recommend to use some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+We recommend to use some more secure algorithm instead of `+*_SHA1+`. Also, with `+*_SHA1+` algorithms, verifying signatures
 do not work if the SAML identity provider (for example another instance of {project_name}) runs on Java 17 or higher.
 
 |Encryption Algorithm
