@@ -1,6 +1,5 @@
 package org.keycloak.crypto.fips.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,9 +7,8 @@ import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,7 +19,6 @@ import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.truststore.FileTruststoreProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
-import org.keycloak.truststore.TruststoreProvider;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.hamcrest.Matchers;
@@ -34,6 +31,7 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -91,86 +89,42 @@ public class FIPS1402KeystoreTypesTest {
     }
 
     @Test
-    public void testMultiCertificatePemTruststoreInNonApprovedMode() throws Exception {
-        Assume.assumeFalse(CryptoServicesRegistrar.isInApprovedOnlyMode());
-        testMultiCertificatePemTruststoreUsesConfiguredProvider(KeystoreUtil.TruststoreFormat.PKCS12);
-    }
-
-    @Test
-    public void testMultiCertificatePemTruststoreInApprovedMode() throws Exception {
-        Assume.assumeTrue(CryptoServicesRegistrar.isInApprovedOnlyMode());
-        testMultiCertificatePemTruststoreUsesConfiguredProvider(KeystoreUtil.TruststoreFormat.BCFKS);
-    }
-
-    private void testMultiCertificatePemTruststoreUsesConfiguredProvider(KeystoreUtil.TruststoreFormat expectedFormat) throws Exception {
+    public void generatedTruststoreIsReadWithItsWriterProvider() throws Exception {
         // given
         File bundle = temporaryFolder.newFile("bundle.pem");
-        Set<String> expectedCertificates = new HashSet<>();
         try (OutputStream output = Files.newOutputStream(bundle.toPath())) {
             for (String resource : new String[] { "/certs/UPN-cert.pem", "/certs/ANS-cert.pem" }) {
                 try (InputStream input = getClass().getResourceAsStream(resource)) {
                     assertNotNull(resource, input);
-                    byte[] certificatePem = input.readAllBytes();
-                    output.write(certificatePem);
+                    input.transferTo(output);
                     output.write('\n');
-                    Certificate certificate = CertificateFactory.getInstance("X.509")
-                            .generateCertificate(new ByteArrayInputStream(certificatePem));
-                    expectedCertificates.add(Base64.getEncoder().encodeToString(certificate.getEncoded()));
                 }
             }
         }
 
-        String truststoreKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY;
-        String typeKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY;
-        String passwordKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY;
-        String providerKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY;
-        String originalTruststoreOrig = System.getProperty(truststoreKey + ".orig");
-        String originalTypeOrig = System.getProperty(typeKey + ".orig");
-        String originalPasswordOrig = System.getProperty(passwordKey + ".orig");
-        String originalProviderOrig = System.getProperty(providerKey + ".orig");
-        String originalTruststore = System.getProperty(truststoreKey);
-        String originalType = System.getProperty(typeKey);
-        String originalPassword = System.getProperty(passwordKey);
-        String originalProvider = System.getProperty(providerKey);
+        Collection<? extends Certificate> certificates;
+        try (InputStream input = Files.newInputStream(bundle.toPath())) {
+            certificates = CertificateFactory.getInstance("X.509").generateCertificates(input);
+        }
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+        Properties originalProperties = (Properties) System.getProperties().clone();
         try {
             // when
             TruststoreBuilder.setSystemTruststore(new String[] { bundle.getAbsolutePath() }, false,
                     temporaryFolder.getRoot().getAbsolutePath());
+            factory.init(new Config.SystemPropertiesScope("keycloak.truststore.file."));
+            KeyStore truststore = factory.create(null).getTruststore();
 
             // then
-            assertThat(System.getProperty(typeKey), equalTo(expectedFormat.name()));
-            FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
-            factory.init(new Config.SystemPropertiesScope("keycloak.truststore.file."));
-            TruststoreProvider provider = factory.create(null);
-
-            assertThat(certificates(provider.getTruststore()), equalTo(expectedCertificates));
-            assertThat(provider.getTruststore().getProvider().getName(), equalTo("BCFIPS"));
-            assertThat(System.getProperty(providerKey), equalTo(provider.getTruststore().getProvider().getName()));
+            assertThat(System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY), equalTo("BCFIPS"));
+            assertThat(truststore.getProvider().getName(), equalTo("BCFIPS"));
+            assertThat(truststore.getType(), equalTo(CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType().name()));
+            assertThat(truststore.size(), equalTo(certificates.size()));
+            for (Certificate certificate : certificates) {
+                assertThat(truststore.getCertificateAlias(certificate), notNullValue());
+            }
         } finally {
-            restoreProperty(truststoreKey, originalTruststore);
-            restoreProperty(typeKey, originalType);
-            restoreProperty(passwordKey, originalPassword);
-            restoreProperty(providerKey, originalProvider);
-            restoreProperty(truststoreKey + ".orig", originalTruststoreOrig);
-            restoreProperty(typeKey + ".orig", originalTypeOrig);
-            restoreProperty(passwordKey + ".orig", originalPasswordOrig);
-            restoreProperty(providerKey + ".orig", originalProviderOrig);
-        }
-    }
-
-    private static Set<String> certificates(KeyStore truststore) throws Exception {
-        Set<String> certificates = new HashSet<>();
-        for (String alias : Collections.list(truststore.aliases())) {
-            certificates.add(Base64.getEncoder().encodeToString(truststore.getCertificate(alias).getEncoded()));
-        }
-        return certificates;
-    }
-
-    private static void restoreProperty(String key, String value) {
-        if (value == null) {
-            System.clearProperty(key);
-        } else {
-            System.setProperty(key, value);
+            System.setProperties(originalProperties);
         }
     }
 }

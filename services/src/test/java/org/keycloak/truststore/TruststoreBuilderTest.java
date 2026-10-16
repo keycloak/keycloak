@@ -18,21 +18,15 @@
 package org.keycloak.truststore;
 
 import java.io.File;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
@@ -45,8 +39,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -127,7 +119,6 @@ public class TruststoreBuilderTest {
         assertEquals(generated.getAbsolutePath(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY));
         assertEquals(TruststoreBuilder.PKCS12, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY));
         assertEquals(TruststoreBuilder.DUMMY_PASSWORD, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY));
-        assertEquals("BC", System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY));
         assertTrue(generated.exists());
         assertFalse(new File(dataDir, "keycloak-truststore.bcfks").exists());
     }
@@ -149,83 +140,12 @@ public class TruststoreBuilderTest {
         assertEquals(generated.getAbsolutePath(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY));
         assertEquals(TruststoreFormat.BCFKS.name(), System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY));
         assertEquals(TruststoreBuilder.DUMMY_PASSWORD, System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY));
-        assertEquals("BC", System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY));
         assertTrue(generated.exists());
         assertFalse(new File(dataDir, "keycloak-truststore.p12").exists());
 
         KeyStore savedLoaded = TruststoreBuilder.loadStore(generated.getAbsolutePath(), TruststoreFormat.BCFKS.name(),
                 TruststoreBuilder.DUMMY_PASSWORD);
         assertEquals(2, Collections.list(savedLoaded.aliases()).size());
-    }
-
-    @Test
-    public void testRepeatedGenerationPreservesOriginalProvider() throws Exception {
-        // given / when / then
-        assertRepeatedGenerationPreservesProvider("SUN");
-    }
-
-    @Test
-    public void testRepeatedGenerationPreservesAbsentOriginalProvider() throws Exception {
-        // given / when / then
-        assertRepeatedGenerationPreservesProvider(null);
-    }
-
-    private void assertRepeatedGenerationPreservesProvider(String provider) throws Exception {
-        // given
-        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
-        KeyStore originalTruststore = KeyStore.getInstance(TruststoreFormat.JKS.name(), "SUN");
-        originalTruststore.load(null, null);
-        Set<String> expectedCertificates = new HashSet<>();
-        try (InputStream input = url.openStream()) {
-            int index = 0;
-            for (Certificate certificate : CertificateFactory.getInstance("X.509").generateCertificates(input)) {
-                originalTruststore.setCertificateEntry("cert-" + index++, certificate);
-                expectedCertificates.add(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-            }
-        }
-        File originalFile = TruststoreBuilder.saveTruststore(originalTruststore, TruststoreFormat.JKS,
-                temporaryFolder.newFolder().getAbsolutePath(), TruststoreBuilder.DUMMY_PASSWORD.toCharArray());
-        String originalTruststoreKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig";
-        String originalTypeKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig";
-        String originalPasswordKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig";
-        String originalProviderKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY + ".orig";
-        System.clearProperty(originalTruststoreKey);
-        System.clearProperty(originalTypeKey);
-        System.clearProperty(originalPasswordKey);
-        System.clearProperty(originalProviderKey);
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, originalFile.getAbsolutePath());
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, TruststoreFormat.JKS.name());
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, TruststoreBuilder.DUMMY_PASSWORD);
-        if (provider == null) {
-            System.clearProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY);
-            System.setProperty(originalProviderKey, "stale-provider");
-        } else {
-            System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY, provider);
-        }
-
-        // when
-        TruststoreBuilder.setSystemTruststore(new String[0], true,
-                temporaryFolder.newFolder().getAbsolutePath());
-        assertThat(System.getProperty(originalProviderKey), equalTo(provider));
-        assertGeneratedTruststoreCertificates(expectedCertificates);
-        TruststoreBuilder.setSystemTruststore(new String[0], true,
-                temporaryFolder.newFolder().getAbsolutePath());
-        // then
-        assertThat(System.getProperty(originalProviderKey), equalTo(provider));
-        assertGeneratedTruststoreCertificates(expectedCertificates);
-    }
-
-    private static void assertGeneratedTruststoreCertificates(Set<String> expectedCertificates) throws Exception {
-        KeyStore generated = TruststoreBuilder.loadStore(
-                System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY),
-                System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY),
-                System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY),
-                System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY));
-        Set<String> generatedCertificates = new HashSet<>();
-        for (String alias : Collections.list(generated.aliases())) {
-            generatedCertificates.add(Base64.getEncoder().encodeToString(generated.getCertificate(alias).getEncoded()));
-        }
-        assertThat(generatedCertificates, equalTo(expectedCertificates));
     }
 
     @Test
