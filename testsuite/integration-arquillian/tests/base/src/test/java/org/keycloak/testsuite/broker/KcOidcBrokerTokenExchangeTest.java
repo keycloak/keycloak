@@ -67,6 +67,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -200,6 +201,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
                     ))) {
                 assertThat(response.getStatus(), equalTo(200));
                 AccessTokenResponse internalToExternalTokenResponse = response.readEntity(AccessTokenResponse.class);
+                assertThat(internalToExternalTokenResponse.getTokenType(), equalTo(TokenUtil.TOKEN_TYPE_BEARER));
             }
         }
     }
@@ -475,6 +477,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
             AccessTokenResponse exchangeResponse = response.readEntity(AccessTokenResponse.class);
             assertThat(exchangeResponse.getError(), nullValue());
             assertThat(exchangeResponse.getToken(), notNullValue());
+            assertThat(exchangeResponse.getTokenType(), equalTo(TokenUtil.TOKEN_TYPE_BEARER));
             assertThat(exchangeResponse.getExpiresIn(), greaterThan((long) IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN));
             assertThat(exchangeResponse.getExpiresIn(), lessThanOrEqualTo(expires));
         }
