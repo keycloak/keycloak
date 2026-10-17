@@ -117,7 +117,7 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
 
     private boolean isGrantMatching(AuthorizationRequestContext request) {
         if (request == null) return false;
-        return isGrantMatchingResponseType(request.getAuthorizationEndpointRequest().getResponseType());
+        return isGrantMatchingResponseType(request.getParsedResponseType());
     }
 
     private boolean isGrantMatching(ImplicitHybridTokenResponse response) {
@@ -128,20 +128,25 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
     private boolean isGrantMatchingResponseType(String responseType) {
         if (responseType == null) return false;
         try {
-            OIDCResponseType parsedResponseType = OIDCResponseType.parse(responseType);
-            if (parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
-                return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE);
-            }
-            else if (parsedResponseType.isImplicitFlow()) {
-                return isGrantMatching(OAuth2Constants.IMPLICIT);
-            }
-            else if (parsedResponseType.isImplicitOrHybridFlow()) {
-                return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE) || isGrantMatching(OAuth2Constants.IMPLICIT);
-            }
-            else {
-                return false;
-            }
+            return isGrantMatchingResponseType(OIDCResponseType.parse(responseType));
         } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private boolean isGrantMatchingResponseType(OIDCResponseType parsedResponseType) {
+        if (parsedResponseType == null) return false;
+        if (parsedResponseType.isImplicitFlow()) {
+            return isGrantMatching(OAuth2Constants.IMPLICIT);
+        }
+        else if (parsedResponseType.isImplicitOrHybridFlow()) {
+            // hybrid, the response carries a code and a front channel token
+            return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE) || isGrantMatching(OAuth2Constants.IMPLICIT);
+        }
+        else if (parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
+            return isGrantMatching(OAuth2Constants.AUTHORIZATION_CODE);
+        }
+        else {
             return false;
         }
     }
