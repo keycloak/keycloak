@@ -45,7 +45,6 @@ import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
@@ -403,8 +402,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // Client Attestation JWT signature check
         //
-        Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        String algorithm = jws.getHeader().getRawAlgorithm();
+        SignatureProvider signatureProvider = algorithm == null ? null : session.getProvider(SignatureProvider.class, algorithm);
         if (signatureProvider == null) {
             throw new TokenVerificationException(attestationJwt, "Signature provider not found for algorithm: " + algorithm);
         }
@@ -480,8 +479,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // Client Attestation PoP JWT signature check
         //
-        Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        String algorithm = jws.getHeader().getRawAlgorithm();
+        SignatureProvider signatureProvider = algorithm == null ? null : session.getProvider(SignatureProvider.class, algorithm);
         if (signatureProvider == null) {
             throw new TokenVerificationException(attestationPoPJwt, "Signature provider not found for algorithm: " + algorithm);
         }

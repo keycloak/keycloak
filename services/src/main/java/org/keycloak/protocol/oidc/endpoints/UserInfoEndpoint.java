@@ -51,7 +51,6 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
@@ -199,11 +198,7 @@ public class UserInfoEndpoint {
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
             JWSHeader header = verifier.getHeader();
-            Algorithm algorithm = header.getAlgorithm();
-            if (algorithm == null) {
-                throw new VerificationException("Missing token algorithm");
-            }
-            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, algorithm.name()).verifier(header.getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, header.getRawAlgorithm()).verifier(header.getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
