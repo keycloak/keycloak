@@ -865,11 +865,13 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (parentGroup == null) {
             parentGroup = getKcGroupsPathGroup(realm);
         }
-        if (parentGroup != null) {
-            return parentGroup.getSubGroupsStream();
-        }
-        // collected here so the query runs without the authorization filters, not later when the stream is consumed
-        return runWithoutAuthorization(() -> getSession().groups().getTopLevelGroupsStream(realm).toList()).stream();
+        GroupModel parent = parentGroup;
+        // collected here so the query runs without the authorization filters, not later when the stream is consumed.
+        // This also covers the sub groups of a parent group: once the parent was updated in this transaction (its
+        // attributes during a sync for example), the cache delegates to the JPA query, which applies the filters.
+        return runWithoutAuthorization(() -> (parent == null
+                ? getSession().groups().getTopLevelGroupsStream(realm)
+                : parent.getSubGroupsStream()).toList()).stream();
     }
 
     /**
