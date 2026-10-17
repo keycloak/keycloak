@@ -11,6 +11,12 @@
       "types": [
         "login"
       ]
+    },
+    {
+      "name": "oauth-redirect-uri",
+      "types": [
+        "login"
+      ]
     }
   ]
 }
