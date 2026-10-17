@@ -217,6 +217,28 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
+    public void testAnonCreateWithPostLogoutRedirectUri() throws Exception {
+        setTrustedHost("localhost");
+
+        OIDCClientRepresentation client = createRepOidc();
+        client.setPostLogoutRedirectUris(Collections.singletonList("http://untrusted.host/logout"));
+        assertOidcFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+
+        // "+" just refers to the redirect URIs
+        client.setPostLogoutRedirectUris(Collections.singletonList("+"));
+        OIDCClientRepresentation oidcClientRep = reg.oidc().create(client);
+        reg.auth(Auth.token(oidcClientRep));
+
+        // Fail update as well
+        oidcClientRep.setPostLogoutRedirectUris(Collections.singletonList("http://untrusted.host/logout"));
+        assertOidcFail(ClientRegOp.UPDATE, oidcClientRep, 403, "URI doesn't match");
+
+        oidcClientRep.setPostLogoutRedirectUris(Collections.singletonList("http://localhost:8080/logout"));
+        reg.oidc().update(oidcClientRep);
+    }
+
+
+    @Test
     public void testRedirectUriWithDomain() throws Exception {
         // Change the policy to avoid checking hosts
         ComponentRepresentation trustedHostPolicyRep = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
