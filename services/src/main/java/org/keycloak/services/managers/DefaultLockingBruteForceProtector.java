@@ -41,11 +41,11 @@ import org.keycloak.models.UserModel;
  * allowing more attempts than the configured limit. The JVM-level lock prevents this by ensuring only one
  * thread per user per node reads and updates the failure state at a time.
  *
- * <p>This is a performance trade-off: acquiring a database lock on every read (including
- * {@link #isTemporarilyDisabled} checks on every login) would be expensive. The JVM-level lock avoids that
- * cost while still providing correctness within a single node. In a cluster, the upper bound for concurrent
- * attempts that may bypass the check equals the number of nodes, as each node maintains its own lock map.
- * The database pessimistic write lock still guarantees that no failure count update is lost.
+ * <p>The JVM-level lock is only acquired during login flows (when an authentication session exists).
+ * Read-only checks from admin endpoints or user profile rendering bypass the lock to avoid unnecessary
+ * contention. In a cluster, the upper bound for concurrent attempts that may bypass the check equals the
+ * number of nodes, as each node maintains its own lock map. The database pessimistic write lock still
+ * guarantees that no failure count update is lost.
  *
  * <p>A database-only locking approach would also require inserting a login failure row on the first login
  * of every user (before knowing if it is a success or failure) in order to have a row to lock. This would
@@ -84,7 +84,11 @@ public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtecto
     @Override
     protected UserLoginFailureModel getUserFailureModel(KeycloakSession session, RealmModel realm, String userId) {
         if (realm == null) return null;
-        acquireLock(session, userId);
+        if (session.getContext().getAuthenticationSession() != null) {
+            // Locking is only needed during login flows, when an authentication session exists.
+            // Admin endpoints and user profile rendering bypass the lock to avoid unnecessary contention.
+            acquireLock(session, userId);
+        }
         return super.getUserFailureModel(session, realm, userId);
     }
 
