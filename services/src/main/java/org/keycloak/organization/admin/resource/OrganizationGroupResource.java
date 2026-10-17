@@ -275,6 +275,11 @@ public class OrganizationGroupResource {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
 
+                // Reject moves that would create a cycle in the group hierarchy
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
+
                 // Move the group if it's not already a child of this group
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     session.groups().moveGroup(realm, child, group);

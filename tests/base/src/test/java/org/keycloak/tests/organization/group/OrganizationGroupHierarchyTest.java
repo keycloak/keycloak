@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -352,5 +354,57 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         // getAll() should return 2 groups (Engineering, Sales), not 3 (Backend is nested)
         List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(topLevelGroups, hasSize(2));
+    }
+
+    @Test
+    public void testMoveGroupToDescendantRejected() {
+        // Moving a group under itself or one of its descendants must be rejected instead of
+        // failing later with an internal error while resolving the group path
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation backendRep = new GroupRepresentation();
+        backendRep.setName("Backend");
+        String backendId;
+        try (Response response = orgResource.groups().group(engineeringId).addSubGroup(backendRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            backendId = response.readEntity(GroupRepresentation.class).getId();
+        }
+
+        GroupRepresentation platformRep = new GroupRepresentation();
+        platformRep.setName("Platform");
+        String platformId;
+        try (Response response = orgResource.groups().group(backendId).addSubGroup(platformRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            platformId = response.readEntity(GroupRepresentation.class).getId();
+        }
+
+        // Moving the top-level group under its own child is rejected with a client error
+        engineeringRep.setId(engineeringId);
+        try (Response response = orgResource.groups().group(backendId).addSubGroup(engineeringRep)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Cannot move group 'Engineering' under itself or its descendants", error.getErrorMessage());
+        }
+
+        // Moving the top-level group under a deeper descendant is rejected too
+        try (Response response = orgResource.groups().group(platformId).addSubGroup(engineeringRep)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+        }
+
+        // The hierarchy is unchanged after the rejected moves
+        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation(false);
+        assertThat(engineering.getName(), is("Engineering"));
+        List<GroupRepresentation> engineeringSubGroups = orgResource.groups().group(engineeringId).getSubGroups(null, null, null, null);
+        assertThat(engineeringSubGroups, hasSize(1));
+        assertThat(engineeringSubGroups.get(0).getName(), is("Backend"));
     }
 }
