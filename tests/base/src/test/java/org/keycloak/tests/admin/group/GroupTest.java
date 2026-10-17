@@ -566,6 +566,76 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void createGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        String tooLongValue = "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-long-attr-" + UUID.randomUUID())
+                .attribute("key", tooLongValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void updateGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+
+        String tooLongValue = "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        group.setAttributes(Map.of("key", List.of(tooLongValue)));
+        GroupRepresentation finalGroup = group;
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+    }
+
+    @Test
+    public void createGroupWithMaxLengthAttributeValueSucceeds() {
+        RealmResource realm = managedRealm.admin();
+        String maxValue = "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH);
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create()
+                .name(groupName)
+                .attribute("key", maxValue)
+                .build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+        assertEquals(maxValue, group.getAttributes().get("key").get(0));
+    }
+
+    @Test
+    public void createGroupWithUnicodeBoundaryAttributeValueSucceeds() {
+        // 253 ASCII chars + 1 emoji (2 UTF-16 units) = 255 UTF-16 units, fits NVARCHAR(255) on all supported databases
+        RealmResource realm = managedRealm.admin();
+        String unicodeBoundaryValue = "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH - 2) + "😀";
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create()
+                .name(groupName)
+                .attribute("key", unicodeBoundaryValue)
+                .build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+        assertEquals(unicodeBoundaryValue, group.getAttributes().get("key").get(0));
+    }
+
+    @Test
+    public void createGroupWithTooManyUnicodeUnitsReturnsBadRequest() {
+        // 254 ASCII chars + 1 emoji (2 UTF-16 units) = 256 UTF-16 units, exceeds NVARCHAR(255)
+        RealmResource realm = managedRealm.admin();
+        String tooLongUnicodeValue = "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH - 1) + "😀";
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-unicode-overflow-" + UUID.randomUUID())
+                .attribute("key", tooLongUnicodeValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
     public void moveGroups() {
         RealmResource realm = managedRealm.admin();
 

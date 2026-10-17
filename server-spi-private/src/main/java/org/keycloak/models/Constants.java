@@ -152,6 +152,8 @@ public final class Constants {
     public static final String GENERATE = "GENERATE";
 
     public static final int DEFAULT_MAX_RESULTS = 100;
+
+    public static final int MAX_ATTRIBUTE_VALUE_LENGTH = 255;
     /**
     * Used by {@code DefaultValue} annotation for when a REST endpoints max size default is set by {@link #DEFAULT_MAX_RESULTS}.
     */

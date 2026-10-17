@@ -302,6 +302,13 @@ public class GroupResource {
             Set<String> attrsToRemove = new HashSet<>(model.getAttributes().keySet());
             attrsToRemove.removeAll(rep.getAttributes().keySet());
             for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
+                if (attr.getValue() != null) {
+                    for (String value : attr.getValue()) {
+                        if (value != null && value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
+                            throw ErrorResponse.error("Attribute value must not exceed " + Constants.MAX_ATTRIBUTE_VALUE_LENGTH + " characters", Response.Status.BAD_REQUEST);
+                        }
+                    }
+                }
                 model.setAttribute(attr.getKey(), attr.getValue());
             }
 
