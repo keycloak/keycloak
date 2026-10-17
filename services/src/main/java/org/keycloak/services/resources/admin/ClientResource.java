@@ -538,6 +538,8 @@ public class ClientResource {
         UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
                 .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
 
+        auth.users().requireView(user);
+
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 

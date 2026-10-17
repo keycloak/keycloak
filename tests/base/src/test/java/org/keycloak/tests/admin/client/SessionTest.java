@@ -19,6 +19,8 @@ package org.keycloak.tests.admin.client;
 
 import java.util.List;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -52,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -199,6 +202,23 @@ public class SessionTest {
         }
     }
 
+    @Test
+    public void testGetServiceAccountUserDeniedWithoutViewUsers() {
+        Keycloak viewClientsOnly = createRealmAdminClient("view-clients-admin");
+        Keycloak viewClientsAndUsers = createRealmAdminClient("view-clients-users-admin");
+
+        String clientUuid = AdminApiUtil.findClientByClientId(managedRealm.admin(), "sa-test-client")
+                .toRepresentation().getId();
+
+        assertThrows(ForbiddenException.class, () -> viewClientsOnly.realm(managedRealm.getName())
+                .clients().get(clientUuid).getServiceAccountUser());
+
+        UserRepresentation saUser = viewClientsAndUsers.realm(managedRealm.getName())
+                .clients().get(clientUuid).getServiceAccountUser();
+        assertNotNull(saUser);
+        assertEquals("service-account-sa-test-client", saUser.getUsername());
+    }
+
     private UserSessionRepresentation getSingleUserSession(Keycloak adminClient, String clientUuid) {
         List<UserSessionRepresentation> sessions = adminClient.realm(managedRealm.getName())
                 .clients().get(clientUuid).getUserSessions(0, 5);
@@ -230,7 +250,10 @@ public class SessionTest {
         public RealmBuilder configure(RealmBuilder builder) {
             builder.clients(ClientBuilder.create(ADMIN_AUTH_CLIENT_ID)
                     .publicClient(true)
-                    .directAccessGrantsEnabled(true));
+                    .directAccessGrantsEnabled(true),
+                    ClientBuilder.create("sa-test-client")
+                    .secret("secret")
+                    .serviceAccountsEnabled());
             builder.users(
                     UserBuilder.create()
                             .username("view-clients-admin")
