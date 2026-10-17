@@ -1200,7 +1200,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.addOrUpdateGroupMapper(mapperName, realm, ldapModel, LDAPGroupMapperMode.READ_ONLY, descriptionName,
                     GroupMapperConfig.GROUPS_DN, "ou=OU" + suffix + "," + baseDn,
                     GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, String.valueOf(preserveInheritance));
-            LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName, descriptionName, groupName + " Description");
+            LDAPObject ldapGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName, descriptionName, groupName + " Description");
+            if (preserveInheritance) {
+                // An existing sub group, it must still be found when the group tree is synced again later
+                LDAPObject ldapChildGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName + "Child", descriptionName, groupName + "Child Description");
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapGroup, ldapChildGroup);
+            }
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
@@ -1222,6 +1227,25 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("johnkeycloak", "Password1");
         Assertions.assertTrue(tokenResponse.isSuccess(), tokenResponse.getError() + ": " + tokenResponse.getErrorDescription());
 
+        if (preserveInheritance) {
+            // A new LDAP sub group that John belongs to, but that is not in Keycloak yet. When John's group mappings
+            // are resolved, the mapper syncs the group tree on demand: it updates the existing groups and looks up
+            // their sub groups, and the existing child group must be found instead of being created again.
+            testingClient.server().run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+                String descriptionName = getGroupDescriptionLDAPAttrName(ldapProvider);
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+                GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+                LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName(groupName);
+                LDAPObject ldapNewGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName + "New", descriptionName, groupName + "New Description");
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapGroup, ldapNewGroup);
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapNewGroup, ldapProvider.loadLDAPUserByUsername(realm, "johnkeycloak"));
+            });
+        }
+
         // Start with no cached group queries, as after a restart or after the group was updated
         adminClient.realm(TEST_REALM_NAME).clearRealmCache();
 
@@ -1237,6 +1261,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // The group was found, it was not created a second time
             Assertions.assertEquals(1, realm.getGroupsStream().filter(group -> groupName.equals(group.getName())).count());
+            if (preserveInheritance) {
+                Assertions.assertEquals(1, realm.getGroupsStream().filter(group -> (groupName + "Child").equals(group.getName())).count());
+                Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/" + groupName + "/" + groupName + "New"));
+            }
 
             UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
             assertThat(john.getGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), hasItem(groupId));
