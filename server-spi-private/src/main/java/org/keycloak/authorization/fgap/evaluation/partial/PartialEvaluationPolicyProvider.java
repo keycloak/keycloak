@@ -65,10 +65,11 @@ public interface PartialEvaluationPolicyProvider {
      * @param session           the session
      * @param resourceType      the type of the resource
      * @param groupResourceType
+     * @param organizationResourceType
      * @param subject           the subject
      * @return the permissions that apply to the given {@code subject}
      */
-    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject);
+    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, ResourceType organizationResourceType, UserModel subject);
 
     /**
      * If partial evaluation is supported for the given {@code policy}.

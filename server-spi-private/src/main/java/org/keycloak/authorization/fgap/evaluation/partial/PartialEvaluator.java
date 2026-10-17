@@ -38,10 +38,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
@@ -73,7 +76,7 @@ public final class PartialEvaluator {
         }
 
         // collect the result from the partial evaluation so that the filters can be applied
-        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
+        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, null, storage, builder, queryBuilder, path);
 
         return buildPredicates(context);
     }
@@ -86,7 +89,7 @@ public final class PartialEvaluator {
         return !shouldSkipPartialEvaluation(session, user, resourceType);
     }
 
-    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, ResourceType organizationResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
         if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(resourceType.getType())) {
@@ -103,7 +106,7 @@ public final class PartialEvaluator {
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
-            policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
+            policyProvider.getPermissions(session, resourceType, groupResourceType, organizationResourceType, adminUser).forEach(permission -> {
                 Set<String> ids = permission.getResourceNames();
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
@@ -213,6 +216,10 @@ public final class PartialEvaluator {
 
     private PartialEvaluationContext createEvaluationContext(KeycloakSession session, ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path, UserModel adminUser) {
         PartialEvaluationContext context = new PartialEvaluationContext(session, resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path);
+
+        Set<String> allowedGroups = new HashSet<>();
+        Set<String> deniedGroups = new HashSet<>();
+
         String groupType = resourceType.getGroupType();
 
         if (groupType != null) {
@@ -223,9 +230,33 @@ public final class PartialEvaluator {
                 return context;
             }
 
-            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, groupResourceType, storage, builder, queryBuilder, path);
-            context.setAllowedGroups(evaluateGroups.getAllowedResources());
-            context.setDeniedGroups(evaluateGroups.getDeniedResources());
+            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, groupResourceType, null, storage, builder, queryBuilder, path);
+            allowedGroups = evaluateGroups.getAllowedResources();
+            deniedGroups = evaluateGroups.getDeniedResources();
+        }
+
+        String organizationType = resourceType.getOrganizationType();
+
+        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+        if (organizationType != null && organizationProvider != null) {
+            ResourceType organizationResourceType = AdminPermissionsSchema.SCHEMA.getResourceTypes().get(organizationType);
+
+            if (organizationResourceType == null) {
+                return context;
+            }
+
+            PartialEvaluationContext evaluateOrganizations = runEvaluation(session, adminUser, organizationResourceType, null, organizationResourceType, storage, builder, queryBuilder, path);
+
+            final List<String> allowedBackingGroups = getOrganizationsBackingGroupIDs(organizationProvider, organizationType, evaluateOrganizations.getAllowedResources());
+            final List<String> deniedBackingGroups = getOrganizationsBackingGroupIDs(organizationProvider, organizationType, evaluateOrganizations.getDeniedResources());
+
+            allowedGroups.addAll(allowedBackingGroups);
+            deniedGroups.addAll(deniedBackingGroups);
+        }
+
+        if (groupType != null || organizationType != null) {
+            context.setAllowedGroups(allowedGroups);
+            context.setDeniedGroups(deniedGroups);
         }
 
         return context;
@@ -313,5 +344,29 @@ public final class PartialEvaluator {
         }
 
         return false;
+    }
+
+    private List<String> getOrganizationsBackingGroupIDs(OrganizationProvider organizationProvider, String resourceType, Set<String> organizationIDs) {
+        return organizationIDs.stream()
+                .map(organizationId -> {
+                    if (organizationId.equals(resourceType)) {
+                        // continue as normal if all organizations are allowed
+                        return organizationId;
+                    } else {
+                        // this is indeed a specific organization, so resolve its organization group ID.
+                        OrganizationModel organizationModel = organizationProvider.getById(organizationId);
+
+                        if (organizationModel != null) {
+                            GroupModel backingGroup = organizationProvider.getOrganizationGroup(organizationModel);
+
+                            if (backingGroup != null) {
+                                return backingGroup.getId();
+                            }
+                        }
+                    }
+
+                    return null;
+                })
+                .toList();
     }
 }
