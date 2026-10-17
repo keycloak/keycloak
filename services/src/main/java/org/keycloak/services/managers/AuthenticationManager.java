@@ -212,10 +212,8 @@ public class AuthenticationManager {
             }
         }
         long currentTime = Time.currentTimeMillis();
-        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm);
-        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()), realm);
+        long lifespan = SessionExpirationUtils.calculateUserSessionMaxLifespanTimestamp(userSession, realm);
+        long idle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(userSession, realm);
 
         boolean sessionIdleOk = idle > currentTime -
                                        ((Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) || Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) ? 0 : TimeUnit.SECONDS.toMillis(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
@@ -230,11 +228,10 @@ public class AuthenticationManager {
             return false;
         }
         long currentTime = Time.currentTimeMillis();
-        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getStarted()),
-                TimeUnit.SECONDS.toMillis(userSession.getStarted()), realm, client);
-        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(userSession.isOffline(),
-                userSession.isRememberMe(), TimeUnit.SECONDS.toMillis(clientSession.getTimestamp()), realm, client);
+        long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
+                userSession, clientSession, realm, client);
+        long idle = SessionExpirationUtils.calculateClientSessionIdleTimestamp(
+                userSession, clientSession, realm, client);
 
         boolean sessionIdleOk = idle > currentTime -
                                        ((Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) || Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) ? 0 : TimeUnit.SECONDS.toMillis(SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));

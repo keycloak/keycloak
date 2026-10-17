@@ -491,8 +491,8 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
-                                               ClientSessionContext clientSessionCtx, boolean isOffline) {
-        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx, isOffline);
+                                               ClientSessionContext clientSessionCtx) {
+        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx);
         token = transformAccessToken(session, token, userSession, clientSessionCtx);
         setActClaimFromImpersonator(token, userSession);
         return token;
@@ -1103,10 +1103,10 @@ public class TokenManager {
     }
 
     protected AccessToken initToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
-                                    ClientSessionContext clientSessionCtx, boolean isOffline) {
+                                    ClientSessionContext clientSessionCtx) {
         AccessToken token = new AccessToken();
         TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
-        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, SecretGenerator.getInstance().generateSecureID(), isOffline);
+        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, SecretGenerator.getInstance().generateSecureID(), userSession.isOffline());
         token.id(encoder.encodeTokenId(tokenCtx));
 
         token.type(formatTokenType(client, token));
@@ -1128,10 +1128,7 @@ public class TokenManager {
         }
 
         token.setSessionId(userSession.getId());
-        ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
-        boolean offlineTokenRequested = offlineAccessScope == null ? false
-                : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
-        token.exp(getTokenExpiration(realm, client, userSession, clientSession, offlineTokenRequested));
+        token.exp(getTokenExpiration(realm, client, userSession, clientSession));
 
         // Tracing
         var tracing = session.getProvider(TracingProvider.class);
@@ -1160,7 +1157,7 @@ public class TokenManager {
     }
 
     private Long getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
-        AuthenticatedClientSessionModel clientSession, boolean offlineTokenRequested) {
+        AuthenticatedClientSessionModel clientSession) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
@@ -1190,13 +1187,14 @@ public class TokenManager {
             expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }
 
-        final boolean offline = userSession.isOffline() || offlineTokenRequested ||
-                (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT &&
-                Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(userSession.getNote(Constants.CREATED_FROM_PERSISTENT)));
+        boolean offline = userSession.isOffline()
+                || (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT
+                && Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(userSession.getNote(Constants.CREATED_FROM_PERSISTENT)));
         long sessionExpires = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
                 offline, userSession.isRememberMe(),
-                TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
-                realm, client);
+                TimeUnit.SECONDS.toMillis(clientSession.getStarted()),
+                TimeUnit.SECONDS.toMillis(userSession.getStarted()),
+                realm, client, SessionExpirationUtils.upstreamSessionExpiry(offline, userSession.getNotes()));
         expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
@@ -1294,7 +1292,7 @@ public class TokenManager {
 
         public AccessTokenResponseBuilder generateAccessToken() {
             UserModel user = userSession.getUser();
-            accessToken = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
+            accessToken = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
             responseTokenType = tokenManager.formatTokenType(client, accessToken);
             return this;
         }
@@ -1372,14 +1370,15 @@ public class TokenManager {
             }
         }
 
-        public void createOrUpdateOfflineSession() {
-            UserSessionManager sessionManager = new UserSessionManager(session);
-            if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
-                event.detail(REASON, "Offline tokens not allowed for the user or client");
+        public UserSessionModel createOrUpdateOfflineSession() {
+            try {
+                return new UserSessionManager(session).createOrUpdateOfflineSession(
+                        clientSessionCtx.getClientSession(), userSession, clientSessionCtx);
+            } catch (UserSessionManager.OfflineTokensNotAllowedException e) {
+                event.detail(REASON, e.getMessage());
                 event.error(Errors.NOT_ALLOWED);
-                throw new ErrorResponseException(Errors.NOT_ALLOWED, "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException(Errors.NOT_ALLOWED, e.getMessage(), Response.Status.BAD_REQUEST);
             }
-            sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
         private AccessToken.Confirmation getRefreshTokenConfirmation(AuthenticatedClientSessionModel clientSession, AccessToken accessToken) {

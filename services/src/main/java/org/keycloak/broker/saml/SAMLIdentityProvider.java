@@ -45,6 +45,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -72,6 +73,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -272,6 +274,21 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
+        if (authn != null) {
+            if (authn.getSessionNotOnOrAfter() != null) {
+                long sessionNotOnOrAfterSeconds = authn.getSessionNotOnOrAfter()
+                        .toGregorianCalendar().getTimeInMillis() / 1000;
+                sessionNotOnOrAfterSeconds += getConfig().getAllowedClockSkew();
+                if (sessionNotOnOrAfterSeconds <= Time.currentTime()) {
+                    throw new IdentityBrokerException("Upstream session has already expired (SessionNotOnOrAfter)");
+                }
+                authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER,
+                        Long.toString(sessionNotOnOrAfterSeconds));
+            } else {
+                authSession.setUserSessionNote(SessionExpirationUtils.FEDERATED_SESSION_NOT_ON_OR_AFTER, null);
+            }
+        }
+
         if (context.getContextData().containsKey(FEDERATED_ACCESS_TOKEN)) {
             String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
             setFederatedAccessToken(authSession, token);

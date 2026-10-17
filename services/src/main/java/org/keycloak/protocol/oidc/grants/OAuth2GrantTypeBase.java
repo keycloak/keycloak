@@ -61,6 +61,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -119,10 +120,11 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
-        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
+
+        UserSessionModel effectiveUserSession = ensureOfflineSessionIfRequested(userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-                .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
+                .responseBuilder(realm, client, event, session, effectiveUserSession, clientSessionCtx).generateAccessToken();
         boolean useRefreshToken = useRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
@@ -202,6 +204,27 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         TokenManager.AccessTokenResponseBuilder responseBuilder = createTokenResponseBuilder(user, userSession,
                 clientSessionCtx, scopeParam, clientPolicyContextGenerator);
         return createTokenResponse(responseBuilder, clientSessionCtx, code);
+    }
+
+    /**
+     * If offline access is requested and the session is not already offline,
+     * creates a persistent offline session so that token expiration uses offline settings.
+     * Transient sessions are not converted because offline sessions are inherently persistent.
+     */
+    protected UserSessionModel ensureOfflineSessionIfRequested(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        if (clientSessionCtx.isOfflineTokenRequested()
+                && !userSession.isOffline()
+                && !UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
+            try {
+                return new UserSessionManager(session).createOrUpdateOfflineSession(
+                        clientSessionCtx.getClientSession(), userSession, clientSessionCtx);
+            } catch (UserSessionManager.OfflineTokensNotAllowedException e) {
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, Errors.NOT_ALLOWED, e.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }
+        return userSession;
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {

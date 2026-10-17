@@ -37,6 +37,7 @@ import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+import org.keycloak.models.utils.SessionExpirationUtils;
 
 import org.infinispan.client.hotrod.RemoteCache;
 
@@ -102,8 +103,9 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
 
     @Override
     public Expiration computeExpiration() {
-        long maxIdle = SessionTimeouts.getClientSessionMaxIdleMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getTimestamp());
-        long lifespan = SessionTimeouts.getClientSessionLifespanMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getStarted(), getUserSessionStarted());
+        var upstream = SessionExpirationUtils.upstreamSessionExpiry(offline, userSession.getNotes());
+        long maxIdle = SessionTimeouts.getClientSessionMaxIdleMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getTimestamp(), upstream);
+        long lifespan = SessionTimeouts.getClientSessionLifespanMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getStarted(), getUserSessionStarted(), upstream);
         return new Expiration(SessionTimeouts.IMMORTAL_FLAG, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan));
     }
 

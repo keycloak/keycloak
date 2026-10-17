@@ -30,6 +30,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -54,7 +55,7 @@ public class UserSessionManager {
         this.kcSession = session;
     }
 
-    public void createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
+    public UserSessionModel createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
 
         // Create and persist offline userSession if we don't have one
@@ -76,8 +77,28 @@ public class UserSessionManager {
             ParameterizedScopeTypeProvider.syncPinnedIdentities(clientSession, offlineClientSession);
             offlineClientSession.setTimestamp(clientSession.getTimestamp());
         }
+
+        return offlineUserSession;
     }
 
+    /**
+     * Checks that offline tokens are allowed for the given context, then creates or updates the offline session.
+     *
+     * @throws OfflineTokensNotAllowedException if the user or client is not authorized for offline access
+     */
+    public UserSessionModel createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession,
+            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        if (!isOfflineTokenAllowed(clientSessionCtx)) {
+            throw new OfflineTokensNotAllowedException();
+        }
+        return createOrUpdateOfflineSession(clientSession, userSession);
+    }
+
+    public static class OfflineTokensNotAllowedException extends ModelException {
+        public OfflineTokensNotAllowedException() {
+            super("Offline tokens not allowed for the user or client");
+        }
+    }
 
     public UserSessionModel findOfflineUserSession(RealmModel realm, String userSessionId) {
         return kcSession.sessions().getOfflineUserSession(realm, userSessionId);

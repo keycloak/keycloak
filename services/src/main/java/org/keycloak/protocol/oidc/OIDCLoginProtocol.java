@@ -62,6 +62,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorPageException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -69,6 +70,7 @@ import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -303,8 +305,22 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
-            org.keycloak.protocol.oidc.TokenManager tokenManager = new org.keycloak.protocol.oidc.TokenManager();
-            org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
+            // For hybrid flow with offline access, create the offline session before generating
+            // the access token so it is encoded with the correct offline session type.
+            UserSessionModel effectiveUserSession = userSession;
+            if (!responseType.isImplicitFlow() && clientSessionCtx.isOfflineTokenRequested()) {
+                try {
+                    effectiveUserSession = new UserSessionManager(session).createOrUpdateOfflineSession(
+                            clientSessionCtx.getClientSession(), userSession, clientSessionCtx);
+                } catch (UserSessionManager.OfflineTokensNotAllowedException e) {
+                    event.detail(Details.REASON, e.getMessage());
+                    event.error(Errors.NOT_ALLOWED);
+                    throw new ErrorResponseException(Errors.NOT_ALLOWED, e.getMessage(), Response.Status.BAD_REQUEST);
+                }
+            }
+
+            TokenManager tokenManager = new org.keycloak.protocol.oidc.TokenManager();
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, effectiveUserSession, clientSessionCtx)
                 .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
@@ -354,11 +370,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.EXPIRES_IN, String.valueOf(res.getExpiresIn()));
             }
 
-            boolean offlineTokenRequested = clientSessionCtx.isOfflineTokenRequested();
-            if (!responseType.isImplicitFlow() && offlineTokenRequested) {
-                // Allow creating offline token early, so the tokens issued from authz-enpdpoint can lookup offline-user-session if used before code-to-token request
-                responseBuilder.createOrUpdateOfflineSession();
-            }
         }
 
         return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx);

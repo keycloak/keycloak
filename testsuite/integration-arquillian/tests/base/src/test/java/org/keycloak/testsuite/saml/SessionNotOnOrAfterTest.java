@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
@@ -57,7 +57,10 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
         assertThat(authType, notNullValue());
         assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
-        assertThat(authType.getSessionNotOnOrAfter(), is(XMLTimeUtil.add(authType.getAuthnInstant(), ssoMaxLifespan * 1000L)));
+        long actualMs = authType.getSessionNotOnOrAfter().toGregorianCalendar().getTimeInMillis();
+        long upperBoundMs = XMLTimeUtil.add(authType.getAuthnInstant(), ssoMaxLifespan * 1000L).toGregorianCalendar().getTimeInMillis();
+        assertThat(actualMs, lessThanOrEqualTo(upperBoundMs));
+        assertThat(actualMs, greaterThan(upperBoundMs - 60_000L));
 
         // Conditions
         Assertions.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());

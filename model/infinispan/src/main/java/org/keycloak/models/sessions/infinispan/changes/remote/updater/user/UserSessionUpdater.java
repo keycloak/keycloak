@@ -19,6 +19,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFac
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.helper.MapUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+import org.keycloak.models.utils.SessionExpirationUtils;
 
 /**
  * The {@link Updater} implementation to keep track of modifications for {@link UserSessionModel}.
@@ -77,8 +78,9 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
 
     @Override
     public Expiration computeExpiration() {
-        long maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, isOffline(), getValue().isRememberMe(), getValue().getLastSessionRefresh());
-        long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, isOffline(), getValue().isRememberMe(), getValue().getStarted());
+        var upstream = SessionExpirationUtils.upstreamSessionExpiry(isOffline(), getValue().getNotes());
+        long maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, isOffline(), getValue().isRememberMe(), getValue().getLastSessionRefresh(), upstream);
+        long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, isOffline(), getValue().isRememberMe(), getValue().getStarted(), upstream);
         return new Expiration(SessionTimeouts.IMMORTAL_FLAG, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan));
     }
 

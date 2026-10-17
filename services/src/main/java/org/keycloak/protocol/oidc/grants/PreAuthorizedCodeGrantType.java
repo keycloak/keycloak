@@ -233,8 +233,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 clientSession.getClient(),
                 userSession.getUser(),
                 userSession,
-                sessionContext,
-                sessionContext.isOfflineTokenRequested());
+                sessionContext);
 
         // Add the scope referenced by the credential from specified credential offer to the token scopes
         String credConfigId = authDetails.getCredentialConfigurationId();
