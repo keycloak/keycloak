@@ -108,10 +108,10 @@ public class LoginTotpPage extends AbstractLoginPage {
     }
 
     private By getCssSelectorForLookupActiveCard() {
-        return By.cssSelector(".pf-m-selected");
+        return By.cssSelector("input[name='selectedCredentialId']:checked + label");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 }

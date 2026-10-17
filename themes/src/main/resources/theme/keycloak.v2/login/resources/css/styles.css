@@ -184,3 +184,19 @@ hr {
 #kc-form-webauthn {
     gap: 0.875rem;
 }
+/* OTP device pickers (login and reset): the radio is visually hidden, so the tile shows its checked state and keyboard focus */
+input[name="selectedCredentialId"]:checked + .pf-v5-c-tile {
+    --pf-v5-c-tile__title--Color: var(--pf-v5-c-tile--m-selected__title--Color);
+    --pf-v5-c-tile__icon--Color: var(--pf-v5-c-tile--m-selected__icon--Color);
+    --pf-v5-c-tile--TranslateY: var(--pf-v5-c-tile--m-selected--TranslateY);
+    --pf-v5-c-tile--Transition: var(--pf-v5-c-tile--m-selected--Transition);
+    --pf-v5-c-tile--after--Height: var(--pf-v5-c-tile--m-selected--after--Height);
+    --pf-v5-c-tile--after--BackgroundColor: var(--pf-v5-c-tile--m-selected--after--BackgroundColor);
+    --pf-v5-c-tile--after--Transition: var(--pf-v5-c-tile--m-selected--after--Transition);
+    --pf-v5-c-tile--after--ScaleY: var(--pf-v5-c-tile--m-selected--after--ScaleY);
+}
+
+input[name="selectedCredentialId"]:focus-visible + .pf-v5-c-tile {
+    outline: var(--pf-v5-global--BorderWidth--md) solid var(--pf-v5-global--primary-color--100);
+    outline-offset: var(--pf-v5-global--spacer--xs);
+}
