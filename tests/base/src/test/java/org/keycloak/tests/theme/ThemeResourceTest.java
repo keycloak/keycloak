@@ -38,6 +38,7 @@ public class ThemeResourceTest {
     public void gzipCacheFailureFallsBackToOriginalResource() throws IOException {
         String resourcesVersion = runOnServer.fetch(session -> Version.RESOURCES_VERSION, String.class);
         String url = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css";
+        String cachedResourcePath = "login/keycloak.v2/css/styles.css.gz";
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableContentCompression().build()) {
             String expected;
             try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
@@ -54,8 +55,7 @@ public class ThemeResourceTest {
             }
 
             runOnServer.run(session -> {
-                Path cachedFile = Path.of(KeycloakApplication.getTmpDirectory()).resolve("kc-gzip-cache")
-                        .resolve(Version.RESOURCES_VERSION).resolve("login/keycloak.v2/css/styles.css.gz");
+                Path cachedFile = findGzipCacheFile(resourcesVersion, cachedResourcePath);
                 Files.delete(cachedFile);
                 // A directory at the cache path forces the cached-file open to fail
                 Files.createDirectory(cachedFile);
@@ -66,9 +66,27 @@ public class ThemeResourceTest {
                 assertTrue(response.getEntity().getContentType().getValue().startsWith("text/css"));
                 assertEquals(expected, EntityUtils.toString(response.getEntity()));
             } finally {
-                runOnServer.run(session -> Files.deleteIfExists(Path.of(KeycloakApplication.getTmpDirectory())
-                        .resolve("kc-gzip-cache").resolve(Version.RESOURCES_VERSION).resolve("login/keycloak.v2/css/styles.css.gz")));
+                runOnServer.run(session -> {
+                    Path cachedFile = findGzipCacheFile(resourcesVersion, cachedResourcePath);
+                    if (cachedFile != null) {
+                        Files.deleteIfExists(cachedFile);
+                    }
+                });
             }
+        }
+    }
+
+    // the directory name has a generation suffix, so match by prefix instead of an exact name
+    private static Path findGzipCacheFile(String resourcesVersion, String relativePath) {
+        Path cacheRoot = Path.of(KeycloakApplication.getTmpDirectory()).resolve("kc-gzip-cache");
+        try (var dirs = Files.list(cacheRoot)) {
+            return dirs.filter(dir -> dir.getFileName().toString().startsWith(resourcesVersion))
+                    .map(dir -> dir.resolve(relativePath))
+                    .filter(Files::exists)
+                    .findFirst()
+                    .orElse(null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
