@@ -31,6 +31,7 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jwe.alg.RSAWrapperAlgorithmProvider;
 
@@ -160,6 +161,18 @@ public class DefaultCryptoProvider implements CryptoProvider {
         } else {
             return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
         }
+    }
+
+    @Override
+    public KeyStore getTrustStore(TruststoreFormat format) throws KeyStoreException, NoSuchProviderException {
+        if (!format.isJavaTrustStore()) {
+            throw new KeyStoreException(format.name() + " is not a Java KeyStore truststore format");
+        }
+        // JDK's PKCS12 honors certProtectionAlgorithm=NONE, BC's ignores it and encrypts with pbeWithSHA1AndRC2_40
+        if (format == TruststoreFormat.PKCS12) {
+            return KeyStore.getInstance(format.toString(), "SUN");
+        }
+        return getKeyStore(KeystoreFormat.valueOf(format.name()));
     }
 
     @Override

@@ -240,6 +240,14 @@ public class TruststoreBuilderTest {
     }
 
     @Test
+    public void testPkcs12TrustStoreUsesJdkProvider() throws Exception {
+        KeyStore ks = CryptoIntegration.getProvider().getTrustStore(TruststoreFormat.PKCS12);
+        // BC ignores certProtectionAlgorithm=NONE and encrypts cert bags with pbeWithSHA1AndRC2_40
+        assertFalse("PKCS12 truststore must not use BouncyCastle provider",
+                ks.getProvider().getName().startsWith("BC"));
+    }
+
+    @Test
     public void testKubernetesCaIgnoresDirectories() throws Exception {
         URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
         String directory = new File(url.getPath()).getParent();
