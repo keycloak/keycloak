@@ -55,6 +55,7 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.BrokeredUserChangeTracker;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -1308,10 +1309,12 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
 
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
+        // the user is updated through the tracker to send events for the changes
+        BrokeredUserChangeTracker trackedUser = BrokeredUserChangeTracker.track(federatedUser);
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
 
         if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
-            setBasicUserAttributes(context, federatedUser);
+            setBasicUserAttributes(context, trackedUser);
 
             if (!Objects.equals(context.getUsername(), federatedIdentityModel.getUserName())) {
                 federatedIdentityModel = new FederatedIdentityModel(federatedIdentityModel.getIdentityProvider(),
@@ -1324,13 +1327,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         // Skip DB write if tokens are null or equal
         updateToken(context, federatedUser, federatedIdentityModel);
-        context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
+        context.getIdp().updateBrokeredUser(session, realmModel, trackedUser, context);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         session.identityProviders().getMappersByAliasStream(context.getIdpConfig().getAlias()).forEach(mapper -> {
             IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
                     .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-            IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realmModel, federatedUser, mapper, context, target);
+            IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realmModel, trackedUser, mapper, context, target);
         });
+        trackedUser.sendEvents(event, context);
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {

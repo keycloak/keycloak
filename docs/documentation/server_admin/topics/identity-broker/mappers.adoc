@@ -30,3 +30,14 @@ image:images/identity-provider-mapper.png[identity provider mapper]
 For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, `contact.address[0].country`.
 
 To investigate the structure of user profile JSON data provided by social providers, you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump` when starting the server.
+
+==== Events for user updates
+
+When an existing user logs in through an identity provider or is linked to it, or when an external token of the identity provider is exchanged for the user, the identity provider and its mappers may change attributes of the user. {project_name} then emits events after all mappers are executed, like for other profile updates:
+
+* An `UPDATE_EMAIL` event if the email changed, with the `previous_email` and `updated_email` details.
+* An `UPDATE_PROFILE` event with the other changes. For each added, changed or removed attribute, the event contains the previous and updated values in the `previous_` and `updated_` details, for example `previous_first_name` and `updated_first_name`, or `previous_department` and `updated_department` for a `department` attribute.
+
+The events have the `context` detail set to `IDP_SYNC` and the `identity_provider` detail set to the alias of the identity provider. Only attributes written by the identity provider or its mappers are reported, and their values are compared as stored by {project_name}, so a value that is normalized when stored, such as an email address in a different case, is not reported as a change. Changes of role mappings and group memberships made by mappers are not reported.
+
+NOTE: The events contain the values of the mapped attributes, which may include sensitive data provided by the identity provider. Also, a mapped value that changes frequently, for example with the *force* sync mode, results in an event on each login. Consider which event types to save and how long to keep them when <<auditing-user-events,auditing user events>>.
