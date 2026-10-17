@@ -4,7 +4,7 @@
     <meta charset="utf-8">
   </head>
   <body>
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
       // Check if the previously placed cookies exist to detect support for 3rd-party access.
       const hasAccess = document.cookie.includes("KEYCLOAK_3P_COOKIE");
 

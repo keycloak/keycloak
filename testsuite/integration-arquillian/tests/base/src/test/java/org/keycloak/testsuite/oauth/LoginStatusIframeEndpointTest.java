@@ -203,11 +203,12 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             assertEquals(200, response.getStatusLine().getStatusCode());
             assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders("Cache-Control")[0].getValue());
 
+            // The iframe carries a per-response CSP nonce, so it must not be cached even when versioned
             get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html?version=" + version);
             response = client.execute(get);
 
             assertEquals(200, response.getStatusLine().getStatusCode());
-            assertTrue(response.getHeaders("Cache-Control")[0].getValue().contains("max-age"));
+            assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders("Cache-Control")[0].getValue());
         }
     }
 

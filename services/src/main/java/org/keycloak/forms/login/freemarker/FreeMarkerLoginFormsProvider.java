@@ -62,6 +62,7 @@ import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.forms.login.freemarker.model.PasswordPoliciesBean;
@@ -92,6 +93,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
@@ -500,6 +502,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         URI baseUriWithCodeAndClientId = baseUriBuilder.build();
 
+        attributes.put("nonce", new NonceBean());
+
         if (client != null) {
             attributes.put("client", new ClientBean(session, client));
         }
@@ -642,7 +646,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("pageId", templateName.substring(0, templateName.length() - 4));
 
             String result = freeMarker.processTemplate(attributes, templateName, theme);
-            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
+            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result)
+                    .cacheControl(CacheControlUtil.noCache());
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }

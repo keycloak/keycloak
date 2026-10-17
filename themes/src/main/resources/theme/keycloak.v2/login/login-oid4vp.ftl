@@ -13,7 +13,7 @@
             <div id="oid4vp-qr-expired" class="${properties.kcFormGroupClass!}" style="text-align: center" role="status" aria-live="polite" hidden>
                 ${msg("oid4vpQrExpired")} <a id="oid4vp-restart-login" href="${url.loginRestartFlowUrl}">${msg("doClickHere")}</a> .
             </div>
-            <script type="module">
+            <script type="module"  nonce="${nonce.value}">
                 <#outputformat "JavaScript">
                 import { startCrossDeviceStatusPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 

@@ -37,6 +37,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -46,6 +47,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
@@ -59,8 +61,6 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.SecureContextResolver;
-
-import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * Created by st on 29/03/17.
@@ -104,7 +104,6 @@ public class AccountConsole implements AccountResourceProvider {
     }
 
     @GET
-    @NoCache
     @Path("{path:.*}")
     public Response getMainPage(@PathParam("path") String path) throws IOException, FreeMarkerException {
 
@@ -128,6 +127,7 @@ public class AccountConsole implements AccountResourceProvider {
         final var isSecureContext = SecureContextResolver.isSecureContext(session);
 
         map.put("isSecureContext", isSecureContext);
+        map.put("nonce", new NonceBean());
         map.put("serverBaseUrl", serverBaseUrl);
         // TODO: Some variables are deprecated and only exist to provide backwards compatibility for older themes, they should be removed in a future version.
         // Note that these should be removed from the template of the Account Console as well.
@@ -229,7 +229,8 @@ public class AccountConsole implements AccountResourceProvider {
 
         FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
         String result = renderAccountConsole(freeMarkerUtil, map);
-        Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
+        Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result)
+                .cacheControl(CacheControlUtil.noCache());
         return builder.build();
     }
 
