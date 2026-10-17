@@ -112,6 +112,6 @@ public class LoginTotpPage extends AbstractLoginPage {
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 }

@@ -184,3 +184,8 @@ hr {
 #kc-form-webauthn {
     gap: 0.875rem;
 }
+/* OTP device picker: the radio is visually hidden, so show its keyboard focus on the tile */
+input[name="selectedCredentialId"]:focus-visible + .pf-v5-c-tile {
+    outline: var(--pf-v5-global--BorderWidth--md) solid var(--pf-v5-global--primary-color--100);
+    outline-offset: var(--pf-v5-global--spacer--xs);
+}

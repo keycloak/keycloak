@@ -23,6 +23,7 @@ import org.keycloak.testsuite.util.UIUtils;
 
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -104,7 +105,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
@@ -112,6 +113,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
+    }
+
+    public void selectOtpCredentialWithKeyboard(String credentialName) {
+        WebElement card = driver.findElement(getXPathForLookupCardWithName(credentialName));
+        driver.findElement(By.id(card.getAttribute("for"))).sendKeys(Keys.SPACE);
     }
 
 }
