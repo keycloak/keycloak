@@ -117,6 +117,14 @@ spec:
     x:
       secret:
         name: my-secret
+  volumes:
+    - name: my-theme
+      configMap:
+        name: my-theme-cm
+  volumeMounts:
+    - name: my-theme
+      mountPath: /opt/keycloak/themes/my-theme
+      readOnly: true
   httpManagement:
     port: 9003
   bootstrapAdmin:
