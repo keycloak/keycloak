@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 import javax.naming.directory.SearchControls;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -33,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -40,6 +43,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
@@ -48,6 +52,7 @@ import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.junit.ClassRule;
@@ -62,6 +67,7 @@ import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPA
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -1153,6 +1159,115 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             Assertions.assertFalse(john.isMemberOf(localGroup));
             Assertions.assertTrue(john.isMemberOf(managedGroup));
+        });
+    }
+
+    // https://github.com/keycloak/keycloak/issues/54054
+    @Test
+    public void test10c_userWithQueryAdminRoleGetsLdapGroupMappings() {
+        userWithQueryAdminRoleGetsLdapGroupMappings(false, "FgapFlat");
+    }
+
+    // https://github.com/keycloak/keycloak/issues/54054
+    @Test
+    public void test10d_userWithQueryAdminRoleGetsLdapGroupMappingsWithPreservedInheritance() {
+        userWithQueryAdminRoleGetsLdapGroupMappings(true, "FgapTree");
+    }
+
+    // A user holding a query-* admin role, but not view-users or manage-users, gets the fine-grained admin permissions
+    // filters applied to group queries once that user is in the session context (login, token endpoint, account
+    // console). The group lookups of the mapper must not be filtered, otherwise an existing group is not found and the
+    // mapper tries to create it again. As in the test above, each variant uses its own OU/mapper/group names.
+    private void userWithQueryAdminRoleGetsLdapGroupMappings(boolean preserveInheritance, String suffix) {
+        String mapperName = "group-mapper-" + suffix;
+        String groupName = "Group" + suffix;
+
+        String groupId = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            realm.removeComponent(LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper"));
+
+            // Without the user cache, the group mappings of the user are resolved by the mapper in every request
+            ctx.getLdapModel().setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(ctx.getLdapModel());
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            String baseDn = ldapModel.getConfig().getFirst(LDAPConstants.BASE_DN);
+            String descriptionName = getGroupDescriptionLDAPAttrName(ldapProvider);
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OU" + suffix);
+            LDAPTestUtils.addOrUpdateGroupMapper(mapperName, realm, ldapModel, LDAPGroupMapperMode.READ_ONLY, descriptionName,
+                    GroupMapperConfig.GROUPS_DN, "ou=OU" + suffix + "," + baseDn,
+                    GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, String.valueOf(preserveInheritance));
+            LDAPObject ldapGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName, descriptionName, groupName + " Description");
+            if (preserveInheritance) {
+                // An existing sub group, it must still be found when the group tree is synced again later
+                LDAPObject ldapChildGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName + "Child", descriptionName, groupName + "Child Description");
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapGroup, ldapChildGroup);
+            }
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+            groupMapper.syncDataFromFederationProviderToKeycloak(realm);
+
+            GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, "/" + groupName);
+            groupMapper.addGroupMappingInLDAP(realm, group, ldapProvider.loadLDAPUserByUsername(realm, "johnkeycloak"));
+
+            // LDAP users get a query-* admin role, but neither view-users nor manage-users. A hardcoded role mapper is
+            // used so that it also works when the users are not imported.
+            LDAPTestUtils.addOrUpdateHardcodedRoleMapper(realm, ldapModel, HardcodedLDAPRoleStorageMapper.ROLE,
+                    Constants.REALM_MANAGEMENT_CLIENT_ID + "." + AdminRoles.QUERY_CLIENTS);
+            realm.setAdminPermissionsEnabled(true);
+            realm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
+
+            return group.getId();
+        }, String.class);
+
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("johnkeycloak", "Password1");
+        Assertions.assertTrue(tokenResponse.isSuccess(), tokenResponse.getError() + ": " + tokenResponse.getErrorDescription());
+
+        if (preserveInheritance) {
+            // A new LDAP sub group that John belongs to, but that is not in Keycloak yet. When John's group mappings
+            // are resolved, the mapper syncs the group tree on demand: it updates the existing groups and looks up
+            // their sub groups, and the existing child group must be found instead of being created again.
+            testingClient.server().run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+                String descriptionName = getGroupDescriptionLDAPAttrName(ldapProvider);
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, mapperName);
+                GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+                LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName(groupName);
+                LDAPObject ldapNewGroup = LDAPTestUtils.createLDAPGroup(mapperName, session, realm, ldapModel, groupName + "New", descriptionName, groupName + "New Description");
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapGroup, ldapNewGroup);
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", ldapNewGroup, ldapProvider.loadLDAPUserByUsername(realm, "johnkeycloak"));
+            });
+        }
+
+        // Start with no cached group queries, as after a restart or after the group was updated
+        adminClient.realm(TEST_REALM_NAME).clearRealmCache();
+
+        // When refreshing the token, John's user session is set to the session context before his roles, and so his
+        // LDAP group mappings, are resolved. Refresh twice, the group must be found both times.
+        for (int i = 0; i < 2; i++) {
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+            Assertions.assertTrue(tokenResponse.isSuccess(), tokenResponse.getError() + ": " + tokenResponse.getErrorDescription());
+        }
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            // The group was found, it was not created a second time
+            Assertions.assertEquals(1, realm.getGroupsStream().filter(group -> groupName.equals(group.getName())).count());
+            if (preserveInheritance) {
+                Assertions.assertEquals(1, realm.getGroupsStream().filter(group -> (groupName + "Child").equals(group.getName())).count());
+                Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/" + groupName + "/" + groupName + "New"));
+            }
+
+            UserModel john = session.users().getUserByUsername(realm, "johnkeycloak");
+            assertThat(john.getGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), hasItem(groupId));
         });
     }
 

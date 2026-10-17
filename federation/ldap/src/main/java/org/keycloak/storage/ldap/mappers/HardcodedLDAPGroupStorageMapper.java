@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.mappers;
 
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -102,7 +103,9 @@ public class HardcodedLDAPGroupStorageMapper extends AbstractLDAPStorageMapper {
 
     private GroupModel getGroup(RealmModel realm) {
         String groupName = mapperModel.getConfig().getFirst(HardcodedLDAPGroupStorageMapper.GROUP);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(getSession(), realm, groupName);
+        // internal lookup, it must not be filtered by the admin permissions of the user in the session context
+        GroupModel group = AdminPermissionsSchema.runWithoutAuthorization(getSession(),
+                () -> KeycloakModelUtils.findGroupByPath(getSession(), realm, groupName));
         if (group == null) {
             logger.warnf("Hardcoded group '%s' configured in mapper '%s' is not available anymore", groupName, mapperModel.getName());
         }
