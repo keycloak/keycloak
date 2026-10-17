@@ -539,6 +539,7 @@ public class RepresentationToModel {
      * @param isNew  Whether the client is new or not (needed because some getters cannot return null).
      */
     private static void updateClientProperties(ClientModel client, ClientRepresentation rep, boolean isNew) {
+        boolean existingBearerOnly = !isNew && client.isBearerOnly() && !client.isPublicClient();
         List<Supplier<ClientTypeException>> clientPropertyUpdates = new LinkedList<Supplier<ClientTypeException>>() {{
             /**
              * Values from the ClientRepresentation take precedence.
@@ -583,7 +584,7 @@ public class RepresentationToModel {
                 });
             }
             // Client Secret
-            add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
+            add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep, existingBearerOnly)));
             // Redirect uris / Web origins
             add(updatePropertyAction(client::setRedirectUris, () -> filterEmptyValues(rep.getRedirectUris()), client::getRedirectUris));
             add(updatePropertyAction(client::setWebOrigins, () -> filterEmptyValues(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
@@ -631,7 +632,7 @@ public class RepresentationToModel {
         return client.getNodeReRegistrationTimeout();
     }
 
-    private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
+    private static String determineNewSecret(ClientModel client, ClientRepresentation rep, boolean existingBearerOnly) {
         if (client.isPublicClient()) {
             // Clear out the secret with null
             return null;
@@ -642,6 +643,10 @@ public class RepresentationToModel {
         String newSecret = rep.getSecret();
 
         if (newSecret == null && currentSecret == null) {
+            // Metadata updates must not introduce credentials for an existing bearer-only client.
+            if (existingBearerOnly && client.isBearerOnly()) {
+                return null;
+            }
             return KeycloakModelUtils.generateSecret(client);
         } else if (newSecret != null) {
             return newSecret;
