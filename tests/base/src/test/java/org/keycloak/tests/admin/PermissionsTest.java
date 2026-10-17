@@ -698,6 +698,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
                                         .alias("foo")
                                         .attribute("clientId", "foo")
                                         .attribute("clientSecret", "foo")
+                                        .attribute("validateSignature", "false")
                                         .build()
                         )
                 ), Resource.IDENTITY_PROVIDER, true);

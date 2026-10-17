@@ -449,9 +449,6 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
     }
 
     private void assertSamlConfig(Map<String, String> config, boolean postBindingResponse, boolean hasHideOnLoginPage) {
-        // import endpoint simply converts IDPSSODescriptor into key value pairs.
-        // check that saml-idp-metadata.xml was properly converted into key value pairs
-        //System.out.println(config);
         List<String> keys = new ArrayList<>(List.of(
                 "validateSignature",
                 "singleLogoutServiceUrl",
@@ -468,10 +465,22 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
                 "loginHint",
                 "idpEntityId"
         ));
+
         if (hasHideOnLoginPage) {
             keys.add("hideOnLoginPage");
         }
-        assertThat(config.keySet(), containsInAnyOrder(keys.toArray()));
+
+        Set<String> actualKeys = new HashSet<>(config.keySet());
+        if (!hasHideOnLoginPage) {
+            actualKeys.remove(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+        }
+        assertThat(actualKeys, containsInAnyOrder(keys.toArray()));
+        String wantAssertionsSigned = config.get(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+        if (hasHideOnLoginPage) {
+            Assertions.assertNull(wantAssertionsSigned, "import-config should not materialize wantAssertionsSigned default");
+        } else {
+            Assertions.assertTrue(wantAssertionsSigned == null || Boolean.parseBoolean(wantAssertionsSigned), "wantAssertionsSigned must be absent or true by default");
+        }
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml/resolve"));
@@ -482,9 +491,11 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
+
         if (hasHideOnLoginPage) {
             assertThat(config, hasEntry("hideOnLoginPage", "true"));
         }
+
         assertThat(config, hasEntry("idpEntityId", "http://localhost:8080/auth/realms/master"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }

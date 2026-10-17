@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.broker;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -231,6 +232,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
     public void testAddIdpFromDifferentRealm() {
         String orgId = createOrganization().getId();
         IdentityProviderRepresentation idpRepresentation = createRep("master-identity-provider", "oidc");
+        idpRepresentation.setConfig(Map.of("validateSignature", "false"));
         adminClient.realm("master").identityProviders().create(idpRepresentation).close();
 
         try {
