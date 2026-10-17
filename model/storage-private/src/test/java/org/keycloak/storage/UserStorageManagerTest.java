@@ -20,11 +20,13 @@ package org.keycloak.storage;
 import java.util.stream.Stream;
 
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.UserModelDelegate;
 
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
@@ -64,6 +66,58 @@ public class UserStorageManagerTest {
 
         Stream<UserModel> result = UserStorageManager.queryWithGracefulDegradation(externalProvider, failing, 0, 10);
         assertThat(result.toList(), empty());
+    }
+
+    private static UserStorageProvider externalProvider() {
+        return new UserStorageProvider() {
+            @Override
+            public void close() {
+            }
+        };
+    }
+
+    /**
+     * A lazy stream that emits the users of the first page(s) and then fails while it is being
+     * consumed, e.g. an LDAP server that stops responding between the pages of a paginated search.
+     */
+    private static UserStorageManager.PaginatedQuery lazyFailingQuery() {
+        return (provider, first, max) -> Stream.concat(
+                Stream.of(new UserModelDelegate(null), new UserModelDelegate(null)),
+                Stream.generate(() -> {
+                    throw FAILURE;
+                }));
+    }
+
+    @Test
+    public void queryWithGracefulDegradationSwallowsLazyFailureDuringBoundedQuery() {
+        // bounded queries are materialized, so a failure raised lazily while the stream is consumed
+        // degrades the provider to an empty result: the users of the pages that succeeded before the
+        // failure must not surface as a partial result
+        Stream<UserModel> result = UserStorageManager.queryWithGracefulDegradation(externalProvider(), lazyFailingQuery(), 0, 10);
+
+        assertThat(result.toList(), empty());
+    }
+
+    @Test
+    public void queryWithGracefulDegradationPropagatesLazyFailureDuringUnboundedQuery() {
+        // unbounded queries stay lazy and stream directly to the consumer, so a failure raised
+        // during that consumption propagates to the consumer
+        Stream<UserModel> result = UserStorageManager.queryWithGracefulDegradation(externalProvider(), lazyFailingQuery(), 0, null);
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, result::toList);
+        assertSame(FAILURE, thrown);
+    }
+
+    @Test
+    public void queryWithGracefulDegradationCapsMaterializedResultToRequestedWindow() {
+        // a lazy stream that ignores the pagination arguments and streams many more users than
+        // requested, like the paginated LDAP search: it must not be consumed entirely, but capped
+        // to the window the caller requested
+        UserStorageManager.PaginatedQuery oversized = (provider, first, max) ->
+                Stream.<UserModel>generate(() -> new UserModelDelegate(null)).limit(1000);
+
+        assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), oversized, 0, 10).toList(), hasSize(10));
+        assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), oversized, 7, 10).toList(), hasSize(17));
     }
 
     @Test

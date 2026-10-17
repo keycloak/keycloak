@@ -73,7 +73,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageUnavailableException;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
@@ -1187,28 +1186,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     },
                     query -> query
             ).flatMap(query -> {
+                        // any failure fetching a page (including the first one) is propagated to the caller;
+                        // UserStorageManager degrades failing external providers to an empty result for bounded
+                        // queries, so a partial result set is never surfaced to the client. Failures of unbounded
+                        // queries propagate to the consumer of the stream.
                         query.setLimit(limit);
-                        List<LDAPObject> ldapObjects;
-
-                        try {
-                            ldapObjects = query.getResultList();
-                        } catch (StorageUnavailableException sue) {
-                            logger.errorf(sue, "Failed to query LDAP %s", query);
-                            /*
-                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
-                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
-                             * See KEYCLOAK-19036
-                             */
-                            query.getPaginationContext().setCookie(null);
-                            return Stream.empty();
-                        } catch (ModelException mde) {
-                            if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
-                                logger.errorf(mde, "Failed to query LDAP %s", query);
-                                return Stream.empty();
-                            } else {
-                                throw mde;
-                            }
-                        }
+                        List<LDAPObject> ldapObjects = query.getResultList();
 
                         if (ldapObjects.isEmpty()) {
                             return Stream.empty();
