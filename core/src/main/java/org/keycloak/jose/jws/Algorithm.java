@@ -17,6 +17,8 @@
 
 package org.keycloak.jose.jws;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.jose.jws.crypto.SignatureProvider;
 
@@ -42,15 +44,24 @@ public enum Algorithm {
     ES512(AlgorithmType.ECDSA, null),
     EdDSA(AlgorithmType.EDDSA, null),
     Ed25519(AlgorithmType.EDDSA, null),
-    Ed448(AlgorithmType.EDDSA, null)
+    Ed448(AlgorithmType.EDDSA, null),
+    ML_DSA_44(AlgorithmType.ML_DSA, null, org.keycloak.crypto.Algorithm.ML_DSA_44),
+    ML_DSA_65(AlgorithmType.ML_DSA, null, org.keycloak.crypto.Algorithm.ML_DSA_65),
+    ML_DSA_87(AlgorithmType.ML_DSA, null, org.keycloak.crypto.Algorithm.ML_DSA_87)
     ;
 
     private AlgorithmType type;
     private SignatureProvider provider;
+    private String value;
 
     Algorithm(AlgorithmType type, SignatureProvider provider) {
+        this(type, provider, null);
+    }
+
+    Algorithm(AlgorithmType type, SignatureProvider provider, String value) {
         this.type = type;
         this.provider = provider;
+        this.value = value;
     }
 
     public AlgorithmType getType() {
@@ -59,5 +70,20 @@ public enum Algorithm {
 
     public SignatureProvider getProvider() {
         return provider;
+    }
+
+    @JsonValue
+    public String getValue() {
+        return value == null ? name() : value;
+    }
+
+    @JsonCreator
+    public static Algorithm fromValue(String value) {
+        for (Algorithm algorithm : values()) {
+            if (algorithm.getValue().equals(value)) {
+                return algorithm;
+            }
+        }
+        throw new IllegalArgumentException("Unknown algorithm " + value);
     }
 }

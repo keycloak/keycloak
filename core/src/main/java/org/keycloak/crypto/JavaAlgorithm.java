@@ -75,6 +75,10 @@ public class JavaAlgorithm {
                     return curve;
                 }
                 return Ed25519;
+            case Algorithm.ML_DSA_44:
+            case Algorithm.ML_DSA_65:
+            case Algorithm.ML_DSA_87:
+                return algorithm;
             case Algorithm.AES:
                 return AES;
             default:
@@ -124,6 +128,10 @@ public class JavaAlgorithm {
                     }
                 }
                 return SHA512;
+            case Algorithm.ML_DSA_44:
+            case Algorithm.ML_DSA_65:
+            case Algorithm.ML_DSA_87:
+                return SHAKE256;
             case Algorithm.AES:
                 return AES;
             default:
@@ -142,6 +150,10 @@ public class JavaAlgorithm {
             case Algorithm.Ed448:
             case Algorithm.Ed25519:
                 return KeyType.OKP;
+            case Algorithm.ML_DSA_44:
+            case Algorithm.ML_DSA_65:
+            case Algorithm.ML_DSA_87:
+                return KeyType.AKP;
             default:
                 return KeyType.OCT;
         }
