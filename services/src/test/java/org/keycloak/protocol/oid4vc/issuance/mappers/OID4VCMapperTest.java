@@ -7,6 +7,7 @@ import java.util.Map;
 import org.keycloak.VCFormat;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 
 import org.junit.Test;
 
@@ -14,6 +15,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 public class OID4VCMapperTest {
+
+    @Test
+    public void shouldDelegateToExistingMapperWithIssuanceContext() {
+        OID4VCMapper mapper = new OID4VCStaticClaimMapper();
+        mapper.setMapperModel(createStaticClaimMapperModel("name", "Alice", null), VCFormat.JWT_VC);
+        Map<String, Object> claims = new HashMap<>();
+        mapper.setClaim(claims, null, new VCIssuanceContext().setClaimsRef("booking-42"));
+        assertEquals(Map.of("name", "Alice"), claims);
+    }
 
     @Test
     public void shouldUseNamespaceClaimPathForMdoc() {
