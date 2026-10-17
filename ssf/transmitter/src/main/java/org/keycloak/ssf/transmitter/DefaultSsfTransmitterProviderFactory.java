@@ -1,5 +1,6 @@
 package org.keycloak.ssf.transmitter;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,8 @@ import java.util.concurrent.ExecutorService;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.connections.httpclient.HttpClientBuilder;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.outbox.OutboxBackoff;
 import org.keycloak.events.outbox.OutboxCleanupTask;
 import org.keycloak.events.outbox.OutboxConfig;
@@ -29,6 +32,7 @@ import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
+import org.keycloak.ssf.transmitter.delivery.push.PrivateAddressDenyingDnsResolver;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
@@ -43,7 +47,10 @@ import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.TruststoreProvider;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jboss.logging.Logger;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory, SsfTransmitterServiceBuilder {
@@ -171,6 +178,19 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      */
     protected ProviderEventListener ssfProviderEventListener;
 
+    /**
+     * Push delivery client that enforces the private-address deny policy at
+     * connection time. Built lazily on first use, since it needs a session
+     * for the truststore, and closed with the factory.
+     */
+    protected volatile CloseableHttpClient pushHttpClient;
+
+    /**
+     * Whether an outgoing proxy is configured that {@link #pushHttpClient}
+     * bypasses. Set together with the client, before it is published.
+     */
+    protected boolean outgoingProxyConfigured;
+
 
     @Override
     public String getId() {
@@ -199,7 +219,90 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public PushDeliveryService createPushDelivery(KeycloakSession session, SsfTransmitterContext ctx) {
-        return new PushDeliveryService(session, ctx.config());
+        if (ctx.config().isAllowInsecurePushTargets()) {
+            // Closed-network deployments: private targets are allowed, so
+            // the shared client (with its proxy mappings) is used as is.
+            return new PushDeliveryService(session, ctx.config());
+        }
+        boolean viaProxy = ctx.config().isPushDeliveryViaProxy();
+        CloseableHttpClient httpClient = getPushHttpClient(session, viaProxy);
+        return new PushDeliveryService(httpClient, ctx.config(), !viaProxy && outgoingProxyConfigured);
+    }
+
+    protected CloseableHttpClient getPushHttpClient(KeycloakSession session, boolean viaProxy) {
+        if (pushHttpClient == null) {
+            synchronized (this) {
+                if (pushHttpClient == null) {
+                    outgoingProxyConfigured = isOutgoingProxyConfigured();
+                    if (outgoingProxyConfigured && !viaProxy) {
+                        log.info("An outgoing HTTP proxy is configured, but SSF push delivery connects to receivers"
+                                + " directly; set the push-delivery-via-proxy SPI option if receivers are only"
+                                + " reachable through the proxy");
+                    }
+                    pushHttpClient = createPushHttpClient(session, viaProxy);
+                }
+            }
+        }
+        return pushHttpClient;
+    }
+
+    /**
+     * Whether the default HTTP client routes requests through a proxy, from
+     * its {@code proxy-mappings} option or the proxy environment variables
+     * it falls back to. Push delivery ignores that proxy, so this only
+     * drives the hint logged when a direct delivery cannot connect.
+     */
+    protected boolean isOutgoingProxyConfigured() {
+        Config.Scope httpClientConfig = Config.scope("connectionsHttpClient", "default");
+        String[] proxyMappings = httpClientConfig == null ? null : httpClientConfig.getArray("proxy-mappings");
+        if (proxyMappings != null && proxyMappings.length > 0) {
+            return true;
+        }
+        for (String name : List.of("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY")) {
+            String value = System.getenv(name);
+            if (value != null && !value.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Builds the client for push delivery when private targets are not
+     * allowed. The private-address deny policy is enforced by its DNS
+     * resolver on every connection, so a receiver that rebinds its host
+     * after stream configuration still cannot reach internal addresses.
+     *
+     * <p>The client otherwise carries the configured outgoing HTTP client
+     * settings, such as the client keystore, timeouts and tracing. A proxy
+     * resolves the target host itself, out of reach of the resolver, so by
+     * default delivery connects directly. With {@code viaProxy}, deliveries
+     * the proxy settings route through a proxy go through it, leaving the
+     * address check to the proxy, while deliveries the settings exclude from
+     * the proxy still connect directly through the resolver. Redirects are
+     * not followed, so the receiver cannot bounce the request elsewhere.
+     */
+    protected CloseableHttpClient createPushHttpClient(KeycloakSession session, boolean viaProxy) {
+        PrivateAddressDenyingDnsResolver dnsResolver = new PrivateAddressDenyingDnsResolver();
+        HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+        try {
+            return httpClientProvider.createHttpClient(dnsResolver, viaProxy);
+        } catch (UnsupportedOperationException e) {
+            log.warnf("%s; SSF push delivery connects directly with a client without the outgoing HTTP client"
+                    + " settings", e.getMessage());
+        }
+
+        HttpClientBuilder builder = new HttpClientBuilder(
+                HttpClients.custom().setDnsResolver(dnsResolver))
+                .disableCookies(true)
+                .disableRedirectHandling();
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider != null && truststoreProvider.getTruststore() != null) {
+            builder.hostnameVerification(truststoreProvider.getPolicy());
+            builder.trustStore(truststoreProvider.getTruststore());
+        }
+        return builder.build();
     }
 
     @Override
@@ -478,6 +581,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .helpText("Grace window (seconds) during which the dispatcher continues delivering events for a subject after a receiver-driven /streams/subjects/remove call (SSF 1.0 §9.3 'Malicious Subject Removal' defense). Admin-driven removes always take effect immediately. Default 0 disables the grace entirely. Enabling means accepting that legitimate churn-removes (receiver dropping users that left their service) also get the grace tail.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS)
                 .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_PUSH_DELIVERY_VIA_PROXY)
+                .type("boolean")
+                .helpText("Whether PUSH deliveries are sent through the outgoing HTTP proxy. When false (default), deliveries connect to receivers directly and every address they connect to is checked against the private-address deny policy. Set to true when receivers are reachable only through an egress proxy: push URLs are still checked when a stream is created, and deliveries the proxy settings exclude from the proxy are still checked when they connect, but for deliveries through the proxy the proxy resolves the receiver's host, so blocking internal destinations is left to the proxy.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_PUSH_DELIVERY_VIA_PROXY)
+                .add()
                 .build();
     }
 
@@ -702,6 +811,19 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.SSF);
+    }
+
+    @Override
+    public void close() {
+        CloseableHttpClient client = pushHttpClient;
+        pushHttpClient = null;
+        if (client != null) {
+            try {
+                client.close();
+            } catch (IOException e) {
+                log.warn("Failed to close SSF push delivery HTTP client", e);
+            }
+        }
     }
 
 }

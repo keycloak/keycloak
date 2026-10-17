@@ -156,6 +156,29 @@ Creating or updating a workflow now fails when `schedule.after` is not a duratio
 Previously, such values caused an internal server error, or they were stored and the scheduled runs failed or did not process any resources.
 Existing workflows with such values must be fixed before they can be updated, including when enabling or disabling them in the Admin Console.
 
+=== SSF push delivery no longer uses the outgoing HTTP proxy by default
+// https://github.com/keycloak/keycloak/issues/53080
+
+The experimental Shared Signals Framework (SSF) transmitter now checks the address of a receiver's push endpoint each time it delivers an event, not only when the stream is created.
+This prevents a receiver from changing its DNS records after the stream is created to point push deliveries at an internal address.
+
+To make that check possible, push deliveries connect to receivers directly, without the proxy configured through the `proxy-mappings` option of the outgoing HTTP client or the `HTTPS_PROXY` and `HTTP_PROXY` environment variables.
+They also no longer follow redirects, even when the `allow-redirects` option of the outgoing HTTP client is enabled.
+A delivery fails, and is retried and eventually dead-lettered like any other failed delivery, when its host resolves to any of these addresses:
+
+* loopback
+* `0.0.0.0/8`
+* link-local, including the cloud metadata address `169.254.169.254`
+* private networks: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and `fc00::/7`
+* carrier-grade NAT: `100.64.0.0/10`
+* multicast
+
+After upgrading, deployments that can reach receivers only through an outgoing proxy see push deliveries fail with connection errors.
+The server log names the proxy as the likely cause.
+To keep delivering through the proxy, set the new `push-delivery-via-proxy` option of the SSF transmitter to `true`, for example with `--spi-ssf-transmitter--default--push-delivery-via-proxy=true`.
+Push URLs are still checked when a stream is created, and deliveries to hosts excluded from the proxy are still checked when they connect.
+For deliveries through the proxy, the proxy resolves the receiver's host, so make sure it does not forward requests to internal destinations.
+
 === Organization Redirect URL now validated against the account client
 
 The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.

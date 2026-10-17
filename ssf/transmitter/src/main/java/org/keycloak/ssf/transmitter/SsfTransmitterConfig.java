@@ -78,6 +78,21 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_ALLOW_INSECURE_PUSH_TARGETS = "allow-insecure-push-targets";
 
     /**
+     * Whether PUSH deliveries are sent through the outgoing HTTP proxy
+     * configured for the server. Default {@code false}: deliveries connect
+     * to receivers directly, and the address each one connects to is
+     * checked against the private-address deny policy.
+     *
+     * <p>Set to {@code true} when receivers are reachable only through an
+     * egress proxy. The checks on receiver-supplied push URLs when a stream
+     * is created stay in place, and deliveries the proxy settings exclude
+     * from the proxy are still checked when they connect. For deliveries
+     * through the proxy, the proxy resolves the receiver's host, so blocking
+     * internal destinations at that point is left to its egress policy.
+     */
+    public static final String CONFIG_PUSH_DELIVERY_VIA_PROXY = "push-delivery-via-proxy";
+
+    /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
      */
@@ -195,6 +210,12 @@ public class SsfTransmitterConfig {
      */
     public static final boolean DEFAULT_ALLOW_INSECURE_PUSH_TARGETS = false;
 
+    /**
+     * Default for {@link #isPushDeliveryViaProxy()}: deliveries connect
+     * directly so their addresses can be checked.
+     */
+    public static final boolean DEFAULT_PUSH_DELIVERY_VIA_PROXY = false;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -221,6 +242,8 @@ public class SsfTransmitterConfig {
 
     private final boolean allowInsecurePushTargets;
 
+    private final boolean pushDeliveryViaProxy;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -234,6 +257,26 @@ public class SsfTransmitterConfig {
                                 boolean metricsEnabled,
                                 int subjectRemovalGraceSeconds,
                                 boolean allowInsecurePushTargets) {
+        this(pushEndpointConnectTimeoutMillis, pushEndpointSocketTimeoutMillis,
+                transmitterInitiatedVerificationDelayMillis, minVerificationIntervalSeconds, signatureAlgorithm,
+                userSubjectFormat, defaultSubjects, subjectManagementEnabled, sseCaepEnabled, criticalSubjectMembers,
+                metricsEnabled, subjectRemovalGraceSeconds, allowInsecurePushTargets, DEFAULT_PUSH_DELIVERY_VIA_PROXY);
+    }
+
+    public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
+                                int pushEndpointSocketTimeoutMillis,
+                                int transmitterInitiatedVerificationDelayMillis,
+                                int minVerificationIntervalSeconds,
+                                String signatureAlgorithm,
+                                String userSubjectFormat,
+                                DefaultSubjects defaultSubjects,
+                                boolean subjectManagementEnabled,
+                                boolean sseCaepEnabled,
+                                Set<String> criticalSubjectMembers,
+                                boolean metricsEnabled,
+                                int subjectRemovalGraceSeconds,
+                                boolean allowInsecurePushTargets,
+                                boolean pushDeliveryViaProxy) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -247,6 +290,7 @@ public class SsfTransmitterConfig {
         this.metricsEnabled = metricsEnabled;
         this.subjectRemovalGraceSeconds = Math.max(0, subjectRemovalGraceSeconds);
         this.allowInsecurePushTargets = allowInsecurePushTargets;
+        this.pushDeliveryViaProxy = pushDeliveryViaProxy;
     }
 
     /**
@@ -280,7 +324,9 @@ public class SsfTransmitterConfig {
                 config.getInt(CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
                         DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS),
                 config.getBoolean(CONFIG_ALLOW_INSECURE_PUSH_TARGETS,
-                        DEFAULT_ALLOW_INSECURE_PUSH_TARGETS));
+                        DEFAULT_ALLOW_INSECURE_PUSH_TARGETS),
+                config.getBoolean(CONFIG_PUSH_DELIVERY_VIA_PROXY,
+                        DEFAULT_PUSH_DELIVERY_VIA_PROXY));
     }
 
     /**
@@ -323,7 +369,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_CRITICAL_SUBJECT_MEMBERS,
                 DEFAULT_METRICS_ENABLED,
                 DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS,
-                DEFAULT_ALLOW_INSECURE_PUSH_TARGETS);
+                DEFAULT_ALLOW_INSECURE_PUSH_TARGETS,
+                DEFAULT_PUSH_DELIVERY_VIA_PROXY);
     }
 
     /**
@@ -466,5 +513,14 @@ public class SsfTransmitterConfig {
      */
     public boolean isAllowInsecurePushTargets() {
         return allowInsecurePushTargets;
+    }
+
+    /**
+     * Whether PUSH deliveries go through the outgoing HTTP proxy instead of
+     * connecting directly with a delivery-time address check — see
+     * {@link #CONFIG_PUSH_DELIVERY_VIA_PROXY}.
+     */
+    public boolean isPushDeliveryViaProxy() {
+        return pushDeliveryViaProxy;
     }
 }

@@ -4,9 +4,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.NoRouteToHostException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,6 +26,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SocketAddress;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -29,6 +38,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -42,10 +52,25 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
 
     private final HttpClient httpClient;
     private final VertxHttpClientProvider provider;
+    private final DnsResolver directResolver;
+    private final boolean useProxy;
 
     VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider) {
+        this(httpClient, provider, null, true);
+    }
+
+    /**
+     * @param directResolver when set, redirects are not followed, and requests that connect
+     *                       directly resolve their host with it and connect to the resolved address
+     * @param useProxy       whether requests that the proxy settings route through a proxy go
+     *                       through it; otherwise every request connects directly
+     */
+    VertxHttpClientBridge(HttpClient httpClient, VertxHttpClientProvider provider, DnsResolver directResolver,
+                          boolean useProxy) {
         this.httpClient = httpClient;
         this.provider = provider;
+        this.directResolver = directResolver;
+        this.useProxy = useProxy;
     }
 
     @Override
@@ -55,11 +80,62 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
                     "HttpContext is not supported by the Vert.x HTTP client bridge (HTTP_CLIENT_V2). "
                     + "Remove the HttpContext parameter or switch back to the Apache HTTP client (HTTP_CLIENT v1).");
         }
-        return provider.executeWithRetry(() -> doExecuteInternal(target, request));
+        URI uri = resolveUri(target, request);
+        // Read once, so a body that can only be read once is sent intact on every attempt.
+        RequestBody body = readBody(request);
+        ProxyOptions proxy = useProxy ? provider.resolveProxyForHost(uri.getHost()) : null;
+        if (directResolver == null || proxy != null) {
+            // Either an unrestricted request, or one the proxy resolves the host for.
+            return provider.executeWithRetry(() -> doExecuteInternal(uri, null, proxy, request, body));
+        }
+        // Resolved once, outside the retry loop: a rejected or unknown host is not retried and
+        // keeps its exception type, as with the Apache client.
+        List<SocketAddress> servers = resolveDirectServers(uri);
+        return provider.executeWithRetry(() -> executeWithFailover(uri, servers, request, body));
     }
 
-    private CloseableHttpResponse doExecuteInternal(HttpHost target, HttpRequest request) throws IOException {
-        URI uri = resolveUri(target, request);
+    private RequestBody readBody(HttpRequest request) throws IOException {
+        if (request instanceof HttpEntityEnclosingRequest) {
+            HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
+            if (entity != null) {
+                return new RequestBody(readEntity(entity), entity.getContentType(), entity.getContentEncoding());
+            }
+        }
+        return new RequestBody(null, null, null);
+    }
+
+    private List<SocketAddress> resolveDirectServers(URI uri) throws IOException {
+        InetAddress[] addresses = directResolver.resolve(uri.getHost());
+        if (addresses == null || addresses.length == 0) {
+            throw new UnknownHostException(uri.getHost());
+        }
+        int port = uri.getPort() != -1 ? uri.getPort() : "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+        List<SocketAddress> servers = new ArrayList<>(addresses.length);
+        for (InetAddress address : addresses) {
+            servers.add(SocketAddress.inetSocketAddress(port, address.getHostAddress()));
+        }
+        return servers;
+    }
+
+    /**
+     * Tries each resolved address in turn, like the Apache client, moving on only when the
+     * connection itself fails or times out, so nothing has been sent to the previous address.
+     */
+    private CloseableHttpResponse executeWithFailover(URI uri, List<SocketAddress> servers, HttpRequest request,
+                                                      RequestBody body) throws IOException {
+        IOException lastFailure = null;
+        for (SocketAddress server : servers) {
+            try {
+                return doExecuteInternal(uri, server, null, request, body);
+            } catch (ConnectException | NoRouteToHostException e) {
+                lastFailure = e;
+            }
+        }
+        throw lastFailure;
+    }
+
+    private CloseableHttpResponse doExecuteInternal(URI uri, SocketAddress server, ProxyOptions proxy, HttpRequest request,
+                                                    RequestBody body) throws IOException {
         String method = request.getRequestLine().getMethod();
         long maxSize = provider.getMaxConsumedResponseSize();
 
@@ -79,18 +155,6 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
         }
 
-        Buffer bodyBuffer = null;
-        Header entityContentType = null;
-        Header entityContentEncoding = null;
-        if (request instanceof HttpEntityEnclosingRequest) {
-            HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-            if (entity != null) {
-                bodyBuffer = readEntity(entity);
-                entityContentType = entity.getContentType();
-                entityContentEncoding = entity.getContentEncoding();
-            }
-        }
-
         RequestOptions reqOptions = new RequestOptions()
                 .setMethod(HttpMethod.valueOf(method))
                 .setAbsoluteURI(uri.toString())
@@ -98,26 +162,36 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         if (connectTimeoutMs > 0) {
             reqOptions.setConnectTimeout(connectTimeoutMs);
         }
-        ProxyOptions proxy = provider.resolveProxyForHost(uri.getHost());
+        if (server != null) {
+            // The URI host still drives the Host header, SNI and certificate verification.
+            reqOptions.setServer(server);
+        }
         if (proxy != null) {
             reqOptions.setProxyOptions(proxy);
         }
+        if (directResolver != null) {
+            reqOptions.setFollowRedirects(false);
+        }
 
         CompletableFuture<CloseableHttpResponse> future = new CompletableFuture<>();
+        CompletableFuture<Void> connected = new CompletableFuture<>();
         AtomicReference<HttpClientRequest> requestRef = new AtomicReference<>();
-        Buffer sendBody = bodyBuffer;
-        Header sendContentType = entityContentType;
-        Header sendContentEncoding = entityContentEncoding;
+        Buffer sendBody = body.buffer();
+        Header sendContentType = body.contentType();
+        Header sendContentEncoding = body.contentEncoding();
 
         httpClient.request(reqOptions).onComplete(reqAr -> {
             if (reqAr.failed()) {
+                connected.completeExceptionally(reqAr.cause());
                 future.completeExceptionally(reqAr.cause());
                 return;
             }
 
             HttpClientRequest clientReq = reqAr.result();
             requestRef.set(clientReq);
-            if (future.isDone()) {
+            // Completing `connected` is what allows sending: if a connection timeout completed it
+            // first, the caller fails over, so this attempt must not send anything.
+            if (!connected.complete(null) || future.isDone()) {
                 clientReq.reset();
                 return;
             }
@@ -178,6 +252,11 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         });
 
         try {
+            if (server != null) {
+                // Waited for separately, so a connection that hangs fails over to the next address
+                // instead of using up the response wait.
+                awaitConnection(connected, connectTimeoutMs > 0 ? connectTimeoutMs : idleTimeoutMs, server);
+            }
             return VertxHttpClientProvider.awaitResult(future, idleTimeoutMs);
         } catch (IOException e) {
             future.completeExceptionally(e);
@@ -187,6 +266,56 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             }
             throw e;
         }
+    }
+
+    /**
+     * Waits for the connection. An interrupted wait is reported as an {@link InterruptedIOException},
+     * which does not fail over. Any other failure is reported as a connection failure, so the caller
+     * fails over: {@code connected} only fails before a connection is established, when nothing has
+     * been sent. A timeout of this wait counts only if it wins the race against the connection callback
+     * for {@code connected}; the callback then sees {@code connected} already completed and does not
+     * send. If the connection completed at the same moment, its outcome stands instead.
+     */
+    static void awaitConnection(CompletableFuture<Void> connected, long timeoutMs, SocketAddress server) throws IOException {
+        try {
+            VertxHttpClientProvider.awaitResult(connected, timeoutMs);
+            return;
+        } catch (IOException e) {
+            if (e.getCause() instanceof InterruptedException) {
+                // Stop without failing over; claiming `connected` keeps a pending connection from
+                // sending. The interrupt flag is already restored.
+                InterruptedIOException interrupted = new InterruptedIOException("Interrupted while connecting to " + server);
+                interrupted.initCause(e.getCause());
+                connected.completeExceptionally(interrupted);
+                throw interrupted;
+            }
+            if (!(e.getCause() instanceof TimeoutException)) {
+                throw asConnectFailure(e, server);
+            }
+            ConnectException timeout = new ConnectException("Timed out connecting to " + server);
+            timeout.initCause(e.getCause());
+            if (connected.completeExceptionally(timeout)) {
+                throw timeout;
+            }
+        }
+        // The connection completed as the wait expired: proceed with it, or report its failure.
+        try {
+            VertxHttpClientProvider.awaitResult(connected, 0);
+        } catch (IOException e) {
+            throw asConnectFailure(e, server);
+        }
+    }
+
+    private static IOException asConnectFailure(IOException failure, SocketAddress server) {
+        if (failure instanceof ConnectException || failure instanceof NoRouteToHostException) {
+            return failure;
+        }
+        ConnectException connectFailure = new ConnectException("Failed to connect to " + server);
+        connectFailure.initCause(failure.getCause() != null ? failure.getCause() : failure);
+        return connectFailure;
+    }
+
+    private record RequestBody(Buffer buffer, Header contentType, Header contentEncoding) {
     }
 
     @Override

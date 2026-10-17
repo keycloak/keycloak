@@ -28,6 +28,7 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 
@@ -218,6 +219,16 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     @Override
     public long getMaxConsumedResponseSize() {
         return maxConsumedResponseSize;
+    }
+
+    /**
+     * Returns a bridge over the shared Vert.x client that pins each direct request to an address
+     * {@code targetResolver} returns, and with {@code useProxy} sends requests the proxy settings
+     * route through a proxy to it. Closing it does not close the shared client.
+     */
+    @Override
+    public CloseableHttpClient createHttpClient(DnsResolver targetResolver, boolean useProxy) {
+        return new VertxHttpClientBridge(httpClient, this, targetResolver, useProxy);
     }
 
     @Override

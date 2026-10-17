@@ -40,6 +40,7 @@ import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -149,6 +150,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
             public long getMaxConsumedResponseSize() {
                 return maxConsumedResponseSize;
             }
+
+            @Override
+            public CloseableHttpClient createHttpClient(DnsResolver targetResolver, boolean useProxy) {
+                return DefaultHttpClientFactory.this.createHttpClient(session, targetResolver, useProxy);
+            }
         };
     }
 
@@ -177,92 +183,121 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
-                    long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
-                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
-                    int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
-                    int connectionPoolSize = config.getInt("connection-pool-size", 128);
-                    long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-                    long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
-                    boolean disableCookies = config.getBoolean("disable-cookies", true);
-                    String clientKeystore = config.get("client-keystore");
-                    String clientKeystorePassword = config.get("client-keystore-password");
-                    String clientPrivateKeyPassword = config.get("client-key-password");
-                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
-
-                    boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
-                    boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
-
-                    // optionally configure proxy mappings
-                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
-                    // lower case env vars take precedence over upper case env vars
-                    ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
-                    if (proxyMappings == null || proxyMappings.isEmpty()) {
-                        logger.debug("Trying to use proxy mapping from env vars");
-                        String httpProxy = getEnvVarValue(HTTPS_PROXY);
-                        if (isBlank(httpProxy)) {
-                            httpProxy = getEnvVarValue(HTTP_PROXY);
-                        }
-                        String noProxy = getEnvVarValue(NO_PROXY);
-
-                        logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
-                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
-                    }
-
-                    HttpClientBuilder builder = newHttpClientBuilder(session);
-
-                    builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                            .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
-                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
-                            .maxPooledPerRoute(maxPooledPerRoute)
-                            .connectionPoolSize(connectionPoolSize)
-                            .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
-                            .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies)
-                            .proxyMappings(proxyMappings)
-                            .expectContinueEnabled(expectContinueEnabled)
-                            .reuseConnections(reuseConnections);
-
-                    TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-                    boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
-
-                    if (disableTruststoreProvider) {
-                    	logger.warn("TruststoreProvider is disabled");
-                    } else {
-                        builder.hostnameVerification(truststoreProvider.getPolicy());
-                        try {
-                            builder.trustStore(truststoreProvider.getTruststore());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load truststore", e);
-                        }
-                    }
-
-                    if (disableTrustManager) {
-                    	logger.warn("TrustManager is disabled");
-                    	builder.disableTrustManager();
-                    }
-
-                    if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
-                        builder.disableRedirectHandling();
-                    }
-
-                    if (clientKeystore != null) {
-                        clientKeystore = EnvUtil.replace(clientKeystore);
-                        try {
-                            KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                            builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load keystore", e);
-                        }
-                    }
-
-                    // Configure retry behavior
-                    configureRetries(builder);
-
-                    httpClient = builder.build();
+                    httpClient = configureHttpClientBuilder(session, resolveProxyMappings()).build();
                 }
             }
         }
+    }
+
+    private CloseableHttpClient createHttpClient(KeycloakSession session, DnsResolver targetResolver, boolean useProxy) {
+        HttpClientBuilder builder = configureHttpClientBuilder(session, null)
+                .disableRedirectHandling();
+        ProxyMappings proxyMappings = useProxy ? resolveProxyMappings() : null;
+        if (proxyMappings != null && !proxyMappings.isEmpty()) {
+            // Proxies are configured by the operator and commonly private, so only the proxy of the
+            // route being connected skips targetResolver; direct targets, including a proxy's own
+            // host reached directly, are always checked.
+            ProxyRouteAwareDnsResolver routing = new ProxyRouteAwareDnsResolver(
+                    new ProxyMappingsAwareRoutePlanner(proxyMappings), targetResolver);
+            builder.getApacheHttpClientBuilder().setRoutePlanner(routing).setDnsResolver(routing);
+        } else {
+            builder.getApacheHttpClientBuilder().setDnsResolver(targetResolver);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Returns the configured proxy mappings. Direct SPI config (e.g. via standalone.xml) takes
+     * precedence over env vars, and lower case env vars take precedence over upper case env vars.
+     */
+    private ProxyMappings resolveProxyMappings() {
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+        if (proxyMappings == null || proxyMappings.isEmpty()) {
+            logger.debug("Trying to use proxy mapping from env vars");
+            String httpProxy = getEnvVarValue(HTTPS_PROXY);
+            if (isBlank(httpProxy)) {
+                httpProxy = getEnvVarValue(HTTP_PROXY);
+            }
+            String noProxy = getEnvVarValue(NO_PROXY);
+
+            logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+            proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+        }
+        return proxyMappings;
+    }
+
+    /**
+     * Returns a builder with this factory's configuration and the given proxy mappings applied,
+     * ready to build the shared client or a client derived from it.
+     */
+    private HttpClientBuilder configureHttpClientBuilder(KeycloakSession session, ProxyMappings proxyMappings) {
+        long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
+        long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+        long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
+        int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
+        int connectionPoolSize = config.getInt("connection-pool-size", 128);
+        long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+        long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
+        boolean disableCookies = config.getBoolean("disable-cookies", true);
+        String clientKeystore = config.get("client-keystore");
+        String clientKeystorePassword = config.get("client-keystore-password");
+        String clientPrivateKeyPassword = config.get("client-key-password");
+        boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+
+        boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+        boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+        HttpClientBuilder builder = newHttpClientBuilder(session);
+
+        builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
+                .maxPooledPerRoute(maxPooledPerRoute)
+                .connectionPoolSize(connectionPoolSize)
+                .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
+                .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
+                .disableCookies(disableCookies)
+                .proxyMappings(proxyMappings)
+                .expectContinueEnabled(expectContinueEnabled)
+                .reuseConnections(reuseConnections);
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
+
+        if (disableTruststoreProvider) {
+        	logger.warn("TruststoreProvider is disabled");
+        } else {
+            builder.hostnameVerification(truststoreProvider.getPolicy());
+            try {
+                builder.trustStore(truststoreProvider.getTruststore());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load truststore", e);
+            }
+        }
+
+        if (disableTrustManager) {
+        	logger.warn("TrustManager is disabled");
+        	builder.disableTrustManager();
+        }
+
+        if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
+            builder.disableRedirectHandling();
+        }
+
+        if (clientKeystore != null) {
+            clientKeystore = EnvUtil.replace(clientKeystore);
+            try {
+                KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
+                builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore", e);
+            }
+        }
+
+        // Configure retry behavior
+        configureRetries(builder);
+
+        return builder;
     }
 
     /**

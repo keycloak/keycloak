@@ -39,11 +39,14 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.DnsResolver;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -97,6 +100,12 @@ public class DefaultHttpClientFactoryTest {
         @AfterClass
         public static void stopHttpServer() {
             server.stop(0);
+        }
+
+        @Before
+        public void clearProxyMappingsCache() {
+            // Proxy mappings are cached by host name across instances.
+            ProxyMappings.clearCache();
         }
 
 	/**
@@ -202,6 +211,74 @@ public class DefaultHttpClientFactoryTest {
                     Assert.assertEquals(200, res2.getStatusLine().getStatusCode());
                     Assert.assertEquals("Hello world!", EntityUtils.toString(res2.getEntity(), StandardCharsets.UTF_8));
                 }
+            }
+        }
+
+        @Test
+        public void testDirectHttpClientUsesGivenResolver() throws IOException {
+            HttpClientProvider provider = createDefaultProvider();
+            DnsResolver resolver = host -> {
+                assertEquals("push.example.test", host);
+                return new InetAddress[]{InetAddress.getLoopbackAddress()};
+            };
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(resolver, false);
+                 CloseableHttpResponse res = httpClient.execute(new HttpGet("http://push.example.test:8280/hello"))) {
+                Assert.assertEquals(200, res.getStatusLine().getStatusCode());
+            }
+        }
+
+        @Test
+        public void testProxiedHttpClientSendsProxiedRequestsThroughProxy() throws IOException {
+            // The test server stands in for a proxy on a private address; the target never resolves.
+            HttpClientProvider provider = createProviderWithProperties(Map.of(
+                    "proxy-mappings", ".*proxied.*;http://127.0.0.1:8280"));
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(rejectingResolver(), true);
+                 CloseableHttpResponse res = httpClient.execute(new HttpGet("http://push.proxied.test/hello"))) {
+                Assert.assertEquals(200, res.getStatusLine().getStatusCode());
+            }
+        }
+
+        @Test
+        public void testProxiedHttpClientChecksRequestsExcludedFromProxy() throws IOException {
+            HttpClientProvider provider = createProviderWithProperties(Map.of(
+                    "proxy-mappings", ".*proxied.*;http://127.0.0.1:8280"));
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(rejectingResolver(), true)) {
+                Assert.assertThrows(UnknownHostException.class,
+                        () -> httpClient.execute(new HttpGet("http://direct.example.test:8280/hello")));
+            }
+        }
+
+        @Test
+        public void testProxiedHttpClientChecksDirectRequestsToProxyHost() throws IOException {
+            // Not matched by the mapping, so this goes directly to the proxy's host and must be checked.
+            HttpClientProvider provider = createProviderWithProperties(Map.of(
+                    "proxy-mappings", ".*proxied.*;http://127.0.0.1:8280"));
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(rejectingResolver(), true)) {
+                Assert.assertThrows(UnknownHostException.class,
+                        () -> httpClient.execute(new HttpGet("http://127.0.0.1:8280/hello")));
+            }
+        }
+
+        private static DnsResolver rejectingResolver() {
+            return host -> {
+                throw new UnknownHostException("rejected " + host);
+            };
+        }
+
+        @Test
+        public void testDirectHttpClientIgnoresRedirectsAndProxy() throws IOException {
+            // The shared client would follow the redirect and route through the unreachable proxy.
+            HttpClientProvider provider = createProviderWithProperties(Map.of(
+                    DefaultHttpClientFactory.ALLOW_REDIRECTS, Boolean.TRUE.toString(),
+                    "proxy-mappings", ".*;http://127.0.0.1:1"));
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(SystemDefaultDnsResolver.INSTANCE, false);
+                 CloseableHttpResponse res = httpClient.execute(new HttpGet("http://localhost:8280/redirect"))) {
+                Assert.assertEquals(302, res.getStatusLine().getStatusCode());
             }
         }
 
