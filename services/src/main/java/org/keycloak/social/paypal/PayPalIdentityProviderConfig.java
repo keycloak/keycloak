@@ -16,6 +16,8 @@
  */
 package org.keycloak.social.paypal;
 
+import java.util.Arrays;
+
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 
@@ -39,6 +41,31 @@ public class PayPalIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setSandbox(boolean sandbox) {
         getConfig().put("sandbox", String.valueOf(sandbox));
+    }
+
+    @Override
+    protected String[] getClientSecretDestinationConfigKeys() {
+        String[] base = super.getClientSecretDestinationConfigKeys();
+        String[] keys = Arrays.copyOf(base, base.length + 1);
+        keys[base.length] = "sandbox";
+        return keys;
+    }
+
+    /**
+     * {@code sandbox} is a boolean; an absent value is equivalent to {@code "false"}, which is what
+     * the admin console submits for existing providers created without the key. Parsing mirrors
+     * {@link #targetSandbox()} so the comparison matches the effective token host.
+     */
+    @Override
+    protected boolean isClientSecretDestinationChanged(String key, String stored, String updated) {
+        if ("sandbox".equals(key)) {
+            return targetSandbox(stored) != targetSandbox(updated);
+        }
+        return super.isClientSecretDestinationChanged(key, stored, updated);
+    }
+
+    private static boolean targetSandbox(String value) {
+        return value != null && Boolean.valueOf(value);
     }
 
 }

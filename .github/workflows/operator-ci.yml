@@ -6,6 +6,7 @@ on:
       - main
       - dependabot/**
       - copilot/**
+      - tmp/**
   pull_request:
   workflow_dispatch:
 
@@ -315,9 +316,6 @@ jobs:
           # we may have to do our own installation to move past this
           opm: 4.16.4
           oc: 4
-
-      - name: Install Yq
-        run: sudo snap install yq
 
       - name: Install OLM
         working-directory: operator

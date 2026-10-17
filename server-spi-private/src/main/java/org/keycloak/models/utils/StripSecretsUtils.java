@@ -41,6 +41,7 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -74,6 +75,7 @@ public class StripSecretsUtils {
         REPRESENTATION_FORMATTER.put(ComponentRepresentation.class, (session, o) -> StripSecretsUtils.stripComponent(session, (ComponentRepresentation) o));
         REPRESENTATION_FORMATTER.put(CredentialRepresentation.class, (session, o) -> StripSecretsUtils.stripCredentials((CredentialRepresentation) o));
         REPRESENTATION_FORMATTER.put(AuthenticatorConfigRepresentation.class, (session, o) -> StripSecretsUtils.stripAuthenticatorConfig(session, (AuthenticatorConfigRepresentation) o));
+        REPRESENTATION_FORMATTER.put(CertificateRepresentation.class, (session, o) -> StripSecretsUtils.stripCertificate((CertificateRepresentation) o));
     }
 
     public static <T> T stripSecrets(KeycloakSession session, T representation) {
@@ -161,24 +163,34 @@ public class StripSecretsUtils {
     }
 
     private static Set<String> collectNonSecretAuthenticatorPropertyNames(KeycloakSession session) {
+        return collectNonSecretAuthenticatorPropertyNames(Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class)
+                .flatMap(providerClass -> session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass))
+                .filter(ConfigurableAuthenticatorFactory.class::isInstance)
+                .map(ConfigurableAuthenticatorFactory.class::cast)
+                .map(ConfigurableAuthenticatorFactory::getConfigProperties)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream));
+    }
+
+    protected static Set<String> collectNonSecretAuthenticatorPropertyNames(Stream<ProviderConfigProperty> factoryProperties) {
         Set<String> nonSecretNames = new HashSet<>();
         Set<String> secretNames = new HashSet<>();
-        Stream.of(Authenticator.class, FormAction.class, ClientAuthenticator.class).forEach(providerClass ->
-                session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass)
-                        .filter(ConfigurableAuthenticatorFactory.class::isInstance)
-                        .map(ConfigurableAuthenticatorFactory.class::cast)
-                        .map(ConfigurableAuthenticatorFactory::getConfigProperties)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .forEach(p -> {
-                            if (p.isSecret()) {
-                                secretNames.add(p.getName());
-                            } else {
-                                nonSecretNames.add(p.getName());
-                            }
-                        }));
+        Stream.concat(ConfigurableAuthenticatorFactory.COMMON_CONFIG_PROPERTIES.stream(), factoryProperties)
+                .forEach(p -> {
+                    if (p.isSecret()) {
+                        secretNames.add(p.getName());
+                    } else {
+                        nonSecretNames.add(p.getName());
+                    }
+                });
         nonSecretNames.removeAll(secretNames);
         return nonSecretNames;
+    }
+
+    protected static CertificateRepresentation stripCertificate(CertificateRepresentation rep) {
+        rep.setPrivateKey(maskNonVaultValue(rep.getPrivateKey()));
+        rep.setJwks(maskNonVaultValue(rep.getJwks()));
+        return rep;
     }
 
     protected static IdentityProviderRepresentation stripBroker(IdentityProviderRepresentation rep) {

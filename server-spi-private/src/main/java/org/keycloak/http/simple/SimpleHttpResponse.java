@@ -2,8 +2,6 @@ package org.keycloak.http.simple;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -11,14 +9,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.SafeInputStream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
-import org.apache.http.HeaderIterator;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.ContentType;
 
@@ -43,32 +42,20 @@ public class SimpleHttpResponse implements AutoCloseable {
 
             HttpEntity entity = response.getEntity();
             if (entity != null) {
-                contentType = ContentType.getOrDefault(entity);
-                Charset charset = contentType.getCharset();
+                try (InputStream entityStream = entity.getContent()) {
+                    contentType = ContentType.getOrDefault(entity);
+                    Charset charset = contentType.getCharset();
 
-                boolean gzip = false;
-                HeaderIterator it = response.headerIterator();
-                while (it.hasNext()) {
-                    Header header = it.nextHeader();
-                    if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
-                        gzip = true;
+                    // TODO: remove manual gzip handling — decompression is already performed by the underlying
+                    // HTTP client (Vert.x/Netty or Apache HttpClient) before the response reaches this code.
+                    Header contentEncoding = response.getFirstHeader(HttpHeaders.CONTENT_ENCODING);
+                    boolean gzip = contentEncoding != null
+                            && ("gzip".equalsIgnoreCase(contentEncoding.getValue()) || "x-gzip".equalsIgnoreCase(contentEncoding.getValue()));
+
+                    InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
+                    try (SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize)) {
+                        responseString = StreamUtil.readString(safe, charset != null ? charset : StandardCharsets.UTF_8);
                     }
-                }
-
-                try (InputStream entityStream = entity.getContent();
-                     InputStream decoded = gzip ? new GZIPInputStream(entityStream) : entityStream;
-                     SafeInputStream safe = new SafeInputStream(decoded, maxConsumedResponseSize);
-                     InputStreamReader reader = charset == null ? new InputStreamReader(safe, StandardCharsets.UTF_8) :
-                             new InputStreamReader(safe, charset)) {
-
-                    StringWriter writer = new StringWriter();
-
-                    char[] buffer = new char[1024 * 4];
-                    for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                        writer.write(buffer, 0, n);
-                    }
-
-                    responseString = writer.toString();
                 }
             }
         }

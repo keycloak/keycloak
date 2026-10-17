@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -423,7 +424,13 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).update(user), Resource.USER, true);
         invoke(realm -> realm.users().count(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).getUserSessions(), Resource.USER, false);
-        invoke(realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId()), Resource.USER, false);
+        // offline sessions need view on both the user and the client, and an unknown client is only reported to admins
+        // that can list clients
+        Invocation offlineSessions = realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId());
+        invoke(offlineSessions, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(offlineSessions, clients.get("none"), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_USERS), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_CLIENTS), false);
         invoke(realm -> realm.users().get(user.getId()).getFederatedIdentity(), Resource.USER, false);
         invoke((realm, response) -> response.set(realm.users().get(user.getId()).addFederatedIdentity("nosuch",
                         FederatedIdentityBuilder.create().identityProvider("nosuch").userId("nosuch").userName("nosuch").build()
@@ -537,6 +544,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 .add(GroupBuilder.create().name("role-mapping-group").build()));
         managedRealm1.cleanup().add(r -> r.groups().group(groupUuid).remove());
         managedRealm1.admin().groups().group(groupUuid).roles().realmLevel().add(List.of(createdRole));
+        managedRealm1.admin().users().get(userUuid).joinGroup(groupUuid);
 
         String clientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients()
                 .create(ClientBuilder.create().clientId("role-mapping-client").build()));
@@ -546,6 +554,14 @@ public class PermissionsTest extends AbstractPermissionsTest {
         RoleRepresentation clientRole = managedRealm1.admin().clients().get(clientUuid).roles().get(clientRoleName).toRepresentation();
         managedRealm1.admin().users().get(userUuid).roles().clientLevel(clientUuid).add(List.of(clientRole));
         managedRealm1.admin().groups().group(groupUuid).roles().clientLevel(clientUuid).add(List.of(clientRole));
+
+        String childUuid;
+        try (Response response = managedRealm1.admin().groups().group(groupUuid)
+                .subGroup(GroupBuilder.create().name("role-mapping-group-child").build())) {
+            childUuid = ApiUtil.getCreatedId(response);
+        }
+        managedRealm1.admin().groups().group(childUuid).roles().realmLevel().add(List.of(createdRole));
+        managedRealm1.admin().groups().group(childUuid).roles().clientLevel(clientUuid).add(List.of(clientRole));
 
         RealmResource manageUsers = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME);
 
@@ -559,6 +575,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(groupMappings.getRealmMappings().stream().map(RoleRepresentation::getName).toList(),
                 Matchers.hasItem(roleName));
 
+        // realm-level mappings follow the same rule
+        assertThat(roleNames(manageUsers.users().get(userUuid).roles().realmLevel().listAll()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.users().get(userUuid).roles().realmLevel().listEffective()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.groups().group(groupUuid).roles().realmLevel().listAll()), Matchers.hasItem(roleName));
+        assertThat(roleNames(manageUsers.groups().group(groupUuid).roles().realmLevel().listEffective()), Matchers.hasItem(roleName));
+
         // client-level mappings without view-clients follow the same rule
         assertThat(roleNames(manageUsers.users().get(userUuid).roles().clientLevel(clientUuid).listAll()), Matchers.hasItem(clientRoleName));
         assertThat(roleNames(manageUsers.users().get(userUuid).roles().clientLevel(clientUuid).listEffective()), Matchers.hasItem(clientRoleName));
@@ -571,12 +593,23 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(groupRep.getClientRoles(), Matchers.hasKey("role-mapping-client"));
         assertThat(groupRep.getClientRoles().get("role-mapping-client"), Matchers.hasItem(clientRoleName));
 
+        // full group listings follow the same rule
+        for (GroupRepresentation rep : groupListings(AdminRoles.MANAGE_USERS, userUuid, groupUuid, childUuid, false)) {
+            assertThat(rep.getRealmRoles(), Matchers.hasItem(roleName));
+            assertThat(rep.getClientRoles(), Matchers.hasKey("role-mapping-client"));
+            assertThat(rep.getClientRoles().get("role-mapping-client"), Matchers.hasItem(clientRoleName));
+        }
+
         RealmResource viewUsers = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME);
 
         assertThat(realmRoleNames(viewUsers.users().get(userUuid).roles().getAll()),
                 Matchers.not(Matchers.hasItem(roleName)));
         assertThat(realmRoleNames(viewUsers.groups().group(groupUuid).roles().getAll()),
                 Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.users().get(userUuid).roles().realmLevel().listAll()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.users().get(userUuid).roles().realmLevel().listEffective()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.groups().group(groupUuid).roles().realmLevel().listAll()), Matchers.not(Matchers.hasItem(roleName)));
+        assertThat(roleNames(viewUsers.groups().group(groupUuid).roles().realmLevel().listEffective()), Matchers.not(Matchers.hasItem(roleName)));
         assertThat(viewUsers.users().get(userUuid).roles().clientLevel(clientUuid).listAll(), Matchers.empty());
         assertThat(viewUsers.users().get(userUuid).roles().clientLevel(clientUuid).listEffective(), Matchers.empty());
         assertThat(viewUsers.groups().group(groupUuid).roles().clientLevel(clientUuid).listAll(), Matchers.empty());
@@ -586,6 +619,20 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 Matchers.not(Matchers.hasItem(roleName)));
         assertThat(viewUsersGroupRep.getClientRoles() == null ? Map.<String, List<String>>of() : viewUsersGroupRep.getClientRoles(),
                 Matchers.not(Matchers.hasKey("role-mapping-client")));
+        for (GroupRepresentation rep : groupListings(AdminRoles.VIEW_USERS, userUuid, groupUuid, childUuid, false)) {
+            assertThat(rep.getRealmRoles() == null ? List.<String>of() : rep.getRealmRoles(),
+                    Matchers.not(Matchers.hasItem(roleName)));
+            assertThat(rep.getClientRoles() == null ? Map.<String, List<String>>of() : rep.getClientRoles(),
+                    Matchers.not(Matchers.hasKey("role-mapping-client")));
+        }
+
+        for (String adminRole : List.of(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
+            for (GroupRepresentation rep : groupListings(adminRole, userUuid, groupUuid, childUuid, true)) {
+                assertThat(rep.getRealmRoles(), Matchers.nullValue());
+                assertThat(rep.getClientRoles(), Matchers.nullValue());
+                assertThat(rep.getAttributes(), Matchers.nullValue());
+            }
+        }
 
         // being able to view (and map) the role does not grant management of the role itself
         String roleId = createdRole.getId();
@@ -607,6 +654,38 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     private static List<String> roleNames(List<RoleRepresentation> roles) {
         return roles.stream().map(RoleRepresentation::getName).toList();
+    }
+
+    /**
+     * Returns parent and child representations as produced by the listing endpoints:
+     * {@code GET /groups} (hierarchy and flat) and {@code GET /users/{id}/groups}.
+     */
+    private List<GroupRepresentation> groupListings(String adminRole, String userUuid, String groupUuid, String childUuid, boolean briefRepresentation) {
+        RealmResource realm = clients.get(adminRole).realm(REALM_NAME);
+        List<GroupRepresentation> reps = new ArrayList<>();
+        reps.add(singleGroup(realm.users().get(userUuid).groups("role-mapping-group", null, null, briefRepresentation), groupUuid));
+
+        for (String groupName : List.of("role-mapping-group", "role-mapping-group-child")) {
+            boolean searchChild = groupName.endsWith("-child");
+            GroupRepresentation root = singleGroup(
+                    realm.groups().groups(groupName, true, null, null, briefRepresentation), groupUuid);
+            reps.add(root);
+            if (searchChild) {
+                reps.add(singleGroup(root.getSubGroups(), childUuid));
+            }
+
+            List<GroupRepresentation> flat = realm.groups().groups(groupName, true, null, null, briefRepresentation, true, false);
+            reps.add(singleGroup(flat, searchChild ? childUuid : groupUuid));
+        }
+
+        return reps;
+    }
+
+    private static GroupRepresentation singleGroup(List<GroupRepresentation> groups, String groupUuid) {
+        assertThat(groups, Matchers.hasSize(1));
+        GroupRepresentation group = groups.get(0);
+        assertThat(group.getId(), Matchers.is(groupUuid));
+        return group;
     }
 
     @Test

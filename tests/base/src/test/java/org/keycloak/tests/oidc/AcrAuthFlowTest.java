@@ -26,6 +26,7 @@ import java.util.List;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -62,7 +63,12 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
@@ -81,11 +87,20 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
     @InjectUser(config = AcrUserConfig.class)
     ManagedUser user;
 
+    @InjectUser(ref = "no-otp-user", config = NoOtpUserConfig.class)
+    ManagedUser noOtpUser;
+
     @InjectClient(config = AcrClientConfig.class)
     ManagedClient client;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectPage
+    LoginConfigTotpPage loginConfigTotpPage;
 
     // config
     private static String TOTP_SECRET = "totpsecret";
@@ -197,6 +212,76 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
         logout(user.getId(), tokens);
     }
 
+    @Test
+    public void test2FASetupBypassViaSessionRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestartDuringReAuth() {
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        // Log in with password first, so the restart below goes through the re-authentication branch
+        loginWithAcr(List.of("acr-password"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(1, noOtpUser.admin().getUserSessions().size());
+
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+
+        restartAuthenticationSession();
+        Assertions.assertTrue(noOtpUser.admin().getUserSessions().isEmpty());
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaRestartCookie() {
+        startForcedOtpSetup();
+
+        // Without AUTH_SESSION_ID the session is rebuilt from the KC_RESTART cookie
+        driver.driver().manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        driver.open(driver.getCurrentUrl());
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupEnforcedLoaSurvivesRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        configureTOTP();
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals("acr-otp", oauth.verifyToken(response.getAccessToken()).getAcr());
+    }
+
+    private void startForcedOtpSetup() {
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    private void restartAuthenticationSession() {
+        // Swap the current login-actions sub-path for "restart", keeping the client_id/tab_id already in the URL
+        driver.open(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+    }
+
+    private void configureTOTP() {
+        loginConfigTotpPage.assertCurrent();
+        loginConfigTotpPage.configure(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()));
+    }
+
     private void setAcrClientPolicy(String acr, String alias) {
         setAcrClientPolicy(acr, alias, null);
     }
@@ -295,8 +380,12 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
      * @param password The password to log in with
      */
     private void authenticatePassword(String password) {
+        authenticatePassword("test-user", password);
+    }
+
+    private void authenticatePassword(String username, String password) {
         loginPage.assertCurrent();
-        loginPage.fillLogin("test-user", password);
+        loginPage.fillLogin(username, password);
         loginPage.submit();
     }
 
@@ -398,6 +487,18 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
                     .lastName("test-user")
                     .password("password")
                     .totpSecret(TOTP_SECRET);
+        }
+    }
+
+    private static class NoOtpUserConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("no-otp-user")
+                    .email("no-otp-user@email.com")
+                    .firstName("no-otp-user")
+                    .lastName("no-otp-user")
+                    .password("password");
         }
     }
 

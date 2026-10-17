@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.login;
+package org.keycloak.tests.login;
 
 import java.util.Map;
 
@@ -29,20 +29,29 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.auth.page.login.OneTimeCode;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
+import org.keycloak.testframework.ui.page.LogoutConfirmPage;
+import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.common.UserWithOneConfiguredOtp;
+import org.keycloak.tests.common.UserWithTwoConfiguredOtp;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>Test for the ConditionalSubFlowExecutedAuthenticator. A <em>test</em> parent
@@ -53,43 +62,64 @@ import org.junit.jupiter.api.Assertions;
  *
  * @author rmartinc
  */
-public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class ConditionalSubFlowExecutedAuthenticatorTest {
 
-    @Page
+    @InjectRealm
+    protected ManagedRealm managedRealm;
+
+    @InjectUser(config = TestRealmUserConfig.class, ref = "test-user@localhost")
+    protected ManagedUser testUser;
+
+    @InjectUser(config = UserWithOneConfiguredOtp.class, ref = "user-with-one-configured-otp")
+    protected ManagedUser userWithOneConfiguredOtp;
+
+    @InjectUser(config = UserWithTwoConfiguredOtp.class, ref = "user-with-two-configured-otp")
+    protected ManagedUser userWithTwoConfiguredOtp;
+
+    @InjectOAuthClient
+    protected OAuthClient oauth;
+
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Page
+    @InjectPage
     protected ErrorPage errorPage;
 
-    @Page
+    @InjectPage
     protected LoginTotpPage loginTotpPage;
 
-    @Page
-    protected OneTimeCode oneTimeCodePage;
+    @InjectPage
+    protected LogoutConfirmPage logoutConfirmPage;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectEvents
+    protected Events events;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        // no-op
+    @AfterEach
+    void logoutUser() {
+        oauth.openLogoutForm();
+        logoutConfirmPage.confirmLogout();
     }
 
     @Test
     public void testWithoutOtpConfiguredExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(testUser.getUsername(), testUser.getPassword());
+        loginPage.submit();
 
         // no otp => check executed => allowed
-        checkAllowed("test-user@localhost");
+        checkAllowed(testUser.getUsername());
     }
 
     @Test
     public void testWithoutOtpConfiguredNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(testUser.getUsername(), testUser.getPassword());
+        loginPage.submit();
 
         // no otp => check not-executed => denied
         checkDenied();
@@ -99,10 +129,12 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithOtpConfiguredExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        oauth.doLogin("user-with-one-configured-otp", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(userWithOneConfiguredOtp.getUsername(), userWithOneConfiguredOtp.getPassword());
+        loginPage.submit();
 
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP(UserWithOneConfiguredOtp.OTP_SECRET));
 
         // otp => check executed => denied
         checkDenied();
@@ -112,30 +144,36 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithOtpConfiguredNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional 2FA", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        oauth.doLogin("user-with-two-configured-otp", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(userWithTwoConfiguredOtp.getUsername(), userWithTwoConfiguredOtp.getPassword());
+        loginPage.submit();
 
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP(UserWithOneConfiguredOtp.OTP_SECRET));
 
         // otp => check not-executed => allowed
-        checkAllowed("user-with-two-configured-otp");
+        checkAllowed(userWithTwoConfiguredOtp.getUsername());
     }
 
     @Test
     public void testWithInvalidFlowExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(testUser.getUsername(), testUser.getPassword());
+        loginPage.submit();
 
         // no flow => check executed => allowed
-        checkAllowed("test-user@localhost");
+        checkAllowed(testUser.getUsername());
     }
 
     @Test
     public void testWithInvalidFlowNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.openLoginForm();
+        loginPage.fillLogin(testUser.getUsername(), testUser.getPassword());
+        loginPage.submit();
 
         // no flow => check executed => denied
         checkDenied();
@@ -164,14 +202,6 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
         RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
-
-        // revert the flows if already changed
-        RealmRepresentation realmRep = realmRes.toRepresentation();
-        if (!realmRep.getBrowserFlow().equals("browser")) {
-            realmRep.setBrowserFlow("browser");
-            realmRes.update(realmRep);
-            authRes.deleteFlow(authRes.getFlows().stream().filter(f -> "test".equals(f.getAlias())).findAny().get().getId());
-        }
 
         // copy the browser flow into a test one
         authRes.copy("browser", Map.of("newName", "test"));
@@ -205,7 +235,10 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         authRes.updateExecutions("2FA Executed", denyExec);
 
         // assign the new flow to the browser binding
-        realmRep.setBrowserFlow("test");
-        realmRes.update(realmRep);
+        managedRealm.updateWithCleanup(r -> r.browserFlow("test"));
+        // revert the flows if already changed
+        managedRealm.cleanup().add(r -> {
+            r.flows().deleteFlow(r.flows().getFlows().stream().filter(f -> "test".equals(f.getAlias())).findAny().get().getId());
+        });
     }
 }

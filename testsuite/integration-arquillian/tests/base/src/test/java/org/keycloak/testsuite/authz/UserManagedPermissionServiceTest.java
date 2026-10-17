@@ -40,11 +40,15 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -768,6 +772,50 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         assertEquals(2, permission.getScopes().size());
         assertTrue(Arrays.asList("Scope A", "Scope C").containsAll(permission.getScopes()));
+    }
+
+    @Test
+    public void testAdminEventsOnUmaPolicyLifecycle() {
+        RealmEventsConfigRepresentation eventsConfig = getRealm().getRealmEventsConfig();
+
+        eventsConfig.setAdminEventsEnabled(true);
+        getRealm().updateRealmEventsConfig(eventsConfig);
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(UUID.randomUUID().toString());
+        resource.setOwner("marta");
+        resource.setOwnerManagedAccess(true);
+        resource.addScope("Scope A");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        resource = protection.resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("Custom User-Managed Policy");
+        permission.addRole("role_a");
+
+        PolicyResource policy = protection.policy(resource.getId());
+
+        permission = policy.create(permission);
+        permission.setDescription("Updated description");
+        policy.update(permission);
+        policy.delete(permission.getId());
+
+        List<AdminEventRepresentation> events = getRealm().getAdminEvents().stream()
+                .filter(event -> ResourceType.AUTHORIZATION_POLICY.name().equals(event.getResourceType()))
+                .toList();
+
+        assertEquals(3, events.size());
+
+        String policyPath = "authz/protection/uma-policy/" + permission.getId();
+
+        for (OperationType operation : List.of(OperationType.CREATE, OperationType.UPDATE, OperationType.DELETE)) {
+            assertTrue(events.stream().anyMatch(event -> operation.name().equals(event.getOperationType()) && policyPath.equals(event.getResourcePath())),
+                    operation + " event with resource path " + policyPath + " not found");
+        }
     }
 
     @Test

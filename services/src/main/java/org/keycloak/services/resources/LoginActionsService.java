@@ -80,7 +80,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
@@ -1010,11 +1009,7 @@ public class LoginActionsService {
         if (organization == null) {
             String emailDomain = Organizations.getEmailDomain(brokerContext.getEmail());
             if (emailDomain != null) {
-                try {
-                    organization = provider.getByDomainName(emailDomain);
-                } catch (ModelValidationException e) {
-                    // malformed domain from unvalidated broker email — treat as no match
-                }
+                organization = provider.getByDomainName(emailDomain);
             }
         }
 

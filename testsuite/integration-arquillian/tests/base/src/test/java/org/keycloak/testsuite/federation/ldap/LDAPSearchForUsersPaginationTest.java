@@ -341,6 +341,60 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
         });
     }
 
+    /*
+    Parameterized Tests are not available, as this is still running on Junit 4
+     */
+    @Test
+    public void testSearchExactWhenLDAPReturnsNoSuchObjectWithPagination() {
+        assertSearchReturnsEmptyWhenLDAPReturnsNoSuchObject(true, true, 1);
+    }
+
+    @Test
+    public void testSearchExactWhenLDAPReturnsNoSuchObjectWithoutPagination() {
+        assertSearchReturnsEmptyWhenLDAPReturnsNoSuchObject(false, true, 1);
+    }
+
+    @Test
+    public void testSearchInfixWhenLDAPReturnsNoSuchObjectWithPagination() {
+        assertSearchReturnsEmptyWhenLDAPReturnsNoSuchObject(true, false, 21);
+    }
+
+    @Test
+    public void testSearchInfixWhenLDAPReturnsNoSuchObjectWithoutPagination() {
+        assertSearchReturnsEmptyWhenLDAPReturnsNoSuchObject(false, false, 21);
+    }
+
+    private void assertSearchReturnsEmptyWhenLDAPReturnsNoSuchObject(boolean pagination, boolean exact, int max) {
+        // a non-existing users DN makes the LDAP server answer every subtree search with error 32 (NO_OBJECT)
+        Map<String, String> orig = updateLDAPConfig(Map.of(
+            LDAPConstants.USERS_DN, "ou=doesnotexist,dc=keycloak,dc=org",
+            LDAPConstants.PAGINATION, Boolean.toString(pagination)));
+        try {
+            // same request as the admin console sends
+            List<UserRepresentation> users = managedRealm.admin().users()
+                .search("nonexisting", null, null, null, 0, max, null, null, exact);
+            assertThat(users, hasSize(0));
+        } finally {
+            updateLDAPConfig(orig);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> updateLDAPConfig(Map<String, String> config) {
+        return testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            Map<String, String> orig = new HashMap<>();
+            config.forEach((key, value) -> {
+                orig.put(key, ctx.getLdapModel().getConfig().getFirst(key));
+                ctx.getLdapModel().getConfig().putSingle(key, value);
+            });
+            appRealm.updateComponent(ctx.getLdapModel());
+            return orig;
+        }, Map.class);
+    }
+
     private void setLDAPEnabled(final boolean enabled) {
         testingClient.server().run((KeycloakSession session) -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);

@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
@@ -139,11 +140,19 @@ export async function setUrl(page: Page, urlType: UrlType, value: string) {
   await page.getByTestId(`config.${urlType}Url`).fill(value);
 }
 
+export async function reenterClientSecret(page: Page, secret: string) {
+  const field = page.getByTestId("config.clientSecret");
+  await expect(field).toHaveValue("");
+  await field.fill(secret);
+  await expect(field).toHaveValue(secret);
+}
+
 export async function assertInvalidUrlNotification(
   page: Page,
   urlType: UrlType,
 ) {
-  await expect(page.getByTestId("last-alert")).toHaveText(
+  await assertNotificationMessage(
+    page,
     `Could not update the provider. The url [${urlType}${urlType.startsWith("single") ? "U" : "_u"}rl] is malformed`,
   );
 }
@@ -189,8 +198,11 @@ export async function addMapper(
   mapperName: string,
 ) {
   await page.getByTestId("no-mappers-empty-action").click();
-  await page.locator("#identityProviderMapper").click();
-  await page.getByTestId(`${mapperType}-idp-mapper`).click();
+  await selectItem(
+    page,
+    "#identityProviderMapper",
+    page.getByTestId(`${mapperType}-idp-mapper`),
+  );
   await page.getByTestId("name").fill(mapperName);
 }
 

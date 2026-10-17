@@ -160,7 +160,14 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
         AccessToken smallToken = getAccessTokenFromStoredData(token);
-        return tokenManager.transformIntrospectionAccessToken(session, token, smallToken, userSession, clientSessionCtx);
+        AccessToken introspectionToken = tokenManager.transformIntrospectionAccessToken(session, token, smallToken, userSession, clientSessionCtx);
+
+        // Preserve the issued token's complete act claim after introspection mappers.
+        Object act = token.getOtherClaims().get(ACT);
+        if (act != null) {
+            introspectionToken.getOtherClaims().put(ACT, act);
+        }
+        return introspectionToken;
     }
 
     private AccessToken getAccessTokenFromStoredData(AccessToken token) {
@@ -182,6 +189,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
         // The cnf is not a claim controlled by the protocol mapper.
         newToken.setConfirmation(token.getConfirmation());
+
         return newToken;
     }
 

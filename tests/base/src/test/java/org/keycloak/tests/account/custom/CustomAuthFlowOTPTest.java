@@ -463,7 +463,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     }
 
     @Test
-    public void conditionalOTPRequestHeaderSkip() {
+    public void conditionalOTPRequestHeaderSkipIgnoredWithoutProxy() {
         //prepare config - request header skip, default to force
         Map<String, String> config = new HashMap<>();
         String port = authServerPort();
@@ -472,10 +472,10 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         setConditionalOTPForm(config);
 
-        //test OTP is skipped
+        //test OTP is not skipped because proxy is not configured.
         oauth.openLoginForm();
         testRealmLoginPage.login(testUser.getUsername(), PASSWORD);
-        assertTrue(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()));
+        assertEquals("Mobile Authenticator Setup", driver.findElement(By.id("kc-page-title")).getText());
     }
 
     @Test

@@ -104,6 +104,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                                 ClientPolicyEvent.REGISTER_NODE));
             }
 
+            // Service accounts and authorization services are
+            // allowed during registration via grant types; escalation risk is guarded on client update.
+            stripPrivilegedAttributes(client);
+
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
@@ -216,6 +220,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                         Response.Status.BAD_REQUEST
                 );
             }
+        }
+
+        stripPrivilegedAttributes(rep);
+        if (auth.isRegistrationAccessToken()
+                && rep.isServiceAccountsEnabled() != null
+                && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
+            throw new ErrorResponseException(
+                    ErrorCodes.INVALID_CLIENT_METADATA,
+                    "Service accounts cannot be enabled or disabled via registration access token",
+                    Response.Status.BAD_REQUEST
+            );
         }
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
 
@@ -383,5 +398,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
         allowedOrigins.addAll(ClientRegistrationPolicyManager.getAllowedOrigins(session, auth.resolveRegistrationAuth()));
         return allowedOrigins;
+    }
+
+    /**
+     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     *
+     * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
+     * without throwing an error.
+     */
+    private void stripPrivilegedAttributes(ClientRepresentation rep) {
+        if (auth.isBearerToken()) {
+            return; // Admin callers retain full write access
+        }
+        if (rep.getAttributes() == null || rep.getAttributes().isEmpty()) {
+            return;
+        }
+        rep.getAttributes().entrySet()
+                .removeIf(e -> e.getKey().startsWith("ssf."));
     }
 }

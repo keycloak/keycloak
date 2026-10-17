@@ -20,12 +20,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
@@ -187,6 +192,17 @@ public class AbstractOAuth2IdentityProviderTest {
 		Assert.assertNull(response.getRefreshExpiresIn()); // Should return null, not throw NPE
 	}
 
+	@Test
+	public void buildTokenResponseDefaultsTokenTypeToBearer() {
+		AccessTokenResponse tokenResponse = new AccessTokenResponse();
+		tokenResponse.setToken("access-token");
+
+		try (Response response = getTested().buildTokenResponse(tokenResponse)) {
+			AccessTokenResponse result = (AccessTokenResponse) response.getEntity();
+			Assert.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, result.getTokenType());
+		}
+	}
+
 	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint, final Boolean passMaxAge) {
 		IdentityProviderModel model = new IdentityProviderModel();
 		OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig(model);
@@ -213,6 +229,10 @@ public class AbstractOAuth2IdentityProviderTest {
 		protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 			return new BrokeredIdentityContext(accessToken, getConfig());
 		};
+
+		private Response buildTokenResponse(AccessTokenResponse tokenResponse) {
+			return buildTokenResponse(null, null, null, null, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
+		}
 
 	};
 

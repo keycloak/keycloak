@@ -1,0 +1,197 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Realm client session statistics respect client visibility
+// https://github.com/keycloak/keycloak/issues/50917
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/client-session-stats` now returns online and offline session statistics only for clients the caller is allowed to view.
+It continues to require the `view-realm` or `manage-realm` role.
+Previously, either realm role allowed callers to retrieve statistics for clients they could not view.
+After upgrading, such callers receive fewer entries, or an empty list if no clients with sessions are visible to them.
+
+Client visibility follows the same permission checks as the client-specific session count endpoints across RBAC, fine-grained admin permissions v1, and v2:
+
+* The `view-clients` and `manage-clients` admin roles grant visibility to all clients.
+* Fine-grained admin permissions v1 grant client visibility through the `view`, `configure`, or `manage` permission.
+* Fine-grained admin permissions v2 keep the Clients `view` and `manage` scopes independent. When access is granted only through fine-grained permissions, `manage` alone does not grant visibility.
+
+Counts for visible clients continue to include all their sessions, independently of the caller's permission to view the associated users.
+
+=== SAML logins require a valid Bearer SubjectConfirmationData
+// https://github.com/keycloak/keycloak/issues/53475
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when none of the assertion's Bearer `SubjectConfirmation` elements carries a valid `SubjectConfirmationData` element, as required by the SAML 2.0 Web Browser SSO Profile.
+This affects both SAML identity provider brokering and applications secured with the {project_name} SAML adapter.
+
+The following conditions are now enforced:
+
+* The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
+* `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
+* For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
+
+After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
+Broker logins fail with an invalid response error; adapter logins restart the login flow.
+If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
+
+=== SAML back-channel SLO via SessionIndex requires client signature
+// https://github.com/keycloak/keycloak/issues/53535
+
+Back-channel SAML single logout that identifies the session with `SessionIndex` (no browser cookie) now requires the initiating client to have *Client signature required* (`saml.client.signature`) enabled.
+Without a verified signature, the `Issuer` field is not authenticated and could be forged to terminate another client's session.
+
+Browser-based (front-channel) logout that carries the user's SSO cookie is unchanged and still works for clients that do not require signatures.
+
+If a SAML client uses back-channel SLO with `SessionIndex` and has *Client signature required* set to *OFF*, either:
+
+* Enable *Client signature required* and configure the client's signing certificate, then sign `LogoutRequest` messages, or
+* Prefer front-channel logout so the browser cookie authenticates the request.
+
+Newly created SAML clients already default to requiring client signatures. Deployments that import realm JSON may still have unsigned clients and are the primary group affected by this change.
+
+=== Email verification before domain-based organization membership
+
+Automatic membership through a linked identity provider now requires a verified email address when the organization has configured domains.
+If the address is unverified, the first broker login flow requires email verification before granting membership, even when the realm's *Verify email* setting is disabled.
+
+Configure the realm's email server so users can complete verification, or enable *Trust Email* for an identity provider whose email verification you trust.
+An OpenID Connect provider returning `email_verified=false`, or a user changing their address during profile review, still requires local verification.
+
+Existing memberships, organizations without domains, and invitation-based membership are unaffected.
+If verification is completed in another browser or the original authentication session is lost, users must sign in through the identity provider again and follow the account-linking prompts.
+Local verification is preserved for a limited time on this retry with the same identity provider account and unchanged email address, including with `FORCE` synchronization.
+Identity provider mappers using `IMPORT` are not replayed during this retry.
+
+Custom identity providers that synchronize email outside `AbstractIdentityProvider` should implement `UserAuthenticationIdentityProvider.updateBrokeredEmail` to expose their email verification policy.
+
+=== Admin client `organizations.findOne` no longer rejects when the organization does not exist
+// https://github.com/keycloak/keycloak/pull/51717
+
+The `organizations.findOne` method in the `@keycloak/keycloak-admin-client` package now resolves to `undefined` when the organization does not exist, instead of rejecting with a 404 error.
+Its declared return type changes from `OrganizationRepresentation` to `OrganizationRepresentation | undefined`.
+
+This aligns the method with the equivalent lookups on other resources, such as `groups.findOne`, `roles.findOneById`, and `clients.findOne`, which already resolve to `undefined` for a missing entity.
+
+After upgrading, code that relies on a rejected promise to detect a missing organization no longer takes that path.
+TypeScript users see a compilation error wherever the result is used without a check.
+Plain JavaScript users receive `undefined` instead of an error, and may only observe the change at a later point in their code.
+
+Replace any handling that catches a 404 from this method with a check for `undefined`:
+
+[source,typescript]
+----
+const organization = await adminClient.organizations.findOne({ id });
+
+if (!organization) {
+  // handle the missing organization
+}
+----
+
+=== Mandatory signature validation for OIDC identity provider backchannel logout tokens
+
+{project_name} now always validates the signature of backchannel logout tokens received from external OIDC identity providers, regardless of the `Validate Signatures` setting on the identity provider configuration. This change addresses CVE-2026-18569, where an unauthenticated attacker could forge unsigned logout tokens (using `alg=none`) to force-logout targeted users when signature validation was disabled.
+
+The OIDC Back-Channel Logout 1.0 specification mandates that logout tokens MUST be signed and that `alg=none` is explicitly prohibited. {project_name} now enforces this requirement.
+
+Other token types (ID tokens, access tokens) continue to respect the `Validate Signatures` setting as before.
+
+If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses backchannel logout, you must configure the identity provider's public key so that {project_name} can validate logout token signatures. Either:
+
+* Set `Use JWKS URL` to *ON* and configure the `JWKS URL` pointing to the external IDP's JWKS endpoint, or
+* Provide the IDP's public key directly via the `Validating Public Key` field and, if needed, its key ID via the `Validating Public Key Id` field.
+
+=== Identity provider client secret must be re-entered when changing its destination (CVE-2026-15943)
+
+When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `+**********+`.
+Previously, an update that sent this masked value back always kept the stored secret, even if the request also changed where that secret is sent.
+A user with the `manage-identity-providers` role could therefore point the identity provider at an attacker-controlled token endpoint and have {project_name} send the real client secret there.
+
+Starting with this release, the stored secret is kept only when the fields that determine where and how it is sent are unchanged: `clientId`, `clientAuthMethod`, `tokenUrl`, `tokenIntrospectionUrl`, and `baseUrl` (GitHub and OpenShift), as well as `tenantId` (Microsoft) and `sandbox` (PayPal).
+If any of these change while the request still contains the masked value, the update is rejected with HTTP `400 Bad Request` and the identity provider is left unchanged.
+To apply such a change, include the actual `clientSecret` in the request.
+The Admin Console clears the *Client Secret* field automatically when one of these fields is edited so that you can enter it again.
+
+The `providerId` of an existing identity provider can no longer be changed through an update request; sending a different value is rejected with HTTP `400 Bad Request`.
+
+Scripts and tools that read an identity provider, modify one of the fields above, and write it back (for example, `kcadm.sh update identity-provider/instances/<alias> -s config.tokenUrl=...`) must now also pass the client secret (`-s config.clientSecret=...`).
+Updates that change other settings, or that use a `${vault.<key>}` expression as the secret, are not affected.
+
+Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
+Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Scope mapping listings filter roles by visibility
+// https://github.com/keycloak/keycloak/issues/53480
+
+The Admin REST API endpoints for reading the scope mappings of a client or a client scope (`GET /admin/realms/\{realm}/clients/\{id}/scope-mappings` and `GET /admin/realms/\{realm}/client-scopes/\{id}/scope-mappings`, including their `realm`, `realm/composite`, `clients/\{client}` and `clients/\{client}/composite` sub-resources) now filter out roles that the caller is allowed neither to view nor to map to users or to client scopes.
+Previously, any caller with permission to view the client or the client scope could see all the roles in its scope, including realm roles without the `view-realm` role and client roles without a *view* permission on the client they belong to.
+After upgrading, callers may see fewer results from these endpoints if the scope contains roles that they are allowed neither to view nor to map.
+Roles that the caller is allowed only to map to client scopes are returned without their attributes, even when `briefRepresentation=false` is requested.
+For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
+With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
+In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
+
+=== Workflow expressions with unsupported characters are rejected
+// https://github.com/keycloak/keycloak/issues/53790
+
+Workflow expressions used in the `on`, `if` and `concurrency` settings are now rejected when they contain characters that are not part of the expression syntax, such as `!`.
+Previously, these characters were silently dropped, so an expression like `!has-role(admin)` was accepted and evaluated as `has-role(admin)`.
+Use the `not`, `and` and `or` operators instead, for example `not has-role(admin)`.
+After upgrading, existing workflows with such an expression in `on` or `if` are no longer executed, and the error is logged when the expression is evaluated.
+If such an expression is used in a `concurrency` setting, the workflow still runs, but that setting no longer restarts or cancels in-progress executions, and the error is logged.
+Update these workflows to fix their expressions.
+
+=== Workflow schedule settings are validated
+// https://github.com/keycloak/keycloak/issues/53849
+
+Creating or updating a workflow now fails when `schedule.after` is not a duration of at least 1 second, or when `schedule.batch-size` is not greater than 0.
+Previously, such values caused an internal server error, or they were stored and the scheduled runs failed or did not process any resources.
+Existing workflows with such values must be fixed before they can be updated, including when enabling or disabling them in the Admin Console.
+
+=== Organization Redirect URL now validated against the account client
+
+The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
+
+Previously, the Redirect URL was used without validation, which could allow an open redirect. After upgrading, if your organization has a custom Redirect URL pointing to your application, you must add that URL to the `account` client's *Valid Redirect URIs*. Otherwise, the redirect will silently fall back to the account console. This does not apply to invitations sent with a custom client, which always use the client's own base URL.
+
+The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
+
+=== The `admin-permissions` client is treated as an internal client
+// https://github.com/keycloak/keycloak/issues/51630
+
+When fine-grained admin permissions V2 are enabled on a realm, the `admin-permissions` client holds the whole authorization model of that realm.
+This client is now treated as an internal client, the same way the `realm-management` client already is, so it can no longer be managed through the Admin REST API.
+Previously, an administrator with a *manage* permission on clients could update it, including changing its `clientId`, even though the `access.manage` field returned for the client was already `false`.
+
+After upgrading, requests that update the `admin-permissions` client are rejected with a 403 status.
+Requests that delete it are also rejected with a 403 status, where previously they were rejected with a 400 status.
+Configuring the permissions and the policies of the realm is not affected, as it requires the `manage-realm` role rather than a permission on the client.
+
+=== User storage periodic sync runs at the configured period again
+
+Periodic full and changed-users synchronization for a user storage provider now starts every `fullSyncPeriod` or `changedSyncPeriod` seconds, as documented.
+A regression caused a sync to run only on every other scheduled tick, so the effective interval was about twice the configured period, whenever a single sync took longer than roughly one second.
+The provider's last-sync time is now recorded when a sync starts rather than when it finishes, so the schedule no longer drifts by the sync duration.
+
+If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Organization Redirect URL
+
+The organization Redirect URL field is now deprecated and will be removed in a future release. When sending invitations, prefer selecting a client to control where users are redirected. Create a client with its base URL set to your desired redirect destination and pass its `client_id` when creating invitations.
+
+=== Organization invitation endpoints without `client_id`
+
+The `invite-user` and `invite-existing-user` admin client overloads that do not accept a `client_id` parameter are now deprecated. Use the overloads that accept an explicit `client_id` instead. When omitted, the endpoints default to the `account` client, but callers should migrate to always specify a client.

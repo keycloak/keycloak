@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -464,6 +465,53 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation updated = reg.update(update);
         assertThat(updated.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
+    }
+
+    @Test
+    public void samlClientCannotBeUpdatedOrDeletedViaOidcEndpointWithRegistrationToken() throws ClientRegistrationException {
+        // Register a SAML client through the protocol-agnostic endpoint; capture the RAT.
+        authManageClients();
+        ClientRepresentation samlClient = buildClient();
+        samlClient.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        ClientRepresentation created = registerClient(samlClient, true);
+        assertThat(created.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
+
+        // Present the SAML client's RAT to the OIDC registration endpoint.
+        reg.auth(Auth.token(created.getRegistrationAccessToken()));
+
+        OIDCClientRepresentation update = new OIDCClientRepresentation();
+        update.setClientId(created.getClientId());
+        update.setRedirectUris(Collections.singletonList("http://localhost:8080/callback"));
+
+        assertWrongClientProtocol(() -> reg.oidc().update(update));
+        assertWrongClientProtocol(() -> {
+            reg.oidc().delete(created.getClientId());
+            return null;
+        });
+
+        // The client must survive both attempts, unchanged.
+        ClientRepresentation afterAttempt = managedRealm.admin().clients().get(created.getId()).toRepresentation();
+        assertThat(afterAttempt.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
+    }
+
+    private void assertWrongClientProtocol(Callable<?> request) {
+        try {
+            request.call();
+            fail("Expected ClientRegistrationException — registration token must not be accepted by an endpoint of a different protocol");
+        } catch (Exception e) {
+            assertThat(e, Matchers.instanceOf(ClientRegistrationException.class));
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(400));
+
+            OAuth2ErrorRepresentation errorRep;
+            try {
+                errorRep = JsonSerialization.readValue(cause.getErrorResponse(), OAuth2ErrorRepresentation.class);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            assertThat(errorRep.getError(), is(Errors.INVALID_CLIENT));
+            assertThat(errorRep.getErrorDescription(), CoreMatchers.containsString("Wrong client protocol"));
+        }
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
