@@ -1,6 +1,8 @@
 package org.keycloak.tests.broker.saml;
 
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.https.InjectCertificates;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
 
 import org.junit.jupiter.api.Test;
@@ -10,6 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class KcSamlBrokerTest extends AbstractKcSamlBrokerTest {
+
+    @InjectCertificates
+    ManagedCertificates certificates;
 
     @Test
     public void testRejectsSamlResponseWithoutSubject() throws Exception {
@@ -38,7 +43,7 @@ public class KcSamlBrokerTest extends AbstractKcSamlBrokerTest {
 
     private void assertInvalidSamlResponse(SamlBrokerResponseTampering.Mutation mutation) throws Exception {
         SamlBrokerResponseTampering.Result result = SamlBrokerResponseTampering.loginWithMutation(
-                oauth, IDP_SAML_ALIAS, getUserLogin(), getUserPassword(), mutation);
+                oauth, certificates, IDP_SAML_ALIAS, getUserLogin(), getUserPassword(), mutation);
 
         assertEquals(400, result.statusCode(), "Malformed broker SAML response should be rejected");
         assertTrue(result.body().contains("Invalid requester"),

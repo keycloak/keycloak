@@ -13,6 +13,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
 
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.utils.SecureContextResolver;
 
@@ -32,6 +33,7 @@ import org.apache.http.cookie.CookieOrigin;
 import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.cookie.DefaultCookieSpec;
 import org.apache.http.message.BasicNameValuePair;
@@ -59,7 +61,7 @@ final class SamlBrokerResponseTampering {
     private SamlBrokerResponseTampering() {
     }
 
-    static Result loginWithMutation(OAuthClient oauth, String idpAlias, String username, String password,
+    static Result loginWithMutation(OAuthClient oauth, ManagedCertificates certificates, String idpAlias, String username, String password,
             Mutation mutation) throws IOException {
         // Like browsers, allow secure cookies on trusted loopback HTTP origins.
         CookieSpecProvider cookieSpec = context -> new DefaultCookieSpec() {
@@ -71,10 +73,13 @@ final class SamlBrokerResponseTampering {
                 return super.match(cookie, origin);
             }
         };
-        try (CloseableHttpClient client = HttpClients.custom()
+        HttpClientBuilder builder = HttpClients.custom()
                 .setDefaultCookieSpecRegistry(RegistryBuilder.<CookieSpecProvider>create().register("browser", cookieSpec).build())
-                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec("browser").build())
-                .build()) {
+                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec("browser").build());
+        if (certificates.isTlsEnabled()) {
+            builder.setSSLContext(certificates.getClientSSLContext());
+        }
+        try (CloseableHttpClient client = builder.build()) {
             CookieStore cookieStore = new BasicCookieStore();
             String loginUrl = oauth.loginForm().param("kc_idp_hint", idpAlias).build();
             Page page = execute(client, cookieStore, new HttpGet(loginUrl));
