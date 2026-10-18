@@ -11,7 +11,8 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  * Provides convenient entity lookups within a {@link KeycloakSession},
  * resolving entities by their IDs against the session's realm context.
  *
- * <p>Primarily used inside {@link KeycloakModelUtils#enlistAfterRollback}
+ * <p>Primarily used inside {@link KeycloakModelUtils#enlistAfterCommit},
+ * {@link KeycloakModelUtils#enlistAfterRollback}, and {@link KeycloakModelUtils#enlistAfterCompletion}
  * to re-lookup entities from the outer session in a new independent transaction.</p>
  */
 public class SessionLookup {

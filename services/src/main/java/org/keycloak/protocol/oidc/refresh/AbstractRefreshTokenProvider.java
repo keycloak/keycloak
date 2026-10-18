@@ -303,7 +303,10 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                 tokenManager.validateTokenReuse(session, realm, refreshToken, clientSession, true);
                 String key = tokenManager.getReuseIdKey(refreshToken);
                 int currentCount = clientSession.getRefreshTokenUseCount(key);
-                clientSession.setRefreshTokenUseCount(key, currentCount + 1);
+                KeycloakModelUtils.enlistAfterCommit(session, ctx -> {
+                    AuthenticatedClientSessionModel cs = ctx.findClientSession(clientSession);
+                    if (cs != null) cs.setRefreshTokenUseCount(key, currentCount + 1);
+                });
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",

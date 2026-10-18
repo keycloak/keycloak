@@ -361,7 +361,20 @@ public final class KeycloakModelUtils {
      * @see #enlistAfterCompletion(KeycloakSession, Consumer)
      */
     public static void enlistAfterRollback(KeycloakSession currentSession, Consumer<SessionLookup> task) {
-        enlistAfterCompletion(currentSession, task, false);
+        enlistAfterCompletion(currentSession, task, false, true);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction after the current
+     * transaction commits. The task is a no-op if the current transaction rolls back.
+     *
+     * <p>Use this for operations that must only persist after the main transaction
+     * completed successfully.</p>
+     *
+     * @see #enlistAfterCompletion(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterCommit(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, true, false);
     }
 
     /**
@@ -374,10 +387,10 @@ public final class KeycloakModelUtils {
      * @see #enlistAfterRollback(KeycloakSession, Consumer)
      */
     public static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task) {
-        enlistAfterCompletion(currentSession, task, true);
+        enlistAfterCompletion(currentSession, task, true, true);
     }
 
-    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit) {
+    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit, boolean runOnRollback) {
         KeycloakSessionFactory factory = currentSession.getKeycloakSessionFactory();
         KeycloakContext context = currentSession.getContext();
 
@@ -391,7 +404,9 @@ public final class KeycloakModelUtils {
 
             @Override
             protected void rollbackImpl() {
-                execute();
+                if (runOnRollback) {
+                    execute();
+                }
             }
 
             private void execute() {
