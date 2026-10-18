@@ -1,5 +1,8 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,6 +37,7 @@ public class SessionsResource {
     private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
 
     public SessionsResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
         this.session = session;
@@ -121,11 +125,13 @@ public class SessionsResource {
 
     private Stream<SessionRepresentation> streamRegular() {
         return session.sessions().readOnlyStreamUserSessions(realm)
+                .filter(this::hasVisibleClientOrNone)
                 .map(s -> toRepresentation(s, REGULAR));
     }
 
     private Stream<SessionRepresentation> streamOffline() {
         return session.sessions().readOnlyStreamOfflineUserSessions(realm)
+                .filter(this::hasVisibleClientOrNone)
                 .map(s -> toRepresentation(s, OFFLINE));
     }
 
@@ -139,7 +145,7 @@ public class SessionsResource {
                 .map(s -> toRepresentation(s, OFFLINE));
     }
 
-    private static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
+    private SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
         SessionRepresentation rep = new SessionRepresentation();
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
@@ -150,9 +156,24 @@ public class SessionsResource {
         rep.setType(type);
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
-            rep.getClients().put(client.getId(), client.getClientId());
+            if (canViewClient(client)) {
+                rep.getClients().put(client.getId(), client.getClientId());
+            }
         }
         rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;
+    }
+
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
+    }
+
+    /**
+     * A session used only by clients the caller cannot view would reveal that the user uses a hidden client, so it is
+     * left out. A session without any clients, e.g. after its clients were removed, reveals nothing and stays listed.
+     */
+    private boolean hasVisibleClientOrNone(UserSessionModel userSession) {
+        Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+        return clientSessions.isEmpty() || clientSessions.stream().anyMatch(cs -> canViewClient(cs.getClient()));
     }
 }

@@ -64,6 +64,9 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
         try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
             IOUtils.copy(is, gos);
+        } catch (IOException e) {
+            Files.deleteIfExists(tmpEncodedFile.toPath());
+            throw e;
         }
 
         // Publish only by atomic rename, so a cached file that exists is always complete

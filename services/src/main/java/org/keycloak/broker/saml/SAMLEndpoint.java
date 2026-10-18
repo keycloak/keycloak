@@ -1083,34 +1083,38 @@ public class SAMLEndpoint {
     }
 
     private boolean validateSubjectConfirmationData(ResponseType responseType, String expectedRequestId) {
-        // If present, Assertion > Subject > Confirmation > SubjectConfirmationData > InResponseTo must also be validated
+        // Assertion > Subject > Confirmation (Bearer) > SubjectConfirmationData is mandatory and must always be
+        // validated. Multiple Bearer confirmations are alternatives per the SAML 2.0 spec, so the assertion is
+        // valid if any one of them passes validation.
         if (responseType.getAssertions().isEmpty())
             return true;
 
         AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
         SubjectType subjectElement = assertion.getSubject();
-        if (subjectElement != null) {
-            if (subjectElement.getConfirmation() != null && !subjectElement.getConfirmation().isEmpty()) {
-                SubjectConfirmationType subjectConfirmationElement = subjectElement.getConfirmation().stream()
+
+        List<SubjectConfirmationType> bearerConfirmations = subjectElement == null
+                ? Collections.emptyList()
+                : subjectElement.getConfirmation().stream()
                         .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
-                        .findFirst().orElse(null);
+                        .collect(Collectors.toList());
 
-                if (subjectConfirmationElement != null) {
-                    SubjectConfirmationDataType subjectConfirmationDataElement = subjectConfirmationElement.getSubjectConfirmationData();
-                    SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
-                            .inResponseTo(expectedRequestId)
-                            .clockSkewInMillis(1000 * config.getAllowedClockSkew());
-                    if (responseType.getDestination() != null) {
-                        scdvb.allowedRecipient(responseType.getDestination());
-                    }
-
-                    if (!scdvb.build().isValid()) {
-                        return false;
-                    }
-                }
-            }
+        if (bearerConfirmations.isEmpty()) {
+            return isSubjectConfirmationDataValid(assertion, null, responseType, expectedRequestId);
         }
 
-        return true;
+        return bearerConfirmations.stream().anyMatch(subjectConfirmationElement ->
+                isSubjectConfirmationDataValid(assertion, subjectConfirmationElement.getSubjectConfirmationData(), responseType, expectedRequestId));
+    }
+
+    private boolean isSubjectConfirmationDataValid(AssertionType assertion, SubjectConfirmationDataType subjectConfirmationDataElement,
+            ResponseType responseType, String expectedRequestId) {
+        SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
+                .inResponseTo(expectedRequestId)
+                .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+        if (responseType.getDestination() != null) {
+            scdvb.allowedRecipient(responseType.getDestination());
+        }
+
+        return scdvb.build().isValid();
     }
 }

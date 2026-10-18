@@ -875,6 +875,10 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         Set<String> allowedUsers = Set.of("user1", "user2");
         createPermission(adminPermissionsClient, allowedUsers, usersType, Set.of(VIEW), policy);
 
+        // make the session client visible so this test checks user view filtering
+        String sessionClientUuid = realm.admin().clients().findByClientId(Constants.ADMIN_CLI_CLIENT_ID).get(0).getId();
+        createPermission(adminPermissionsClient, sessionClientUuid, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
         // assign view-realm role to myadmin so that the user can access the sessions endpoint
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(clientUuid).add(List.of(viewRealmRole));
         realm.cleanup().add(r -> r.users().get(myadmin.getId()).roles().clientLevel(clientUuid).remove(List.of(viewRealmRole)));

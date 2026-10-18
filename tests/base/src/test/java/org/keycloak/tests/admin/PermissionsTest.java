@@ -424,7 +424,13 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).update(user), Resource.USER, true);
         invoke(realm -> realm.users().count(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).getUserSessions(), Resource.USER, false);
-        invoke(realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId()), Resource.USER, false);
+        // offline sessions need view on both the user and the client, and an unknown client is only reported to admins
+        // that can list clients
+        Invocation offlineSessions = realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId());
+        invoke(offlineSessions, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(offlineSessions, clients.get("none"), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_USERS), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_CLIENTS), false);
         invoke(realm -> realm.users().get(user.getId()).getFederatedIdentity(), Resource.USER, false);
         invoke((realm, response) -> response.set(realm.users().get(user.getId()).addFederatedIdentity("nosuch",
                         FederatedIdentityBuilder.create().identityProvider("nosuch").userId("nosuch").userName("nosuch").build()

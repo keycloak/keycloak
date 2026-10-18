@@ -42,6 +42,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
@@ -282,6 +283,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         tokenResponse.setRefreshToken(null);
         tokenResponse.setRefreshExpiresIn(0);
         tokenResponse.getOtherClaims().clear();
+
+        if (tokenResponse.getTokenType() == null) {
+            tokenResponse.setTokenType(TokenUtil.TOKEN_TYPE_BEARER);
+        }
 
         tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
 
