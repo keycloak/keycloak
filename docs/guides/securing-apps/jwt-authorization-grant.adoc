@@ -25,20 +25,32 @@ The trust relationship in {project_name} is defined by an link:{adminguide_link}
 
 The **JWT Authorization Grant** is a new type of Identity Provider in {project_name} to represent a generic trust relationship. Similar to the previous type, its configuration allows to validate the assertion and obtain an access token using the JWT authorization grant.
 
-{project_name} requires the `sub` claim in the assertion to be the user identifier in the external provider. The {project_name} user should be previously linked to the Identity Provider. This way there is a link between the external and the internal user ID.
+{project_name} requires the `sub` claim in the assertion to be the user identifier in the external provider. By default, the {project_name} user should be previously linked to the Identity Provider. This way there is a link between the external and the internal user ID.
 
 The exact processing that {project_name} performs over the assertion is the following (check the mentioned RFCs for more details about what requirements are needed in the assertion JWT):
 
 . The requester client should be configured to allow JWT authorization grants.
 . The claim `iss` (issuer) should identify the the Identity Provider (**issuer** configuration option).
 . The Identity Provider should be configured to allow JWT authorization grants and the client should be configured to allow exchanging grants with this IdP.
-. The claim `sub` (subject) should identify the user in {project_name}. As commented, the `sub` claim needs to be the ID of the user in the external provider. The user in {project_name} should be linked to the Identity Provider. The linking information will finally locate the user in {project_name}.
+. The claim `sub` (subject) should identify the user in {project_name}. As commented, the `sub` claim needs to be the ID of the user in the external provider. Unless transient external users are enabled as described below, the user in {project_name} should be linked to the Identity Provider. The linking information will finally locate the user in {project_name}.
 . The claim `aud` (audience) should identify the {project_name} server (issuer or token endpoint URL) and must contain only a single value. For security reasons and in line with recent OIDC recommendations, {project_name} rejects JWTs with multiple values in the `aud` claim.
 . The claim `exp` (expiration) should be present and validated.
 . Other claims like `nbf` (not before), `iat` (issued at) and `jti` (JWT ID) can be present and should be validated in that case.
 . The JWT should be signed and its signature should be verified with the keys associated to the identity provider in {project_name}.
 
 NOTE: Brute force protection is not applied to the JWT Authorization Grant for temporarily locked users, since this grant type does not perform user credential-based authentication but relies on an assertion issued by an external identity provider, and therefore cannot be compromised by brute force attacks on credentials of {project_name} user.
+
+== Transient external users
+
+When the experimental `transient-users` feature is enabled, an Identity Provider can opt in to issuing grants without a stored user by setting its `doNotStoreUsers` configuration property to `true`. The client must still be confidential, enable JWT Authorization Grant, and explicitly allow that Identity Provider. All assertion validation and client policies continue to apply.
+
+For this provider, the grant creates a read-only in-memory user instead of resolving a federated identity link. No user or federated link is created. The grant continues to use a transient session and does not issue a refresh token. A configured opt-in with the feature disabled fails the grant rather than falling back to stored-user resolution.
+
+The token subject is a `lightweight-` identifier derived from a SHA-256 hash of the validated issuer and case-sensitive external subject. The username is an opaque `ext.` identifier derived from the same hash. Changing the issuer or external subject changes the resulting identity. Provider aliases and assertion usernames do not affect that identity. Hashing provides pseudonymisation, not anonymisation.
+
+This path does not import assertion claims, local account roles, or existing linked-user permissions. Client scope configuration and protocol mappers still control token issuance. Clients requiring stored consent cannot obtain consent through this non-interactive flow. Only enable this option where the trust agreement permits externally authenticated users to receive the configured client permissions without local account approval.
+
+The token is intended for resource servers which validate it directly. Do not assume that endpoints requiring a stored user, including `userinfo` and introspection, can resolve this actor. Per-user administrative revocation is not available without a stored account. Disabling an issuer or client prevents new issuance but does not automatically revoke tokens accepted through offline validation. Use short access-token lifetimes and resource-server suspension controls where required.
 
 == Configuration
 
@@ -131,7 +143,7 @@ The previous JSON example should be signed and the JWT header should specify the
 }
 ----
 
-NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#_transient-session[transient session] is always created. The access token can be used normally in {project_name} through the introspection, user-info or any other endpoint. It will be valid until expired or explicitly revoked by the revocation endpoint.
+NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#_transient-session[transient session] is always created. For stored users, the access token can be used normally in {project_name} through the introspection, user-info or any other endpoint. Transient external users have the endpoint limitations described above. It will be valid until expired or explicitly revoked by the revocation endpoint.
 
 == How to get a valid token for JWT Authorization Grant
 
