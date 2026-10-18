@@ -152,8 +152,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
-        // Mark the pre-authorized code as used only after all validations pass
-        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
+        // Mark the pre-authorized code as used only after all validations pass.
+        // The code is tracked by the offer it was issued for, not by its wire string, as the same
+        // signed code has many accepted encodings (e.g. padding appended to its signature segment).
+        markPreAuthCodeAsUsed(offerState.getCredentialsOfferId(), offerState.getExpiresAt());
 
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
@@ -320,9 +322,9 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         return preAuthCodeCtx;
     }
 
-    private void markPreAuthCodeAsUsed(String code, long expiresAt) {
+    private void markPreAuthCodeAsUsed(String credentialsOfferId, long expiresAt) {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key = getPreAuthCodeSingleObjectKey(code);
+        String key = getPreAuthCodeSingleObjectKey(credentialsOfferId);
         long expiresIn = expiresAt - Time.currentTimeSeconds();
         boolean firstInsertion = singleUseStore.putIfAbsent(key, expiresIn);
         if (!firstInsertion) {
@@ -399,8 +401,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
     }
 
-    private static String getPreAuthCodeSingleObjectKey(String code) {
-        String hash = HashUtils.sha256UrlEncodedHash(code.trim(), StandardCharsets.UTF_8);
+    private static String getPreAuthCodeSingleObjectKey(String credentialsOfferId) {
+        String hash = HashUtils.sha256UrlEncodedHash(credentialsOfferId, StandardCharsets.UTF_8);
         String fqcn = PreAuthorizedCodeGrantType.class.getName().toLowerCase();
         return fqcn + "." + hash;
     }
