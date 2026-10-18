@@ -75,6 +75,17 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      * @param actionVerificationNonce
      */
     protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
+        this(userId, actionId, (long) absoluteExpirationInSecs, actionVerificationNonce);
+    }
+
+    /**
+     *
+     * @param userId User ID
+     * @param actionId Action ID
+     * @param absoluteExpirationInSecs Absolute expiration time in seconds in timezone of Keycloak.
+     * @param actionVerificationNonce
+     */
+    protected DefaultActionToken(String userId, String actionId, long absoluteExpirationInSecs, UUID actionVerificationNonce) {
         super(userId, actionId, absoluteExpirationInSecs, actionVerificationNonce);
     }
 
@@ -86,6 +97,17 @@ public class DefaultActionToken extends DefaultActionTokenKey implements SingleU
      * @param actionVerificationNonce
      */
     protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String compoundAuthenticationSessionId) {
+        this(userId, actionId, (long) absoluteExpirationInSecs, actionVerificationNonce, compoundAuthenticationSessionId);
+    }
+
+    /**
+     *
+     * @param userId User ID
+     * @param actionId Action ID
+     * @param absoluteExpirationInSecs Absolute expiration time in seconds in timezone of Keycloak.
+     * @param actionVerificationNonce
+     */
+    protected DefaultActionToken(String userId, String actionId, long absoluteExpirationInSecs, UUID actionVerificationNonce, String compoundAuthenticationSessionId) {
         super(userId, actionId, absoluteExpirationInSecs, actionVerificationNonce);
         setCompoundAuthenticationSessionId(compoundAuthenticationSessionId);
     }
