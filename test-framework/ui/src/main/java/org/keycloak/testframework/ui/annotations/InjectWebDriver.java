@@ -21,6 +21,11 @@ public @interface InjectWebDriver {
     String ref() default "";
 
     /**
+     * Additional command-line arguments passed to Chrome. Ignored by other browsers.
+     */
+    String[] chromeArguments() default {};
+
+    /**
      * Controls the lifecycle of the resource
      */
     LifeCycle lifecycle() default LifeCycle.GLOBAL;
