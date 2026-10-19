@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -72,8 +73,10 @@ import org.jboss.logging.Logger;
  *       {@link OutboxConfig#batchSize()} due rows ({@code FOR UPDATE
  *       SKIP LOCKED}), stamps a per-tick token and a lease end
  *       ({@code claimed_until} = now + {@link OutboxConfig#claimLease()});
- *       rows with a live lease are not due for other ticks.
- *       After commit no row lock is held. With
+ *       rows with a live lease are not due for other ticks, and
+ *       neither is any row of an owner that has a row in flight, so
+ *       an owner is delivered by one tick at a time even when ticks
+ *       overlap across nodes. After commit no row lock is held. With
  *       {@link OutboxConfig#perOwnerBatchSize()} set the rows are taken
  *       owner by owner, oldest-waiting owner first and at most that
  *       many per owner per round, so one destination cannot fill the
@@ -96,9 +99,10 @@ import org.jboss.logging.Logger;
  *       skipped rather than overwriting the newer attempt, and so is a
  *       result for a row an admin transitioned meanwhile.</li>
  *   <li><b>Budget</b> — {@link OutboxConfig#tickBudget()} starts when
- *       the claim has returned and is checked before each row, so the
- *       first row always runs; claimed rows the tick does not get to
- *       are handed back (token and lease cleared, still due) in one
+ *       the claim has returned and is checked before each row; the
+ *       first row of a tick runs regardless, so a tick always makes
+ *       progress. Claimed rows the tick does not get to are handed
+ *       back (token and lease cleared, still due) in one
  *       transaction.</li>
  *   <li><b>Housekeeping</b> — one final transaction expires queued rows
  *       older than {@link OutboxConfig#pendingMaxAge()} to DEAD_LETTER,
@@ -113,8 +117,13 @@ import org.jboss.logging.Logger;
  * that many workers, the tick thread being one of them and the rest
  * coming from the {@code outbox-delivery-<kind>} executor; one owner's
  * rows stay in order on one worker, different owners are delivered in
- * parallel. Row-level listener callbacks then run on worker threads,
- * inside the row's record transaction.
+ * parallel.
+ *
+ * <p>Row-level listener callbacks run after the row's record
+ * transaction committed, in a short transaction of their own and with
+ * a detached row, so a listener failure (a JPA exception included,
+ * which would mark a shared transaction rollback-only) can never undo
+ * a transition. With delivery workers they run on the worker thread.
  *
  * <p>Crash safety: a node that dies mid-tick leaves its claimed rows
  * with a token and a lease end; once the lease expires they are due
@@ -139,6 +148,9 @@ public class OutboxDrainerTask implements ScheduledTask {
 
     /** Executor name prefix for delivery workers; the kind is appended. */
     public static final String DELIVERY_EXECUTOR_PREFIX = "outbox-delivery-";
+
+    /** {@code last_error} of rows expired by the {@code pendingMaxAge} backstop. */
+    public static final String STALE_REASON = "queued exceeded pendingMaxAge";
 
     protected final OutboxConfig config;
     protected final OutboxDeliveryHandler handler;
@@ -282,17 +294,23 @@ public class OutboxDrainerTask implements ScheduledTask {
 
     /**
      * Processes rows in order on the calling thread, stopping at the
-     * deadline; rows not reached are reported as unprocessed.
+     * deadline; rows not reached are reported as unprocessed. The
+     * first row of the tick is exempt from the deadline, so a budget
+     * shorter than the claim, the executor setup or the thread
+     * scheduling still lets the tick make progress.
      */
     protected void processRows(KeycloakSessionFactory factory, List<OutboxEntryEntity> rows, String token,
                                Instant deadline, TickCounters counters, List<String> unprocessed) {
         boolean budgetExhausted = false;
         for (OutboxEntryEntity row : rows) {
-            if (budgetExhausted || (deadline != null && !Instant.now().isBefore(deadline))) {
-                budgetExhausted = true;
+            if (!budgetExhausted && deadline != null && !Instant.now().isBefore(deadline)) {
+                budgetExhausted = !counters.firstRowStarted.compareAndSet(false, true);
+            }
+            if (budgetExhausted) {
                 unprocessed.add(row.getId());
                 continue;
             }
+            counters.firstRowStarted.set(true);
             processClaimed(factory, row, token, counters);
         }
     }
@@ -376,6 +394,11 @@ public class OutboxDrainerTask implements ScheduledTask {
 
         OutboxDeliveryResult result = executeSafely(delivery, id);
 
+        // Counters and listener callbacks are deferred until the record
+        // transaction has committed: a listener must not be able to
+        // roll the transition back, and the counters must reflect what
+        // was actually recorded.
+        Runnable[] afterCommit = new Runnable[1];
         try {
             KeycloakModelUtils.runJobInTransaction(factory, s -> {
                 OutboxStore store = storeFactory.apply(s);
@@ -386,11 +409,15 @@ public class OutboxDrainerTask implements ScheduledTask {
                             result.outcome(), id, config.entryKind(), token);
                     return;
                 }
-                applyResult(s, store, row, result, counters);
+                afterCommit[0] = applyResult(factory, store, row, result, counters);
             });
         } catch (RuntimeException e) {
+            afterCommit[0] = null;
             log.warnf(e, "Outbox failed to record outcome %s — row stays leased and is retried after the lease. id=%s entryKind=%s",
                     result.outcome(), id, config.entryKind());
+        }
+        if (afterCommit[0] != null) {
+            afterCommit[0].run();
         }
     }
 
@@ -470,67 +497,84 @@ public class OutboxDrainerTask implements ScheduledTask {
                 : e.getClass().getSimpleName() + ": " + e.getMessage();
     }
 
-    protected void applyResult(KeycloakSession session, OutboxStore store, OutboxEntryEntity row,
-                               OutboxDeliveryResult result, TickCounters counters) {
+    /**
+     * Applies the transition for {@code result} to the (locked) row in
+     * the current transaction and returns the work to do once that
+     * transaction has committed: the counter update and the listener
+     * callback.
+     */
+    protected Runnable applyResult(KeycloakSessionFactory factory, OutboxStore store, OutboxEntryEntity row,
+                                   OutboxDeliveryResult result, TickCounters counters) {
         switch (result.outcome()) {
             case DELIVERED -> {
                 store.markDelivered(row);
-                counters.delivered.incrementAndGet();
                 log.debugf("Outbox delivered. id=%s entryKind=%s correlationId=%s attempts=%d",
                         row.getId(), row.getEntryKind(), row.getCorrelationId(), row.getAttempts());
-                notify(() -> listener.onDelivered(session, row));
+                return () -> {
+                    counters.delivered.incrementAndGet();
+                    notifyRow(factory, s -> listener.onDelivered(s, row));
+                };
             }
-            case RETRY -> handleRetry(session, store, row, result.errorMessage(), counters);
+            case RETRY -> {
+                return handleRetry(factory, store, row, result.errorMessage(), counters);
+            }
             case DEFER -> {
                 store.deferUntil(row, result.notBefore(), result.errorMessage());
-                counters.deferred.incrementAndGet();
                 log.debugf("Outbox deferred without counting an attempt. id=%s entryKind=%s correlationId=%s notBefore=%s reason=%s",
                         row.getId(), row.getEntryKind(), row.getCorrelationId(), result.notBefore(), result.errorMessage());
-                notify(() -> listener.onDeferred(session, row, row.getNextAttemptAt(), result.errorMessage()));
+                Instant notBefore = row.getNextAttemptAt();
+                return () -> {
+                    counters.deferred.incrementAndGet();
+                    notifyRow(factory, s -> listener.onDeferred(s, row, notBefore, result.errorMessage()));
+                };
             }
             case DEAD_LETTER -> {
                 String reason = result.errorMessage() != null ? result.errorMessage()
                         : "handler returned DEAD_LETTER (attempt " + (row.getAttempts() + 1) + ")";
-                deadLetter(session, store, row, OutboxDrainerListener.DeadLetterCause.HANDLER, reason, counters);
                 log.warnf("Outbox dead-lettered by handler. id=%s entryKind=%s correlationId=%s",
                         row.getId(), row.getEntryKind(), row.getCorrelationId());
                 log.debugf("Outbox dead-letter reason. id=%s reason=%s", row.getId(), reason);
+                return deadLetter(factory, store, row, OutboxDrainerListener.DeadLetterCause.HANDLER, reason, counters);
             }
             case ORPHANED -> {
                 String reason = result.errorMessage() != null ? result.errorMessage()
                         : "handler returned ORPHANED (destination no longer exists)";
-                deadLetter(session, store, row, OutboxDrainerListener.DeadLetterCause.ORPHANED, reason, counters);
                 log.warnf("Outbox dead-lettered as orphan. id=%s entryKind=%s correlationId=%s",
                         row.getId(), row.getEntryKind(), row.getCorrelationId());
                 log.debugf("Outbox dead-letter reason. id=%s reason=%s", row.getId(), reason);
+                return deadLetter(factory, store, row, OutboxDrainerListener.DeadLetterCause.ORPHANED, reason, counters);
             }
+            default -> throw new IllegalStateException("unknown outcome " + result.outcome());
         }
     }
 
-    protected void handleRetry(KeycloakSession session, OutboxStore store, OutboxEntryEntity row,
-                               String errorMessage, TickCounters counters) {
+    protected Runnable handleRetry(KeycloakSessionFactory factory, OutboxStore store, OutboxEntryEntity row,
+                                   String errorMessage, TickCounters counters) {
         int nextAttempts = row.getAttempts() + 1;
         String reason = errorMessage != null ? errorMessage : "delivery failed";
         if (config.backoff().isExhausted(nextAttempts)) {
             log.warnf("Outbox dead-lettered after %d attempts. id=%s entryKind=%s correlationId=%s",
                     nextAttempts, row.getId(), row.getEntryKind(), row.getCorrelationId());
             log.debugf("Outbox dead-letter reason. id=%s reason=%s", row.getId(), reason);
-            deadLetter(session, store, row, OutboxDrainerListener.DeadLetterCause.ATTEMPTS_EXHAUSTED, reason, counters);
-            return;
+            return deadLetter(factory, store, row, OutboxDrainerListener.DeadLetterCause.ATTEMPTS_EXHAUSTED, reason, counters);
         }
         Instant nextAttemptAt = config.backoff().computeNextAttemptAt(Instant.now(), nextAttempts);
         log.debugf("Outbox scheduling retry. id=%s attempts=%d nextAttemptAt=%s reason=%s",
                 row.getId(), nextAttempts, nextAttemptAt, reason);
         store.recordFailure(row, nextAttemptAt, reason);
-        counters.retried.incrementAndGet();
-        notify(() -> listener.onRetryScheduled(session, row, nextAttemptAt, reason));
+        return () -> {
+            counters.retried.incrementAndGet();
+            notifyRow(factory, s -> listener.onRetryScheduled(s, row, nextAttemptAt, reason));
+        };
     }
 
-    protected void deadLetter(KeycloakSession session, OutboxStore store, OutboxEntryEntity row,
-                              OutboxDrainerListener.DeadLetterCause cause, String reason, TickCounters counters) {
+    protected Runnable deadLetter(KeycloakSessionFactory factory, OutboxStore store, OutboxEntryEntity row,
+                                  OutboxDrainerListener.DeadLetterCause cause, String reason, TickCounters counters) {
         store.markDeadLetter(row, reason);
-        counters.deadLettered.incrementAndGet();
-        notify(() -> listener.onDeadLetter(session, row, cause, reason));
+        return () -> {
+            counters.deadLettered.incrementAndGet();
+            notifyRow(factory, s -> listener.onDeadLetter(s, row, cause, reason));
+        };
     }
 
     protected void releaseUnprocessed(KeycloakSessionFactory factory, List<String> ids, String token,
@@ -547,15 +591,25 @@ public class OutboxDrainerTask implements ScheduledTask {
     }
 
     protected void housekeeping(KeycloakSessionFactory factory, TickCounters counters) {
+        List<OutboxEntryEntity> expired = new ArrayList<>();
         try {
             KeycloakModelUtils.runJobInTransaction(factory, s -> {
                 OutboxStore store = storeFactory.apply(s);
-                counters.stalePromoted.set(expireStaleQueued(s, store));
+                expired.addAll(expireStaleQueued(store));
                 counters.purgedDelivered.set(purgeDeliveredOlderThanRetention(store));
                 counters.purgedDeadLetter.set(purgeDeadLetterOlderThanRetention(store));
             });
         } catch (RuntimeException e) {
+            expired.clear();
             log.warnf(e, "Outbox housekeeping failed for entryKind=%s — retried on the next tick", config.entryKind());
+        }
+        counters.stalePromoted.set(expired.size());
+        if (!expired.isEmpty()) {
+            notifyRow(factory, s -> {
+                for (OutboxEntryEntity row : expired) {
+                    notify(() -> listener.onDeadLetter(s, row, OutboxDrainerListener.DeadLetterCause.PENDING_MAX_AGE, STALE_REASON));
+                }
+            });
         }
     }
 
@@ -573,38 +627,53 @@ public class OutboxDrainerTask implements ScheduledTask {
     }
 
     /**
-     * Runs a tick-level listener callback in a short transaction of
-     * its own (listeners such as the metrics listener read the depth
-     * per realm), with the same failure isolation as {@link #notify}.
+     * Runs a listener callback in a short transaction of its own
+     * (listeners such as the metrics listener read the realm or the
+     * depth per realm), with the same failure isolation as
+     * {@link #notify}; a transaction the callback breaks is rolled
+     * back without affecting anything else.
      */
     protected void notifyInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask callback) {
         notify(() -> KeycloakModelUtils.runJobInTransaction(factory, callback));
     }
 
     /**
-     * Expires queued rows older than {@link OutboxConfig#pendingMaxAge()}
-     * to DEAD_LETTER, one by one so each reaches the listener with
-     * cause {@link OutboxDrainerListener.DeadLetterCause#PENDING_MAX_AGE}.
-     * Bounded to {@link OutboxConfig#batchSize()} rows per tick; a
-     * larger backlog drains over the following ticks.
+     * {@link #notifyInTransaction} for row-level callbacks, skipped
+     * for the no-op listener so a drainer without observers pays no
+     * extra transaction per row.
      */
-    protected int expireStaleQueued(KeycloakSession session, OutboxStore store) {
+    protected void notifyRow(KeycloakSessionFactory factory, KeycloakSessionTask callback) {
+        if (listener == OutboxDrainerListener.NOOP) {
+            return;
+        }
+        notifyInTransaction(factory, callback);
+    }
+
+    /**
+     * Expires queued rows older than {@link OutboxConfig#pendingMaxAge()}
+     * to DEAD_LETTER, one by one so each can reach the listener with
+     * cause {@link OutboxDrainerListener.DeadLetterCause#PENDING_MAX_AGE}
+     * once the transaction committed. Bounded to
+     * {@link OutboxConfig#batchSize()} rows per tick; a larger backlog
+     * drains over the following ticks.
+     *
+     * @return the expired rows, for the listener callbacks.
+     */
+    protected List<OutboxEntryEntity> expireStaleQueued(OutboxStore store) {
         Duration pendingMaxAge = config.pendingMaxAge();
         if (pendingMaxAge == null || pendingMaxAge.isZero() || pendingMaxAge.isNegative()) {
-            return 0;
+            return List.of();
         }
         Instant cutoff = Instant.now().minus(pendingMaxAge);
-        String reason = "queued exceeded pendingMaxAge";
         List<OutboxEntryEntity> stale = store.lockStaleQueued(config.entryKind(), cutoff, config.batchSize());
         for (OutboxEntryEntity row : stale) {
-            store.expireQueued(row, reason);
-            notify(() -> listener.onDeadLetter(session, row, OutboxDrainerListener.DeadLetterCause.PENDING_MAX_AGE, reason));
+            store.expireQueued(row, STALE_REASON);
         }
         if (!stale.isEmpty()) {
             log.infof("Outbox expired %d stale queued row(s) to DEAD_LETTER (entryKind=%s, pendingMaxAge=%s)",
                     stale.size(), config.entryKind(), pendingMaxAge);
         }
-        return stale.size();
+        return stale;
     }
 
     protected int purgeDeliveredOlderThanRetention(OutboxStore store) {
@@ -639,6 +708,8 @@ public class OutboxDrainerTask implements ScheduledTask {
         final AtomicInteger stalePromoted = new AtomicInteger();
         final AtomicInteger purgedDelivered = new AtomicInteger();
         final AtomicInteger purgedDeadLetter = new AtomicInteger();
+        /** Whether a row was let through the budget check yet; the first one always is. */
+        final AtomicBoolean firstRowStarted = new AtomicBoolean();
 
         OutboxDrainerTickSummary summary(String entryKind, Duration duration) {
             return new OutboxDrainerTickSummary(entryKind, claimed.get(), processed.get(), delivered.get(),

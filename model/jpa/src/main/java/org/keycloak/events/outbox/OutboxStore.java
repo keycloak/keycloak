@@ -273,7 +273,10 @@ public class OutboxStore {
     /**
      * Locks up to {@code limit} due PENDING rows for delivery in the
      * current transaction. Uses {@code FOR UPDATE SKIP LOCKED} so
-     * cluster-aware drainers don't fight for the same rows.
+     * cluster-aware drainers don't fight for the same rows. Rows of an
+     * owner that has any row under a live lease are not due: an owner
+     * is delivered by one tick at a time, so its order holds even when
+     * ticks overlap across nodes.
      */
     public List<OutboxEntryEntity> lockDueForDrain(String entryKind, int limit) {
         Objects.requireNonNull(entryKind, "entryKind");
@@ -297,6 +300,16 @@ public class OutboxStore {
      * {@code FOR UPDATE SKIP LOCKED}.
      */
     public List<OutboxEntryEntity> lockDueForOwner(String entryKind, String ownerId, int limit) {
+        return lockDueForOwner(entryKind, ownerId, limit, null);
+    }
+
+    /**
+     * {@link #lockDueForOwner(String, String, int)} for a tick that may
+     * already hold rows of the owner under {@code token}: those do not
+     * fence the owner, so the owner-fair claim can take an owner's
+     * rows over several rounds. Rows held under any other token do.
+     */
+    public List<OutboxEntryEntity> lockDueForOwner(String entryKind, String ownerId, int limit, String token) {
         Objects.requireNonNull(entryKind, "entryKind");
         Objects.requireNonNull(ownerId, "ownerId");
         if (limit <= 0) {
@@ -308,6 +321,8 @@ public class OutboxStore {
                 .setParameter("ownerId", ownerId)
                 .setParameter("status", OutboxEntryStatus.PENDING)
                 .setParameter("now", Instant.now().toEpochMilli())
+                // Tokens are UUIDs, so an empty string matches no in-flight row.
+                .setParameter("token", token == null ? "" : token)
                 .setMaxResults(limit)
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE);
         skipLocked(query, "owner drain query");
@@ -377,7 +392,7 @@ public class OutboxStore {
      * drain so no single owner fills a whole batch.
      */
     public List<OutboxEntryEntity> claimDueForOwner(String entryKind, String ownerId, int limit, String token, Duration lease) {
-        return claim(lockDueForOwner(entryKind, ownerId, limit), token, lease);
+        return claim(lockDueForOwner(entryKind, ownerId, limit, token), token, lease);
     }
 
     protected List<OutboxEntryEntity> claim(List<OutboxEntryEntity> rows, String token, Duration lease) {

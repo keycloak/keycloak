@@ -460,9 +460,11 @@ public class OutboxStoreTests {
             List<OutboxEntryEntity> first = store.claimDueForOwner(TEST_KIND, "owner-a", 1, "tick-a", Duration.ofMinutes(5));
             Assertions.assertEquals(List.of("a-old"), first.stream().map(OutboxEntryEntity::getCorrelationId).toList());
 
+            Assertions.assertTrue(store.claimDueForOwner(TEST_KIND, "owner-a", 5, "tick-b", Duration.ofMinutes(5)).isEmpty(),
+                    "another tick finds the owner fenced while tick-a holds a row of it");
             List<OutboxEntryEntity> second = store.claimDueForOwner(TEST_KIND, "owner-a", 5, "tick-a", Duration.ofMinutes(5));
             Assertions.assertEquals(List.of("a-new"), second.stream().map(OutboxEntryEntity::getCorrelationId).toList(),
-                    "already-claimed and not-yet-due rows are skipped");
+                    "the same tick goes on with the owner; already-claimed and not-yet-due rows are skipped");
             em(session).flush();
             em(session).clear();
 
@@ -584,6 +586,46 @@ public class OutboxStoreTests {
             Assertions.assertEquals("tick-a", keptAfter.getClaimToken());
 
             new OutboxStore(session).deleteByRealm(OTHER_KIND, realmId);
+        });
+    }
+
+    @Test
+    public void lockDueForDrain_skipsOwnersWithRowsInFlight() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            // owner-busy: one row leased by a running tick, one newer row due and unclaimed.
+            OutboxEntryEntity inFlight = persistRaw(session, TEST_KIND, realmId, "owner-busy", null,
+                    "in-flight", OutboxEntryStatus.PENDING, 0, now.minusSeconds(10), now.minusSeconds(10));
+            inFlight.setClaimToken("tick-a");
+            inFlight.setClaimedUntil(now.plusSeconds(300));
+            OutboxEntryEntity newer = persistRaw(session, TEST_KIND, realmId, "owner-busy", null,
+                    "newer", OutboxEntryStatus.PENDING, 0, now.minusSeconds(5), now.minusSeconds(5));
+            // owner-free: a due row, nothing in flight.
+            OutboxEntryEntity free = persistRaw(session, TEST_KIND, realmId, "owner-free", null,
+                    "free", OutboxEntryStatus.PENDING, 0, now.minusSeconds(1), now.minusSeconds(1));
+            // owner-expired: a row whose lease has run out, plus a newer due row: both due again.
+            OutboxEntryEntity expiredLease = persistRaw(session, TEST_KIND, realmId, "owner-expired", null,
+                    "expired-lease", OutboxEntryStatus.PENDING, 0, now.minusSeconds(10), now.minusSeconds(10));
+            expiredLease.setClaimToken("tick-dead");
+            expiredLease.setClaimedUntil(now.minusSeconds(1));
+            persistRaw(session, TEST_KIND, realmId, "owner-expired", null,
+                    "expired-newer", OutboxEntryStatus.PENDING, 0, now.minusSeconds(5), now.minusSeconds(5));
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            List<String> due = store.lockDueForDrain(TEST_KIND, 10).stream().map(OutboxEntryEntity::getCorrelationId).toList();
+            Assertions.assertEquals(List.of("expired-lease", "expired-newer", "free"), due,
+                    "an owner with a row under a live lease is skipped entirely; an expired lease frees the owner");
+            Assertions.assertEquals(List.of("owner-expired", "owner-free"), store.findOwnersWithDueRows(TEST_KIND, 10));
+            Assertions.assertTrue(store.lockDueForOwner(TEST_KIND, "owner-busy", 10).isEmpty());
+            Assertions.assertEquals(List.of("newer"),
+                    store.lockDueForOwner(TEST_KIND, "owner-busy", 10, "tick-a").stream().map(OutboxEntryEntity::getCorrelationId).toList(),
+                    "the tick that holds the in-flight row may take the owner's next rows");
+            Assertions.assertEquals(1, store.lockDueForOwner(TEST_KIND, "owner-free", 10).size());
+            Assertions.assertNotNull(findById(session, newer.getId()));
+            Assertions.assertNotNull(findById(session, free.getId()));
         });
     }
 

@@ -214,6 +214,53 @@ public class OutboxDrainerTaskTests {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void tick_budgetAlwaysDeliversTheFirstRow() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant base = Instant.now().minusSeconds(10);
+            persistRow(session, realmId, "slow-1", 0, base);
+            persistRow(session, realmId, "slow-2", 0, base.plusSeconds(1));
+            persistRow(session, realmId, "slow-3", 0, base.plusSeconds(2));
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            // A budget no tick can honour: the deadline has passed by
+            // the time the first row is looked at.
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null,
+                    Duration.ofMinutes(5), Duration.ofMillis(1));
+            new OutboxDrainerTask(config, handler, OutboxStore::new).run(session);
+
+            Map<String, Object> out = snapshot(session);
+            out.put("summary", handler.summary);
+            return out;
+        }, Map.class);
+
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(3, summary.get("claimed"));
+        Assertions.assertEquals(1, summary.get("processed"), "the first row is exempt from the deadline");
+        Assertions.assertEquals(1, summary.get("delivered"));
+        Assertions.assertEquals(2, summary.get("released"));
+        Assertions.assertEquals("DELIVERED", result.get("status.slow-1"));
+    }
+
+    @Test
+    public void tick_survivesAListenerThatFailsInsideJpa() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> persistRow(session, realmId, "deliver", 0, Instant.now().minusSeconds(1)));
+
+        String status = runOnServer.fetch(session -> {
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
+            new OutboxDrainerTask(config, new ScriptedHandler(), OutboxStore::new, new JpaFailingListener()).run(session);
+            return (String) snapshot(session).get("status.deliver");
+        }, String.class);
+
+        Assertions.assertEquals("DELIVERED", status,
+                "a listener that breaks its transaction must not roll the transition back");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void tick_leavesRowsLeasedByAnotherTickAlone() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
@@ -469,9 +516,11 @@ public class OutboxDrainerTaskTests {
             ScriptedHandler handler = new ScriptedHandler();
             OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
             OutboxDrainerTask task = new OutboxDrainerTask(config, handler, OutboxStore::new);
-            new OutboxDrainerRunner(session.getKeycloakSessionFactory(), task, 60_000).run();
+            OutboxDrainerRunner runner = new OutboxDrainerRunner(session.getKeycloakSessionFactory(), task, 60_000);
+            runner.run();
 
             Map<String, Object> out = snapshot(session);
+            out.put("lockTimeoutSecs", runner.getLockTimeoutSecs());
             out.put("summary", handler.summary);
             out.put("events", handler.events);
             return out;
@@ -480,6 +529,7 @@ public class OutboxDrainerTaskTests {
         Map<String, Object> summary = (Map<String, Object>) result.get("summary");
         Assertions.assertEquals(1, summary.get("delivered"));
         Assertions.assertEquals("DELIVERED", result.get("status.deliver-probe"));
+        Assertions.assertEquals(300, result.get("lockTimeoutSecs"), "the cluster lock lives as long as the 5 minute claim lease, not the 60 s interval");
         List<String> events = (List<String>) result.get("events");
         Assertions.assertEquals("tickStart:test-kind", events.get(0));
         Assertions.assertTrue(events.contains("tickStartTx:true"), "tick callbacks get a session with a transaction: " + events);
@@ -635,6 +685,15 @@ public class OutboxDrainerTaskTests {
         @Override
         public void onDeadLetter(KeycloakSession session, OutboxEntry row, DeadLetterCause cause, String reason) {
             events.add("deadLetter:" + row.getCorrelationId() + ":" + cause);
+        }
+    }
+
+    /** Fails with a persistence exception, which marks the transaction it runs in rollback-only. */
+    public static class JpaFailingListener implements OutboxDrainerListener, Serializable {
+
+        @Override
+        public void onDelivered(KeycloakSession session, OutboxEntry row) {
+            em(session).createNativeQuery("SELECT 1 FROM NO_SUCH_OUTBOX_TABLE").getResultList();
         }
     }
 
