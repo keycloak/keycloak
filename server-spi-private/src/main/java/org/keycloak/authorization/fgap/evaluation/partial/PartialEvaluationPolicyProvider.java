@@ -55,7 +55,13 @@ public interface PartialEvaluationPolicyProvider {
         /**
          * The policy could not be evaluated because and should be unconditionally denied without applying logic inversion.
          */
-        FORCE_DENY
+        FORCE_DENY,
+
+        /**
+         * Invalid configuration prevents evaluation. Aggregated policies propagate this outcome
+         * unchanged, regardless of their logic or decision strategy.
+         */
+        INVALID
     }
 
     /**

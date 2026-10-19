@@ -85,6 +85,11 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             } else {
                 eval.setEffect(effect);
             }
+
+            if (eval.getEffect() == Decision.Effect.INVALID) {
+                evaluation.setEffect(Decision.Effect.INVALID);
+                return;
+            }
         }
 
         decision.onComplete(permission);
@@ -118,6 +123,7 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
 
     @Override
     public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         int grants = 0;
@@ -125,10 +131,18 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
         int forceDeny = 0;
 
         for (Policy associatedPolicy : associatedPolicies) {
-            PolicyProvider policyProvider = session.getProvider(AuthorizationProvider.class).getProvider(associatedPolicy.getType());
+            PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+
+            if (policyProvider != null && !policyProvider.isValid(associatedPolicy, authorization)) {
+                return Outcome.INVALID;
+            }
 
             if (policyProvider instanceof PartialEvaluationPolicyProvider partialPolicyProvider) {
                 Outcome childOutcome = partialPolicyProvider.evaluateOutcome(session, associatedPolicy, subject);
+
+                if (Outcome.INVALID.equals(childOutcome)) {
+                    return Outcome.INVALID;
+                }
 
                 if (Outcome.FORCE_DENY.equals(childOutcome)) {
                     forceDeny++;
