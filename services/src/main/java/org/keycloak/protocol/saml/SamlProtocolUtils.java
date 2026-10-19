@@ -19,7 +19,9 @@ package org.keycloak.protocol.saml;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -80,6 +82,8 @@ import org.apache.xml.security.encryption.XMLCipher;
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import static java.lang.Math.min;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -475,4 +479,108 @@ public class SamlProtocolUtils {
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * Creates a size limited InputStream of specified is.
+     * It throws IOException when attempt to read beyond the limit is made.
+     *
+     * @param is InputStream to apply limit at
+     * @param limit the limit in bytes to apply in reading from given InputStream
+     * @return LimitedInputStream
+     */
+    public static InputStream limit(InputStream is, long limit) {
+        if (is instanceof LimitedInputStream) {
+            LimitedInputStream lis = (LimitedInputStream) is;
+            if (lis.limit <= limit) {
+                return lis;
+            }
+        }
+        return new LimitedInputStream(is, limit);
+    }
+
+    /**
+     * Modified Guava class to actually throw exception in attempt to read beyond the limit
+     *
+     */
+    private static final class LimitedInputStream extends FilterInputStream {
+
+        private long left;
+        private long mark = -1;
+        private final long limit;
+
+        LimitedInputStream(InputStream in, long limit) {
+            super(in);
+            left = limit;
+            this.limit = limit;
+        }
+
+        @Override
+        public int available() throws IOException {
+            return in.available();
+        }
+
+        // it's okay to mark even if mark isn't supported, as reset won't work
+        @Override
+        public synchronized void mark(int readLimit) {
+            in.mark(readLimit);
+            mark = left;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (left <= 0) {
+                throw new IOException("Limit reached (" + limit + ")");
+            }
+
+            int result = in.read();
+            if (result != -1) {
+                --left;
+                return result;
+            }
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (left <= 0) {
+                throw new IOException("Limit reached (" + limit + ")");
+            }
+
+            int result = in.read(b, off, len);
+            if (result != -1) {
+                left -= result;
+                if (left < 0) {
+                    // reached beyond the limit
+                    throw new IOException("Limit reached (" + limit + ")");
+                }
+                return result;
+            }
+            return result;
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            if (!in.markSupported()) {
+                throw new IOException("Mark not supported");
+            }
+            if (mark == -1) {
+                throw new IOException("Mark not set");
+            }
+
+            in.reset();
+            left = mark;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            n = min(n, left);
+            long skipped = in.skip(n);
+            left -= skipped;
+            return skipped;
+        }
+
+    }
+
+
+
 }

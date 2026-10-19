@@ -2,6 +2,8 @@ package org.keycloak.protocol.saml;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -47,6 +49,8 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThrows;
 
 public class SamlProtocolUtilsTest {
+
+    private final byte[] bytes = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
     private static final String RELAY_STATE = "relay-state";
 
@@ -300,4 +304,86 @@ public class SamlProtocolUtilsTest {
     private static void assertRedirectRejected(String rawQuery, String processedMessage, String processedRelayState) {
         assertThrows(VerificationException.class, () -> verifyRedirect(rawQuery, processedMessage, processedRelayState));
     }
+    @Test
+    public void testLimitedInputStream() throws IOException {
+
+        InputStream inputStream = SamlProtocolUtils.limit(new ByteArrayInputStream(bytes), 3);
+
+        for (int i = 1; i <= 3; i++) {
+            int read = inputStream.read();
+            assertThat(read, is(i));
+        }
+
+        Throwable e = Assertions.assertThrowsExactly(IOException.class, () -> {
+            inputStream.read();
+        });
+        assertThat(e.getMessage(), containsString("Limit reached") );
+
+    }
+
+    @Test
+    public void testLimitedInputStreamBufferMore() throws IOException {
+
+        InputStream inputStream = SamlProtocolUtils.limit(new ByteArrayInputStream(bytes), 6);
+
+        {
+            byte[] buffer = new byte[5];
+            int read = inputStream.read(buffer, 0, 2);
+            assertThat(read, is(2));
+        }
+        {
+            byte[] buffer = new byte[5];
+            int read = inputStream.read(buffer, 0, 2);
+            assertThat(read, is(2));
+        }
+
+        Throwable e = Assertions.assertThrowsExactly(IOException.class, () -> {
+            byte[] buffer = new byte[10];
+            int read = inputStream.read(buffer, 0, 10);
+        });
+        assertThat(e.getMessage(), containsString("Limit reached") );
+
+    }
+
+    @Test
+    public void testLimitedInputStreamBufferReadLess() throws IOException {
+
+        InputStream inputStream = SamlProtocolUtils.limit(new ByteArrayInputStream(bytes), 20);
+
+        {
+            byte[] buffer = new byte[5];
+            int read = inputStream.read(buffer, 0, 5);
+            assertThat(read, is(5));
+        }
+        {
+            byte[] buffer = new byte[5];
+            int read = inputStream.read(buffer, 0, 3);
+            assertThat(read, is(3));
+        }
+        {
+            byte[] buffer = new byte[200];
+            int read = inputStream.read(buffer, 0, 20);
+            assertThat(read, is(2));
+            assertThat(Byte.valueOf(buffer[0]), is(Byte.valueOf((byte)9)));
+            assertThat(Byte.valueOf(buffer[1]), is(Byte.valueOf((byte)10)));
+        }
+
+    }
+
+    @Test
+    public void testLimitedInputStreamBufferRead2() throws IOException {
+
+        InputStream inputStream = SamlProtocolUtils.limit(new ByteArrayInputStream(bytes), 20);
+        byte[] buffer = new byte[10];
+
+        int read = inputStream.read(buffer, 0, 5);
+        read += inputStream.read(buffer, 5, 3);
+
+        for (int i = 0; i < read; i++) {
+            assertThat(bytes[i], is(buffer[i]));
+        }
+
+    }
+
+
 }
