@@ -11,6 +11,7 @@ import {
   Button,
   ButtonVariant,
   Checkbox,
+  Content,
   DataList,
   DataListCell,
   DataListItem,
@@ -19,12 +20,13 @@ import {
   Divider,
   Label,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   SelectOption,
   Stack,
   StackItem,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -278,10 +280,90 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     return (
       <Modal
         variant={ModalVariant.medium}
-        title={t("partialImport")}
         isOpen={props.open}
         onClose={props.toggleDialog}
-        actions={[
+        aria-label={t("partialImport")}
+      >
+        <ModalHeader title={t("partialImport")} />
+        <ModalBody>
+          <Stack hasGutter>
+            <StackItem>
+              <Content>
+                <Content component="p">{t("partialImportHeaderText")}</Content>
+              </Content>
+            </StackItem>
+            <StackItem>
+              <JsonFileUpload
+                id="partial-import-file"
+                allowEditingUploadedText
+                onChange={handleFileChange}
+              />
+            </StackItem>
+
+            {isFileSelected && targetHasResources() && (
+              <>
+                <StackItem>
+                  <Divider />
+                </StackItem>
+                {Array.isArray(importedFile) && importedFile.length > 1 && (
+                  <StackItem>
+                    <Content component="p">{t("selectRealm")}:</Content>
+                    <KeycloakSelect
+                      toggleId="realm-selector"
+                      isOpen={isRealmSelectOpen}
+                      typeAheadAriaLabel={t("realmSelector")}
+                      aria-label={t("realmSelector")}
+                      onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
+                      selections={targetRealm.id}
+                      onSelect={(value) => handleRealmSelect(value)}
+                      placeholderText={targetRealm.realm || targetRealm.id}
+                    >
+                      {realmSelectOptions(importedFile)}
+                    </KeycloakSelect>
+                  </StackItem>
+                )}
+                <StackItem>
+                  <Content component="p">{t("chooseResources")}:</Content>
+                  <DataList aria-label={t("resourcesToImport")} isCompact>
+                    {targetHasResource("users") &&
+                      resourceDataListItem("users", t("users"))}
+                    {targetHasResource("groups") &&
+                      resourceDataListItem("groups", t("groups"))}
+                    {targetHasResource("clients") &&
+                      resourceDataListItem("clients", t("clients"))}
+                    {targetHasResource("identityProviders") &&
+                      resourceDataListItem(
+                        "identityProviders",
+                        t("identityProviders"),
+                      )}
+                    {targetHasRealmRoles() &&
+                      resourceDataListItem("realmRoles", t("realmRoles"))}
+                    {targetHasClientRoles() &&
+                      resourceDataListItem("clientRoles", t("clientRoles"))}
+                  </DataList>
+                </StackItem>
+                <StackItem>
+                  <Content component="p">
+                    {t("selectIfResourceExists")}:
+                  </Content>
+                  <KeycloakSelect
+                    isOpen={isCollisionSelectOpen}
+                    direction="up"
+                    onToggle={() => {
+                      setIsCollisionSelectOpen(!isCollisionSelectOpen);
+                    }}
+                    selections={collisionOption}
+                    onSelect={handleCollisionSelect}
+                    placeholderText={t(collisionOption)}
+                  >
+                    {collisionOptions()}
+                  </KeycloakSelect>
+                </StackItem>
+              </>
+            )}
+          </Stack>
+        </ModalBody>
+        <ModalFooter>
           <Button
             id="modal-import"
             data-testid="confirm"
@@ -292,7 +374,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
             }}
           >
             {t("import")}
-          </Button>,
+          </Button>
           <Button
             id="modal-cancel"
             data-testid="cancel"
@@ -303,83 +385,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
             }}
           >
             {t("cancel")}
-          </Button>,
-        ]}
-      >
-        <Stack hasGutter>
-          <StackItem>
-            <TextContent>
-              <Text>{t("partialImportHeaderText")}</Text>
-            </TextContent>
-          </StackItem>
-          <StackItem>
-            <JsonFileUpload
-              id="partial-import-file"
-              allowEditingUploadedText
-              onChange={handleFileChange}
-            />
-          </StackItem>
-
-          {isFileSelected && targetHasResources() && (
-            <>
-              <StackItem>
-                <Divider />
-              </StackItem>
-              {Array.isArray(importedFile) && importedFile.length > 1 && (
-                <StackItem>
-                  <Text>{t("selectRealm")}:</Text>
-                  <KeycloakSelect
-                    toggleId="realm-selector"
-                    isOpen={isRealmSelectOpen}
-                    typeAheadAriaLabel={t("realmSelector")}
-                    aria-label={t("realmSelector")}
-                    onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
-                    selections={targetRealm.id}
-                    onSelect={(value) => handleRealmSelect(value)}
-                    placeholderText={targetRealm.realm || targetRealm.id}
-                  >
-                    {realmSelectOptions(importedFile)}
-                  </KeycloakSelect>
-                </StackItem>
-              )}
-              <StackItem>
-                <Text>{t("chooseResources")}:</Text>
-                <DataList aria-label={t("resourcesToImport")} isCompact>
-                  {targetHasResource("users") &&
-                    resourceDataListItem("users", t("users"))}
-                  {targetHasResource("groups") &&
-                    resourceDataListItem("groups", t("groups"))}
-                  {targetHasResource("clients") &&
-                    resourceDataListItem("clients", t("clients"))}
-                  {targetHasResource("identityProviders") &&
-                    resourceDataListItem(
-                      "identityProviders",
-                      t("identityProviders"),
-                    )}
-                  {targetHasRealmRoles() &&
-                    resourceDataListItem("realmRoles", t("realmRoles"))}
-                  {targetHasClientRoles() &&
-                    resourceDataListItem("clientRoles", t("clientRoles"))}
-                </DataList>
-              </StackItem>
-              <StackItem>
-                <Text>{t("selectIfResourceExists")}:</Text>
-                <KeycloakSelect
-                  isOpen={isCollisionSelectOpen}
-                  direction="up"
-                  onToggle={() => {
-                    setIsCollisionSelectOpen(!isCollisionSelectOpen);
-                  }}
-                  selections={collisionOption}
-                  onSelect={handleCollisionSelect}
-                  placeholderText={t(collisionOption)}
-                >
-                  {collisionOptions()}
-                </KeycloakSelect>
-              </StackItem>
-            </>
-          )}
-        </Stack>
+          </Button>
+        </ModalFooter>
       </Modal>
     );
   };
@@ -446,10 +453,45 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     return (
       <Modal
         variant={ModalVariant.medium}
-        title={t("partialImport")}
         isOpen={props.open}
         onClose={props.toggleDialog}
-        actions={[
+        aria-label={t("partialImport")}
+      >
+        <ModalHeader title={t("partialImport")} />
+        <ModalBody>
+          <Alert
+            variant="success"
+            component="p"
+            isInline
+            title={importCompleteMessage()}
+          />
+          <KeycloakDataTable
+            loader={loader}
+            isPaginated
+            ariaLabelKey="partialImport"
+            columns={[
+              {
+                name: "action",
+                displayKey: "action",
+                cellRenderer: ActionLabel,
+              },
+              {
+                name: "resourceType",
+                displayKey: "type",
+                cellRenderer: TypeRenderer,
+              },
+              {
+                name: "resourceName",
+                displayKey: "name",
+              },
+              {
+                name: "id",
+                displayKey: "id",
+              },
+            ]}
+          />
+        </ModalBody>
+        <ModalFooter>
           <Button
             id="modal-close"
             data-testid="close-button"
@@ -460,40 +502,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
             }}
           >
             {t("close")}
-          </Button>,
-        ]}
-      >
-        <Alert
-          variant="success"
-          component="p"
-          isInline
-          title={importCompleteMessage()}
-        />
-        <KeycloakDataTable
-          loader={loader}
-          isPaginated
-          ariaLabelKey="partialImport"
-          columns={[
-            {
-              name: "action",
-              displayKey: "action",
-              cellRenderer: ActionLabel,
-            },
-            {
-              name: "resourceType",
-              displayKey: "type",
-              cellRenderer: TypeRenderer,
-            },
-            {
-              name: "resourceName",
-              displayKey: "name",
-            },
-            {
-              name: "id",
-              displayKey: "id",
-            },
-          ]}
-        />
+          </Button>
+        </ModalFooter>
       </Modal>
     );
   };

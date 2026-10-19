@@ -62,12 +62,7 @@ const SecretInput = ({
             )}
           </InputGroupItem>
           <InputGroupItem>
-            <CopyToClipboardButton
-              id={id}
-              text={secret}
-              label="clientSecret"
-              variant="control"
-            />
+            <CopyToClipboardButton id={id} text={secret} variant="control" />
           </InputGroupItem>
         </InputGroup>
       </SplitItem>
@@ -97,7 +92,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
         })
       : undefined;
 
-  return <div className="pf-v5-u-my-md">{unixTimeToString(time)}</div>;
+  return <div className="pf-v6-u-my-md">{unixTimeToString(time)}</div>;
 };
 
 export const ClientSecret = ({
@@ -142,8 +137,8 @@ export const ClientSecret = ({
       <FormGroup
         label={t("clientSecret")}
         fieldId="kc-client-secret"
-        className="pf-v5-u-my-md"
-        labelIcon={
+        className="pf-v6-u-my-md"
+        labelHelp={
           <HelpItem
             helpText={t("oidcClientSecretHelp")}
             fieldLabelId="kc-client-secret"

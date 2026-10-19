@@ -17,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
-  Chip,
   FormGroup,
   Label,
   SelectOption,
@@ -25,9 +24,9 @@ import {
   SplitItem,
   Stack,
   StackItem,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
+
 import {
   CheckCircleIcon,
   InfoCircleIcon,
@@ -219,14 +218,14 @@ export const ReceiverTab = ({
   };
 
   return (
-    <Card isFlat className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfReceiver")}</CardTitle>
       </CardHeader>
       <CardBody>
-        <TextContent>
-          <Text>{t("ssfReceiverHelp")}</Text>
-        </TextContent>
+        <Content>
+          <Content component="p">{t("ssfReceiverHelp")}</Content>
+        </Content>
       </CardBody>
       <CardBody>
         <FormAccess
@@ -247,9 +246,9 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Text className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionGeneralHelp")}
-                    </Text>
+                    </Content>
                     <FormGroup
                       label={t("ssfStreamStatusLabel")}
                       fieldId="ssfStreamStatusIndicator"
@@ -422,7 +421,7 @@ export const ReceiverTab = ({
                     <FormGroup
                       label={t("ssfSubjectRemovalGrace")}
                       fieldId="ssfSubjectRemovalGrace"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfSubjectRemovalGraceHelp")}
                           fieldLabelId="ssfSubjectRemovalGrace"
@@ -484,7 +483,7 @@ export const ReceiverTab = ({
                     <FormGroup
                       label={t("ssfMaxEventAge")}
                       fieldId="ssfMaxEventAge"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfMaxEventAgeHelp")}
                           fieldLabelId="ssfMaxEventAge"
@@ -510,7 +509,7 @@ export const ReceiverTab = ({
                     <FormGroup
                       label={t("ssfInactivityTimeout")}
                       fieldId="ssfInactivityTimeout"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfInactivityTimeoutHelp")}
                           fieldLabelId="ssfInactivityTimeout"
@@ -546,9 +545,9 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Text className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionAuthenticationHelp")}
-                    </Text>
+                    </Content>
                     <DefaultSwitchControl
                       name={convertAttributeNameToForm<FormFields>(
                         "attributes.ssf.requireServiceAccount",
@@ -560,7 +559,7 @@ export const ReceiverTab = ({
                     <FormGroup
                       label={t("ssfRequiredRole")}
                       fieldId="ssfRequiredRole"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfRequiredRoleHelp")}
                           fieldLabelId="ssfRequiredRole"
@@ -593,9 +592,10 @@ export const ReceiverTab = ({
                             )}
                             {field.value && field.value !== "" && (
                               <SplitItem>
-                                <Chip
+                                <Label
+                                  variant="outline"
                                   textMaxWidth="500px"
-                                  onClick={() => field.onChange("")}
+                                  onClose={() => field.onChange("")}
                                 >
                                   <ServiceRole
                                     role={{
@@ -605,7 +605,7 @@ export const ReceiverTab = ({
                                       clientId: parseRoleValue(field.value)[0],
                                     }}
                                   />
-                                </Chip>
+                                </Label>
                               </SplitItem>
                             )}
                             <SplitItem>
@@ -637,13 +637,13 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Text className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionDeliveryHelp")}
-                    </Text>
+                    </Content>
                     <FormGroup
                       label={t("ssfAllowedDeliveryMethods")}
                       fieldId="ssfAllowedDeliveryMethods"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfAllowedDeliveryMethodsHelp")}
                           fieldLabelId="ssfAllowedDeliveryMethods"
@@ -685,7 +685,7 @@ export const ReceiverTab = ({
                       <FormGroup
                         label={t("ssfValidPushUrls")}
                         fieldId="ssfValidPushUrls"
-                        labelIcon={
+                        labelHelp={
                           <HelpItem
                             helpText={t("ssfValidPushUrlsHelp")}
                             fieldLabelId="ssfValidPushUrls"
@@ -746,13 +746,13 @@ export const ReceiverTab = ({
                       rowGap: "1.5rem",
                     }}
                   >
-                    <Text className="pf-v5-u-pb-lg">
+                    <Content component="p" className="pf-v6-u-pb-lg">
                       {t("ssfSectionEventsHelp")}
-                    </Text>
+                    </Content>
                     <FormGroup
                       label={t("ssfSupportedEvents")}
                       fieldId="ssfSupportedEvents"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfSupportedEventsHelp")}
                           fieldLabelId="ssfSupportedEvents"
@@ -764,7 +764,7 @@ export const ReceiverTab = ({
                         data-testid="ssfSupportedEvents"
                         variant={SelectVariant.typeaheadMulti}
                         chipGroupProps={{
-                          numChips: 5,
+                          numLabels: 5,
                           expandedText: t("hide"),
                           collapsedText: t("showRemaining"),
                         }}
@@ -814,7 +814,7 @@ export const ReceiverTab = ({
                                 <Label
                                   color="blue"
                                   isCompact
-                                  className="pf-v5-u-ml-sm"
+                                  className="pf-v6-u-ml-sm"
                                 >
                                   {t("ssfNativelyEmittedBadge")}
                                 </Label>
@@ -834,7 +834,7 @@ export const ReceiverTab = ({
                     <FormGroup
                       label={t("ssfEmitOnlyEvents")}
                       fieldId="ssfEmitOnlyEvents"
-                      labelIcon={
+                      labelHelp={
                         <HelpItem
                           helpText={t("ssfEmitOnlyEventsHelp")}
                           fieldLabelId="ssfEmitOnlyEvents"
@@ -846,7 +846,7 @@ export const ReceiverTab = ({
                         data-testid="ssfEmitOnlyEvents"
                         variant={SelectVariant.typeaheadMulti}
                         chipGroupProps={{
-                          numChips: 5,
+                          numLabels: 5,
                           expandedText: t("hide"),
                           collapsedText: t("showRemaining"),
                         }}
@@ -899,7 +899,7 @@ export const ReceiverTab = ({
                       <FormGroup
                         label={t("ssfEmitEventsRole")}
                         fieldId="ssfEmitEventsRole"
-                        labelIcon={
+                        labelHelp={
                           <HelpItem
                             helpText={t("ssfEmitEventsRoleHelp")}
                             fieldLabelId="ssfEmitEventsRole"
@@ -932,9 +932,10 @@ export const ReceiverTab = ({
                               )}
                               {field.value && field.value !== "" && (
                                 <SplitItem>
-                                  <Chip
+                                  <Label
+                                    variant="outline"
                                     textMaxWidth="500px"
-                                    onClick={() => field.onChange("")}
+                                    onClose={() => field.onChange("")}
                                   >
                                     <ServiceRole
                                       role={{
@@ -946,7 +947,7 @@ export const ReceiverTab = ({
                                         )[0],
                                       }}
                                     />
-                                  </Chip>
+                                  </Label>
                                 </SplitItem>
                               )}
                               <SplitItem>

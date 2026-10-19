@@ -14,7 +14,7 @@ export const SyncSettings = () => {
     <FormProvider {...form}>
       <FormGroup
         label={t("periodicFullSync")}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("periodicFullSyncHelp")}
             fieldLabelId="periodicFullSync"
@@ -35,8 +35,7 @@ export const SyncSettings = () => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("on")}
-              labelOff={t("off")}
+              label={field.value !== "-1" ? t("on") : t("off")}
               aria-label={t("periodicFullSync")}
             />
           )}
@@ -54,7 +53,7 @@ export const SyncSettings = () => {
       )}
       <FormGroup
         label={t("periodicChangedUsersSync")}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("periodicChangedUsersSyncHelp")}
             fieldLabelId="periodicChangedUsersSync"
@@ -75,8 +74,7 @@ export const SyncSettings = () => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("on")}
-              labelOff={t("off")}
+              label={field.value !== "-1" ? t("on") : t("off")}
               aria-label={t("periodicChangedUsersSync")}
             />
           )}

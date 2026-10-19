@@ -44,12 +44,12 @@ export const RoleForm = ({
   return (
     <>
       {!editMode && <ViewHeader titleKey={t("createRole")} />}
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
           role={role}
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           fineGrainedAccess={true} // We would never want to show this form in read-only mode
         >
           <TextControl

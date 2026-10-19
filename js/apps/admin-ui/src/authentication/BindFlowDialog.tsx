@@ -6,6 +6,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -49,13 +52,40 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
 
   return (
     <Modal
-      title={t("bindFlow")}
       variant="small"
       onClose={() => onClose()}
-      actions={[
+      isOpen
+      aria-label={t("bindFlow")}
+    >
+      <ModalHeader title={t("bindFlow")} />
+      <ModalBody>
+        <Form
+          id="bind-form"
+          isHorizontal
+          onSubmit={form.handleSubmit(onSubmit)}
+        >
+          <FormProvider {...form}>
+            <SelectControl
+              id="chooseBindingType"
+              name="bindingType"
+              label={t("chooseBindingType")}
+              options={flowKeys
+                .filter((f) => f !== "dockerAuthenticationFlow")
+                .map((key) => ({
+                  key,
+                  value: t(`flow.${REALM_FLOWS.get(key)}`),
+                }))}
+              controller={{ defaultValue: flowKeys[0] }}
+              menuAppendTo="parent"
+              aria-label={t("chooseBindingType")}
+            />
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button key="confirm" data-testid="save" type="submit" form="bind-form">
           {t("save")}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -63,28 +93,8 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           onClick={() => onClose()}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-      isOpen
-    >
-      <Form id="bind-form" isHorizontal onSubmit={form.handleSubmit(onSubmit)}>
-        <FormProvider {...form}>
-          <SelectControl
-            id="chooseBindingType"
-            name="bindingType"
-            label={t("chooseBindingType")}
-            options={flowKeys
-              .filter((f) => f !== "dockerAuthenticationFlow")
-              .map((key) => ({
-                key,
-                value: t(`flow.${REALM_FLOWS.get(key)}`),
-              }))}
-            controller={{ defaultValue: flowKeys[0] }}
-            menuAppendTo="parent"
-            aria-label={t("chooseBindingType")}
-          />
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

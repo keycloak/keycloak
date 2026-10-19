@@ -13,7 +13,7 @@ import {
   DropdownList,
   MenuToggle,
   PageSection,
-  Popover,
+  Tooltip,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { EllipsisVIcon } from "@patternfly/react-icons";
@@ -196,7 +196,7 @@ export default function RealmSection() {
         />
       )}
       <ViewHeader titleKey="manageRealms" divider={false} />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}
@@ -245,14 +245,11 @@ export default function RealmSection() {
                 name !== realm ? (
                   <Link to={toDashboard({ realm: name })}>{name}</Link>
                 ) : (
-                  <Popover
-                    bodyContent={t("currentRealmExplain")}
-                    triggerAction="hover"
-                  >
-                    <>
+                  <Tooltip content={t("currentRealmExplain")}>
+                    <span>
                       {name} <Badge isRead>{t("currentRealm")}</Badge>
-                    </>
-                  </Popover>
+                    </span>
+                  </Tooltip>
                 ),
             },
             {

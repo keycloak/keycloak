@@ -116,7 +116,7 @@ export const AttributeGeneralSettings = () => {
         />
         <FormGroup
           label={t("attributeDisplayName")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("attributeDisplayNameHelp")}
               fieldLabelId="attributeDisplayName"
@@ -168,7 +168,7 @@ export const AttributeGeneralSettings = () => {
             <Divider />
             <FormGroup
               label={t("enabledWhen")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("enabledWhenTooltip")}
                   fieldLabelId="enabled-when"
@@ -184,7 +184,7 @@ export const AttributeGeneralSettings = () => {
                 name="enabledWhen"
                 label={t("always")}
                 onChange={() => setHasSelector(false)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
               <Radio
                 id="scopesAsRequested"
@@ -193,7 +193,7 @@ export const AttributeGeneralSettings = () => {
                 name="enabledWhen"
                 label={t("scopesAsRequested")}
                 onChange={() => setHasSelector(true)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             {hasSelector && (
@@ -212,7 +212,7 @@ export const AttributeGeneralSettings = () => {
                       }}
                       typeAheadAriaLabel="Select"
                       chipGroupProps={{
-                        numChips: 3,
+                        numLabels: 3,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -252,7 +252,7 @@ export const AttributeGeneralSettings = () => {
             <Divider />
             <FormGroup
               label={t("required")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("requiredHelp")}
                   fieldLabelId="required"
@@ -272,7 +272,6 @@ export const AttributeGeneralSettings = () => {
                     onChange={field.onChange}
                     isChecked={field.value}
                     label={t("on")}
-                    labelOff={t("off")}
                     aria-label={t("required")}
                   />
                 )}
@@ -312,7 +311,7 @@ export const AttributeGeneralSettings = () => {
                 </FormGroup>
                 <FormGroup
                   label={t("requiredWhen")}
-                  labelIcon={
+                  labelHelp={
                     <HelpItem
                       helpText={t("requiredWhenTooltip")}
                       fieldLabelId="required-when"
@@ -328,7 +327,7 @@ export const AttributeGeneralSettings = () => {
                     name="requiredWhen"
                     label={t("always")}
                     onChange={() => setHasRequiredScopes(false)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                   <Radio
                     id="requiredScopesAsRequested"
@@ -337,7 +336,7 @@ export const AttributeGeneralSettings = () => {
                     name="requiredWhen"
                     label={t("scopesAsRequested")}
                     onChange={() => setHasRequiredScopes(true)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                 </FormGroup>
                 {hasRequiredScopes && (
@@ -352,7 +351,7 @@ export const AttributeGeneralSettings = () => {
                           variant={SelectVariant.typeaheadMulti}
                           typeAheadAriaLabel="Select"
                           chipGroupProps={{
-                            numChips: 3,
+                            numLabels: 3,
                             expandedText: t("hide"),
                             collapsedText: t("showRemaining"),
                           }}

@@ -29,7 +29,7 @@ export const ClientSettings = (props: ClientSettingsProps) => {
   return (
     <ScrollForm
       label={t("jumpToSection")}
-      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
+      className="pf-v6-u-px-lg pf-v6-u-pb-lg"
       sections={[
         {
           title: t("generalSettings"),

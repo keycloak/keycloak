@@ -4,9 +4,9 @@
 }
 
 .keycloak-admin--groups__member-count svg {
-  color: var(--pf-v5-global--Color--200);
-  font-size: var(--pf-v5-global--FontSize--md);
-  margin-right: var(--pf-v5-global--spacer--sm);
+  color: var(--pf-t--global--text--color--subtle);
+  font-size: var(--pf-t--global--font--size--md);
+  margin-right: var(--pf-t--global--spacer--sm);
 }
 
 .keycloak-admin--groups__section {

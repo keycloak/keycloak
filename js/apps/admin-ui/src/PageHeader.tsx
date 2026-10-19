@@ -131,7 +131,7 @@ export const Header = () => {
       toolbarItems={[
         <ToolbarItem
           key="help"
-          align={{ default: "alignRight" }}
+          align={{ default: "alignEnd" }}
           visibility={{
             default: "hidden",
             md: "visible",

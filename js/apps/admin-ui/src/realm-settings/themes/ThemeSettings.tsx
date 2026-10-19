@@ -32,11 +32,11 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   ];
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         isHorizontal
         role="manage-realm"
-        className="pf-v5-u-mt-lg"
+        className="pf-v6-u-mt-lg"
         onSubmit={handleSubmit(save)}
       >
         <FormProvider {...form}>
