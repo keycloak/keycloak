@@ -197,8 +197,8 @@ With TLS re-encrypt, {project_name} requires the following configuration:
 <@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none"/>
 
 `--proxy-headers xforwarded`::
-Instructs {project_name} to read the client IP address and protocol from the `X-Forwarded-*` headers set by Traefik.
-In re-encrypt mode, Traefik overwrites any incoming `X-Forwarded-*` headers with the correct client values before forwarding requests to {project_name}, preventing clients from injecting misleading header values.
+Instructs {project_name} to read the client IP address and protocol from the `+X-Forwarded-*+` headers set by Traefik.
+In re-encrypt mode, Traefik overwrites any incoming `+X-Forwarded-*+` headers with the correct client values before forwarding requests to {project_name}, preventing clients from injecting misleading header values.
 Do not set `--proxy-protocol-enabled` when using TLS re-encrypt.
 The PROXY protocol is only relevant for TLS passthrough (TCP mode).
 
