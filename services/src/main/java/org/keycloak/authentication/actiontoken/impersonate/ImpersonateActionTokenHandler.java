@@ -71,7 +71,7 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         // Normally, action tokens are invalidated after the intended required action is executed. However, since
         // impersonation doesn't have a required action and is instead executed immediately when the token is handled,
         // we need to invalidate the token here to prevent it from being used multiple times.
-        if (!AuthenticationManager.invalidateActionToken(session, token.serializeKey(), 0L)) {
+        if (!AuthenticationManager.invalidateActionToken(session, token.serializeKey(), AuthenticationManager.CLOCK_SKEW_SECONDS)) {
             return handleImpersonationError(tokenContext, Errors.EXPIRED_CODE, Status.BAD_REQUEST);
         }
 
