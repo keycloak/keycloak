@@ -18,6 +18,7 @@
 package org.keycloak.broker.provider.mappersync;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.RoleModel;
@@ -55,5 +56,31 @@ public class RoleConfigPropertyByRoleNameSynchronizer implements ConfigSynchroni
                     event.getKeycloakSession().identityProviders().updateMapper(idpMapper);
                 });
 
+        GrantableRoleReferences.rewrite(event.getKeycloakSession(), event.getRealm(),
+                reference -> rename(event, reference), this);
+    }
+
+    private static RoleReferenceRename rename(RoleModel.RoleNameChangeEvent event, String reference) {
+        return namesRole(event, reference, event.getPreviousName()) ? renamedReference(event) : RoleReferenceRename.UNAFFECTED;
+    }
+
+    /**
+     * The reference to the role under its new name, unless that spelling names a different role.
+     */
+    private static RoleReferenceRename renamedReference(RoleModel.RoleNameChangeEvent event) {
+        String newReference = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getNewName());
+        return namesRole(event, newReference, event.getNewName())
+                ? new RoleReferenceRename.Renamed(newReference)
+                : new RoleReferenceRename.Ambiguous(newReference);
+    }
+
+    /**
+     * Whether {@code reference} names the role of the event's container called {@code roleName}; a role rename does not
+     * change which client IDs exist.
+     */
+    private static boolean namesRole(RoleModel.RoleNameChangeEvent event, String reference, String roleName) {
+        RoleReference role = new RoleReference(Optional.ofNullable(event.getClientId()), roleName);
+        return RoleReference.resolve(reference, clientId -> event.getRealm().getClientByClientId(clientId) != null)
+                .equals(Optional.of(role));
     }
 }
