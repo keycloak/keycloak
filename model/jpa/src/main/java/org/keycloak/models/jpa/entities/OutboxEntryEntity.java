@@ -83,6 +83,9 @@ import org.hibernate.annotations.Nationalized;
                         + "   AND e.status = :status"
                         + "   AND e.nextAttemptAt <= :now"
                         + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now)"
                         + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.id ASC"),
         // Owner-fair drain: which owners have due rows (oldest first),
         // then the due rows of one owner. Both use IDX_OUTBOX_OWNER /
@@ -94,6 +97,9 @@ import org.hibernate.annotations.Nationalized;
                         + "   AND e.status = :status"
                         + "   AND e.nextAttemptAt <= :now"
                         + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now)"
                         + " GROUP BY e.ownerId"
                         + " ORDER BY MIN(e.nextAttemptAt) ASC, e.ownerId ASC"),
         @NamedQuery(
@@ -104,6 +110,12 @@ import org.hibernate.annotations.Nationalized;
                         + "   AND e.status = :status"
                         + "   AND e.nextAttemptAt <= :now"
                         + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        // Rows the calling tick holds itself do not fence the owner:
+                        // the owner-fair claim takes an owner's rows over several rounds.
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now"
+                        + "          AND (f.claimToken IS NULL OR f.claimToken <> :token))"
                         + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.id ASC"),
         @NamedQuery(
                 name = "OutboxEntryEntity.findByOwnerAndCorrelationId",

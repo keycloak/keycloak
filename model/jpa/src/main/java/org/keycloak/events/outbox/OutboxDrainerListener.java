@@ -19,11 +19,11 @@ import org.keycloak.models.KeycloakSession;
  * <p>Listener failures are logged and swallowed by the drainer; they
  * never affect the row's transition or the rest of the tick.
  *
- * <p>All callbacks run inside the drainer's transaction, before it
- * commits. A listener that needs the row's new state durably
- * committed (e.g. to notify an external system) should do so from
- * {@link #onTickEnd} or defer the work to a transaction completion
- * hook.
+ * <p>Every callback runs in a short transaction of its own, opened by
+ * the drainer. Row callbacks run after the row's transition has been
+ * committed, so the new state is durable when they see it; the row
+ * they receive is a detached snapshot. A callback that breaks its
+ * transaction (a failing query, say) only loses that transaction.
  */
 public interface OutboxDrainerListener {
 

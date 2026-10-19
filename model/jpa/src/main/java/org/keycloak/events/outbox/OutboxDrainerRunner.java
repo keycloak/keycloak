@@ -33,17 +33,27 @@ public class OutboxDrainerRunner implements TaskRunner {
 
     private final KeycloakSessionFactory sessionFactory;
     private final OutboxDrainerTask task;
-    private final int intervalSecs;
+    private final int lockTimeoutSecs;
 
     /**
-     * @param intervalMillis the schedule interval; doubles as the
-     *                       cluster lock timeout, like
-     *                       {@code ClusterAwareScheduledTaskRunner}.
+     * The cluster lock is held for the longer of {@code intervalMillis}
+     * and the task's {@link OutboxConfig#claimLease() claim lease}.
+     * {@code ClusterAwareScheduledTaskRunner} uses the interval alone,
+     * which lets the lock expire under a tick that outlives it; the
+     * lease is the window after which the drainer already treats a
+     * node as gone, so a lock that lives as long adds no new failure
+     * mode. Owner ordering does not depend on it either: the claim
+     * skips owners with rows in flight.
      */
     public OutboxDrainerRunner(KeycloakSessionFactory sessionFactory, OutboxDrainerTask task, long intervalMillis) {
         this.sessionFactory = Objects.requireNonNull(sessionFactory, "sessionFactory");
         this.task = Objects.requireNonNull(task, "task");
-        this.intervalSecs = (int) (intervalMillis / 1000);
+        long leaseSecs = task.getConfig().claimLease().toSeconds();
+        this.lockTimeoutSecs = (int) Math.max(1, Math.max(intervalMillis / 1000, leaseSecs));
+    }
+
+    public int getLockTimeoutSecs() {
+        return lockTimeoutSecs;
     }
 
     @Override
@@ -70,7 +80,7 @@ public class OutboxDrainerRunner implements TaskRunner {
     protected void runTick(KeycloakSession session) {
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         String taskKey = task.getTaskName();
-        ExecutionResult<Void> result = cluster.executeIfNotExecuted(taskKey, intervalSecs, () -> {
+        ExecutionResult<Void> result = cluster.executeIfNotExecuted(taskKey, lockTimeoutSecs, () -> {
             task.run(session);
             return null;
         });
