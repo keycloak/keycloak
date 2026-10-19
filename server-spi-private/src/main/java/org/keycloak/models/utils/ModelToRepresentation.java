@@ -1588,4 +1588,11 @@ public class ModelToRepresentation {
         return toRepresentation(model, credentialType);
     }
 
+    public static void setServiceAccountUserId(KeycloakSession session, ClientModel client, ClientRepresentation rep) {
+        UserModel serviceAccount = session.users().getServiceAccount(client);
+        if (serviceAccount != null) {
+            rep.setServiceAccountUserId(serviceAccount.getId());
+        }
+    }
+
 }
