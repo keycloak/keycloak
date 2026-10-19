@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
@@ -219,11 +220,24 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
             UserModel ldapUser = new UserModelDelegate(user) {
                 @Override
+                public boolean isFederated() {
+                    return true;
+                }
+
+                @Override
                 public String getFirstAttribute(String name) {
                     if (UserModel.USERNAME.equals(name)) {
                         return "LDAP-Case-User";
                     }
                     return super.getFirstAttribute(name);
+                }
+
+                @Override
+                public Stream<String> getAttributeStream(String name) {
+                    if (UserModel.USERNAME.equals(name)) {
+                        return Stream.of("LDAP-Case-User");
+                    }
+                    return super.getAttributeStream(name);
                 }
             };
 
