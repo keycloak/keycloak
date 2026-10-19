@@ -16,7 +16,7 @@
         <RoleIdentifiers>
             <Attribute name="Role"/>
         </RoleIdentifiers>
-        <IDP entityID="idp"
+        <IDP entityID="http://localhost:8080/auth/realms/tenant2"
              signatureAlgorithm="RSA_SHA256">
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
