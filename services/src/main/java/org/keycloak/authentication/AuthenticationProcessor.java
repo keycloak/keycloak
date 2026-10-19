@@ -1064,8 +1064,8 @@ public class AuthenticationProcessor {
         UserModel authUser = authenticationSession.getAuthenticatedUser();
         validateUser(authUser);
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
-        if (model == null) {
-            logger.debug("Cannot find execution, reseting flow");
+        if (model == null || !AuthenticatorUtil.checkExecutionBelongsToFlow(realm, flowId, model)) {
+            logger.debug("Cannot find execution in the authentication flow, reseting flow");
             logFailure(null);
             resetFlow();
             return authenticate();
