@@ -469,8 +469,6 @@ public class ImpersonationTest {
             EventAssertion.assertError(events.poll())
                     .type(EventType.IMPERSONATE_ERROR)
                     .error(Errors.EXPIRED_CODE);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
