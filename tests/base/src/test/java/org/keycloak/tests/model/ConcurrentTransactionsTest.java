@@ -35,6 +35,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.Assertions;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class ConcurrentTransactionsTest {
 
     private static final int LATCH_TIMEOUT_MS = 30000;
