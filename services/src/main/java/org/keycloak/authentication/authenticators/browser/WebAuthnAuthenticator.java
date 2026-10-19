@@ -68,6 +68,7 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_CHALLENGE;
@@ -377,6 +378,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_BAD_SIGNATURE:
         case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED:
         case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED:
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)

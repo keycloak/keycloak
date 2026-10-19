@@ -358,6 +358,7 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_BAD_SIGNATURE = "webauthn-error-bad-signature";
     public static final String WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED = "webauthn-error-backup-eligible-not-allowed";
     public static final String WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED = "webauthn-error-backup-eligible-required";
+    public static final String WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED = "webauthn-error-backup-eligible-changed";
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";

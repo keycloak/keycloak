@@ -2,6 +2,7 @@ package org.keycloak.tests.webauthn;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -165,6 +166,32 @@ public class WebAuthnBackupEligibilityTest extends AbstractWebAuthnVirtualTest {
         assertThat(error.getDetails().get(WebAuthnConstants.AUTH_ERR_LABEL), is("webauthn-error-backup-eligible-not-allowed"));
     }
 
+    @Test
+    public void changedBackupEligibleFlagIsRejectedAtLogin() throws IOException {
+        useAuthenticator(BackupFlagsVirtualAuthenticatorOptions.syncedPasskey());
+
+        registerDefaultUser();
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
+        logout();
+
+        // a device-bound policy would be satisfied by the forged flag, but the recorded flag says otherwise
+        managedRealm.updateWithCleanup(r -> r.webAuthn(isPasswordless(), builder ->
+                builder.backupEligibility(Constants.WEBAUTHN_POLICY_OPTION_DEVICE_BOUND)));
+        setBackupEligibility(false);
+
+        authenticateUser(USERNAME, PASSWORD, false);
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("The passkey reported a different backup capability than when it was registered"));
+
+        EventRepresentation error = pollEvent(EventType.LOGIN_ERROR);
+        assertThat(error.getDetails().get(WebAuthnConstants.AUTH_ERR_LABEL), is("webauthn-error-backup-eligible-changed"));
+
+        // the recorded flag is kept
+        WebAuthnCredentialData data = webAuthnCredentialData(userId);
+        assertThat(data.getBackupEligible(), is(true));
+    }
+
     private void useAuthenticator(VirtualAuthenticatorOptions options) {
         getVirtualAuthManager().useAuthenticator(options);
     }
@@ -174,13 +201,26 @@ public class WebAuthnBackupEligibilityTest extends AbstractWebAuthnVirtualTest {
      * credential manager that backs up or stops backing up a passkey.
      */
     private void setBackupState(boolean backupState) {
+        setCredentialProperties(Map.of("backupState", backupState));
+    }
+
+    /**
+     * Makes the virtual authenticator report a different Backup Eligible flag, which a real authenticator must
+     * never do. Simulates a cloned or tampered credential. The Backup State flag is cleared as well, since
+     * authenticator data with BS set but BE unset is invalid and would be rejected before the flag comparison.
+     */
+    private void setBackupEligibility(boolean backupEligibility) {
+        setCredentialProperties(Map.of("backupEligibility", backupEligibility, "backupState", backupEligibility));
+    }
+
+    private void setCredentialProperties(Map<String, Object> properties) {
         VirtualAuthenticator authenticator = getVirtualAuthManager().getCurrent().getAuthenticator();
         List<Credential> credentials = authenticator.getCredentials();
         assertThat(credentials.size(), is(1));
-        ((ChromeDriver) driver.driver()).executeCdpCommand("WebAuthn.setCredentialProperties", Map.of(
-                "authenticatorId", authenticator.getId(),
-                "credentialId", Base64.getEncoder().encodeToString(credentials.get(0).getId()),
-                "backupState", backupState));
+        Map<String, Object> params = new HashMap<>(properties);
+        params.put("authenticatorId", authenticator.getId());
+        params.put("credentialId", Base64.getEncoder().encodeToString(credentials.get(0).getId()));
+        ((ChromeDriver) driver.driver()).executeCdpCommand("WebAuthn.setCredentialProperties", params);
     }
 
     private WebAuthnCredentialData webAuthnCredentialData(String userId) throws IOException {
