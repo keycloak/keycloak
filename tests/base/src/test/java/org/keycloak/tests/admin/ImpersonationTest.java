@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -101,6 +102,8 @@ import org.openqa.selenium.Cookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -417,6 +420,24 @@ public class ImpersonationTest {
         String realmAdminId = managedRealm.admin().users().search("realm-admin", true).get(0).getId();
         try (Keycloak client = login("admin", Config.getAdminRealm())) {
             impersonate(client, "admin", Config.getAdminRealm(), realmAdminId);
+        }
+    }
+
+    @Test
+    public void testSelfImpersonationTerminatesImpersonatorSession() {
+        String realmAdminId = managedRealm.admin().users().search("realm-admin", true).get(0).getId();
+        managedRealm.admin().users().get(realmAdminId).logout();
+        try (Keycloak client = login("realm-admin", managedRealm.getName())) {
+            List<UserSessionRepresentation> sessionsBefore = managedRealm.admin().users().get(realmAdminId).getUserSessions();
+            assertThat(sessionsBefore, hasSize(1));
+            String impersonatorSessionId = sessionsBefore.get(0).getId();
+
+            impersonate(client, "realm-admin", managedRealm.getName(), realmAdminId);
+
+            List<String> sessionIdsAfter = managedRealm.admin().users().get(realmAdminId).getUserSessions().stream()
+                    .map(UserSessionRepresentation::getId)
+                    .toList();
+            assertThat(sessionIdsAfter, not(hasItem(impersonatorSessionId)));
         }
     }
 

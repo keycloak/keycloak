@@ -91,7 +91,7 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         // handler opts out of the identity-cookie authentication performed by LoginActionsServiceChecks#checkIsUserValid.
         if (token.getImpersonatorSessionId() != null) {
             UserSessionModel impersonatorSession = session.sessions().getUserSession(realm, token.getImpersonatorSessionId());
-            if (impersonatorSession != null && !impersonatorSession.getUser().getId().equals(user.getId())) {
+            if (impersonatorSession != null && impersonatorSession.getUser().getId().equals(token.getImpersonatorId())) {
                 AuthenticationManager.expireIdentityCookie(session);
                 AuthenticationManager.expireRememberMeCookie(session);
                 AuthenticationManager.expireAuthSessionCookie(session);
