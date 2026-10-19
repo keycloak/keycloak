@@ -37,6 +37,14 @@ public class WebAuthnCredentialData {
     private String credentialPublicKey;
     private String attestationStatementFormat;
     private Set<String> transports;
+    // WebAuthn Level 3 backup flags. null for credentials registered before the flags were recorded.
+    private Boolean backupEligible;
+    private Boolean backupState;
+
+    public WebAuthnCredentialData(String aaguid, String credentialId, long counter, String attestationStatement,
+                                  String credentialPublicKey, String attestationStatementFormat, Set<String> transports) {
+        this(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports, null, null);
+    }
 
     @JsonCreator
     public WebAuthnCredentialData(@JsonProperty("aaguid") String aaguid,
@@ -45,7 +53,9 @@ public class WebAuthnCredentialData {
                                   @JsonProperty("attestationStatement") String attestationStatement,
                                   @JsonProperty("credentialPublicKey") String credentialPublicKey,
                                   @JsonProperty("attestationStatementFormat") String attestationStatementFormat,
-                                  @JsonProperty("transports") Set<String> transports) {
+                                  @JsonProperty("transports") Set<String> transports,
+                                  @JsonProperty("backupEligible") Boolean backupEligible,
+                                  @JsonProperty("backupState") Boolean backupState) {
         this.aaguid = aaguid;
         this.credentialId = credentialId;
         this.counter = counter;
@@ -53,6 +63,8 @@ public class WebAuthnCredentialData {
         this.credentialPublicKey = credentialPublicKey;
         this.attestationStatementFormat = attestationStatementFormat;
         this.transports = transports;
+        this.backupEligible = backupEligible;
+        this.backupState = backupState;
     }
 
     public String getAaguid() {
@@ -95,6 +107,31 @@ public class WebAuthnCredentialData {
         this.transports = transports;
     }
 
+    /**
+     * Backup Eligible (BE) flag reported by the authenticator. {@code true} means the credential may be synced to
+     * other devices (a "synced passkey"), {@code false} means the private key is bound to the authenticator
+     * (a "device-bound passkey"). {@code null} when unknown, for credentials registered before the flag was recorded.
+     */
+    public Boolean getBackupEligible() {
+        return backupEligible;
+    }
+
+    public void setBackupEligible(Boolean backupEligible) {
+        this.backupEligible = backupEligible;
+    }
+
+    /**
+     * Backup State (BS) flag reported by the authenticator in the last assertion: whether the credential is currently
+     * backed up. Only meaningful when {@link #getBackupEligible()} is {@code true}.
+     */
+    public Boolean getBackupState() {
+        return backupState;
+    }
+
+    public void setBackupState(Boolean backupState) {
+        this.backupState = backupState;
+    }
+
     @Override
     public String toString() {
         return "WebAuthnCredentialData { " +
@@ -106,6 +143,8 @@ public class WebAuthnCredentialData {
                 ", credentialPublicKey='" + credentialPublicKey + '\'' +
                 ", attestationStatementFormat='" + attestationStatementFormat + '\'' +
                 ", transports=" + Arrays.toString(getTransports().toArray()) +
+                ", backupEligible=" + backupEligible +
+                ", backupState=" + backupState +
                 " }";
     }
 }
