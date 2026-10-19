@@ -145,6 +145,7 @@ public class RealmRepresentation {
     protected Boolean webAuthnPolicyAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyAcceptableAaguids;
     protected List<String> webAuthnPolicyExtraOrigins;
+    protected String webAuthnPolicyBackupEligibility;
 
     // WebAuthn passwordless properties below
 
@@ -162,6 +163,7 @@ public class RealmRepresentation {
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
     protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
     protected String webAuthnPolicyPasswordlessMediation;
+    protected String webAuthnPolicyPasswordlessBackupEligibility;
 
     // Client Policies/Profiles
 
@@ -1206,6 +1208,14 @@ public class RealmRepresentation {
         this.webAuthnPolicyExtraOrigins = extraOrigins;
     }
 
+    public String getWebAuthnPolicyBackupEligibility() {
+        return webAuthnPolicyBackupEligibility;
+    }
+
+    public void setWebAuthnPolicyBackupEligibility(String webAuthnPolicyBackupEligibility) {
+        this.webAuthnPolicyBackupEligibility = webAuthnPolicyBackupEligibility;
+    }
+
     // WebAuthn passwordless properties below
 
 
@@ -1327,6 +1337,14 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessMediation(String webAuthnPolicyPasswordlessMediation) {
         this.webAuthnPolicyPasswordlessMediation = webAuthnPolicyPasswordlessMediation;
+    }
+
+    public String getWebAuthnPolicyPasswordlessBackupEligibility() {
+        return webAuthnPolicyPasswordlessBackupEligibility;
+    }
+
+    public void setWebAuthnPolicyPasswordlessBackupEligibility(String webAuthnPolicyPasswordlessBackupEligibility) {
+        this.webAuthnPolicyPasswordlessBackupEligibility = webAuthnPolicyPasswordlessBackupEligibility;
     }
 
     // Client Policies/Profiles

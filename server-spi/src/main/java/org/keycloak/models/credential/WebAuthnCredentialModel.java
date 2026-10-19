@@ -56,7 +56,13 @@ public class WebAuthnCredentialModel extends CredentialModel {
 
     public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
                                                  String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat, Set<String> transports) {
-        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports);
+        return create(credentialType, userLabel, aaguid, credentialId, attestationStatement, credentialPublicKey, counter, attestationStatementFormat, transports, null, null);
+    }
+
+    public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
+                                                 String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat, Set<String> transports,
+                                                 Boolean backupEligible, Boolean backupState) {
+        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports, backupEligible, backupState);
         WebAuthnSecretData secretData = new WebAuthnSecretData();
 
         WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);
@@ -95,6 +101,19 @@ public class WebAuthnCredentialModel extends CredentialModel {
 
     public void updateCounter(long counter) {
         credentialData.setCounter(counter);
+        writeCredentialData();
+    }
+
+    /**
+     * Records the backup flags reported by the authenticator in the latest assertion.
+     */
+    public void updateBackupFlags(Boolean backupEligible, Boolean backupState) {
+        credentialData.setBackupEligible(backupEligible);
+        credentialData.setBackupState(backupState);
+        writeCredentialData();
+    }
+
+    private void writeCredentialData() {
         try {
             setCredentialData(JsonSerialization.writeValueAsString(credentialData));
         } catch (IOException e) {

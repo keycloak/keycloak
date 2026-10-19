@@ -72,6 +72,10 @@ public interface WebAuthnConstants {
     // Event key for Public Key Credential's AAGUID
     String PUBKEY_CRED_AAGUID_ATTR = "public_key_credential_aaguid";
 
+    // Event keys for the Backup Eligible (BE) and Backup State (BS) flags of the authenticator data
+    String PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR = "public_key_credential_backup_eligible";
+    String PUBKEY_CRED_BACKUP_STATE_ATTR = "public_key_credential_backup_state";
+
     String USER_VERIFICATION_CHECKED = "web_authn_authenticator_user_verification_checked";
     String AUTHENTICATED_USER_ID = "web_authn_authenticated_user_id";
     String FIRST_AUTHENTICATED_USER_ID = "first_authenticated_user_id";

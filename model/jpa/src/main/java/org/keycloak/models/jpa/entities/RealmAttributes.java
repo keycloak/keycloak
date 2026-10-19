@@ -52,6 +52,7 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_EXTRA_ORIGINS = "webAuthnPolicyExtraOrigins";
     String WEBAUTHN_POLICY_PASSKEYS_ENABLED = "webAuthnPolicyPasskeysEnabled";
     String WEBAUTHN_POLICY_MEDIATION = "webAuthnPolicyMediation";
+    String WEBAUTHN_POLICY_BACKUP_ELIGIBILITY = "webAuthnPolicyBackupEligibility";
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 

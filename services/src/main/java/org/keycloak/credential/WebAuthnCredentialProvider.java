@@ -28,6 +28,8 @@ import jakarta.annotation.Nonnull;
 
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
+import org.keycloak.authentication.requiredactions.WebAuthnBackupEligibilityVerifier;
+import org.keycloak.authentication.requiredactions.WebAuthnPolicyException;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -48,6 +50,7 @@ import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.client.CollectedClientData;
 import com.webauthn4j.data.client.Origin;
@@ -66,6 +69,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
     private static final String WEBAUTHN_AUTHENTICATOR_PROVIDER = "webauthn-authenticator-provider";
     private static final String WEBAUTHN_TRANSPORTS = "webauthn-transports";
+    private static final String WEBAUTHN_SYNCED_PASSKEY = "webauthn-synced-passkey";
+    private static final String WEBAUTHN_DEVICE_BOUND_PASSKEY = "webauthn-device-bound-passkey";
 
     private final KeycloakSession session;
     private final WebAuthnMetadataService metadataService;
@@ -111,7 +116,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
                 data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
-                data.getAttestationStatementFormat(), data.getTransports(), metadata.name(), metadata.iconLight(), metadata.iconDark());
+                data.getAttestationStatementFormat(), data.getTransports(), data.getBackupEligible(), data.getBackupState(),
+                metadata.name(), metadata.iconLight(), metadata.iconDark());
         return WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
                 presentationData, origCredential.getWebAuthnSecretData());
     }
@@ -147,7 +153,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 credentialPublicKey,
                 counter,
                 attestationStatementFormat,
-                transports
+                transports,
+                webAuthnModel.getBackupEligible(),
+                webAuthnModel.getBackupState()
         );
 
         model.setId(webAuthnModel.getCredentialDBId());
@@ -236,17 +244,29 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     );
                     webAuthnAuthenticationManager.verify(authenticationData, authenticationParameters);
 
+                    AuthenticatorData<?> authenticatorData = authenticationData.getAuthenticatorData();
+                    logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticatorData.getFlags());
 
-                    logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
+                    // The BE flag is signed by the credential private key, so the policy can be enforced on every
+                    // assertion. This also covers credentials registered before the policy was configured.
+                    final boolean backupEligible = authenticatorData.isFlagBE();
+                    final boolean backupState = authenticatorData.isFlagBS();
+                    context.setBackupEligible(backupEligible);
+                    context.setBackupState(backupState);
+                    WebAuthnPolicy policy = getWebAuthnPolicy();
+                    if (WebAuthnBackupEligibilityVerifier.isConfigured(policy)) {
+                        WebAuthnBackupEligibilityVerifier.verify(backupEligible, policy);
+                    }
 
                     CredentialModel credModel = user.credentialManager().getStoredCredentialById(auth.getCredentialDBId());
                     WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
+                    boolean credentialChanged = false;
 
                     // update authenticator counter
                     // counters are an optional feature of the spec - if an authenticator does not support them, it
                     // will always send zero. MacOS/iOS does this for keys stored in the secure enclave (TouchID/FaceID)
                     final long storedCounter = auth.getCount();
-                    final long clientCounter = authenticationData.getAuthenticatorData().getSignCount();
+                    final long clientCounter = authenticatorData.getSignCount();
                     if (storedCounter > 0 || clientCounter > 0) {
                         if (clientCounter <= storedCounter) {
                             logger.debugf("Invalid client counter, authenticator may have been cloned");
@@ -254,6 +274,23 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                         }
 
                         webAuthnCredModel.updateCounter(clientCounter);
+                        credentialChanged = true;
+                    }
+
+                    // record the backup flags: BE is fixed for the lifetime of the credential, BS may change when
+                    // the credential gets backed up later on
+                    WebAuthnCredentialData storedData = webAuthnCredModel.getWebAuthnCredentialData();
+                    if (!Boolean.valueOf(backupEligible).equals(storedData.getBackupEligible())
+                            || !Boolean.valueOf(backupState).equals(storedData.getBackupState())) {
+                        if (storedData.getBackupEligible() != null && storedData.getBackupEligible() != backupEligible) {
+                            logger.warnf("Backup eligible flag of WebAuthn credential %s changed from %s to %s, which the WebAuthn specification does not allow",
+                                    credModel.getId(), storedData.getBackupEligible(), backupEligible);
+                        }
+                        webAuthnCredModel.updateBackupFlags(backupEligible, backupState);
+                        credentialChanged = true;
+                    }
+
+                    if (credentialChanged) {
                         user.credentialManager().updateStoredCredential(webAuthnCredModel);
                     }
 
@@ -263,6 +300,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     return true;
                 }
             }
+        } catch (WebAuthnPolicyException wpe) {
+            logger.debug("WebAuthn policy violation during authentication.", wpe);
+            throw wpe;
         } catch (WebAuthnException wae) {
             wae.printStackTrace();
             throw(wae);
@@ -353,6 +393,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
             }
             if (!properties.isEmpty()) {
                 credentialMetadata.setInfoProperties(properties);
+            }
+            if (credentialData.getBackupEligible() != null) {
+                credentialMetadata.setInfoMessage(credentialData.getBackupEligible() ? WEBAUTHN_SYNCED_PASSKEY : WEBAUTHN_DEVICE_BOUND_PASSKEY);
             }
             credentialMetadata.setIconLight(credentialData.getIconLight());
             credentialMetadata.setIconDark(credentialData.getIconDark());

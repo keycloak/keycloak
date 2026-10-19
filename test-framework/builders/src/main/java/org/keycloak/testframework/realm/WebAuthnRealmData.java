@@ -61,6 +61,10 @@ public class WebAuthnRealmData {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessAcceptableAaguids() : realm.getWebAuthnPolicyAcceptableAaguids();
     }
 
+    public String getBackupEligibility() {
+        return isPasswordless ? realm.getWebAuthnPolicyPasswordlessBackupEligibility() : realm.getWebAuthnPolicyBackupEligibility();
+    }
+
     public Boolean getPasskeysEnabled() {
         if (isPasswordless) {
             return realm.getWebAuthnPolicyPasswordlessPasskeysEnabled();
@@ -141,6 +145,11 @@ public class WebAuthnRealmData {
 
         public Builder acceptableAaguids(List<String> aaguids) {
             setProperty(aaguids, realm::setWebAuthnPolicyAcceptableAaguids, realm::setWebAuthnPolicyPasswordlessAcceptableAaguids);
+            return this;
+        }
+
+        public Builder backupEligibility(String backupEligibility) {
+            setProperty(backupEligibility, realm::setWebAuthnPolicyBackupEligibility, realm::setWebAuthnPolicyPasswordlessBackupEligibility);
             return this;
         }
 
