@@ -37,6 +37,7 @@ import java.util.function.Function;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.ScheduledTask;
@@ -59,10 +60,13 @@ import org.jboss.logging.Logger;
  * class name) is shared by every drainer instance and would make them
  * exclude each other.
  *
- * <p>Transaction layout of one tick. The session the scheduler hands
- * to {@link #run} is used only for the tick-level listener callbacks
- * and to look up the delivery executor; all database work runs in
- * transactions the drainer opens itself:
+ * <p>Transaction layout of one tick. The session handed to
+ * {@link #run} is used only to reach the session factory and the
+ * delivery executor; it needs no transaction, and
+ * {@link OutboxDrainerRunner} indeed runs the tick without one. All
+ * database work, the tick-level listener callbacks included, runs in
+ * short transactions the drainer opens itself, and no session is bound
+ * to the tick thread while a delivery executes:
  * <ol>
  *   <li><b>Claim</b> — one short transaction locks up to
  *       {@link OutboxConfig#batchSize()} due rows ({@code FOR UPDATE
@@ -77,33 +81,40 @@ import org.jboss.logging.Logger;
  *   <li><b>Prepare</b> — per row, in a short transaction, the handler's
  *       {@link OutboxDeliveryHandler#prepare prepare} resolves what the
  *       delivery needs. The row is re-read first; if it no longer
- *       carries the tick's token the claim was taken over and the row
- *       is skipped.</li>
+ *       carries the tick's token, is no longer PENDING or no longer of
+ *       this kind (taken over by another tick, or held, dead-lettered,
+ *       re-armed or migrated by an admin) the row is skipped.</li>
  *   <li><b>Deliver</b> — {@link OutboxDelivery#execute()} runs outside
  *       any transaction, with no session bound to the thread. No
  *       connection is held while a destination is being called, and a
  *       slow destination blocks neither other rows nor other ticks.</li>
  *   <li><b>Record</b> — per row, in another short transaction, the
  *       row is re-read with a write lock and the transition applied
- *       only if it still carries the tick's token. A lease that
- *       expired mid-delivery lets another tick re-claim the row; the
- *       late tick's record is then skipped rather than overwriting the
- *       newer attempt.</li>
- *   <li><b>Budget</b> — before each row the tick checks
- *       {@link OutboxConfig#tickBudget()}; claimed rows it does not get
- *       to are handed back (token and lease cleared, still due) in one
+ *       only if it still carries the tick's token and passes the same
+ *       status and kind check. A lease that expired mid-delivery lets
+ *       another tick re-claim the row; the late tick's record is then
+ *       skipped rather than overwriting the newer attempt, and so is a
+ *       result for a row an admin transitioned meanwhile.</li>
+ *   <li><b>Budget</b> — {@link OutboxConfig#tickBudget()} starts when
+ *       the claim has returned and is checked before each row, so the
+ *       first row always runs; claimed rows the tick does not get to
+ *       are handed back (token and lease cleared, still due) in one
  *       transaction.</li>
- *   <li><b>Housekeeping</b> — one final transaction promotes rows
- *       older than {@link OutboxConfig#pendingMaxAge()} to DEAD_LETTER
- *       and purges DELIVERED / DEAD_LETTER rows past their retention.</li>
+ *   <li><b>Housekeeping</b> — one final transaction expires queued rows
+ *       older than {@link OutboxConfig#pendingMaxAge()} to DEAD_LETTER,
+ *       row by row and at most {@link OutboxConfig#batchSize()} per
+ *       tick so each reaches {@link OutboxDrainerListener#onDeadLetter}
+ *       with cause {@code PENDING_MAX_AGE}, and purges DELIVERED /
+ *       DEAD_LETTER rows past their retention.</li>
  * </ol>
  *
  * <p>With {@link OutboxConfig#deliveryConcurrency()} above one, the
  * claimed rows are grouped by owner and the groups are spread over
- * that many workers of the {@code outbox-delivery-<kind>} executor;
- * one owner's rows stay in order on one worker, different owners are
- * delivered in parallel. Row-level listener callbacks then run on
- * worker threads, inside the row's record transaction.
+ * that many workers, the tick thread being one of them and the rest
+ * coming from the {@code outbox-delivery-<kind>} executor; one owner's
+ * rows stay in order on one worker, different owners are delivered in
+ * parallel. Row-level listener callbacks then run on worker threads,
+ * inside the row's record transaction.
  *
  * <p>Crash safety: a node that dies mid-tick leaves its claimed rows
  * with a token and a lease end; once the lease expires they are due
@@ -173,26 +184,32 @@ public class OutboxDrainerTask implements ScheduledTask {
         return TASK_NAME_PREFIX + config.entryKind();
     }
 
+    /**
+     * Runs one tick. {@code session} only provides the session factory
+     * and the delivery executor; whether it has a transaction is
+     * irrelevant, and it is not bound to the thread while the tick
+     * runs, so a delivery never sees a caller's session or connection.
+     */
     @Override
     public void run(KeycloakSession session) {
         KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
         KeycloakSession previous = KeycloakSessionUtil.getKeycloakSession();
-        KeycloakSessionUtil.setKeycloakSession(session);
+        KeycloakSessionUtil.setKeycloakSession(null);
         Instant tickStart = Instant.now();
         TickCounters counters = new TickCounters();
-        notify(() -> listener.onTickStart(session, config.entryKind()));
+        notifyInTransaction(factory, s -> listener.onTickStart(s, config.entryKind()));
         try {
-            drain(session, factory, tickStart, counters);
+            drain(session, factory, counters);
             housekeeping(factory, counters);
         } finally {
-            KeycloakSessionUtil.setKeycloakSession(previous);
             OutboxDrainerTickSummary summary = counters.summary(config.entryKind(),
                     Duration.between(tickStart, Instant.now()));
-            notify(() -> listener.onTickEnd(session, summary));
+            notifyInTransaction(factory, s -> listener.onTickEnd(s, summary));
+            KeycloakSessionUtil.setKeycloakSession(previous);
         }
     }
 
-    protected void drain(KeycloakSession session, KeycloakSessionFactory factory, Instant tickStart, TickCounters counters) {
+    protected void drain(KeycloakSession session, KeycloakSessionFactory factory, TickCounters counters) {
         String token = UUID.randomUUID().toString();
         List<OutboxEntryEntity> claimed = KeycloakModelUtils.runJobInTransactionWithResult(factory,
                 s -> claimBatch(storeFactory.apply(s), token));
@@ -202,7 +219,10 @@ public class OutboxDrainerTask implements ScheduledTask {
         }
         log.debugf("Outbox drainer claimed %d due row(s) for entryKind=%s token=%s", claimed.size(), config.entryKind(), token);
 
-        Instant deadline = config.tickBudget() == null ? null : tickStart.plus(config.tickBudget());
+        // The budget bounds delivering, not claiming: a slow claim must
+        // not leave the tick with no time for even its first row, which
+        // would release the whole batch tick after tick.
+        Instant deadline = config.tickBudget() == null ? null : Instant.now().plus(config.tickBudget());
         List<String> unprocessed = Collections.synchronizedList(new ArrayList<>());
         int concurrency = config.deliveryConcurrency() == null ? 1 : config.deliveryConcurrency();
         if (concurrency > 1 && claimed.size() > 1) {
@@ -279,9 +299,11 @@ public class OutboxDrainerTask implements ScheduledTask {
 
     /**
      * Groups the rows by owner (keeping each owner's order) and spreads
-     * the groups over up to {@code concurrency} workers of the kind's
-     * delivery executor. Falls back to sequential processing when the
-     * executor rejects work.
+     * the groups over up to {@code concurrency} workers: the tick
+     * thread itself plus up to {@code concurrency - 1} threads of the
+     * kind's delivery executor, so at most {@code concurrency}
+     * deliveries run at once. Falls back to sequential processing when
+     * the executor is unavailable or rejects work.
      */
     protected void processConcurrently(KeycloakSession session, KeycloakSessionFactory factory,
                                        List<OutboxEntryEntity> claimed, String token, Instant deadline,
@@ -291,7 +313,8 @@ public class OutboxDrainerTask implements ScheduledTask {
             byOwner.computeIfAbsent(row.getOwnerId(), k -> new ArrayList<>()).add(row);
         }
         Queue<List<OutboxEntryEntity>> groups = new ConcurrentLinkedQueue<>(byOwner.values());
-        int workers = Math.min(concurrency, byOwner.size());
+        // One worker is the tick thread (see below).
+        int workers = Math.min(concurrency, byOwner.size()) - 1;
         ExecutorService executor;
         try {
             executor = session.getProvider(ExecutorsProvider.class).getExecutor(DELIVERY_EXECUTOR_PREFIX + config.entryKind());
@@ -313,8 +336,9 @@ public class OutboxDrainerTask implements ScheduledTask {
         } catch (RejectedExecutionException e) {
             log.warnf("Outbox delivery executor rejected work for entryKind=%s — remaining owners delivered on the tick thread", config.entryKind());
         }
-        // Whatever the workers did not pick up is processed here, so a
-        // starved pool still drains the batch.
+        // The tick thread is the remaining worker; it also picks up
+        // whatever a starved pool leaves behind, so the batch always
+        // drains.
         List<OutboxEntryEntity> group;
         while ((group = groups.poll()) != null) {
             processRows(factory, group, token, deadline, counters, unprocessed);
@@ -356,9 +380,9 @@ public class OutboxDrainerTask implements ScheduledTask {
             KeycloakModelUtils.runJobInTransaction(factory, s -> {
                 OutboxStore store = storeFactory.apply(s);
                 OutboxEntryEntity row = store.findClaimed(id, token);
-                if (row == null) {
+                if (row == null || !holdsClaim(row, token)) {
                     counters.claimLost.incrementAndGet();
-                    log.warnf("Outbox claim lost after delivery — outcome %s not recorded, row will be retried by its new holder. id=%s entryKind=%s token=%s",
+                    log.warnf("Outbox claim lost after delivery — outcome %s not recorded, the row's new holder or state wins (lease expired or admin transition). id=%s entryKind=%s token=%s",
                             result.outcome(), id, config.entryKind(), token);
                     return;
                 }
@@ -371,12 +395,25 @@ public class OutboxDrainerTask implements ScheduledTask {
     }
 
     /**
+     * Whether the row is still this tick's to deliver and record: it
+     * carries the tick's token, is still PENDING and still of this
+     * kind. The token alone is not enough, because an admin operation
+     * that holds, dead-letters, re-arms or migrates the row between
+     * claim and record must win over the in-flight delivery.
+     */
+    protected boolean holdsClaim(OutboxEntryEntity row, String token) {
+        return token.equals(row.getClaimToken())
+                && row.getStatus() == OutboxEntryStatus.PENDING
+                && config.entryKind().equals(row.getEntryKind());
+    }
+
+    /**
      * Runs the handler's prepare phase in a fresh transaction. Returns
-     * {@code null} if the row no longer carries the tick's token. A
-     * {@code null} delivery or an exception from the handler becomes a
-     * settled RETRY. The delivery is kept even if the transaction fails
-     * to commit afterwards (only handler-side database writes, if any,
-     * were lost).
+     * {@code null} if the row no longer {@link #holdsClaim holds} the
+     * tick's claim. A {@code null} delivery or an exception from the
+     * handler becomes a settled RETRY. The delivery is kept even if the
+     * transaction fails to commit afterwards (only handler-side
+     * database writes, if any, were lost).
      */
     protected OutboxDelivery prepareInOwnTransaction(KeycloakSessionFactory factory, String id, String token) {
         OutboxDelivery[] holder = new OutboxDelivery[1];
@@ -384,7 +421,7 @@ public class OutboxDrainerTask implements ScheduledTask {
         try {
             KeycloakModelUtils.runJobInTransaction(factory, s -> {
                 OutboxEntryEntity row = storeFactory.apply(s).findById(id);
-                if (row == null || !token.equals(row.getClaimToken())) {
+                if (row == null || !holdsClaim(row, token)) {
                     claimLost[0] = true;
                     return;
                 }
@@ -513,7 +550,7 @@ public class OutboxDrainerTask implements ScheduledTask {
         try {
             KeycloakModelUtils.runJobInTransaction(factory, s -> {
                 OutboxStore store = storeFactory.apply(s);
-                counters.stalePromoted.set(promoteStaleQueuedToDeadLetter(store));
+                counters.stalePromoted.set(expireStaleQueued(s, store));
                 counters.purgedDelivered.set(purgeDeliveredOlderThanRetention(store));
                 counters.purgedDeadLetter.set(purgeDeadLetterOlderThanRetention(store));
             });
@@ -535,19 +572,39 @@ public class OutboxDrainerTask implements ScheduledTask {
         }
     }
 
-    protected int promoteStaleQueuedToDeadLetter(OutboxStore store) {
+    /**
+     * Runs a tick-level listener callback in a short transaction of
+     * its own (listeners such as the metrics listener read the depth
+     * per realm), with the same failure isolation as {@link #notify}.
+     */
+    protected void notifyInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask callback) {
+        notify(() -> KeycloakModelUtils.runJobInTransaction(factory, callback));
+    }
+
+    /**
+     * Expires queued rows older than {@link OutboxConfig#pendingMaxAge()}
+     * to DEAD_LETTER, one by one so each reaches the listener with
+     * cause {@link OutboxDrainerListener.DeadLetterCause#PENDING_MAX_AGE}.
+     * Bounded to {@link OutboxConfig#batchSize()} rows per tick; a
+     * larger backlog drains over the following ticks.
+     */
+    protected int expireStaleQueued(KeycloakSession session, OutboxStore store) {
         Duration pendingMaxAge = config.pendingMaxAge();
         if (pendingMaxAge == null || pendingMaxAge.isZero() || pendingMaxAge.isNegative()) {
             return 0;
         }
         Instant cutoff = Instant.now().minus(pendingMaxAge);
-        int promoted = store.promoteStaleQueuedToDeadLetter(config.entryKind(), cutoff,
-                "queued exceeded pendingMaxAge");
-        if (promoted > 0) {
-            log.infof("Outbox promoted %d stale queued row(s) to DEAD_LETTER (entryKind=%s, pendingMaxAge=%s)",
-                    promoted, config.entryKind(), pendingMaxAge);
+        String reason = "queued exceeded pendingMaxAge";
+        List<OutboxEntryEntity> stale = store.lockStaleQueued(config.entryKind(), cutoff, config.batchSize());
+        for (OutboxEntryEntity row : stale) {
+            store.expireQueued(row, reason);
+            notify(() -> listener.onDeadLetter(session, row, OutboxDrainerListener.DeadLetterCause.PENDING_MAX_AGE, reason));
         }
-        return promoted;
+        if (!stale.isEmpty()) {
+            log.infof("Outbox expired %d stale queued row(s) to DEAD_LETTER (entryKind=%s, pendingMaxAge=%s)",
+                    stale.size(), config.entryKind(), pendingMaxAge);
+        }
+        return stale.size();
     }
 
     protected int purgeDeliveredOlderThanRetention(OutboxStore store) {

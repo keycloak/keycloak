@@ -12,6 +12,7 @@ import org.keycloak.events.outbox.OutboxBackoff;
 import org.keycloak.events.outbox.OutboxCleanupTask;
 import org.keycloak.events.outbox.OutboxConfig;
 import org.keycloak.events.outbox.OutboxDrainerListener;
+import org.keycloak.events.outbox.OutboxDrainerRunner;
 import org.keycloak.events.outbox.OutboxDrainerScheduler;
 import org.keycloak.events.outbox.OutboxDrainerTask;
 import org.keycloak.events.outbox.OutboxMetricsListener;
@@ -26,8 +27,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
@@ -46,6 +45,7 @@ import org.keycloak.ssf.transmitter.subject.DefaultSsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
+import org.keycloak.timer.TaskRunner;
 import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
@@ -613,13 +613,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * {@link OutboxDrainerScheduler}: the {@link TimerProvider} only
      * triggers, the tick runs on an executor so a slow receiver cannot
      * delay other scheduled tasks on the node, and the
-     * {@link ClusterAwareScheduledTaskRunner} wrapper keeps one tick per
-     * kind cluster-wide.
+     * {@link OutboxDrainerRunner} keeps one tick per kind cluster-wide
+     * without wrapping the tick in a transaction.
      */
     protected void scheduleOutboxDrainer(KeycloakSessionFactory factory) {
         try (KeycloakSession session = factory.create()) {
             OutboxDrainerTask task = createDrainerTask(session);
-            ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
+            TaskRunner runner = createDrainerTaskRunner(factory, task);
             OutboxDrainerScheduler.schedule(session, runner, outboxDrainerIntervalMillis);
             log.infof("SSF push outbox drainer scheduled: task=%s, entryKind=%s, interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s, claimLease=%dms, tickBudget=%s, perReceiverBatchSize=%s, deliveryConcurrency=%d",
                     task.getTaskName(), SsfOutboxKinds.PUSH, outboxDrainerIntervalMillis,
@@ -634,11 +634,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         }
     }
 
-    protected ScheduledTaskRunner createDrainerScheduledTaskRunner(KeycloakSessionFactory factory, OutboxDrainerTask task) {
-        // Lock key per entry kind: the runner's default key (the class
-        // name) is shared by every OutboxDrainerTask instance, so two
-        // kinds scheduled this way would exclude each other's ticks.
-        return new ClusterAwareScheduledTaskRunner(factory, task, outboxDrainerIntervalMillis, task.getTaskName());
+    protected TaskRunner createDrainerTaskRunner(KeycloakSessionFactory factory, OutboxDrainerTask task) {
+        // Locked per entry kind (the task name), so two kinds never
+        // exclude each other's ticks.
+        return new OutboxDrainerRunner(factory, task, outboxDrainerIntervalMillis);
     }
 
     protected OutboxDrainerTask createDrainerTask(KeycloakSession session) {
