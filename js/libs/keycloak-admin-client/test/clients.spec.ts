@@ -257,13 +257,12 @@ describe("Clients", () => {
       expect(typeof installationProvider).to.be.equal("string");
     });
 
-    it("get service account user", async () => {
-      const serviceAccountUser =
-        await kcAdminClient.clients.getServiceAccountUser({
-          id: currentClient.id!,
-        });
+    it("get service account user id", async () => {
+      const client = await kcAdminClient.clients.findOne({
+        id: currentClient.id!,
+      });
 
-      expect(serviceAccountUser).to.be.ok;
+      expect(client?.serviceAccountUserId).to.be.ok;
     });
   });
 

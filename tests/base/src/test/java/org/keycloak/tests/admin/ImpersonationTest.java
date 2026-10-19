@@ -293,7 +293,8 @@ public class ImpersonationTest {
         }
         managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
+        String saUserId = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").toRepresentation().getServiceAccountUserId();
+        UserRepresentation user = managedRealm.admin().users().get(saUserId).toRepresentation();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
@@ -319,7 +320,8 @@ public class ImpersonationTest {
         }
         masterRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
+        String saUserId = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").toRepresentation().getServiceAccountUserId();
+        UserRepresentation user = masterRealm.admin().users().get(saUserId).toRepresentation();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles

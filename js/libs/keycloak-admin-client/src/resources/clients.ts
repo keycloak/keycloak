@@ -162,19 +162,6 @@ export class Clients extends Resource<{ realm?: string }> {
   });
 
   /**
-   * Service account user
-   */
-
-  public getServiceAccountUser = this.makeRequest<
-    { id: string },
-    UserRepresentation
-  >({
-    method: "GET",
-    path: "/{id}/service-account-user",
-    urlParamKeys: ["id"],
-  });
-
-  /**
    * Client secret
    */
 

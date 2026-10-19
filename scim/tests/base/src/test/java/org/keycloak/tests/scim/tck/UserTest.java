@@ -417,8 +417,8 @@ public class UserTest extends AbstractScimTest {
         }
         realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
-        User actual = client.users().get(serviceAccount.getId());
+        String serviceAccountUserId = realm.admin().clients().get(targetClient.getId()).toRepresentation().getServiceAccountUserId();
+        User actual = client.users().get(serviceAccountUserId);
 
         assertNull(actual);
     }
@@ -437,8 +437,8 @@ public class UserTest extends AbstractScimTest {
         }
         realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
-        ListResponse<User> response = client.users().getAll(ResourceFilter.filter().eq("id", serviceAccount.getId()).build());
+        String serviceAccountUserId = realm.admin().clients().get(targetClient.getId()).toRepresentation().getServiceAccountUserId();
+        ListResponse<User> response = client.users().getAll(ResourceFilter.filter().eq("id", serviceAccountUserId).build());
 
         assertEquals(0, response.getTotalResults());
     }
@@ -457,7 +457,8 @@ public class UserTest extends AbstractScimTest {
         }
         realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(targetClient.getId()).toRepresentation().getServiceAccountUserId();
+        UserRepresentation serviceAccount = realm.admin().users().get(serviceAccountUserId).toRepresentation();
         User update = new User();
         update.setId(serviceAccount.getId());
         update.setUserName(serviceAccount.getUsername());
@@ -484,10 +485,10 @@ public class UserTest extends AbstractScimTest {
         }
         realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(targetClient.getId()).toRepresentation().getServiceAccountUserId();
 
         try {
-            client.users().delete(serviceAccount.getId());
+            client.users().delete(serviceAccountUserId);
             fail("Should not be able to delete a service account via SCIM");
         } catch (ScimClientException sce) {
             assertEquals(Status.NOT_FOUND.getStatusCode(), sce.getError().getStatusInt());
@@ -508,10 +509,10 @@ public class UserTest extends AbstractScimTest {
         }
         realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(targetClient.getId()).toRepresentation().getServiceAccountUserId();
 
         try {
-            client.users().patch(serviceAccount.getId(), PatchRequest.create()
+            client.users().patch(serviceAccountUserId, PatchRequest.create()
                     .add("name.givenName", "modified")
                     .build());
             fail("Should not be able to patch a service account via SCIM");

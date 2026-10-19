@@ -152,12 +152,12 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         }
 
         RealmResource realm = getRealm();
-        UserRepresentation serviceAccount = getClient().getServiceAccountUser();
+        String serviceAccountUserId = getClient().toRepresentation().getServiceAccountUserId();
         GroupRepresentation rootGroup = realm.groups().groups().stream()
                 .filter(group -> "Group A".equals(group.getName()))
                 .findFirst()
                 .orElseThrow();
-        realm.users().get(serviceAccount.getId()).joinGroup(rootGroup.getId());
+        realm.users().get(serviceAccountUserId).joinGroup(rootGroup.getId());
         ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization(authzClient.obtainAccessToken().getToken()).authorize(new AuthorizationRequest(ticket));
         assertNotNull(response.getToken());
