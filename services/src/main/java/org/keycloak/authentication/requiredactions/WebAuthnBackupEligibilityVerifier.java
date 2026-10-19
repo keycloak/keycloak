@@ -5,6 +5,7 @@ import org.keycloak.models.WebAuthnPolicy;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED;
 
@@ -32,6 +33,26 @@ public final class WebAuthnBackupEligibilityVerifier {
         String requirement = policy.getBackupEligibility();
         return Constants.WEBAUTHN_POLICY_OPTION_DEVICE_BOUND.equals(requirement)
                 || Constants.WEBAUTHN_POLICY_OPTION_BACKUP_ELIGIBLE.equals(requirement);
+    }
+
+    /**
+     * The BE flag is fixed for the lifetime of a credential. An assertion reporting a different value than the one
+     * recorded for the credential indicates a cloned, tampered or broken authenticator and must not be trusted,
+     * regardless of the configured policy. Otherwise a credential known to be backup eligible could pass a
+     * device-bound policy and be reclassified as device-bound.
+     *
+     * @param storedBackupEligible the BE flag recorded for the credential, {@code null} when unknown for
+     *                             credentials registered before the flag was recorded
+     * @param backupEligible the BE flag from the authenticator data of the assertion
+     * @throws WebAuthnPolicyException when the recorded flag is known and differs from the asserted one
+     */
+    public static void verifyUnchanged(Boolean storedBackupEligible, boolean backupEligible, String credentialId) {
+        if (storedBackupEligible != null && storedBackupEligible != backupEligible) {
+            logger.warnf("Backup eligible flag of WebAuthn credential %s changed from %s to %s, which the WebAuthn specification does not allow. Rejecting the assertion.",
+                    credentialId, storedBackupEligible, backupEligible);
+            throw new WebAuthnPolicyException(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED,
+                    "Backup eligible flag of credential " + credentialId + " changed from " + storedBackupEligible + " to " + backupEligible);
+        }
     }
 
     /**

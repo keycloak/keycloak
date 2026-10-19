@@ -5,6 +5,7 @@ import org.keycloak.models.WebAuthnPolicy;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED;
 
@@ -44,6 +45,20 @@ public class WebAuthnBackupEligibilityVerifierTest {
 
         WebAuthnPolicyException e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verify(false, policy));
         assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED, e.getMessageKey());
+    }
+
+    @Test
+    public void changedBackupEligibleFlagIsRejected() {
+        // unknown stored value (credential registered before the flag was recorded) accepts either
+        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, true, "cred"));
+        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, false, "cred"));
+        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, true, "cred"));
+        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, false, "cred"));
+
+        WebAuthnPolicyException e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, false, "cred"));
+        assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
+        e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, true, "cred"));
+        assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
     }
 
     private static WebAuthnPolicy policy(String backupEligibility) {
