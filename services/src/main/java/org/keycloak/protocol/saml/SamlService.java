@@ -164,11 +164,13 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private final DestinationValidator destinationValidator;
     private final long maxInflatingSize;
+    protected final long maxSoapMessageRequestSize;
 
-    public SamlService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
+    public SamlService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize) {
         super(session, event);
         this.destinationValidator = destinationValidator;
         this.maxInflatingSize = maxInflatingSize;
+        this.maxSoapMessageRequestSize = maxSoapMessageRequestSize;
     }
 
     public abstract class BindingProtocol {
@@ -1177,7 +1179,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml", MediaType.TEXT_XML})
     public Response artifactResolutionService(InputStream inputStream) {
-        Document soapBodyContents = Soap.extractSoapMessage(inputStream);
+        Document soapBodyContents = Soap.extractSoapMessage(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
         ArtifactResolveType artifactResolveType = null;
         SAMLDocumentHolder samlDocumentHolder = null;
         try {
@@ -1227,9 +1229,9 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize);
 
-        return bindingService.authenticate(inputStream);
+        return bindingService.authenticate(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
     }
 
     private ClientModel getAndCheckClientModel(String clientSessionId, String clientId) throws ProcessingException {
