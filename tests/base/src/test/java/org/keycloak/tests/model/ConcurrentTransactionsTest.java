@@ -17,11 +17,13 @@
 
 package org.keycloak.tests.model;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
@@ -37,8 +39,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 import org.keycloak.tests.suites.DatabaseTest;
 
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -190,6 +194,7 @@ public class ConcurrentTransactionsTest {
     // KEYCLOAK-3296 , KEYCLOAK-3494
     @TestOnServer
     public void removeUserAttribute(KeycloakSession session) throws Exception {
+        assumeConcurrentAttributeUpdatesSupported(session);
 
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
@@ -273,6 +278,7 @@ public class ConcurrentTransactionsTest {
 
     @TestOnServer
     public void setRoleSingleAttribute(KeycloakSession session) throws Exception {
+        assumeConcurrentAttributeUpdatesSupported(session);
 
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
@@ -350,6 +356,16 @@ public class ConcurrentTransactionsTest {
         } finally {
             tearDownRealm(session, "original");
         }
+    }
+
+    private void assumeConcurrentAttributeUpdatesSupported(KeycloakSession session) {
+        boolean mariaDbRepeatableRead = session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                .unwrap(Session.class).doReturningWork(connection ->
+                        "MariaDB".equals(connection.getMetaData().getDatabaseProductName())
+                                && connection.getTransactionIsolation() == Connection.TRANSACTION_REPEATABLE_READ);
+        Assumptions.assumeFalse(mariaDbRepeatableRead,
+                "MariaDB snapshot isolation rejects concurrent attribute updates under REPEATABLE READ; "
+                        + "switch to READ COMMITTED: https://github.com/keycloak/keycloak/issues/54133");
     }
 
     private void tearDownRealm(KeycloakSession session, String realmName) {
