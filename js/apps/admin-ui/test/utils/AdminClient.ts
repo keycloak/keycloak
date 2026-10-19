@@ -206,6 +206,25 @@ class AdminClient {
     });
   }
 
+  async addRealmRoleToUser(
+    userId: string,
+    roleName: string,
+    realmName: string = this.#client.realmName,
+  ) {
+    await this.#login();
+
+    const realmRole = await this.#client.roles.findOneByName({
+      name: roleName,
+      realm: realmName,
+    });
+
+    await this.#client.users.addRealmRoleMappings({
+      id: userId,
+      roles: [realmRole as RoleMappingPayload],
+      realm: realmName,
+    });
+  }
+
   async deleteUser(
     username: string,
     realm: string = this.#client.realmName,
