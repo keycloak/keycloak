@@ -61,7 +61,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -76,7 +75,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -224,6 +222,10 @@ public class ClientResource {
         }
 
         representation.setAccess(auth.clients().getAccess(client));
+
+        if (client.isServiceAccountsEnabled()) {
+            ModelToRepresentation.setServiceAccountUserId(session, client, representation);
+        }
 
         return representation;
     }
@@ -520,26 +522,6 @@ public class ClientResource {
     @Path("evaluate-scopes")
     public ClientScopeEvaluateResource clientScopeEvaluateResource() {
         return new ClientScopeEvaluateResource(session, session.getContext().getUri(), realm, auth, client, clientConnection);
-    }
-
-    /**
-     * Get a user dedicated to the service account
-     *
-     * @return
-     */
-    @Path("service-account-user")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get a user dedicated to the service account")
-    public UserRepresentation getServiceAccountUser() {
-        auth.clients().requireView(client);
-
-        UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
-                .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
-
-        return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
     /**

@@ -38,7 +38,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
 /**
@@ -203,11 +202,6 @@ public interface ClientResource {
     @DELETE
     @Path("optional-client-scopes/{clientScopeId}")
     void removeOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
-
-    @Path("/service-account-user")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    UserRepresentation getServiceAccountUser();
 
     @Path("nodes")
     @POST
