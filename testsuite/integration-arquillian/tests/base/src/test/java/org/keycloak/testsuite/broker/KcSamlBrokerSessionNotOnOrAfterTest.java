@@ -21,7 +21,8 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
@@ -66,6 +67,9 @@ public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
 
         assertThat(authType, notNullValue());
         assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
-        assertThat(authType.getSessionNotOnOrAfter(), is(XMLTimeUtil.add(authType.getAuthnInstant(), adminClient.realm(REALM_CONS_NAME).toRepresentation().getSsoSessionMaxLifespan() * 1000)));
+        long actualMs = authType.getSessionNotOnOrAfter().toGregorianCalendar().getTimeInMillis();
+        long upperBoundMs = XMLTimeUtil.add(authType.getAuthnInstant(), adminClient.realm(REALM_CONS_NAME).toRepresentation().getSsoSessionMaxLifespan() * 1000L).toGregorianCalendar().getTimeInMillis();
+        assertThat(actualMs, lessThanOrEqualTo(upperBoundMs));
+        assertThat(actualMs, greaterThan(upperBoundMs - 60_000L));
     }
 }

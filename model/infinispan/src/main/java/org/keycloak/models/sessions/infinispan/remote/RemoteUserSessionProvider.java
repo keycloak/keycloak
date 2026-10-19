@@ -303,7 +303,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
         var query = UserSessionQueries.searchByRealm(getUserSessionTransaction(offline).getCache(), realm.getId());
         var clientSessionCache = getClientSessionTransaction(offline).getCache();
         //not very efficient at all.
@@ -317,7 +317,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         if (maxResults == 0) {
             return Stream.empty();
         }
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
         var clientSessionCache = getClientSessionTransaction(offline).getCache();
         var userSessionIdQuery = ClientSessionQueries.fetchUserSessionIdForClientId(clientSessionCache, realm.getId(), client.getId());
         if (skip > 0) {

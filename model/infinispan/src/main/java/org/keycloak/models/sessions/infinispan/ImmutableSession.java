@@ -175,7 +175,7 @@ public final class ImmutableSession {
                     if (client == null || userSession == null) {
                         return;
                     }
-                    if (expirationPredicates.isClientSessionExpired(clientSession, userSession.rememberMe(), client)) {
+                    if (expirationPredicates.isClientSessionExpired(clientSession, userSession, client)) {
                         return;
                     }
                     var copy = new ImmutableClientSession(
@@ -201,7 +201,7 @@ public final class ImmutableSession {
             if (client == null || userSession == null) {
                 return;
             }
-            if (expirationPredicates.isClientSessionExpired(entity, userSession.started(), userSession.rememberMe(), client)) {
+            if (expirationPredicates.isClientSessionExpired(entity, userSession, client)) {
                 return;
             }
             var copy = new ImmutableClientSession(

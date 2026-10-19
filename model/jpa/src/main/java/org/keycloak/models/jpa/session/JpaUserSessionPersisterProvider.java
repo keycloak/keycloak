@@ -290,7 +290,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private static int calculateOldestSessionTime(RealmModel realm, boolean offline) {
-        return Time.currentTime() - (int) TimeUnit.MILLISECONDS.toSeconds(SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, realm.isRememberMe(), 0, realm));
+        return Time.currentTime() - (int) TimeUnit.MILLISECONDS.toSeconds(SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, realm.isRememberMe(), 0, realm, null));
     }
 
     @Override

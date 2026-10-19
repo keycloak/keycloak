@@ -147,8 +147,10 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
+        UserSessionModel effectiveUserSession = ensureOfflineSessionIfRequested(userSession, clientSessionCtx);
+
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+            .responseBuilder(realm, client, event, session, effectiveUserSession, clientSessionCtx).generateAccessToken();
         boolean useRefreshToken = clientConfig.isUseRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();

@@ -158,7 +158,7 @@ public class KeycloakIdentity implements Identity {
             AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
             ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
-            this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
+            this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
             UserModel tokenUser = userSession.getUser();
             removeTransientAdminRoles(realm, null, tokenUser, this.accessToken.getRealmAccess());
             Map<String, Access> resourceAccess = this.accessToken.getResourceAccess();
