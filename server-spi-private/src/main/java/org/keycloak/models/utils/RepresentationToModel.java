@@ -1973,6 +1973,7 @@ public class RepresentationToModel {
         model.setExpiresAt(representation.getExpiresAt());
         model.setClientId(representation.getClientId());
         model.setRevision(representation.getRevision());
+        model.setCompleted(representation.isCompleted());
         return model;
     }
 }
