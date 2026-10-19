@@ -264,6 +264,8 @@ public class OutboxStoreTests {
             Assertions.assertEquals(0, deadAfter.getAttempts());
             Assertions.assertNull(deadAfter.getLastError());
             Assertions.assertFalse(deadAfter.getNextAttemptAt().isBefore(before), "re-armed rows are due now");
+            Assertions.assertFalse(deadAfter.getCreatedAt().isBefore(before),
+                    "re-armed rows count as enqueued now, so pendingMaxAge does not expire them again at once");
 
             OutboxEntryEntity deliveredAfter = findById(session, delivered.getId());
             Assertions.assertEquals(OutboxEntryStatus.PENDING, deliveredAfter.getStatus());
@@ -538,6 +540,53 @@ public class OutboxStoreTests {
         });
     }
 
+    @Test
+    public void lifecycleUpdates_invalidateTheClaimOfRowsInFlight() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            Instant old = now.minus(Duration.ofDays(3));
+            // One claimed PENDING row per admin operation, each under its own owner.
+            OutboxEntryEntity hold = claimedRow(session, TEST_KIND, realmId, "owner-lc-hold", "test.event", "hold", OutboxEntryStatus.PENDING, now);
+            OutboxEntryEntity dead = claimedRow(session, TEST_KIND, realmId, "owner-lc-dead", "test.event", "dead", OutboxEntryStatus.PENDING, now);
+            OutboxEntryEntity dropped = claimedRow(session, TEST_KIND, realmId, "owner-lc-types", "dropped.event", "dropped", OutboxEntryStatus.PENDING, now);
+            OutboxEntryEntity kept = claimedRow(session, TEST_KIND, realmId, "owner-lc-types", "kept.event", "kept", OutboxEntryStatus.PENDING, now);
+            OutboxEntryEntity migrated = claimedRow(session, TEST_KIND, realmId, "owner-lc-mig", "test.event", "migrated", OutboxEntryStatus.PENDING, now);
+            OutboxEntryEntity stale = claimedRow(session, TEST_KIND, realmId, "owner-lc-stale", "test.event", "stale", OutboxEntryStatus.PENDING, old);
+            OutboxEntryEntity deadLetterWithToken = claimedRow(session, TEST_KIND, realmId, "owner-lc-rq", "test.event", "rq", OutboxEntryStatus.DEAD_LETTER, now);
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            Assertions.assertEquals(1, store.holdPendingForOwner(TEST_KIND, "owner-lc-hold"));
+            Assertions.assertEquals(1, store.deadLetterQueuedForOwner(TEST_KIND, "owner-lc-dead", "disabled"));
+            Assertions.assertEquals(1, store.deadLetterQueuedForOwnerNotMatchingTypes(TEST_KIND, "owner-lc-types", List.of("kept.event"), "narrowed"));
+            Assertions.assertEquals(1, store.migrateEntryKindForOwner(TEST_KIND, OTHER_KIND, "owner-lc-mig"));
+            Assertions.assertEquals(1, store.promoteStaleQueuedToDeadLetter(TEST_KIND, now.minus(Duration.ofDays(2)), "aged out"));
+            Assertions.assertEquals(1, store.requeue(TEST_KIND, List.of(deadLetterWithToken.getId())));
+            em(session).flush();
+            em(session).clear();
+
+            for (OutboxEntryEntity row : List.of(hold, dead, dropped, migrated, stale, deadLetterWithToken)) {
+                OutboxEntryEntity after = findById(session, row.getId());
+                Assertions.assertNull(after.getClaimToken(), "operation must clear the claim token: " + row.getCorrelationId());
+                Assertions.assertNull(after.getClaimedUntil(), "operation must clear the lease: " + row.getCorrelationId());
+            }
+            Assertions.assertEquals(OutboxEntryStatus.HELD, findById(session, hold.getId()).getStatus());
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, findById(session, dead.getId()).getStatus());
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, findById(session, dropped.getId()).getStatus());
+            Assertions.assertEquals(OTHER_KIND, findById(session, migrated.getId()).getEntryKind());
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, findById(session, stale.getId()).getStatus());
+            Assertions.assertEquals(OutboxEntryStatus.PENDING, findById(session, deadLetterWithToken.getId()).getStatus());
+
+            OutboxEntryEntity keptAfter = findById(session, kept.getId());
+            Assertions.assertEquals(OutboxEntryStatus.PENDING, keptAfter.getStatus(), "rows the operation does not touch keep their claim");
+            Assertions.assertEquals("tick-a", keptAfter.getClaimToken());
+
+            new OutboxStore(session).deleteByRealm(OTHER_KIND, realmId);
+        });
+    }
+
     // -- Row transitions -------------------------------------------------
 
     @Test
@@ -737,6 +786,57 @@ public class OutboxStoreTests {
             Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, afterOldDeadLetter.getStatus());
             Assertions.assertEquals("original dead-letter reason", afterOldDeadLetter.getLastError(),
                     "already-DEAD_LETTER rows must keep their original lastError");
+        });
+    }
+
+    @Test
+    public void lockStaleQueuedAndExpireQueued_expireOldQueuedRowsOneByOneWithoutCountingAnAttempt() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            Instant old = now.minus(Duration.ofDays(3));
+            OutboxEntryEntity oldHeld = persistRaw(session, TEST_KIND, realmId, "owner-expire", null,
+                    "old-held", OutboxEntryStatus.HELD, 2, now.plusSeconds(60), old);
+            OutboxEntryEntity oldPending = persistRaw(session, TEST_KIND, realmId, "owner-expire", null,
+                    "old-pending", OutboxEntryStatus.PENDING, 0, now.plusSeconds(60), old.plusSeconds(1));
+            oldPending.setClaimToken("tick-a");
+            oldPending.setClaimedUntil(now.plusSeconds(300));
+            persistRaw(session, TEST_KIND, realmId, "owner-expire", null,
+                    "fresh", OutboxEntryStatus.PENDING, 0, now.plusSeconds(60), now.minusSeconds(60));
+            persistRaw(session, TEST_KIND, realmId, "owner-expire", null,
+                    "old-delivered", OutboxEntryStatus.DELIVERED, 1, now, old);
+            persistRaw(session, OTHER_KIND, realmId, "owner-expire", null,
+                    "old-other-kind", OutboxEntryStatus.PENDING, 0, now.plusSeconds(60), old);
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            Instant cutoff = now.minus(Duration.ofDays(2));
+            List<OutboxEntryEntity> stale = store.lockStaleQueued(TEST_KIND, cutoff, 10);
+            Assertions.assertEquals(List.of("old-held", "old-pending"),
+                    stale.stream().map(OutboxEntryEntity::getCorrelationId).toList(),
+                    "queued rows of the kind older than the cutoff, oldest first");
+            Assertions.assertEquals(1, store.lockStaleQueued(TEST_KIND, cutoff, 1).size(), "limit is honoured");
+
+            for (OutboxEntryEntity row : stale) {
+                store.expireQueued(row, "queued exceeded pendingMaxAge");
+            }
+            em(session).flush();
+            em(session).clear();
+
+            OutboxEntryEntity heldAfter = findById(session, oldHeld.getId());
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, heldAfter.getStatus());
+            Assertions.assertEquals(2, heldAfter.getAttempts(), "expiry does not count an attempt");
+            Assertions.assertEquals("queued exceeded pendingMaxAge", heldAfter.getLastError());
+
+            OutboxEntryEntity pendingAfter = findById(session, oldPending.getId());
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, pendingAfter.getStatus());
+            Assertions.assertEquals(0, pendingAfter.getAttempts());
+            Assertions.assertNull(pendingAfter.getClaimToken(), "expiry clears a claim the row still carried");
+            Assertions.assertNull(pendingAfter.getClaimedUntil());
+
+            Assertions.assertTrue(store.lockStaleQueued(TEST_KIND, cutoff, 10).isEmpty(), "nothing stale is left");
+            new OutboxStore(session).deleteByRealm(OTHER_KIND, realmId);
         });
     }
 
@@ -1500,6 +1600,17 @@ public class OutboxStoreTests {
 
     private static OutboxEntryEntity findById(KeycloakSession session, String id) {
         return em(session).find(OutboxEntryEntity.class, id);
+    }
+
+    /** A row claimed by tick {@code tick-a} with a live lease, created and due at {@code createdAt}. */
+    private static OutboxEntryEntity claimedRow(KeycloakSession session, String entryKind, String realmId, String ownerId,
+                                                String entryType, String correlationId, OutboxEntryStatus status,
+                                                Instant createdAt) {
+        OutboxEntryEntity row = persistRawWithType(session, entryKind, realmId, ownerId, entryType,
+                correlationId, status, 0, createdAt, createdAt);
+        row.setClaimToken("tick-a");
+        row.setClaimedUntil(Instant.now().plusSeconds(300));
+        return row;
     }
 
     private static OutboxEntryEntity persistRaw(KeycloakSession session,

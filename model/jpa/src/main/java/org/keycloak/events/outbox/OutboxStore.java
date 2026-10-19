@@ -522,6 +522,11 @@ public class OutboxStore {
      *
      * <p>Does not bump {@code attempts}: these rows didn't actually
      * retry, they aged out. The {@code last_error} captures the reason.
+     * Clears a claim token the row may still carry.
+     *
+     * <p>Bulk variant for admin and cleanup use. The drainer uses
+     * {@link #lockStaleQueued} and {@link #expireQueued} instead so
+     * every expired row reaches its {@link OutboxDrainerListener}.
      */
     public int promoteStaleQueuedToDeadLetter(String entryKind, Instant cutoff, String reason) {
         Objects.requireNonNull(entryKind, "entryKind");
@@ -536,15 +541,59 @@ public class OutboxStore {
                 .executeUpdate();
     }
 
+    /**
+     * Locks up to {@code limit} {@link OutboxEntryStatus#QUEUED queued}
+     * rows of the kind whose {@code createdAt} is older than
+     * {@code cutoff}, oldest first, with {@code FOR UPDATE SKIP LOCKED}.
+     * Row-wise twin of {@link #promoteStaleQueuedToDeadLetter} for the
+     * drainer's housekeeping, which expires each row through
+     * {@link #expireQueued} and notifies its listener per row.
+     */
+    public List<OutboxEntryEntity> lockStaleQueued(String entryKind, Instant cutoff, int limit) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(cutoff, "cutoff");
+        if (limit <= 0) {
+            throw new IllegalArgumentException("limit must be positive, got " + limit);
+        }
+        var query = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.findStaleQueued", OutboxEntryEntity.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("statuses", OutboxEntryStatus.QUEUED)
+                .setParameter("olderThan", cutoff.toEpochMilli())
+                .setMaxResults(limit)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        skipLocked(query, "outbox stale query");
+        return query.getResultList();
+    }
+
+    /**
+     * Expires one queued row to {@code DEAD_LETTER} because it exceeded
+     * {@code pendingMaxAge}. Unlike {@link #markDeadLetter} this does
+     * not count an attempt: the row never retried, it aged out. Clears
+     * the claim token and lease.
+     */
+    public void expireQueued(OutboxEntryEntity entity, String reason) {
+        Objects.requireNonNull(entity, "entity");
+        entity.setStatus(OutboxEntryStatus.DEAD_LETTER);
+        entity.setLastError(truncateError(reason));
+        entity.setClaimToken(null);
+        entity.setClaimedUntil(null);
+        getEntityManager().merge(entity);
+    }
+
     // -- Re-arm (admin retry / replay) -------------------------------------
 
     /**
      * Re-arms the given rows: {@link OutboxEntryStatus#TERMINAL
      * terminal} rows (DEAD_LETTER for an admin retry, DELIVERED for a
      * replay) go back to PENDING with {@code attempts = 0},
-     * {@code next_attempt_at = now} and a cleared {@code last_error} /
-     * {@code delivered_at}. Rows in any other status, of another kind,
-     * or with unknown ids are left alone, so the call is idempotent.
+     * {@code next_attempt_at = now}, {@code created_at = now} and a
+     * cleared {@code last_error} / {@code delivered_at}. The row counts
+     * as enqueued now: {@code created_at} is the baseline of the
+     * {@code pendingMaxAge} backstop, and a dead letter re-armed with
+     * its original arrival time would be expired again by the next
+     * housekeeping pass. Rows in any other status, of another kind, or
+     * with unknown ids are left alone, so the call is idempotent.
      *
      * <p>Done in place rather than by inserting a fresh row because
      * the {@code (entryKind, ownerId, correlationId)} unique
@@ -821,7 +870,8 @@ public class OutboxStore {
     /**
      * Bulk-transitions every PENDING row for the owner to HELD —
      * "park" the queue when the upstream channel pauses (e.g. SSF
-     * stream paused / disabled).
+     * stream paused / disabled). Rows in flight lose their claim: the
+     * tick that holds them skips their delivery and record.
      *
      * @return the number of rows that transitioned PENDING → HELD.
      */
@@ -845,7 +895,8 @@ public class OutboxStore {
      * Dead-letters every queued (PENDING + HELD) row for the owner
      * with the supplied reason. Used when the upstream forbids
      * holding (e.g. SSF stream disabled) and the rows must be
-     * discarded rather than parked.
+     * discarded rather than parked. Rows in flight lose their claim,
+     * so a late delivery result cannot overwrite the dead letter.
      */
     public int deadLetterQueuedForOwner(String entryKind, String ownerId, String reason) {
         Objects.requireNonNull(entryKind, "entryKind");
@@ -906,7 +957,9 @@ public class OutboxStore {
      * Migrates queued rows for the owner from one entryKind to another
      * (e.g. SSF receiver flipping push ↔ poll). Terminal rows
      * (DELIVERED, DEAD_LETTER) are left under the previous kind — they
-     * are audit / dedup artifacts of the old channel.
+     * are audit / dedup artifacts of the old channel. Rows in flight
+     * lose their claim, so the old kind's tick does not deliver them
+     * over the old channel.
      *
      * @return the number of rows whose entryKind was migrated.
      */

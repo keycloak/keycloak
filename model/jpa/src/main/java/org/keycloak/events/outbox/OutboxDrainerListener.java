@@ -37,7 +37,13 @@ public interface OutboxDrainerListener {
         /** The handler returned {@link OutboxDeliveryOutcome#DEAD_LETTER}. */
         HANDLER,
         /** The handler returned {@link OutboxDeliveryOutcome#ORPHANED}. */
-        ORPHANED
+        ORPHANED,
+        /**
+         * Housekeeping expired the queued row because it was older
+         * than {@code OutboxConfig.pendingMaxAge()}. No attempt was
+         * counted; the row aged out without being delivered.
+         */
+        PENDING_MAX_AGE
     }
 
     default void onTickStart(KeycloakSession session, String entryKind) {

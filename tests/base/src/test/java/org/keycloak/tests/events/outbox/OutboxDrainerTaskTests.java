@@ -21,6 +21,7 @@ import org.keycloak.events.outbox.OutboxDelivery;
 import org.keycloak.events.outbox.OutboxDeliveryHandler;
 import org.keycloak.events.outbox.OutboxDeliveryResult;
 import org.keycloak.events.outbox.OutboxDrainerListener;
+import org.keycloak.events.outbox.OutboxDrainerRunner;
 import org.keycloak.events.outbox.OutboxDrainerTask;
 import org.keycloak.events.outbox.OutboxDrainerTickSummary;
 import org.keycloak.events.outbox.OutboxEntry;
@@ -33,6 +34,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -378,6 +380,113 @@ public class OutboxDrainerTaskTests {
         Assertions.assertTrue(threads.size() >= 2, "deliveries ran on more than one worker thread: " + threads);
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void tick_skipsRowsAnAdminTransitionedAfterTheClaim() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant base = Instant.now().minusSeconds(10);
+            persistRow(session, realmId, "status-kept", 0, base);
+            persistRow(session, realmId, "hold-owner", 0, base.plusSeconds(1));
+            persistRow(session, realmId, "deliver", 0, base.plusSeconds(2));
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
+            new OutboxDrainerTask(config, handler, OutboxStore::new).run(session);
+
+            Map<String, Object> out = snapshot(session);
+            out.put("summary", handler.summary);
+            out.put("events", handler.events);
+            return out;
+        }, Map.class);
+
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(3, summary.get("claimed"));
+        Assertions.assertEquals(3, summary.get("processed"));
+        Assertions.assertEquals(3, summary.get("claimLost"));
+        Assertions.assertEquals(0, summary.get("delivered"), "no result of an in-flight row may overwrite an admin transition");
+
+        Assertions.assertEquals("DEAD_LETTER", result.get("status.status-kept"), "a changed status stops the record even with the token in place");
+        Assertions.assertEquals("HELD", result.get("status.hold-owner"), "the held row keeps its HELD status");
+        Assertions.assertNull(result.get("claimToken.hold-owner"), "holding cleared the claim");
+        Assertions.assertEquals("HELD", result.get("status.deliver"), "a row held between claim and prepare is not delivered");
+        Assertions.assertEquals(0, result.get("attempts.deliver"));
+        List<String> events = (List<String>) result.get("events");
+        Assertions.assertFalse(events.stream().anyMatch(e -> e.startsWith("delivered:")), events.toString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void tick_housekeepingExpiresStaleQueuedRowsThroughTheListener() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant notDue = Instant.now().plusSeconds(3600);
+            Instant old = Instant.now().minus(Duration.ofDays(3));
+            persistRow(session, realmId, "owner-drain", "stale-pending", 0, notDue, OutboxEntryStatus.PENDING, old);
+            persistRow(session, realmId, "owner-drain", "stale-held", 1, notDue, OutboxEntryStatus.HELD, old);
+            persistRow(session, realmId, "owner-drain", "not-due", 0, notDue, OutboxEntryStatus.PENDING, Instant.now().minusSeconds(5));
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, Duration.ofDays(1));
+            new OutboxDrainerTask(config, handler, OutboxStore::new).run(session);
+
+            Map<String, Object> out = snapshot(session);
+            out.put("summary", handler.summary);
+            out.put("events", handler.events);
+            return out;
+        }, Map.class);
+
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(0, summary.get("claimed"), "none of the rows is due");
+        Assertions.assertEquals(2, summary.get("stalePromoted"));
+        Assertions.assertEquals(0, summary.get("deadLettered"), "expiry is reported as stalePromoted, not as a drain-pass dead letter");
+
+        List<String> events = (List<String>) result.get("events");
+        Assertions.assertTrue(events.contains("deadLetter:stale-pending:PENDING_MAX_AGE"), events.toString());
+        Assertions.assertTrue(events.contains("deadLetter:stale-held:PENDING_MAX_AGE"), events.toString());
+        Assertions.assertFalse(events.stream().anyMatch(e -> e.endsWith(":not-due")), events.toString());
+
+        for (String corr : List.of("stale-pending", "stale-held")) {
+            Assertions.assertEquals("DEAD_LETTER", result.get("status." + corr));
+            Assertions.assertEquals("queued exceeded pendingMaxAge", result.get("lastError." + corr));
+        }
+        Assertions.assertEquals(0, result.get("attempts.stale-pending"), "expiry does not count an attempt");
+        Assertions.assertEquals(1, result.get("attempts.stale-held"));
+        Assertions.assertEquals("PENDING", result.get("status.not-due"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void runner_runsTheTickUnderTheClusterLockWithoutASurroundingTransaction() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> persistRow(session, realmId, "deliver-probe", 0, Instant.now().minusSeconds(1)));
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
+            OutboxDrainerTask task = new OutboxDrainerTask(config, handler, OutboxStore::new);
+            new OutboxDrainerRunner(session.getKeycloakSessionFactory(), task, 60_000).run();
+
+            Map<String, Object> out = snapshot(session);
+            out.put("summary", handler.summary);
+            out.put("events", handler.events);
+            return out;
+        }, Map.class);
+
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(1, summary.get("delivered"));
+        Assertions.assertEquals("DELIVERED", result.get("status.deliver-probe"));
+        List<String> events = (List<String>) result.get("events");
+        Assertions.assertEquals("tickStart:test-kind", events.get(0));
+        Assertions.assertTrue(events.contains("tickStartTx:true"), "tick callbacks get a session with a transaction: " + events);
+        Assertions.assertTrue(events.contains("execute:deliver-probe:session=false"), "no session is bound while a delivery executes: " + events);
+        Assertions.assertEquals("tickEnd", events.get(events.size() - 1));
+    }
+
     /**
      * Reads every row of the test owner back through a fresh query
      * (the drainer committed in its own transactions) into a flat,
@@ -431,9 +540,31 @@ public class OutboxDrainerTaskTests {
                 });
                 return OutboxDelivery.settled(OutboxDeliveryResult.delivered());
             }
+            if ("status-kept".equals(corr)) {
+                // An admin operation that (wrongly) leaves the token in
+                // place but changes the status: the status check alone
+                // must stop the record.
+                String id = row.getId();
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> {
+                    OutboxEntryEntity current = s.getProvider(JpaConnectionProvider.class)
+                            .getEntityManager().find(OutboxEntryEntity.class, id);
+                    current.setStatus(OutboxEntryStatus.DEAD_LETTER);
+                });
+                return OutboxDelivery.settled(OutboxDeliveryResult.delivered());
+            }
+            if ("hold-owner".equals(corr)) {
+                // The owner's stream is paused while this row is in
+                // flight: this row's record and the next row's prepare
+                // must both be skipped.
+                String ownerId = row.getOwnerId();
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        s -> new OutboxStore(s).holdPendingForOwner(TEST_KIND, ownerId));
+                return OutboxDelivery.settled(OutboxDeliveryResult.delivered());
+            }
             if (corr.startsWith("deliver-")) {
                 return () -> {
                     threads.add(Thread.currentThread().getName());
+                    events.add("execute:" + corr + ":session=" + (KeycloakSessionUtil.getKeycloakSession() != null));
                     if (corr.startsWith("deliver-slow")) {
                         sleep(150);
                     }
@@ -468,6 +599,7 @@ public class OutboxDrainerTaskTests {
         @Override
         public void onTickStart(KeycloakSession session, String entryKind) {
             events.add("tickStart:" + entryKind);
+            events.add("tickStartTx:" + session.getTransactionManager().isActive());
         }
 
         @Override
@@ -530,6 +662,13 @@ public class OutboxDrainerTaskTests {
 
     private static OutboxEntryEntity persistRow(KeycloakSession session, String realmId, String ownerId,
                                                 String correlationId, int attempts, Instant nextAttemptAt) {
+        return persistRow(session, realmId, ownerId, correlationId, attempts, nextAttemptAt,
+                OutboxEntryStatus.PENDING, Instant.now().minusSeconds(5));
+    }
+
+    private static OutboxEntryEntity persistRow(KeycloakSession session, String realmId, String ownerId,
+                                                String correlationId, int attempts, Instant nextAttemptAt,
+                                                OutboxEntryStatus status, Instant createdAt) {
         OutboxEntryEntity e = new OutboxEntryEntity();
         e.setId(UUID.randomUUID().toString());
         e.setEntryKind(TEST_KIND);
@@ -538,10 +677,10 @@ public class OutboxDrainerTaskTests {
         e.setCorrelationId(correlationId);
         e.setEntryType("test.event");
         e.setPayload("encoded-" + correlationId);
-        e.setStatus(OutboxEntryStatus.PENDING);
+        e.setStatus(status);
         e.setAttempts(attempts);
         e.setNextAttemptAt(nextAttemptAt);
-        e.setCreatedAt(Instant.now().minusSeconds(5));
+        e.setCreatedAt(createdAt);
         em(session).persist(e);
         return e;
     }

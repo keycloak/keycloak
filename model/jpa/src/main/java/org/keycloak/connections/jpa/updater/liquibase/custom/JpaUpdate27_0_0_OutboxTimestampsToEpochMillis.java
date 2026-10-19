@@ -7,7 +7,9 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import liquibase.exception.CustomChangeException;
+import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.core.RawParameterizedSqlStatement;
+import liquibase.structure.core.Table;
 
 /**
  * Back-fills the BIGINT epoch-millisecond columns of {@code OUTBOX_ENTRY}
@@ -19,10 +21,29 @@ import liquibase.statement.core.RawParameterizedSqlStatement;
  * constant offset; to make that harmless, the next attempt of every
  * queued row is clamped to "now" so no row ends up scheduled hours into
  * the future. The outbox is at-least-once, so an early retry is safe.
+ *
+ * <p>Skipped when {@code OUTBOX_ENTRY} does not exist in the live
+ * database: with the manual migration strategy the SQL of a pre-26.7
+ * database is only exported, so the table that the 26.7.0 changeset
+ * creates is not there to read from (and has no rows to convert).
  */
 public class JpaUpdate27_0_0_OutboxTimestampsToEpochMillis extends CustomKeycloakTask {
 
     private static final Calendar UTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+    @Override
+    protected boolean isApplicable() throws CustomChangeException {
+        return super.isApplicable() && tableExists("OUTBOX_ENTRY");
+    }
+
+    private boolean tableExists(String tableName) throws CustomChangeException {
+        try {
+            String correctedTableName = database.correctObjectName(tableName, Table.class);
+            return SnapshotGeneratorFactory.getInstance().has(new Table().setName(correctedTableName), database);
+        } catch (Exception e) {
+            throw new CustomChangeException(getTaskId() + ": failed to check for existence of " + tableName, e);
+        }
+    }
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {

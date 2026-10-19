@@ -225,9 +225,17 @@ import org.hibernate.annotations.Nationalized;
         // them. Bumps neither attempts nor deliveredAt — these rows
         // never actually retried; they aged out.
         @NamedQuery(
+                name = "OutboxEntryEntity.findStaleQueued",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status IN :statuses"
+                        + "   AND e.createdAt < :olderThan"
+                        + " ORDER BY e.createdAt ASC, e.id ASC"),
+        @NamedQuery(
                 name = "OutboxEntryEntity.promoteStaleQueuedToDeadLetter",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.status IN :statuses"
                         + "    AND e.createdAt < :olderThan"),
@@ -269,11 +277,15 @@ import org.hibernate.annotations.Nationalized;
         // to PENDING with a fresh attempt budget. In-place rather than
         // a new row because the (entryKind, ownerId, correlationId)
         // unique constraint forbids re-enqueueing the same message.
+        // created_at is reset too: it is the pending-age baseline for
+        // the pendingMaxAge backstop, and a re-armed row is "enqueued
+        // now", not when it first arrived.
         @NamedQuery(
                 name = "OutboxEntryEntity.requeueByIds",
                 query = "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :pending, e.attempts = 0, e.nextAttemptAt = :now,"
-                        + "        e.deliveredAt = NULL, e.lastError = NULL"
+                        + "        e.createdAt = :now, e.deliveredAt = NULL, e.lastError = NULL,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.id IN :ids"
                         + "    AND e.status IN :fromStatuses"),
@@ -281,7 +293,8 @@ import org.hibernate.annotations.Nationalized;
                 name = "OutboxEntryEntity.requeueForOwnerByStatus",
                 query = "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :pending, e.attempts = 0, e.nextAttemptAt = :now,"
-                        + "        e.deliveredAt = NULL, e.lastError = NULL"
+                        + "        e.createdAt = :now, e.deliveredAt = NULL, e.lastError = NULL,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :fromStatus"),
@@ -315,32 +328,37 @@ import org.hibernate.annotations.Nationalized;
         // Owner-scoped lifecycle: pause/resume, disable, narrowed
         // type allow-list. Drives consumer-side lifecycle operations
         // such as SSF stream pause / resume / disable / events_requested
-        // narrowing.
+        // narrowing. Every one of them clears the claim token and lease:
+        // a row in flight whose status or kind an admin changes must
+        // not be delivered or recorded by the tick that claimed it.
         @NamedQuery(
                 name = "OutboxEntryEntity.releaseHeldForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :pending, e.nextAttemptAt = :now"
+                        + "    SET e.status = :pending, e.nextAttemptAt = :now,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :held"),
         @NamedQuery(
                 name = "OutboxEntryEntity.holdPendingForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :held"
+                        + "    SET e.status = :held, e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :pending"),
         @NamedQuery(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses"),
         @NamedQuery(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwnerNotMatchingTypes",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses"
@@ -353,7 +371,7 @@ import org.hibernate.annotations.Nationalized;
         @NamedQuery(
                 name = "OutboxEntryEntity.migrateEntryKindForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.entryKind = :newKind"
+                        + "    SET e.entryKind = :newKind, e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :currentKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses")

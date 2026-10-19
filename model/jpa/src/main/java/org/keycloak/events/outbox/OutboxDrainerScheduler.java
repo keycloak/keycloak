@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.timer.TaskRunner;
 import org.keycloak.timer.TimerProvider;
 
@@ -27,8 +26,9 @@ import org.jboss.logging.Logger;
  * {@code spi-executors-default-outbox-drainer-min/max}). A trigger
  * that fires while the previous tick of the same task is still running
  * on this node is skipped, so ticks never queue up. Across nodes the
- * {@link ClusterAwareScheduledTaskRunner} lock, keyed by
- * {@link OutboxDrainerTask#getTaskName()}, keeps one tick per kind.
+ * {@link OutboxDrainerRunner} lock, keyed by
+ * {@link OutboxDrainerTask#getTaskName()}, keeps one tick per kind;
+ * that runner also keeps the tick free of a surrounding transaction.
  */
 public final class OutboxDrainerScheduler {
 
@@ -40,12 +40,12 @@ public final class OutboxDrainerScheduler {
     }
 
     /**
-     * Schedules {@code task} every {@code intervalMillis} with a
-     * cluster-aware runner keyed by the task name.
+     * Schedules {@code task} every {@code intervalMillis} with an
+     * {@link OutboxDrainerRunner}.
      */
     public static TaskRunner schedule(KeycloakSession session, OutboxDrainerTask task, long intervalMillis) {
         KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
-        TaskRunner runner = new ClusterAwareScheduledTaskRunner(factory, task, intervalMillis, task.getTaskName());
+        TaskRunner runner = new OutboxDrainerRunner(factory, task, intervalMillis);
         return schedule(session, runner, intervalMillis);
     }
 
