@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        Outbox drainer lease: a row claimed for delivery carries the
+        claiming tick's token and the instant its lease ends. Rows with a
+        live lease are not due for other ticks; the transition recorded
+        after delivery is conditional on the token, so a node whose lease
+        expired cannot overwrite a newer attempt. Both nullable: rows that
+        are not in flight carry neither.
+    -->
+    <changeSet author="keycloak" id="27.0.0-outbox-claim-lease">
+        <addColumn tableName="OUTBOX_ENTRY">
+            <column name="CLAIM_TOKEN" type="VARCHAR(36)"/>
+            <column name="CLAIMED_UNTIL" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <!--
+        OUTBOX_ENTRY was the only table storing instants as TIMESTAMP.
+        On MySQL and MariaDB that type has whole-second precision, so rows
+        written in the same second tie and arrival order falls back to the
+        random id. Switch CREATED_AT, NEXT_ATTEMPT_AT and DELIVERED_AT to
+        BIGINT epoch milliseconds like every other Keycloak table: add the
+        new columns, back-fill them from the old ones, swap them in.
+    -->
+    <changeSet author="keycloak" id="27.0.0-outbox-epoch-millis-add">
+        <addColumn tableName="OUTBOX_ENTRY">
+            <column name="CREATED_AT_MS" type="BIGINT"/>
+            <column name="NEXT_ATTEMPT_AT_MS" type="BIGINT"/>
+            <column name="DELIVERED_AT_MS" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="27.0.0-outbox-epoch-millis-backfill">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_OutboxTimestampsToEpochMillis"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="27.0.0-outbox-epoch-millis-swap">
+        <dropIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_DRAIN"/>
+        <dropColumn tableName="OUTBOX_ENTRY" columnName="CREATED_AT"/>
+        <dropColumn tableName="OUTBOX_ENTRY" columnName="NEXT_ATTEMPT_AT"/>
+        <dropColumn tableName="OUTBOX_ENTRY" columnName="DELIVERED_AT"/>
+        <renameColumn tableName="OUTBOX_ENTRY" oldColumnName="CREATED_AT_MS" newColumnName="CREATED_AT" columnDataType="BIGINT"/>
+        <renameColumn tableName="OUTBOX_ENTRY" oldColumnName="NEXT_ATTEMPT_AT_MS" newColumnName="NEXT_ATTEMPT_AT" columnDataType="BIGINT"/>
+        <renameColumn tableName="OUTBOX_ENTRY" oldColumnName="DELIVERED_AT_MS" newColumnName="DELIVERED_AT" columnDataType="BIGINT"/>
+        <addNotNullConstraint tableName="OUTBOX_ENTRY" columnName="CREATED_AT" columnDataType="BIGINT"/>
+        <addNotNullConstraint tableName="OUTBOX_ENTRY" columnName="NEXT_ATTEMPT_AT" columnDataType="BIGINT"/>
+        <!-- Drainer hot path, as in 26.7.0: WHERE entry_kind=? AND status=? AND next_attempt_at<=? -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_DRAIN">
+            <column name="ENTRY_KIND"/>
+            <column name="STATUS"/>
+            <column name="NEXT_ATTEMPT_AT"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
