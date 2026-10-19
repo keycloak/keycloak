@@ -1,0 +1,172 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.tests.saml;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+/**
+ * A mutable view over a POST-binding SAML response that a test, acting as a service provider, receives from
+ * an identity provider. It decodes the base64 form value into a DOM document, exposes helpers to inspect and
+ * tamper with the assertion, and re-encodes it for posting back.
+ * <p>
+ * The realms used by SAML broker tests are typically unsigned, so mutating the decoded document does not
+ * invalidate any signature.
+ */
+public class SamlResponseDocument {
+
+    private static final String ASSERTION_NS = JBossSAMLURIConstants.ASSERTION_NSURI.get();
+
+    public static final String BEARER_METHOD = JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get();
+
+    public static final String HOLDER_OF_KEY_METHOD = JBossSAMLURIConstants.HOLDER_OF_KEY.get();
+
+    private final org.w3c.dom.Document document;
+
+    private SamlResponseDocument(org.w3c.dom.Document document) {
+        this.document = document;
+    }
+
+    /**
+     * Parses a base64 POST-binding {@code SAMLResponse} form value into a mutable document.
+     */
+    public static SamlResponseDocument fromPostBinding(String base64SamlResponse) {
+        byte[] xml = Base64.getMimeDecoder().decode(base64SamlResponse);
+        try {
+            return new SamlResponseDocument(DocumentUtil.getDocument(new String(xml, StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to parse SAML response document", e);
+        }
+    }
+
+    public org.w3c.dom.Document getDocument() {
+        return document;
+    }
+
+    private Element getFirstAssertionSubject() {
+        Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        if (assertion == null) {
+            throw new IllegalStateException("SAML response does not contain an assertion");
+        }
+        Element subject = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Subject").item(0);
+        if (subject == null) {
+            throw new IllegalStateException("SAML assertion does not contain a subject");
+        }
+        return subject;
+    }
+
+    private List<Element> getSubjectConfirmations() {
+        NodeList nodes = getFirstAssertionSubject().getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmation");
+        List<Element> confirmations = new ArrayList<>(nodes.getLength());
+        for (int i = 0; i < nodes.getLength(); i++) {
+            confirmations.add((Element) nodes.item(i));
+        }
+        return confirmations;
+    }
+
+    /**
+     * Creates (but does not attach) an element in the SAML assertion namespace, e.g. {@code "SubjectConfirmation"}.
+     */
+    public Element createAssertionElement(String localName) {
+        return document.createElementNS(ASSERTION_NS, "saml:" + localName);
+    }
+
+    /**
+     * Returns the number of {@code <saml:SubjectConfirmation>} elements in the first assertion's subject.
+     */
+    public int getSubjectConfirmationCount() {
+        return getSubjectConfirmations().size();
+    }
+
+    /**
+     * Returns {@code true} if the first assertion's subject carries a {@code <saml:SubjectConfirmation>} with
+     * the given {@code Method}.
+     */
+    public boolean hasSubjectConfirmation(String method) {
+        return getSubjectConfirmations().stream().anyMatch(c -> method.equals(c.getAttribute("Method")));
+    }
+
+    /**
+     * Returns {@code true} if the first assertion's subject carries a {@code <saml:SubjectConfirmation>} with
+     * the given {@code Method} that also contains a {@code <saml:SubjectConfirmationData>} element.
+     */
+    public boolean hasSubjectConfirmationData(String method) {
+        return getSubjectConfirmations().stream()
+                .filter(c -> method.equals(c.getAttribute("Method")))
+                .anyMatch(c -> c.getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmationData").getLength() > 0);
+    }
+
+    /**
+     * Removes every {@code <saml:SubjectConfirmation>} from the assertion subject, so the assertion carries no
+     * confirmation at all.
+     */
+    public SamlResponseDocument removeSubjectConfirmations() {
+        for (Element confirmation : getSubjectConfirmations()) {
+            confirmation.getParentNode().removeChild(confirmation);
+        }
+        return this;
+    }
+
+    /**
+     * Appends a {@code <saml:SubjectConfirmation>} with the given {@code Method} and no
+     * {@code <saml:SubjectConfirmationData>} to the assertion subject, keeping any existing confirmation in
+     * place.
+     */
+    public SamlResponseDocument addSubjectConfirmation(String method) {
+        Element confirmation = createAssertionElement("SubjectConfirmation");
+        confirmation.setAttribute("Method", method);
+        getFirstAssertionSubject().appendChild(confirmation);
+        return this;
+    }
+
+    /**
+     * Expires the {@code <saml:SubjectConfirmationData>} of the confirmation carrying the given {@code Method}
+     * by setting its {@code NotOnOrAfter} to a fixed instant in the past, so that confirmation fails
+     * validation while remaining present on the assertion.
+     */
+    public SamlResponseDocument expireSubjectConfirmationData(String method) {
+        Element data = getSubjectConfirmations().stream()
+                .filter(c -> method.equals(c.getAttribute("Method")))
+                .map(c -> (Element) c.getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmationData").item(0))
+                .filter(d -> d != null)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "No SubjectConfirmationData found for method " + method));
+        data.setAttribute("NotOnOrAfter", "2000-01-01T00:00:00Z");
+        return this;
+    }
+
+    /**
+     * Serialises the (possibly mutated) document back into a base64 POST-binding {@code SAMLResponse} value.
+     */
+    public String toPostBinding() {
+        try {
+            String xml = DocumentUtil.getDocumentAsString(document);
+            return Base64.getEncoder().encodeToString(xml.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to serialise SAML response document", e);
+        }
+    }
+}
