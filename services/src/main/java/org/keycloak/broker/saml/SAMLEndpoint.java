@@ -915,7 +915,7 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
             }
 
-            long ttlSeconds = (ttlMillis + 999) / 1000;
+            long ttlSeconds = (ttlMillis + 999) / 1000 + 1;
 
             String issuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue() : "";
             String key = "saml.oneTimeUse." + issuer + "::" + assertion.getID();
