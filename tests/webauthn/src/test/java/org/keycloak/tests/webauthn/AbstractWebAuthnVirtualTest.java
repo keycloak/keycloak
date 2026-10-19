@@ -167,7 +167,12 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
     @AfterEach
     public void cleanup() {
-        removeVirtualAuthenticator();
+        try {
+            // Stop page scripts before removing the authenticator and cleaning up the realm.
+            driver.open("about:blank");
+        } finally {
+            removeVirtualAuthenticator();
+        }
     }
 
     @Override
