@@ -187,6 +187,24 @@ This mapper grants a specified {project_name} role to each {project_name} user f
 Group Mapper::
 This mapper maps LDAP groups from a branch of an LDAP tree into groups within {project_name}. This mapper also propagates user-group mappings from LDAP into user-group mappings in {project_name}.
 
+[[_translated_membership_mapper]]
+Translated Membership Mapper::
+This mapper grants realm roles, client roles of one client, or groups whose names are derived from the names of the LDAP groups the user is member of. Use it when the LDAP group names differ from the role or group names in {project_name}, for example when the LDAP group `myapp-Admin-users` stands for the role `Admin`. The mapper is read-only: it writes nothing to LDAP and stores nothing in the {project_name} database. Users who have a role or group only through this mapper are not listed in the *Users in role* tab of the role or the *Members* tab of the group, as with the hardcoded role and group mappers.
++
+The grants are evaluated when the user is loaded from LDAP. When the user is cached, a change of LDAP group membership takes effect after the cache entry of the user expires or is evicted, according to the *Cache policy* of the LDAP provider.
++
+A role mapper in `LDAP_ONLY` mode reports only the roles it reads from LDAP for its realm or client, and a group mapper in `LDAP_ONLY` mode with the groups path `/` reports only the groups it reads from LDAP. Depending on the order in which the mappers of the provider are applied, such a mapper can hide the roles of the same realm or client, or the groups, that this mapper grants. Use the `READ_ONLY` or `IMPORT` mode for those role and group mappers.
++
+The mapper reads the values of the *Member-Of LDAP Attribute* of the user, `memberOf` by default. When a value is a DN, the group name is the *Group Name LDAP Attribute* of its first RDN, `cn` by default. A DN whose first RDN lacks that attribute is ignored and logged as a warning. Any other value is the group name itself. Table keys and values, the translation pattern, and the translation template are used exactly as written, including leading and trailing spaces.
++
+The *Target* selects whether the translated names are realm roles (`REALM_ROLE`), roles of the client selected in *Client ID* (`CLIENT_ROLE`), or full group paths (`GROUP`). The mapper does not create roles or groups. A translated name that matches no existing role or group grants nothing. Such names are logged as a warning. The configuration is validated when the mapper is saved.
++
+For example, the pattern `myapp-(.+)-users` with the template `$1` translates `myapp-Admin-users` to `Admin`. With the target `GROUP` and the template `/applications/$1`, the same LDAP group grants membership in the group `/applications/Admin`. Each group name is translated as follows:
++
+* An entry of the *Translation Table* with the exact group name as the key wins. The value is the role name, or the full group path when the target is `GROUP`. Repeat a key to grant several roles or groups.
+* Otherwise, when the *Translation Pattern* matches the whole group name, the *Translation Template* filled with the capture groups of the pattern is the result. Refer to a capture group as `$1` or `${name}`.
+* Otherwise, the group grants nothing. These group names are logged at the DEBUG level.
+
 [[_msad_mapper]]
 MSAD User Account Mapper::
 This mapper is specific to Microsoft Active Directory (MSAD). It can integrate the MSAD user account state into the {project_name} account state, such as enabled account or  expired password. This mapper uses the `userAccountControl`, and `pwdLastSet` LDAP attributes, specific to MSAD and are not the LDAP standard. For example, if the value of `pwdLastSet` is `0`, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of  `userAccountControl` is `514` (disabled account), the {project_name} user is disabled.
