@@ -48,17 +48,28 @@ public class WebAuthnBackupEligibilityVerifierTest {
     }
 
     @Test
-    public void changedBackupEligibleFlagIsRejected() {
-        // unknown stored value (credential registered before the flag was recorded) accepts either
-        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, true, "cred"));
-        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, false, "cred"));
-        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, true, "cred"));
-        assertDoesNotThrow(() -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, false, "cred"));
+    public void changedBackupEligibleFlagIsRejectedWhenPolicyIsConfigured() {
+        for (String value : new String[] { Constants.WEBAUTHN_POLICY_OPTION_DEVICE_BOUND, Constants.WEBAUTHN_POLICY_OPTION_BACKUP_ELIGIBLE }) {
+            WebAuthnPolicy policy = policy(value);
+            // unknown stored value (credential registered before the flag was recorded) accepts either
+            assertFalse(WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, true, "cred", policy));
+            assertFalse(WebAuthnBackupEligibilityVerifier.verifyUnchanged(null, false, "cred", policy));
+            assertFalse(WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, true, "cred", policy));
+            assertFalse(WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, false, "cred", policy));
 
-        WebAuthnPolicyException e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, false, "cred"));
-        assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
-        e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, true, "cred"));
-        assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
+            WebAuthnPolicyException e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, false, "cred", policy));
+            assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
+            e = assertThrows(WebAuthnPolicyException.class, () -> WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, true, "cred", policy));
+            assertEquals(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED, e.getMessageKey());
+        }
+    }
+
+    @Test
+    public void changedBackupEligibleFlagIsOnlyReportedWithoutPolicy() {
+        WebAuthnPolicy policy = policy(Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED);
+        assertFalse(WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, true, "cred", policy));
+        assertTrue(WebAuthnBackupEligibilityVerifier.verifyUnchanged(true, false, "cred", policy));
+        assertTrue(WebAuthnBackupEligibilityVerifier.verifyUnchanged(false, true, "cred", policy));
     }
 
     private static WebAuthnPolicy policy(String backupEligibility) {

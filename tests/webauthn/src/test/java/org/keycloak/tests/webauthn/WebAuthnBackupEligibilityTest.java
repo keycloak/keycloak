@@ -9,7 +9,6 @@ import java.util.Map;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -158,8 +157,7 @@ public class WebAuthnBackupEligibilityTest extends AbstractWebAuthnVirtualTest {
         managedRealm.updateWithCleanup(r -> r.webAuthn(isPasswordless(), builder ->
                 builder.backupEligibility(Constants.WEBAUTHN_POLICY_OPTION_DEVICE_BOUND)));
 
-        authenticateUser(USERNAME, PASSWORD, false);
-        webAuthnErrorPage.assertCurrent();
+        authenticateAndExpectErrorPage();
         assertThat(webAuthnErrorPage.getError(), containsString(DEVICE_BOUND_ERROR));
 
         EventRepresentation error = pollEvent(EventType.LOGIN_ERROR);
@@ -174,22 +172,46 @@ public class WebAuthnBackupEligibilityTest extends AbstractWebAuthnVirtualTest {
         Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
         String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
         logout();
+        setBackupEligibility(false);
+
+        // without a backup eligibility policy the change is only logged, the recorded flag is kept
+        authenticateUser(USERNAME, PASSWORD, true);
+        WebAuthnCredentialData data = webAuthnCredentialData(userId);
+        assertThat(data.getBackupEligible(), is(true));
+        assertThat(data.getBackupState(), is(false));
+        logout();
 
         // a device-bound policy would be satisfied by the forged flag, but the recorded flag says otherwise
         managedRealm.updateWithCleanup(r -> r.webAuthn(isPasswordless(), builder ->
                 builder.backupEligibility(Constants.WEBAUTHN_POLICY_OPTION_DEVICE_BOUND)));
-        setBackupEligibility(false);
+        events.clear();
 
-        authenticateUser(USERNAME, PASSWORD, false);
-        webAuthnErrorPage.assertCurrent();
+        authenticateAndExpectErrorPage();
         assertThat(webAuthnErrorPage.getError(), containsString("The passkey reported a different backup capability than when it was registered"));
 
         EventRepresentation error = pollEvent(EventType.LOGIN_ERROR);
         assertThat(error.getDetails().get(WebAuthnConstants.AUTH_ERR_LABEL), is("webauthn-error-backup-eligible-changed"));
+        assertThat(error.getDetails().get(WebAuthnConstants.AUTH_ERR_DETAIL_LABEL), containsString("changed from true to false"));
+        assertThat(error.getDetails().get(WebAuthnConstants.PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR), is("false"));
 
-        // the recorded flag is kept
-        WebAuthnCredentialData data = webAuthnCredentialData(userId);
+        // the recorded flag is still kept
+        data = webAuthnCredentialData(userId);
         assertThat(data.getBackupEligible(), is(true));
+    }
+
+    /**
+     * Logs in with password and passkey and waits for the WebAuthn error page. Unlike
+     * {@code authenticateUser(..., false)} this waits for the navigation to the error page instead of inspecting
+     * whatever page is current right after the click.
+     */
+    private void authenticateAndExpectErrorPage() {
+        oAuthClient.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.fillLogin(USERNAME, PASSWORD);
+        loginPage.submit();
+        webAuthnLoginPage.assertCurrent();
+        webAuthnLoginPage.clickAuthenticate();
+        webAuthnErrorPage.assertCurrent();
     }
 
     private void useAuthenticator(VirtualAuthenticatorOptions options) {
@@ -226,7 +248,7 @@ public class WebAuthnBackupEligibilityTest extends AbstractWebAuthnVirtualTest {
     private WebAuthnCredentialData webAuthnCredentialData(String userId) throws IOException {
         List<CredentialRepresentation> credentials = managedRealm.admin().users().get(userId).credentials();
         CredentialRepresentation credential = credentials.stream()
-                .filter(c -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(c.getType()))
+                .filter(c -> getCredentialType().equals(c.getType()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no webauthn credential registered"));
         return JsonSerialization.readValue(credential.getCredentialData(), WebAuthnCredentialData.class);

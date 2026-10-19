@@ -37,22 +37,30 @@ public final class WebAuthnBackupEligibilityVerifier {
 
     /**
      * The BE flag is fixed for the lifetime of a credential. An assertion reporting a different value than the one
-     * recorded for the credential indicates a cloned, tampered or broken authenticator and must not be trusted,
-     * regardless of the configured policy. Otherwise a credential known to be backup eligible could pass a
-     * device-bound policy and be reclassified as device-bound.
+     * recorded for the credential indicates a cloned, tampered or broken authenticator. When a backup eligibility
+     * policy is configured the assertion is rejected, as otherwise a credential known to be backup eligible could
+     * pass a device-bound policy by relabeling itself. Without a policy the change is only logged, so realms that
+     * did not opt into the feature see no new login failures; the recorded flag is kept either way.
      *
      * @param storedBackupEligible the BE flag recorded for the credential, {@code null} when unknown for
      *                             credentials registered before the flag was recorded
      * @param backupEligible the BE flag from the authenticator data of the assertion
-     * @throws WebAuthnPolicyException when the recorded flag is known and differs from the asserted one
+     * @return {@code true} when the asserted flag differs from the recorded one
+     * @throws WebAuthnPolicyException when the flag changed and a backup eligibility policy is configured
      */
-    public static void verifyUnchanged(Boolean storedBackupEligible, boolean backupEligible, String credentialId) {
-        if (storedBackupEligible != null && storedBackupEligible != backupEligible) {
+    public static boolean verifyUnchanged(Boolean storedBackupEligible, boolean backupEligible, String credentialId, WebAuthnPolicy policy) {
+        if (storedBackupEligible == null || storedBackupEligible == backupEligible) {
+            return false;
+        }
+        if (isConfigured(policy)) {
             logger.warnf("Backup eligible flag of WebAuthn credential %s changed from %s to %s, which the WebAuthn specification does not allow. Rejecting the assertion.",
                     credentialId, storedBackupEligible, backupEligible);
             throw new WebAuthnPolicyException(WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED,
                     "Backup eligible flag of credential " + credentialId + " changed from " + storedBackupEligible + " to " + backupEligible);
         }
+        logger.warnf("Backup eligible flag of WebAuthn credential %s changed from %s to %s, which the WebAuthn specification does not allow. Keeping the recorded flag.",
+                credentialId, storedBackupEligible, backupEligible);
+        return true;
     }
 
     /**

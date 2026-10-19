@@ -255,16 +255,18 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
                     // The BE flag is signed by the credential private key, so the policy can be enforced on every
                     // assertion. This also covers credentials registered before the policy was configured.
-                    // A BE flag differing from the recorded one is rejected before anything else, as the recorded
-                    // value is the one the policy was evaluated against.
+                    // A BE flag differing from the recorded one is checked before anything else, as the recorded
+                    // value is the one the policy is evaluated against.
                     final boolean backupEligible = authenticatorData.isFlagBE();
                     final boolean backupState = authenticatorData.isFlagBS();
                     context.setBackupEligible(backupEligible);
                     context.setBackupState(backupState);
-                    WebAuthnBackupEligibilityVerifier.verifyUnchanged(storedData.getBackupEligible(), backupEligible, credModel.getId());
                     WebAuthnPolicy policy = getWebAuthnPolicy();
+                    WebAuthnBackupEligibilityVerifier.verifyUnchanged(storedData.getBackupEligible(), backupEligible, credModel.getId(), policy);
+                    // the recorded flag wins over an (unexpectedly) changed asserted one
+                    final boolean recordedBackupEligible = storedData.getBackupEligible() != null ? storedData.getBackupEligible() : backupEligible;
                     if (WebAuthnBackupEligibilityVerifier.isConfigured(policy)) {
-                        WebAuthnBackupEligibilityVerifier.verify(backupEligible, policy);
+                        WebAuthnBackupEligibilityVerifier.verify(recordedBackupEligible, policy);
                     }
 
                     // update authenticator counter
@@ -283,11 +285,11 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     }
 
                     // record the backup flags: BE is only initialized for credentials registered before the flag
-                    // was recorded (a change was rejected above), BS may change when the credential gets backed up
-                    // later on
+                    // was recorded and never overwritten afterwards, BS may change when the credential gets backed
+                    // up later on
                     if (storedData.getBackupEligible() == null
                             || !Boolean.valueOf(backupState).equals(storedData.getBackupState())) {
-                        webAuthnCredModel.updateBackupFlags(backupEligible, backupState);
+                        webAuthnCredModel.updateBackupFlags(recordedBackupEligible, backupState);
                         credentialChanged = true;
                     }
 

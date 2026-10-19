@@ -271,6 +271,12 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             result = user.credentialManager().isValid(cred);
         } catch (WebAuthnPolicyException wpe) {
             logger.debug("WebAuthn policy violation during authentication.", wpe);
+            if (cred.getBackupEligible() != null) {
+                // the flags the authenticator asserted, so an admin can tell a flag change from a wrong passkey
+                context.getEvent()
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR, cred.getBackupEligible().toString())
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_STATE_ATTR, String.valueOf(cred.getBackupState()));
+            }
             setErrorResponse(context, wpe.getMessageKey(), wpe.getMessage(), wpe.getParameters());
             return;
         } catch (WebAuthnException wae) {
