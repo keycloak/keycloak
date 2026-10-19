@@ -11,7 +11,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.outbox.OutboxBackoff;
 import org.keycloak.events.outbox.OutboxCleanupTask;
 import org.keycloak.events.outbox.OutboxConfig;
+import org.keycloak.events.outbox.OutboxDrainerListener;
+import org.keycloak.events.outbox.OutboxDrainerScheduler;
 import org.keycloak.events.outbox.OutboxDrainerTask;
+import org.keycloak.events.outbox.OutboxMetricsListener;
 import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.ClientModel;
@@ -35,6 +38,7 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxMetricsListener;
 import org.keycloak.ssf.transmitter.outbox.SsfPushDeliveryHandler;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -73,6 +77,14 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     public static final String CONFIG_OUTBOX_PENDING_MAX_AGE = "outbox-pending-max-age";
 
+    public static final String CONFIG_OUTBOX_DRAINER_CLAIM_LEASE = "outbox-drainer-claim-lease";
+
+    public static final String CONFIG_OUTBOX_DRAINER_TICK_BUDGET = "outbox-drainer-tick-budget";
+
+    public static final String CONFIG_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE = "outbox-drainer-per-receiver-batch-size";
+
+    public static final String CONFIG_OUTBOX_DRAINER_DELIVERY_CONCURRENCY = "outbox-drainer-delivery-concurrency";
+
     public static final long DEFAULT_OUTBOX_DRAINER_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
     public static final int DEFAULT_OUTBOX_DRAINER_BATCH_SIZE = 50;
@@ -109,6 +121,42 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     public static final long DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS = Duration.ofDays(2).toMillis();
 
     /**
+     * Default lease a drainer tick holds on the rows it claimed — the
+     * generic {@link OutboxConfig#DEFAULT_CLAIM_LEASE} (5 minutes).
+     * Must cover the tick budget plus the slowest single push (HTTP
+     * connect + read timeout), otherwise a sibling tick re-claims a
+     * row that is still being delivered and the receiver sees it
+     * twice.
+     */
+    public static final long DEFAULT_OUTBOX_DRAINER_CLAIM_LEASE_MILLIS = OutboxConfig.DEFAULT_CLAIM_LEASE.toMillis();
+
+    /**
+     * Default per-tick time budget — {@code 0}, i.e. unbounded: a tick
+     * delivers every row it claimed. Set to bound a tick (for example
+     * to the drainer interval) so the housekeeping steps and the next
+     * tick are not delayed by a slow receiver; claimed rows the budget
+     * does not reach are handed back for the next tick.
+     */
+    public static final long DEFAULT_OUTBOX_DRAINER_TICK_BUDGET_MILLIS = 0;
+
+    /**
+     * Default per-receiver share of a drainer batch — {@code 0}, i.e.
+     * off: a tick takes the oldest due rows regardless of receiver.
+     * Set to cap how many rows one receiver can occupy per round so a
+     * slow or flooding receiver cannot fill the whole batch.
+     */
+    public static final int DEFAULT_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE = 0;
+
+    /**
+     * Default number of delivery workers per tick — {@code 1}: pushes
+     * run one after another on the tick thread. Raise it to push to
+     * several receivers at once; one receiver's rows always stay in
+     * order. Workers come from the {@code outbox-delivery-ssf-push}
+     * executor.
+     */
+    public static final int DEFAULT_OUTBOX_DRAINER_DELIVERY_CONCURRENCY = 1;
+
+    /**
      * Aliases (or full URIs) of the events the transmitter advertises as
      * "default supported events" for a receiver client that does not set
      * its own {@code ssf.supportedEvents} attribute. Sourced from the
@@ -135,6 +183,14 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected long outboxDeliveredRetentionMillis = DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS;
 
     protected long outboxPendingMaxAgeMillis = DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS;
+
+    protected long outboxDrainerClaimLeaseMillis = DEFAULT_OUTBOX_DRAINER_CLAIM_LEASE_MILLIS;
+
+    protected long outboxDrainerTickBudgetMillis = DEFAULT_OUTBOX_DRAINER_TICK_BUDGET_MILLIS;
+
+    protected int outboxDrainerPerReceiverBatchSize = DEFAULT_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE;
+
+    protected int outboxDrainerDeliveryConcurrency = DEFAULT_OUTBOX_DRAINER_DELIVERY_CONCURRENCY;
 
     /**
      * Shared metrics binder — constructed once at factory init time and
@@ -285,6 +341,18 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         if (pendingMaxAgeStr != null) {
             this.outboxPendingMaxAgeMillis = SsfUtil.parseDurationMillis(pendingMaxAgeStr, DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS);
         }
+        String claimLeaseStr = config.get(CONFIG_OUTBOX_DRAINER_CLAIM_LEASE);
+        if (claimLeaseStr != null) {
+            this.outboxDrainerClaimLeaseMillis = SsfUtil.parseDurationMillis(claimLeaseStr, DEFAULT_OUTBOX_DRAINER_CLAIM_LEASE_MILLIS);
+        }
+        String tickBudgetStr = config.get(CONFIG_OUTBOX_DRAINER_TICK_BUDGET);
+        if (tickBudgetStr != null) {
+            this.outboxDrainerTickBudgetMillis = SsfUtil.parseDurationMillis(tickBudgetStr, DEFAULT_OUTBOX_DRAINER_TICK_BUDGET_MILLIS);
+        }
+        this.outboxDrainerPerReceiverBatchSize = config.getInt(CONFIG_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE,
+                DEFAULT_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE);
+        this.outboxDrainerDeliveryConcurrency = config.getInt(CONFIG_OUTBOX_DRAINER_DELIVERY_CONCURRENCY,
+                DEFAULT_OUTBOX_DRAINER_DELIVERY_CONCURRENCY);
 
         // Metrics binder lifecycle. Two gates combine:
         //   1. SSF-level metrics-enabled SPI knob — lets an operator
@@ -337,9 +405,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         }
         try {
             SsfMetricsBinder binder = new SsfMetricsBinder();
-            log.infof("SSF metrics binder installed; meters under prefix %s",
-                    SsfMetricsBinder.METER_OUTBOX_DEPTH.substring(0,
-                            SsfMetricsBinder.METER_OUTBOX_DEPTH.indexOf("outbox")));
+            log.infof("SSF metrics binder installed; meters under prefix %s (drainer meters under %s)",
+                    SsfMetricsBinder.PREFIX, OutboxMetricsListener.PREFIX);
             return binder;
         } catch (LinkageError micrometerUnavailable) {
             // Covers NoClassDefFoundError + all other linkage errors.
@@ -455,6 +522,30 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .defaultValue(DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS + "ms")
                 .add()
                 .property()
+                .name(CONFIG_OUTBOX_DRAINER_CLAIM_LEASE)
+                .type("string")
+                .helpText("How long a drainer tick holds the outbox rows it claimed. Other ticks (on any node) treat a claimed row as abandoned once the lease expires and deliver it again, so the lease must cover outbox-drainer-tick-budget plus the slowest single push (HTTP connect + read timeout). Accepts suffixes ms, s, m, h (default 5m equivalent).")
+                .defaultValue(DEFAULT_OUTBOX_DRAINER_CLAIM_LEASE_MILLIS + "ms")
+                .add()
+                .property()
+                .name(CONFIG_OUTBOX_DRAINER_TICK_BUDGET)
+                .type("string")
+                .helpText("Time budget for one drainer tick. Once exceeded the tick stops delivering, hands the remaining claimed rows back for the next tick and runs its housekeeping; at least one row is always delivered per tick. Must be shorter than outbox-drainer-claim-lease. Accepts suffixes ms, s, m, h. Set to 0 (default) for no budget — a tick delivers every row it claimed.")
+                .defaultValue(DEFAULT_OUTBOX_DRAINER_TICK_BUDGET_MILLIS + "ms")
+                .add()
+                .property()
+                .name(CONFIG_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE)
+                .type("int")
+                .helpText("Maximum number of outbox rows one receiver can occupy per round of a drainer batch. When set, a tick visits the receivers with due rows oldest-first and takes at most this many from each, going round again until outbox-drainer-batch-size is reached, so a slow or flooding receiver cannot delay every other receiver. Set to 0 (default) to take the oldest due rows regardless of receiver.")
+                .defaultValue(DEFAULT_OUTBOX_DRAINER_PER_RECEIVER_BATCH_SIZE)
+                .add()
+                .property()
+                .name(CONFIG_OUTBOX_DRAINER_DELIVERY_CONCURRENCY)
+                .type("int")
+                .helpText("Number of workers a drainer tick may push with at the same time. Rows are grouped by receiver: one receiver's rows are always pushed in order by one worker, different receivers in parallel. Workers come from the outbox-delivery-ssf-push executor (size it with spi-executors-default-outbox-delivery-ssf-push-max). Default 1: pushes run one after another on the tick thread.")
+                .defaultValue(DEFAULT_OUTBOX_DRAINER_DELIVERY_CONCURRENCY)
+                .add()
+                .property()
                 .name(SsfTransmitterConfig.CONFIG_SUBJECT_MANAGEMENT_ENABLED)
                 .type("boolean")
                 .helpText("Whether the /subjects:add and /subjects:remove endpoints are exposed. When false, the endpoints are not registered and the transmitter metadata omits them. Subject subscriptions can still be managed via admin-curated ssf.notify.<clientId> attributes.")
@@ -518,30 +609,36 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     /**
-     * Registers the SSF push outbox drainer with Keycloak's
-     * {@link TimerProvider}, wrapped in a
-     * {@link ClusterAwareScheduledTaskRunner} so that in an HA deployment
-     * only one node drains per interval even though every node schedules
-     * the timer.
+     * Registers the SSF push outbox drainer through
+     * {@link OutboxDrainerScheduler}: the {@link TimerProvider} only
+     * triggers, the tick runs on an executor so a slow receiver cannot
+     * delay other scheduled tasks on the node, and the
+     * {@link ClusterAwareScheduledTaskRunner} wrapper keeps one tick per
+     * kind cluster-wide.
      */
     protected void scheduleOutboxDrainer(KeycloakSessionFactory factory) {
         try (KeycloakSession session = factory.create()) {
-            TimerProvider timer = session.getProvider(TimerProvider.class);
             OutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
-            timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis,
-                    "SsfPushOutboxDrainerTask");
-            log.infof("SSF push outbox drainer scheduled: entryKind=%s, interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s",
-                    SsfOutboxKinds.PUSH, outboxDrainerIntervalMillis,
+            OutboxDrainerScheduler.schedule(session, runner, outboxDrainerIntervalMillis);
+            log.infof("SSF push outbox drainer scheduled: task=%s, entryKind=%s, interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s, claimLease=%dms, tickBudget=%s, perReceiverBatchSize=%s, deliveryConcurrency=%d",
+                    task.getTaskName(), SsfOutboxKinds.PUSH, outboxDrainerIntervalMillis,
                     outboxDrainerBatchSize, outboxDrainerMaxAttempts,
                     outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled",
                     outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled",
-                    outboxPendingMaxAgeMillis > 0 ? outboxPendingMaxAgeMillis + "ms" : "disabled");
+                    outboxPendingMaxAgeMillis > 0 ? outboxPendingMaxAgeMillis + "ms" : "disabled",
+                    outboxDrainerClaimLeaseMillis,
+                    outboxDrainerTickBudgetMillis > 0 ? outboxDrainerTickBudgetMillis + "ms" : "unbounded",
+                    outboxDrainerPerReceiverBatchSize > 0 ? String.valueOf(outboxDrainerPerReceiverBatchSize) : "off",
+                    outboxDrainerDeliveryConcurrency);
         }
     }
 
     protected ScheduledTaskRunner createDrainerScheduledTaskRunner(KeycloakSessionFactory factory, OutboxDrainerTask task) {
-        return new ClusterAwareScheduledTaskRunner(factory, task, outboxDrainerIntervalMillis);
+        // Lock key per entry kind: the runner's default key (the class
+        // name) is shared by every OutboxDrainerTask instance, so two
+        // kinds scheduled this way would exclude each other's ticks.
+        return new ClusterAwareScheduledTaskRunner(factory, task, outboxDrainerIntervalMillis, task.getTaskName());
     }
 
     protected OutboxDrainerTask createDrainerTask(KeycloakSession session) {
@@ -557,7 +654,20 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         return new OutboxDrainerTask(
                 createOutboxConfig(),
                 createSsfPushDeliveryHandler(),
-                this::createOutboxStore);
+                this::createOutboxStore,
+                createOutboxDrainerListener());
+    }
+
+    /**
+     * Drainer observer feeding the tick, dead-letter and outbox-depth
+     * meters. {@link OutboxDrainerListener#NOOP} when metrics are off,
+     * so the per-tick depth aggregate is not even queried.
+     */
+    protected OutboxDrainerListener createOutboxDrainerListener() {
+        if (metricsBinder == SsfMetricsBinder.NOOP) {
+            return OutboxDrainerListener.NOOP;
+        }
+        return new SsfOutboxMetricsListener(metricsBinder, this::createOutboxStore);
     }
 
     protected SsfPushDeliveryHandler createSsfPushDeliveryHandler() {
@@ -575,14 +685,27 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         Duration pendingMaxAge = outboxPendingMaxAgeMillis > 0
                 ? Duration.ofMillis(outboxPendingMaxAgeMillis)
                 : null;
+        Duration claimLease = outboxDrainerClaimLeaseMillis > 0
+                ? Duration.ofMillis(outboxDrainerClaimLeaseMillis)
+                : OutboxConfig.DEFAULT_CLAIM_LEASE;
+        Duration tickBudget = outboxDrainerTickBudgetMillis > 0
+                ? Duration.ofMillis(outboxDrainerTickBudgetMillis)
+                : null;
 
+        // OutboxConfig rejects a budget that is not shorter than the
+        // lease — a misconfiguration surfaces at startup rather than
+        // as duplicate pushes later.
         return new OutboxConfig(
                 SsfOutboxKinds.PUSH,
                 outboxDrainerBatchSize,
                 backoff,
                 deadLetterRetention,
                 deliveredRetention,
-                pendingMaxAge);
+                pendingMaxAge,
+                claimLease,
+                tickBudget,
+                outboxDrainerPerReceiverBatchSize > 0 ? outboxDrainerPerReceiverBatchSize : null,
+                outboxDrainerDeliveryConcurrency > 1 ? outboxDrainerDeliveryConcurrency : null);
     }
 
 

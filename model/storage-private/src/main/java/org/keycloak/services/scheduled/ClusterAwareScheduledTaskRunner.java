@@ -17,6 +17,7 @@
 
 package org.keycloak.services.scheduled;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import org.keycloak.cluster.ClusterProvider;
@@ -38,15 +39,26 @@ public class ClusterAwareScheduledTaskRunner extends ScheduledTaskRunner {
 
     private final int intervalSecs;
 
+    private final String taskKey;
+
     public ClusterAwareScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task, long intervalMillis) {
+        this(sessionFactory, task, intervalMillis, task.getClass().getSimpleName());
+    }
+
+    /**
+     * @param taskKey the cluster-wide lock key. Tasks that are scheduled more than once with different
+     *                configuration (e.g. one instance per outbox entry kind) must supply a key that is
+     *                unique per instance, otherwise the instances exclude each other.
+     */
+    public ClusterAwareScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task, long intervalMillis, String taskKey) {
         super(sessionFactory, task);
         this.intervalSecs = (int) (intervalMillis / 1000);
+        this.taskKey = Objects.requireNonNull(taskKey, "taskKey");
     }
 
     @Override
     protected void runTask(final KeycloakSession session) {
         ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
-        String taskKey = task.getClass().getSimpleName();
 
         // copying over the value as parent class is in another module that wouldn't allow access from the lambda in Wildfly
         ScheduledTask localTask = this.task;
