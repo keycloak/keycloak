@@ -166,6 +166,18 @@ public class KeycloakServerConfigBuilder {
     }
 
     /**
+     * Add another value to a list-valued CLI option without replacing values already configured
+     *
+     * @param key the key of the option
+     * @param value the additional value to set
+     * @return
+     */
+    public KeycloakServerConfigBuilder addOption(String key, String value) {
+        options.merge(key, value, (current, additional) -> current + "," + additional);
+        return this;
+    }
+
+    /**
      * Set an SPI configuration option
      *
      * @param spi the name of the SPI
