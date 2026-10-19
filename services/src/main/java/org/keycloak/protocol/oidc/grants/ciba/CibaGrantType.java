@@ -119,6 +119,14 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
     public Response process(Context context) {
         setContext(context);
 
+        if (client.isPublicClient()) {
+            String errorMessage = "Public client not allowed to use OIDC CIBA Grant";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT,
+                    errorMessage, Response.Status.UNAUTHORIZED);
+        }
+
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
             String errorMessage = "Client not allowed OIDC CIBA Grant";
             event.detail(Details.REASON, errorMessage);
