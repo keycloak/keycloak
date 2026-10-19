@@ -159,4 +159,51 @@ public class OID4VCIssuedCredentialsAdminAPITest extends OID4VCIssuerEndpointTes
         assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
         assertTrue(credentialResponse.getErrorDescription().contains("Verifiable credential not found"));
     }
+
+    @Test
+    public void testIssuedCredentialCompletedOnlyAfterCredentialRequest() {
+        String scopeName = jwtTypeCredentialScope.getName();
+        String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String accessToken = tokenResponse.getAccessToken();
+
+        List<OID4VCAuthorizationDetail> authDetails = getAuthorizationDetailsFromAccessToken(accessToken);
+        String issuedCredentialId = authDetails.get(0).getIssuedCredentialId();
+        String credentialIdentifier = authDetails.get(0).getCredentialIdentifiers().get(0);
+
+        // The issued-credential row is created during the token request, before anything was delivered
+        assertFalse(findIssuedCredential(issuedCredentialId).isCompleted(),
+                "Issued credential must not be completed before the credential request");
+
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        Proofs proofs = jwtProofs(credentialIssuer.getCredentialIssuer(), cNonce);
+
+        CredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest()
+                .bearerToken(accessToken)
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .send()
+                .getCredentialResponse();
+
+        assertNotNull(credentialResponse.getCredentials(), "Credential should have been issued");
+
+        assertTrue(findIssuedCredential(issuedCredentialId).isCompleted(),
+                "Issued credential must be completed after successful delivery");
+    }
+
+    private IssuedVerifiableCredentialRepresentation findIssuedCredential(String issuedCredentialId) {
+        return testRealm.admin().users().get(userId).verifiableCredentials().getIssuedCredentials().stream()
+                .filter(issuedCredential -> issuedCredentialId.equals(issuedCredential.getId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Issued credential not found: " + issuedCredentialId));
+    }
 }

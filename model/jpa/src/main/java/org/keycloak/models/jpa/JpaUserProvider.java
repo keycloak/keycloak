@@ -1169,6 +1169,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         issuedVerifiableCredentialEntity.setClientId(model.getClientId());
         issuedVerifiableCredentialEntity.setRevision(revision);
 
+        issuedVerifiableCredentialEntity.setCompleted(model.isCompleted());
+
         long issuedAt = model.getIssuedAt() != null ? model.getIssuedAt() : Time.currentTimeMillis();
         issuedVerifiableCredentialEntity.setIssuedAt(issuedAt);
 
@@ -1185,6 +1187,17 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         TypedQuery<IssuedVerifiableCredentialEntity> query = em.createNamedQuery("issuedVcsByUser", IssuedVerifiableCredentialEntity.class);
         query.setParameter("userId", userId);
         return closing(query.getResultStream()).map(this::toIssuedVcModel);
+    }
+
+    @Override
+    public boolean markIssuedVerifiableCredentialCompleted(String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId);
+        if (entity == null) {
+            return false;
+        }
+        entity.setCompleted(true);
+        em.flush();
+        return true;
     }
 
     @Override
@@ -1407,6 +1420,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         model.setIssuedAt(entity.getIssuedAt());
         model.setExpiresAt(entity.getExpiresAt());
         model.setClientId(entity.getClientId());
+        model.setCompleted(entity.isCompleted());
 
         return model;
     }
