@@ -185,7 +185,37 @@ public class AuthenticatorUtil {
         }
     }
 
-
+    /**
+     * Checks if the execution belongs to the passed flowId. It searches recursively
+     * to see if the execution is under that specific flow.
+     *
+     * @param realm The realm
+     * @param flowId The flow ID to check if has the execution model
+     * @param executionModel The executionModel to check if it belongs to the passed flow ID
+     * @return true if the execution belongs to the flowId, false if not
+     */
+    public static boolean checkExecutionBelongsToFlow(RealmModel realm, String flowId, AuthenticationExecutionModel executionModel) {
+        while (executionModel != null) {
+            if (executionModel.isAuthenticatorFlow() && flowId.equals(executionModel.getFlowId())) {
+                return true;
+            }
+            if (executionModel.getParentFlow() == null) {
+                return false;
+            }
+            AuthenticationFlowModel parentFlow = realm.getAuthenticationFlowById(executionModel.getParentFlow());
+            if (parentFlow == null) {
+                return false;
+            }
+            if (parentFlow.getId().equals(flowId)) {
+                return true;
+            }
+            if (parentFlow.isTopLevel()) {
+                return false;
+            }
+            executionModel = realm.getAuthenticationExecutionByFlowId(parentFlow.getId());
+        }
+        return false;
+    }
 
     /**
      * Logouts all sessions that are different to the current authentication session
