@@ -3,3 +3,11 @@
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+= Organizations
+
+== Authentication flow condition on organization attributes
+
+The new *Condition - organization attribute* condition runs a conditional sub-flow when an organization of the user has an attribute with the expected value. For example, members of organizations flagged with an attribute can be required to use OTP. The condition checks either every enabled organization the user is a member of, or only the organization the user is authenticating in the scope of.
+
+For more details, see link:{adminguide_link}#pass:a[_conditions_on_organizations_][Conditions on organizations] in the {adminguide_name}.

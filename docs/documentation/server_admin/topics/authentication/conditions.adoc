@@ -73,6 +73,23 @@ The list of credentials to be considered by the condition.
 Included:::
 If *included* is true, the condition will be evaluated to `true` when any of the credentials specified in the *credentials* option has been used in the authentication process, false otherwise. If *included* is false, the condition is evaluated in the opposite way, it will be `true` if none of the *credentials* configured have been used, and `false` if one or more of them have been used.
 
+`Condition - organization attribute`::
+This condition evaluates if an organization of the user has an attribute with the expected value.
+It is available when the organization feature is enabled. In a realm with organizations disabled, it evaluates to `false`.
+See <<_conditions_on_organizations_,Conditions on organizations>> for an example. Configuration options:
+
+Attribute name:::
+Name of the organization attribute to check. The name is matched exactly, including case and whitespace.
+
+Expected attribute value:::
+The value the attribute must have among its values. The value is matched exactly, including case and whitespace.
+
+Organization:::
+The organizations to check. `any-membership` checks every enabled organization the user is a member of. `selected` checks the organization the user is authenticating in the scope of, as resolved by the *Organization Identity-First Login* step, and only if the user is a member of that organization. With `selected`, when no organization is resolved or the user is not its member, no organization is checked, so a negated condition evaluates to `true`. Any other value makes the condition evaluate to `false`, negated or not.
+
+Negate output:::
+Apply a NOT to the check result. When the flow has no user yet, organizations are disabled for the realm, or the *Attribute name* or *Expected attribute value* is empty, the condition evaluates to `false`, negated or not.
+
 
 ==== Explicitly deny/allow access in conditional flows
 
