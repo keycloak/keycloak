@@ -27,11 +27,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.truststore.DistrustedCertificates;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
@@ -43,7 +45,6 @@ import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContexts;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -280,7 +281,7 @@ public class HttpClientBuilder {
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
             } else {
                 final SSLContext tlsContext = SSLContext.getInstance("TLS");
-                tlsContext.init(null, null, null);
+                tlsContext.init(null, DistrustedCertificates.getTrustManagers(null), null);
                 sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
 
@@ -329,12 +330,11 @@ public class HttpClientBuilder {
             final KeyStore truststore,
             final SecureRandom random)
             throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
-        return SSLContexts.custom()
-                        .setProtocol(algorithm)
-                        .setSecureRandom(random)
-                        .loadKeyMaterial(keystore, keyPassword != null ? keyPassword.toCharArray() : null)
-                        .loadTrustMaterial(truststore, null)
-                        .build();
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keystore, keyPassword != null ? keyPassword.toCharArray() : null);
+        final SSLContext context = SSLContext.getInstance(algorithm);
+        context.init(kmf.getKeyManagers(), DistrustedCertificates.getTrustManagers(truststore), random);
+        return context;
     }
 
 }

@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.truststore.DistrustedCertificates;
 
 import org.jboss.logging.Logger;
 
@@ -83,7 +84,9 @@ public class Rfc9440ClientCertificateLookup implements X509ClientCertificateLook
                 chain.add(clientCertificate);
                 chain.addAll(getClientCertificateChainFromHeader(httpRequest));
             }
-            return chain.toArray(new X509Certificate[0]);
+            X509Certificate[] certs = chain.toArray(new X509Certificate[0]);
+            DistrustedCertificates.checkChain(certs);
+            return certs;
         } catch (RfcViolationException e) {
             throw new GeneralSecurityException(e);
         }

@@ -19,7 +19,6 @@ package org.keycloak.truststore;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -76,11 +75,8 @@ public class JSSETruststoreConfigurator {
         if (tm == null) {
             synchronized (this) {
                 if (tm == null) {
-                    TrustManagerFactory tmf = null;
                     try {
-                        tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                        tmf.init(provider.getTruststore());
-                        tm = tmf.getTrustManagers();
+                        tm = DistrustedCertificates.getTrustManagers(provider.getTruststore());
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to initialize TrustManager: ", e);
                     }

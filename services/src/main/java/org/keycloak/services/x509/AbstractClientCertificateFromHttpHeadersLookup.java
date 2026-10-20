@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.keycloak.common.util.PemException;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.truststore.DistrustedCertificates;
 
 import org.jboss.logging.Logger;
 
@@ -128,7 +129,9 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
         if (cert != null) {
             buildChain(httpRequest, chain, cert);
         }
-        return chain.toArray(new X509Certificate[0]);
+        X509Certificate[] certs = chain.toArray(new X509Certificate[0]);
+        DistrustedCertificates.checkChain(certs);
+        return certs;
     }
 
     protected void buildChain(HttpRequest httpRequest, List<X509Certificate> chain, X509Certificate cert) {

@@ -18,9 +18,11 @@
 
 package org.keycloak.services.x509;
 
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import org.keycloak.http.HttpRequest;
+import org.keycloak.truststore.DistrustedCertificates;
 
 import org.jboss.logging.Logger;
 
@@ -45,7 +47,7 @@ public class DefaultClientCertificateLookup implements X509ClientCertificateLook
     }
 
     @Override
-    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) {
+    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws CertificateException {
 
         X509Certificate[] certs = httpRequest.getClientCertificateChain();
         if (logger.isTraceEnabled() && certs != null) {
@@ -53,6 +55,7 @@ public class DefaultClientCertificateLookup implements X509ClientCertificateLook
                 logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectDN().getName());
             }
         }
+        DistrustedCertificates.checkChain(certs);
         return certs;
     }
 }

@@ -17,10 +17,12 @@
 
 package org.keycloak.quarkus.runtime.integration.web;
 
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import org.keycloak.http.HttpRequest;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
+import org.keycloak.truststore.DistrustedCertificates;
 
 import org.jboss.logging.Logger;
 
@@ -40,7 +42,7 @@ public class VertxClientCertificateLookup implements X509ClientCertificateLookup
     }
 
     @Override
-    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) {
+    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws CertificateException {
         X509Certificate[] certificates = httpRequest.getClientCertificateChain();
 
         if (logger.isTraceEnabled() && certificates != null) {
@@ -49,6 +51,7 @@ public class VertxClientCertificateLookup implements X509ClientCertificateLookup
             }
         }
 
+        DistrustedCertificates.checkChain(certificates);
         return certificates;
     }
 }

@@ -26,6 +26,12 @@ For example:
 
 It is still possible to directly set your own `javax.net.ssl` truststore System properties, but it's recommended to use the `--truststore-paths` instead.
 
+== Distrusted certificates
+
+{project_name} rejects certificates that are known to be compromised, even when they chain to a root in the truststore. This currently covers the eMudhra intermediate CAs whose private keys were compromised in October 2026, including their cross-signs by Sectigo's AAA Certificate Services. Such certificates are ignored with a warning if they are found in the truststore paths.
+
+This applies to outgoing connections, such as HTTPS, SMTP, and LDAP, and to X.509 client certificate authentication. For incoming mTLS connections, also set `https-trust-store-file` so that only the CAs of your clients are trusted.
+
 == Cluster CA certificates (Kubernetes and OpenShift)
 
 When running {project_name} on Kubernetes or OpenShift, the server will automatically include well-known cluster certificate authorities in the system truststore if they are present on the filesystem:

@@ -74,6 +74,7 @@ import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.truststore.DistrustedCertificates;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.OCSPProvider;
@@ -763,6 +764,7 @@ public class CertificateValidator {
 
         // Disable CRL checks (this is done manually as additional step)
         pkixParams.setRevocationEnabled(false);
+        pkixParams.addCertPathChecker(DistrustedCertificates.certPathChecker());
 
         // Specify a list of intermediate certificates
         Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();

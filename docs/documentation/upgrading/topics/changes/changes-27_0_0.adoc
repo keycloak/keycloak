@@ -232,6 +232,18 @@ The provider's last-sync time is now recorded when a sync starts rather than whe
 
 If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
 
+=== Compromised eMudhra intermediate CAs are no longer trusted
+// https://github.com/keycloak/keycloak/issues/54197
+
+The private keys of eight eMudhra intermediate CAs were compromised in October 2026, as described in the https://emudhra.we-have-a-problem.com/[incident report].
+These CAs chain to roots that are still included in the Java and operating system truststores, and {project_name} does not check revocation for outgoing TLS connections by default.
+
+{project_name} now rejects certificates issued by these CAs, including their cross-signs by Sectigo's AAA Certificate Services, for outgoing HTTPS, SMTP, and LDAP connections and for X.509 client certificate authentication.
+If these certificates are found in the truststore paths, they are ignored and a warning is logged.
+The container image also adds them to the blocked certificates of the JVM, so that they are rejected for all TLS connections, including incoming mTLS connections.
+
+If you run {project_name} outside the container image and enable mTLS without setting `https-trust-store-file`, set it so that only the CAs of your clients are trusted.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

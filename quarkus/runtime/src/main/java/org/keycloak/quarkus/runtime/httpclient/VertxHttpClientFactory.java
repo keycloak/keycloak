@@ -2,8 +2,11 @@ package org.keycloak.quarkus.runtime.httpclient;
 
 import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -18,6 +21,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.truststore.DistrustedCertificates;
 import org.keycloak.truststore.TruststoreProvider;
 
 import io.quarkus.arc.Arc;
@@ -25,6 +29,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.jboss.logging.Logger;
@@ -161,10 +166,11 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
             if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
                 logger.warn("TruststoreProvider is disabled");
+                options.setTrustOptions(distrustingTrustOptions(null));
             } else {
                 HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
                 options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
-                options.setTrustOptions(keystoreToOptions(truststoreProvider.getTruststore(), null));
+                options.setTrustOptions(distrustingTrustOptions(truststoreProvider.getTruststore()));
                 options.setSsl(true);
             }
         }
@@ -181,6 +187,18 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load client keystore: " + clientKeystore, e);
             }
+        }
+    }
+
+    private TrustOptions distrustingTrustOptions(KeyStore truststore) {
+        try {
+            TrustManager trustManager = Arrays.stream(DistrustedCertificates.getTrustManagers(truststore))
+                    .filter(X509TrustManager.class::isInstance)
+                    .findFirst()
+                    .orElseThrow();
+            return TrustOptions.wrap(trustManager);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize trust manager", e);
         }
     }
 

@@ -292,7 +292,13 @@ public class TruststoreBuilder {
         }
     }
 
-    private static void setCertificateEntry(KeyStore truststore, Certificate cert) throws KeyStoreException {
+    static void setCertificateEntry(KeyStore truststore, Certificate cert) throws KeyStoreException {
+        if (DistrustedCertificates.isDistrusted(cert)) {
+            // every entry becomes a trust anchor, which would bypass the checks on the presented chain
+            LOGGER.warnf("Ignoring distrusted certificate from the truststore: %s",
+                    cert instanceof X509Certificate x509Cert ? x509Cert.getSubjectX500Principal().getName() : cert.getType());
+            return;
+        }
         String alias = null;
         if (cert instanceof X509Certificate) {
             X509Certificate x509Cert = (X509Certificate)cert;
