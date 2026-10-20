@@ -9,6 +9,7 @@ summary="Configure and start {project_name}.">
 
 This {section} explains the configuration methods for {project_name} and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing {project_name} for faster startup and low memory footprint.
 
+[#_configuring_sources_for_keycloak]
 == Configuring sources for {project_name}
 {project_name} loads the configuration from four sources, which are listed here in order of application.
 
@@ -44,7 +45,7 @@ Based on the priority of application, the value that is used at startup is `cliV
 
 If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. If none of the previous values were applied, the value `kc.db-url=keystoreValue` would be used due to the lowest priority among the available configuration sources.
 
-{project_name} configuration options often map to lower-level Quarkus or spi options. We refer to these as first-class and second-class configuration respectively. 
+{project_name} configuration options often map to lower-level Quarkus or spi options. We refer to these as first-class and second-class configuration respectively.
 There are startup warnings to indicate if you are using a second-class option. For example if you try to directly use `quarkus.http.port`, you will be warned to use `kc.http-port` instead.
 
 == Formats for configuration
@@ -132,7 +133,7 @@ When the KeyStore is created, you can start the server using the following param
 
 === Format for raw Quarkus properties
 In most cases, the available configuration options should suffice to configure the server.
-However, for a specific behavior or capability that is missing in the {project_name} configuration, you can use properties from the underlying Quarkus framework. If possible, avoid using properties directly from Quarkus, because they are unsupported by {project_name}. 
+However, for a specific behavior or capability that is missing in the {project_name} configuration, you can use properties from the underlying Quarkus framework. If possible, avoid using properties directly from Quarkus, because they are unsupported by {project_name}.
 
 <@profile.ifCommunity>
 If your need is essential, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[enhancement request] first. This approach helps us improve the configuration of {project_name} to fit your needs.
