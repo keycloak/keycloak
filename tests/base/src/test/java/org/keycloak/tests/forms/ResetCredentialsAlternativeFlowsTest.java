@@ -29,8 +29,6 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestCleanup;
 import org.keycloak.testframework.annotations.TestSetup;
-import org.keycloak.testframework.mail.MailServer;
-import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
@@ -43,11 +41,9 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -61,9 +57,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractResetCredentia
 
     @InjectUser(ref="differentUser", config = ResetCredentialsAlternativeFlowsTest.DifferentUser.class)
     ManagedUser differentUser;
-
-    @InjectMailServer
-    MailServer mail;
 
     @InjectPage
     protected LoginUsernamePage loginUsernameOnlyPage;
@@ -199,8 +192,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractResetCredentia
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
             // Assert user authenticated
-            assertThat(driver.driver().getPageSource(), Matchers.containsString("kc-info-message"));
-            assertThat(driver.driver().getPageSource(), Matchers.containsString("Your account has been updated."));
+            infoPage.assertCurrent();
+            assertEquals("Your account has been updated.", infoPage.getInfo());
         } finally {
             revertResetCredentialsFlows();
         }

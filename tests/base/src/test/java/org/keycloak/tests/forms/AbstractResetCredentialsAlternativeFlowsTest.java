@@ -6,10 +6,13 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.tests.actions.AbstractAppInitiatedActionTest;
@@ -25,8 +28,14 @@ public abstract class AbstractResetCredentialsAlternativeFlowsTest extends Abstr
     @InjectRunOnServer
     protected RunOnServerClient runOnServer;
 
+    @InjectMailServer
+    MailServer mail;
+
     @InjectPage
     protected LoginPage loginPage;
+
+    @InjectPage
+    InfoPage infoPage;
 
     @InjectPage
     protected LoginPasswordResetPage resetPasswordPage;
