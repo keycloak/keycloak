@@ -51,6 +51,8 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
@@ -259,8 +261,14 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         }
     }
 
-    @Test
-    public void testClientScopeEvaluationFiltersRealmRolesCallerCannotView() {
+    @ParameterizedTest(name = "{0}, fullScopeAllowed={1}")
+    @CsvSource({
+            AdminRoles.VIEW_REALM + ", false",
+            AdminRoles.VIEW_REALM + ", true",
+            AdminRoles.MANAGE_USERS + ", false",
+            AdminRoles.MANAGE_USERS + ", true"
+    })
+    public void testClientScopeEvaluationRespectsRoleVisibility(String realmRole, boolean fullScopeAllowed) {
         String realmName = "test-realm";
         RealmResource testRealm = createRealm(adminClient, realmName);
 
@@ -268,61 +276,69 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         testRealm.roles().create(RoleBuilder.create().name("granted-role").attributes(attributes).build());
         testRealm.roles().create(RoleBuilder.create().name("not-granted-role").attributes(attributes).build());
         RoleRepresentation grantedRole = testRealm.roles().get("granted-role").toRepresentation();
+        RoleRepresentation notGrantedRole = testRealm.roles().get("not-granted-role").toRepresentation();
 
         ClientRepresentation evaluatedClient = createRestrictedScopeClient(testRealm, "evaluated-client");
+        evaluatedClient.setFullScopeAllowed(fullScopeAllowed);
+        testRealm.clients().get(evaluatedClient.getId()).update(evaluatedClient);
         testRealm.clients().get(evaluatedClient.getId()).getScopeMappings().realmLevel().add(List.of(grantedRole));
 
+        ClientRepresentation roleContainer = createRestrictedScopeClient(testRealm, "role-container");
+        testRealm.clients().get(roleContainer.getId()).roles().create(
+                RoleBuilder.create().name("granted-client-role").attributes(attributes).build());
+        testRealm.clients().get(roleContainer.getId()).roles().create(
+                RoleBuilder.create().name("not-granted-client-role").attributes(attributes).build());
+        RoleRepresentation grantedClientRole = testRealm.clients().get(roleContainer.getId()).roles().get("granted-client-role").toRepresentation();
+        RoleRepresentation notGrantedClientRole = testRealm.clients().get(roleContainer.getId()).roles().get("not-granted-client-role").toRepresentation();
+        testRealm.clients().get(evaluatedClient.getId()).getScopeMappings().clientLevel(roleContainer.getId()).add(List.of(grantedClientRole));
+
         createDelegatedAdmin(testRealm, "view-clients-admin", AdminRoles.VIEW_CLIENTS);
-        createDelegatedAdmin(testRealm, "view-realm-admin", AdminRoles.VIEW_CLIENTS, AdminRoles.VIEW_REALM);
+        createDelegatedAdmin(testRealm, "view-realm-roles-admin", AdminRoles.VIEW_CLIENTS, realmRole);
 
         runAs(realmName, "view-clients-admin", userClient -> {
-            assertForbidden("view-clients admin must not view a realm role directly",
-                    () -> userClient.realm(realmName).rolesById().getRole(grantedRole.getId()));
+            for (RoleRepresentation role : List.of(grantedRole, notGrantedRole)) {
+                assertForbidden("view-clients admin must not view a realm role directly",
+                        () -> userClient.realm(realmName).rolesById().getRole(role.getId()));
+            }
+            for (RoleRepresentation role : List.of(grantedClientRole, notGrantedClientRole)) {
+                assertEquals(role.getName(), userClient.realm(realmName).rolesById().getRole(role.getId()).getName());
+            }
             try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
                 assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
                         evaluatedClient.getId(), realmName, "granted")));
                 assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
                         evaluatedClient.getId(), realmName, "not-granted")));
+                // view-clients permits viewing roles from every client, including another role container.
+                assertEquals(fullScopeAllowed ? Set.of("granted-client-role", "not-granted-client-role") : Set.of("granted-client-role"),
+                        toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                                evaluatedClient.getId(), roleContainer.getId(), "granted")));
+                assertEquals(fullScopeAllowed ? Set.of() : Set.of("not-granted-client-role"),
+                        toNames(evaluateScopeMappings(httpClient, userClient, realmName,
+                                evaluatedClient.getId(), roleContainer.getId(), "not-granted")));
             }
         });
 
-        runAs(realmName, "view-realm-admin", userClient -> {
+        runAs(realmName, "view-realm-roles-admin", userClient -> {
+            // Both view-realm and manage-users permit viewing ordinary realm roles.
+            for (RoleRepresentation role : List.of(grantedRole, notGrantedRole)) {
+                assertEquals(role.getName(), userClient.realm(realmName).rolesById().getRole(role.getId()).getName());
+            }
             try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
                 List<RoleRepresentation> granted = evaluateScopeMappings(httpClient, userClient, realmName,
                         evaluatedClient.getId(), realmName, "granted");
                 Set<String> grantedNames = toNames(granted);
                 assertTrue(grantedNames.contains("granted-role"));
-                assertFalse(grantedNames.contains("not-granted-role"));
+                assertEquals(fullScopeAllowed, grantedNames.contains("not-granted-role"));
 
                 List<RoleRepresentation> notGranted = evaluateScopeMappings(httpClient, userClient, realmName,
                         evaluatedClient.getId(), realmName, "not-granted");
                 Set<String> notGrantedNames = toNames(notGranted);
-                assertTrue(notGrantedNames.contains("not-granted-role"));
-                assertFalse(notGrantedNames.contains("granted-role"));
-            }
-        });
-
-        ClientRepresentation update = testRealm.clients().get(evaluatedClient.getId()).toRepresentation();
-        update.setFullScopeAllowed(true);
-        testRealm.clients().get(evaluatedClient.getId()).update(update);
-
-        runAs(realmName, "view-clients-admin", userClient -> {
-            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
-                        evaluatedClient.getId(), realmName, "granted")));
-                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
-                        evaluatedClient.getId(), realmName, "not-granted")));
-            }
-        });
-
-        runAs(realmName, "view-realm-admin", userClient -> {
-            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-                Set<String> grantedNames = toNames(evaluateScopeMappings(httpClient, userClient, realmName,
-                        evaluatedClient.getId(), realmName, "granted"));
-                assertTrue(grantedNames.contains("granted-role"));
-                assertTrue(grantedNames.contains("not-granted-role"));
-                assertEquals(Set.of(), toNames(evaluateScopeMappings(httpClient, userClient, realmName,
-                        evaluatedClient.getId(), realmName, "not-granted")));
+                if (fullScopeAllowed) {
+                    assertEquals(Set.of(), notGrantedNames);
+                } else {
+                    assertTrue(notGrantedNames.contains("not-granted-role"));
+                    assertFalse(notGrantedNames.contains("granted-role"));
+                }
             }
         });
     }

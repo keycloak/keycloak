@@ -62,6 +62,8 @@ import org.keycloak.tests.admin.authz.fgap.RealmAdminAccessTest.ServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
@@ -617,13 +619,19 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         assertThat(mappings.getClientMappings(), not(hasKey("secret-client")));
     }
 
-    @Test
-    public void testClientScopeEvaluationFiltersHiddenRoles() {
+    @ParameterizedTest(name = "{0}, fullScopeAllowed={1}")
+    @CsvSource({
+            AdminPermissionsSchema.MAP_ROLE + ", false",
+            AdminPermissionsSchema.MAP_ROLE + ", true",
+            AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE + ", false",
+            AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE + ", true"
+    })
+    public void testClientScopeEvaluationFiltersHiddenRoles(String permission, boolean fullScopeAllowed) {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
         ClientRepresentation evaluatedClient = new ClientRepresentation();
         evaluatedClient.setClientId("evaluated-client");
-        evaluatedClient.setFullScopeAllowed(false);
+        evaluatedClient.setFullScopeAllowed(fullScopeAllowed);
         try (Response response = realm.admin().clients().create(evaluatedClient)) {
             evaluatedClient.setId(ApiUtil.getCreatedId(response));
         }
@@ -649,46 +657,57 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
 
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
         createPermission(adminPermissionsClient, evaluatedClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        List<RoleRepresentation> hiddenRoles = List.of(hiddenClientGranted, hiddenClientNotGranted, hiddenRealmGranted, hiddenRealmNotGranted);
+        List<RoleRepresentation> visibleRoles = List.of(visibleClientGranted, visibleClientNotGranted, visibleRealmGranted, visibleRealmNotGranted);
+
+        // Viewing the evaluated client alone must not disclose roles from another container.
+        for (RoleRepresentation role : List.of(hiddenClientGranted, visibleClientGranted, hiddenClientNotGranted, visibleClientNotGranted,
+                hiddenRealmGranted, visibleRealmGranted, hiddenRealmNotGranted, visibleRealmNotGranted)) {
+            assertThrows(ForbiddenException.class,
+                    () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+        }
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            for (String roleContainerId : List.of(hiddenClient.getId(), realm.getName())) {
+                for (String endpoint : List.of("granted", "not-granted")) {
+                    assertThat(evaluateScopeMappings(httpClient, evaluatedClient.getId(), roleContainerId, endpoint), empty());
+                }
+            }
+        }
+
         createPermission(adminPermissionsClient, Set.of(
                         visibleClientGranted.getId(), visibleClientNotGranted.getId(),
                         visibleRealmGranted.getId(), visibleRealmNotGranted.getId()),
-                AdminPermissionsSchema.ROLES.getType(), Set.of(AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE), policy);
+                AdminPermissionsSchema.ROLES.getType(), Set.of(permission), policy);
 
-        assertThrows(ForbiddenException.class,
-                () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(hiddenClientGranted.getId()));
-        assertThrows(ForbiddenException.class,
-                () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(visibleClientGranted.getId()));
-        assertThrows(ForbiddenException.class,
-                () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(hiddenRealmGranted.getId()));
-        assertThrows(ForbiddenException.class,
-                () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(visibleRealmGranted.getId()));
+        for (RoleRepresentation role : hiddenRoles) {
+            assertThrows(ForbiddenException.class,
+                    () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+        }
+        for (RoleRepresentation role : visibleRoles) {
+            if (AdminPermissionsSchema.MAP_ROLE.equals(permission)) {
+                assertThat(realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()).getName(), is(role.getName()));
+            } else {
+                // Scope-mapping visibility does not imply permission to view the role directly.
+                assertThrows(ForbiddenException.class,
+                        () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+            }
+        }
 
         try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
             List<RoleRepresentation> grantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "granted");
-            assertThat(toNames(grantedClientRoles), equalTo(Set.of("VISIBLE_CLIENT_GRANTED")));
+            assertThat(toNames(grantedClientRoles), equalTo(fullScopeAllowed
+                    ? Set.of("VISIBLE_CLIENT_GRANTED", "VISIBLE_CLIENT_NOT_GRANTED") : Set.of("VISIBLE_CLIENT_GRANTED")));
 
             List<RoleRepresentation> notGrantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "not-granted");
-            assertThat(toNames(notGrantedClientRoles), equalTo(Set.of("VISIBLE_CLIENT_NOT_GRANTED")));
+            assertThat(toNames(notGrantedClientRoles), equalTo(fullScopeAllowed ? Set.of() : Set.of("VISIBLE_CLIENT_NOT_GRANTED")));
 
             List<RoleRepresentation> grantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "granted");
-            assertThat(toNames(grantedRealmRoles), equalTo(Set.of("VISIBLE_REALM_GRANTED")));
+            assertThat(toNames(grantedRealmRoles), equalTo(fullScopeAllowed
+                    ? Set.of("VISIBLE_REALM_GRANTED", "VISIBLE_REALM_NOT_GRANTED") : Set.of("VISIBLE_REALM_GRANTED")));
 
             List<RoleRepresentation> notGrantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "not-granted");
-            assertThat(toNames(notGrantedRealmRoles), equalTo(Set.of("VISIBLE_REALM_NOT_GRANTED")));
-
-            ClientRepresentation update = realm.admin().clients().get(evaluatedClient.getId()).toRepresentation();
-            update.setFullScopeAllowed(true);
-            realm.admin().clients().get(evaluatedClient.getId()).update(update);
-
-            grantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "granted");
-            assertThat(toNames(grantedClientRoles), equalTo(Set.of("VISIBLE_CLIENT_GRANTED", "VISIBLE_CLIENT_NOT_GRANTED")));
-            notGrantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "not-granted");
-            assertThat(toNames(notGrantedClientRoles), empty());
-
-            grantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "granted");
-            assertThat(toNames(grantedRealmRoles), equalTo(Set.of("VISIBLE_REALM_GRANTED", "VISIBLE_REALM_NOT_GRANTED")));
-            notGrantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "not-granted");
-            assertThat(toNames(notGrantedRealmRoles), empty());
+            assertThat(toNames(notGrantedRealmRoles), equalTo(fullScopeAllowed ? Set.of() : Set.of("VISIBLE_REALM_NOT_GRANTED")));
         }
     }
 
