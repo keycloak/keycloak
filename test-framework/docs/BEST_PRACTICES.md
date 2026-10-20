@@ -22,6 +22,74 @@ within some test methods that will result in the realm being re-created after th
 The same applies to resources within the realm. For example if tests modify a user a lot it may be better to have a 
 realm with `lifecycle=class`, but then have a user with `lifecycle=method`.
 
+## Prefer `updateWithCleanup` over manual try/finally
+
+Do not manually snapshot and restore realm or client configuration in try/finally blocks. Use the framework's cleanup
+methods instead, which are shorter, less error-prone, and run even if the test fails unexpectedly.
+
+Bad:
+
+```java
+@Test
+public void testWithShortSession() {
+    RealmRepresentation rep = realm.admin().toRepresentation();
+    int original = rep.getSsoSessionMaxLifespan();
+    try {
+        rep.setSsoSessionMaxLifespan(120);
+        realm.admin().update(rep);
+        // test logic
+    } finally {
+        rep.setSsoSessionMaxLifespan(original);
+        realm.admin().update(rep);
+    }
+}
+```
+
+Good:
+
+```java
+@Test
+public void testWithShortSession() {
+    realm.updateWithCleanup(r -> r.ssoSessionMaxLifespan(120));
+    // test logic
+}
+```
+
+The same applies to client, user, and identity provider configuration using `updateClientWithCleanup`,
+`updateUserWithCleanup`, and `updateIdentityProvider` respectively.
+
+## Do not manually reset `TimeOffSet`
+
+`TimeOffSet` is injected with `LifeCycle.METHOD` by default. Its supplier automatically resets the offset to 0 after
+each test method. Do not add `timeOffSet.set(0)` in finally blocks or `@AfterEach` methods.
+
+Bad:
+
+```java
+@Test
+public void testExpiredSession() {
+    try {
+        timeOffSet.set(3600);
+        // test logic
+    } finally {
+        timeOffSet.set(0);
+    }
+}
+```
+
+Good:
+
+```java
+@Test
+public void testExpiredSession() {
+    timeOffSet.set(3600);
+    // test logic
+}
+```
+
+Setting `timeOffSet.set(0)` mid-test to reset the clock before performing further assertions is fine since that is
+part of the test logic, not cleanup.
+
 # Static utility classes
 
 Static utility classes can be hard to discover. In many cases it is better to write suppliers to
