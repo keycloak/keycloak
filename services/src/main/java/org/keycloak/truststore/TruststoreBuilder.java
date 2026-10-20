@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -50,6 +51,8 @@ public class TruststoreBuilder {
     private static final String CERT_PROTECTION_ALGORITHM_KEY = "keystore.pkcs12.certProtectionAlgorithm";
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
     static final String PKCS12 = "PKCS12";
+    private static final String JKS = "JKS";
+    private static final String DEFAULT_JRE_TRUSTSTORE_PASSWORD = "changeit";
 
     private static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     private static final String SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
@@ -216,10 +219,12 @@ public class TruststoreBuilder {
         String type = PKCS12;
         String password = null;
         File defaultTrustStore = null;
+        boolean jreTruststore = false;
         if (trustStorePath == null) {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (trustStorePath == null) {
                 defaultTrustStore = getJRETruststore();
+                jreTruststore = true;
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
@@ -241,7 +246,8 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadStore(path, type, password));
+            KeyStore store = jreTruststore ? loadJRETruststore(path) : loadStore(path, type, password);
+            mergeTrustStore(truststore, path, store);
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
@@ -256,6 +262,28 @@ public class TruststoreBuilder {
             return jssecacertsFile;
         }
         return new File(securityDirectory, "cacerts");
+    }
+
+    /**
+     * The format of the JRE truststore is not fixed (for example it is JKS on some distributions), so
+     * try the candidate types, with no password and then the well-known default one.
+     */
+    private static KeyStore loadJRETruststore(String path) {
+        Collection<String> types = new LinkedHashSet<>(List.of(KeyStore.getDefaultType(), JKS, PKCS12));
+        Exception failure = null;
+        for (String type : types) {
+            for (String password : new String[] { null, DEFAULT_JRE_TRUSTSTORE_PASSWORD }) {
+                try {
+                    return KeystoreUtil.loadKeyStore(path, password, type);
+                } catch (Exception e) {
+                    if (failure == null) {
+                        failure = e;
+                    }
+                }
+            }
+        }
+        throw new RuntimeException("Failed to initialize truststore: " + new File(path).getAbsolutePath()
+                + ", tried types " + types, failure);
     }
 
     static KeyStore loadStore(String path, String type, String password) {
