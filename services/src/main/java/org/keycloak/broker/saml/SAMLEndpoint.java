@@ -882,7 +882,8 @@ public class SAMLEndpoint {
 
             if (!config.isValidateSignature()) {
                 logger.warn("SAML assertion contains OneTimeUse condition but signature validation is disabled. "
-                        + "OneTimeUse enforcement requires signature validation to prevent assertion ID tampering.");
+                        + "Replay check will proceed as defense-in-depth but cannot prevent assertion ID tampering. "
+                        + "Enable signature validation for full OneTimeUse protection.");
             }
 
             XMLGregorianCalendar notOnOrAfter = assertion.getConditions().getNotOnOrAfter();
@@ -927,7 +928,7 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
             }
 
-            if (!session.singleUseObjects().putIfAbsent(key, ttlSeconds)) {
+            if (!session.revokedTokens().put(key, ttlSeconds)) {
                 logger.errorf("SAML assertion replay detected. Assertion ID: %s, Issuer: %s", assertion.getID(), issuer);
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
