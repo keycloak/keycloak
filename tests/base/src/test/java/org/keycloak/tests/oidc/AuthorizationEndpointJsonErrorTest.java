@@ -20,7 +20,18 @@ package org.keycloak.tests.oidc;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ClientData;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -31,6 +42,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.util.JsonSerialization;
 
@@ -52,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -65,6 +79,9 @@ public class AuthorizationEndpointJsonErrorTest {
 
     @InjectHttpClient(followRedirects = false)
     CloseableHttpClient httpClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     static Stream<Arguments> errors() {
         return Stream.of(
@@ -140,6 +157,26 @@ public class AuthorizationEndpointJsonErrorTest {
             assertEquals("Access denied", body.getError());
             assertNull(body.getErrorDescription());
         }
+    }
+
+    @Test
+    public void unsupportedResponseTypeWithoutDescriptionRendersErrorPage() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = realm.getClientByClientId("valid");
+            session.getContext().setClient(client);
+            OIDCLoginProtocol protocol = new OIDCLoginProtocol(session, realm, session.getContext().getUri(),
+                    session.getContext().getRequestHeaders(), new EventBuilder(realm, session).event(EventType.LOGIN));
+            ClientData clientData = new ClientData("https://client.example/cb", "invalid", null, null);
+
+            ErrorPageException exception = assertThrows(ErrorPageException.class,
+                    () -> protocol.sendError(client, clientData, LoginProtocol.Error.CANCELLED_BY_USER));
+            try (Response response = exception.getResponse()) {
+                assertEquals(400, response.getStatus());
+                assertTrue(response.getMediaType().isCompatible(MediaType.TEXT_HTML_TYPE));
+                assertTrue(response.getEntity().toString().contains("unsupported_response_type"));
+            }
+        });
     }
 
     private CloseableHttpResponse request(String query, String accept, String locale, boolean post) throws Exception {

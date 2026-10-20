@@ -477,7 +477,7 @@ public class AuthorizationEndpointChecker {
         if (Messages.INVALID_PARAMETER.equals(ex.error)) {
             throw ErrorPageException.oauthError(session, authenticationSession, ex.status, OAuthErrorException.INVALID_REQUEST, ex.error, ex.errorDescription);
         }
-        throw ErrorPageException.oauthError(session, authenticationSession, ex.status, ex.error, ex.errorDescription);
+        throw ErrorPageException.oauthError(session, authenticationSession, ex.status, ex.error, ex.errorDescription != null ? ex.errorDescription : ex.error);
     }
 
     public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
