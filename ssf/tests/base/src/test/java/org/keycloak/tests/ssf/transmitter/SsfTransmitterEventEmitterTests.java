@@ -24,7 +24,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
@@ -1375,14 +1374,14 @@ public class SsfTransmitterEventEmitterTests {
 
     protected void grantRoleToServiceAccount(String mgmtClientId, String targetClientId, String roleName) {
         ClientRepresentation mgmt = findClientByClientId(mgmtClientId);
-        UserRepresentation saUser = realm.admin().clients().get(mgmt.getId()).getServiceAccountUser();
+        String saUserId = realm.admin().clients().get(mgmt.getId()).toRepresentation().getServiceAccountUserId();
 
         String targetUuid = findClientByClientId(targetClientId).getId();
         RoleRepresentation role = realm.admin().clients().get(targetUuid).roles().get(roleName).toRepresentation();
 
         // The admin API is idempotent for add() — if the mapping already
         // exists it's a no-op, which is what we want for @BeforeEach.
-        realm.admin().users().get(saUser.getId()).roles().clientLevel(targetUuid).add(List.of(role));
+        realm.admin().users().get(saUserId).roles().clientLevel(targetUuid).add(List.of(role));
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {

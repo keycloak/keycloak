@@ -56,7 +56,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -136,14 +135,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = registerClient(clientRep, false);
 
-        UserRepresentation serviceAccountUser = managedRealm.admin().clients().get(rep.getId()).getServiceAccountUser();
+        String serviceAccountUserId = managedRealm.admin().clients().get(rep.getId()).toRepresentation().getServiceAccountUserId();
 
-        assertNotNull(serviceAccountUser);
+        assertNotNull(serviceAccountUserId);
 
         deleteClient(rep);
 
         try {
-            managedRealm.admin().users().get(serviceAccountUser.getId()).toRepresentation();
+            managedRealm.admin().users().get(serviceAccountUserId).toRepresentation();
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
         }
@@ -997,9 +996,9 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Response response = masterRealm.admin().clients().create(testAdminClient);
         testAdminClient = masterRealm.admin().clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
 
-        UserRepresentation serviceAccountUser = masterRealm.admin().clients().get(testAdminClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = testAdminClient.getServiceAccountUserId();
         RoleRepresentation adminRole =  masterRealm.admin().roles().get(AdminRoles.ADMIN).toRepresentation();
-        masterRealm.admin().users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
+        masterRealm.admin().users().get(serviceAccountUserId).roles().realmLevel().add(List.of(adminRole));
 
         oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
         oauth.realm(masterRealm.getName());
