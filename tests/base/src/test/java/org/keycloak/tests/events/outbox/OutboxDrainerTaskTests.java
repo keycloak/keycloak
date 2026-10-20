@@ -293,7 +293,7 @@ public class OutboxDrainerTaskTests {
             em(session).clear();
             OutboxStore store = new OutboxStore(session);
             Map<String, Object> out = new LinkedHashMap<>();
-            int delivered = 0;
+            long delivered = 0;
             for (String owner : List.of("owner-i1", "owner-i2", "owner-i3")) {
                 delivered += store.countForOwnerByStatus(TEST_KIND, owner, OutboxEntryStatus.DELIVERED);
             }
@@ -305,7 +305,7 @@ public class OutboxDrainerTaskTests {
         }, Map.class);
 
         Assertions.assertEquals(false, result.get("tickAlive"));
-        Assertions.assertEquals(6, result.get("deliveredRows"), "every worker finished before the tick returned");
+        Assertions.assertEquals(6, ((Number) result.get("deliveredRows")).intValue(), "every worker finished before the tick returned");
         Map<String, Object> summary = (Map<String, Object>) result.get("summary");
         Assertions.assertEquals(6, summary.get("delivered"), "the summary saw every worker's result");
         Assertions.assertEquals(true, result.get("interruptedAfterRun"), "the interrupt flag is restored");
