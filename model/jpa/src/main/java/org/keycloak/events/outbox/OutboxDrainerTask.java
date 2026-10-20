@@ -99,7 +99,10 @@ import org.jboss.logging.Logger;
  *   <li><b>Record</b> — per row, in another short transaction, the
  *       row is re-read with a write lock and the transition applied
  *       only if it still carries the tick's token and passes the same
- *       status and kind check. A lease that expired mid-delivery lets
+ *       status and kind check. The result's optional
+ *       {@link OutboxDeliveryResult#effect() effect} runs in this
+ *       transaction after the transition; if it throws, the record is
+ *       rolled back and the row is retried after its lease. A lease that expired mid-delivery lets
  *       another tick re-claim the row; the late tick's record is then
  *       skipped rather than overwriting the newer attempt, and so is a
  *       result for a row an admin transitioned meanwhile.</li>
@@ -429,11 +432,17 @@ public class OutboxDrainerTask implements ScheduledTask {
                     return;
                 }
                 afterCommit[0] = applyResult(factory, store, row, result, counters);
+                if (result.effect() != null) {
+                    // Consumer state that must commit with the transition;
+                    // a failure here rolls the record back (see the catch).
+                    result.effect().accept(s);
+                }
             });
         } catch (RuntimeException e) {
             afterCommit[0] = null;
-            log.warnf(e, "Outbox failed to record outcome %s — row stays leased and is retried after the lease. id=%s entryKind=%s",
-                    result.outcome(), id, config.entryKind());
+            log.warnf("Outbox failed to record outcome %s (%s) — row stays leased and is retried after the lease. id=%s entryKind=%s",
+                    result.outcome(), e.getClass().getSimpleName(), id, config.entryKind());
+            log.debugf(e, "Outbox record failure detail. id=%s", id);
         }
         if (afterCommit[0] != null) {
             afterCommit[0].run();
@@ -494,8 +503,11 @@ public class OutboxDrainerTask implements ScheduledTask {
             return delivery != null ? delivery
                     : OutboxDelivery.settled(OutboxDeliveryResult.retry("delivery handler returned null delivery"));
         } catch (RuntimeException e) {
-            log.warnf(e, "Outbox delivery handler threw in prepare — treating as RETRY. id=%s entryKind=%s correlationId=%s",
-                    row.getId(), row.getEntryKind(), row.getCorrelationId());
+            // Class only at WARN: the message may carry a destination's
+            // response text, which stays at DEBUG and in last_error.
+            log.warnf("Outbox delivery handler threw %s in prepare — treating as RETRY. id=%s entryKind=%s correlationId=%s",
+                    e.getClass().getName(), row.getId(), row.getEntryKind(), row.getCorrelationId());
+            log.debugf(e, "Outbox prepare failure detail. id=%s", row.getId());
             return OutboxDelivery.settled(OutboxDeliveryResult.retry(describe(e)));
         }
     }
@@ -505,7 +517,9 @@ public class OutboxDrainerTask implements ScheduledTask {
             OutboxDeliveryResult result = delivery.execute();
             return result != null ? result : OutboxDeliveryResult.retry("delivery returned null result");
         } catch (RuntimeException e) {
-            log.warnf(e, "Outbox delivery threw — treating as RETRY. id=%s entryKind=%s", id, config.entryKind());
+            log.warnf("Outbox delivery threw %s — treating as RETRY. id=%s entryKind=%s",
+                    e.getClass().getName(), id, config.entryKind());
+            log.debugf(e, "Outbox delivery failure detail. id=%s", id);
             return OutboxDeliveryResult.retry(describe(e));
         }
     }

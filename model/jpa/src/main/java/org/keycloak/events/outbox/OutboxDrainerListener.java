@@ -30,6 +30,18 @@ public interface OutboxDrainerListener {
     OutboxDrainerListener NOOP = new OutboxDrainerListener() {
     };
 
+    /**
+     * A listener that forwards every callback to all of
+     * {@code listeners} in order, so a consumer can stack its own
+     * listener with the generic {@link OutboxMetricsListener}. A
+     * delegate that throws is logged and skipped; the others still
+     * run. {@code NOOP} delegates are dropped; no delegates yields
+     * {@link #NOOP}, one yields that one.
+     */
+    static OutboxDrainerListener composite(OutboxDrainerListener... listeners) {
+        return CompositeOutboxDrainerListener.of(listeners);
+    }
+
     /** Why the drainer moved a row to {@code DEAD_LETTER}. */
     enum DeadLetterCause {
         /** {@link OutboxDeliveryOutcome#RETRY} with no attempts left. */

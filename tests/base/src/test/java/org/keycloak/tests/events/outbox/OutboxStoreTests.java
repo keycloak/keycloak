@@ -629,6 +629,84 @@ public class OutboxStoreTests {
         });
     }
 
+    @Test
+    public void listByOwnerAndType_pagesASubjectsRowsInEitherOrderAndFiltersByStatus() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant t = Instant.now().minusSeconds(100);
+            persistRawWithType(session, TEST_KIND, realmId, "owner-subj", "user:1", "s-a", OutboxEntryStatus.DELIVERED, 1, t, t);
+            persistRawWithType(session, TEST_KIND, realmId, "owner-subj", "user:1", "s-b", OutboxEntryStatus.PENDING, 0, t.plusSeconds(1), t.plusSeconds(1));
+            persistRawWithType(session, TEST_KIND, realmId, "owner-subj", "user:1", "s-c", OutboxEntryStatus.PENDING, 0, t.plusSeconds(2), t.plusSeconds(2));
+            persistRawWithType(session, TEST_KIND, realmId, "owner-subj", "user:2", "s-other", OutboxEntryStatus.PENDING, 0, t, t);
+            persistRawWithType(session, OTHER_KIND, realmId, "owner-subj", "user:1", "s-other-kind", OutboxEntryStatus.PENDING, 0, t, t);
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            Assertions.assertEquals(List.of("s-a", "s-b", "s-c"),
+                    corr(store.listByOwnerAndType(TEST_KIND, "owner-subj", "user:1", null, false, 0, 10)));
+            Assertions.assertEquals(List.of("s-c", "s-b", "s-a"),
+                    corr(store.listByOwnerAndType(TEST_KIND, "owner-subj", "user:1", null, true, 0, 10)));
+            Assertions.assertEquals(List.of("s-c", "s-b"),
+                    corr(store.listByOwnerAndType(TEST_KIND, "owner-subj", "user:1", OutboxEntryStatus.PENDING, true, 0, 10)));
+            Assertions.assertEquals(List.of("s-b"),
+                    corr(store.listByOwnerAndType(TEST_KIND, "owner-subj", "user:1", null, false, 1, 1)), "paging");
+            new OutboxStore(session).deleteByRealm(OTHER_KIND, realmId);
+        });
+    }
+
+    @Test
+    public void updateMetadata_replacesTheRowsMetadataWithinTheKind() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            OutboxEntryEntity row = persistRaw(session, TEST_KIND, realmId, "owner-md", null, "md", OutboxEntryStatus.PENDING, 0, now, now);
+            row.setMetadata("before");
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            Assertions.assertTrue(store.updateMetadata(TEST_KIND, row.getId(), "{\"remoteId\":\"42\"}"));
+            Assertions.assertFalse(store.updateMetadata(OTHER_KIND, row.getId(), "x"), "the row belongs to another kind");
+            Assertions.assertFalse(store.updateMetadata(TEST_KIND, "no-such-id", "x"));
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertEquals("{\"remoteId\":\"42\"}", findById(session, row.getId()).getMetadata());
+        });
+    }
+
+    @Test
+    public void markSuperseded_settlesQueuedRowsAsDeliveredWithoutAnAttemptAndRejectsTerminalRows() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            OutboxEntryEntity pending = persistRaw(session, TEST_KIND, realmId, "owner-sup", null, "sup-pending", OutboxEntryStatus.PENDING, 2, now, now);
+            pending.setClaimToken("tick-a");
+            pending.setClaimedUntil(now.plusSeconds(300));
+            OutboxEntryEntity held = persistRaw(session, TEST_KIND, realmId, "owner-sup", null, "sup-held", OutboxEntryStatus.HELD, 0, now, now);
+            OutboxEntryEntity delivered = persistRaw(session, TEST_KIND, realmId, "owner-sup", null, "sup-delivered", OutboxEntryStatus.DELIVERED, 1, now, now);
+            em(session).flush();
+            em(session).clear();
+
+            OutboxStore store = new OutboxStore(session);
+            store.markSuperseded(findById(session, pending.getId()), "superseded by sup-newer");
+            store.markSuperseded(findById(session, held.getId()), "superseded by sup-newer");
+            Assertions.assertThrows(IllegalStateException.class,
+                    () -> store.markSuperseded(findById(session, delivered.getId()), "x"));
+            em(session).flush();
+            em(session).clear();
+
+            OutboxEntryEntity after = findById(session, pending.getId());
+            Assertions.assertEquals(OutboxEntryStatus.DELIVERED, after.getStatus());
+            Assertions.assertEquals(2, after.getAttempts(), "no attempt is counted");
+            Assertions.assertNotNull(after.getDeliveredAt());
+            Assertions.assertEquals("superseded by sup-newer", after.getLastError());
+            Assertions.assertNull(after.getClaimToken(), "a row in flight loses its claim");
+            Assertions.assertEquals(OutboxEntryStatus.DELIVERED, findById(session, held.getId()).getStatus());
+        });
+    }
+
     // -- Row transitions -------------------------------------------------
 
     @Test
@@ -1642,6 +1720,10 @@ public class OutboxStoreTests {
 
     private static OutboxEntryEntity findById(KeycloakSession session, String id) {
         return em(session).find(OutboxEntryEntity.class, id);
+    }
+
+    private static List<String> corr(List<OutboxEntryEntity> rows) {
+        return rows.stream().map(OutboxEntryEntity::getCorrelationId).toList();
     }
 
     /** A row claimed by tick {@code tick-a} with a live lease, created and due at {@code createdAt}. */

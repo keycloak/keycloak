@@ -19,6 +19,9 @@ package org.keycloak.events.outbox;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.function.Consumer;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Per-row result returned by an {@link OutboxDeliveryHandler#deliver}
@@ -37,16 +40,40 @@ import java.util.Objects;
  * <p>{@link #delivered()} / {@link #orphaned()} return null for the
  * message; the drainer clears {@code last_error} on a successful
  * delivery.
+ *
+ * <p>An optional {@code effect} is consumer state that must commit
+ * together with the transition: the drainer runs it inside the row's
+ * record transaction, after the transition has been applied, with
+ * that transaction's session. If the effect throws, the record is
+ * rolled back, nothing of the transition is kept, and the row is
+ * delivered again once its lease expires; so an effect must be
+ * idempotent, like the delivery itself. Effects are for writes that
+ * belong to the outcome (a remote id, a destination's health); plain
+ * observation belongs in an {@link OutboxDrainerListener}, which runs
+ * after the commit and cannot undo it.
  */
 public record OutboxDeliveryResult(OutboxDeliveryOutcome outcome,
                                    String errorMessage,
-                                   Instant notBefore) {
+                                   Instant notBefore,
+                                   Consumer<KeycloakSession> effect) {
 
     public OutboxDeliveryResult {
         Objects.requireNonNull(outcome, "outcome");
         if (outcome == OutboxDeliveryOutcome.DEFER && notBefore == null) {
             throw new IllegalArgumentException("DEFER requires a notBefore instant");
         }
+    }
+
+    public OutboxDeliveryResult(OutboxDeliveryOutcome outcome, String errorMessage, Instant notBefore) {
+        this(outcome, errorMessage, notBefore, null);
+    }
+
+    /**
+     * The same result with {@code effect} to run in the record
+     * transaction; {@code null} removes a previously set effect.
+     */
+    public OutboxDeliveryResult withEffect(Consumer<KeycloakSession> effect) {
+        return new OutboxDeliveryResult(outcome, errorMessage, notBefore, effect);
     }
 
     public static OutboxDeliveryResult delivered() {

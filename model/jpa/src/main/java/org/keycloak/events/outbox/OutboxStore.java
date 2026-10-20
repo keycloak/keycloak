@@ -275,6 +275,80 @@ public class OutboxStore {
                 .getResultList();
     }
 
+    /**
+     * Pages the rows of one subject, {@code (ownerId, entryType)}, of
+     * the kind, optionally filtered by status, oldest first or with
+     * {@code newestFirst} the other way round. Consumers that key
+     * their messages by subject (SCIM: one entry type per provisioned
+     * resource) use it for a subject's history and its pending work.
+     */
+    public List<OutboxEntryEntity> listByOwnerAndType(String entryKind, String ownerId, String entryType,
+                                                      OutboxEntryStatus status, boolean newestFirst,
+                                                      int first, int max) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        Objects.requireNonNull(entryType, "entryType");
+        if (first < 0) {
+            throw new IllegalArgumentException("first must not be negative, got " + first);
+        }
+        if (max <= 0) {
+            throw new IllegalArgumentException("max must be positive, got " + max);
+        }
+        String jpql = "SELECT e FROM OutboxEntryEntity e"
+                + " WHERE e.entryKind = :entryKind AND e.ownerId = :ownerId AND e.entryType = :entryType"
+                + (status != null ? " AND e.status = :status" : "")
+                + (newestFirst ? " ORDER BY e.createdAt DESC, e.id DESC" : " ORDER BY e.createdAt ASC, e.id ASC");
+        var query = getEntityManager().createQuery(jpql, OutboxEntryEntity.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("entryType", entryType);
+        if (status != null) {
+            query.setParameter("status", status);
+        }
+        return query.setFirstResult(first).setMaxResults(max).getResultList();
+    }
+
+    /**
+     * Replaces the opaque {@code metadata} of one row (consumer-owned
+     * bookkeeping such as a remote id or a content hash).
+     *
+     * @return {@code false} if no row with that id exists in the kind.
+     */
+    public boolean updateMetadata(String entryKind, String id, String metadata) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(id, "id");
+        OutboxEntryEntity row = findById(id);
+        if (row == null || !entryKind.equals(row.getEntryKind())) {
+            return false;
+        }
+        row.setMetadata(metadata);
+        getEntityManager().merge(row);
+        return true;
+    }
+
+    /**
+     * Settles a queued row as DELIVERED without a delivery: a newer
+     * row for the same subject supersedes it (the destination will
+     * get the newer state anyway). Counts no attempt; {@code reason}
+     * goes to {@code last_error} as the audit note (for example
+     * "superseded by &lt;id&gt;"). A row in flight loses its claim, so
+     * the tick delivering it records nothing.
+     *
+     * @throws IllegalStateException if the row is not queued.
+     */
+    public void markSuperseded(OutboxEntryEntity entity, String reason) {
+        Objects.requireNonNull(entity, "entity");
+        if (!OutboxEntryStatus.QUEUED.contains(entity.getStatus())) {
+            throw new IllegalStateException("only queued rows can be superseded, " + entity.getId() + " is " + entity.getStatus());
+        }
+        entity.setStatus(OutboxEntryStatus.DELIVERED);
+        entity.setDeliveredAt(Instant.now());
+        entity.setLastError(truncateError(reason));
+        entity.setClaimToken(null);
+        entity.setClaimedUntil(null);
+        getEntityManager().merge(entity);
+    }
+
     // -- Drainer reads -----------------------------------------------------
 
     /**
