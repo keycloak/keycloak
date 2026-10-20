@@ -124,6 +124,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
     }
 
     private Stream<RoleModel> getGrantedRoles(KeycloakSession session) {
+        // Compute scope membership independently of visibility, which is checked by each endpoint.
         if (client.isFullScopeAllowed()) {
             return roleContainer.getRolesStream();
         }
