@@ -207,7 +207,7 @@ public class ResetPasswordTest {
             .details(Details.USERNAME, USER_LOGIN)
             .userId(user.getId());
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        assertTrue(driver.page().getPageSource().contains("Your account has been updated."));
     }
 
     @Test
