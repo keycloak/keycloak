@@ -33,7 +33,9 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.message.BasicNameValuePair;
 import org.w3c.dom.Document;
 
@@ -51,7 +53,7 @@ public class SamlClient {
     public enum Binding {
         POST {
             @Override
-            public HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+            public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
                 return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY);
             }
 
@@ -85,9 +87,28 @@ public class SamlClient {
             public URI getBindingUri() {
                 return JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             }
+        },
+        REDIRECT {
+            @Override
+            public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                try {
+                    URI requestURI = new BaseSAML2BindingBuilder()
+                            .relayState(relayState)
+                            .redirectBinding(samlRequest)
+                            .requestURI(samlEndpoint.toString());
+                    return new HttpGet(requestURI);
+                } catch (ProcessingException | ConfigurationException | IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+
+            @Override
+            public URI getBindingUri() {
+                return JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+            }
         };
 
-        public abstract HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
+        public abstract HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
         public abstract URI getBindingUri();
     }
 
