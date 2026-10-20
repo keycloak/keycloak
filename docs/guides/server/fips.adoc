@@ -31,7 +31,7 @@ fips-mode-setup --enable
 == BouncyCastle library
 
 {project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;
-however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library is not shipped with {project_name} as 
+however,  BouncyCastle also provides a FIPS validated version of its library. The FIPS validated BouncyCastle library is not shipped with {project_name} as
 {project_name} cannot provide official support of it. Therefore, to run in FIPS compliant mode, you need to download BouncyCastle-FIPS bits and add them to the {project_name} distribution.
 When {project_name} executes in fips mode, it will use the BCFIPS bits instead of the default BouncyCastle bits, which achieves FIPS compliance.
 
@@ -198,7 +198,7 @@ available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=205162
 == Run the CLI on the FIPS host
 
 If you want to run Client Registration CLI (`kcreg.sh|bat` script) or Admin CLI (`kcadm.sh|bat` script),
- the CLI must also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
+the CLI must also use the BouncyCastle FIPS dependencies instead of plain BouncyCastle dependencies. To achieve this, you may copy the
 jars to the CLI library folder and that is enough. CLI tool will automatically use BCFIPS dependencies instead of plain BC when
 it detects that corresponding BCFIPS jars are present (see above for the versions used). For example, use command such as the following before running the CLI:
 
@@ -297,3 +297,19 @@ see the https://access.redhat.com/documentation/en-us/red_hat_build_of_openjdk/2
 You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related {project_name} packages as described in the Keycloak startup command earlier.
 
 </@tmpl.guide>
+
+== Troubleshooting
+
+BouncyCastle FIPS requires TLS certificates with a Subject Alternative Name (SAN), with no fallback to using
+the Common Name (CN) from the certificate. Due to an issue in older versions of BouncyCastle FIPS the fallback was
+enabled by default, which is no longer the case.
+
+If you see an error such as `No hostname specified for HTTPS endpoint ID check` the recommended solution is to
+update the certificates to include a Subject Alternative Name (SAN).
+
+As an alternative temporary solution enable the Common Name (CN) fallback with:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Dorg.bouncycastle.jsse.hostname_check_cn_fallback=true"
+----
