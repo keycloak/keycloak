@@ -146,24 +146,7 @@ export default function ScopeDetails() {
                   {t("save")}
                 </Button>
 
-                {!scope ? (
-                  <Button
-                    variant="link"
-                    data-testid="cancel"
-                    component={(props) => (
-                      <Link
-                        {...props}
-                        to={toAuthorizationTab({
-                          realm,
-                          clientId: id,
-                          tab: "scopes",
-                        })}
-                      ></Link>
-                    )}
-                  >
-                    {t("cancel")}
-                  </Button>
-                ) : (
+                {scope && (
                   <Button
                     variant="link"
                     data-testid="revert"
@@ -172,6 +155,22 @@ export default function ScopeDetails() {
                     {t("revert")}
                   </Button>
                 )}
+                <Button
+                  variant="link"
+                  data-testid="cancel"
+                  component={(props) => (
+                    <Link
+                      {...props}
+                      to={toAuthorizationTab({
+                        realm,
+                        clientId: id,
+                        tab: "scopes",
+                      })}
+                    ></Link>
+                  )}
+                >
+                  {t("cancel")}
+                </Button>
               </div>
             </ActionGroup>
           </FormAccess>
