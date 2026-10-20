@@ -10,9 +10,9 @@ export function useCurrentUser() {
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
 
   useFetch(
-    () => adminClient.users.findOne({ id: whoAmI.userId }),
+    () => adminClient.users.findOne({ id: whoAmI.userId, realm: whoAmI.realm }),
     setCurrentUser,
-    [whoAmI.userId],
+    [whoAmI.userId, whoAmI.realm],
   );
 
   return { ...currentUser, realm: whoAmI.realm };
