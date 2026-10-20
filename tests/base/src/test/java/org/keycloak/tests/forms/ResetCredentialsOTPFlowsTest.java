@@ -1,7 +1,12 @@
 package org.keycloak.tests.forms;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
+import jakarta.mail.internet.MimeMessage;
+
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -9,8 +14,11 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.ui.page.LogoutConfirmPage;
 import org.keycloak.testframework.ui.page.RegisterPage;
+import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -19,6 +27,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.utils.PasswordGenerateUtil.generatePassword;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest
 public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAlternativeFlowsTest  {
@@ -31,6 +41,12 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
 
     @InjectPage
     protected LogoutConfirmPage logoutConfirmPage;
+
+    @InjectPage
+    protected LoginPasswordUpdatePage loginPasswordUpdatePage;
+
+    @InjectPage
+    protected LoginTotpPage loginTotpPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -46,7 +62,7 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             // * Without 'Send Reset Email' authenticator,
             // * Without 'Reset Password' authenticator
             final String newFlowAlias = "resetcred - KEYCLOAK-11753 - test";
-            configureResetCredentialsRemoveExecutionsAndBindTheFlow( // TODO
+            configureResetCredentialsRemoveExecutionsAndBindTheFlow(
                     newFlowAlias,
                     Arrays.asList("reset-credential-email", "reset-password")
             );
@@ -114,7 +130,7 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             // * Without 'Send Reset Email' authenticator,
             // * Without 'Reset Password' authenticator
             final String newFlowAlias = "resetcred - KEYCLOAK-12168 - firstOTP - account - test";
-            configureResetCredentialsRemoveExecutionsAndBindTheFlow( // TODO
+            configureResetCredentialsRemoveExecutionsAndBindTheFlow(
                     newFlowAlias,
                     Arrays.asList("reset-credential-email", "reset-password")
             );
@@ -205,8 +221,64 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
         }
     }
 
+    // https://github.com/keycloak/keycloak/issues/12759
     @Test
-    void resetPasswordReAuthForced() {
-        // TODO
+    void resetPasswordReAuthForced() throws IOException {
+        try {
+            final String newFlowAlias = "resetcred - 12759 - nootp";
+            configureResetCredentialsRemoveExecutionsAndBindTheFlow(
+                    newFlowAlias,
+                    List.of()
+            );
+            // disable reset OTP step
+            disableResetOTPStep(newFlowAlias);
+            managedUser.updateWithCleanup(u -> u.totpSecret("secret"));
+            managedUser.dirty();
+
+            oauth.openLoginForm();
+            loginPage.resetPassword();
+            resetPasswordPage.changePassword(managedUser.getUsername());
+
+            mail.waitForIncomingEmail(1);
+            MimeMessage message = mail.getLastReceivedMessage();
+            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+            driver.open(changePasswordUrl.trim());
+
+            loginPasswordUpdatePage.assertCurrent();
+            loginPasswordUpdatePage.changePassword("new-password", "new-password");
+
+            // user is not authenticated right away
+            infoPage.assertCurrent();
+            assertEquals("Your account has been updated.", infoPage.getInfo());
+
+            // user has to reauthenticate
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.fillLogin(managedUser.getUsername(), "new-password");
+            loginPage.submit();
+
+            // with otp
+            loginTotpPage.assertCurrent();
+            loginTotpPage.login(new TimeBasedOTP().generateTOTP("secret"));
+            driver.waiting().waitForOAuthCallback();
+
+            // Logout
+            oauth.openLogoutForm();
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+        } finally {
+            revertResetCredentialsFlows();
+        }
+    }
+
+    private void disableResetOTPStep(String newFlowAlias) {
+        final String conditionalOtpFlowAlias = newFlowAlias + " Reset - Conditional OTP";
+        managedRealm.admin().flows().getExecutions(newFlowAlias).stream()
+                .filter(e -> conditionalOtpFlowAlias.equals(e.getDisplayName()))
+                .findFirst()
+                .ifPresent(e -> {
+                    e.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.name());
+                    managedRealm.admin().flows().updateExecutions(newFlowAlias, e);
+                });
     }
 }
