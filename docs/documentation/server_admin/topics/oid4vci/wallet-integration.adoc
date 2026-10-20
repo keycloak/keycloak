@@ -32,10 +32,18 @@ Valera Wallet by A-SIT Plus is a demo wallet that can be used to test OpenID4VCI
 | `dc+sd-jwt`
 
 | Flows tested
+ifeval::[{project_community}==true]
 | Authorization Code Flow and Pre-Authorized Code Flow
 
 | Result
 | Both flows completed successfully and returned the issued credential to the wallet
+endif::[]
+ifeval::[{project_community}!=true]
+| Authorization Code Flow
+
+| Result
+| The flow completed successfully and returned the issued credential to the wallet
+endif::[]
 |===
 
 [[_oid4vci_valera_wallet_server_setup]]
@@ -133,8 +141,14 @@ The credential offer must target the same client id that the wallet uses during 
 [NOTE]
 ====
 Instead of REST credential-offer, it is recommended to use AIA for creating credential offer. That is easier and does not need feature `oid4vc-vci-rest-credential-offer` to be enabled.
-Follow <<_oid4vci_lissi_wallet_authz_code_flow,Lissi wallet Authorization code section>> or <<_oid4vci_lissi_wallet_preauthz_flow,Lissi wallet Pre-authorized code section>> for the details.
+Follow <<_oid4vci_lissi_wallet_authz_code_flow,Lissi wallet Authorization code section>>
+ifeval::[{project_community}==true]
+or <<_oid4vci_lissi_wallet_preauthz_flow,Lissi wallet Pre-authorized code section>>
+endif::[]
+for the details.
 ====
+
+WARNING: The REST credential-offer endpoint requires the experimental `oid4vc-vci-rest-credential-offer` feature. Do not use it in production environments.
 
 The examples in the flow sections below use the REST credential-offer endpoint. The bearer token must be issued to the Valera client for the user who creates the offer. When creating an offer for a different target user, that issuing user must have permission to create credential offers.
 
@@ -152,6 +166,7 @@ curl -G "$ISSUER_BASE/protocol/oid4vc/create-credential-offer" \
   --data-urlencode "type=uri_qr"
 ----
 
+ifeval::[{project_community}==true]
 For the Pre-Authorized Code Flow test, create a pre-authorized offer for the user who owns the credential:
 
 [source,bash]
@@ -167,6 +182,7 @@ curl -G "$ISSUER_BASE/protocol/oid4vc/create-credential-offer" \
   --data-urlencode "target_user=$TARGET_USER" \
   --data-urlencode "type=uri_qr"
 ----
+endif::[]
 
 The JSON response contains an `issuer`, a `nonce`, and a `qr_code` data URL. Display the `qr_code` value as an image for the wallet to scan, or use the returned issuer and nonce with your offer display component to create a deep link.
 
@@ -236,6 +252,7 @@ The test succeeded with Valera Wallet 5.8.0. The final credential request used t
 }
 ----
 
+ifeval::[{project_community}==true]
 ===== Pre-Authorized Code Flow Test
 
 Use this flow when the user has already been authenticated by the issuer and the wallet can redeem a pre-authorized credential offer without starting an interactive login flow on the phone.
@@ -251,6 +268,7 @@ This flow requires the dedicated experimental `oid4vc-vci-preauth-code` feature 
 . {project_name} returns the issued `IdentityCredential` to the wallet.
 
 The test succeeded with Valera Wallet 5.8.0. Earlier testing with Valera Wallet 5.7.6 failed because the JWT proof issuer claim did not match the client id used for the token request. This was no longer reproducible with the tested 5.8.0 version.
+endif::[]
 
 ===== Test Result
 
@@ -264,9 +282,11 @@ The test succeeded with Valera Wallet 5.8.0. Earlier testing with Valera Wallet 
 | Success
 | Valera completed PAR, user authentication, token exchange, and the final credential request with `credential_identifier` set to `IdentityCredential`.
 
+ifeval::[{project_community}==true]
 | Pre-Authorized Code Flow
 | Success
 | Valera exchanged the pre-authorized code and requested the credential with `credential_identifier` set to `IdentityCredential`.
+endif::[]
 |===
 
 [[_oid4vci_valera_troubleshooting]]
@@ -303,10 +323,18 @@ Lissi wallet is another demo wallet that can be used to test OpenID4VCI credenti
 | `dc+sd-jwt`
 
 | Flows tested
+ifeval::[{project_community}==true]
 | Authorization Code Flow and Pre-Authorized Code Flow
 
 | Result
 | Both flows completed successfully and returned the issued credential to the wallet
+endif::[]
+ifeval::[{project_community}!=true]
+| Authorization Code Flow
+
+| Result
+| The flow completed successfully and returned the issued credential to the wallet
+endif::[]
 |===
 
 [[_oid4vci_lissi_wallet_server_setup]]
@@ -392,10 +420,11 @@ image::images/oid4vci/lissi2-adding-credential.png[Lissi wallet confirmation scr
 .Lissi wallet - credential
 image::images/oid4vci/lissi3-credential.png[Lissi wallet - credential, width=320]
 
+ifeval::[{project_community}==true]
 [[_oid4vci_lissi_wallet_preauthz_flow]]
 ===== Pre-Authorized Code Flow Test
 
-This flow requires {project_name} running with the features `oid4vc-vci` and `oid4vc-vci-preauth-code`
+WARNING: This flow is experimental. It requires {project_name} running with the features `oid4vc-vci` and the experimental `oid4vc-vci-preauth-code`. Do not use it in production environments.
 
 . Logout from account console on your laptop (from previous step) and make sure that login screen is displayed.
 It should display `client_id=account-console` in the browser URL (among many other parameters).
@@ -422,6 +451,7 @@ The parameter is base64Url-encoded value of the credential-offer config, which l
 
 . Additional steps are the same as for <<_oid4vci_lissi_wallet_authz_code_flow,Authorization code flow>>. With the exception, that with the pre-authorized code flow, the mobile
 application does not request login from the user as it is assumed that user was "pre-authorized" in some other way - which in this use-case was done in fact by user authentication on the laptop to the {project_name} account console.
+endif::[]
 
 [[_oid4vci_lissi_troubleshooting]]
 ===== Troubleshooting
