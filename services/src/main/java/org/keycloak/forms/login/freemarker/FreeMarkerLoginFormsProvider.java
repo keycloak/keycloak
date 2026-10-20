@@ -782,9 +782,19 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public Response createErrorPage(Response.Status status) {
+        return createErrorPage(status, null);
+    }
+
+    @Override
+    public Response createErrorPage(Response.Status status, String error) {
         if (MediaTypeMatcher.isJsonRequest(session.getContext().getRequestHeaders())) {
             OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation();
-            errorRep.setError(formatMessage(getFirstMessage()));
+            if (error == null) {
+                errorRep.setError(formatMessage(getFirstMessage()));
+            } else {
+                errorRep.setError(error);
+                errorRep.setErrorDescription(formatMessage(getFirstMessage()));
+            }
 
             return Response.status(status)
                     .type(MediaType.APPLICATION_JSON_TYPE)

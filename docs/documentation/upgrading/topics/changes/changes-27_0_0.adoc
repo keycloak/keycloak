@@ -4,6 +4,14 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization endpoint JSON errors
+// https://github.com/keycloak/keycloak/issues/54134
+
+When an OpenID Connect authorization request with `Accept: application/json` is rejected during client or request validation, the JSON response now contains an OAuth error code in `error` and the human-readable message in `error_description`.
+For example, an unknown client returns `{"error":"invalid_client","error_description":"Client not found."}`.
+Applications should use `error` rather than matching translated messages. HTTP status codes and HTML error pages retain their existing behavior, and errors sent to a validated redirect URI continue to use that redirect.
+Other JSON error pages, including direct-grant authenticator errors, are unchanged.
+
 === Deleting required client scopes
 // https://github.com/keycloak/keycloak/issues/51248
 
