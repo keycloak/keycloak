@@ -125,6 +125,11 @@ public class AttributesTab implements UiTabProvider, UiTabProviderFactory<Compon
         realm.setAttribute("logo", model.get("logo"));
     }
 
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        realm.setAttribute("logo", newModel.get("logo"));
+    }
+
     // implement remaining Provider methods as needed
 }
 ----
