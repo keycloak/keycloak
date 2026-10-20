@@ -1,16 +1,11 @@
 package org.keycloak.tests.broker.saml;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import javax.swing.text.MutableAttributeSet;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.parser.ParserDelegator;
 
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.testframework.https.ManagedCertificates;
@@ -38,6 +33,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.cookie.DefaultCookieSpec;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -170,50 +167,17 @@ final class SamlBrokerResponseTampering {
 
     private static List<HtmlForm> parseForms(String html) {
         List<HtmlForm> forms = new ArrayList<>();
-        try {
-            new ParserDelegator().parse(new StringReader(html), new HTMLEditorKit.ParserCallback() {
-                private HtmlForm currentForm;
-
-                @Override
-                public void handleStartTag(HTML.Tag tag, MutableAttributeSet attributes, int position) {
-                    if (HTML.Tag.FORM.equals(tag)) {
-                        currentForm = new HtmlForm(attribute(attributes, HTML.Attribute.ACTION, ""),
-                                attribute(attributes, HTML.Attribute.METHOD, "get"));
-                        forms.add(currentForm);
-                    }
-                }
-
-                @Override
-                public void handleSimpleTag(HTML.Tag tag, MutableAttributeSet attributes, int position) {
-                    if (HTML.Tag.INPUT.equals(tag) && currentForm != null) {
-                        currentForm.fields().add(new FormField(
-                                attribute(attributes, HTML.Attribute.NAME), attribute(attributes, HTML.Attribute.VALUE, ""),
-                                attribute(attributes, HTML.Attribute.ID), attribute(attributes, HTML.Attribute.TYPE, "text"),
-                                attributes.isDefined(HTML.Attribute.CHECKED)));
-                    }
-                }
-
-                @Override
-                public void handleEndTag(HTML.Tag tag, int position) {
-                    if (HTML.Tag.FORM.equals(tag)) {
-                        currentForm = null;
-                    }
-                }
-            }, true);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not parse SAML login form", e);
+        for (Element element : Jsoup.parse(html).select("form")) {
+            HtmlForm form = new HtmlForm(element.attr("action"), element.hasAttr("method") ? element.attr("method") : "get");
+            for (Element input : element.select("input")) {
+                form.fields().add(new FormField(
+                        input.hasAttr("name") ? input.attr("name") : null, input.attr("value"),
+                        input.hasAttr("id") ? input.attr("id") : null, input.hasAttr("type") ? input.attr("type") : "text",
+                        input.hasAttr("checked")));
+            }
+            forms.add(form);
         }
         return forms;
-    }
-
-    private static String attribute(MutableAttributeSet attributes, HTML.Attribute attribute) {
-        Object value = attributes.getAttribute(attribute);
-        return value == null ? null : value.toString();
-    }
-
-    private static String attribute(MutableAttributeSet attributes, HTML.Attribute attribute, String defaultValue) {
-        String value = attribute(attributes, attribute);
-        return value == null ? defaultValue : value;
     }
 
     private static String mutate(String response, Mutation mutation) {
