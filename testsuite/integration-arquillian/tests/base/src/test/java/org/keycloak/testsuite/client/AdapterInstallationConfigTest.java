@@ -16,12 +16,21 @@
  */
 package org.keycloak.testsuite.client;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +39,7 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -40,6 +50,17 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
     private ClientRepresentation client;
     private ClientRepresentation client2;
     private ClientRepresentation clientPublic;
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        super.addTestRealms(testRealms);
+        testRealms.stream().filter(realm -> REALM_NAME.equals(realm.getRealm())).findFirst().orElseThrow()
+                .getUsers().add(UserBuilder.create()
+                        .username("view-clients")
+                        .password("password")
+                        .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS)
+                        .build());
+    }
 
     @Before
     @Override
@@ -79,10 +100,78 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
     @Test
     public void getConfigWithRegistrationAccessToken() throws ClientRegistrationException {
+        assertConfigWithRegistrationAccessToken("client-secret");
+    }
+
+    @Test
+    public void getJwtConfigWithRegistrationAccessToken() throws ClientRegistrationException {
+        assertConfigWithRegistrationAccessToken("client-secret-jwt");
+    }
+
+    private void assertConfigWithRegistrationAccessToken(String authenticator) throws ClientRegistrationException {
+        configureAuthenticator(authenticator);
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
 
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
+        assertInstallationSecret(config, authenticator, "RegistrationAccessTokenTestClientSecret");
+    }
+
+    @Test
+    public void getConfigWithViewClientsRole_secretIsMasked() throws ClientRegistrationException {
+        assertConfigWithViewClientsRole("client-secret");
+    }
+
+    @Test
+    public void getJwtConfigWithViewClientsRole_secretIsMasked() throws ClientRegistrationException {
+        assertConfigWithViewClientsRole("client-secret-jwt");
+    }
+
+    private void assertConfigWithViewClientsRole(String authenticator) throws ClientRegistrationException {
+        configureAuthenticator(authenticator);
+        reg.auth(Auth.token(getToken("view-clients", "password")));
+
+        AdapterConfig config = reg.getAdapterConfig(client.getClientId());
+
+        assertInstallationSecret(config, authenticator, ComponentRepresentation.SECRET_VALUE);
+    }
+
+    @Test
+    public void getConfigWithManageClientsRole_secretIsVisible() throws ClientRegistrationException {
+        assertConfigWithManageClientsRole("client-secret");
+    }
+
+    @Test
+    public void getJwtConfigWithManageClientsRole_secretIsVisible() throws ClientRegistrationException {
+        assertConfigWithManageClientsRole("client-secret-jwt");
+    }
+
+    private void assertConfigWithManageClientsRole(String authenticator) throws ClientRegistrationException {
+        configureAuthenticator(authenticator);
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+
+        AdapterConfig config = reg.getAdapterConfig(client.getClientId());
+
+        assertInstallationSecret(config, authenticator, "RegistrationAccessTokenTestClientSecret");
+    }
+
+    private void configureAuthenticator(String authenticator) {
+        client.setClientAuthenticatorType(authenticator);
+        client.setAttributes(Map.of(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, "HS256"));
+        adminClient.realm(REALM_NAME).clients().get(client.getId()).update(client);
+    }
+
+    private void assertInstallationSecret(AdapterConfig config, String authenticator, String expectedSecret) {
+        if ("client-secret-jwt".equals(authenticator)) {
+            assertEquals(1, config.getCredentials().size());
+            Object credentials = config.getCredentials().get("secret-jwt");
+            assertTrue(credentials instanceof Map);
+            Map<?, ?> jwtCredentials = (Map<?, ?>) credentials;
+            assertEquals(expectedSecret, jwtCredentials.get("secret"));
+            assertEquals("HS256", jwtCredentials.get("algorithm"));
+        } else {
+            assertEquals(expectedSecret, config.getCredentials().get("secret"));
+        }
     }
 
     @Test
