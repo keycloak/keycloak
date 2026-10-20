@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -42,6 +43,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Singleton;
 import jakarta.persistence.PersistenceUnitTransactionType;
 import jakarta.persistence.SharedCacheMode;
@@ -129,7 +131,10 @@ import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
+import io.quarkus.arc.processor.DotNames;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
+import io.quarkus.datasource.common.runtime.DataSourceUtil;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -145,6 +150,7 @@ import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LogHandlerBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
+import io.quarkus.hibernate.orm.PersistenceUnit;
 import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationStaticConfiguredBuildItem;
@@ -152,6 +158,10 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalPersistenceUnitBuildIte
 import io.quarkus.hibernate.orm.deployment.xml.QuarkusMappingFileParser;
 import io.quarkus.hibernate.orm.runtime.PersistenceUnitUtil;
 import io.quarkus.hibernate.orm.runtime.boot.xml.RecordableXmlMapping;
+import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
+import io.quarkus.hibernate.orm.runtime.tenant.DataSourceTenantConnectionResolver;
+import io.quarkus.hibernate.orm.runtime.tenant.TenantConnectionResolver;
+import io.quarkus.hibernate.orm.runtime.tenant.TenantResolver;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
@@ -206,6 +216,11 @@ class KeycloakProcessor {
     // which is only used by the legacy (test-only) DefaultJpaConnectionProviderFactory.
     private static final String QUARKUS_DEFAULT_PERSISTENCE_UNIT = PersistenceUnitUtil.DEFAULT_PERSISTENCE_UNIT_NAME;
     private static final String KEYCLOAK_DEFAULT_PERSISTENCE_UNIT = "keycloak-default";
+
+    // The persistence.xml property through which a user persistence unit requests multi-tenancy. Quarkus still reads
+    // this property at runtime, but for persistence units contributed through the SPI it records a NONE strategy and
+    // therefore never wires the multi-tenancy services; Keycloak restores them (see configureStaticPersistenceUnitProperties).
+    private static final String MULTI_TENANCY_PROPERTY = "hibernate.multiTenancy";
 
     // persistence.xml datasource properties: consumed to derive the datasource name (wired via
     // AdditionalPersistenceUnitBuildItem.dataSourceName()), so they must not be copied as generic Hibernate properties.
@@ -411,15 +426,15 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(ProfileBuildItem.class)
     @Produce(ValidatePersistenceUnitsBuildItem.class)
-    void checkPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs) {
+    void checkPersistenceUnits(List<UserPersistenceUnitBuildItem> userUnits) {
         if (Database.Vendor.TIDB.isOfKind(Configuration.getConfigValue(DB).getValue())) {
             if (!Profile.isFeatureEnabled(Profile.Feature.DB_TIDB)){
                 throw new RuntimeException("The feature TiDB is not enabled");
             }
         }
 
-        List<String> notSetPersistenceUnitsDBKinds = additionalPUs.stream()
-                .map(pu -> pu.getDataSourceName().orElse(pu.getPersistenceUnitName()))
+        List<String> notSetPersistenceUnitsDBKinds = userUnits.stream()
+                .map(UserPersistenceUnitBuildItem::getDataSourceName)
                 .filter(this::missingDbKind)
                 .map(datasourceName -> PropertyMappers.getWildcardPropertyMapper(DatabaseOptions.DB_KIND).orElseThrow().getFrom(datasourceName)).toList();
 
@@ -506,17 +521,11 @@ class KeycloakProcessor {
         return persistenceUnitName;
     }
 
-    /**
-     * Parse any user-provided {@code META-INF/persistence.xml} and expose each unit as an
-     * {@link AdditionalPersistenceUnitBuildItem}. Quarkus is told to ignore persistence.xml
-     * ({@code quarkus.hibernate-orm.persistence-xml.ignore=true}); the default persistence unit is configured through
-     * {@code quarkus.hibernate-orm.*} properties (see application.properties) plus Quarkus entity auto-discovery, and
-     * user units keep working with no user-facing change.
-     */
     @BuildStep
     @Consume(CheckJdbcBuildStep.class)
     @Consume(CheckMultipleDatasourcesBuildStep.class)
-    void produceUserDefinedPersistenceUnits(BuildProducer<AdditionalPersistenceUnitBuildItem> producer) {
+    void produceUserDefinedPersistenceUnits(BuildProducer<AdditionalPersistenceUnitBuildItem> producer,
+            BuildProducer<UserPersistenceUnitBuildItem> userUnits) {
         PersistenceXmlParser parser = PersistenceXmlParser.create();
         List<URL> urls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
         if (urls.isEmpty()) {
@@ -546,8 +555,15 @@ class KeycloakProcessor {
             }
 
             String datasourceName = getDatasourceNameFromPersistenceXml(descriptor);
+            MultiTenancyStrategy multiTenancyStrategy = getMultiTenancyStrategy(puName, descriptor.getProperties());
+            // SCHEMA tenants are schemas of the server database, so such a unit is bound to the default datasource at the
+            // Quarkus level; Keycloak keeps the declared datasource name for its db-*-<datasource> options.
+            // A DATABASE unit stays on its declared datasource, so Quarkus derives its dialect and database version from it.
+            String quarkusDataSourceName = multiTenancyStrategy == MultiTenancyStrategy.SCHEMA
+                    ? DataSourceUtil.DEFAULT_DATASOURCE_NAME
+                    : datasourceName;
             AdditionalPersistenceUnitBuildItem.Builder builder = AdditionalPersistenceUnitBuildItem.builder(puName)
-                    .dataSourceName(datasourceName);
+                    .dataSourceName(quarkusDataSourceName);
             for (String className : descriptor.getManagedClassNames()) {
                 builder.managedClass(className);
             }
@@ -574,6 +590,12 @@ class KeycloakProcessor {
                     builder.property(key, value);
                 }
             }
+            if (multiTenancyStrategy == MultiTenancyStrategy.DATABASE) {
+                // Quarkus records no multi-tenancy for units contributed through the SPI and would resolve the declared
+                // datasource on start (it may be disabled), although tenants get connections from a TenantConnectionResolver.
+                // A datasource named in the unit makes Quarkus skip that lookup.
+                builder.property(JdbcSettings.JAKARTA_JTA_DATASOURCE, datasourceName);
+            }
             ValidationMode validationMode = descriptor.getValidationMode();
             if (validationMode != null && validationMode != ValidationMode.AUTO) {
                 builder.property("jakarta.persistence.validation.mode", validationMode.name());
@@ -583,6 +605,20 @@ class KeycloakProcessor {
                 builder.property("jakarta.persistence.sharedCache.mode", sharedCacheMode.name());
             }
             producer.produce(builder.build());
+            userUnits.produce(new UserPersistenceUnitBuildItem(puName, datasourceName, multiTenancyStrategy));
+        }
+    }
+
+    static MultiTenancyStrategy getMultiTenancyStrategy(String unitName, Properties properties) {
+        String value = properties == null ? null : properties.getProperty(MULTI_TENANCY_PROPERTY);
+        if (value == null || value.isBlank()) {
+            return MultiTenancyStrategy.NONE;
+        }
+        try {
+            return MultiTenancyStrategy.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException(("Unknown multi-tenancy strategy '%s' configured through the '%s' property"
+                    + " of persistence unit '%s' in persistence.xml.").formatted(value, MULTI_TENANCY_PROPERTY, unitName));
         }
     }
 
@@ -714,7 +750,7 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(ValidatePersistenceUnitsBuildItem.class)
     @Record(ExecutionTime.STATIC_INIT)
-    void configureStaticPersistenceUnitProperties(List<AdditionalPersistenceUnitBuildItem> additionalPUs,
+    void configureStaticPersistenceUnitProperties(List<UserPersistenceUnitBuildItem> userUnits,
             List<JdbcDataSourceBuildItem> jdbcDataSources,
             BuildProducer<HibernateOrmIntegrationStaticConfiguredBuildItem> staticConfigured,
             KeycloakRecorder recorder) {
@@ -722,13 +758,69 @@ class KeycloakProcessor {
         if (!defaultDataSource.isDefault()) {
             throw new RuntimeException("The server datasource must be the default datasource.");
         }
-        for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
-            String datasourceName = pu.getDataSourceName().orElse(pu.getPersistenceUnitName());
-            Map<String, String> puProps = getUserPersistenceUnitOverrides(datasourceName);
+        for (UserPersistenceUnitBuildItem unit : userUnits) {
+            Map<String, String> puProps = getUserPersistenceUnitOverrides(unit.getDataSourceName());
             if (!puProps.isEmpty()) {
-                staticConfigured.produce(new HibernateOrmIntegrationStaticConfiguredBuildItem("keycloak", pu.getPersistenceUnitName())
+                staticConfigured.produce(new HibernateOrmIntegrationStaticConfiguredBuildItem("keycloak", unit.getUnitName())
                         .setInitListener(recorder.createStaticPropertiesListener(puProps)));
             }
+            if (unit.getMultiTenancyStrategy() != MultiTenancyStrategy.NONE) {
+                // Quarkus records MultiTenancyStrategy.NONE for SPI-contributed units, so it wires neither the
+                // MultiTenantConnectionProvider (FastBootMetadataBuilder#mergeSettings) nor the tenant identifier
+                // resolver (FastBootEntityManagerFactoryBuilder#build). Contribute them here, so the strategy declared
+                // in the persistence.xml takes effect. This runs during metadata building, after Quarkus' own overrides.
+                staticConfigured.produce(new HibernateOrmIntegrationStaticConfiguredBuildItem("keycloak-multitenancy", unit.getUnitName())
+                        .setInitListener(recorder.createMultiTenancyListener(unit.getUnitName(), unit.getMultiTenancyStrategy())));
+            }
+        }
+    }
+
+    /**
+     * Register, for every user persistence unit using DATABASE or SCHEMA multi-tenancy, the default
+     * {@link io.quarkus.hibernate.orm.runtime.tenant.DataSourceTenantConnectionResolver} qualified for that unit and
+     * keep the user's {@link TenantResolver}/{@link TenantConnectionResolver} beans from being removed as unused. This
+     * temporary workaround mirrors {@code HibernateOrmProcessor#multitenancy}, which Quarkus skips for units it recorded as non-multi-tenant.
+     */
+    @BuildStep
+    @Consume(ValidatePersistenceUnitsBuildItem.class)
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void configureUserDefinedPersistenceUnitMultiTenancy(List<UserPersistenceUnitBuildItem> userUnits,
+            BuildProducer<SyntheticBeanBuildItem> syntheticBeans,
+            BuildProducer<UnremovableBeanBuildItem> unremovableBeans,
+            KeycloakRecorder recorder) {
+        boolean multiTenancyEnabled = false;
+        for (UserPersistenceUnitBuildItem unit : userUnits) {
+            MultiTenancyStrategy strategy = unit.getMultiTenancyStrategy();
+            if (strategy == MultiTenancyStrategy.NONE) {
+                continue;
+            }
+            // Even a DISCRIMINATOR unit, which needs no connection resolver, relies on the user's TenantResolver bean
+            // being retained so the current tenant identifier can be resolved at runtime.
+            multiTenancyEnabled = true;
+            if (!strategy.requiresMultiTenantConnectionProvider()) {
+                continue;
+            }
+            String unitName = unit.getUnitName();
+            logger.debugf("Enabling %s multi-tenancy for persistence unit '%s'", strategy, unitName);
+            // SCHEMA tenants use the server datasource rather than the declared one. This is not great, since a tenant
+            // schema sticks to pooled connections Keycloak reuses (db-schema avoids the impact), but existing tenant
+            // schemas live there, so we keep it for a backwards compatibility
+            syntheticBeans.produce(SyntheticBeanBuildItem.configure(DataSourceTenantConnectionResolver.class)
+                    .scope(ApplicationScoped.class)
+                    .types(TenantConnectionResolver.class)
+                    .setRuntimeInit()
+                    .defaultBean()
+                    .unremovable()
+                    .supplier(recorder.createDataSourceTenantConnectionResolver(unitName, DataSourceUtil.DEFAULT_DATASOURCE_NAME, strategy))
+                    .addQualifier().annotation(DotNames.NAMED).addValue("value", unitName).done()
+                    .addQualifier().annotation(PersistenceUnit.class).addValue("value", unitName).done()
+                    .done());
+        }
+        if (multiTenancyEnabled) {
+            unremovableBeans.produce(new UnremovableBeanBuildItem(
+                    new UnremovableBeanBuildItem.BeanTypeExclusion(DotName.createSimple(TenantConnectionResolver.class))));
+            unremovableBeans.produce(new UnremovableBeanBuildItem(
+                    new UnremovableBeanBuildItem.BeanTypeExclusion(DotName.createSimple(TenantResolver.class))));
         }
     }
 
@@ -801,7 +893,7 @@ class KeycloakProcessor {
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
-    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<AdditionalPersistenceUnitBuildItem> additionalPUs) {
+    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<UserPersistenceUnitBuildItem> userUnits) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
@@ -821,7 +913,7 @@ class KeycloakProcessor {
             }
 
             if (spi instanceof JpaConnectionSpi) {
-                configureUserDefinedPersistenceUnits(additionalPUs, factories, preConfiguredProviders, spi);
+                configureUserDefinedPersistenceUnits(userUnits, factories, preConfiguredProviders, spi);
             }
 
             if (spi instanceof ThemeResourceSpi) {
@@ -866,14 +958,18 @@ class KeycloakProcessor {
         }
     }
 
-    private void configureUserDefinedPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs,
+    private void configureUserDefinedPersistenceUnits(List<UserPersistenceUnitBuildItem> userUnits,
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
-        for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
-            String unitName = pu.getPersistenceUnitName();
+        for (UserPersistenceUnitBuildItem unit : userUnits) {
+            String unitName = unit.getUnitName();
             NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
             factory.setUnitName(unitName);
-            factory.setDataSourceName(pu.getDataSourceName().orElse(unitName));
+            factory.setDataSourceName(unit.getDataSourceName());
+            // A DATABASE or SCHEMA multi-tenant unit resolves its connections per tenant, so it must stay active even
+            // when its declared datasource is disabled or has no connectivity of its own.
+            factory.setDataSourceRequired(!unit.getMultiTenancyStrategy().requiresMultiTenantConnectionProvider());
+            factory.setSchemaMultiTenancy(unit.getMultiTenancyStrategy() == MultiTenancyStrategy.SCHEMA);
             factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
             preConfiguredProviders.put(unitName, factory);
         }
