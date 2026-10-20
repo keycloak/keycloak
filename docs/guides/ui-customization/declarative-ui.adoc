@@ -84,7 +84,8 @@ Register the factory under `META-INF/services/org.keycloak.services.ui.extend.Ui
 Valid paths are defined in the `routes` modules of the Admin Console source.
 `getParams()` supplies the path parameters, including the tab identifier.
 
-You can react to create, update, and delete through the component lifecycle callbacks on the factory, for example `onCreate`.
+You can react to create, update, and delete through the component lifecycle callbacks on the factory, such as `onCreate` and `onUpdate`.
+After the first save, the Admin Console updates the existing component, so override `onUpdate` whenever you need side effects on later edits.
 
 .Example tab provider
 [source,java]
