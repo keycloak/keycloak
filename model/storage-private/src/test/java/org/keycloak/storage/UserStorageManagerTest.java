@@ -17,6 +17,7 @@
 
 package org.keycloak.storage;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.keycloak.models.UserModel;
@@ -118,6 +119,45 @@ public class UserStorageManagerTest {
 
         assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), oversized, 0, 10).toList(), hasSize(10));
         assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), oversized, 7, 10).toList(), hasSize(17));
+    }
+
+    @Test
+    public void queryWithGracefulDegradationDoesNotOverflowWhenPaginationWindowExceedsMaxInt() {
+        // firstResult + maxResults overflows int; the cap must be computed with long arithmetic so
+        // Stream.limit does not reject it and degrade a healthy provider to an empty result
+        UserStorageManager.PaginatedQuery healthy = (provider, first, max) ->
+                Stream.of(new UserModelDelegate(null), new UserModelDelegate(null));
+
+        assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), healthy, 1, Integer.MAX_VALUE).toList(), hasSize(2));
+    }
+
+    @Test
+    public void queryWithGracefulDegradationClosesProviderStreamAfterBoundedMaterialization() {
+        // the materialized result is a new stream over the collected list, so the original provider
+        // stream must be closed to release provider-owned resources; the unbounded path hands the
+        // stream to the caller unchanged and stays untouched
+        AtomicBoolean closed = new AtomicBoolean();
+        UserStorageManager.PaginatedQuery closeable = (provider, first, max) ->
+                Stream.<UserModel>generate(() -> new UserModelDelegate(null)).limit(5).onClose(() -> closed.set(true));
+
+        assertThat(UserStorageManager.queryWithGracefulDegradation(externalProvider(), closeable, 0, 5).toList(), hasSize(5));
+        assertThat(closed.get(), is(true));
+    }
+
+    @Test
+    public void queryWithGracefulDegradationClosesProviderStreamOnLazyFailureDuringBoundedQuery() {
+        // the provider stream must also be closed when the failure surfaces lazily during the
+        // materialization, before the query is degraded to an empty result
+        AtomicBoolean closed = new AtomicBoolean();
+        UserStorageManager.PaginatedQuery lazyFailingWithCloseHandler = (provider, first, max) ->
+                Stream.concat(Stream.of(new UserModelDelegate(null)),
+                        Stream.<UserModel>generate(() -> { throw FAILURE; }))
+                      .onClose(() -> closed.set(true));
+
+        Stream<UserModel> result = UserStorageManager.queryWithGracefulDegradation(externalProvider(), lazyFailingWithCloseHandler, 0, 10);
+
+        assertThat(result.toList(), empty());
+        assertThat(closed.get(), is(true));
     }
 
     @Test

@@ -471,10 +471,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
              *
              * The materialized result is capped at firstResult + maxResults elements, so providers that return a
              * lazy stream ignoring the pagination arguments (e.g. the paginated LDAP search) are not consumed entirely.
+             * The cap is computed with long arithmetic because firstResult + maxResults may exceed Integer.MAX_VALUE,
+             * and an overflowing int would make Stream.limit reject the (negative) cap and degrade a healthy provider.
              */
-            int limit = (firstResult == null ? 0 : firstResult) + maxResults;
+            long limit = (firstResult == null ? 0L : firstResult.longValue()) + maxResults;
 
-            return result.limit(limit).collect(Collectors.toList()).stream();
+            // collect() does not close the provider stream, so it is closed explicitly to release
+            // provider-owned resources, both when the materialization succeeds and when it fails lazily
+            try (Stream<UserModel> bounded = result) {
+                return bounded.limit(limit).collect(Collectors.toList()).stream();
+            }
         } catch (Exception e) {
             // Log the failure but continue with other providers for graceful degradation
             logger.warnf(e, "User storage provider %s failed during query operation. " +
