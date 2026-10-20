@@ -101,13 +101,12 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
     }
 
     private void autoConfigure(ClientRepresentation rep) {
-        if (configuration.isAutoConfigure())
-            rep.setImplicitFlowEnabled(Boolean.FALSE);
+        if (configuration == null || !Boolean.TRUE.equals(configuration.isAutoConfigure())) return;
+        rep.setImplicitFlowEnabled(Boolean.FALSE);
     }
 
     private void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean isImplicitFlowEnabled = rep.isImplicitFlowEnabled().booleanValue();
-        if (!isImplicitFlowEnabled) return;
+        if (!Boolean.TRUE.equals(rep.isImplicitFlowEnabled())) return;
         throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: implicit flow enabled");
     }
 
