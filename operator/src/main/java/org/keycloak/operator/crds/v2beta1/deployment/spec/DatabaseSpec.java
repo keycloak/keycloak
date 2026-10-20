@@ -35,13 +35,13 @@ public class DatabaseSpec {
     @JsonPropertyDescription("The reference to a secret holding the password of the database user.")
     private SecretKeySelector passwordSecret;
 
-    @JsonPropertyDescription("Sets the database name of the default JDBC URL of the chosen vendor. If the `url` option is set, this option is ignored.")
+    @JsonPropertyDescription("Sets the database name of the default JDBC URL of the chosen vendor. Can't be combined with the `url` option.")
     private String database;
 
-    @JsonPropertyDescription("Sets the hostname of the default JDBC URL of the chosen vendor. If the `url` option is set, this option is ignored.")
+    @JsonPropertyDescription("Sets the hostname of the default JDBC URL of the chosen vendor. Can't be combined with the `url` option.")
     private String host;
 
-    @JsonPropertyDescription("Sets the port of the default JDBC URL of the chosen vendor. If the `url` option is set, this option is ignored.")
+    @JsonPropertyDescription("Sets the port of the default JDBC URL of the chosen vendor. Can't be combined with the `url` option.")
     private Integer port;
 
     @JsonPropertyDescription("The database schema to be used.")
