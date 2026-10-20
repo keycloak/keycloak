@@ -106,8 +106,9 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
     }
 
     private void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean isImplicitFlowEnabled = rep.isImplicitFlowEnabled().booleanValue();
-        if (!isImplicitFlowEnabled) return;
+        // The field is optional in the representation and Keycloak defaults
+        // it to disabled: treat it as such instead of unboxing a null Boolean.
+        if (!Boolean.TRUE.equals(rep.isImplicitFlowEnabled())) return;
         throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: implicit flow enabled");
     }
 
