@@ -379,6 +379,16 @@ test("should save Deflate Compression setting", async ({ page }) => {
   );
   await requestEncryptionSwitch.click({ force: true });
 
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  let realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+
   const deflateSwitch = page.getByTestId(
     "attributes.oid4vci.request.zip.algorithms",
   );
@@ -389,10 +399,8 @@ test("should save Deflate Compression setting", async ({ page }) => {
     page.getByText("Realm successfully updated").first(),
   ).toBeVisible();
 
-  let realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "true",
-  );
+  realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
 
   await deflateSwitch.click({ force: true });
   await page.getByTestId("tokens-tab-save").click();
@@ -401,9 +409,9 @@ test("should save Deflate Compression setting", async ({ page }) => {
   ).toBeVisible();
 
   realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "false",
-  );
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
 });
 
 test("should save issuer info setting", async ({ page }) => {
