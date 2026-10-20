@@ -21,6 +21,7 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
   useLoginProviders,
@@ -144,6 +145,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     ),
     defaultValue: "false",
   });
+
+  const { hasAccess } = useAccess();
+  const canManageRealm = hasAccess("manage-realm");
+  const scopeTypeOptions = allClientScopeTypes.filter(
+    (key) => canManageRealm || !clientScope || key === "none",
+  );
 
   const selectedProtocol = useWatch({
     control,
@@ -282,8 +289,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name="type"
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
+          isDisabled={!canManageRealm && !!clientScope}
           controller={{ defaultValue: allClientScopeTypes[0] }}
-          options={allClientScopeTypes.map((key) => ({
+          options={scopeTypeOptions.map((key) => ({
             key,
             value: t(`clientScopeType.${key}`),
           }))}
