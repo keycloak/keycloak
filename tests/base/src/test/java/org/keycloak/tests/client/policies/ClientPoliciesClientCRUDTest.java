@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
@@ -32,6 +33,7 @@ import static org.keycloak.tests.utils.ClientPoliciesUtil.createRejectisResource
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -271,6 +273,35 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testRejectImplicitGrantExecutorUpdateWithOmittedImplicitFlow() throws Exception {
+        // The client is created with implicit flow enabled before the profile exists
+        String clientUUID = createClientByAdmin(realm, "client-implicit-enabled", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+        });
+        assertTrue(realm.admin().clients().get(clientUUID).toRepresentation().isImplicitFlowEnabled());
+
+        setupPolicy(realm, RejectImplicitGrantExecutorFactory.PROVIDER_ID, createRejectImplicitGrantExecutorConfig(Boolean.FALSE),
+                AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig());
+
+        // Update the client without the implicitFlowEnabled field. The field is omitted, so the client keeps
+        // implicit flow enabled after the update, and the executor must reject it instead of letting it through
+        try {
+            updateClientByAdmin(realm, clientUUID, clientRep -> {
+                clientRep.setImplicitFlowEnabled(null);
+            });
+            fail("Update should have failed because the client keeps implicit flow enabled when the field is omitted");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Invalid client metadata: implicit flow enabled", cpe.getErrorDetail());
+        }
+
+        // Explicitly disabling the flow is the legitimate way past the policy
+        updateClientByAdmin(realm, clientUUID, clientRep -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+        });
+        assertFalse(realm.admin().clients().get(clientUUID).toRepresentation().isImplicitFlowEnabled());
+    }
+
+    @Test
     public void testRejectImplicitGrantExecutorEmptyConfigurationClientCRUD() throws Exception {
         // Setup policy: any client condition + RejectImplicitGrant executor declared with an empty configuration
         // (no auto-configure option) - validate-only mode, must not fail with a NullPointerException
@@ -297,6 +328,45 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
         // Register client with implicitFlowEnabled=true. Still rejected - validate runs even without the auto-configure option
         try {
             createClientByAdmin(realm, "client-empty-config-implicit", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            });
+            fail("Registration should have failed because implicit flow is enabled");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Invalid client metadata: implicit flow enabled", cpe.getErrorDetail());
+        }
+    }
+
+    @Test
+    public void testRejectImplicitGrantExecutorOmittedConfigurationClientCRUD() throws Exception {
+        // Setup policy: any client condition + RejectImplicitGrant executor declared with no
+        // configuration at all, which is a distinct case from an empty configuration object:
+        // an omitted configuration reaches validation as null and the executor must treat
+        // it like auto-configure absent, not crash with a NullPointerException
+        ClientProfileRepresentation profile = ClientProfileBuilder.create()
+                .name("executor")
+                .description("executor description")
+                .executor(RejectImplicitGrantExecutorFactory.PROVIDER_ID, null)
+                .build();
+        profile.getExecutors().get(0).setConfiguration(null);
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(profile);
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("policy")
+                    .description("description of policy")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .profile("executor")
+                    .build());
+            return r;
+        });
+
+        // Register client without implicitFlowEnabled (null). Should succeed with the omitted configuration
+        createClientByAdmin(realm, "client-omitted-config", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {});
+
+        // Register client with implicitFlowEnabled=true. Still rejected - validation runs without any configuration
+        try {
+            createClientByAdmin(realm, "client-omitted-config-implicit", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
                 clientRep.setImplicitFlowEnabled(Boolean.TRUE);
             });
             fail("Registration should have failed because implicit flow is enabled");

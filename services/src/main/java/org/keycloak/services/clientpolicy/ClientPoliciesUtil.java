@@ -346,7 +346,7 @@ public class ClientPoliciesUtil {
                         RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
                 ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(
                         RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()), provider.getExecutorConfigurationClass());
-                return configuration.validateConfig();
+                return configuration == null || configuration.validateConfig();
             } else {
                 return true;
             }
