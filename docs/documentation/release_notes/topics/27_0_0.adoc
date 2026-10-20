@@ -73,3 +73,15 @@ Each accepted type of that credential therefore links its own identity.
 The claim must be unique across all trusted issuers of a type, since any of them can issue a credential with that value.
 Links to an OID4VP identity provider created by an earlier version no longer match and block the first broker login of their users, so remove them.
 Only credentials in the `dc+sd-jwt` format can be requested.
+
+= Extension Development
+
+== Extend the Admin Console with the Declarative UI SPI (supported)
+// https://github.com/keycloak/keycloak/issues/54149
+
+Adding configuration screens to the Admin Console previously required maintaining a custom React theme for even simple provider forms.
+The Declarative UI SPI lets extensions describe Admin Console pages and tabs in Java with `UiPageProvider` and `UiTabProvider`, and {project_name} renders those forms automatically.
+
+In this release, the `declarative-ui` feature is promoted from experimental to supported and is enabled by default.
+
+For more details, see the link:{ui_customization_guide_link}declarative-ui[Extending the Admin Console with the Declarative UI SPI] guide.
