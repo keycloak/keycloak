@@ -30,6 +30,8 @@ COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
 
 # Block the compromised eMudhra intermediate CAs (https://emudhra.we-have-a-problem.com/) for every TLS
 # connection of the JVM, including those not covered by org.keycloak.truststore.DistrustedCertificates.
+# The JDK only matches certificate fingerprints, so the last 8 entries are the equally valid copies of the
+# ECDSA-signed certificates with their signature value s replaced by n - s.
 # Remove once the JDK ships them in its own blocked.certs.
 RUN f="$(readlink -f /usr/lib/jvm/jre/lib/security/blocked.certs)" && \
     printf '%s\n' \
@@ -49,6 +51,14 @@ RUN f="$(readlink -f /usr/lib/jvm/jre/lib/security/blocked.certs)" && \
       A496E23AC0CAB8155FC9B117B97EAE368EFCBB9041AEC8804D5A308D2D01C2D8 \
       4B2460A466F95FD40113BCDCCA2CEB29B3B093921DE45474DA7DF48874C630B1 \
       84112972B8E59D14560AE7E7119654474AAD119990CF3722BFC1E3B91615E1FD \
+      37E866582D43C35D7C17D47794B974F291B3047B868DC123382477F7A08AEFA8 \
+      A4B72DBD37256324B557B9176F8CBA4310DDFFBCC4609977E2463F3504A716C8 \
+      33C1BCDC6DA52DF950B3B14121127DA1955F7F31F828497A7608986EB2DDCC09 \
+      A104B1314DF8E02F7DE27DDC287D0961D6E6824AD4DAFC3D11064F24C1B653D5 \
+      EF34030C01B13BF42B534072DCC3C75B13C009DC9241119ADA39E2C15E2AFD2E \
+      169A0523C5E071AA4E298286DBD4EE0E40C8C06ABB6B0C077D132F001FA19240 \
+      5D8FC3ECDDB4DDB243AEE5C306BCFDE670ADF2D66B193DD3AA2D6B2FB91869BE \
+      AB7292F82267333031F512379FDBADA949DFA49D3C046CC8FA7F34117C342986 \
       >> "$f"
 
 RUN echo "keycloak:x:0:root" >> /etc/group && \

@@ -23,6 +23,7 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidator;
@@ -92,17 +93,63 @@ public class DistrustedCertificatesTest {
 
     @Test
     public void testNewCertificateForCompromisedKeyIsDistrusted() throws Exception {
-        X509Certificate compromised = load("emudhra-intermediates.pem").get(0);
         KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
         generator.initialize(384);
         KeyPair caKeyPair = generator.generateKeyPair();
         X509Certificate ca = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "Test CA");
 
-        X509Certificate crossSign = CertificateUtils.generateV3Certificate(new KeyPair(compromised.getPublicKey(), null),
-                caKeyPair.getPrivate(), ca, "EM DV TLS CA - G3B");
-
-        assertTrue(DistrustedCertificates.isDistrusted(crossSign));
+        for (X509Certificate compromised : load("emudhra-intermediates.pem")) {
+            X509Certificate crossSign = CertificateUtils.generateV3Certificate(new KeyPair(compromised.getPublicKey(), null),
+                    caKeyPair.getPrivate(), ca, "Test cross-sign");
+            assertTrue(compromised.getSubjectX500Principal().getName(), DistrustedCertificates.isDistrusted(crossSign));
+        }
         assertFalse(DistrustedCertificates.isDistrusted(ca));
+    }
+
+    @Test
+    public void testCompromisedIntermediatesWithMalleatedSignatureAreDistrusted() throws Exception {
+        List<X509Certificate> originals = load("emudhra-intermediates.pem");
+        List<X509Certificate> malleated = load("emudhra-intermediates-malleated.pem");
+        assertEquals(8, malleated.size());
+
+        // replacing the ECDSA signature value s with n - s keeps the certificate valid but changes its fingerprint
+        malleated.get(0).verify(load("dv-g3b-emudhra-chain.pem").get(2).getPublicKey());
+        for (X509Certificate certificate : malleated) {
+            assertFalse(originals.contains(certificate));
+            assertTrue(originals.stream().anyMatch(original -> original.getIssuerX500Principal().equals(certificate.getIssuerX500Principal())
+                    && original.getSerialNumber().equals(certificate.getSerialNumber())
+                    && original.getPublicKey().equals(certificate.getPublicKey())));
+            assertTrue(certificate.getSubjectX500Principal().getName(), DistrustedCertificates.isDistrusted(certificate));
+        }
+    }
+
+    @Test
+    public void testChainWithoutDistrustedIntermediateIsRejected() throws Exception {
+        // only the leaf is presented, as when the intermediate is a trust anchor or is fetched from the AIA extension
+        X509Certificate[] leafOnly = { load("dv-g3b-emudhra-chain.pem").get(0) };
+
+        CertificateException e = assertThrows(CertificateException.class, () -> DistrustedCertificates.checkChain(leafOnly));
+        assertTrue(e.getMessage(), e.getMessage().contains("EM DV TLS CA - G3B"));
+
+        AcceptingExtendedTrustManager delegate = new AcceptingExtendedTrustManager();
+        X509ExtendedTrustManager tm = (X509ExtendedTrustManager) DistrustedCertificates.wrap(new TrustManager[] { delegate })[0];
+        assertThrows(CertificateException.class, () -> tm.checkServerTrusted(leafOnly, "ECDHE_ECDSA", (SSLEngine) null));
+        assertEquals(0, delegate.calls.get());
+    }
+
+    @Test
+    public void testCertPathValidationFailsWithDistrustedTrustAnchor() throws Exception {
+        List<X509Certificate> chain = load("dv-g3b-emudhra-chain.pem");
+        CertPath leafOnly = CertificateFactory.getInstance("X.509").generateCertPath(List.of(chain.get(0)));
+        PKIXParameters params = new PKIXParameters(Set.of(new TrustAnchor(chain.get(1), null)));
+        params.setRevocationEnabled(false);
+        params.setDate(VALIDATION_DATE);
+        CertPathValidator validator = CertPathValidator.getInstance("PKIX");
+
+        assertNotNull(validator.validate(leafOnly, params));
+
+        params.addCertPathChecker(DistrustedCertificates.certPathChecker());
+        assertThrows(CertPathValidatorException.class, () -> validator.validate(leafOnly, params));
     }
 
     @Test
@@ -207,7 +254,7 @@ public class DistrustedCertificatesTest {
         assertThrows(CertificateException.class, () -> tm.checkClientTrusted(chain, "ECDHE_ECDSA"));
         assertEquals(0, calls.get());
 
-        tm.checkServerTrusted(new X509Certificate[] { chain[0] }, "ECDHE_ECDSA");
+        tm.checkServerTrusted(load("emsign-ecc-root-ca-g3.pem").toArray(X509Certificate[]::new), "ECDHE_ECDSA");
         assertEquals(1, calls.get());
     }
 

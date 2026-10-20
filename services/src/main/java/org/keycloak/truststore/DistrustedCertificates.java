@@ -18,27 +18,34 @@
 package org.keycloak.truststore;
 
 import java.net.Socket;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.X509Certificate;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * Certificates that are never trusted, regardless of the configured truststores.
@@ -49,20 +56,33 @@ import javax.net.ssl.X509TrustManager;
 public final class DistrustedCertificates {
 
     /**
-     * SHA-256 hashes of the SubjectPublicKeyInfo of the eMudhra intermediate CAs whose private keys were
-     * compromised in October 2026, see https://emudhra.we-have-a-problem.com/. Matching on the key covers
-     * every certificate issued for it, including the cross-signs by Sectigo's AAA Certificate Services.
+     * The eMudhra intermediate CAs whose private keys were compromised in October 2026, see
+     * https://emudhra.we-have-a-problem.com/, with their SubjectPublicKeyInfo. Matching on the key covers every
+     * certificate issued for it, including the cross-signs by Sectigo's AAA Certificate Services and copies with a
+     * re-encoded signature.
      */
-    private static final Set<String> DISTRUSTED_SPKI_SHA256 = Set.of(
-            "EBED6475C2C2D80FCB199F3FE8DD6E6B3CE60B77EB15D4E42C3DEC0C6F5B5105", // EM DV TLS CA - G3B
-            "49DD353DC2B919A3770645117D0E60C16115E7D1BC259EEFE734B00EA434FE5F", // EM DV TLS CA - G3C
-            "43BFFA19D6EF651451F6841E019931E96F6F2EAEFF28AB4B6F1CE4576DE2717B", // EM OV TLS CA - G3B
-            "63ECEFEE431D49523BC1136C4E72D0206A477086CAF606CD5CF025686C109CF8", // EM OV TLS CA - G3C
-            "E0254C7FCDC265E2F0F8A428DABB75AB4AE039B4872D62F5EE57F0877D5A8A41", // EM EV TLS CA - G3B
-            "5C0660A2B164910D8FF589C18E14552E9E0EC237DCEFE2CB736D41A4811F81A0", // EM EV TLS CA - G3C
-            "EC4FFA1AD0AC88081314B7AAFFEF6A91F97CD57291BB5BA686C5415F5EB4F6B6", // EM OV CS CA - G3B
-            "92C063D67E8F14DB71D288E11266FFDAF69CBF115F7BAB14F3BC2F68D25E0E30"  // EM OV CS CA - G3C
+    private static final List<DistrustedKey> DISTRUSTED_KEYS = List.of(
+            new DistrustedKey("CN=EM DV TLS CA - G3B,O=eMudhra BV,C=NL",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE557ZwEqXc8RzXlERHahawr1eZKs3S4DhLLwgOOweTw47gS/JhZ4eZ6+wTi+LyX90hbplqpEe6KTkW2LVzAPVa+Z4s8OMtNyTfKJGDiOEU8iSk10p1E+R4VYGtjzO2rRo"),
+            new DistrustedKey("CN=EM DV TLS CA - G3C,O=eMudhra Inc,C=US",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEOnp4YsjETTJN3WkDOmeCwO/u/kBV5ooSP6A3G6O9kZRRTuFypDPjYw8CvRiAN9nlFJ+bd9uUooHfmHsv6oiLdL3+j9pMEJnubKGVZv4+8OX2sJpVbMyLpQVh3xsqRB0B"),
+            new DistrustedKey("CN=EM OV TLS CA - G3B,O=eMudhra BV,C=NL",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEc4l6oOs8/cqLEkAv+vCrxOEhK6+N7neKye4tbbg/rCgMXgVjiueirNccMiqONhzeufacQwK53Y1z0cxsqrLMCu5OIWzped1Rikr0tiblaEzdZYA37QyFTkzBL0z4ZG0N"),
+            new DistrustedKey("CN=EM OV TLS CA - G3C,O=eMudhra Inc,C=US",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEE4JRzVKskpjByKrZdzId65fnCb0LTKCspV3IrVHc/J0ViaFZfjpRIOHv1jHGPhg1ysrimGmmLhYx6KKBgatWYW3EXZGKvAnzqw5jz3kqpNztc4e+N7ulaVSfHAKycO1n"),
+            new DistrustedKey("CN=EM EV TLS CA - G3B,O=eMudhra BV,C=NL",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEJduoWmTTl9oLEFLp6lRuSHvv6pydnWigxerc/u91ppu11vwB9Cv7ym60C81kwHZ+Nv/QXZeoE8WqDGyVMOec9fCGZGjxOAZCCqXIUYQLHiUlQOeQ5LZUw4Uu1krx6GV9"),
+            new DistrustedKey("CN=EM EV TLS CA - G3C,O=eMudhra Inc,C=US",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAELVboKab7gsZKRpfZYK+VHpBnrpH5JtNDBtpIqKrreGm2pn5tJ0JuBEKqA7NuGYjf9jZRTuHPB/W6Sz/yoGZFrn0x1YZq0xqj0kbrCzF37pnLdWbFFs50gIpmj5HwxH/K"),
+            new DistrustedKey("CN=EM OV CS CA - G3B,O=eMudhra BV,C=NL",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEqrsPsGZqz88B+tUr/P1MK/LLPDSX3nOVDlgZth/mlQmHQcjEkUObNKBDHK/+W/m0wcjorgAB+fTcitgsWfNjnpbNbD1NsM7+wmw9YlF7N3YTcnQ/jordd7EAZPKr5eBQ"),
+            new DistrustedKey("CN=EM OV CS CA - G3C,O=eMudhra Inc,C=US",
+                    "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEufDgY0cCppymqt1EPP1ixBubpLIJJGl9eXTnaRoSb7lq+z40wv07xfSDBh8mXcKlhDY0cyNRBDayjwTzhiNjBnmA4lA+AlMtZUYjWnFlolmh70lvdBtf3ud4cgjkuPrv")
     );
+
+    private static final Set<String> DISTRUSTED_SPKI_SHA256 = DISTRUSTED_KEYS.stream()
+            .map(DistrustedKey::spkiSha256)
+            .collect(Collectors.toUnmodifiableSet());
 
     /**
      * SHA-256 fingerprints of the known certificates for the keys above. These do not depend on how a
@@ -103,16 +123,20 @@ public final class DistrustedCertificates {
     }
 
     /**
-     * @throws CertificateException if any certificate in the chain is distrusted
+     * Rejects chains that contain a distrusted certificate, or a certificate issued with a distrusted key. The
+     * latter covers chains where the distrusted certificate is not presented, for example because it is a trust
+     * anchor, it is fetched from the AIA extension, or the chain could not be rebuilt.
+     *
+     * @throws CertificateException if the chain is rejected
      */
     public static void checkChain(X509Certificate[] chain) throws CertificateException {
         if (chain == null) {
             return;
         }
         for (X509Certificate certificate : chain) {
-            if (isDistrusted(certificate)) {
-                throw new CertificateException("Certificate chain contains a distrusted certificate: "
-                        + certificate.getSubjectX500Principal().getName());
+            String reason = getDistrustReason(certificate);
+            if (reason != null) {
+                throw new CertificateException("Certificate chain contains a " + reason);
             }
         }
     }
@@ -141,7 +165,7 @@ public final class DistrustedCertificates {
     }
 
     /**
-     * Wraps each {@link X509TrustManager} so that it also rejects chains containing a distrusted certificate.
+     * Wraps each {@link X509TrustManager} so that it also rejects chains as described in {@link #checkChain}.
      */
     public static TrustManager[] wrap(TrustManager[] trustManagers) {
         if (trustManagers == null) {
@@ -166,6 +190,47 @@ public final class DistrustedCertificates {
      */
     public static PKIXCertPathChecker certPathChecker() {
         return new DistrustedCertPathChecker();
+    }
+
+    private static String getDistrustReason(Certificate certificate) {
+        if (isDistrusted(certificate)) {
+            return "distrusted certificate: " + getSubjectName(certificate);
+        }
+        if (certificate instanceof X509Certificate x509Cert && isIssuedByDistrustedKey(x509Cert)) {
+            return "certificate issued by a distrusted certificate: " + x509Cert.getIssuerX500Principal().getName();
+        }
+        return null;
+    }
+
+    private static boolean isIssuedByDistrustedKey(X509Certificate certificate) {
+        for (DistrustedKey key : DISTRUSTED_KEYS) {
+            // paths are built by name, so a certificate can only chain to the key if it names its subject as issuer
+            if (key.subject().equals(certificate.getIssuerX500Principal()) && isSignedBy(certificate, key.publicKey())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSignedBy(X509Certificate certificate, PublicKey publicKey) {
+        try {
+            certificate.verify(publicKey);
+            return true;
+        } catch (GeneralSecurityException e) {
+            return false;
+        }
+    }
+
+    private static String getSubjectName(Certificate certificate) {
+        return certificate instanceof X509Certificate x509Cert ? x509Cert.getSubjectX500Principal().getName() : certificate.getType();
+    }
+
+    private static PublicKey decodePublicKey(String spki) {
+        try {
+            return KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(spki)));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Failed to decode distrusted public key", e);
+        }
     }
 
     private static List<X509Certificate> getAcceptedIssuers(TrustManager[] trustManagers) {
@@ -204,10 +269,17 @@ public final class DistrustedCertificates {
 
         @Override
         public void check(Certificate cert, Collection<String> unresolvedCritExts) throws CertPathValidatorException {
-            if (isDistrusted(cert)) {
-                String name = cert instanceof X509Certificate x509Cert ? x509Cert.getSubjectX500Principal().getName() : cert.getType();
-                throw new CertPathValidatorException("Distrusted certificate: " + name);
+            String reason = getDistrustReason(cert);
+            if (reason != null) {
+                throw new CertPathValidatorException("Certification path contains a " + reason);
             }
+        }
+    }
+
+    private record DistrustedKey(X500Principal subject, PublicKey publicKey, String spkiSha256) {
+
+        private DistrustedKey(String subject, String spki) {
+            this(new X500Principal(subject), decodePublicKey(spki), sha256(Base64.getDecoder().decode(spki)));
         }
     }
 
