@@ -7,6 +7,7 @@ import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation.js";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
@@ -796,6 +797,59 @@ class AdminClient {
         resourceId: foundResource._id,
       });
     }
+  }
+
+  async #findClientByClientId(clientId: string, realm: string) {
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    return client;
+  }
+
+  async createAuthorizationScope(
+    clientId: string,
+    scope: ScopeRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = scope;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createAuthorizationScope(
+      { id: client.id!, realm },
+      payload,
+    );
+  }
+
+  async createAuthzPolicy(
+    clientId: string,
+    policy: PolicyRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = policy;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createPolicy(
+      { id: client.id!, type: payload.type!, realm },
+      payload,
+    );
+  }
+
+  async createAuthzPermission(
+    clientId: string,
+    permission: PolicyRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = permission;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createPermission(
+      { id: client.id!, type: payload.type!, realm },
+      payload,
+    );
   }
 
   async findUserByUsername(
