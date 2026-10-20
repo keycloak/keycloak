@@ -180,7 +180,7 @@ public class XMLTimeUtil {
      */
     public static Duration parseAsDuration(String timeValue) {
         if (timeValue == null) {
-            PicketLinkLoggerFactory.getLogger().nullArgumentError("duration time");
+            throw logger.nullArgumentError("duration time");
         }
 
         DatatypeFactory factory = DATATYPE_FACTORY.get();
@@ -205,6 +205,10 @@ public class XMLTimeUtil {
      * @return
      */
     public static XMLGregorianCalendar parse(String timeString) {
+        if (timeString == null) {
+            throw logger.nullArgumentError("timeString");
+        }
+
         DatatypeFactory factory = DATATYPE_FACTORY.get();
         return factory.newXMLGregorianCalendar(timeString);
     }
