@@ -261,6 +261,82 @@ public class OutboxDrainerTaskTests {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void tick_waitsForDeliveryWorkersWhenInterrupted() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant base = Instant.now().minusSeconds(100);
+            for (String owner : List.of("owner-i1", "owner-i2", "owner-i3")) {
+                persistRow(session, realmId, owner, "deliver-slow-0", 0, base);
+                persistRow(session, realmId, owner, "deliver-slow-1", 0, base.plusSeconds(1));
+            }
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null,
+                    Duration.ofMinutes(5), null, null, 3);
+            OutboxDrainerTask task = new OutboxDrainerTask(config, handler, OutboxStore::new);
+            boolean[] interruptedAfterRun = new boolean[1];
+            Thread tick = new Thread(() -> {
+                task.run(session);
+                interruptedAfterRun[0] = Thread.currentThread().isInterrupted();
+            }, "test-tick");
+            tick.start();
+            try {
+                Thread.sleep(50);
+                tick.interrupt();
+                tick.join(10_000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            em(session).clear();
+            OutboxStore store = new OutboxStore(session);
+            Map<String, Object> out = new LinkedHashMap<>();
+            int delivered = 0;
+            for (String owner : List.of("owner-i1", "owner-i2", "owner-i3")) {
+                delivered += store.countForOwnerByStatus(TEST_KIND, owner, OutboxEntryStatus.DELIVERED);
+            }
+            out.put("deliveredRows", delivered);
+            out.put("tickAlive", tick.isAlive());
+            out.put("interruptedAfterRun", interruptedAfterRun[0]);
+            out.put("summary", handler.summary);
+            return out;
+        }, Map.class);
+
+        Assertions.assertEquals(false, result.get("tickAlive"));
+        Assertions.assertEquals(6, result.get("deliveredRows"), "every worker finished before the tick returned");
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(6, summary.get("delivered"), "the summary saw every worker's result");
+        Assertions.assertEquals(true, result.get("interruptedAfterRun"), "the interrupt flag is restored");
+    }
+
+    @Test
+    public void tick_expiryCallbacksRunInSeparateTransactions() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant old = Instant.now().minus(Duration.ofDays(3));
+            Instant notDue = Instant.now().plusSeconds(3600);
+            persistRow(session, realmId, "owner-drain", "stale-a", 0, notDue, OutboxEntryStatus.PENDING, old);
+            persistRow(session, realmId, "owner-drain", "stale-b", 0, notDue, OutboxEntryStatus.PENDING, old);
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, Duration.ofDays(1));
+            JpaFailingListener listener = new JpaFailingListener();
+            new OutboxDrainerTask(config, new ScriptedHandler(), OutboxStore::new, listener).run(session);
+            Map<String, Object> out = snapshot(session);
+            out.put("deadLetterCallbacks", listener.deadLetterCallbacks);
+            return out;
+        }, Map.class);
+
+        Assertions.assertEquals("DEAD_LETTER", result.get("status.stale-a"));
+        Assertions.assertEquals("DEAD_LETTER", result.get("status.stale-b"));
+        Assertions.assertEquals(2, result.get("deadLetterCallbacks"), "the second callback runs although the first broke its transaction");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void tick_leavesRowsLeasedByAnotherTickAlone() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
@@ -691,8 +767,16 @@ public class OutboxDrainerTaskTests {
     /** Fails with a persistence exception, which marks the transaction it runs in rollback-only. */
     public static class JpaFailingListener implements OutboxDrainerListener, Serializable {
 
+        int deadLetterCallbacks;
+
         @Override
         public void onDelivered(KeycloakSession session, OutboxEntry row) {
+            em(session).createNativeQuery("SELECT 1 FROM NO_SUCH_OUTBOX_TABLE").getResultList();
+        }
+
+        @Override
+        public void onDeadLetter(KeycloakSession session, OutboxEntry row, DeadLetterCause cause, String reason) {
+            deadLetterCallbacks++;
             em(session).createNativeQuery("SELECT 1 FROM NO_SUCH_OUTBOX_TABLE").getResultList();
         }
     }
