@@ -206,6 +206,77 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private final String TEST_CLIENT_PASSWORD = "password";
 
     @Test
+    public void testBackchannelAuthenticationRequestFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(false, false);
+    }
+
+    @Test
+    public void testSignedAuthenticationRequestFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(true, false);
+    }
+
+    @Test
+    public void testRequestUriFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(true, true);
+    }
+
+    private void testAuthenticationRequestFiltersReservedClaims(boolean signedRequest, boolean useRequestUri) throws Exception {
+        String username = "nutzername-rot";
+        String userId = managedRealm.admin().users().searchByUsername(username, true).get(0).getId();
+        String otherUserId = managedRealm.admin().users().searchByUsername("nutzername-gelb", true).get(0).getId();
+        String bindingMessage = "reserved-claims";
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        try {
+            prepareCIBASettings(clientResource, clientRep);
+            Map<String, String> additionalParameters = new HashMap<>();
+            additionalParameters.put("user_device", "mobile");
+
+            if (signedRequest) {
+                // In a signed request object the reserved names are legitimate JWT claims. A forged
+                // "sub"/"typ" is dropped and the server-controlled subject is preserved, so the request
+                // still succeeds.
+                AuthorizationEndpointRequestObject requestObject = createValidSharedAuthenticationRequest();
+                requestObject.setLoginHint(username);
+                requestObject.setBindingMessage(bindingMessage);
+                requestObject.subject(otherUserId);
+                requestObject.type("forged-type");
+                registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, Algorithm.RS256, useRequestUri);
+
+                AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME,
+                        TEST_CLIENT_PASSWORD, username, bindingMessage, null, additionalParameters);
+                TestAuthenticationChannelRequest channelRequest = doAuthenticationChannelRequest(bindingMessage);
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get(JsonWebToken.SUBJECT), nullValue());
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get(JsonWebToken.TYPE), nullValue());
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+                doAuthenticationChannelCallback(channelRequest);
+
+                AccessTokenResponse tokenResponse = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+                AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+                assertThat(accessToken.getSubject(), is(equalTo(userId)));
+                assertThat(oauth.verifyIDToken(tokenResponse.getIdToken()).getSubject(), is(equalTo(userId)));
+                doLogoutByRefreshToken(tokenResponse.getRefreshToken(), accessToken.getSessionId(), userId, false);
+            } else {
+                // In a form-encoded request body reserved protocol claim names are never valid, so the
+                // request is rejected outright and never reaches the authentication channel.
+                additionalParameters.put(JsonWebToken.SUBJECT, otherUserId);
+                additionalParameters.put(JsonWebToken.TYPE, "forged-type");
+
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username)
+                        .bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
+                assertThat(response.getStatusCode(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
+                assertThat(response.getAuthReqId(), nullValue());
+                assertThat("Rejected claims must not reach the authentication channel",
+                        doAuthenticationChannelRequest(bindingMessage), nullValue());
+            }
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    @Test
     public void testAttackerClientUseVictimAuthReqIdAttack() throws Exception {
         ClientResource victimClientResource = null;
         ClientResource attackerClientResource = null;
