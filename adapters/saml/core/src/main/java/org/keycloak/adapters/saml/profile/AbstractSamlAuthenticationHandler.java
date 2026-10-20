@@ -205,6 +205,18 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 }
             }
             LogoutRequestType logout = (LogoutRequestType) requestAbstractType;
+
+            // Validate logout request issuer matches configured IdP entity ID
+            // SAML 2.0 Profiles spec (section 4.4.3.1) requires Issuer on LogoutRequest
+            NameIDType requestIssuer = logout.getIssuer();
+            if (requestIssuer == null || requestIssuer.getValue() == null
+                    || !requestIssuer.getValue().equals(deployment.getIDP().getEntityID())) {
+                log.errorf("LogoutRequest issuer '%s' does not match configured IdP entity ID '%s'",
+                        requestIssuer != null ? requestIssuer.getValue() : null,
+                        deployment.getIDP().getEntityID());
+                return failedTerminal();
+            }
+
             return logoutRequest(logout, relayState);
 
         } else {
@@ -419,6 +431,27 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 log.error("Error processing validation of SAML assertion: " + e.getMessage());
                 return failed(CHALLENGE_EXTRACTION_FAILURE);
             }
+        }
+
+        // Validate that assertion and response issuers match the configured IdP entity ID
+        String configuredIdpEntityId = deployment.getIDP().getEntityID();
+
+        // Response-level Issuer is optional per SAML 2.0 spec, but if present must match
+        NameIDType responseIssuer = responseType.getIssuer();
+        if (responseIssuer != null && responseIssuer.getValue() != null
+                && !responseIssuer.getValue().equals(configuredIdpEntityId)) {
+            log.errorf("Response issuer '%s' does not match configured IdP entity ID '%s'",
+                    responseIssuer.getValue(), configuredIdpEntityId);
+            return failed(CHALLENGE_EXTRACTION_FAILURE);
+        }
+
+        // Assertion Issuer is required per SAML 2.0 spec and must match
+        NameIDType assertionIssuer = assertion.getIssuer();
+        if (assertionIssuer == null || assertionIssuer.getValue() == null
+                || !assertionIssuer.getValue().equals(configuredIdpEntityId)) {
+            log.errorf("Assertion issuer '%s' does not match configured IdP entity ID '%s'",
+                    assertionIssuer != null ? assertionIssuer.getValue() : null, configuredIdpEntityId);
+            return failed(CHALLENGE_EXTRACTION_FAILURE);
         }
 
         SubjectType subject = assertion.getSubject();

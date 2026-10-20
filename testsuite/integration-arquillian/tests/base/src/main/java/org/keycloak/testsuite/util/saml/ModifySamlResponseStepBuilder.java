@@ -1,13 +1,13 @@
 /*
  * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,25 +16,36 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-import org.keycloak.testsuite.util.SamlClient.Binding;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import javax.xml.crypto.dsig.XMLSignature;
+
 import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -52,11 +63,14 @@ import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 
@@ -69,13 +83,52 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     private Binding targetBinding;
     private Supplier<String> documentSupplier;
 
+    private String signingPrivateKeyPem;
+    private String signingPublicKeyPem;
+    private String signingCertificatePem;
+    private boolean signAssertions;
+    private SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA256;
+
     public ModifySamlResponseStepBuilder(Binding binding, SamlClientBuilder clientBuilder) {
         super(clientBuilder);
         this.binding = binding;
         this.targetBinding = binding;
     }
 
-    // TODO: support for signing
+    /**
+     * Configures POST-binding document signing with the given keys using RSA_SHA256.
+     * Replaces the existing response signature after applying all transformations.
+     */
+    public ModifySamlResponseStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem) {
+        return signWith(signingPrivateKeyPem, signingPublicKeyPem, null);
+    }
+
+    /**
+     * Configures document signing with the given PEM-encoded keys and optional certificate.
+     */
+    public ModifySamlResponseStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem, String signingCertificatePem) {
+        this.signingPrivateKeyPem = signingPrivateKeyPem;
+        this.signingPublicKeyPem = signingPublicKeyPem;
+        this.signingCertificatePem = signingCertificatePem;
+        return this;
+    }
+
+    /**
+     * Overrides the default RSA_SHA256 signature algorithm.
+     */
+    public ModifySamlResponseStepBuilder signatureAlgorithm(SignatureAlgorithm signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
+        return this;
+    }
+
+    /**
+     * Replaces assertion signatures as well as the response signature when signing.
+     */
+    public ModifySamlResponseStepBuilder signAssertions() {
+        this.signAssertions = true;
+        return this;
+    }
+
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
         switch (binding) {
@@ -84,7 +137,7 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
 
             case POST:
                 return handlePostBinding(currentResponse);
-                
+
             case ARTIFACT_RESPONSE:
                 return handleArtifactResponse(currentResponse);
         }
@@ -189,7 +242,7 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
             InputStream decoded = RedirectBindingUtil.base64DeflateDecode(base64EncodedSamlDoc);
             samlDoc = IOUtils.toString(decoded, GeneralConstants.SAML_CHARSET);
             IOUtils.closeQuietly(decoded);
-            
+
             uri = this.targetUri != null
                ? this.targetUri
                : locationUri;
@@ -255,6 +308,13 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
             return null;
         }
 
+        if (signingPrivateKeyPem != null) {
+            if (targetBinding != Binding.POST) {
+                throw new IllegalStateException("Re-signing is supported only for POST binding");
+            }
+            transformed = signDocument(transformed);
+        }
+
         switch (this.targetBinding) {
             case POST:
                 return createPostRequest(locationUri, attributeName, transformed, parameters);
@@ -262,6 +322,49 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
                 return createRedirectRequest(locationUri, attributeName, transformed, parameters);
         }
         throw new RuntimeException("Unknown target binding for " + ModifySamlResponseStepBuilder.class.getName());
+    }
+
+    private String signDocument(String samlDocString) throws Exception {
+        Document document = DocumentUtil.getDocument(samlDocString);
+
+        PrivateKey privateKey = KeyUtils.privateKeyFromString(signingPrivateKeyPem);
+        PublicKey publicKey = signingPublicKeyPem != null ? KeyUtils.publicKeyFromString(signingPublicKeyPem) : null;
+        X509Certificate cert = signingCertificatePem != null ? PemUtils.decodeCertificate(signingCertificatePem) : null;
+        if (publicKey == null && cert != null) {
+            publicKey = cert.getPublicKey();
+        }
+
+        removeSignature(document.getDocumentElement());
+        if (signAssertions) {
+            for (Node child = document.getDocumentElement().getFirstChild(); child != null; child = child.getNextSibling()) {
+                if ("Assertion".equals(child.getLocalName())
+                        && "urn:oasis:names:tc:SAML:2.0:assertion".equals(child.getNamespaceURI())) {
+                    removeSignature(child);
+                }
+            }
+        }
+
+        BaseSAML2BindingBuilder<?> builder = new BaseSAML2BindingBuilder<>()
+                .signatureAlgorithm(signatureAlgorithm)
+                .signWith(org.keycloak.common.util.KeyUtils.createKeyId(publicKey), privateKey, publicKey, cert)
+                .signDocument();
+        if (signAssertions) {
+            builder.signAssertions();
+        }
+        // POST binding signs assertions first, then the enclosing response.
+        builder.postBinding(document);
+
+        return DocumentUtil.getDocumentAsString(document);
+    }
+
+    private static void removeSignature(Node parent) {
+        for (Node child = parent.getFirstChild(); child != null;) {
+            Node next = child.getNextSibling();
+            if ("Signature".equals(child.getLocalName()) && XMLSignature.XMLNS.equals(child.getNamespaceURI())) {
+                parent.removeChild(child);
+            }
+            child = next;
+        }
     }
 
     protected HttpUriRequest createRedirectRequest(URI locationUri, String attributeName, String transformed, List<NameValuePair> parameters) throws IOException, URISyntaxException {

@@ -68,9 +68,10 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
                     .append(")\n\n");
         }
         
+        String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(baseUri)).build(realm.getName()).toString();
         builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                 .append(quote(entityId))
-                .append("/IDP=idp/:add( \\\n    SingleSignOnService={ \\\n        signRequest=")
+                .append("/IDP=").append(quote(idpEntityId)).append("/:add( \\\n    SingleSignOnService={ \\\n        signRequest=")
                 .append(Boolean.toString(samlClient.requiresClientSignature()))
                 .append(", \\\n        validateResponseSignature=")
                 .append(Boolean.toString(samlClient.requiresRealmSignature()))
@@ -95,13 +96,13 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
         if (samlClient.requiresClientSignature()) {
             builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                     .append(quote(entityId))
-                    .append("/IDP=idp/:write-attribute(name=signatureAlgorithm,value=")
+                    .append("/IDP=").append(quote(idpEntityId)).append("/:write-attribute(name=signatureAlgorithm,value=")
                     .append(samlClient.getSignatureAlgorithm())
                     .append(")\n\n");
             if (samlClient.getCanonicalizationMethod() != null) {
                 builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                         .append(quote(entityId))
-                        .append("/IDP=idp/:write-attribute(name=signatureCanonicalizationMethod,value=")
+                        .append("/IDP=").append(quote(idpEntityId)).append("/:write-attribute(name=signatureCanonicalizationMethod,value=")
                         .append(samlClient.getCanonicalizationMethod())
                         .append(")\n");
             }

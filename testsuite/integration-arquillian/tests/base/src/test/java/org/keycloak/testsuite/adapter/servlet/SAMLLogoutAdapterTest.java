@@ -200,7 +200,7 @@ public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {
             .transformObject(this::extractNameId)
             .build()
 
-          .logoutRequest(clientSamlEndpoint, "http://no.one.cares/", binding)
+          .logoutRequest(clientSamlEndpoint, getAuthServerRoot() + "realms/demo", binding)
             .nameId(nameIdRef::get)
             .sessionIndex(sessionIndexRef::get)
             .apply(logoutReqUpdater)

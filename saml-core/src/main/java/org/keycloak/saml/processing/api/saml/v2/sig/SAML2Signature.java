@@ -186,14 +186,16 @@ public class SAML2Signature {
      * @return
      */
     public Node getNextSiblingOfIssuer(Document doc) {
-        // Find the sibling of Issuer
-        NodeList nl = doc.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get());
-        if (nl.getLength() > 0) {
-            Node issuer = nl.item(0);
-
-            return issuer.getNextSibling();
+        // Only the issuer of the element being signed determines signature placement.
+        // A Response may omit its issuer while containing an Assertion with an issuer.
+        Element root = doc.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if (JBossSAMLConstants.ISSUER.get().equals(child.getLocalName())
+                    && JBossSAMLURIConstants.ASSERTION_NSURI.get().equals(child.getNamespaceURI())) {
+                return child.getNextSibling();
+            }
         }
-        return null;
+        return root.getFirstChild();
     }
 
     /**
