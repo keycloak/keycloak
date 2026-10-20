@@ -39,3 +39,11 @@ Configure the accepted credential types (`vct`) in the new *Default Credential T
 A DCQL query can still be configured for requests that mappers cannot express, such as claim sets.
 It takes precedence over the inferred query and is now validated when the identity provider is saved.
 Only a single credential in the `dc+sd-jwt` format can be requested.
+
+= Transactional outbox
+
+== Outbox shared by multiple consumers
+
+The generic transactional outbox that backs the push delivery of the experimental SSF transmitter can now be shared by several consumers, such as an outbound SCIM provisioning extension.
+Every consumer's drainer holds its own cluster lock, deliveries run outside of database transactions under a per-entry lease, different destinations are delivered in parallel with a per-destination batch cap, and a generic Micrometer listener publishes `keycloak.outbox.*` meters.
+The `OUTBOX_ENTRY` timestamps are converted to epoch milliseconds; see the upgrading guide.

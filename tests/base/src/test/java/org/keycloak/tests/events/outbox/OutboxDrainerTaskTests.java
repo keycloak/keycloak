@@ -337,6 +337,65 @@ public class OutboxDrainerTaskTests {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void tick_runsTheResultEffectInTheRecordTransaction() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant base = Instant.now().minusSeconds(10);
+            persistRow(session, realmId, "effect", 0, base);
+            persistRow(session, realmId, "effect-fails", 0, base.plusSeconds(1));
+        });
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
+            new OutboxDrainerTask(config, handler, OutboxStore::new).run(session);
+
+            Map<String, Object> out = snapshot(session);
+            out.put("summary", handler.summary);
+            out.put("events", handler.events);
+            return out;
+        }, Map.class);
+
+        Assertions.assertEquals("DELIVERED", result.get("status.effect"));
+        Assertions.assertEquals("effect-ran", result.get("metadata.effect"), "the effect committed with the transition");
+
+        Assertions.assertEquals("PENDING", result.get("status.effect-fails"), "a failing effect rolls the record back");
+        Assertions.assertEquals(0, result.get("attempts.effect-fails"));
+        Assertions.assertNotNull(result.get("claimToken.effect-fails"), "the row stays leased and is retried after the lease");
+        Map<String, Object> summary = (Map<String, Object>) result.get("summary");
+        Assertions.assertEquals(2, summary.get("processed"));
+        Assertions.assertEquals(1, summary.get("delivered"), "the rolled-back record is not counted");
+        List<String> events = (List<String>) result.get("events");
+        Assertions.assertTrue(events.contains("delivered:effect"), events.toString());
+        Assertions.assertFalse(events.contains("delivered:effect-fails"), events.toString());
+    }
+
+    @Test
+    public void tick_compositeListenerForwardsToEveryDelegateAndSurvivesABrokenOne() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> persistRow(session, realmId, "deliver", 0, Instant.now().minusSeconds(1)));
+
+        Map<String, Object> result = runOnServer.fetch(session -> {
+            ScriptedHandler handler = new ScriptedHandler();
+            OutboxConfig config = new OutboxConfig(TEST_KIND, 50, new OutboxBackoff(), null, null, null);
+            OutboxDrainerListener listener = OutboxDrainerListener.composite(new BrokenListener(), handler);
+            new OutboxDrainerTask(config, handler, OutboxStore::new, listener).run(session);
+
+            Map<String, Object> out = snapshot(session);
+            out.put("events", handler.events);
+            return out;
+        }, Map.class);
+
+        Assertions.assertEquals("DELIVERED", result.get("status.deliver"));
+        @SuppressWarnings("unchecked")
+        List<String> events = (List<String>) result.get("events");
+        Assertions.assertEquals("tickStart:test-kind", events.get(0), "the second delegate runs although the first threw: " + events);
+        Assertions.assertTrue(events.contains("delivered:deliver"), events.toString());
+        Assertions.assertEquals("tickEnd", events.get(events.size() - 1));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void tick_leavesRowsLeasedByAnotherTickAlone() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
@@ -626,6 +685,7 @@ public class OutboxDrainerTaskTests {
             out.put("attempts." + row.getCorrelationId(), row.getAttempts());
             out.put("lastError." + row.getCorrelationId(), row.getLastError());
             out.put("claimToken." + row.getCorrelationId(), row.getClaimToken());
+            out.put("metadata." + row.getCorrelationId(), row.getMetadata());
             out.put("dueLater." + row.getCorrelationId(), row.getNextAttemptAt().isAfter(Instant.now()));
         }
         return out;
@@ -665,6 +725,17 @@ public class OutboxDrainerTaskTests {
                     current.setClaimToken("other-tick");
                 });
                 return OutboxDelivery.settled(OutboxDeliveryResult.delivered());
+            }
+            if ("effect".equals(corr)) {
+                String id = row.getId();
+                return OutboxDelivery.settled(OutboxDeliveryResult.delivered()
+                        .withEffect(s -> new OutboxStore(s).updateMetadata(TEST_KIND, id, "effect-ran")));
+            }
+            if ("effect-fails".equals(corr)) {
+                return OutboxDelivery.settled(OutboxDeliveryResult.delivered()
+                        .withEffect(s -> {
+                            throw new IllegalStateException("scripted effect failure");
+                        }));
             }
             if ("status-kept".equals(corr)) {
                 // An admin operation that (wrongly) leaves the token in
