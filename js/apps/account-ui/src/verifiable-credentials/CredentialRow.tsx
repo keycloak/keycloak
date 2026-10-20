@@ -9,6 +9,9 @@ import {
   Flex,
   FlexItem,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
@@ -44,13 +47,22 @@ const RevokeDialog = ({
 }: RevokeDialogProps) => {
   if (!isOpen) return null;
 
+  const modalTitle = t("revokeVerifiableCredentialTitle");
+
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("revokeVerifiableCredentialTitle")}
-      isOpen={true}
+      isOpen
       onClose={onClose}
-      actions={[
+      aria-label={modalTitle}
+    >
+      <ModalHeader title={modalTitle} />
+      <ModalBody>
+        {t("deleteCredentialConfirm", {
+          credentialName,
+        })}
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           variant="danger"
@@ -60,15 +72,11 @@ const RevokeDialog = ({
           }}
         >
           {t("doRevoke")}
-        </Button>,
+        </Button>
         <Button key="cancel" variant="link" onClick={onClose}>
           {t("doCancel")}
-        </Button>,
-      ]}
-    >
-      {t("deleteCredentialConfirm", {
-        credentialName,
-      })}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
