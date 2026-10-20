@@ -75,8 +75,13 @@ import org.jboss.logging.Logger;
  *       ({@code claimed_until} = now + {@link OutboxConfig#claimLease()});
  *       rows with a live lease are not due for other ticks, and
  *       neither is any row of an owner that has a row in flight, so
- *       an owner is delivered by one tick at a time even when ticks
- *       overlap across nodes. After commit no row lock is held. With
+ *       an owner is delivered by one tick at a time even when a tick
+ *       outlives the cluster lock while delivering. That fence reads
+ *       committed leases; it does not serialize two claim
+ *       transactions running at the same instant, which is what the
+ *       cluster lock of {@link OutboxDrainerRunner} prevents: it is
+ *       held at least for the claim lease, taken right before the
+ *       claim. After commit no row lock is held. With
  *       {@link OutboxConfig#perOwnerBatchSize()} set the rows are taken
  *       owner by owner, oldest-waiting owner first and at most that
  *       many per owner per round, so one destination cannot fill the
@@ -361,16 +366,30 @@ public class OutboxDrainerTask implements ScheduledTask {
         while ((group = groups.poll()) != null) {
             processRows(factory, group, token, deadline, counters, unprocessed);
         }
+        // Every submitted worker is awaited, interruption or not: the
+        // tick must not move on to housekeeping, report its summary and
+        // release the cluster lock and the overlap guard while workers
+        // are still delivering. An interruption is remembered and the
+        // flag restored once the workers are done.
+        boolean interrupted = false;
         for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warnf("Outbox drainer interrupted while waiting for delivery workers, entryKind=%s", config.entryKind());
-                return;
-            } catch (ExecutionException e) {
-                log.warnf(e.getCause(), "Outbox delivery worker failed for entryKind=%s", config.entryKind());
+            while (true) {
+                try {
+                    future.get();
+                    break;
+                } catch (InterruptedException e) {
+                    if (!interrupted) {
+                        log.warnf("Outbox drainer interrupted while waiting for delivery workers — waiting for them to finish, entryKind=%s", config.entryKind());
+                    }
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    log.warnf(e.getCause(), "Outbox delivery worker failed for entryKind=%s", config.entryKind());
+                    break;
+                }
             }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -604,12 +623,8 @@ public class OutboxDrainerTask implements ScheduledTask {
             log.warnf(e, "Outbox housekeeping failed for entryKind=%s — retried on the next tick", config.entryKind());
         }
         counters.stalePromoted.set(expired.size());
-        if (!expired.isEmpty()) {
-            notifyRow(factory, s -> {
-                for (OutboxEntryEntity row : expired) {
-                    notify(() -> listener.onDeadLetter(s, row, OutboxDrainerListener.DeadLetterCause.PENDING_MAX_AGE, STALE_REASON));
-                }
-            });
+        for (OutboxEntryEntity row : expired) {
+            notifyRow(factory, s -> listener.onDeadLetter(s, row, OutboxDrainerListener.DeadLetterCause.PENDING_MAX_AGE, STALE_REASON));
         }
     }
 

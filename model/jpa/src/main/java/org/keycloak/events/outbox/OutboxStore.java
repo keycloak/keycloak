@@ -66,6 +66,13 @@ public class OutboxStore {
 
     protected final KeycloakSession session;
 
+    /**
+     * Token value for callers that hold no claim: non-empty (Oracle
+     * stores an empty string as NULL, which would disable the owner
+     * fence there) and not a UUID, so it matches no in-flight row.
+     */
+    static final String NO_TOKEN = "no-token";
+
     public OutboxStore(KeycloakSession session) {
         this.session = Objects.requireNonNull(session, "session");
     }
@@ -321,8 +328,7 @@ public class OutboxStore {
                 .setParameter("ownerId", ownerId)
                 .setParameter("status", OutboxEntryStatus.PENDING)
                 .setParameter("now", Instant.now().toEpochMilli())
-                // Tokens are UUIDs, so an empty string matches no in-flight row.
-                .setParameter("token", token == null ? "" : token)
+                .setParameter("token", token == null ? NO_TOKEN : token)
                 .setMaxResults(limit)
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE);
         skipLocked(query, "owner drain query");
