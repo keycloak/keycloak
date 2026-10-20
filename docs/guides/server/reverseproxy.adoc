@@ -313,6 +313,7 @@ Same risks as other tracing headers.
 
 |===
 
+[#_exposed_path_recommendations]
 === Exposed path recommendations
 
 When using a reverse proxy, {project_name} only requires certain paths to be exposed.
