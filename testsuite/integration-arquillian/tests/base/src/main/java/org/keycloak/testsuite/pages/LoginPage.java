@@ -84,6 +84,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(className = "instruction")
     private WebElement instruction;
 
+    @FindBy(id = "kc-form-login")
+    private WebElement formLogin;
+
     public void login(String username, String password) {
         clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);
@@ -276,6 +279,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public boolean isRememberMeChecked() {
         return rememberMe.isSelected();
+    }
+
+    public String getFormUrl() {
+        return formLogin.getDomAttribute("action");
     }
 
     /**
