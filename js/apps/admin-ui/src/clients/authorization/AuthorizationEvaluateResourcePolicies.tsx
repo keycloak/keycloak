@@ -36,6 +36,11 @@ export const AuthorizationEvaluateResourcePolicies = ({
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { clientId } = useParams<ClientParams>();
+  // Deny results copy scopes onto the result. Permit results leave that list
+  // empty and keep the scopes on the permission.
+  const scopes = outerPolicy.scopes?.length
+    ? outerPolicy.scopes
+    : outerPolicy.policy?.scopes;
 
   return (
     <Tbody key={idx} isExpanded={expanded}>
@@ -64,14 +69,13 @@ export const AuthorizationEvaluateResourcePolicies = ({
         </Td>
         <Td>{t(`${outerPolicy.policy?.decisionStrategy?.toLowerCase()}`)}</Td>
         <Td>
-          {outerPolicy.status === DecisionEffect.Permit
-            ? resource.policies?.[rowIndex]?.scopes?.join(", ")
+          {outerPolicy.status === DecisionEffect.Permit && scopes?.length
+            ? scopes.join(", ")
             : "-"}
         </Td>
         <Td>
-          {outerPolicy.status === DecisionEffect.Deny &&
-          resource.policies?.[rowIndex]?.scopes?.length
-            ? resource.policies[rowIndex].scopes.join(", ")
+          {outerPolicy.status === DecisionEffect.Deny && scopes?.length
+            ? scopes.join(", ")
             : "-"}
         </Td>
       </Tr>
