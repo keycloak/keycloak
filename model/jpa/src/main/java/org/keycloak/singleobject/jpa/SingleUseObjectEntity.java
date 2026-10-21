@@ -41,6 +41,15 @@ import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
                         " where expire <= :currentTime"
         ),
         @NamedQuery(
+                name = "deleteExpiredSingleUseObject",
+                query = "delete from SingleUseObjectEntity e where e.id = :id and e.expire <= :currentTime"
+        ),
+        @NamedQuery(
+                name = "insertIfAbsentSingleUseObject",
+                query = "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
+                        " on conflict (id) do nothing"
+        ),
+        @NamedQuery(
                 name = "updateIfNotExpiredSingleUseObject",
                 query = "update SingleUseObjectEntity set notes = :notes" +
                         " where id = :id and expire > :currentTime"

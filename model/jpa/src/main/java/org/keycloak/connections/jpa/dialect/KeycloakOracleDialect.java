@@ -24,12 +24,18 @@ import org.hibernate.sql.ast.SqlAstTranslator;
 import org.hibernate.sql.ast.SqlAstTranslatorFactory;
 import org.hibernate.sql.ast.spi.StandardSqlAstTranslatorFactory;
 import org.hibernate.sql.ast.tree.Statement;
+import org.hibernate.sql.ast.tree.insert.ConflictClause;
 import org.hibernate.sql.ast.tree.insert.InsertSelectStatement;
 import org.hibernate.sql.exec.spi.JdbcOperation;
 
 /**
- * Fixes Hibernate's Oracle dialect to correctly handle HQL {@code insert ... on conflict ... do nothing}
- * by emitting a MERGE statement instead of a plain INSERT that silently drops the conflict clause.
+ * Fixes Hibernate's Oracle dialect to correctly handle HQL {@code insert ... on conflict (...) do nothing}, which it
+ * would otherwise render as a plain INSERT that silently drops the conflict clause.
+ * <p>
+ * It renders an INSERT with the {@code IGNORE_ROW_ON_DUPKEY_INDEX} hint, so that a duplicate key is skipped and
+ * counted as 0 rows. Unlike a MERGE, this also holds when a concurrent transaction inserts the same key. The conflict
+ * columns must match a unique index. {@code do update} clauses are still rendered as MERGE, which fails with a unique
+ * constraint violation in that case.
  * <p>
  * See <a href="https://hibernate.atlassian.net/browse/HHH-20826">HHH-20826</a> for the upstream tracker.
  */
@@ -44,11 +50,29 @@ public class KeycloakOracleDialect extends OracleDialect {
                 return new OracleSqlAstTranslator<>(sessionFactory, statement) {
                     @Override
                     protected void visitInsertStatementOnly(InsertSelectStatement statement) {
-                        if (statement.getConflictClause() != null
-                                && !statement.getConflictClause().getConstraintColumnNames().isEmpty()) {
+                        ConflictClause conflictClause = statement.getConflictClause();
+                        if (conflictClause != null && !conflictClause.isDoNothing()
+                                && !conflictClause.getConstraintColumnNames().isEmpty()) {
                             visitInsertStatementEmulateMerge(statement);
                         } else {
                             super.visitInsertStatementOnly(statement);
+                        }
+                    }
+
+                    @Override
+                    protected void renderInsertCommand(InsertSelectStatement statement) {
+                        ConflictClause conflictClause = statement.getConflictClause();
+                        if (conflictClause != null && conflictClause.isDoNothing()
+                                && !conflictClause.getConstraintColumnNames().isEmpty()) {
+                            // The hint names the table as it appears in the statement, without a schema
+                            String table = statement.getTargetTable().getTableExpression();
+                            appendSql("insert /*+ IGNORE_ROW_ON_DUPKEY_INDEX(");
+                            appendSql(table.substring(table.lastIndexOf('.') + 1));
+                            appendSql('(');
+                            appendSql(String.join(",", conflictClause.getConstraintColumnNames()));
+                            appendSql(")) */ into ");
+                        } else {
+                            super.renderInsertCommand(statement);
                         }
                     }
                 };
