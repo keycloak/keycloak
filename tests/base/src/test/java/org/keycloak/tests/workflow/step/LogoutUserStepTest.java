@@ -57,9 +57,9 @@ import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.HttpServerUtil;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
@@ -110,6 +110,30 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
             createLogoutWorkflow(null);
             oauth.scope(null);
             login();
+
+            runScheduledSteps(Duration.ofMinutes(2));
+
+            LogoutToken logoutToken = logoutTokens.poll();
+            assertThat(logoutToken, notNullValue());
+            assertThat(logoutToken.getSubject(), is(userAlice.getId()));
+        } finally {
+            httpServer.removeContext(BACKCHANNEL_LOGOUT_PATH);
+        }
+    }
+
+    @Test
+    public void testBackchannelLogoutIsSentToRelativeUrl() {
+        BlockingQueue<LogoutToken> logoutTokens = receiveBackchannelLogouts(oauth.getClientId());
+
+        try {
+            createLogoutWorkflow(null);
+            oauth.scope(null);
+            login();
+
+            ClientRepresentation client = managedRealm.admin().clients().findByClientId(oauth.getClientId()).get(0);
+            client.setRootUrl(getHttpServerUrl());
+            client.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, BACKCHANNEL_LOGOUT_PATH);
+            managedRealm.admin().clients().get(client.getId()).update(client);
 
             runScheduledSteps(Duration.ofMinutes(2));
 
@@ -245,8 +269,7 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
             HttpServerUtil.sendResponse(exchange, 200, Map.of());
         });
 
-        String backchannelLogoutUrl = "http://" + httpServer.getAddress().getHostString() + ":"
-                + httpServer.getAddress().getPort() + BACKCHANNEL_LOGOUT_PATH;
+        String backchannelLogoutUrl = getHttpServerUrl() + BACKCHANNEL_LOGOUT_PATH;
         for (String clientId : clientIds) {
             ClientRepresentation client = managedRealm.admin().clients().findByClientId(clientId).get(0);
             client.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
@@ -254,6 +277,10 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
         }
 
         return logoutTokens;
+    }
+
+    private String getHttpServerUrl() {
+        return "http://" + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort();
     }
 
     private String getClientUuid() {
