@@ -17,6 +17,8 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -43,6 +45,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -124,6 +127,12 @@ public class ClientScopesResource {
     })
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        if (rep.getProtocolMappers() != null) {
+            Set<String> mapperTypes = rep.getProtocolMappers().stream()
+                    .map(ProtocolMapperRepresentation::getProtocolMapper)
+                    .collect(Collectors.toSet());
+            ProtocolMappersResource.requireManageProtocolMappers(auth, realm, mapperTypes);
+        }
         ClientScopeResource.validateClientScopeName(rep.getName());
         ClientScopeResource.validateClientScopeProtocol(session, rep.getProtocol());
         ClientScopeResource.validateClientScope(session, rep);

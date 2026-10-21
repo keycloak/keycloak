@@ -268,4 +268,11 @@ public final class Constants {
 
     // Suffix for "private key" client attribute. The attribute of this name should not be persisted to the DB and should not be displayed in admin events
     public static final String PRIVATE_KEY_ATTR_SUFFIX = "private.key";
+
+    /**
+     * Comma-separated list of protocol-mapper provider IDs that client administrators (users with permissions to manage client(s) or client scope(s), but not with permissions to manage-realm)
+     * are allowed to use when creating, updating, or deleting protocol mappers.
+     * If absent or empty, users without permissions to manage-realm cannot manage protocol mappers.
+     */
+    public static final String ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS = "allowedProtocolMapperTypesForClientAdministrators";
 }

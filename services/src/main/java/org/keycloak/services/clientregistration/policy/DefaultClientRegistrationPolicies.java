@@ -43,7 +43,7 @@ import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientReg
  */
 public class DefaultClientRegistrationPolicies {
 
-    private static String[] DEFAULT_ALLOWED_PROTOCOL_MAPPERS = {
+    private static final String[] DEFAULT_ALLOWED_PROTOCOL_MAPPERS = {
             UserAttributeStatementMapper.PROVIDER_ID,
             UserAttributeMapper.PROVIDER_ID,
             UserPropertyAttributeStatementMapper.PROVIDER_ID,
