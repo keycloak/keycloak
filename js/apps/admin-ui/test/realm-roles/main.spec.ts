@@ -56,6 +56,7 @@ test.describe.serial("Realm roles test", () => {
 
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
+    await assertNotificationMessage(page, "Role created");
     await goToRealmRoles(page);
 
     await clickCreateRoleButton(page);
