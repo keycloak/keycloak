@@ -434,6 +434,9 @@ public class BrokerTest extends AbstractSamlTest {
                   SubjectType.STSubType subType = new SubjectType.STSubType();
                   subType.addBaseID(nameId);
                   subject.setSubType(subType);
+                  // preserve the bearer subject confirmation built by SAML2LoginResponseBuilder so the
+                  // assertion remains valid; this test only exercises Conditions expiration handling
+                  a.getSubject().getConfirmation().forEach(subject::addConfirmation);
                   a.setSubject(subject);
 
                   ConditionsType conditions = a.getConditions();
