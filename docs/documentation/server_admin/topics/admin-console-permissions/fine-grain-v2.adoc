@@ -219,6 +219,12 @@ set of management operations:
 The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily. The administrator must also
 have user role mapping permissions on the user.
 
+WARNING: By default, the *manage* scope on the Clients resource type does not grant permission to create, update, or delete protocol
+mappers on clients or client scopes. Protocol mapper management requires permission to manage the realm itself.
+However, when updating a client or client scope, a delegated administrator is still allowed to proceed even if the request body contains
+`protocolMappers`, as long as no mapper was added, modified, or deleted compared to the existing ones.
+If a realm administrator wants delegated administrators with permissions to manage clients (or client scopes) to be able to create, update, or delete protocol mappers of individual clients (or client scopes), they can configure the allowed protocol mapper types via the **Allowed protocol mapper types for client administrators** option in **Realm settings**. If this option is not configured (which is the default), delegated client administrators cannot manage any protocol mappers.
+
 ===== Roles Resource Type
 
 The *Roles* realm resource type represents the roles in a realm. You can manage permissions for roles based on the following set of management operations:
