@@ -324,6 +324,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
+                .targetClient(oauth.getClientId())
                 .bearerToken(offerToken)
                 .send()
                 .getCredentialOfferURI();
