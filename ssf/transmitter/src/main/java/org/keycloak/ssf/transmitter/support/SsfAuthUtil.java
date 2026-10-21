@@ -8,7 +8,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
@@ -107,7 +110,7 @@ public class SsfAuthUtil {
         String requiredRole = client.getAttribute(ClientStreamStore.SSF_REQUIRED_ROLE_KEY);
         if (requiredRole != null && !requiredRole.isBlank()) {
             if (!hasRole(authResult, requiredRole)) {
-                log.tracef("SSF auth denied: token missing required role '%s' for client %s", requiredRole, client.getClientId());
+                log.tracef("SSF auth denied: caller does not hold required role '%s' for client %s", requiredRole, client.getClientId());
                 return false;
             }
         }
@@ -137,45 +140,33 @@ public class SsfAuthUtil {
     }
 
     /**
-     * Checks whether the token carries the given role. The role value
-     * follows the same format the admin UI role picker produces:
-     * <ul>
-     *     <li>{@code roleName} — checked as a realm role.</li>
-     *     <li>{@code clientId.roleName} — checked as a client role on
-     *         the specified client.</li>
-     * </ul>
+     * Checks whether the authenticated user holds the given role. See
+     * {@link #hasRole(RealmModel, UserModel, ClientModel, String)}.
      */
     public static boolean hasRole(AuthenticationManager.AuthResult authResult, String roleValue) {
-        return hasRole(authResult.token(), roleValue);
+        ClientModel client = authResult.client();
+        return client != null && hasRole(client.getRealm(), authResult.user(), client, roleValue);
     }
 
     /**
-     * Token-level overload of {@link #hasRole(AuthenticationManager.AuthResult, String)}.
-     * Callers that only have the decoded {@link AccessToken} (e.g. the
-     * admin emit endpoint goes through {@code AdminAuth}, not the SSF
-     * receiver auth pipeline) can check roles without needing a full
-     * {@code AuthResult} wrapper.
+     * Checks whether {@code user} actually holds the given role and
+     * {@code client} has it in scope — the same check
+     * {@code AdminAuth.hasAppRole}/{@code hasRealmRole} perform. Role
+     * claims in the access token are deliberately ignored: protocol
+     * mappers (e.g. a Hardcoded Role mapper) can inject arbitrary roles
+     * into {@code realm_access}/{@code resource_access} without a
+     * corresponding role grant.
+     *
+     * <p>The role value follows the same format the admin UI role
+     * picker produces — {@code roleName} for a realm role,
+     * {@code clientId.roleName} for a client role — and is resolved with
+     * {@link KeycloakModelUtils#getRoleFromString(KeycloakSession, RealmModel, String)}.
      */
-    public static boolean hasRole(AccessToken token, String roleValue) {
-        if (token == null || roleValue == null || roleValue.isBlank()) {
+    public static boolean hasRole(RealmModel realm, UserModel user, ClientModel client, String roleValue) {
+        if (realm == null || user == null || client == null || roleValue == null || roleValue.isBlank()) {
             return false;
         }
-
-        int dot = roleValue.indexOf('.');
-        if (dot > 0 && dot < roleValue.length() - 1) {
-            // Client role: "clientId.roleName"
-            String clientId = roleValue.substring(0, dot);
-            String roleName = roleValue.substring(dot + 1);
-            AccessToken.Access clientAccess = token.getResourceAccess(clientId);
-            return clientAccess != null
-                    && clientAccess.getRoles() != null
-                    && clientAccess.getRoles().contains(roleName);
-        }
-
-        // Realm role: plain "roleName"
-        AccessToken.Access realmAccess = token.getRealmAccess();
-        return realmAccess != null
-                && realmAccess.getRoles() != null
-                && realmAccess.getRoles().contains(roleValue);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(KeycloakSessionUtil.getKeycloakSession(), realm, roleValue);
+        return role != null && user.hasRole(role) && client.hasScope(role);
     }
 }

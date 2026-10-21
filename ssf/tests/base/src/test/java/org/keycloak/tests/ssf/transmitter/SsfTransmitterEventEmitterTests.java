@@ -19,10 +19,12 @@ import org.keycloak.common.Profile;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
@@ -50,6 +52,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -288,6 +291,33 @@ public class SsfTransmitterEventEmitterTests {
             Assertions.assertEquals(403, res.getStatus(),
                     "caller without the emitter role must be refused");
             Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_roleInjectedByHardcodedRoleMapper_returns403() throws Exception {
+        // Regression guard for keycloak/keycloak#54070: a Hardcoded Role
+        // mapper on a client the caller controls puts the emitter role
+        // into the token's resource_access claim without granting it.
+        // The gate must check the actual role grant, not the claim.
+        String mapperId = addHardcodedRoleMapper(MGMT_NO_ROLE, RECEIVER + "." + EMITTER_ROLE);
+        try {
+            String mgmtToken = obtainServiceAccountToken(MGMT_NO_ROLE, MGMT_NO_ROLE_SECRET);
+            JsonNode claims = decodeSet(mgmtToken);
+            Assertions.assertTrue(claims.path("resource_access").path(RECEIVER).path("roles").toString()
+                            .contains(EMITTER_ROLE),
+                    "sanity: the mapper must inject the emitter role into the token claims");
+
+            try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                    Map.of("credential_type", "password"))) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "a mapper-injected role claim without a role grant must not authorize emission");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+            Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                    "refused call must not result in any push");
+        } finally {
+            removeProtocolMapper(MGMT_NO_ROLE, mapperId);
         }
     }
 
@@ -1382,6 +1412,24 @@ public class SsfTransmitterEventEmitterTests {
         // The admin API is idempotent for add() — if the mapping already
         // exists it's a no-op, which is what we want for @BeforeEach.
         realm.admin().users().get(saUserId).roles().clientLevel(targetUuid).add(List.of(role));
+    }
+
+    protected String addHardcodedRoleMapper(String clientId, String role) {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("hardcoded-" + role);
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
+        mapper.setConfig(Map.of(HardcodedRole.ROLE_CONFIG, role));
+        ClientResource client = realm.admin().clients().get(findClientByClientId(clientId).getId());
+        try (Response response = client.getProtocolMappers().createMapper(mapper)) {
+            Assertions.assertEquals(201, response.getStatus(), "hardcoded role mapper should be created");
+            return ApiUtil.getCreatedId(response);
+        }
+    }
+
+    protected void removeProtocolMapper(String clientId, String mapperId) {
+        realm.admin().clients().get(findClientByClientId(clientId).getId())
+                .getProtocolMappers().delete(mapperId);
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {
