@@ -1188,6 +1188,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
+    public IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId);
+        return entity == null ? null : toIssuedVcModel(entity);
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
@@ -1392,8 +1398,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public void removeExpiredIssuedVerifiableCredentials() {
+        removeExpiredIssuedVerifiableCredentialsWithCount();
+    }
+
+    @Override
+    public int removeExpiredIssuedVerifiableCredentialsWithCount() {
         long currentTimeMillis = Time.currentTimeMillis();
-        em.createNamedQuery("deleteExpiredIssuedVcs")
+        return em.createNamedQuery("deleteExpiredIssuedVcs")
             .setParameter("currentTime", currentTimeMillis)
             .executeUpdate();
     }
