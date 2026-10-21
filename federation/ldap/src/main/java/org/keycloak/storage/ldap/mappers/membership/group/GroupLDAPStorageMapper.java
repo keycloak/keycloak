@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -321,7 +322,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             updateAttributesOfKCGroup(kcGroup, ldapGroups.get(kcGroup.getName()));
             syncResult.increaseUpdated();
         } else {
-            kcGroup = createKcGroup(realm, groupTreeEntry.getGroupName(), kcParent);
+            kcGroup = createKcGroupOrGetExisting(realm, groupTreeEntry.getGroupName(), kcParent);
             if (kcGroup.getParent() == null) {
                 logger.debugf("Imported top-level group '%s' from LDAP", kcGroup.getName());
             } else {
@@ -403,7 +404,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 String groupNameAttr = config.getGroupNameLdapAttribute();
                 String groupName = ldapGroup.getAttributeAsString(groupNameAttr);
 
-                kcGroup = createKcGroup(realm, groupName, null);
+                kcGroup = createKcGroupOrGetExisting(realm, groupName, null);
                 updateAttributesOfKCGroup(kcGroup, ldapGroup);
             }
 
@@ -852,6 +853,32 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             parentGroup = getKcGroupsPathGroup(realm);
         }
         return realm.createGroup(ldapGroupName, parentGroup);
+    }
+
+    /**
+     * Creates the KC group in its own transaction, so a concurrent insert of the same group by another node or thread
+     * does not leave the caller's transaction rollback-only. If the group already exists, the existing one is returned.
+     */
+    private GroupModel createKcGroupOrGetExisting(RealmModel realm, String ldapGroupName, GroupModel parentGroup) {
+        GroupModel parent = parentGroup == null ? getKcGroupsPathGroup(realm) : parentGroup;
+        String parentId = parent == null ? null : parent.getId();
+        try {
+            KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), session -> {
+                RealmModel innerTransactionRealm = session.realms().getRealm(realm.getId());
+                GroupModel innerTransactionParent = parentId == null ? null : session.groups().getGroupById(innerTransactionRealm, parentId);
+                // Insert only if this transaction sees the parent and no group with the same name, so it never waits on
+                // uncommitted changes of the caller's transaction
+                if ((parentId == null || innerTransactionParent != null)
+                        && session.groups().getGroupByName(innerTransactionRealm, innerTransactionParent, ldapGroupName) == null) {
+                    innerTransactionRealm.createGroup(ldapGroupName, innerTransactionParent);
+                }
+            });
+        } catch (ModelDuplicateException e) {
+            logger.debugf("Group '%s' was already created by another node or thread, using the existing one", ldapGroupName);
+        }
+        GroupModel group = getSession().groups().getGroupByName(realm, parent, ldapGroupName);
+        // Still missing if the caller's transaction holds changes the inner one can't see, such as an uncommitted parent
+        return group != null ? group : createKcGroup(realm, ldapGroupName, parentGroup);
     }
 
     /**
