@@ -69,6 +69,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
+    public static final String PROXY_RESTRICTION_VALIDATION = "proxyRestrictionValidation";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -248,6 +249,13 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setPostBindingResponse(boolean postBindingResponse) {
         getConfig().put(POST_BINDING_RESPONSE, String.valueOf(postBindingResponse));
+    }
+
+    public boolean isProxyRestrictionValidationEnabled() {
+        String proxyRestrictionValidation = getConfig().get(PROXY_RESTRICTION_VALIDATION);
+        // Fail closed: keep validation enabled unless it is explicitly disabled with "false". Any missing,
+        // malformed or unexpected value leaves validation on so a misconfiguration never silently bypasses it.
+        return proxyRestrictionValidation == null || !"false".equalsIgnoreCase(proxyRestrictionValidation.trim());
     }
 
     public boolean isPostBindingLogout() {
