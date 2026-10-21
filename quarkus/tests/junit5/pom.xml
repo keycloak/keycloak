@@ -76,6 +76,10 @@
             <artifactId>rest-assured</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit-internal</artifactId>
         </dependency>
