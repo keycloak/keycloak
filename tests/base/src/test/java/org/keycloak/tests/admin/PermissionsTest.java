@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
@@ -146,12 +147,21 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke((realm, response) ->
                         response.set(realm.clients().create(ClientBuilder.create().clientId("foo").build())),
                 Resource.CLIENT, true);
+        // Create/update with protocol mappers are covered by clientProtocolMappers()
 
         ClientRepresentation foo = managedRealm1.admin().clients().findByClientId("foo").get(0);
+        // Register cleanup by clientId so it survives the remove/re-create cycle below.
+        managedRealm1.cleanup().add(r -> {
+            List<ClientRepresentation> found = r.clients().findByClientId("foo");
+            if (!found.isEmpty()) {
+                r.clients().get(found.get(0).getId()).remove();
+            }
+        });
 
         invoke(realm -> realm.clients().get(foo.getId()).toRepresentation(), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).getInstallationProvider("nosuch"), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).update(foo), Resource.CLIENT, true);
+
         invoke(realm -> {
             realm.clients().get(foo.getId()).remove();
             realm.clients().create(foo);
@@ -183,17 +193,11 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(null),
                 Resource.CLIENT, true);
 
-        invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().createMapper(List.of()), Resource.CLIENT, true);
-        invoke((realm, response) ->
-                        response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(new ProtocolMapperRepresentation())),
-                Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().getMapperById("nosuch"), Resource.CLIENT, false, true);
         invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().getMappers(), Resource.CLIENT, false, true);
         invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().getMappersPerProtocol("nosuch"),
                 Resource.CLIENT, false, true);
-        invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().update("nosuch",
-                        new ProtocolMapperRepresentation()), Resource.CLIENT, true);
-        invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete("nosuch"), Resource.CLIENT, true);
+        // Write operations (create/update/delete) via ProtocolMappersResource are covered by clientProtocolMappersResource()
 
         invoke(realm -> realm.clients().get(foo.getId()).getScopeMappings().getAll(), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).getScopeMappings().realmLevel().listAll(), Resource.CLIENT, false);
@@ -226,6 +230,273 @@ public class PermissionsTest extends AbstractPermissionsTest {
         }
     }
 
+    /**
+     * Tests create/update permissions for client representations that include protocolMappers.
+     *
+     * <p>manage-realm users are always permitted. manage-clients users are permitted only when every
+     * mapper type in the representation that is new or changed is listed in
+     * {@link Constants#ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS}.
+     * Unchanged mappers already persisted on the client are not checked.
+     */
+    @Test
+    public void clientProtocolMappers() {
+        // mapper whose type will be placed in the allowlist
+        ProtocolMapperRepresentation allowedMapper = new ProtocolMapperRepresentation();
+        allowedMapper.setName("test-mapper");
+        allowedMapper.setProtocol("openid-connect");
+        allowedMapper.setProtocolMapper("oidc-usermodel-property-mapper");
+        allowedMapper.setConfig(Map.of("user.attribute", "username", "claim.name", "preferred_username"));
+
+        // --- Create: baseline (no allowlist) → manage-clients always denied for mapper writes ---
+        InvocationWithResponse createClientWithMappers = (realm, response) -> {
+            ClientRepresentation rep = ClientBuilder.create().clientId(UUID.randomUUID().toString()).build();
+            rep.setProtocolMappers(List.of(allowedMapper));
+            response.set(realm.clients().create(rep));
+            if (response.get().getStatus() == Response.Status.CREATED.getStatusCode()) {
+                String createdId = ApiUtil.getCreatedId(response.get());
+                realm.clients().get(createdId).remove();
+            }
+        };
+        invoke(createClientWithMappers, clients.get("none"), false);
+        invoke(createClientWithMappers, clients.get("master-none"), false);
+        invoke(createClientWithMappers, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createClientWithMappers, clients.get("master-admin"), true);
+        // "multi" has manage-realm and view-clients, but lacks manage-clients
+        invoke(createClientWithMappers, clients.get("multi"), false);
+        // manage-clients only: passes requireManage() but mapper type not in (empty) allowlist → 403
+        invoke(createClientWithMappers, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        // manage-realm only: fails requireManage() before reaching the mapper check
+        invoke(createClientWithMappers, clients.get(AdminRoles.MANAGE_REALM), false);
+
+        // --- Create: allowlist configured → manage-clients allowed for listed types ---
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-usermodel-property-mapper"));
+        invoke(createClientWithMappers, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+        invoke(createClientWithMappers, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createClientWithMappers, clients.get("master-admin"), true);
+
+        ProtocolMapperRepresentation disallowedMapper = new ProtocolMapperRepresentation();
+        disallowedMapper.setName("disallowed-mapper");
+        disallowedMapper.setProtocol("openid-connect");
+        disallowedMapper.setProtocolMapper("oidc-acr-mapper");
+        InvocationWithResponse createClientWithDisallowedMapper = (realm, response) -> {
+            ClientRepresentation rep = ClientBuilder.create().clientId(UUID.randomUUID().toString()).build();
+            rep.setProtocolMappers(List.of(disallowedMapper));
+            response.set(realm.clients().create(rep));
+            if (response.get().getStatus() == Response.Status.CREATED.getStatusCode()) {
+                String createdId = ApiUtil.getCreatedId(response.get());
+                realm.clients().get(createdId).remove();
+            }
+        };
+        // type NOT in allowlist → manage-clients denied
+        invoke(createClientWithDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(createClientWithDisallowedMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createClientWithDisallowedMapper, clients.get("master-admin"), true);
+
+        // Clear the allowlist so the Update-baseline block below runs without it
+        RealmRepresentation realmRep = managedRealm1.admin().toRepresentation();
+        realmRep.getAttributes().remove(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
+        managedRealm1.admin().update(realmRep);
+
+        // Create a fresh client with no pre-existing protocol mappers for the update tests.
+        Response fooCreateResponse = managedRealm1.admin().clients()
+                .create(ClientBuilder.create().clientId("foo-pm-update-test").build());
+        String fooId = ApiUtil.getCreatedId(fooCreateResponse);
+        managedRealm1.cleanup().add(r -> r.clients().get(fooId).remove());
+
+        // --- Update: baseline (no allowlist) → manage-clients is denied even for a new mapper ---
+        // Only test the principals that should be denied: permitted principals (realm-admin) would
+        // persist the mapper into the DB, causing subsequent invocations to see it as unchanged.
+        ClientRepresentation fooWithNewMapper = managedRealm1.admin().clients().get(fooId).toRepresentation();
+        fooWithNewMapper.setProtocolMappers(List.of(allowedMapper));
+        InvocationWithResponse updateClientWithNewMapper = (realm, response) ->
+                realm.clients().get(fooWithNewMapper.getId()).update(fooWithNewMapper);
+
+        invoke(updateClientWithNewMapper, clients.get("none"), false);
+        invoke(updateClientWithNewMapper, clients.get("master-none"), false);
+        // "multi" has manage-realm and view-clients, but lacks manage-clients (configure)
+        invoke(updateClientWithNewMapper, clients.get("multi"), false);
+        // manage-clients only: passes requireConfigure() but mapper type not in (empty) allowlist → 403
+        invoke(updateClientWithNewMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        // manage-realm only: fails requireConfigure() before reaching the mapper check
+        invoke(updateClientWithNewMapper, clients.get(AdminRoles.MANAGE_REALM), false);
+
+        // --- Update: allowlist configured → manage-clients allowed/denied based on what actually changed ---
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-usermodel-property-mapper"));
+
+        // New mapper whose type is in the allowlist → manage-clients allowed
+        invoke(updateClientWithNewMapper, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+        invoke(updateClientWithNewMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(updateClientWithNewMapper, clients.get("master-admin"), true);
+
+        // New mapper whose type is NOT in the allowlist → manage-clients denied
+        ClientRepresentation fooWithDisallowedMapper = managedRealm1.admin().clients().get(fooId).toRepresentation();
+        ProtocolMapperRepresentation disallowedMapper2 = new ProtocolMapperRepresentation();
+        disallowedMapper2.setName("disallowed-mapper");
+        disallowedMapper2.setProtocol("openid-connect");
+        disallowedMapper2.setProtocolMapper("oidc-acr-mapper");
+        fooWithDisallowedMapper.setProtocolMappers(List.of(disallowedMapper2));
+        InvocationWithResponse updateClientWithNewDisallowedMapper = (realm, response) ->
+                realm.clients().get(fooWithDisallowedMapper.getId()).update(fooWithDisallowedMapper);
+        invoke(updateClientWithNewDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(updateClientWithNewDisallowedMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(updateClientWithNewDisallowedMapper, clients.get("master-admin"), true);
+
+        // Pre-persist a disallowed-type mapper on foo via admin so we can test unchanged vs. changed.
+        ProtocolMapperRepresentation persistedDisallowedMapper = new ProtocolMapperRepresentation();
+        persistedDisallowedMapper.setName("persisted-disallowed-mapper");
+        persistedDisallowedMapper.setProtocol("openid-connect");
+        persistedDisallowedMapper.setProtocolMapper("oidc-acr-mapper");
+        managedRealm1.admin().clients().get(fooId).getProtocolMappers()
+                .createMapper(persistedDisallowedMapper);
+
+        // Fetch foo with its now-persisted mapper so the representation matches the DB exactly.
+        ClientRepresentation fooWithPersistedMapper = managedRealm1.admin().clients().get(fooId).toRepresentation();
+
+        // Unchanged disallowed-type mapper: no field differs → no type check fires → manage-clients allowed
+        InvocationWithResponse updateClientWithUnchangedDisallowedMapper = (realm, response) ->
+                realm.clients().get(fooWithPersistedMapper.getId()).update(fooWithPersistedMapper);
+        invoke(updateClientWithUnchangedDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+        // Changed disallowed-type mapper: config modified → type check fires → manage-clients denied
+        ClientRepresentation fooWithChangedDisallowedMapper = managedRealm1.admin().clients().get(fooId).toRepresentation();
+        fooWithChangedDisallowedMapper.getProtocolMappers().stream()
+                .filter(m -> "persisted-disallowed-mapper".equals(m.getName()))
+                .forEach(m -> m.setConfig(Map.of("some.config", "changed")));
+        InvocationWithResponse updateClientWithChangedDisallowedMapper = (realm, response) ->
+                realm.clients().get(fooWithChangedDisallowedMapper.getId()).update(fooWithChangedDisallowedMapper);
+        invoke(updateClientWithChangedDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+    }
+
+    /**
+     * Tests create/update/delete permissions for protocol mappers on clients via ProtocolMappersResource.
+     *
+     * <p>The realm attribute {@link Constants#ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS}
+     * is set to {@code oidc-acr-mapper,oidc-amr-mapper} for the duration of the test.
+     * Users with {@code manage-realm} are always permitted regardless of the mapper type.
+     * Users with {@code manage-clients} (but not {@code manage-realm}) are permitted only when the
+     * mapper type is explicitly in the allowed list; otherwise they are denied.
+     */
+    @Test
+    public void clientProtocolMappersResource() {
+        // Create the client used throughout this test and ensure it is removed afterwards.
+        Response createResponse = managedRealm1.admin().clients().create(ClientBuilder.create().clientId("foo-mapper-test").build());
+        String fooId = ApiUtil.getCreatedId(createResponse);
+        managedRealm1.cleanup().add(r -> r.clients().get(fooId).remove());
+        ClientRepresentation foo = managedRealm1.admin().clients().get(fooId).toRepresentation();
+
+        // Configure the allowed-types list on the realm.
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-acr-mapper,oidc-amr-mapper"));
+        // --- Allowed mapper type: both realm-admin and manage-clients users are permitted ---
+            ProtocolMapperRepresentation allowedMapper = new ProtocolMapperRepresentation();
+            allowedMapper.setProtocolMapper("oidc-acr-mapper");
+            allowedMapper.setName("allowed-mapper");
+            allowedMapper.setProtocol("openid-connect");
+
+            // createMapper (bulk) and update perform the auth check before the existence check,
+            // so denied callers receive 403 even when the mapper id does not exist.
+            for (Invocation writeOp : List.<Invocation>of(
+                    realm -> realm.clients().get(foo.getId()).getProtocolMappers().createMapper(List.of(allowedMapper)),
+                    realm -> realm.clients().get(foo.getId()).getProtocolMappers().update("nosuch", allowedMapper))) {
+                invoke(writeOp, clients.get("none"), false);
+                invoke(writeOp, clients.get("master-none"), false);
+                invoke(writeOp, clients.get(AdminRoles.REALM_ADMIN), true);
+                invoke(writeOp, clients.get("master-admin"), true);
+                // manage-clients: managePermission passes, type is in allowlist
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+                // manage-realm only: fails managePermission (requires manage-clients)
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_REALM), false);
+            }
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("none"), false);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("master-none"), false);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("master-admin"), true);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.MANAGE_REALM), false);
+
+            // delete resolves the mapper model before the auth check, so a non-existent id always
+            // yields 404. Test delete only with permitted callers; denied callers are covered above.
+            invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get("master-admin"), true);
+            invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+            // --- Disallowed mapper type: only realm-admin is permitted; manage-clients is denied ---
+            ProtocolMapperRepresentation disallowedMapper = new ProtocolMapperRepresentation();
+            disallowedMapper.setProtocolMapper("oidc-usermodel-property-mapper");
+            disallowedMapper.setName("disallowed-mapper");
+            disallowedMapper.setProtocol("openid-connect");
+
+            for (Invocation writeOp : List.<Invocation>of(
+                    realm -> realm.clients().get(foo.getId()).getProtocolMappers().createMapper(List.of(disallowedMapper)),
+                    realm -> realm.clients().get(foo.getId()).getProtocolMappers().update("nosuch", disallowedMapper))) {
+                invoke(writeOp, clients.get("none"), false);
+                invoke(writeOp, clients.get("master-none"), false);
+                invoke(writeOp, clients.get(AdminRoles.REALM_ADMIN), true);
+                invoke(writeOp, clients.get("master-admin"), true);
+                // manage-clients: managePermission passes, but type is not in allowlist
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_REALM), false);
+            }
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), false);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke((realm, response) ->
+                            response.set(realm.clients().get(foo.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get("master-admin"), true);
+
+            // --- Update changing the provider type: the stored type must be allowed too ---
+            // Persisted mapper of a disallowed type; manage-clients must not be able to replace it by an allowed type.
+            ProtocolMapperRepresentation storedDisallowed = new ProtocolMapperRepresentation();
+            storedDisallowed.setName("stored-disallowed-mapper");
+            storedDisallowed.setProtocol("openid-connect");
+            storedDisallowed.setProtocolMapper("oidc-usermodel-property-mapper");
+            storedDisallowed.setConfig(Map.of("user.attribute", "username", "claim.name", "preferred_username"));
+            String storedDisallowedId = ApiUtil.getCreatedId(
+                    managedRealm1.admin().clients().get(fooId).getProtocolMappers().createMapper(storedDisallowed));
+
+            ProtocolMapperRepresentation replacement = new ProtocolMapperRepresentation();
+            replacement.setName("stored-disallowed-mapper");
+            replacement.setProtocol("openid-connect");
+            replacement.setProtocolMapper("oidc-acr-mapper");
+            invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().update(storedDisallowedId, replacement),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), false);
+
+            // --- Delete authorization: guard at line 313 is only reached for existing mappers ---
+            // manage-clients may delete an allowed-type mapper.
+            ProtocolMapperRepresentation storedAllowed = new ProtocolMapperRepresentation();
+            storedAllowed.setName("stored-allowed-mapper");
+            storedAllowed.setProtocol("openid-connect");
+            storedAllowed.setProtocolMapper("oidc-acr-mapper");
+            String storedAllowedId = ApiUtil.getCreatedId(
+                    managedRealm1.admin().clients().get(fooId).getProtocolMappers().createMapper(storedAllowed));
+            invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete(storedAllowedId),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+        // manage-clients must not delete a disallowed-type mapper.
+        invoke(realm -> realm.clients().get(foo.getId()).getProtocolMappers().delete(storedDisallowedId),
+                clients.get(AdminRoles.MANAGE_CLIENTS), false);
+    }
+
     @Test
     public void clientScopes() {
         invoke((RealmResource realm) -> realm.clientScopes().findAll(), Resource.CLIENT, false, true);
@@ -234,64 +505,357 @@ public class PermissionsTest extends AbstractPermissionsTest {
             scope.setName("scope");
             response.set(realm.clientScopes().create(scope));
         }, Resource.CLIENT, true);
+        // Create/update with protocol mappers are covered by clientScopeProtocolMappers()
 
-        ClientScopeRepresentation scope = managedRealm1.admin().clientScopes().findAll().get(0);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).toRepresentation(), Resource.CLIENT, false);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).update(scope), Resource.CLIENT, true);
+        // Use a dedicated scope to avoid mutating pre-existing system scopes and to ensure
+        // cleanup of any state left behind (mappers, remove/re-create cycles, etc.).
+        ClientScopeRepresentation dedicatedClientScope = new ClientScopeRepresentation();
+        dedicatedClientScope.setName("client-scopes-test-scope");
+        dedicatedClientScope.setProtocol("openid-connect");
+        Response dedicatedClientScopeResponse = managedRealm1.admin().clientScopes().create(dedicatedClientScope);
+        String dedicatedClientScopeId = ApiUtil.getCreatedId(dedicatedClientScopeResponse);
+        // Track the live ID via AtomicReference so it survives remove/re-create below.
+        AtomicReference<String> scopeId = new AtomicReference<>(dedicatedClientScopeId);
+        managedRealm1.cleanup().add(r -> {
+            String liveId = scopeId.get();
+            List<ClientScopeRepresentation> found = r.clientScopes().findAll().stream()
+                    .filter(s -> "client-scopes-test-scope".equals(s.getName()))
+                    .toList();
+            String id = found.isEmpty() ? liveId : found.get(0).getId();
+            try { r.clientScopes().get(id).remove(); } catch (Exception ignored) {}
+        });
+
+        ClientScopeRepresentation scope = managedRealm1.admin().clientScopes().get(dedicatedClientScopeId).toRepresentation();
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).toRepresentation(), Resource.CLIENT, false);
+
+        // Updating client scope without protocol mappers only requires manage-clients
+        scope.setProtocolMappers(null);
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).update(scope), Resource.CLIENT, true);
         invoke((RealmResource realm) -> {
-            realm.clientScopes().get(scope.getId()).remove();
-            realm.clientScopes().create(scope);
+            realm.clientScopes().get(scopeId.get()).remove();
+            Response r = realm.clientScopes().create(scope);
+            if (r.getStatus() == Response.Status.CREATED.getStatusCode()) {
+                scopeId.set(ApiUtil.getCreatedId(r));
+                scope.setId(scopeId.get());
+            }
         }, Resource.CLIENT, true);
 
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getProtocolMappers().getMappers(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getProtocolMappers().getMappers(),
                 Resource.CLIENT, false, true);
         invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getProtocolMappers().getMappersPerProtocol("nosuch"),
+                        realm.clientScopes().get(scopeId.get()).getProtocolMappers().getMappersPerProtocol("nosuch"),
                 Resource.CLIENT, false, true);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getProtocolMappers().getMapperById("nosuch"),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getProtocolMappers().getMapperById("nosuch"),
                 Resource.CLIENT, false, true);
-        invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getProtocolMappers().update("nosuch", new ProtocolMapperRepresentation()),
-                Resource.CLIENT, true);
-        invoke((RealmResource realm, AtomicReference<Response> response) ->
-                        response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(new ProtocolMapperRepresentation())),
-                Resource.CLIENT, true);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(List.of()),
-                Resource.CLIENT, true);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete("nosuch"),
-                Resource.CLIENT, true);
+        // Write operations (create/update/delete) via ProtocolMappersResource are covered by clientScopeProtocolMappersResource()
 
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().getAll(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().getAll(),
                 Resource.CLIENT, false);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().listAll(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().realmLevel().listAll(),
                 Resource.CLIENT, false);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().listAvailable(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().realmLevel().listAvailable(),
                 Resource.CLIENT, false);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().listEffective(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().realmLevel().listEffective(),
                 Resource.CLIENT, false);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().add(List.of()),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().realmLevel().add(List.of()),
                 Resource.CLIENT, true);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().remove(List.of()),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().realmLevel().remove(List.of()),
                 Resource.CLIENT, true);
         ClientRepresentation realmAccessClient = adminClient.realms().realm(REALM_NAME) .clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).listAll(),
+        invoke((RealmResource realm) -> realm.clientScopes().get(scopeId.get()).getScopeMappings().clientLevel(realmAccessClient.getId()).listAll(),
                 Resource.CLIENT, false);
         invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).listAvailable(),
+                        realm.clientScopes().get(scopeId.get()).getScopeMappings().clientLevel(realmAccessClient.getId()).listAvailable(),
                 Resource.CLIENT, false);
         invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).listEffective(),
+                        realm.clientScopes().get(scopeId.get()).getScopeMappings().clientLevel(realmAccessClient.getId()).listEffective(),
                 Resource.CLIENT, false);
         invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).add(List.of()),
+                        realm.clientScopes().get(scopeId.get()).getScopeMappings().clientLevel(realmAccessClient.getId()).add(List.of()),
                 Resource.CLIENT, true);
         invoke((RealmResource realm) ->
-                        realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).remove(List.of()),
+                        realm.clientScopes().get(scopeId.get()).getScopeMappings().clientLevel(realmAccessClient.getId()).remove(List.of()),
                 Resource.CLIENT, true);
 
         // this should throw forbidden as "query-users" role isn't enough
         invoke(realm -> clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clientScopes().findAll(),
                 clients.get(AdminRoles.QUERY_USERS), false);
+    }
+
+    /**
+     * Tests create/update permissions for client-scope representations that include protocolMappers.
+     *
+     * <p>manage-realm users are always permitted. manage-clients users are permitted only when every
+     * mapper type in the representation that is new or changed is listed in
+     * {@link Constants#ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS}.
+     * Unchanged mappers already persisted on the scope are not checked.
+     */
+    @Test
+    public void clientScopeProtocolMappers() {
+        ProtocolMapperRepresentation allowedScopeMapper = new ProtocolMapperRepresentation();
+        allowedScopeMapper.setName("test-scope-mapper");
+        allowedScopeMapper.setProtocol("openid-connect");
+        allowedScopeMapper.setProtocolMapper("oidc-usermodel-property-mapper");
+        allowedScopeMapper.setConfig(Map.of("user.attribute", "username", "claim.name", "preferred_username"));
+
+        // --- Create: baseline (no allowlist) → manage-clients always denied for mapper writes ---
+        InvocationWithResponse createScopeWithMappers = (realm, response) -> {
+            ClientScopeRepresentation rep = new ClientScopeRepresentation();
+            rep.setName(UUID.randomUUID().toString());
+            rep.setProtocol("openid-connect");
+            rep.setProtocolMappers(List.of(allowedScopeMapper));
+            response.set(realm.clientScopes().create(rep));
+            if (response.get().getStatus() == Response.Status.CREATED.getStatusCode()) {
+                String createdId = ApiUtil.getCreatedId(response.get());
+                realm.clientScopes().get(createdId).remove();
+            }
+        };
+        invoke(createScopeWithMappers, clients.get("none"), false);
+        invoke(createScopeWithMappers, clients.get("master-none"), false);
+        invoke(createScopeWithMappers, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createScopeWithMappers, clients.get("master-admin"), true);
+        // "multi" has manage-realm and view-clients, but lacks manage-clients
+        invoke(createScopeWithMappers, clients.get("multi"), false);
+        // manage-clients only: passes requireManageClientScopes() but mapper type not in (empty) allowlist → 403
+        invoke(createScopeWithMappers, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        // manage-realm only: fails requireManageClientScopes() before reaching the mapper check
+        invoke(createScopeWithMappers, clients.get(AdminRoles.MANAGE_REALM), false);
+
+        // --- Create: allowlist configured → manage-clients allowed for listed types ---
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-usermodel-property-mapper"));
+        invoke(createScopeWithMappers, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+        invoke(createScopeWithMappers, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createScopeWithMappers, clients.get("master-admin"), true);
+
+        ProtocolMapperRepresentation disallowedScopeMapper = new ProtocolMapperRepresentation();
+        disallowedScopeMapper.setName("disallowed-scope-mapper");
+        disallowedScopeMapper.setProtocol("openid-connect");
+        disallowedScopeMapper.setProtocolMapper("oidc-acr-mapper");
+        InvocationWithResponse createScopeWithDisallowedMapper = (realm, response) -> {
+            ClientScopeRepresentation rep = new ClientScopeRepresentation();
+            rep.setName(UUID.randomUUID().toString());
+            rep.setProtocol("openid-connect");
+            rep.setProtocolMappers(List.of(disallowedScopeMapper));
+            response.set(realm.clientScopes().create(rep));
+            if (response.get().getStatus() == Response.Status.CREATED.getStatusCode()) {
+                String createdId = ApiUtil.getCreatedId(response.get());
+                realm.clientScopes().get(createdId).remove();
+            }
+        };
+        // type NOT in allowlist → manage-clients denied
+        invoke(createScopeWithDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(createScopeWithDisallowedMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(createScopeWithDisallowedMapper, clients.get("master-admin"), true);
+
+        // Clear the allowlist so the Update-baseline block below runs without it
+        RealmRepresentation scopeRealmRep = managedRealm1.admin().toRepresentation();
+        scopeRealmRep.getAttributes().remove(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
+        managedRealm1.admin().update(scopeRealmRep);
+
+        // Create a fresh empty scope (no pre-existing protocol mappers) for the update tests.
+        ClientScopeRepresentation freshScope = new ClientScopeRepresentation();
+        freshScope.setName("pm-update-test-scope");
+        freshScope.setProtocol("openid-connect");
+        Response scopeCreateResponse = managedRealm1.admin().clientScopes().create(freshScope);
+        String scopeId = ApiUtil.getCreatedId(scopeCreateResponse);
+        managedRealm1.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+
+        // --- Update: baseline (no allowlist) → manage-clients always denied when mapper is new ---
+        ClientScopeRepresentation scopeWithNewMapper = managedRealm1.admin().clientScopes().get(scopeId).toRepresentation();
+        scopeWithNewMapper.setProtocolMappers(List.of(allowedScopeMapper));
+        Invocation updateScopeWithNewMapper = realm -> realm.clientScopes().get(scopeId).update(scopeWithNewMapper);
+
+        invoke(updateScopeWithNewMapper, clients.get("none"), false);
+        invoke(updateScopeWithNewMapper, clients.get("master-none"), false);
+        invoke(updateScopeWithNewMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(updateScopeWithNewMapper, clients.get("master-admin"), true);
+        // "multi" has manage-realm and view-clients, but lacks manage-clients
+        invoke(updateScopeWithNewMapper, clients.get("multi"), false);
+        // manage-clients only: passes requireManageClientScopes() but mapper type not in (empty) allowlist → 403
+        invoke(updateScopeWithNewMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        // manage-realm only: fails requireManageClientScopes() before reaching the mapper check
+        invoke(updateScopeWithNewMapper, clients.get(AdminRoles.MANAGE_REALM), false);
+
+        // --- Update: allowlist configured → manage-clients allowed/denied based on what actually changed ---
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-usermodel-property-mapper"));
+
+        // New mapper whose type is in the allowlist → manage-clients allowed
+        invoke(updateScopeWithNewMapper, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+        invoke(updateScopeWithNewMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(updateScopeWithNewMapper, clients.get("master-admin"), true);
+
+        // New mapper whose type is NOT in the allowlist → manage-clients denied
+        ClientScopeRepresentation scopeWithDisallowedMapper = managedRealm1.admin().clientScopes().get(scopeId).toRepresentation();
+        ProtocolMapperRepresentation disallowedScopeMapper2 = new ProtocolMapperRepresentation();
+        disallowedScopeMapper2.setName("disallowed-scope-mapper");
+        disallowedScopeMapper2.setProtocol("openid-connect");
+        disallowedScopeMapper2.setProtocolMapper("oidc-acr-mapper");
+        scopeWithDisallowedMapper.setProtocolMappers(List.of(disallowedScopeMapper2));
+        Invocation updateScopeWithNewDisallowedMapper = realm -> realm.clientScopes().get(scopeId).update(scopeWithDisallowedMapper);
+        invoke(updateScopeWithNewDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(updateScopeWithNewDisallowedMapper, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(updateScopeWithNewDisallowedMapper, clients.get("master-admin"), true);
+
+        // Pre-persist a disallowed-type mapper on the scope via admin.
+        ProtocolMapperRepresentation persistedDisallowedScopeMapper = new ProtocolMapperRepresentation();
+        persistedDisallowedScopeMapper.setName("persisted-disallowed-scope-mapper");
+        persistedDisallowedScopeMapper.setProtocol("openid-connect");
+        persistedDisallowedScopeMapper.setProtocolMapper("oidc-acr-mapper");
+        managedRealm1.admin().clientScopes().get(scopeId).getProtocolMappers()
+                .createMapper(persistedDisallowedScopeMapper);
+
+        // Fetch scope with its now-persisted mapper so the representation matches the DB exactly.
+        ClientScopeRepresentation scopeWithPersistedMapper = managedRealm1.admin().clientScopes().get(scopeId).toRepresentation();
+
+        // Unchanged disallowed-type mapper: no field differs → no type check fires → manage-clients allowed
+        Invocation updateScopeWithUnchangedDisallowedMapper = realm ->
+                realm.clientScopes().get(scopeId).update(scopeWithPersistedMapper);
+        invoke(updateScopeWithUnchangedDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+        // Changed disallowed-type mapper: config modified → type check fires → manage-clients denied
+        ClientScopeRepresentation scopeWithChangedDisallowedMapper = managedRealm1.admin().clientScopes().get(scopeId).toRepresentation();
+        scopeWithChangedDisallowedMapper.getProtocolMappers().stream()
+                .filter(m -> "persisted-disallowed-scope-mapper".equals(m.getName()))
+                .forEach(m -> m.setConfig(Map.of("some.config", "changed")));
+        Invocation updateScopeWithChangedDisallowedMapper = realm ->
+                realm.clientScopes().get(scopeId).update(scopeWithChangedDisallowedMapper);
+        invoke(updateScopeWithChangedDisallowedMapper, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+    }
+
+
+    /**
+     * Tests create/update/delete permissions for protocol mappers on client scopes via ProtocolMappersResource.
+     *
+     * <p>The realm attribute {@link Constants#ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS}
+     * is set to {@code oidc-acr-mapper,oidc-amr-mapper} for the duration of the test.
+     * Users with {@code manage-realm} are always permitted regardless of the mapper type.
+     * Users with {@code manage-clients} (but not {@code manage-realm}) are permitted only when the
+     * mapper type is explicitly in the allowed list; otherwise they are denied.
+     * Users with {@code manage-realm} only are additionally blocked by the {@code ClientScopesResource}
+     * routing guard ({@code requireListClientScopes}) regardless of the mapper type.
+     */
+    @Test
+    public void clientScopeProtocolMappersResource() {
+        // Use a dedicated scope so that mappers created/left behind during the test do not
+        // pollute any pre-existing client scope and are automatically removed via cleanup().
+        ClientScopeRepresentation dedicatedScope = new ClientScopeRepresentation();
+        dedicatedScope.setName("pm-resource-test-scope");
+        dedicatedScope.setProtocol("openid-connect");
+        Response dedicatedScopeResponse = managedRealm1.admin().clientScopes().create(dedicatedScope);
+        String dedicatedScopeId = ApiUtil.getCreatedId(dedicatedScopeResponse);
+        managedRealm1.cleanup().add(r -> r.clientScopes().get(dedicatedScopeId).remove());
+        ClientScopeRepresentation scope = managedRealm1.admin().clientScopes().get(dedicatedScopeId).toRepresentation();
+
+        // Configure the allowed-types list on the realm.
+        managedRealm1.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                "oidc-acr-mapper,oidc-amr-mapper"));
+        // --- Allowed mapper type: both realm-admin and manage-clients users are permitted ---
+            ProtocolMapperRepresentation allowedMapper = new ProtocolMapperRepresentation();
+            allowedMapper.setName("allowed-mapper");
+            allowedMapper.setProtocol("openid-connect");
+            allowedMapper.setProtocolMapper("oidc-acr-mapper");
+
+            // createMapper (bulk) and update perform the auth check before the existence check,
+            // so denied callers receive 403 even when the mapper id does not exist.
+            for (Invocation writeOp : List.<Invocation>of(
+                    realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(List.of(allowedMapper)),
+                    realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().update("nosuch", allowedMapper))) {
+                invoke(writeOp, clients.get("none"), false);
+                invoke(writeOp, clients.get("master-none"), false);
+                invoke(writeOp, clients.get(AdminRoles.REALM_ADMIN), true);
+                invoke(writeOp, clients.get("master-admin"), true);
+                // "multi" has manage-realm and view-clients, but lacks manage-clients
+                invoke(writeOp, clients.get("multi"), false);
+                // manage-clients: routing guard passes, managePermission passes, type is in allowlist
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+                // manage-realm only: fails the ClientScopesResource routing guard (requireListClientScopes)
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_REALM), false);
+            }
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("none"), false);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("master-none"), false);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("master-admin"), true);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get("multi"), false);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(allowedMapper)),
+                    clients.get(AdminRoles.MANAGE_REALM), false);
+
+            // delete resolves the mapper model before the auth check, so a non-existent id always
+            // yields 404. Test delete only with permitted callers; denied callers are covered above.
+            invoke(realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke(realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get("master-admin"), true);
+            invoke(realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete("nosuch"),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+            // --- Disallowed mapper type: only realm-admin is permitted; manage-clients is denied ---
+            ProtocolMapperRepresentation disallowedMapper = new ProtocolMapperRepresentation();
+            disallowedMapper.setName("disallowed-mapper");
+            disallowedMapper.setProtocol("openid-connect");
+            disallowedMapper.setProtocolMapper("oidc-usermodel-property-mapper");
+
+            // createMapper (bulk) and update perform the auth check before the existence check.
+            for (Invocation writeOp : List.<Invocation>of(
+                    realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(List.of(disallowedMapper)),
+                    realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().update("nosuch", disallowedMapper))) {
+                invoke(writeOp, clients.get("none"), false);
+                invoke(writeOp, clients.get("master-none"), false);
+                invoke(writeOp, clients.get(AdminRoles.REALM_ADMIN), true);
+                invoke(writeOp, clients.get("master-admin"), true);
+                // "multi" has manage-realm and view-clients, but lacks manage-clients
+                invoke(writeOp, clients.get("multi"), false);
+                // manage-clients: routing guard passes, but type is not in allowlist
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+                // manage-realm only: fails the ClientScopesResource routing guard
+                invoke(writeOp, clients.get(AdminRoles.MANAGE_REALM), false);
+            }
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), false);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get(AdminRoles.REALM_ADMIN), true);
+            invoke((realm, response) ->
+                            response.set(realm.clientScopes().get(scope.getId()).getProtocolMappers().createMapper(disallowedMapper)),
+                    clients.get("master-admin"), true);
+
+            // --- Delete authorization: guard is only reached for existing mappers ---
+            // manage-clients may delete an allowed-type mapper.
+            ProtocolMapperRepresentation storedScopeAllowed = new ProtocolMapperRepresentation();
+            storedScopeAllowed.setName("stored-allowed-scope-mapper");
+            storedScopeAllowed.setProtocol("openid-connect");
+            storedScopeAllowed.setProtocolMapper("oidc-acr-mapper");
+            String storedScopeAllowedId = ApiUtil.getCreatedId(
+                    managedRealm1.admin().clientScopes().get(scope.getId()).getProtocolMappers().createMapper(storedScopeAllowed));
+            invoke(realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete(storedScopeAllowedId),
+                    clients.get(AdminRoles.MANAGE_CLIENTS), true);
+
+            // manage-clients must not delete a disallowed-type mapper.
+            ProtocolMapperRepresentation storedScopeDisallowed = new ProtocolMapperRepresentation();
+            storedScopeDisallowed.setName("stored-disallowed-scope-mapper");
+            storedScopeDisallowed.setProtocol("openid-connect");
+            storedScopeDisallowed.setProtocolMapper("oidc-usermodel-property-mapper");
+            storedScopeDisallowed.setConfig(Map.of("user.attribute", "username", "claim.name", "preferred_username"));
+            String storedScopeDisallowedId = ApiUtil.getCreatedId(
+                    managedRealm1.admin().clientScopes().get(scope.getId()).getProtocolMappers().createMapper(storedScopeDisallowed));
+        invoke(realm -> realm.clientScopes().get(scope.getId()).getProtocolMappers().delete(storedScopeDisallowedId),
+                clients.get(AdminRoles.MANAGE_CLIENTS), false);
     }
 
     @Test

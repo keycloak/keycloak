@@ -49,6 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -692,6 +693,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void addClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -708,7 +710,8 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     @DatabaseTest
-    public void removeClientProtcolMappers() throws ClientRegistrationException {
+    public void removeClientProtocolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -725,6 +728,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void updateClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -736,6 +740,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation updatedClient = reg.get(CLIENT_ID);
         assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    /**
+     * Allows the given protocol mapper type in realm. The allowed protocol mapper must be included in both realm and protocol-mappers client registration policy
+     */
+    private void allowProtocolMapperTypeInRealm(String mapperProviderType) {
+        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, mapperProviderType));
     }
 
     private void addProtocolMapper(ClientRepresentation client, String mapperName) {
