@@ -9,10 +9,14 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
 import static org.keycloak.authorization.model.Policy.FilterOption.OWNER;
@@ -74,6 +78,37 @@ public class UserManagedPermissionServiceRunOnServerHelpers {
             policies = policyStore
                     .find(resourceServer, Collections.emptyMap(), null, null);
             assertTrue(policies.isEmpty());
+        };
+    }
+
+    static RunOnServer createOwnerBoundResourceTypePolicy() {
+        return session -> {
+            RealmModel realm = session.realms().getRealmByName("authz-test");
+            session.getContext().setRealm(realm);
+            ClientModel client = realm.getClientByClientId("resource-server-test");
+            AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+            ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(client);
+            UserModel marta = session.users().getUserByUsername(realm, "marta");
+
+            UserPolicyRepresentation userPolicyRep = new UserPolicyRepresentation();
+            userPolicyRep.setName(KeycloakModelUtils.generateId());
+            userPolicyRep.addUser("kolo");
+
+            PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+            Policy userPolicy = policyStore.create(resourceServer, userPolicyRep);
+            userPolicy.setOwner(marta.getId());
+
+            PolicyRepresentation policyRep = new PolicyRepresentation();
+            policyRep.setName(KeycloakModelUtils.generateId());
+            policyRep.setType("uma");
+            policyRep.addPolicy(userPolicy.getId());
+
+            Policy policy = policyStore.create(resourceServer, policyRep);
+            policy.setOwner(marta.getId());
+            policy.setResourceType("patient-data");
+
+            Scope scope = provider.getStoreFactory().getScopeStore().findByName(resourceServer, "read");
+            policy.addScope(scope);
         };
     }
 

@@ -99,7 +99,13 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             PolicyStore policyStore = storeFactory.getPolicyStore();
             ResourceServer resourceServer = permission.getResourceServer();
 
-            policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
+            // resource-type policies are only considered when they are not bound to a specific owner (e.g. not a
+            // user-managed permission), so that an owner cannot use a resource type to reach resources they don't own
+            policyStore.findByResourceType(resourceServer, resource.getType(), policy -> {
+                if (policy.getOwner() == null) {
+                    policyConsumer.accept(policy);
+                }
+            });
 
             if (!resource.getOwner().equals(resourceServer.getClientId())) {
                 ResourceStore resourceStore = storeFactory.getResourceStore();

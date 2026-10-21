@@ -160,6 +160,19 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         newPermission.getResources().remove(resourceB.getId());
 
+        newPermission.setResourceType("patient-data");
+
+        try {
+            protection.policy(resource.getId()).create(newPermission);
+            fail("Should fail, not allowed to set a resource type on a user-managed permission");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
+        }
+
+        newPermission.setResourceType(null);
+
         UmaPermissionRepresentation permission = protection.policy(resource.getId()).create(newPermission);
 
         assertEquals(newPermission.getName(), permission.getName());
@@ -433,6 +446,39 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             fail("Updates do not allow changing resources");
         } catch (AuthorizationDeniedException ignore) {
 
+        }
+    }
+
+    @Test
+    public void testUpdateResourceType() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setType("patient-data");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection("marta", "password").resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("my-policy");
+        permission.addUser("kolo");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        permission = protection.policy(resource.getId()).create(permission);
+
+        permission.setResourceType("patient-data");
+
+        try {
+            protection.policy(resource.getId()).update(permission);
+            fail("Updates do not allow setting a resource type on a user-managed permission");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
         }
     }
 
@@ -1078,6 +1124,40 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         } finally {
             settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
             authzAdmin.update(settings);
+        }
+    }
+
+    @Test
+    public void testResourceTypePolicyWithOwnerDoesNotGrantCrossOwnerAccess() {
+        // alice owns a resource of type "patient-data" that she never shares with kolo
+        ResourceRepresentation aliceResource = new ResourceRepresentation();
+        aliceResource.setName("alice-medical-records");
+        aliceResource.setType("patient-data");
+        aliceResource.setOwnerManagedAccess(true);
+        aliceResource.addScope("read");
+        aliceResource = getAuthzClient().protection("alice", "password").resource().create(aliceResource);
+
+        // marta owns a resource of the same type and has a (pre-existing / legacy) owner-bound policy that
+        // matches by resource type and grants kolo access; this simulates data created before this fix, since
+        // the Protection API no longer allows setting a resource type on a user-managed permission
+        ResourceRepresentation martaResource = new ResourceRepresentation();
+        martaResource.setName("marta-medical-records");
+        martaResource.setType("patient-data");
+        martaResource.setOwner("marta");
+        martaResource.setOwnerManagedAccess(true);
+        martaResource.addScope("read");
+        getAuthzClient().protection("marta", "password").resource().create(martaResource);
+
+        getTestingClient().server().run(UserManagedPermissionServiceRunOnServerHelpers.createOwnerBoundResourceTypePolicy());
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(aliceResource.getId(), "read");
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("kolo should not gain access to alice's resource through marta's owner-bound resource-type policy");
+        } catch (Exception e) {
+            assertTrue(e instanceof AuthorizationDeniedException);
         }
     }
 
