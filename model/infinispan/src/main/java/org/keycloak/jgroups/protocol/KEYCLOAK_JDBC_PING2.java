@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -247,6 +248,9 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     protected record DiscoveryData(List<PingData> entries, Map<Address, Set<Address>> partitions) {
+        Optional<Map.Entry<Address, Set<Address>>> winningPartition() {
+            return partitions.entrySet().stream().min(SPLIT_BRAIN_DECIDER);
+        }
     }
 
     protected DiscoveryData readDiscoveryData(String cluster) throws Exception {
@@ -415,20 +419,43 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      */
     public HealthStatus healthStatus() {
         try {
-            HealthStatus status = readDiscoveryData(cluster_name).partitions()
-                    .entrySet().stream()
-                    .min(SPLIT_BRAIN_DECIDER)
-                    .map(Map.Entry::getKey)
-                    .map(view.getCoord()::equals)
-                    .map(isCoordinatorInView -> isCoordinatorInView ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY)
+            return readDiscoveryData(cluster_name).winningPartition()
+                    .map(partition -> healthStatus(partition.getKey()))
                     .orElse(HealthStatus.NO_COORDINATOR);
-
-            if (status == HealthStatus.HEALTHY && !allow_multiple_clusters && hasOtherClusters()) {
-                return HealthStatus.MULTIPLE_CLUSTERS;
-            }
-            return status;
         } catch (Exception e) {
             return HealthStatus.ERROR;
+        }
+    }
+
+    private HealthStatus healthStatus(Address coordinator) {
+        if (!view.getCoord().equals(coordinator)) {
+            return HealthStatus.UNHEALTHY;
+        }
+        return !allow_multiple_clusters && hasOtherClusters() ? HealthStatus.MULTIPLE_CLUSTERS : HealthStatus.HEALTHY;
+    }
+
+    /**
+     * Selects a database-task owner only in the partition accepted by the readiness check.
+     * Prefers its coordinator while its own publication is fresh, otherwise the lowest-address fresh member.
+     * This is not an exclusive lease: publication expiry and concurrent snapshots can cause overlapping workers.
+     */
+    public boolean isDatabaseTaskCoordinator() {
+        try {
+            var winner = readDiscoveryData(cluster_name).winningPartition();
+            if (winner.isEmpty()) {
+                return false;
+            }
+            var partition = winner.get();
+            if (healthStatus(partition.getKey()) != HealthStatus.HEALTHY) {
+                return false;
+            }
+            Address coordinator = partition.getKey();
+            Address owner = partition.getValue().contains(coordinator) ? coordinator
+                    : partition.getValue().stream().min(Address::compareTo).orElseThrow();
+            return owner.equals(local_addr);
+        } catch (Exception e) {
+            log.warn(String.format("Failed to determine database task ownership for cluster '%s'.", cluster_name), e);
+            return false;
         }
     }
 
