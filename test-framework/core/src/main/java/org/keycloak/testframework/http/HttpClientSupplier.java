@@ -12,6 +12,7 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.server.KeycloakServer;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -22,7 +23,8 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
 
     @Override
     public List<Dependency> getDependencies(RequestedInstance<HttpClient, InjectHttpClient> instanceContext) {
-        return DependenciesBuilder.create(ManagedCertificates.class).build();
+        // The pooled connections must not outlive the server, as the server can be restarted between test classes
+        return DependenciesBuilder.create(ManagedCertificates.class).add(KeycloakServer.class).build();
     }
 
     @Override
