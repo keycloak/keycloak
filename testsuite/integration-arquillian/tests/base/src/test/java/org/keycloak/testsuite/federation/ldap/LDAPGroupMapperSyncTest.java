@@ -572,24 +572,26 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             realm.createGroup("group11");
         });
 
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel realm = ctx.getRealm();
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
-            RacingGroupMapper groupMapper = new RacingGroupMapper(mapperModel, LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel()));
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+                RacingGroupMapper groupMapper = new RacingGroupMapper(mapperModel, LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel()));
 
-            GroupModel group11 = groupMapper.lazyImport(realm, groupMapper.loadLDAPGroupByName("group11"));
+                GroupModel group11 = groupMapper.lazyImport(realm, groupMapper.loadLDAPGroupByName("group11"));
 
-            Assertions.assertEquals(KeycloakModelUtils.findGroupByPath(session, realm, "/group11").getId(), group11.getId());
-            Assertions.assertEquals(1, realm.getTopLevelGroupsStream().count());
-        });
-
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
-            ctx.getRealm().updateComponent(mapperModel);
-        });
+                Assertions.assertEquals(KeycloakModelUtils.findGroupByPath(session, realm, "/group11").getId(), group11.getId());
+                Assertions.assertEquals(1, realm.getTopLevelGroupsStream().count());
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+                ctx.getRealm().updateComponent(mapperModel);
+            });
+        }
     }
 
     @Test

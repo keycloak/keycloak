@@ -865,6 +865,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         try {
             KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), session -> {
                 RealmModel innerTransactionRealm = session.realms().getRealm(realm.getId());
+                session.getContext().setRealm(innerTransactionRealm);
                 GroupModel innerTransactionParent = parentId == null ? null : session.groups().getGroupById(innerTransactionRealm, parentId);
                 // Insert only if this transaction sees the parent and no group with the same name, so it never waits on
                 // uncommitted changes of the caller's transaction

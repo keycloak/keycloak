@@ -792,6 +792,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     private UserModel addUserInOwnTransaction(KeycloakSession session, RealmModel realm, String username, LDAPObject ldapUser) {
         String userId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), innerSession -> {
             RealmModel innerTransactionRealm = innerSession.realms().getRealm(realm.getId());
+            innerSession.getContext().setRealm(innerTransactionRealm);
             UserProvider innerUserProvider = UserStoragePrivateUtil.userLocalStorage(innerSession);
             // Insert only if this transaction sees no user with the same username, so it never waits on uncommitted
             // changes of the caller's transaction
