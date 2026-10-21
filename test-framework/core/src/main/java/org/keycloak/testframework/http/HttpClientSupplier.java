@@ -31,6 +31,9 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
     public HttpClient getValue(InstanceContext<HttpClient, InjectHttpClient> instanceContext) {
         HttpClientBuilder builder = HttpClientBuilder.create();
 
+        // Retrieving the dependency registers this client as its dependent, so it is closed when the server is replaced
+        instanceContext.getDependency(KeycloakServer.class);
+
         ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
 
         if (managedCerts.isTlsEnabled()) {
