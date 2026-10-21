@@ -17,7 +17,7 @@ When an issuer discovery URL is configured, Keycloak invokes its
 `<DISCOVERY_URL>/.well-known/openid-configuration` endpoint when the provider is saved or updated and persists the returned JWKS
 URL. Otherwise, it discovers keys from `<ISSUER>/.well-known/openid-configuration` when needed. {project_name} uses the token from
 `/var/run/secrets/kubernetes.io/serviceaccount/token` to access the in-cluster discovery endpoint. When loading JWKS,
-it uses the token when its `iss` claim matches the configured issuer.
+by default it forwards the token only to trusted in-cluster Kubernetes API server endpoints (HTTPS with port 443 or default, on hosts `kubernetes.default.svc`, `kubernetes.default.svc.cluster.local`, or `kubernetes.default`) when its `iss` claim matches the configured issuer. Forwarding the token to additional endpoints (such as external or custom JWKS URLs) can be enabled with the `forwardTokenToAdditionalEndpoints` configuration option.
 
 Each identity provider must have a unique issuer. Each client must also have a unique subject identifier for each
 issuer. As the subject identifier is built from the namespace and service account name, each client must have its own
@@ -48,6 +48,9 @@ and make sure tokens can not be intercepted in communication between the client 
 
 |Issuer discovery URL
 |Optional Kubernetes API server or external OIDC discovery base URL. When configured, {project_name} resolves and persists the issuer and JWKS URL when the provider is saved or updated.
+
+|Forward token to additional endpoints
+|Optional setting to control whether the pod's service account token is forwarded to additional endpoints beyond the trusted in-cluster Kubernetes API server endpoints listed above. Defaults to `false`.
 
 |===
 +

@@ -1,10 +1,13 @@
 package org.keycloak.broker.kubernetes;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.Strings;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
@@ -67,5 +70,32 @@ final class KubernetesUtils {
             logger.warn("Failed to read service account token file", e);
         }
         return null;
+    }
+
+    static boolean isTrustedKubernetesEndpoint(String uri) {
+        if (Strings.isEmpty(uri)) {
+            return false;
+        }
+        try {
+            URI parsed = URI.create(uri);
+            String scheme = parsed.getScheme();
+            if (!"https".equalsIgnoreCase(scheme)) {
+                return false;
+            }
+            int port = parsed.getPort();
+            if (port != -1 && port != 443) {
+                return false;
+            }
+            String host = parsed.getHost();
+            if (host == null) {
+                return false;
+            }
+            host = host.toLowerCase(Locale.ROOT);
+            return host.equals("kubernetes.default.svc")
+                    || host.equals("kubernetes.default.svc.cluster.local")
+                    || host.equals("kubernetes.default");
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
