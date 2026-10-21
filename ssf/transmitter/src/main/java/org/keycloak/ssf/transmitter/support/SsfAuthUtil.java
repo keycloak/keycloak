@@ -160,13 +160,58 @@ public class SsfAuthUtil {
      * <p>The role value follows the same format the admin UI role
      * picker produces — {@code roleName} for a realm role,
      * {@code clientId.roleName} for a client role — and is resolved with
-     * {@link KeycloakModelUtils#getRoleFromString(KeycloakSession, RealmModel, String)}.
+     * {@link #resolveUnambiguousRole(RealmModel, String)}.
      */
     public static boolean hasRole(RealmModel realm, UserModel user, ClientModel client, String roleValue) {
         if (realm == null || user == null || client == null || roleValue == null || roleValue.isBlank()) {
             return false;
         }
-        RoleModel role = KeycloakModelUtils.getRoleFromString(KeycloakSessionUtil.getKeycloakSession(), realm, roleValue);
+        RoleModel role = resolveUnambiguousRole(realm, roleValue);
         return role != null && user.hasRole(role) && client.hasScope(role);
+    }
+
+    /**
+     * Resolves a {@code roleName} / {@code clientId.roleName} value to
+     * the single role it can denote, or {@code null} if it denotes none
+     * or more than one.
+     *
+     * <p>Client IDs and role names may both contain dots, so a value
+     * such as {@code a.b.c} can mean role {@code c} on client {@code a.b},
+     * role {@code b.c} on client {@code a}, or realm role {@code a.b.c}.
+     * {@link KeycloakModelUtils#getRoleFromString(KeycloakSession, RealmModel, String)}
+     * picks the longest matching client prefix, so creating a client
+     * with a colliding ID would silently redirect the gate to a role on
+     * that client. An authorization gate must not depend on which
+     * clients happen to exist, so every candidate is collected and an
+     * ambiguous value is denied.
+     */
+    static RoleModel resolveUnambiguousRole(RealmModel realm, String roleValue) {
+        RoleModel match = realm.getRole(roleValue);
+        int candidates = match != null ? 1 : 0;
+
+        int lookups = 0;
+        int dot = roleValue.lastIndexOf(KeycloakModelUtils.CLIENT_ROLE_SEPARATOR);
+        while (dot >= 0) {
+            if (++lookups > KeycloakModelUtils.MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+                log.warnf("SSF role value '%s' has too many '.' separators to resolve; denying", roleValue);
+                return null;
+            }
+            ClientModel roleClient = realm.getClientByClientId(roleValue.substring(0, dot));
+            if (roleClient != null) {
+                RoleModel clientRole = roleClient.getRole(roleValue.substring(dot + 1));
+                if (clientRole != null) {
+                    match = clientRole;
+                    candidates++;
+                }
+            }
+            dot = dot > 0 ? roleValue.lastIndexOf(KeycloakModelUtils.CLIENT_ROLE_SEPARATOR, dot - 1) : -1;
+        }
+
+        if (candidates > 1) {
+            log.warnf("SSF role value '%s' matches %d roles because client IDs or role names contain '.'; denying."
+                    + " Rename the colliding client or role so the value is unambiguous.", roleValue, candidates);
+            return null;
+        }
+        return match;
     }
 }

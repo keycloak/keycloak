@@ -322,6 +322,69 @@ public class SsfTransmitterEventEmitterTests {
     }
 
     @Test
+    public void emit_ambiguousDottedRoleValue_returns403() throws Exception {
+        // The picker stores role "events.emit" on RECEIVER as
+        // "<RECEIVER>.events.emit". A client named "<RECEIVER>.events"
+        // with role "emit" makes that value denote a second role, which
+        // longest-prefix resolution would pick. The gate must refuse an
+        // ambiguous value rather than authorize whichever role wins.
+        // The collision is in place before the value is first resolved:
+        // KeycloakModelUtils.getRoleFromString caches its result, and a
+        // warm cache would hide the longest-prefix pick until eviction.
+        String dottedRole = "events.emit";
+        String collidingClientId = RECEIVER + ".events";
+        Map<String, Object> event = Map.of("credential_type", "password", "change_type", "update");
+        ensureReceiverRole(dottedRole);
+        grantRoleToServiceAccount(MGMT_EMITTER, RECEIVER, dottedRole);
+        String collidingClientUuid = null;
+        try {
+            ClientRepresentation colliding = new ClientRepresentation();
+            colliding.setClientId(collidingClientId);
+            try (Response response = realm.admin().clients().create(colliding)) {
+                Assertions.assertEquals(201, response.getStatus(), "colliding client should be created");
+                collidingClientUuid = ApiUtil.getCreatedId(response);
+            }
+            RoleRepresentation collidingRole = new RoleRepresentation();
+            collidingRole.setName("emit");
+            realm.admin().clients().get(collidingClientUuid).roles().create(collidingRole);
+            grantRoleToServiceAccount(MGMT_NO_ROLE, collidingClientId, "emit");
+            setReceiverAttributes(true, RECEIVER + "." + dottedRole);
+
+            String collidingToken = obtainServiceAccountToken(MGMT_NO_ROLE, MGMT_NO_ROLE_SECRET);
+            try (SimpleHttpResponse res = emit(collidingToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "holding the colliding role must not satisfy the configured emit-events role");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+
+            String emitterToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+            try (SimpleHttpResponse res = emit(emitterToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "an ambiguous role value must be denied for every caller");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+            Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                    "refused calls must not result in any push");
+
+            // Control: once the collision is gone the dotted role
+            // resolves unambiguously and authorizes its holder again.
+            realm.admin().clients().get(collidingClientUuid).remove();
+            collidingClientUuid = null;
+            try (SimpleHttpResponse res = emit(emitterToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(200, res.getStatus(),
+                        "an unambiguous dotted role value must authorize its holder");
+            }
+            Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                    "control emit should reach the mock receiver");
+        } finally {
+            if (collidingClientUuid != null) {
+                realm.admin().clients().get(collidingClientUuid).remove();
+            }
+            realm.admin().clients().get(findClientByClientId(RECEIVER).getId()).roles().deleteRole(dottedRole);
+        }
+    }
+
+    @Test
     public void emit_noBearerToken_returns401() throws Exception {
         String url = emitEndpointUrl();
         try (SimpleHttpResponse res = http.doPost(url)
