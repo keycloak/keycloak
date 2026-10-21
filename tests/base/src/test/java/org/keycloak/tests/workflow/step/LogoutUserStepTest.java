@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.workflow.step;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
@@ -27,22 +28,28 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.workflow.LogoutUserStepProvider;
 import org.keycloak.models.workflow.LogoutUserStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
@@ -63,12 +70,12 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class LogoutUserStepTest extends AbstractWorkflowTest {
 
     private static final String BACKCHANNEL_LOGOUT_PATH = "/backchannel-logout";
+    private static final String OTHER_CLIENT_ID = "other-app";
 
     @InjectTimeOffSet
     private TimeOffSet timeOffSet;
@@ -96,32 +103,54 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testBackchannelLogoutIsSentToClient() throws Exception {
-        BlockingQueue<String> logoutRequests = new LinkedBlockingQueue<>();
-        httpServer.createContext(BACKCHANNEL_LOGOUT_PATH, exchange -> {
-            logoutRequests.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            HttpServerUtil.sendResponse(exchange, 200, Map.of());
-        });
+    public void testBackchannelLogoutIsSentToClient() {
+        BlockingQueue<LogoutToken> logoutTokens = receiveBackchannelLogouts(oauth.getClientId());
 
         try {
-            ClientResource client = managedRealm.admin().clients().get(getClientUuid());
-            ClientRepresentation clientRep = client.toRepresentation();
-            clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "http://"
-                    + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort() + BACKCHANNEL_LOGOUT_PATH);
-            client.update(clientRep);
-
             createLogoutWorkflow(null);
             oauth.scope(null);
             login();
 
             runScheduledSteps(Duration.ofMinutes(2));
 
-            String logoutRequest = logoutRequests.poll();
-            assertThat(logoutRequest, notNullValue());
-            assertThat(logoutRequest, startsWith("logout_token="));
-
-            LogoutToken logoutToken = new JWSInput(logoutRequest.substring("logout_token=".length())).readJsonContent(LogoutToken.class);
+            LogoutToken logoutToken = logoutTokens.poll();
+            assertThat(logoutToken, notNullValue());
             assertThat(logoutToken.getSubject(), is(userAlice.getId()));
+        } finally {
+            httpServer.removeContext(BACKCHANNEL_LOGOUT_PATH);
+        }
+    }
+
+    @Test
+    public void testBackchannelLogoutIncludingOfflineSessionsIsSentToAllClients() {
+        managedRealm.admin().clients().create(ClientBuilder.create()
+                .clientId(OTHER_CLIENT_ID)
+                .frontchannelLogout(false)
+                .build()).close();
+        BlockingQueue<LogoutToken> logoutTokens = receiveBackchannelLogouts(oauth.getClientId(), OTHER_CLIENT_ID);
+
+        try {
+            createLogoutWorkflow("true");
+            oauth.scope(null);
+            login();
+
+            // both clients share the login session, but only the test client also has an offline session
+            String username = userAlice.getUsername();
+            String clientId = oauth.getClientId();
+            runOnServer.run((RunOnServer) session -> {
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, username);
+                UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).findFirst().orElseThrow();
+                new UserSessionManager(session).createOrUpdateOfflineSession(
+                        userSession.getAuthenticatedClientSessionByClient(realm.getClientByClientId(clientId).getId()), userSession);
+                session.sessions().createClientSession(realm, realm.getClientByClientId(OTHER_CLIENT_ID), userSession)
+                        .setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            });
+            assertThat(managedRealm.admin().users().get(userAlice.getId()).getOfflineSessions(getClientUuid()), hasSize(1));
+
+            runScheduledSteps(Duration.ofMinutes(2));
+
+            assertThat(logoutTokens.stream().anyMatch(token -> token.hasAudience(OTHER_CLIENT_ID)), is(true));
         } finally {
             httpServer.removeContext(BACKCHANNEL_LOGOUT_PATH);
         }
@@ -202,6 +231,29 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
         AccessTokenResponse refreshed = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
         assertThat(refreshed.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
         assertThat(refreshed.getError(), is(OAuthErrorException.INVALID_GRANT));
+    }
+
+    private BlockingQueue<LogoutToken> receiveBackchannelLogouts(String... clientIds) {
+        BlockingQueue<LogoutToken> logoutTokens = new LinkedBlockingQueue<>();
+        httpServer.createContext(BACKCHANNEL_LOGOUT_PATH, exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            try {
+                logoutTokens.add(new JWSInput(body.substring("logout_token=".length())).readJsonContent(LogoutToken.class));
+            } catch (JWSInputException e) {
+                throw new IOException(e);
+            }
+            HttpServerUtil.sendResponse(exchange, 200, Map.of());
+        });
+
+        String backchannelLogoutUrl = "http://" + httpServer.getAddress().getHostString() + ":"
+                + httpServer.getAddress().getPort() + BACKCHANNEL_LOGOUT_PATH;
+        for (String clientId : clientIds) {
+            ClientRepresentation client = managedRealm.admin().clients().findByClientId(clientId).get(0);
+            client.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
+            managedRealm.admin().clients().get(client.getId()).update(client);
+        }
+
+        return logoutTokens;
     }
 
     private String getClientUuid() {

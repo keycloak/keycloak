@@ -64,12 +64,13 @@ public class LogoutUserStepProvider implements WorkflowStepProvider {
             session.users().setNotBeforeForUser(realm, user, Time.currentTime());
         }
 
-        // offline sessions go first, as logging them out also removes the matching online sessions
+        // online sessions go first, as logging out an offline session removes the matching online session
+        // without notifying its clients
+        logout(realm, session.sessions().getUserSessionsStream(realm, user).toList());
+
         if (stepModel.get(CONFIG_INCLUDE_OFFLINE_SESSIONS, false)) {
             logout(realm, session.sessions().getOfflineUserSessionsStream(realm, user).toList());
         }
-
-        logout(realm, session.sessions().getUserSessionsStream(realm, user).toList());
     }
 
     private void logout(RealmModel realm, List<UserSessionModel> userSessions) {
