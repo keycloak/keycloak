@@ -1,0 +1,58 @@
+[[_vault-spi]]
+== Vault SPI
+
+=== Vault provider
+
+You can use a vault SPI from `org.keycloak.vault` package to write custom extension for {project_name} to connect to arbitrary vault implementation.
+
+The built-in `files-plaintext` provider is an example of the implementation of this SPI. In general the following rules apply:
+
+* To prevent a secret from leaking across realms, you may want to isolate or limit the secrets that can be retrieved by a realm.
+  In that case, your provider should take into account the realm name when looking up secrets, for example by prefixing
+  entries with the realm name. For example, an expression `${vault.key}` would then evaluate generally to different entry
+  names, depending on whether it was used in a realm _A_ or realm _B_. To differentiate between realms, the realm needs to
+  be passed to the created `VaultProvider` instance from `VaultProviderFactory.create()` method where it is available from the
+  `KeycloakSession` parameter.
+
+* The vault provider needs to implement a single method `obtainSecret` that returns a `VaultRawSecret` for the given secret name. That class holds the representation of the secret either in `byte[]` or `ByteBuffer` and is expected to convert between the two upon demand. Note that this buffer would be discarded after usage as explained below.
+
+ifeval::[{project_community}==true]
+Regarding realm separation, all built-in vault provider factories allow the configuration of one or more key resolvers. Represented
+by the `VaultKeyResolver` interface, a key resolver essentially implements the algorithm or strategy for combining the realm name
+with the key (as obtained from the `${vault.key}` expression) into the final entry name that will be used to retrieve the
+secret from the vault. The code that handles this configuration has been extracted into abstract vault provider and vault
+provider factory classes, so custom implementations that want to offer support for key resolvers may extend these abstract classes
+instead of the implementing SPI interfaces to inherit the ability to configure the key resolvers that should be tried when retrieving a secret.
+endif::[]
+
+For details on how to package and deploy a custom provider refer to the <<_providers,Service Provider Interfaces>> chapter.
+
+=== Consuming values from vault
+
+The vault contains sensitive data and {project_name} treats the secrets accordingly. When accessing a secret, the secret is obtained from the vault and retained in JVM memory only for the necessary time. Then all possible attempts to discard its content from JVM memory is done. This is achieved by using the vault secrets only within `try`-with-resources statement as outlined below:
+
+[source,java]
+----
+    char[] c;
+    try (VaultCharSecret cSecret = session.vault().getCharSecret(SECRET_NAME)) {
+        // ... use cSecret
+        c = cSecret.getAsArray().orElse(null);
+        // if c != null, it now contains password
+    }
+
+    // if c != null, it now contains garbage
+----
+
+The example uses `KeycloakSession.vault()` as the entrypoint for accessing
+the secrets. Using the `VaultProvider.obtainSecret` method directly is indeed
+also possible. However the `vault()` method has the benefit of ability
+to interpret the raw secret (which is generally a byte array)
+as a character array (via `vault().getCharSecret()`) or a `String`
+(via `vault().getStringSecret()`) in addition to obtaining the original
+uninterpreted value (via `vault().getRawSecret()` method).
+
+Note that since `String` objects are immutable, their content cannot be discarded
+by overriding with random garbage. Even though measures have been taken in the default
+`VaultStringSecret` implementation to prevent internalizing ``String``s, the secrets
+stored in `String` objects would live at least to the next GC round. Thus using
+plain byte and character arrays and buffers is preferable.

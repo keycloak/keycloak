@@ -1,0 +1,12 @@
+ifeval::[{project_community}==true]
+= Upgrade to WildFly 14
+
+The {project_name} server was upgraded to use WildFly 14 under the covers.
+
+= Keycloak Gatekeeper
+
+Keycloak Gatekeeper provides a security proxy that can be used to secure applications and services without an adapter.
+It can be installed locally alongside your application or as a sidecar on OpenShift or Kubernetes.
+
+Huge thanks to https://github.com/gambol99[gambol99] for contributing this work to Keycloak.
+endif::[]

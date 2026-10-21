@@ -1,0 +1,8 @@
+
+=== Retrieving external IDP tokens
+
+With {project_name}, you can store tokens and responses from the authentication process with the external IDP using the `Store Token` configuration option on the IDP's settings page.
+
+Application code can retrieve these tokens and responses to import extra user information or to request the external IDP securely. For example, an application can use the Google token to use other Google services and REST APIs.
+
+For the details on how to configure and use this functionality, please see the link:{developerguide_link}#_identity-brokering-apis-tokens[section for retrieving external IDP tokens from {developerguide_name}].

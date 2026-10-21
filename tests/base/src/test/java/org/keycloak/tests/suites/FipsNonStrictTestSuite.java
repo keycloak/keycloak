@@ -1,0 +1,88 @@
+package org.keycloak.tests.suites;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.testframework.https.CertificatesConfig;
+import org.keycloak.testframework.https.CertificatesConfigBuilder;
+import org.keycloak.testframework.injection.SuiteSupport;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.admin.ServerInfoTest;
+import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.cli.AbstractCliTest;
+import org.keycloak.tests.cli.admin.KcAdmCreateTest;
+import org.keycloak.tests.cli.admin.KcAdmTest;
+import org.keycloak.tests.cli.registration.KcRegCreateTest;
+import org.keycloak.tests.cli.registration.KcRegTest;
+import org.keycloak.tests.client.MutualTLSClientTest;
+import org.keycloak.tests.forms.LoginSSLTest;
+import org.keycloak.tests.forms.LoginTest;
+import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
+import org.keycloak.tests.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest;
+import org.keycloak.tests.x509.X509BrowserLoginTest;
+import org.keycloak.tests.x509.X509DirectGrantTest;
+
+import org.junit.platform.suite.api.AfterSuite;
+import org.junit.platform.suite.api.BeforeSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@SelectClasses({
+        CredentialsTest.class,
+        JavaKeystoreKeyProviderTest.class,
+        ServerInfoTest.class,
+        OID4VCSdJwtIssuingEndpointTest.class,
+        MutualTLSClientTest.class,
+        LoginTest.class,
+        LoginSSLTest.class,
+        KcAdmTest.class,
+        KcAdmCreateTest.class,
+        KcRegTest.class,
+        KcRegCreateTest.class,
+        X509BrowserLoginTest.class,
+        X509DirectGrantTest.class,
+})
+public class FipsNonStrictTestSuite {
+
+    @BeforeSuite
+    public static void beforeSuite() {
+        SuiteSupport.startSuite()
+                .registerServerConfig(FipsNonStrictServerConfig.class)
+                .registerSupplierConfig("certificates", FipsNonStrictCertificatesConfig.class)
+                .registerSupplierConfig("crypto", "fips", FipsMode.NON_STRICT.name());
+        // the cli tests spawn kcadm/kcreg as external processes, so point them at the FIPS-enabled client tools
+        AbstractCliTest.useFipsClientTools();
+    }
+
+    @AfterSuite
+    public static void afterSuite() {
+        SuiteSupport.stopSuite();
+    }
+
+    public static class FipsNonStrictServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.FIPS)
+                .option("fips-mode", "non-strict")
+                .dependency("org.bouncycastle", "bc-fips")
+                .dependency("org.bouncycastle", "bctls-fips")
+                .dependency("org.bouncycastle", "bcpkix-fips")
+                .dependency("org.bouncycastle", "bcutil-fips");
+        }
+    }
+
+    public static class FipsNonStrictCertificatesConfig implements CertificatesConfig {
+
+        @Override
+        public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
+            return config
+                    .tlsEnabled(true)
+                    .mTlsEnabled(true)
+                    .keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS)
+                    .stores("keycloak.bcfks", "keycloak-truststore.bcfks", "client.bcfks", "keycloak-truststore.bcfks");
+        }
+    }
+}

@@ -1,0 +1,26 @@
+package org.keycloak.tests.suites;
+
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@SelectPackages({
+        "org.keycloak.tests.account",
+        "org.keycloak.tests.actions",
+        "org.keycloak.tests.authz",
+        "org.keycloak.tests.broker",
+        "org.keycloak.tests.cli",
+        "org.keycloak.tests.client",
+        "org.keycloak.tests.common",
+        "org.keycloak.tests.composites",
+        "org.keycloak.tests.cookies",
+        "org.keycloak.tests.cors",
+        "org.keycloak.tests.db",
+        "org.keycloak.tests.docker",
+        "org.keycloak.tests.error",
+        "org.keycloak.tests.exportimport",
+        "org.keycloak.tests.events",
+        "org.keycloak.tests.forms",
+})
+public class Base2TestSuite {
+}

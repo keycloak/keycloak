@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="26.0.0-org-alias">
+        <addColumn tableName="ORG">
+            <column name="ALIAS" type="VARCHAR(255)"/>
+        </addColumn>
+        <update tableName="ORG">
+            <column name="ALIAS" valueComputed="NAME"/>
+        </update>
+        <addNotNullConstraint tableName="ORG" columnName="ALIAS" columnDataType="VARCHAR(255)"/>
+        <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, ALIAS" constraintName="UK_ORG_ALIAS"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-org-group">
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="TYPE" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+        <update tableName="KEYCLOAK_GROUP">
+            <column name="TYPE" valueNumeric="0" type="INT"/>
+        </update>
+        <addNotNullConstraint tableName="KEYCLOAK_GROUP" columnName="TYPE" columnDataType="INT"/>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_OrganizationGroupType"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-org-indexes">
+        <createIndex tableName="ORG_DOMAIN" indexName="IDX_ORG_DOMAIN_ORG_ID">
+            <column name="ORG_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-org-group-membership">
+        <addColumn tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" type="VARCHAR(255)"/>
+        </addColumn>
+        <update tableName="USER_GROUP_MEMBERSHIP">
+            <column name="MEMBERSHIP_TYPE" value="UNMANAGED"/>
+        </update>
+        <addNotNullConstraint tableName="USER_GROUP_MEMBERSHIP" columnName="MEMBERSHIP_TYPE" columnDataType="VARCHAR(255)"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="31296-persist-revoked-access-tokens">
+        <createTable tableName="REVOKED_TOKEN">
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="EXPIRE" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_RT" tableName="REVOKED_TOKEN"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="31725-index-persist-revoked-access-tokens">
+        <createIndex indexName="IDX_REV_TOKEN_ON_EXPIRE" tableName="REVOKED_TOKEN">
+            <column name="EXPIRE" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-idps-for-login">
+        <validCheckSum>9:51f5fffadf986983d4bd59582c6c1604</validCheckSum>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="ORGANIZATION_ID" type="VARCHAR(255)"/>
+            <column name="HIDE_ON_LOGIN" type="BOOLEAN" defaultValueBoolean="false"/>
+        </addColumn>
+        <createIndex indexName="IDX_IDP_REALM_ORG" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_IDP_FOR_LOGIN" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ENABLED"/>
+            <column name="LINK_ONLY"/>
+            <column name="HIDE_ON_LOGIN"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_0_0_IdentityProviderAttributesMigration"/>
+        <modifySql dbms="mssql">
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-32583-drop-redundant-index-on-client-session">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <indexExists indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
+        </preConditions>
+        <dropIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION" />
+    </changeSet>
+    
+    <changeSet id="26.0.0.32582-remove-tables-user-session-user-session-note-and-client-session" author="keycloak">
+        <dropTable tableName="CLIENT_SESSION_ROLE"/>
+        <dropTable tableName="CLIENT_SESSION_NOTE"/>
+        <dropTable tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <dropTable tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <dropTable tableName="CLIENT_USER_SESSION_NOTE"/>
+        <dropTable tableName="CLIENT_SESSION"/>
+        <dropTable tableName="USER_SESSION_NOTE"/>
+        <dropTable tableName="USER_SESSION"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.0.0-33201-org-redirect-url">
+        <addColumn tableName="ORG">
+            <column name="REDIRECT_URL" type="VARCHAR(2048)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

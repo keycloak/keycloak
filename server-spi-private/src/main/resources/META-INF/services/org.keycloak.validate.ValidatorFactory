@@ -1,0 +1,11 @@
+org.keycloak.validate.validators.LengthValidator
+org.keycloak.validate.validators.NotEmptyValidator
+org.keycloak.validate.validators.UriValidator
+org.keycloak.validate.validators.EmailValidator
+org.keycloak.validate.validators.NotBlankValidator
+org.keycloak.validate.validators.PatternValidator
+org.keycloak.validate.validators.DoubleValidator
+org.keycloak.validate.validators.IntegerValidator
+org.keycloak.validate.validators.LocalDateValidator
+org.keycloak.validate.validators.OptionsValidator
+org.keycloak.validate.validators.IsoDateValidator

@@ -1,0 +1,102 @@
+name: Create Azure SQL Database
+description: Create Azure SQL Database
+
+inputs:
+  name:
+    description: 'The name prefix for the Azure SQL resources'
+    required: true
+  region:
+    description: 'The Azure region used to host the SQL server'
+    required: true
+  admin-user:
+    description: 'The admin username for the SQL server'
+    required: false
+    default: 'sqladmin'
+  db-user:
+    description: 'The db username for the Keycloak DB'
+    required: false
+    default: 'keycloak'
+  admin-password:
+    description: 'Override admin password (auto-generated if not provided)'
+    required: false
+  db-password:
+    description: 'Override DB password (auto-generated if not provided)'
+    required: false
+  subscription:
+    description: 'Azure subscription ID'
+    required: true
+
+outputs:
+  endpoint:
+    description: 'The Endpoint URL for SQL clients to connect to'
+    value: ${{ steps.create.outputs.endpoint }}
+  db:
+    description: 'Database name'
+    value: ${{ steps.create.outputs.db }}
+  username:
+    description: 'DB user principal'
+    value: ${{ steps.create.outputs.username }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate secure passwords
+      id: generate-passwords
+      shell: bash
+      run: |
+        # Generate passwords using OpenSSL
+        generate_password() {
+          openssl rand -base64 48 | tr -d '\n/' | head -c 32
+        }
+        
+        # Use provided passwords or generate random ones
+        if [[ -n "${{ inputs.admin-password }}" ]]; then
+          ADMIN_PASSWORD="${{ inputs.admin-password }}"
+          echo "INFO: Using provided admin password"
+        else
+          ADMIN_PASSWORD=$(generate_password)
+          echo "INFO: Using generated admin password"
+        fi
+        
+        if [[ -n "${{ inputs.db-password }}" ]]; then
+          DB_PASSWORD="${{ inputs.db-password }}"
+          echo "INFO: Using provided DB password"
+        else
+          DB_PASSWORD=$(generate_password)
+          echo "INFO: Using generated DB password"
+        fi
+        
+        # Mask passwords
+        echo "::add-mask::$ADMIN_PASSWORD"
+        echo "::add-mask::$DB_PASSWORD"
+        
+        # Export to environment for subsequent steps
+        {
+          echo "AZURE_ADMIN_PASSWORD=$ADMIN_PASSWORD"
+          echo "AZURE_DB_PASSWORD=$DB_PASSWORD"
+        } >> $GITHUB_ENV
+    
+    - name: Install sqlcmd (mssql-tools)
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y curl apt-transport-https gnupg
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev
+        echo "/opt/mssql-tools/bin" >> $GITHUB_PATH
+
+    - id: create
+      shell: bash
+      run: |
+        ./azure_create_sql.sh
+      working-directory: .github/scripts/azure/sql
+      env:
+        AZURE_NAME: ${{ inputs.name }}
+        AZURE_REGION: ${{ inputs.region }}
+        AZURE_SUBSCRIPTION: ${{ inputs.subscription }}
+        AZURE_ADMIN_PASSWORD: ${{ env.AZURE_ADMIN_PASSWORD }}
+        AZURE_ADMIN_USER: ${{ inputs.admin-user }}
+        AZURE_DB_PASSWORD: ${{ env.AZURE_DB_PASSWORD }}
+        AZURE_DB_USER: ${{ inputs.db-user }}

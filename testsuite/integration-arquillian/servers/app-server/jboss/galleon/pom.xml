@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-servers-app-server-jboss-galleon</artifactId>
+    <packaging>jar</packaging>
+
+    <name>App Server - JBoss Galleon (EAP8)</name>
+
+    <properties>
+        <app.server.jboss>eap8</app.server.jboss>
+        <eap.version>${eap8.version}</eap.version>
+
+        <app.server.jboss.groupId>org.jboss.eap</app.server.jboss.groupId>
+        <app.server.jboss.artifactId>wildfly-ee-dist</app.server.jboss.artifactId>
+        <app.server.jboss.version>${eap.version}</app.server.jboss.version>
+
+        <app.server.jboss.unpacked.folder.path>${containers.home}/jboss-distribution</app.server.jboss.unpacked.folder.path>
+        <app.server.jboss.unpacked.folder.name>jboss-eap-8.0</app.server.jboss.unpacked.folder.name>
+
+        <app.server.saml.adapter.artifactId>keycloak-saml-adapter-galleon-pack</app.server.saml.adapter.artifactId>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.arquillian</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugin</artifactId>
+                <version>${org.jboss.galleon.version}</version>
+                <!--Provision a server with relevant layers-->
+                <executions>
+                    <execution>
+                        <id>server-provisioning</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <install-dir>${app.server.jboss.home}</install-dir>
+                            <record-state>true</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>false</offline>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                </feature-pack>
+                            </feature-packs>
+                            <pluginOptions>
+                                <optional-packages>all</optional-packages>
+                            </pluginOptions>
+                            <configurations>
+                                <config>
+                                    <model>standalone</model>
+                                    <name>standalone.xml</name>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>web-server</layer>
+                                        <layer>jaxrs-server</layer>
+                                        <layer>datasources-web-server</layer>
+                                        <layer>web-console</layer>
+
+                                        <layer>keycloak-saml</layer>
+                                        <layer>keycloak-client-saml</layer>
+                                        <layer>keycloak-client-saml-ejb</layer>
+                                    </layers>
+                                </config>
+                            </configurations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-standalone-file</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${app.server.jboss.unpacked.folder.path}/${app.server.jboss.unpacked.folder.name}/standalone/configuration
+                                    </directory>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>copy-welcome-content</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${app.server.jboss.home}/welcome-content</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${app.server.jboss.unpacked.folder.path}/${app.server.jboss.unpacked.folder.name}/welcome-content
+                                    </directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

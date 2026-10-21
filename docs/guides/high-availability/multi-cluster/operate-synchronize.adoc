@@ -1,0 +1,68 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Synchronizing sites"
+summary="Synchronize an offline site with an online site."
+tileVisible="false" >
+
+include::../partials/infinispan/infinispan-attributes.adoc[]
+
+== When to use this procedure
+
+Use this when the state of {jdgserver_name} clusters of two sites become disconnected and the contents of the caches are out-of-sync.
+Perform this for example after a split-brain or when one site has been taken offline for maintenance.
+
+At the end of the procedure, the data on the secondary site have been discarded and replaced by the data of the active site. All caches in the offline site are cleared to prevent invalid cache contents.
+
+== Procedures
+
+=== {jdgserver_name} Cluster
+
+For the context of this {section}, `{keep-site-name}` is the currently active site and `{stale-site-name}` is an offline site that is not part
+of the AWS Global Accelerator EndpointGroup and is therefore not receiving user requests.
+
+WARNING: Transferring state may impact {jdgserver_name} cluster performance by increasing the response time and/or resources usage.
+
+The first procedure is to delete the stale data from the offline site.
+
+. Login into the offline site.
+
+. Shutdown {project_name}.
+This will clear all {project_name} caches and prevents the {project_name} state from being out-of-sync with {jdgserver_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
+
+<#include "/high-availability/partials/infinispan/infinispan-cli-connect.adoc" />
+<#include "/high-availability/partials/infinispan/infinispan-cli-clear-caches.adoc" />
+
+Now we are ready to transfer the state from the active site to the offline site.
+
+. Login into your Active site
+
+<#include "/high-availability/partials/infinispan/infinispan-cli-connect.adoc" />
+
+<#include "/high-availability/partials/infinispan/infinispan-cli-state-transfer.adoc" />
+
+Now the state is available in the offline site, {project_name} can be started again:
+
+. Login into your secondary site.
+
+. Startup {project_name}.
++
+When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to the original value.
+
+=== AWS Aurora Database
+
+No action required.
+
+=== AWS Global Accelerator
+
+Once the two sites have been synchronized, it is safe to add the previously offline site back to the Global Accelerator
+EndpointGroup following the steps in the <@links.ha id="multi-cluster-operate-site-online" /> {section}.
+
+== Further reading
+
+See <@links.ha id="multi-cluster-concepts-infinispan-cli-batch" />.
+
+</@tmpl.guide>

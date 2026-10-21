@@ -1,0 +1,3 @@
+= WildFly 15 Upgrade
+
+Keycloak server was upgraded to use WildFly 15 under the covers.

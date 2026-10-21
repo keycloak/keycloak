@@ -1,0 +1,111 @@
+[
+  {
+    "id": "realm1",
+    "realm": "realm1",
+    "clients": [
+      {
+        "clientId": "customer-portal",
+        "enabled": true,
+        "adminUrl": "/customer-portal",
+        "baseUrl": "/customer-portal",
+        "redirectUris": ["/customer-portal/*"],
+        "secret": "password"
+      }
+    ],
+    "users": [
+      {
+        "username": "ssilvert",
+        "enabled": true,
+        "email": "ssilvert@redhat.com",
+        "firstName": "Stan",
+        "lastName": "Silvert",
+        "credentials": [{ "type": "password", "value": "password" }],
+        "realmRoles": ["user", "offline_access"],
+        "clientRoles": {
+          "account": ["manage-account"]
+        }
+      }
+    ],
+    "groups": [
+      {
+        "id": "7a20471c-c695-4778-adb0-4ee4ae88d198",
+        "name": "group1",
+        "path": "/group1",
+        "attributes": {
+          "foo": ["bar"]
+        },
+        "realmRoles": ["create-realm"],
+        "clientRoles": {},
+        "subGroups": []
+      }
+    ],
+    "identityProviders": [
+      {
+        "alias": "keycloak-oidc",
+        "internalId": "721b5dae-5b98-4284-bcd1-f872ce2ac174",
+        "providerId": "keycloak-oidc",
+        "enabled": true,
+        "updateProfileFirstLoginMode": "on",
+        "trustEmail": false,
+        "storeToken": false,
+        "addReadTokenRoleOnCreate": false,
+        "authenticateByDefault": false,
+        "config": {
+          "clientSecret": "foo",
+          "clientId": "foo",
+          "tokenUrl": "https://foo.bar",
+          "authorizationUrl": "https://foo.bar"
+        }
+      }
+    ],
+    "roles": {
+      "realm": [
+        {
+          "id": "9d2638c8-4c62-4c42-90ea-5f3c836d0cc8",
+          "name": "offline_access",
+          "scopeParamRequired": false,
+          "composite": false
+        },
+        {
+          "id": "9d2638c8-4c62-4c42-90ea-5f3c836d0cc8",
+          "name": "another",
+          "scopeParamRequired": false,
+          "composite": false
+        }
+      ],
+      "client": {
+        "realm-management": [
+          {
+            "id": "3b939f75-d013-4096-8462-48aa39261293",
+            "name": "create-client",
+            "description": "${role_create-client}",
+            "scopeParamRequired": false,
+            "composite": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "realm2",
+    "realm": "realm2",
+    "clients": [
+      {
+        "clientId": "customer-portal",
+        "enabled": true,
+        "adminUrl": "/customer-portal",
+        "baseUrl": "/customer-portal",
+        "redirectUris": ["/customer-portal/*"],
+        "secret": "password"
+      },
+      {
+        "clientId": "customer-portal2",
+        "enabled": true,
+        "adminUrl": "/customer-portal",
+        "baseUrl": "/customer-portal",
+        "redirectUris": ["/customer-portal/*"],
+        "secret": "password"
+      }
+    ]
+  }
+]

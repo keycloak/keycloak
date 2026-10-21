@@ -1,0 +1,29 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Using Avatars"
+priority=50
+summary="Use avatars in the Admin console and Account console.">
+
+Both the admin and account consoles allow use of an avatar to personalize the user experience.  {project_name} supports avatars using the oidc standard `picture` claim.
+
+This `picture` claim should have a URI as its value.  The URI should point to the avatar meant to be displayed in the masthead section of the admin console or account console.
+
+== Setting a picture attribute from the admin console
+The simplest way to allow users to specify the avatar URI is to add a `picture` attribute in User profile.  Just go to the admin console and navigate to the `Realm Settings -> User profile` tab.
+
+Here is an example setup of the `picture` attribute:
+
+image::ui-customization/picture-attribute-general-settings.png[caption="",title="User profile picture attribute setup in admin console"]
+
+== Avatar success
+Here is the result in account console once the URI is saved for the picture attribute:
+
+image::ui-customization/account-console-with-avatar.png[caption="",title="Avatar shown in account console"]
+
+== Important warning
+CAUTION: Allowing users to specify their own URI could lead to security concerns.  An avatar can contain malware. So ensure that images come from a trusted source.  One practical approach is to make sure that the `picture` has a regular expression validator to restrict the URI.
+
+image::ui-customization/avatar-validation.png[caption="",title="RegExp validator for User profile picture attribute"]
+</@tmpl.guide>

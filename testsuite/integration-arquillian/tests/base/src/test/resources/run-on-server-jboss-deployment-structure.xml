@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
+    <deployment>
+        <dependencies>
+            <module name="org.keycloak.testsuite.integration-arquillian-testsuite-providers"/>
+            <module name="org.keycloak.keycloak-common"/>
+            <module name="org.keycloak.keycloak-core"/>
+            <module name="org.keycloak.keycloak-server-spi"/>
+            <module name="org.keycloak.keycloak-server-spi-private"/>
+            <module name="org.keycloak.keycloak-services"/>
+            <module name="org.keycloak.keycloak-model-infinispan"/>
+            <module name="org.keycloak.keycloak-model-jpa"/>
+            <module name="org.keycloak.keycloak-kerberos-federation"/>
+            <module name="org.keycloak.keycloak-ldap-federation"/>
+            <module name="org.infinispan"/>
+            <module name="org.apache.commons.io"/>
+            <module name="org.apache.httpcomponents.core"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

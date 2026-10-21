@@ -1,0 +1,148 @@
+= Server Distribution
+
+== Java 11 support removed
+
+Running the Keycloak server with Java 11 is no longer supported. Java 11 was deprecated in Keycloak 21 with the announced plan to be removed in Keycloak 22.
+
+== Upgrade to Quarkus 3.x
+
+Keycloak upgraded to version 3.2.0.Final of the Quarkus Java framework.
+Quarkus 3.x continues the tradition of propelling Java development by moving fast and providing a cutting-edge user experience with the latest technologies.
+
+=== Transition from Java EE to Jakarta EE
+
+As part of upgrading to Quarkus 3.x Keycloak migrated its codebase from Java EE (Enterprise Edition) to its successor Jakarta EE, which brings various changes into Keycloak.
+We have upgraded all Jakarta EE specifications in order to support Jakarta EE 10.
+
+=== Context and dependency injection no longer enabled to JAX-RS Resources
+
+In order to provide a better runtime and leverage as much as possible the underlying stack,
+all injection points for contextual data using the `javax.ws.rs.core.Context` annotation were removed. The expected improvement
+in performance involves no longer creating proxies instances multiple times during the request lifecycle, and drastically reducing the amount of reflection code at runtime.
+
+== Upgrade to Hibernate ORM 6
+
+Keycloak now benefits from the upgrade to Hibernate ORM 6.2, which includes improved performance, better SQL, modern JDK support, and support for modern RDBMS features.
+
+== Elytron credential store replacement
+
+The previous and now removed WildFly distribution provided a built-in vault provider that reads secrets from a keystore-backed Elytron credential store. As this is no longer available, we have added a new implementation of the Keycloak Vault SPI called Keycloak KeyStore Vault. As the name suggests, this implementation reads secrets from a Java keystore file. Such secrets can be then used within multiple places of the Administration Console. For further details, see https://www.keycloak.org/server/vault[our guide] and the latest https://www.keycloak.org/docs/latest/server_admin/index.html#_vault-administration[documentation].
+
+== KeyStore Config Source added
+
+In relation to the KeyStore Vault news, we also integrated Quarkus's recently released feature called KeyStore Config Source. This means that among the already existing configuration sources (CLI parameters, environment variables and files), you can now configure your Keycloak server via configuration properties stored in a Java keystore file. You can learn more about this feature in the https://www.keycloak.org/server/configuration[Configuration guide].
+
+== Hostname debug tool
+
+As a number of users have had problems with configuring the hostname for the server correctly there is now a new helper tool to allow debugging the configuration.
+
+== Passthrough proxy mode changes
+
+Installations which use Keycloak's `--proxy` configuration setting with mode *passthrough* should review the documentation as the behavior of this mode has changed.
+
+== Export and Import perform an automatic build
+
+In previous releases, the `export` and `import` commands required a `build` command to be run first.
+Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
+
+
+= Admin Console
+
+== Account Console v1 removal
+
+The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
+in Keycloak 12.
+
+== Account Console v3 promoted to preview
+
+In version 21.1.0 of Keycloak the new Account Console (version 3) was introduced as an experimental feature. Starting this version it has been promoted to a preview feature.
+
+== Account Console template variables removed
+
+Two of the variables exposed to the Account Console V2 and V3 templates (`isEventsEnabled` and `isTotpConfigured`) were left unused, and have been removed in this release.
+
+It is possible that if a developer extended the Account Console theme, he or she could make use of these variables. So make sure that these variables are no longer used if you are extending the base theme.
+
+== Changes to custom Admin Console messages
+
+The Admin Console (and soon also the new Account Console) works slightly different than the rest of Keycloak in regards to how keys for internationalized messages are parsed. This is due to the fact that it uses the https://www.i18next.com/[i18next] library for internationalization. Therefore when defining custom messages for the Admin Console under "Realm Settings" ➡ "Localization" best practices for i18next must be taken into account. Specifically, when defining a message for the Admin Console it is it important to specify a https://www.i18next.com/principles/namespaces[namespace] in the key of your message.
+
+For example, let's assume we want to overwrite the https://github.com/keycloak/keycloak/blob/025778fe9c745316f80b53fe3052aeb314e868ef/js/apps/admin-ui/public/locales/en/dashboard.json#L3[`welcome`] message shown to the user when a new realm has been created. This message is located in the `dashboard` namespace, same as the name of the original file that holds the messages (`dashboard.json`). If we wanted to overwrite this message we'll have to use the namespace as a prefix followed by the key of the message separated by a colon, in this case it would become `dashboard:welcome`.
+
+
+= JavaScript adapter
+
+== Legacy Promise API removed
+
+With this release, we have removed the legacy Promise API methods from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible.
+
+== Required to be instantiated with the `new` operator
+
+In a previous release we started to actively log deprecation warnings when the Keycloak JS adapter is constructed without the `new` operator. Starting this release doing so will throw an exception instead. This is to align with the expected behavior of https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes[JavaScript classes], which will allow further refactoring of the adapter in the future.
+
+
+= Admin API
+
+== Renamed Admin library artifacts
+
+After the upgrade to Jakarta EE, artifacts for Keycloak Admin clients were renamed to more descriptive names with consideration for long-term maintainability.
+We still provide two separate Keycloak Admin clients, one with Jakarta EE and the other with Java EE support.
+
+== Support for count users based on custom attributes
+
+The User API now supports querying the number of users based on custom attributes. For that, a new `q` parameter was added to the `/{realm-name}/users/count` endpoint.
+
+The `q` parameter expects the following format `q=<name>:<value> <name>:<value>`. Where `<name>` and `<value>` represent the attribute name and value, respectively.
+
+
+= Operator
+
+== k8s.keycloak.org/v2alpha1 changes
+
+The are additional fields available in the keycloak.status to facilitate keycloak being a scalable resource. There are also additional fields that make the status easier to interpret such as observedGeneration and condition observedGeneration and lastTransitionTime fields.
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
+
+== Co-management of Operator Resources
+
+In scenarios where advanced management is needed you may now directly update most fields on operator managed resources that have not been set by the operator directly. This can be used as an alternative to the unsupported stanza of the Keycloak spec. Like the unsupported stanza these direct modifications are not considered supported. If your modifications prevent the operator from being able to manage the resource, there Keycloak CR will show this error condition and the operator will log it.
+
+
+= Identity Brokering
+
+== Essential claim configuration in OpenID Connect identity providers
+
+OpenID Connect identity providers support a new configuration to specify that the ID tokens issued by the identity provider must have a specific claim,
+otherwise the user can not authenticate through this broker.
+
+The option is disabled by default; when it is enabled, you can specify the name of the JWT token claim to filter and the value to match 
+(supports regular expression format).
+
+== Support for JWE encrypted ID Tokens and UserInfo responses in OpenID Connect providers
+
+The OpenID Connect providers now support https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] for the ID Token and the UserInfo response. The providers use the realm keys defined for the selected encryption algorithm to perform the decryption.
+
+== Hardcoded group mapper
+
+The new hardcorded group mapper allows adding a specific group to users brokered from an Identity Provider.
+
+== User session note mapper
+
+The new user session note mapper allows mapping a claim to the user session notes.
+
+
+= LDAP Federation
+
+== LDAPS-only Truststore option removed
+
+LDAP option to use truststore SPI `Only for ldaps` has been removed. This parameter is used to
+select truststore for TLS-secured LDAP connection: either internal Keycloak truststore is
+picked (`Always`), or the global JVM one (`Never`).
+
+Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
+selected for TLS-secured LDAP connections.
+
+
+= Removed Openshift integration feature
+
+The `openshift-integration` preview feature that allowed replacing the internal IdP in OpenShift 3.x with Keycloak was removed from Keycloak codebase into separate extension project.

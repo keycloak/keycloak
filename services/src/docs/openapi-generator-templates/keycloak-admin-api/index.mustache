@@ -1,0 +1,146 @@
+= {{{appName}}}
+{{#headerAttributes}}
+:toc: left
+:icons: font
+:toclevels: 2
+:keywords: openapi, rest, {{appName}}
+:specDir: {{specDir}}
+:snippetDir: {{snippetDir}}
+:generator-template: v1 2019-12-20
+:info-url: {{infoUrl}}
+:app-name: {{appName}}
+{{/headerAttributes}}
+
+{{#useIntroduction}}
+== Overview
+{{/useIntroduction}}
+{{^useIntroduction}}
+[abstract]
+.Abstract
+{{/useIntroduction}}
+{{{appDescription}}}
+
+=== Version information
+Version: {{version}}
+
+=== URI scheme
+
+```
+{base url}/admin/realms
+```
+
+For example `http://localhost:8080/admin/realms`
+
+ifdef::project_community[]
+
+=== OpenAPI Definitions
+
+WARNING: The OpenAPI definitions are a feature that is currently in preview.
+Please provide your feedback by link:https://github.com/keycloak/keycloak/discussions/8898[joining this discussion] while we’re continuing to work on this.
+If you find something is outdated or wrong, create a GitHub issue and provide a pull request.
+
+* link:openapi.json[OpenAPI definition in JSON format]
+* link:openapi.yaml[OpenAPI definition in YAML format]
+
+endif::[]
+
+{{#specinclude}}intro.adoc{{/specinclude}}
+
+{{#hasAuthMethods}}
+== Access
+
+{{#authMethods}}
+{{#isBasic}}
+{{#isBasicBasic}}* *HTTP Basic* Authentication _{{{name}}}_{{/isBasicBasic}}
+{{#isBasicBearer}}* *Bearer* Authentication {{/isBasicBearer}}
+{{/isBasic}}
+{{#isOAuth}}* *OAuth*  AuthorizationUrl: _{{authorizationUrl}}_, TokenUrl:   _{{tokenUrl}}_ {{/isOAuth}}
+{{#isApiKey}}* *APIKey* KeyParamName:     _{{keyParamName}}_,     KeyInQuery: _{{isKeyInQuery}}_, KeyInHeader: _{{isKeyInHeader}}_{{/isApiKey}}
+{{/authMethods}}
+
+{{/hasAuthMethods}}
+
+== Resources
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+
+[.{{baseName}}]
+// this is a better name
+=== {{operation.0.tags.0.name}}
+
+
+{{#operation}}
+
+[.{{nickname}}]
+{{#useMethodAndPath}}
+==== {{httpMethod}} {{path}}
+
+// Operation Id:: {{nickname}}
+
+{{/useMethodAndPath}}
+{{^useMethodAndPath}}
+==== {{nickname}}
+
+`{{httpMethod}} {{path}}`
+{{/useMethodAndPath}}
+
+{{{summary}}}
+
+// conditionally add description if there are notes
+{{#notes}}
+
+===== Description
+
+{{{.}}}
+{{/notes}}
+{{#specinclude}}{{path}}/{{httpMethod}}/spec.adoc{{/specinclude}}
+
+
+{{> params}}
+
+{{#hasProduces}}
+===== Content Type
+
+{{#produces}}
+* `+{{mediaType}}+`
+{{/produces}}
+{{/hasProduces}}
+
+===== Responses
+
+[cols="2,3,1"]
+|===
+| Code | Message | Datatype
+
+{{#responses}}
+
+| {{^isDefault}}{{code}}{{/isDefault}}{{#isDefault}}*default*{{/isDefault}}
+| {{^isDefault}}{{message}}{{/isDefault}}{{#isDefault}}success{{/isDefault}}
+| {{#containerType}}{{dataType}}[<<{{baseType}}>>]{{/containerType}} {{^containerType}}<<{{dataType}}>>{{/containerType}}
+
+{{/responses}}
+|===
+
+{{^skipExamples}}
+===== Samples
+
+{{#snippetinclude}}{{path}}/{{httpMethod}}/http-request.adoc{{/snippetinclude}}
+{{#snippetinclude}}{{path}}/{{httpMethod}}/http-response.adoc{{/snippetinclude}}
+
+{{#snippetlink}}* wiremock data, {{path}}/{{httpMethod}}/{{httpMethod}}.json{{/snippetlink}}
+{{/skipExamples}}
+
+ifdef::internal-generation[]
+===== Implementation
+{{#specinclude}}{{path}}/{{httpMethod}}/implementation.adoc{{/specinclude}}
+
+endif::internal-generation[]
+
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+{{> model}}

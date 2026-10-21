@@ -1,0 +1,44 @@
+/*
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.jose.jwe;
+
+import org.keycloak.common.crypto.CryptoConstants;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class JWEConstants {
+
+    public static final String DIRECT = "dir";
+    public static final String A128KW = CryptoConstants.A128KW;
+    public static final String RSA1_5 = CryptoConstants.RSA1_5;
+    public static final String RSA_OAEP = CryptoConstants.RSA_OAEP;
+    public static final String RSA_OAEP_256 = CryptoConstants.RSA_OAEP_256;
+    public static final String ECDH_ES = CryptoConstants.ECDH_ES;
+    public static final String ECDH_ES_A128KW = CryptoConstants.ECDH_ES_A128KW;
+    public static final String ECDH_ES_A192KW = CryptoConstants.ECDH_ES_A192KW;
+    public static final String ECDH_ES_A256KW = CryptoConstants.ECDH_ES_A256KW;
+
+    public static final String A128CBC_HS256 = "A128CBC-HS256";
+    public static final String A192CBC_HS384 = "A192CBC-HS384";
+    public static final String A256CBC_HS512 = "A256CBC-HS512";
+    public static final String A128GCM = "A128GCM";
+    public static final String A192GCM = "A192GCM";
+    public static final String A256GCM = "A256GCM";
+
+}

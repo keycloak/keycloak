@@ -1,0 +1,16 @@
+
+
+div.keycloak_help-header-description {
+  padding-top: var(--pf-v5-global--spacer--lg);
+  overflow-wrap: break-word;
+  white-space: normal;
+  color: var(--pf-v5-c-dropdown__menu-item--Color);
+}
+
+.keycloak_help-header-switch {
+  margin-left: var(--pf-v5-global--spacer--xl);
+}
+
+.keycloak_help-header-switch .pf-v5-c-switch__toggle::before {
+  background-color: var(--pf-v5-c-switch__toggle-icon--Color);
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "IT-1",
+    "groupNumber": 732
+  },
+  {
+    "name": "IT-2",
+    "groupNumber": 532
+  },
+  {
+    "name": "IT-3",
+    "groupNumber": 43
+  },
+  {
+    "name": "3scale-group",
+    "groupNumber": 732
+  },
+  {
+    "name": "Fuse-group",
+    "groupNumber": 532
+  },
+  {
+    "name": "Apicurio-group",
+    "groupNumber": 43
+  }
+]

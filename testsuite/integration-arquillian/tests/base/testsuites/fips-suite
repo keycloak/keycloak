@@ -1,0 +1,17 @@
+LoginTotpTest
+PasswordHashingTest
+ClientAuthSignedJWTTest
+ClientAuthEdDSASignedJWTTest
+UserFederationLdapConnectionTest
+LDAPUserLoginTest
+org.keycloak.testsuite.x509.**
+FAPI1Test
+FAPICIBATest
+SAMLServletAdapterTest
+SamlSignatureTest
+KcSamlBrokerTest
+KcSamlFirstBrokerLoginTest
+KcSamlEncryptedIdTest
+KcSamlSignedBrokerTest
+KcSamlSpDescriptorTest
+KerberosLdapTest

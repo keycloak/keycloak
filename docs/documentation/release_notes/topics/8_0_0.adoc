@@ -1,0 +1,95 @@
+= Highlights
+
+== Vault
+
+Several configuration fields can obtain their value from
+a vault instead of entering the value directly: LDAP bind password,
+SMTP password, and identity provider secrets.
+
+Furthermore, new vault SPI has been introduced to enable development
+of extensions to access secrets from custom vaults.
+
+== New Default Hostname provider
+
+The fixed and request hostname providers have been replaced with a single new default hostname provider. This provider
+comes with a number of improvements, including:
+
+* No need to change provider to set fixed base URL
+* Support different base URL for frontend and backend requests
+* Support changing context-path in cases where Keycloak is exposed on a different context-path through a reverse proxy
+
+== Messages in theme resources
+
+Message bundles in theme resources enables internationalization of custom providers such as authenticators. They are also shared between all theme types, making it possible to for example share messages between the login and account console. Thanks to https://github.com/micedre[micedre].
+
+== RoleMappingsProvider SPI for the SAML adapters
+
+We have added a new SPI that allows for the configuration of custom role mappers that are used by the SAML adapters to map
+the roles extracted from the SAML assertion into roles that exist in the SP application environment. This is particularly useful
+when the adapters need to communicate with third party IDPs and the roles set by the IDP in the assertion do not correspond to
+the roles that were defined for the SP application. The provider to be used can be configured in the `keycloak-saml.xml`
+file or in the `keycloak-saml` subsystem. An implementation that performs the role mappings based on the contents of a properties
+file was also provided.
+
+Notice that when {project_name} acts as the IDP we can use the built-in role mappers to perform any necessary mappings
+before setting the roles into the assertion, so this SPI will probably be redundant in this case. The `RoleMappingsProvider`
+SPI was designed for situations when the IDP offer no way to map roles before adding them to the assertion.
+
+== WildFly 18 Upgrade
+
+Keycloak server was upgraded to use WildFly 18 under the covers.
+
+== W3C Web Authentication support
+
+In this release, we added initial support for W3C Web Authentication (WebAuthn). There are a few limitations in current implementation,
+however we are working on further improvements in this area. Thanks to https://github.com/tnorimat[tnorimat] for the contribution. Also thanks to 
+// https://github.com/ynojima[ynojima] <-- Broken URL
+ynojima for the help and feedback.
+
+== Support for password-less authentication, multi-factor authentication and multiple credentials per user
+
+With the arrival of W3C Web Authentication support, we've refined the authentication flow system to be able to allow a user to select which authentication method is preferred for login (for example, the choice between an OTP credential and a WebAuthn credential). The new mechanisms also allow an administrator to
+craft flows for password-less login, for example just using WebAuthn as an authentication method. Please note that with these changes, any custom authentication
+flow you have created may need to be adapted to the new flow logic.
+
+As a result of these changes, users can now have multiple OTP devices and multiple WebAuthn devices. The same system that allows a user
+to select which type of device to use during login also allows that user to select which specific device to use. Thanks to the https://github.com/cloudtrust[Cloudtrust] team:
+https://github.com/AlistairDoswald[AlistairDoswald], https://github.com/fperot74[sispeo] and https://github.com/Fratt[Fratt] for their contributions, and
+to https://github.com/harture[harture] and https://github.com/lagess[Laurent] for their help.
+
+
+= Other Improvements
+
+== System properties and environment variables support in theme.properties
+
+It is now possible to use system properties and environment variables within theme.properties file. Thanks to https://github.com/Opa-[Opa-]
+
+== Support more signing algorithms for client authentication with signed JWT
+
+Thanks to https://github.com/tnorimat[tnorimat], we support more signing algorithms for client authentication with signed JWT.
+
+==  Configurable client authentication method for OIDC Identity providers
+
+In this release, possibility to authenticate OIDC providers with signed JWT or basic authentication was added. So all the client
+authentication methods mentioned in the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OIDC specification]
+are supported now. Thanks to https://github.com/madgaet[madgaet] and https://github.com/rradillen[rradillen] for contributions.
+
+== Support enable/disable logging into the JavaScript adapter
+
+Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or disable logging for the JS adapter.
+
+== Credentials support removed from the JavaScript adapter
+
+The option to provide client credentials in the JavaScript adapter was removed. Thanks to https://github.com/jonkoops[jonkoops]
+
+== Updates for Gatekeeper
+
+* Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]
+* There was a bug on Gatekeeper which was making cookies to be applied to subdomains. Thanks to https://github.com/daniel-ac-martin[daniel-ac-martin] the issue was fixed
+* Now Gatekeeper provides support to Same-site cookies. Thanks to https://github.com/fiji-flo[fiji-flo]
+
+ifeval::[{project_community}==true]
+== Deploying Scripts to the Server
+
+Please take a look at link:{releasenotes_link}#keycloak-7-0-1[7.0.1 {releasenotes_name}] for more details on how you can now deploy and run scripts to customize specific behavior.
+endif::[]

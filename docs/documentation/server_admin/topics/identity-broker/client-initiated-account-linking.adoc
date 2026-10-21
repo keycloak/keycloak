@@ -1,0 +1,15 @@
+
+=== Link existing user to the identity provider
+
+In the typical usage, the identity provider will automatically register new user to the {project_name} storage once user is authenticated
+to the {project_name} with the identity provider for the first time. Details about this are described in the <<_identity_broker_first_login, First login flow>>.
+
+However in many cases, it may be desired to link existing {project_name} user to the identity provider. This is useful, so that user can login with the identity provider
+during his next authentication to {project_name}. Another use is, that application may need to use existing tokens from identity provider.
+For example application may want to use Facebook API, so it will need user to link his {project_name} user account with his Facebook account to be then able to retrieve Facebook token from {project_name} and
+use it as described in the link:{developerguide_link}#_identity-brokering-apis-tokens[corresponding section from {developerguide_name}].
+
+The easiest is to use <<_account-service, Account console>> from where the user can directly link his account to the particular identity provider.
+It is also possible to directly trigger process of linking user with the identity provider from your own application. This is possible with the use of Client initiated account linking API.
+This API is used under the covers by the built-in {project_name} account console. For the details about this API, see
+the link:{developerguide_link}#_client-initiated-account-linking[corresponding section from {developerguide_name}].

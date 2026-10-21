@@ -1,0 +1,21 @@
+// Module included in the following assemblies:
+//
+// con-user-registration.adoc
+
+[id="proc-registering-new-user_{context}"]
+= Registering as a new user
+
+[role="_abstract"]
+As a new user, you must complete a registration form to log in for the first time. You add profile information and a password to register.
+
+.Registration form
+image:images/registration-form.png[]
+
+.Prerequisite
+* User registration is enabled.
+
+.Procedure
+. Click the *Register* link on the login page. The registration page is displayed.
+. Enter the user profile information.
+. Enter the new password.
+. Click *Register*.

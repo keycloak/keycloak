@@ -1,0 +1,101 @@
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                  entityID="https://IdentityProvider.com/SAML">
+    <ds:Signature>...</ds:Signature>
+    <IDPSSODescriptor WantAuthnRequestsSigned="true"
+                      protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:KeyName>IdentityProvider.com SSO Key</ds:KeyName>
+            </ds:KeyInfo>
+        </KeyDescriptor>
+        <ArtifactResolutionService isDefault="true" index="0"
+                                   Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+                                   Location="https://IdentityProvider.com/SAML/Artifact"/>
+        <SingleLogoutService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+            Location="https://IdentityProvider.com/SAML/SLO/SOAP"/>
+        <SingleLogoutService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+            Location="https://IdentityProvider.com/SAML/SLO/Browser"
+            ResponseLocation="https://IdentityProvider.com/SAML/SLO/Response"/>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName
+        </NameIDFormat>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+        </NameIDFormat>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:2.0:nameid-format:transient
+        </NameIDFormat>
+        <SingleSignOnService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+            Location="https://IdentityProvider.com/SAML/SSO/Browser"/>
+        <SingleSignOnService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+            Location="https://IdentityProvider.com/SAML/SSO/Browser"/>
+        <saml:Attribute
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+            Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6"
+            FriendlyName="eduPersonPrincipalName">
+        </saml:Attribute>
+        <saml:Attribute
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+            Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1"
+            FriendlyName="eduPersonAffiliation">
+            <saml:AttributeValue>member</saml:AttributeValue>
+            <saml:AttributeValue>student</saml:AttributeValue>
+            <saml:AttributeValue>faculty</saml:AttributeValue>
+            <saml:AttributeValue>employee</saml:AttributeValue>
+            <saml:AttributeValue>staff</saml:AttributeValue>
+        </saml:Attribute>
+    </IDPSSODescriptor>
+    <AttributeAuthorityDescriptor
+        protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:KeyName>IdentityProvider.com AA Key</ds:KeyName>
+            </ds:KeyInfo>
+        </KeyDescriptor>
+        <AttributeService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+            Location="https://IdentityProvider.com/SAML/AA/SOAP"/>
+        <AssertionIDRequestService
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:URI"
+            Location="https://IdentityProvider.com/SAML/AA/URI"/>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName
+        </NameIDFormat>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+        </NameIDFormat>
+        <NameIDFormat>
+            urn:oasis:names:tc:SAML:2.0:nameid-format:transient
+        </NameIDFormat>
+        <saml:Attribute
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+            Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6"
+            FriendlyName="eduPersonPrincipalName">
+        </saml:Attribute>
+        <saml:Attribute
+            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+            Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1"
+            FriendlyName="eduPersonAffiliation">
+            <saml:AttributeValue>member</saml:AttributeValue>
+            <saml:AttributeValue>student</saml:AttributeValue>
+            <saml:AttributeValue>faculty</saml:AttributeValue>
+            <saml:AttributeValue>employee</saml:AttributeValue>
+            <saml:AttributeValue>staff</saml:AttributeValue>
+        </saml:Attribute>
+    </AttributeAuthorityDescriptor>
+    <Organization>
+        <OrganizationName xml:lang="en">Identity Providers R
+            US</OrganizationName>
+        <OrganizationDisplayName xml:lang="en">
+            Identity Providers R US, a Division of Lerxst Corp.
+        </OrganizationDisplayName>
+        <OrganizationURL
+            xml:lang="en">https://IdentityProvider.com</OrganizationURL>
+    </Organization>
+</EntityDescriptor>

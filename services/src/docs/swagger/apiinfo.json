@@ -1,0 +1,8 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Keycloak Admin REST API",
+    "description": "This is a REST API reference for the Keycloak Admin REST API",
+    "version": 1
+  }
+}

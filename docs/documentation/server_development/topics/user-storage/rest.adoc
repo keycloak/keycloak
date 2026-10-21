@@ -1,0 +1,102 @@
+
+=== REST management API
+
+You can create, remove, and update your user storage provider deployments through the administrator REST API. The User Storage SPI
+is built on top of a generic component interface so you will be using that generic API to manage your providers.
+
+The REST Component API lives under your realm admin resource.
+
+----
+/admin/realms/{realm-name}/components
+----
+
+We will only show this REST API interaction with the Java client. Hopefully you can extract how to do this from `curl` from this API.
+
+[source,java]
+----
+public interface ComponentsResource {
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ComponentRepresentation> query();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ComponentRepresentation> query(@QueryParam("parent") String parent);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ComponentRepresentation> query(@QueryParam("parent") String parent, @QueryParam("type") String type);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ComponentRepresentation> query(@QueryParam("parent") String parent,
+                                               @QueryParam("type") String type,
+                                               @QueryParam("name") String name);
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response add(ComponentRepresentation rep);
+
+    @Path("{id}")
+    ComponentResource component(@PathParam("id") String id);
+}
+
+public interface ComponentResource {
+    @GET
+    public ComponentRepresentation toRepresentation();
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void update(ComponentRepresentation rep);
+
+    @DELETE
+    public void remove();
+}
+
+----
+
+To create a user storage provider, you must specify the provider id, a provider type of the string `org.keycloak.storage.UserStorageProvider`,
+as well as the configuration.
+
+[source,java,subs="attributes+"]
+----
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.RealmRepresentation;
+...
+
+Keycloak keycloak = Keycloak.getInstance(
+    "http://localhost:8080{kc_base_path}",
+    "master",
+    "admin",
+    "password",
+    "admin-cli");
+RealmResource realmResource = keycloak.realm("master");
+RealmRepresentation realm = realmResource.toRepresentation();
+
+ComponentRepresentation component = new ComponentRepresentation();
+component.setName("home");
+component.setProviderId("readonly-property-file");
+component.setProviderType("org.keycloak.storage.UserStorageProvider");
+component.setParentId(realm.getId());
+component.setConfig(new MultivaluedHashMap());
+component.getConfig().putSingle("path", "~/users.properties");
+
+realmResource.components().add(component);
+
+// retrieve a component
+
+List<ComponentRepresentation> components = realmResource.components().query(realm.getId(),
+                                                                    "org.keycloak.storage.UserStorageProvider",
+                                                                    "home");
+component = components.get(0);
+
+// Update a component
+
+component.getConfig().putSingle("path", "~/my-users.properties");
+realmResource.components().component(component.getId()).update(component);
+
+// Remove a component
+
+realmREsource.components().component(component.getId()).remove();
+----
+

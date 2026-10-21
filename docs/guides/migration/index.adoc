@@ -1,0 +1,12 @@
+= Keycloak migration guide
+
+include::../attributes.adoc[]
+
+<#list ctx.guides as guide>
+:links_migration_${guide.id}_name: ${guide.title}
+:links_migration_${guide.id}_url: #${guide.id}
+</#list>
+
+<#list ctx.guides as guide>
+include::${guide.template}[leveloffset=+${guide.levelOffset}]
+</#list>

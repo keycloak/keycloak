@@ -1,0 +1,8 @@
+.kc-filter-session-type-select {
+  margin-right: 10px;
+  width: 300px;
+}
+
+.pf-v5-c-form__group.kc-revocation-modal-form-group {
+  display: inline-block !important;
+}

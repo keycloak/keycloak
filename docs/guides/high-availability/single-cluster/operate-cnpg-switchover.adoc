@@ -1,0 +1,186 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="CloudNativePG Switchover Procedure"
+summary="Performing switchover of the CloudNativePG primary instance"
+tileVisible="false" >
+
+These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== When to use this procedure
+
+The CloudNativePG operator is designed to perform an automated switchover in situations such as changing a cluster configuration that requires a rolling update (for example `imageName`, `resources`, or certain `postgresql.paramaters`), an operator upgrade, or a {kubernetes} node maintenance (Pod eviction).
+
+This procedure can be used to perform a switchover manually, outside of these situations, for example to test how {project_name} behaves during switchovers.
+
+In order to minimize service disruptions it is recommended to perform this procedure during a period of minimal load.
+As long as the primary database node is shut down gracefully, no committed data should be lost.
+
+[IMPORTANT]
+====
+Initiating a switchover terminates existing connections to the primary instance. {project_name} will available again once the new primary instance is promoted and new connections can be established.
+This should take less than one minute.
+
+Shutdown of the primary instance may take some time, depending on how long it takes to finish its replication and possible archiving tasks. The maximum duration of this process can be controlled with the `.spec.switchoverDelay` setting. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/instance_manager#shutdown-of-the-primary-during-a-switchover[CloudNativePG documentation] for details.
+====
+
+== Prerequisities
+
+* A CloudNativePG cluster deployed according to steps described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
+* The `kubectl` command-line utility.
+* The `kubectl cnpg` plugin. Please follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/kubectl-plugin[CloudNativePG documentation] for installation steps.
+
+== Procedure
+
+. Review the status of the CloudNativePG cluster using the `kubectl cnpg status` command.
++
+.Command:
+[source,bash]
+----
+kubectl cnpg status -n cnpg-keycloak cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+Cluster Summary
+Name                     cnpg-keycloak/cnpg-keycloak
+System ID:               *******************
+PostgreSQL Image:        ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie
+Primary instance:        cnpg-keycloak-1 <1>
+Primary promotion time:  ****-**-** **:**:** +0000 UTC (*****)
+Status:                  Cluster in healthy state
+Instances:               3
+Ready instances:         3
+Size:                    ****
+Current Write LSN:       0/8000000 (Timeline: 1 - WAL File: 000000010000000000000008)
+
+Continuous Backup not configured
+
+Streaming Replication status  <2>
+Replication Slots Enabled
+Name             ⋯  Replay LSN  ⋯  Replay Lag  State      Sync State  Sync Priority  ⋯
+----             ⋯  ----------  ⋯  ----------  -----      ----------  -------------  ⋯
+cnpg-keycloak-2  ⋯  0/8000000   ⋯  00:00:00    streaming  quorum      1              ⋯
+cnpg-keycloak-3  ⋯  0/8000000   ⋯  00:00:00    streaming  quorum      1              ⋯
+
+Instances status <3>
+Name             Current LSN  Replication role  Status  QoS         Manager Version  Node
+----             -----------  ----------------  ------  ---         ---------------  ----
+cnpg-keycloak-1  0/8000000    Primary           OK      BestEffort  1.28.0           ⋯
+cnpg-keycloak-2  0/8000000    Standby (sync)    OK      BestEffort  1.28.0           ⋯
+cnpg-keycloak-3  0/8000000    Standby (sync)    OK      BestEffort  1.28.0           ⋯
+----
+<1> The current primary instance of the cluster.
+<2> This section shows the status of the cluster's replica instances.
+<3> General status of individual instances and their roles in the cluster.
+
+. Find a candidate for a new primary instance.
++
+In the _Streaming Replication status_ table note the values in the columns: `State` and `Sync State`.
++
+Before performing the switchover it is important to ensure that the candidate instance is in the `streaming` state, which means that it is actively receiving data from the primary, and that its Sync State is either `quorum` or `sync`.
++
+[IMPORTANT]
+====
+For replicas with the Sync State value of `potential` or `async` the replication is _asynchronous,_ which means that there is no guarantee that the particular replica has all the changes confirmed by the primary instance as committed. When selecting a new primary instance these replicas should be avoided.
+====
++
+In case the cluster is configured for a _quorum-based synchronous replication_ as described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}, it is possible to promote any of the available replicas.
++
+In case the cluster is configured for a _priority-based synchronous replication_, select the replica with the Sync State value of `sync`.
++
+.Sync State
+[%autowidth]
+|===
+| Sync State | Replication | Safe to promote
+
+| `quorum` | Quorum Synchronous | Safe
+| `sync` | Synchronous | Safe
+| `potential` | Asynchronous ^1^ | Unsafe
+| `async` | Asynchronous | Unsafe
+|===
+.Table footnotes:
+^1^ May be promoted to a synchronous standby if the current synchronous standby fails.
+
+. Promote a new primary instance.
++
+Once a candidate for the new primary instance is identified, for example `cnpg-keycloak-2` from the above example, use the following command to promote it.
++
+.Command:
+[source,bash]
+----
+kubectl cnpg promote -n cnpg-keycloak cnpg-keycloak cnpg-keycloak-2
+----
++
+.Output:
+[source,bash]
+----
+{"level":"info","ts":"****-**-*****:**:**.*********+**:**","msg":"Cluster has become unhealthy"}
+Node cnpg-keycloak-2 in cluster cnpg-keycloak will be promoted
+----
+
+. Wait for the cluster to return to the Ready state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=30s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
++
+
+. Verify the switchover by checking the cluster status again.
++
+.Command:
+[source,bash]
+----
+kubectl cnpg status -n cnpg-keycloak cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+Cluster Summary
+Name                     cnpg-keycloak/cnpg-keycloak
+System ID:               *******************
+PostgreSQL Image:        ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie
+Primary instance:        cnpg-keycloak-2 <1>
+Primary promotion time:  ****-**-** **:**:** +0000 UTC (*****)
+Status:                  Cluster in healthy state
+Instances:               3
+Ready instances:         3
+Size:                    ****
+Current Write LSN:       1/2B011FB0 (Timeline: 2 - WAL File: 00000002000000010000002B)
+
+Continuous Backup not configured
+
+Streaming Replication status <2>
+Replication Slots Enabled
+Name             ⋯  Replay LSN  ⋯  Replay Lag  State      Sync State  Sync Priority  ⋯
+----             ⋯  ----------  ⋯  ----------  -----      ----------  -------------  ⋯
+cnpg-keycloak-1  ⋯  1/2B011FB0  ⋯  00:00:00    streaming  quorum      1              ⋯
+cnpg-keycloak-3  ⋯  1/2B011FB0  ⋯  00:00:00    streaming  quorum      1              ⋯
+
+Instances status
+Name             Current LSN  Replication role  Status  QoS         Manager Version  Node
+----             -----------  ----------------  ------  ---         ---------------  ----
+cnpg-keycloak-2  1/2B011FB0   Primary           OK      BestEffort  1.28.0           ⋯
+cnpg-keycloak-1  1/2B011FB0   Standby (sync)    OK      BestEffort  1.28.0           ⋯
+cnpg-keycloak-3  1/2B011FB0   Standby (sync)    OK      BestEffort  1.28.0           ⋯
+----
+<1> Note that the role of the _primary instance_ has been switched over to `cnpg-keycloak-2`.
+<2> Note that the role of the original primary instance `cnpg-keycloak-1` has changed to replica.
+
+For possible troubleshooting scenarios refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/troubleshooting[CloudNativePG documentation].
+
+</@tmpl.guide>

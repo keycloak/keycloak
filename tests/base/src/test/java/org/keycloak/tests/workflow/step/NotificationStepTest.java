@@ -1,0 +1,419 @@
+/*
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.tests.workflow.step;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
+import org.keycloak.models.workflow.DisableUserStepProviderFactory;
+import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.representations.workflows.StepExecutionStatus;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipient;
+import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipientContaining;
+import static org.keycloak.tests.workflow.util.EmailTestUtils.verifyEmailContent;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Tests the execution of the 'notify-user' workflow step.
+ */
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class NotificationStepTest extends AbstractWorkflowTest {
+
+    @InjectMailServer
+    private MailServer mailServer;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectAdminClient(ref = "managed", realmRef = "managedRealm")
+    Keycloak adminClient;
+
+    @Test
+    public void testNotifyUserStepSendsEmailWithDefaultDisableMessage() {
+        // Create workflow: disable at 10 days, notify 3 days before (at day 7)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(3))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("test@example.com").name("John", "").build()).close();
+
+        // Simulate user being 7 days old (eligible for notify step)
+        runScheduledSteps(Duration.ofDays(7));
+
+        // Verify email was sent to our test user
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test@example.com");
+        assertNotNull(testUserMessage, "No email found for test@example.com");
+        verifyEmailContent(testUserMessage, "test@example.com", "Disable", "John", "3", "inactivity");
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserStepSendsEmailWithDefaultDeleteMessage() {
+        // Create workflow: delete at 30 days, notify 15 days before (at day 15)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build()).close();
+
+        // Simulate user being 15 days old
+        runScheduledSteps(Duration.ofDays(15));
+
+        // Verify email was sent to our test user
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test2@example.com");
+        assertNotNull(testUserMessage, "No email found for test2@example.com");
+        verifyEmailContent(testUserMessage, "test2@example.com", "Deletion", "Jane", "15", "inactivity", "permanently deleted");
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserStepSendsEmailInUserLocale() throws Exception {
+        String realmName = "Realm Italiano";
+        managedRealm.updateWithCleanup(r -> r.displayName(realmName).internationalizationEnabled(true).supportedLocales("en", "it"));
+
+        String locale = "it";
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountDisableNotificationSubject", "Avviso di disabilitazione account");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountDisableNotificationBody", "Il tuo account verra disabilitato tra {0} giorni per {1}.");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationGreeting", "Gentile {0},");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationTimeRemaining", "Tempo rimanente: {0} giorni");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationQuestions", "Per domande contatta gli amministratori di {0}.");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationSignature", "Cordiali saluti,");
+        managedRealm.admin().localization().saveRealmLocalizationText(locale, "accountNotificationSignatureFrom", "Amministrazione {0}");
+
+        // Create workflow: disable at 10 days, notify 3 days before (at day 7)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(3))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser-it").email("test-it@example.com").name("Mario", "")
+                .attribute(UserModel.LOCALE, locale).build()).close();
+
+        try {
+            // Simulate user being 7 days old (eligible for notify step)
+            runScheduledSteps(Duration.ofDays(7));
+
+            MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test-it@example.com");
+            assertNotNull(testUserMessage, "No email found for test-it@example.com");
+            assertEquals("Avviso di disabilitazione account", testUserMessage.getSubject());
+
+            MailUtils.EmailBody body = MailUtils.getBody(testUserMessage);
+
+            for (String content : List.of(body.getText(), body.getHtml())) {
+                assertTrue(content.contains("Gentile Mario,"), content);
+                assertTrue(content.contains("Il tuo account verra disabilitato tra 3 giorni per inactivity."), content);
+                assertTrue(content.contains("Tempo rimanente: 3 giorni"), content);
+                assertTrue(content.contains("Per domande contatta gli amministratori di " + realmName + "."), content);
+                assertTrue(content.contains("Cordiali saluti,"), content);
+                assertTrue(content.contains("Amministrazione " + realmName), content);
+
+                assertFalse(content.contains("Dear"), content);
+                assertFalse(content.contains("Time remaining"), content);
+                assertFalse(content.contains("If you have questions"), content);
+                assertFalse(content.contains("Best regards"), content);
+            }
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepSkipsUsersWithoutEmailButLogsWarning() {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create().username("testuser4").name("NoEmail", "").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+
+        runScheduledSteps(Duration.ofDays(5));
+        List<WorkflowRepresentation> scheduledWorkflows = managedRealm.admin().workflows().getScheduledWorkflows(userId);
+        assertThat(scheduledWorkflows, hasSize(1));
+        List<WorkflowStepRepresentation> steps = scheduledWorkflows.get(0).getSteps();
+        assertThat(steps, hasSize(2));
+        assertThat(steps.get(0).getExecutionStatus(), is(StepExecutionStatus.COMPLETED));
+        assertThat(steps.get(1).getExecutionStatus(), is(StepExecutionStatus.PENDING));
+        // pending step should the disable step
+        assertEquals(DisableUserStepProviderFactory.ID, steps.get(1).getUses());
+
+        // Should NOT send email to user without email address
+        MimeMessage testUserMessage = findEmailByRecipientContaining(mailServer, "testuser4");
+        assertNull(testUserMessage, "No email should be sent to user without email address");
+    }
+
+    @Test
+    public void testCompleteUserLifecycleWithMultipleNotifications() {
+        // Create workflow: just disable at 30 days with one notification before
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build()).close();
+
+        // Day 15: First notification - this should run the notify step and schedule the disable step
+        runScheduledSteps(Duration.ofDays(15));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser5");
+            // Check that user is still enabled after notification
+            user = session.users().getUserById(realm, user.getId());
+            assertTrue(user.isEnabled(), "User should still be enabled after notification");
+        });
+
+        // Day 30 + 15 minutes: Disable user - run 15 minutes after the scheduled time to ensure it's due
+        runScheduledSteps(Duration.ofDays(30).plus(Duration.ofMinutes(15)));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "testuser5");
+            // Verify user is disabled
+            user = session.users().getUserById(realm, user.getId());
+            assertNotNull(user, "User should still exist after disable");
+            assertFalse(user.isEnabled(), "User should be disabled");
+        });
+
+        // Verify notification was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "testuser5@example.com");
+        assertNotNull(testUserMessage, "No email found for testuser5@example.com");
+        verifyEmailContent(testUserMessage, "testuser5@example.com", "Disable", "TestUser5", "15", "inactivity");
+
+        mailServer.runCleanup();
+    }
+
+
+    @Test
+    public void testNotifyUserStepWithCustomMessageOverride() throws IOException {
+        // Create workflow: disable at 7 days, notify 2 days before (at day 5) with custom message
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("message", "<p>Dear ${user.firstName} ${user.lastName}, </p>\n" +
+                                        "\n" +
+                                        "        <p>Welcome to ${realm.name}!</p>\n" +
+                                        "        <p>The next step is scheduled to ${workflow.daysUntilNextStep} days.</p>\n" +
+                                        "\n" +
+                                        "        <p>\n" +
+                                        "           Best regards,<br/>\n" +
+                                        "           ${realm.name} team\n" +
+                                        "        </p> ")
+                                .withConfig("subject", "customComplianceSubject")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser3")
+                            .email("test3@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            MailUtils.EmailBody body = MailUtils.getBody(message);
+
+            for (String content : List.of(body.getText(), body.getHtml())) {
+                assertTrue(content.contains("Dear Bob Doe,"));
+                assertTrue(content.contains("Welcome to " + managedRealm.getName() + "!"));
+                assertTrue(content.contains("The next step is scheduled to 7 days."));
+            }
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithCustomSubjectResolvingProperties() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "${user.firstName}, your ${realm.name} account's review is due in ${workflow.daysUntilNextStep} days")
+                                .withConfig("message", "<p>Dear ${user.firstName},</p>")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser6")
+                            .email("test6@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // properties are resolved and the text is not interpreted as a MessageFormat pattern
+            assertEquals("Bob, your " + managedRealm.getName() + " account's review is due in 7 days", message.getSubject());
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithCustomSubjectFromMessageBundle() throws Exception {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("subject", "accountNotificationSubject")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        try {
+            managedRealm.admin().users().create(
+                    UserBuilder.create()
+                            .username("testuser7")
+                            .email("test7@example.com")
+                            .name("Bob", "Doe")
+                            .build()
+            ).close();
+
+            assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "notification email not received");
+
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            assertNotNull(message);
+
+            // a subject matching a key from the email theme message bundle still resolves to the localized text
+            assertEquals("Account Notification", message.getSubject());
+        } finally {
+            mailServer.runCleanup();
+        }
+    }
+
+    @Test
+    public void testNotifyUserStepWithSendToConfiguration() throws Exception {
+        // Create workflow: notify immediately with send_to
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .withConfig("to", "admin@example.com")
+                                .withConfig("reason", "manual-review")
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserBuilder.create().username("userXYZ").email("user@example.com").name("User", "XYZ").build()).close();
+
+        // Verify email was sent to admin@example.com
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        assertNotNull(message, "Email should be sent");
+
+        assertEquals("admin@example.com", message.getRecipients(jakarta.mail.Message.RecipientType.TO)[0].toString());
+
+        // Use helper to verify content - note that we pass admin email as recipient check
+        verifyEmailContent(message, "admin@example.com", "Disable", "User", "7", "manual-review");
+
+        mailServer.runCleanup();
+    }
+}

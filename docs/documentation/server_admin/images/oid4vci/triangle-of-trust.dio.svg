@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/TR/SVG11/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="750px" height="620px" viewBox="0 0 750 620">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc"/>
+      <stop offset="100%" style="stop-color:#eef2f6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="750" height="620" fill="url(#bg-grad)" rx="12"/>
+
+  <text x="375" y="40" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" fill="#1a202c">Triangle of Trust — The Issuer-Holder-Verifier Model</text>
+
+  <!-- Lines connecting the three parties -->
+  <line x1="115" y1="160" x2="375" y2="530" stroke="#3182ce" stroke-width="2.5" stroke-dasharray="10,5"/>
+  <line x1="635" y1="160" x2="375" y2="530" stroke="#3182ce" stroke-width="2.5" stroke-dasharray="10,5"/>
+  <line x1="115" y1="160" x2="635" y2="160" stroke="#a0aec0" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <!-- Issuer box (top-left) -->
+  <rect x="25" y="85" width="180" height="110" rx="12" fill="#dae8fc" stroke="#2b6cb0" stroke-width="2.5"/>
+  <text x="115" y="125" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold" fill="#2b6cb0">Issuer</text>
+  <text x="115" y="152" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">Signs and issues</text>
+  <text x="115" y="174" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">Verifiable Credentials</text>
+
+  <!-- Verifier box (top-right) -->
+  <rect x="545" y="85" width="180" height="110" rx="12" fill="#dae8fc" stroke="#2b6cb0" stroke-width="2.5"/>
+  <text x="635" y="125" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold" fill="#2b6cb0">Verifier</text>
+  <text x="635" y="152" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">Validates credentials</text>
+  <text x="635" y="174" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">without contacting Issuer</text>
+
+  <!-- Holder box (bottom-center) -->
+  <rect x="250" y="470" width="250" height="95" rx="12" fill="#dae8fc" stroke="#2b6cb0" stroke-width="2.5"/>
+  <text x="375" y="505" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold" fill="#2b6cb0">Holder / Wallet</text>
+  <text x="375" y="532" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">Receives, stores, and presents</text>
+  <text x="375" y="554" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="500" fill="#2d3748">Verifiable Credentials</text>
+
+  <!-- Edge labels -->
+  <!-- Top label: Issuer ↔ Verifier -->
+  <rect x="230" y="140" width="290" height="36" rx="8" fill="#ffffff" stroke="#cbd5e0" stroke-width="1.5" opacity="0.95"/>
+  <text x="375" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4a5568">No direct communication — privacy by design</text>
+  <text x="375" y="170" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#718096">Issuer never learns when or where credentials are used</text>
+
+  <!-- Left: Issuer → Holder -->
+  <rect x="140" y="280" width="160" height="44" rx="8" fill="#ffffff" stroke="#3182ce" stroke-width="1.5" opacity="0.95"/>
+  <text x="220" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#2b6cb0">OpenID4VCI</text>
+  <text x="220" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#2d3748">Credential Issuance</text>
+
+  <!-- Right: Holder → Verifier -->
+  <rect x="450" y="280" width="160" height="44" rx="8" fill="#ffffff" stroke="#3182ce" stroke-width="1.5" opacity="0.95"/>
+  <text x="530" y="303" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#2b6cb0">OpenID4VP</text>
+  <text x="530" y="322" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#2d3748">Credential Presentation</text>
+
+  <!-- On Issuer → Holder arrow -->
+  <rect x="260" y="420" width="230" height="36" rx="8" fill="#ebf8ff" stroke="#bee3f8" stroke-width="1.5" opacity="0.95"/>
+  <text x="375" y="438" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#2b6cb0">Delegates control to the Holder</text>
+  <text x="375" y="454" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#4a5568">Holder chooses what to share and with whom</text>
+
+  <!-- Footer -->
+  <text x="375" y="605" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#718096">The separation of issuance from presentation prevents tracking and preserves user privacy.</text>
+</svg>

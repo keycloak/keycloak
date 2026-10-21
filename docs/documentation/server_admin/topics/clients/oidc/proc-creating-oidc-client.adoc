@@ -1,0 +1,24 @@
+[id="proc-creating-oidc-client_{context}"]
+= Creating an OpenID Connect client
+
+[role="_abstract"]
+To protect an application that uses the OpenID connect protocol, you create a client.
+
+.Procedure
+
+. Click *Clients* in the menu.
+. Click *Create client*.
++
+.Create client
+image:images/add-client-oidc.png[Create Client]
+. Leave *Client type* set to *OpenID Connect*.
+. Enter a *Client ID.*
++
+This ID is an alphanumeric string that is used in OIDC requests and in the {project_name} database to identify the client.
+. Supply a *Name* for the client.
++
+If you plan to localize this name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
+
+. Click *Save*.
+
+This action creates the client and bring you to the *Settings* tab, where you can perform xref:con-basic-settings_{context}[Basic configuration].

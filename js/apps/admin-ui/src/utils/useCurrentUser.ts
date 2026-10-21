@@ -1,0 +1,23 @@
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
+import { useState } from "react";
+import { useAdminClient } from "../admin-client";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
+
+export function useCurrentUser() {
+  const { adminClient } = useAdminClient();
+  const { whoAmI } = useWhoAmI();
+  const [currentUser, setCurrentUser] = useState<UserRepresentation>();
+
+  useFetch(
+    async () =>
+      (await adminClient.users.findOne({
+        id: whoAmI.userId,
+        realm: whoAmI.realm,
+      })) ?? undefined,
+    setCurrentUser,
+    [whoAmI.userId, whoAmI.realm],
+  );
+
+  return { ...currentUser, realm: whoAmI.realm };
+}

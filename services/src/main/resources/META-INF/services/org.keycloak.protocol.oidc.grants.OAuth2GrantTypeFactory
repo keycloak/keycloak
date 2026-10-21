@@ -1,0 +1,10 @@
+org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory
+org.keycloak.protocol.oidc.grants.ClientCredentialsGrantTypeFactory
+org.keycloak.protocol.oidc.grants.PermissionGrantTypeFactory
+org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory
+org.keycloak.protocol.oidc.grants.ResourceOwnerPasswordCredentialsGrantTypeFactory
+org.keycloak.protocol.oidc.grants.TokenExchangeGrantTypeFactory
+org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory
+org.keycloak.protocol.oidc.grants.device.DeviceGrantTypeFactory
+org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory
+org.keycloak.protocol.oidc.grants.JWTAuthorizationGrantTypeFactory

@@ -1,0 +1,48 @@
+package org.keycloak.testsuite.pages;
+
+import org.keycloak.testsuite.util.UIUtils;
+
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
+/**
+ * Signing In Page with required action "Enter Backup Code for authentication"
+ *
+ * @author <a href="mailto:vnukala@redhat.com">Venkata Nukala</a>
+ */
+public class EnterRecoveryAuthnCodePage extends LanguageComboboxAwarePage {
+
+    @FindBy(xpath = "//label[@for='recoveryCodeInput']")
+    private WebElement recoveryAuthnCodeLabel;
+
+    @FindBy(id = "recoveryCodeInput")
+    private WebElement recoveryAuthnCodeTextField;
+
+    @FindBy(id = "kc-login")
+    private WebElement signInButton;
+
+    @FindBy(className = "kc-feedback-text")
+    private WebElement feedbackText;
+
+    public int getRecoveryAuthnCodeToEnterNumber() {
+        String [] recoveryAuthnCodeLabelParts = recoveryAuthnCodeLabel.getText().split("#");
+        return Integer.valueOf(recoveryAuthnCodeLabelParts[1]) - 1; // Recovery Authn Code 1 is at element 0 in the list
+    }
+
+    public void enterRecoveryAuthnCode(String recoveryCode) {
+        recoveryAuthnCodeTextField.sendKeys(recoveryCode);
+    }
+
+    public void clickSignInButton() {
+        UIUtils.clickLink(signInButton);
+    }
+
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-recovery-authn-code-input";
+    }
+
+    public String getFeedbackText() {
+        return feedbackText.getText().trim();
+    }
+}

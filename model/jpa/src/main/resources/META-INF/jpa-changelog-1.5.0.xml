@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.5.0">
+        <validCheckSum>7:cf12b04b79bea5152f165eb41f3955f6</validCheckSum>
+        <delete tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <delete tableName="CLIENT_SESSION_ROLE"/>
+        <delete tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <delete tableName="CLIENT_SESSION_NOTE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
+        <delete tableName="USER_SESSION"/>
+
+        <dropDefaultValue tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED" />
+        <dropColumn tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED"/>
+        <addColumn tableName="CREDENTIAL">
+            <column name="COUNTER" type="INT" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DIGITS" type="INT" defaultValueNumeric="6">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PERIOD" type="INT" defaultValueNumeric="30">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ALGORITHM" type="VARCHAR(36)" defaultValue="HmacSHA1">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="REALM">
+            <column name="OTP_POLICY_COUNTER" type="INT" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+            <column name="OTP_POLICY_WINDOW" type="INT" defaultValueNumeric="1">
+                <constraints nullable="true"/>
+            </column>
+            <column name="OTP_POLICY_PERIOD" type="INT" defaultValueNumeric="30">
+                <constraints nullable="true"/>
+            </column>
+            <column name="OTP_POLICY_DIGITS" type="INT" defaultValueNumeric="6">
+                <constraints nullable="true"/>
+            </column>
+            <column name="OTP_POLICY_ALG" type="VARCHAR(36)" defaultValue="HmacSHA1">
+                <constraints nullable="true"/>
+            </column>
+            <column name="OTP_POLICY_TYPE" type="VARCHAR(36)" defaultValue="totp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="BROWSER_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="REGISTRATION_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DIRECT_GRANT_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="RESET_CREDENTIALS_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="CLIENT_AUTH_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_AUTHENTICATOR_TYPE" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
+
+    </changeSet>
+</databaseChangeLog>

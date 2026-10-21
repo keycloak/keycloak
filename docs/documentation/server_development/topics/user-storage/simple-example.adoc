@@ -1,0 +1,280 @@
+=== Simple read-only, lookup example
+
+To illustrate the basics of implementing the User Storage SPI let's walk through a simple example. In this chapter you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file. The property file contains username and password definitions and is hardcoded to a specific location on the classpath. The provider will be able to look up the user by ID and username and also be able to validate passwords. Users that originate from this provider will be read-only.
+
+==== Provider class
+
+The first thing we will walk through is the `UserStorageProvider` class.
+
+[source,java]
+----
+public class PropertyFileUserStorageProvider implements
+        UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputValidator,
+        CredentialInputUpdater
+{
+...
+}
+----
+
+Our provider class, `PropertyFileUserStorageProvider`, implements many interfaces. It implements the `UserStorageProvider` as that is a base requirement of the SPI. It implements the `UserLookupProvider` interface because we want to be able to log in with users stored by this provider. It implements the `CredentialInputValidator` interface because we want to be able to validate passwords entered in using the login screen. Our property file is read-only. We implement the `CredentialInputUpdater` because we want to post an error condition when the user attempts to update his password.
+
+[source,java]
+----
+    protected KeycloakSession session;
+    protected Properties properties;
+    protected ComponentModel model;
+    // map of loaded users in this transaction
+    protected Map<String, UserModel> loadedUsers = new HashMap<>();
+
+    public PropertyFileUserStorageProvider(KeycloakSession session, ComponentModel model, Properties properties) {
+        this.session = session;
+        this.model = model;
+        this.properties = properties;
+    }
+----
+
+The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and property file. We'll use all of these later. Also notice that there is a map of loaded users. Whenever we find a user we will store it in this map so that we avoid re-creating it again within the same transaction. This is a good practice to follow as many providers will need to do this (that is, any provider that integrates with JPA). Remember also that provider class instances are created once per transaction and are closed after the transaction completes.
+
+===== UserLookupProvider implementation
+
+[source,java]
+----
+    @Override
+    public UserModel getUserByUsername(RealmModel realm, String username) {
+        UserModel adapter = loadedUsers.get(username);
+        if (adapter == null) {
+            String password = properties.getProperty(username);
+            if (password != null) {
+                adapter = createAdapter(realm, username);
+                loadedUsers.put(username, adapter);
+            }
+        }
+        return adapter;
+    }
+
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+        };
+    }
+
+    @Override
+    public UserModel getUserById(RealmModel realm, String id) {
+        StorageId storageId = new StorageId(id);
+        String username = storageId.getExternalId();
+        return getUserByUsername(realm, username);
+    }
+
+    @Override
+    public UserModel getUserByEmail(RealmModel realm, String email) {
+        return null;
+    }
+
+
+----
+
+The `getUserByUsername()` method is invoked by the {project_name} login page when a user logs in. In our implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction. If it hasn't been loaded we look in the property file for the username. If it exists we create an implementation of `UserModel`, store it in `loadedUsers` for future reference, and return this instance.
+
+The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter.AbstractUserAdapter`. This provides a base implementation for `UserModel`. It automatically generates a user id based on the required storage id format using the username of the user as the external id.
+
+----
+"f:" + component id + ":" + username
+----
+
+Every get method of `AbstractUserAdapter` either returns null or empty collections. However, methods that return role and group mappings will return the default roles and groups configured for the realm for every user.  Every set method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`. So if you attempt to modify the user in the Admin Console, you will get an error.
+
+The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId` helper class. The `StorageId.getExternalId()` method is invoked to obtain the username embedded in the `id` parameter. The method then delegates to `getUserByUsername()`.
+
+Emails are not stored, so the `getUserByEmail()` method returns null.
+
+===== CredentialInputValidator implementation
+
+Next let's look at the method implementations for `CredentialInputValidator`.
+
+[source,java]
+----
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        String password = properties.getProperty(user.getUsername());
+        return credentialType.equals(PasswordCredentialModel.TYPE) && password != null;
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return credentialType.equals(PasswordCredentialModel.TYPE);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType())) return false;
+
+        String password = properties.getProperty(user.getUsername());
+        if (password == null) return false;
+        return password.equals(input.getChallengeResponse());
+    }
+----
+
+The `isConfiguredFor()` method is called by the runtime to determine if a specific credential type is configured for the user. This method checks to see that the password is set for the user.
+
+The `supportsCredentialType()` method returns whether validation is supported for a specific credential type. We check to see if the credential type is `password`.
+
+The `isValid()` method is responsible for validating passwords. The `CredentialInput` parameter is really just an abstract interface for all credential types. We make sure that we support the credential type and also that it is an instance of `UserCredentialModel`. When a user logs in through the login page, the plain text of the password input is put into an instance of `UserCredentialModel`. The `isValid()` method checks this value against the plain text password stored in the properties file. A return value of `true` means the password is valid.
+
+===== CredentialInputUpdater implementation
+
+As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overridden in {project_name} local storage. We'll talk more about this later in this chapter.
+
+[source,java]
+----
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) throw new ReadOnlyException("user is read only for this update");
+
+        return false;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return Stream.empty();
+    }
+----
+
+The `updateCredential()` method just checks to see if the credential type is password.  If it is, a `ReadOnlyException` is thrown.
+
+==== Provider factory implementation
+
+Now that the provider class is complete, we now turn our attention to the provider factory class.
+
+[source,java]
+----
+public class PropertyFileUserStorageProviderFactory
+                 implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+
+    public static final String PROVIDER_NAME = "readonly-property-file";
+
+    @Override
+    public String getId() {
+        return PROVIDER_NAME;
+    }
+----
+
+First thing to notice is that when implementing the `UserStorageProviderFactory` class, you must pass in the concrete provider class implementation as a template parameter. Here we specify the provider class we defined before: `PropertyFileUserStorageProvider`.
+
+WARNING: If you do not specify the template parameter, your provider will not function. The runtime does class introspection
+         to determine the _capability interfaces_ that the provider implements.
+
+The `getId()` method identifies the factory in the runtime and will also be the string shown in the admin console when you want to enable a user storage provider for the realm.
+
+===== Initialization
+
+[source,java]
+----
+    private static final Logger logger = Logger.getLogger(PropertyFileUserStorageProviderFactory.class);
+    protected Properties properties = new Properties();
+
+    @Override
+    public void init(Config.Scope config) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("/users.properties");
+
+        if (is == null) {
+            logger.warn("Could not find users.properties in classpath");
+        } else {
+            try {
+                properties.load(is);
+            } catch (IOException ex) {
+                logger.error("Failed to load users.properties file", ex);
+            }
+        }
+    }
+
+    @Override
+    public PropertyFileUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new PropertyFileUserStorageProvider(session, model, properties);
+    }
+----
+
+The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {project_name} boots up, only one instance of each provider factory is created. Also at boot time, the `init()` method is called on each of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods are called.
+
+In our `init()` method implementation, we find the property file containing our user declarations from the classpath. We then load the `properties` field with the username and password combinations stored there.
+
+The `Config.Scope` parameter is factory configuration that configured through server configuration.
+
+For example, by running the server with the following argument:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-storage--readonly-property-file--path=/other-users.properties
+----
+
+We can specify the classpath of the user property file instead of hardcoding it. Then you can retrieve the configuration in the `PropertyFileUserStorageProviderFactory.init()`:
+
+[source,java]
+----
+public void init(Config.Scope config) {
+    String path = config.get("path");
+    InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+
+    ...
+}
+----
+
+===== Create method
+
+Our last step in creating the provider factory is the `create()` method.
+
+[source,java]
+----
+    @Override
+    public PropertyFileUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new PropertyFileUserStorageProvider(session, model, properties);
+    }
+----
+
+We simply allocate the `PropertyFileUserStorageProvider` class.  This create method will be called once per transaction.
+
+==== Packaging and deployment
+
+The class files for our provider implementation should be placed in a jar.  You also have to declare the provider factory class within the `META-INF/services/org.keycloak.storage.UserStorageProviderFactory` file.
+
+----
+org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
+----
+
+To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+
+==== Enabling the provider in the Admin Console
+
+You enable user storage providers per realm within the *User Federation* page in the Admin Console.
+
+.User Federation
+image:images/empty-user-federation-page.png[]
+
+.Procedure
+
+. Select the provider we just created from the list: `readonly-property-file`.
++
+The configuration page for our provider displays.
+
+. Click *Save* because we have nothing to configure.
++
+.Configured Provider
+image:images/storage-provider-created.png[]
+
+. Return to the main *User Federation* page
++
+You now see your provider listed.
++
+.User Federation
+image:images/user-federation-page.png[]
+
+You will now be able to log in with a user declared in the `users.properties` file. This user will only be able to view the account page after logging in.

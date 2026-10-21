@@ -1,0 +1,140 @@
+[[_service_protection_permission_api_papi]]
+= Managing permission requests
+
+Resource servers using the UMA protocol can use a specific endpoint to manage permission requests. This endpoint provides a UMA-compliant flow for registering permission requests and obtaining a permission ticket.
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission
+----
+
+A <<_overview_terminology_permission_ticket, permission ticket>> is a special security token type representing a permission request. Per the UMA specification, a permission ticket is:
+
+`A correlation handle that is conveyed from an authorization server to a resource server, from a resource server to a client, and ultimately from a client back to an authorization server, to enable the authorization server to assess the correct policies to apply to a request for authorization data.`
+
+In most cases, you do not need to deal with this endpoint directly. {project_name} provides a <<_enforcer_overview, policy enforcer>> that enables UMA for your
+resource server so it can obtain a permission ticket from the authorization server, return this ticket to client application, and enforce authorization decisions based on a final requesting party token (RPT).
+
+The process of obtaining permission tickets from {project_name} is performed by resource servers and not regular client applications,
+where permission tickets are obtained when a client tries to access a protected resource without the necessary grants to access the resource. The issuance of
+permission tickets is an important aspects when using UMA as it allows resource servers to:
+
+* Abstract from clients the data associated with the resources protected by the resource server
+* Register in the {project_name} authorization requests which in turn can be used later in workflows to grant access based on the resource's owner consent
+* Decouple resource servers from authorization servers and allow them to protect and manage their resources using different authorization servers
+
+Client wise, a permission ticket has also important aspects that its worthy to highlight:
+
+* Clients don't need to know about how authorization data is associated with protected resources. A permission ticket is completely opaque to clients.
+* Clients can have access to resources on different resource servers and protected by different authorization servers
+
+These are just some of the benefits brought by UMA where other aspects of UMA are strongly based on permission tickets, specially regarding
+privacy and user controlled access to their resources.
+
+== Creating permission ticket
+
+To create a permission ticket, send an HTTP POST request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '[
+  {
+    "resource_id": "{resource_id}",
+    "resource_scopes": [
+      "view"
+    ]
+  }
+]'
+----
+
+When creating tickets you can also push arbitrary claims and associate these claims with the ticket:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '[
+  {
+    "resource_id": "{resource_id}",
+    "resource_scopes": [
+      "view"
+    ],
+    "claims": {
+        "organization": ["acme"]
+    }
+  }
+]'
+----
+
+Where these claims will be available to your policies when evaluating permissions for the resource and scope(s) associated
+with the permission ticket.
+
+== Other non UMA-compliant endpoints
+
+=== Creating permission ticket
+
+To grant permissions for a specific resource with id {resource_id} to a user with id {user_id}, as an owner of the resource send an HTTP POST request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+     http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "resource": "{resource_id}",
+       "requester": "{user_id}",
+       "granted": true,
+       "scopeName": "view"
+     }'
+----
+
+=== Getting permission tickets
+
+[source,bash,subs="attributes+"]
+----
+curl http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token
+----
+
+You can use any of these query parameters:
+
+* `scopeId`
+* `resourceId`
+* `owner`
+* `requester`
+* `granted`
+* `returnNames`
+* `first`
+* `max`
+
+=== Updating permission ticket
+
+[source,bash,subs="attributes+"]
+----
+curl -X PUT \
+     http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "id": "{ticket_id}"
+       "resource": "{resource_id}",
+       "requester": "{user_id}",
+       "granted": false,
+       "scopeName": "view"
+     }'
+----
+
+=== Deleting permission ticket
+
+[source,bash,subs="attributes+"]
+----
+curl -X DELETE http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission/ticket/{ticket_id} \
+     -H 'Authorization: Bearer '$access_token
+----

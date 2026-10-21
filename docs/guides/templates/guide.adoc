@@ -1,0 +1,33 @@
+<#import "/templates/options.adoc" as opts>
+
+<#macro guide title summary priority=999 deniedCategories="" includedOptions="" excludedOptions="" preview="" tileVisible="true" levelOffset=1 previewDiscussionLink="">
+:guide-id: ${id}
+:guide-parent: ${parent}
+:guide-title: ${title}
+:guide-summary: ${summary}
+:guide-priority: ${priority}
+:guide-tile-visible: ${tileVisible}
+:guide-level-offset: ${levelOffset}
+:version: ${version}
+
+include::${attributes}
+
+[[${id}]]
+= ${title}
+
+ifeval::["${preview}" == "true"]
+WARNING: This {section} is describing a feature which is currently in preview.
+ifeval::["${previewDiscussionLink}" == ""]
+Please provide your feedback while we’re continuing to work on this.
+endif::[]
+ifeval::["${previewDiscussionLink}" != ""]
+Please provide your feedback by link:${previewDiscussionLink}[joining this discussion] while we’re continuing to work on this.
+endif::[]
+endif::[]
+
+<#nested>
+
+<#if includedOptions?has_content>
+<@opts.printRelevantOptions includedOptions=includedOptions excludedOptions=excludedOptions deniedCategories=deniedCategories></@>
+</#if>
+</#macro>

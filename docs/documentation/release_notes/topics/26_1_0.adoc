@@ -1,0 +1,189 @@
+= Transport stack `jdbc-ping` as new default
+
+{project_name} now uses by default its database to discover other nodes of the same cluster, which removes the need of additional network related configurations especially for cloud providers. It is also a default that will work out-of-the-box in cloud environments.
+
+Previous versions of {project_name} used as a default UDP multicast to discover other nodes to form a cluster and to synchronize the replicated caches of {project_name}.
+This required multicast to be available and to be configured correctly, which is usually not the case in cloud environments.
+
+Starting with this version, the default changes to the `jdbc-ping` configuration which uses {project_name}'s database to discover other nodes.
+As this removes the need for multicast network capabilities and UDP and no longer using dynamic ports for the TCP-based failure detection, this is a simplification and a drop-in replacement for environments which used the previous default.
+To enable the previous behavior, choose the transport stack `udp` which is now deprecated.
+
+The {project_name} Operator will continue to configure `kubernetes` as a transport stack.
+
+See the https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more information.
+
+= Virtual Threads enabled for Infinispan and JGroups thread pools
+
+Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups when running on OpenJDK 21 for environments with at least 2 CPU cores available.
+This removes the need to configure the JGroups thread pool, the need to align the JGroups thread pool with the HTTP worker thread pool, and reduces the overall memory footprint.
+
+= OpenTelemetry Tracing supported
+
+In the previous release, the OpenTelemetry Tracing feature was preview and is *fully supported* now.
+It means the `opentelemetry` feature is enabled by default.
+
+There were made multiple improvements to the tracing capabilities in {project_name} such as:
+
+* *Configuration via Keycloak CR* in {project_name} Operator
+* *Custom spans* for:
+** Incoming/outgoing HTTP requests including Identity Providers brokerage
+** Database operations and connections
+** LDAP requests
+** Time-consuming operations (passwords hashing, persistent sessions operations, ...)
+
+For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
+
+= Infinispan default XML configuration location
+
+Previous releases ignored any change  to `conf/cache-ispn.xml` if the `--cache-config-file` option was not provided.
+
+Starting from this release, when `--cache-config-file` is not set, the default Infinispan XML configuration file is `conf/cache-ispn.xml` as this is both the expected behavior and the implied behavior given the docs of the current and previous releases.
+
+= Individual options for category-specific log levels
+
+It is now possible to set category-specific log levels as individual `log-level-category` options.
+
+For more details, see the https://www.keycloak.org/server/logging#_configuring_levels_as_individual_options[Logging guide].
+
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it has great improvements in this release.
+This feature benefits from much polishing of the existing configuration and making the feature more dynamic and customizable.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/Captain-P-Goldfish[Pascal Knüppel],
+https://github.com/thomasdarimont[Thomas Darimont], https://github.com/Ogenbertrand[Ogen Bertrand], https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/tnorimat[Takashi Norimatsu].
+
+= Minimum ACR Value for the client
+
+The option *Minimum ACR value* is added as a configuration option on the realm OIDC clients. This addition is an enhancement related to step-up authentication, which makes it possible
+to enforce minimum ACR level when logging in to the particular client.
+
+Many thanks to https://github.com/sonOfRa[Simon Levermann] for the contribution.
+
+= Support for prompt=create
+
+Support now exists for the https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating user registration standard], which allows OIDC clients to initiate the login request with
+the parameter `prompt=create` to notify {project_name} that a new user should be registered rather than an existing user authenticated. Initiating user registration was already supported in {project_name} with the use of dedicated endpoint `/realms/<realm>/protocol/openid-connect/registrations`.
+However, this endpoint is now deprecated in favor of the standard way as it was a proprietary solution specific to {project_name}.
+
+Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
+= Option to create certificates for generated EC keys
+
+A new option, *Generate certificate*, exists for EC-DSA and Ed-DSA key providers. When the generated key is created by a realm administrator, a
+certificate might be generated for this key. The certificate information is available in the Admin Console and in the JWK representation of this key, which is available
+from JWKS endpoint with the realm keys.
+
+Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
+
+= Authorization Code Binding to a DPoP Key
+
+Support now exists for https://datatracker.ietf.org/doc/html/rfc9449#section-10[Authorization Code Binding to a DPoP Key] including support for the DPoP with Pushed Authorization Requests.
+
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+= Maximum count and length for additional parameters sent to OIDC authentication request
+
+The OIDC authentication request supports a limited number of additional custom parameters of maximum length. The additional parameters can be
+used for custom purposes (for example, adding the claims into the token with the use of the protocol mappers). In the previous versions, the maximum count of
+the parameters was hardcoded to 5 and the maximum length of the parameters was hardcoded to 2000. Now both values are configurable. Additionally it can be possible to configure
+if additional parameters cause a request to fail or if parameters are ignored.
+
+Many thanks to https://github.com/mschallar[Manuel Schallar] and https://github.com/patrick-primesign[Patrick Weiner] for the contribution.
+
+= Network Policy support added to the {project_name} Operator
+
+NOTE: Preview feature.
+
+To improve the security of your Kubernetes deployment, https://kubernetes.io/docs/concepts/services-networking/network-policies/[Network Policies] can be specified in your {project_name} CR.
+The {project_name} Operator accepts the ingress rules, which define from where the traffic is allowed to come from, and automatically creates the necessary Network Policies.
+
+= LDAP users are created as enabled by default when using Microsoft Active Directory
+
+If you are using Microsoft AD and creating users through the administrative interfaces, the user will be created as enabled by default.
+
+In previous versions, it was only possible to update the user status after setting a (non-temporary) password to the user.
+This behavior was not consistent with other built-in user storages as well as not consistent with other LDAP vendors supported
+by the LDAP provider.
+
+= New conditional authenticators `Condition - sub-flow executed` and `Condition - client scope`
+
+The *Condition - sub-flow executed* and *Condition - client scope* are new conditional authenticators in {project_name}. The condition *Condition - sub-flow executed* checks if a previous sub-flow was
+executed (or not executed) successfully during the authentication flow execution. The condition *Condition - client scope* checks if a configured client scope is present as a client scope of the
+client requesting authentication. For more details, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
+
+= Defining dependencies between provider factories
+
+When developing extensions for {project_name}, developers can now specify dependencies between provider factories classes by implementing the method `dependsOn()` in the `ProviderFactory` interface.
+See the Javadoc for a detailed description.
+
+= Dark mode enabled for the welcome theme
+
+We've now enabled dark mode support for all the `keycloak` themes. This feature was previously present in the admin console, account console and login, and is now also available on the welcome page. If a user indicates their preference through an operating system setting (e.g. light or dark mode) or a user agent setting, the theme will automatically follow these preferences.
+
+If you are using a custom theme that extends any of the `keycloak` themes and are not yet ready to support dark mode, or have styling conflicts that prevent you from implementing dark mode, you can disable support by adding the following property to your theme:
+
+[source,properties]
+----
+darkMode=false
+----
+
+Alternatively, you can disable dark mode support for the built-in Keycloak themes on a per-realm basis by turning off the *Dark mode* setting under the *Theme* tab in the realm settings.
+
+= Metrics on password hashing
+
+There is a new metric available counting how many password validations were performed by {project_name}.
+This allows you to better assess where CPU resources are used, and can feed into your sizing calculations.
+
+See https://www.keycloak.org/observability/metrics-for-troubleshooting-http[Keycloak metrics] and https://www.keycloak.org/high-availability/multi-cluster/concepts-memory-and-cpu-sizing#multi-cluster-measture-running-instance[Concepts for sizing CPU and memory resources] for more details.
+
+= Sign out all active sessions in admin console now effectively removes all sessions
+
+In previous versions, clicking on *Sign out all active sessions* in the admin console resulted in the removal of regular sessions only. Offline sessions would still be displayed despite being effectively invalidated.
+
+This has been changed. Now all sessions, regular and offline, are removed when signing out of all active sessions.
+
+= Dedicated release cycle for the Node.js adapter and JavaScript adapter
+
+From this release onwards, the {project_name} JavaScript adapter and {project_name} Node.js adapter will have a release cycle independent of the {project_name} server release cycle. The 26.1.0 release may be the last one
+where these adapters are released together with the {project_name} server, but from now on, these adapters may be released at a different time than the {project_name} server.
+
+= Updates in quickstarts
+
+The {project_name} quickstarts are now using `main` as the base branch. The `latest`  branch, used previously, is removed. The `main` branch depends on the
+last released version of the {project_name} server, {project_name} client libraries, and adapters.  As a result, contributions to the quickstarts are immediately visible to quickstart
+consumers with no need to wait for the next {project_name} server release.
+
+= Updated format of KEYCLOAK_SESSION cookie and AUTH_SESSION_ID cookie
+
+The format of `KEYCLOAK_SESSION` cookie was slightly updated to not contain any private data in plain text. Until now, the format of the cookie was `realmName/userId/userSessionId`. Now the cookie contains user session ID, which is hashed by SHA-256 and URL encoded.
+
+
+The format of `AUTH_SESSION_ID` cookie was updated to include a signature of the auth session id to ensure its integrity through signature verification. The new format is `base64(auth_session_id.auth_session_id_signature)`. With this update, the old format will no longer be accepted, meaning that old auth sessions will no longer be valid. This change has no impact on user sessions.
+
+These changes can affect you just in case when implementing your own providers and relying on the format of internal Keycloak cookies.
+
+= Removal of robots.txt file
+
+The `robots.txt` file, previously included by default, is now removed. The default `robots.txt` file blocked all crawling, which prevented the `noindex`/`nofollow` directives from being followed. The desired default behaviour is for {project_name} pages to not show up in search engine results and this is accomplished by the existing `X-Robots-Tag` header, which is set to `none` by default. The value of this header can be overridden per-realm if a different behaviour is needed.
+
+If you previously added a rule in your reverse proxy configuration for this, you can now remove it.
+
+= Imported key providers check and passivate keys with an expired cetificate
+
+The key providers that allow to import externally generated keys (`rsa` and `java-keystore` factories) now check the validity of the associated certificate if present. Therefore a key with a certificate that is expired cannot be imported in {project_name} anymore. If the certificate expires at runtime, the key is converted into a passive key (enabled but not active). A passive key is not used for new tokens, but it is still valid for validating previous issued tokens.
+
+The default `generated` key providers generate a certificate valid for 10 years (the types that have or can have an associated certificate). Because of the long validity and the recommendation to rotate keys frequently, the generated providers do not perform this check.
+
+= Admin events might include now additional details about the context when the event is fired
+
+In this release, admin events might hold additional details about the context when the event is fired. When upgrading you should
+expect the database schema being updated to add a new column `DETAILS_JSON` to the `ADMIN_EVENT_ENTITY` table.
+
+= OpenShift v3 identity brokering removed
+
+As OpenShift v3 reached end-of-life a while back, support for identity brokering with OpenShift v3 has been removed from Keycloak.

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xacml="urn:oasis:names:tc:xacml:2.0:policy:schema:os" xmlns:xacml-context="urn:oasis:names:tc:xacml:2.0:context:schema:os" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:oasis:names:tc:xacml:2.0:context:schema:os" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:import namespace="urn:oasis:names:tc:xacml:2.0:policy:schema:os" schemaLocation="access_control-xacml-2.0-policy-schema-os.xsd"/>
+	<!-- 	-->
+	<xs:element name="Request" type="xacml-context:RequestType"/>
+	<xs:complexType name="RequestType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Subject" maxOccurs="unbounded"/>
+			<xs:element ref="xacml-context:Resource" maxOccurs="unbounded"/>
+			<xs:element ref="xacml-context:Action"/>
+			<xs:element ref="xacml-context:Environment"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Response" type="xacml-context:ResponseType"/>
+	<xs:complexType name="ResponseType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Result" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Subject" type="xacml-context:SubjectType"/>
+	<xs:complexType name="SubjectType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Attribute" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="SubjectCategory" type="xs:anyURI" default="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Resource" type="xacml-context:ResourceType"/>
+	<xs:complexType name="ResourceType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:ResourceContent" minOccurs="0"/>
+			<xs:element ref="xacml-context:Attribute" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="ResourceContent" type="xacml-context:ResourceContentType"/>
+	<xs:complexType name="ResourceContentType" mixed="true">
+		<xs:sequence>
+			<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" processContents="lax"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Action" type="xacml-context:ActionType"/>
+	<xs:complexType name="ActionType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Attribute" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Environment" type="xacml-context:EnvironmentType"/>
+	<xs:complexType name="EnvironmentType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Attribute" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Attribute" type="xacml-context:AttributeType"/>
+	<xs:complexType name="AttributeType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:AttributeValue" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="AttributeId" type="xs:anyURI" use="required"/>
+		<xs:attribute name="DataType" type="xs:anyURI" use="required"/>
+		<xs:attribute name="Issuer" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="AttributeValue" type="xacml-context:AttributeValueType"/>
+	<xs:complexType name="AttributeValueType" mixed="true">
+		<xs:sequence>
+			<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" processContents="lax"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Result" type="xacml-context:ResultType"/>
+	<xs:complexType name="ResultType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:Decision"/>
+			<xs:element ref="xacml-context:Status" minOccurs="0"/>
+			<xs:element ref="xacml:Obligations" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="ResourceId" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="Decision" type="xacml-context:DecisionType"/>
+	<xs:simpleType name="DecisionType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Permit"/>
+			<xs:enumeration value="Deny"/>
+			<xs:enumeration value="Indeterminate"/>
+			<xs:enumeration value="NotApplicable"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- -->
+	<xs:element name="Status" type="xacml-context:StatusType"/>
+	<xs:complexType name="StatusType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:StatusCode"/>
+			<xs:element ref="xacml-context:StatusMessage" minOccurs="0"/>
+			<xs:element ref="xacml-context:StatusDetail" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="StatusCode" type="xacml-context:StatusCodeType"/>
+	<xs:complexType name="StatusCodeType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:StatusCode" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="Value" type="xs:anyURI" use="required"/>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="StatusMessage" type="xs:string"/>
+	<!-- -->
+	<xs:element name="StatusDetail" type="xacml-context:StatusDetailType"/>
+	<xs:complexType name="StatusDetailType">
+		<xs:sequence>
+			<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="MissingAttributeDetail" type="xacml-context:MissingAttributeDetailType"/>
+	<xs:complexType name="MissingAttributeDetailType">
+		<xs:sequence>
+			<xs:element ref="xacml-context:AttributeValue" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="AttributeId" type="xs:anyURI" use="required"/>
+		<xs:attribute name="DataType" type="xs:anyURI" use="required"/>
+		<xs:attribute name="Issuer" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<!-- -->
+</xs:schema>
+

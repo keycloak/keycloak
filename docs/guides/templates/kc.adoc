@@ -1,0 +1,55 @@
+<#macro build rootParameters="" parameters="">
+[source,bash]
+----
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> build<#if parameters?has_content> ${parameters}</#if>
+----
+</#macro>
+
+<#macro start rootParameters="" parameters="">
+[source,bash]
+----
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> start<#if parameters?has_content> ${parameters}</#if>
+----
+</#macro>
+
+<#macro startdev parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev ${parameters}
+----
+</#macro>
+
+<#macro admin parameters>
+[source,bash]
+----
+bin/kcadm.[sh|bat] ${parameters}
+----
+</#macro>
+
+<#macro export parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] export ${parameters}
+----
+</#macro>
+
+<#macro import parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] import ${parameters}
+----
+</#macro>
+
+<#macro bootstrapadmin parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] bootstrap-admin ${parameters}
+----
+</#macro>
+
+<#macro updatecompatibility parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] update-compatibility ${parameters}
+----
+</#macro>

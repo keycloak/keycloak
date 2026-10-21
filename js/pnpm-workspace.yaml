@@ -1,0 +1,40 @@
+packages:
+  - apps/*
+  - libs/*
+  - themes-vendor
+
+ignoredOptionalDependencies:
+  - '@types/c3'
+  - bootstrap-datepicker
+  - bootstrap-sass
+  - bootstrap-select
+  - bootstrap-slider
+  - bootstrap-switch
+  - bootstrap-touchspin
+  - 'c3'
+  - 'd3'
+  - datatables.net
+  - datatables.net-colreorder
+  - datatables.net-colreorder-bs
+  - datatables.net-select
+  - drmonty-datatables-colvis
+  - eonasdan-bootstrap-datetimepicker
+  - font-awesome-sass
+  - google-code-prettify
+  - jquery-match-height
+  - moment
+  - moment-timezone
+  - patternfly-bootstrap-combobox
+  - patternfly-bootstrap-treeview
+overrides:
+  serialize-javascript: ^7.0.5
+  'brace-expansion@^1': ^1.1.13
+  'brace-expansion@^2': ^2.0.3
+  diff@^7: ^8.0.3
+  '@microsoft/api-extractor': ^7.58.7
+  jquery@^3: ^3.7.1
+  lodash: ^4.17.23
+  mdast-util-to-hast: ^13.2.1
+allowBuilds:
+  '@swc/core': true
+  esbuild: true

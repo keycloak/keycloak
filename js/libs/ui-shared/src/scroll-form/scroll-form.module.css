@@ -1,0 +1,8 @@
+.panel {
+  margin-top: var(--pf-v5-global--spacer--lg);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+}

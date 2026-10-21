@@ -1,0 +1,53 @@
+==== OpenShift 4
+
+.Prerequisites
+. A certificate of the OpenShift 4 instance stored in the {project_name} Truststore.
+. A {project_name} server configured in order to use the truststore. For more information, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
+
+.Procedure
+. Locate the Openshift 4 instance's API URL by using this command:
++
+[source,bash,subs=+attributes]
+----
+oc cluster-info
+----
+. Look for the URL in a line that has this format:
++
+[source,bash,subs=+attributes]
+----
+Kubernetes master is running at https://api.<your-openshift-domain>:6443
+----
+. In the Admin Console, click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Openshift v4*.
+. Enter the *Client ID* and *Client Secret* and in the *Base URL* field, enter the API URL of your OpenShift 4 instance. Additionally, you can copy the *Redirect URI* to your clipboard.
++
+.Add identity provider
+image:images/openshift-4-add-identity-provider.png[Add Identity Provider]
++
+. Register your client, either via OpenShift 4 Console (Home -> API Explorer -> OAuth Client -> Instances) or using the `oc` command-line tool.
++
+[source, subs="attributes+"]
+----
+$ oc create -f <(echo '
+kind: OAuthClient
+apiVersion: oauth.openshift.io/v1
+metadata:
+ name: kc-client <1>
+secret: "..." <2>
+redirectURIs:
+ - "<here you can paste the Redirect URI that you copied in the previous step>" <3>
+grantMethod: prompt <4>
+')
+----
+
+<1> The `name` of your OAuth client. Passed as `client_id` request parameter when making requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token`. The `name` parameter must be the same in the `OAuthClient` object and the {project_name} configuration.
+<2> The `secret` {project_name} uses as the `client_secret` request parameter.
+<3> The `redirect_uri` parameter specified in requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token` must be equal to (or prefixed by) one of the URIs in `redirectURIs`. The easiest way to configure it correctly is to copy-paste it from {project_name} OpenShift 4 Identity Provider configuration page (`Redirect URI` field).
+<4> The `grantMethod` {project_name} uses to determine the action when this client requests tokens but has not been granted access by the user.
+
+In the end you should see the OpenShift 4 Identity Provider on the login page of your {project_name} instance. After clicking on it, you should be redirected to the OpenShift 4 login page.
+
+.Result
+image:images/openshift-4-result.png[Result]
+
+See https://docs.okd.io/latest/authentication/configuring-oauth-clients.html#oauth-register-additional-client_configuring-oauth-clients[official OpenShift documentation] for more information.

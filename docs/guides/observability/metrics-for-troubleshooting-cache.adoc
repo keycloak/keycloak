@@ -1,0 +1,75 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Local caching metrics"
+summary="Use metrics to monitor health for local caching."
+tileVisible="false">
+
+====
+*Global tags*
+
+`cache=<name>`:: The cache name.
+====
+
+== Size
+
+Monitor the number of entries in your local cache.
+
+|===
+|Metric |Description
+
+m| cache_size
+| The number of cached entries.
+
+|===
+
+== Data Access
+
+The following metrics monitor the cache accesses, such as lookup and evictions.
+
+=== Reads
+
+====
+*Tags*
+
+`result=hit|miss`:: The result of the read/lookup operation.
+If the value is `hit`, the entry was found in the cache.
+====
+
+The read requests can be monitored using a single metric.
+
+|===
+|Metric |Description
+
+m| cache_gets_total
+| The total number of cache lookups.
+
+|===
+
+====
+*Hit Ratio for read operation*
+
+An expression can be used to compute the hit ratio for a cache in systems such as Prometheus.
+For example, the hit ratio for read operations can be expressed as:
+
+----
+cache_gets_total{result="hit"} / cache_gets_total
+
+----
+
+====
+
+=== Evictions
+
+When a cache is limited, eviction is the process of removing the least used entries to make space available for new entries to be cached.
+
+|===
+|Metric |Description
+
+m|cache_evictions_count
+| The number of times the cache was evicted.
+
+|===
+
+</@tmpl.guide>

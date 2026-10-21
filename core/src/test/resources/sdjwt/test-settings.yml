@@ -1,0 +1,32 @@
+# from: https://github.com/openwallet-foundation-labs/sd-jwt-python/blob/main/src/sd_jwt/utils/demo_settings.yml
+identifiers:
+    issuer: "https://example.com/issuer"
+    verifier: "https://example.com/verifier"
+
+key_settings:
+    key_size: 256
+
+    kty: EC
+
+    issuer_key:
+        kty: EC
+        d: Ur2bNKuBPOrAaxsRnbSH6hIhmNTxSGXshDSUD1a1y7g
+        crv: P-256
+        x: b28d4MwZMjw8-00CG4xfnn9SLMVMM19SlqZpVb_uNtQ
+        y: Xv5zWwuoaTgdS6hV43yI6gBwTnjukmFQQnJ_kCxzqk8
+
+    holder_key:
+        kty: EC
+        d: 5K5SCos8zf9zRemGGUl6yfok-_NiiryNZsvANWMhF-I
+        crv: P-256
+        x: TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc
+        y: ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ
+
+key_binding_nonce: "1234567890"
+
+expiry_seconds: 86400000  # 1000 days
+
+random_seed: 0
+
+iat: 1683000000  # Tue May 02 2023 04:00:00 GMT+0000
+exp: 1883000000  # Sat Sep 01 2029 23:33:20 GMT+0000

@@ -1,0 +1,9 @@
+// Configure settings for the preview in IntelliJ
+// see: https://intellij-asciidoc-plugin.ahus1.de/docs/users-guide/features/advanced/asciidoctorconfig-file.html
+:imagesdir: {asciidoctorconfigdir}/images
+:icons: font
+:section: guide
+:sections: guides
+
+ifndef::asciidoctorconfigdir[:asciidoctorconfigdir: .]
+include::{asciidoctorconfigdir}/attributes.adoc[]

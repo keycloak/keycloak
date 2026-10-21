@@ -1,0 +1,390 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.testsuite.saml;
+
+import java.nio.charset.StandardCharsets;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPMessage;
+import jakarta.xml.ws.soap.SOAPFaultException;
+
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.Test;
+
+import static org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
+public class SOAPBindingTest extends AbstractSamlTest {
+
+    @Test
+    public void soapBindingAuthnWithSignatureTest() {
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                    .basicAuthentication(bburkeUser)
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
+        ResponseType rt = (ResponseType)response.getSamlObject();
+        assertThat(rt.getAssertions(), not(empty()));
+    }
+
+    @Test
+    public void soapBindingAuthnWithSignatureMissingDestinationTest() {
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                    .transformObject(authnRequestType -> {
+                        authnRequestType.setDestination(null);
+                        return authnRequestType;
+                    })
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .basicAuthentication(bburkeUser)
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
+        ResponseType rt = (ResponseType)response.getSamlObject();
+        assertThat(rt.getAssertions(), not(empty()));
+    }
+
+    @Test
+    public void soapBindingAuthnWithoutSignatureTest() {
+        getCleanup()
+                .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                        .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                        .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                        .update()
+                );
+
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                .basicAuthentication(bburkeUser)
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
+        ResponseType rt = (ResponseType)response.getSamlObject();
+        assertThat(rt.getAssertions(), not(empty()));
+    }
+
+    @Test
+    public void soapBindingAuthnWithoutSignatureMissingDestinationTest() {
+        getCleanup()
+                .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                        .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                        .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                        .update()
+                );
+
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                    .transformObject(authnRequestType -> {
+                        authnRequestType.setDestination(null);
+                        return authnRequestType;
+                    })
+                    .basicAuthentication(bburkeUser)
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(ResponseType.class));
+        ResponseType rt = (ResponseType)response.getSamlObject();
+        assertThat(rt.getAssertions(), not(empty()));
+    }
+
+    @Test
+    public void soapBindingLogoutWithSignature() {
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .login().user(bburkeUser).build()
+                .processSamlResponse(POST)
+                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                .build()
+                .clearCookies()
+                .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
+    }
+
+    @Test
+    public void soapBindingLogoutWithoutSignature() {
+        // SessionIndex back-channel logout without client signature must be rejected (#53535)
+        getCleanup()
+                .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                        .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                        .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                        .update()
+                );
+
+        try {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(POST)
+                        .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                    .build()
+                    .clearCookies()
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                        .nameId(nameIdRef::get)
+                        .sessionIndex(sessionIndexRef::get)
+                    .build()
+                    .executeAndTransform(SOAP::extractResponse);
+            fail("unsigned SessionIndex LogoutRequest should be rejected");
+        } catch (RuntimeException ex) {
+            assertThat(ex.getCause(), instanceOf(SOAPFaultException.class));
+            assertThat(((SOAPFaultException) ex.getCause()).getFault().getFaultString(),
+                    is(AUTHN_REQUEST_CANNOT_BE_PROCESSED));
+        }
+    }
+
+    @Test
+    public void soapBindingLogoutWithSignatureMissingDestinationTest() {
+        SAMLDocumentHolder response = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .login().user(bburkeUser).build()
+                .processSamlResponse(POST)
+                    .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                .build()
+                .clearCookies()
+                .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                    .transformObject(logoutRequestType -> {
+                        logoutRequestType.setDestination(null);
+                        return logoutRequestType;
+                    })
+                .build()
+                .executeAndTransform(SOAP::extractResponse);
+
+
+        assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
+    }
+
+    @Test
+    public void soapBindingLogoutWithoutSignatureMissingDestinationTest() {
+        // Unsigned SessionIndex logout is rejected regardless of Destination (#53535)
+        getCleanup()
+                .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                        .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                        .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                        .update()
+                );
+
+        try {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, POST)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(POST)
+                    .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                    .build()
+                    .clearCookies()
+                    .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
+                    .nameId(nameIdRef::get)
+                    .sessionIndex(sessionIndexRef::get)
+                    .transformObject(logoutRequestType -> {
+                        logoutRequestType.setDestination(null);
+                        return logoutRequestType;
+                    })
+                    .build()
+                    .executeAndTransform(SOAP::extractResponse);
+            fail("unsigned SessionIndex LogoutRequest should be rejected");
+        } catch (RuntimeException ex) {
+            assertThat(ex.getCause(), instanceOf(SOAPFaultException.class));
+            assertThat(((SOAPFaultException) ex.getCause()).getFault().getFaultString(),
+                    is(AUTHN_REQUEST_CANNOT_BE_PROCESSED));
+        }
+    }
+
+    @Test
+    public void soapBindingIsNotPossibleForClientsWithSamlEcpFlowAttributeFalse() {
+        // Disable ECP_FLOW_ENABLED switch
+        getCleanup().addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                .setAttribute(SamlConfigAttributes.SAML_ALLOW_ECP_FLOW, "false")
+                .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                .update());
+
+        new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                .basicAuthentication(bburkeUser)
+                .build()
+                .execute(response -> {
+                    assertThat(response, statusCodeIsHC(Response.Status.INTERNAL_SERVER_ERROR));
+
+                    try {
+                        MessageFactory messageFactory = MessageFactory.newInstance();
+                        SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+                        String faultString = soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getFaultString();
+                        assertThat(faultString, is(equalTo(SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED)));
+                        assertThat(soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getDetail(), is(nullValue()));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+    }
+
+    @Test
+    public void ecpFlowCreatesTransientSessions() {
+        // Disable ECP_FLOW_ENABLED switch
+        getCleanup().addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                .update());
+
+        // Successfully login using ECP flow
+        SAML2Object samlObject = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                .basicAuthentication(bburkeUser)
+                .build()
+                .executeAndTransform(SOAP::extractResponse).getSamlObject();
+
+        assertThat(samlObject, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        ResponseType loginResp1 = (ResponseType) samlObject;
+        AuthnStatementType sessionId = (AuthnStatementType) loginResp1.getAssertions().get(0).getAssertion().getStatements().iterator().next();
+
+        String userSessionId = sessionId.getSessionIndex().split("::")[0];
+
+        // Test that the user session with the given ID does not exist
+        testingClient.server().run(session -> {
+            RealmModel realmByName = session.realms().getRealmByName(REALM_NAME);
+            UserSessionModel userSession = session.sessions().getUserSession(realmByName, userSessionId);
+
+            assertThat(userSession, nullValue());
+        });
+
+
+    }
+
+    @Test
+    public void soapBindingErrorHandlingEmptyBody() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity("".getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            // Before the fix, this returned Content-Type: application/json via KeycloakErrorHandler
+            // instead of a SOAP fault, because the exception from Soap.extractSoapMessage() was not caught.
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
+    }
+
+    @Test
+    public void soapBindingErrorHandlingMalformedXml() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        String malformedXml = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                              "<soap:Body>" +
+                              "<malformed>This is not valid SOAP</malformed>";
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity(malformedXml.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertNotNull(response.getFirstHeader("Content-Type"));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
+    }
+
+    @Test
+    public void soapBindingErrorHandlingInvalidSamlContent() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        String validSoapWithInvalidSaml = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                                          "<soap:Body>" +
+                                          "<NotASamlRequest>Invalid SAML content</NotASamlRequest>" +
+                                          "</soap:Body>" +
+                                          "</soap:Envelope>";
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity(validSoapWithInvalidSaml.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+        post.setHeader("Authorization", "Basic YmJ1cmtlOmJidXJrZQ==");
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
+    }
+}

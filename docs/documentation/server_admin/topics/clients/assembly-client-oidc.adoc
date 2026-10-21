@@ -1,0 +1,23 @@
+
+[[_oidc_clients]]
+= Managing OpenID Connect clients
+[role="_abstract"]
+xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure applications.  It was designed from the ground up to be web friendly and it works best with HTML5/JavaScript applications.
+
+include::oidc/proc-creating-oidc-client.adoc[leveloffset=+1]
+include::oidc/con-basic-settings.adoc[leveloffset=+1]
+include::oidc/con-advanced-settings.adoc[leveloffset=+1]
+
+include::oidc/con-confidential-client-credentials.adoc[leveloffset=+1]
+
+include::oidc/con-dpop.adoc[leveloffset=+1]
+
+include::oidc/con-secret-rotation.adoc[leveloffset=+1]
+
+include::oidc/proc-secret-rotation.adoc[leveloffset=+1]
+
+include::oidc/proc-using-a-service-account.adoc[leveloffset=+1]
+
+include::oidc/con-token-role-mappings.adoc[leveloffset=+1]
+include::oidc/con-audience.adoc[leveloffset=+1]
+

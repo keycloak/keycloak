@@ -1,0 +1,9 @@
+mvn:keycloak-quarkus-dist:keycloak
+mvn:keycloak-api-docs-dist:keycloak-api-docs
+
+mvn:documentation/keycloak-documentation:keycloak-documentation
+
+npm:js/libs/keycloak-admin-client/target/keycloak-keycloak-admin-client-$$VERSION$$.tgz:keycloak-admin-client-$$VERSION$$.tgz
+npm:js/libs/ui-shared/target/keycloak-keycloak-ui-shared-$$VERSION$$.tgz:keycloak-ui-shared-$$VERSION$$.tgz
+npm:js/apps/account-ui/target/keycloak-keycloak-account-ui-$$VERSION$$.tgz:keycloak-account-ui-$$VERSION$$.tgz
+npm:js/apps/admin-ui/target/keycloak-keycloak-admin-ui-$$VERSION$$.tgz:keycloak-admin-ui-$$VERSION$$.tgz

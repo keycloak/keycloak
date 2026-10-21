@@ -1,0 +1,41 @@
+
+= IDP Initiated login
+[role="_abstract"]
+IDP Initiated Login is a feature that allows you to set up an endpoint on the {project_name} server that will log you into a specific application/client.
+In the *Settings* tab for your client, you need to specify the *IDP Initiated SSO URL Name*.
+This is a simple string with no whitespace in it.
+After this you can reference your client at the following URL: `root{kc_realms_path}/{realm-name}/protocol/saml/clients/{url-name}`
+
+The IDP initiated login implementation prefers _POST_ over _REDIRECT_ binding (check <<_saml, saml bindings>> for more information).
+Therefore the final binding and SP URL are selected in the following way:
+
+1. If the specific *Assertion Consumer Service POST Binding URL* is defined (inside *Fine Grain SAML Endpoint Configuration* section
+of the client settings) _POST_ binding is used through that URL.
+2. If the general *Master SAML Processing URL* is specified then _POST_ binding is used again throughout this general URL.
+3. As the last resort, if the *Assertion Consumer Service Redirect Binding URL* is configured (inside
+*Fine Grain SAML Endpoint Configuration*) _REDIRECT_ binding is used with this URL.
+
+If your client requires a special relay state, you can also configure this on the *Settings* tab in the *IDP Initiated SSO Relay State* field.
+Alternatively, browsers can specify the relay state in a *RelayState* query parameter, i.e.
+`root{kc_realms_path}/{realm-name}/protocol/saml/clients/{url-name}?RelayState=thestate`.
+
+When using <<_identity_broker,identity brokering>>, it is possible to set up an IDP Initiated Login for a client from an
+external IDP. The actual client is set up for IDP Initiated Login at broker IDP as described above. The external IDP has
+to set up the client for application IDP Initiated Login that will point to a special URL pointing to the broker and
+representing IDP Initiated Login endpoint for a selected client at the brokering IDP. This means that in client settings
+at the external IDP:
+
+* *IDP Initiated SSO URL Name* is set to a name that will be published as IDP Initiated Login initial point,
+* *Assertion Consumer Service POST Binding URL* in the *Fine Grain SAML Endpoint Configuration* section has
+  to be set to the following URL:
+  `broker-root{kc_realms_path}/{broker-realm}/broker/{idp-name}/endpoint/clients/{client-id}`, where:
+
+    ** _broker-root_ is base broker URL
+    ** _broker-realm_ is name of the realm at broker where external IDP is declared
+    ** _idp-name_ is name of the external IDP at broker
+    ** _client-id_ is the value of *IDP Initiated SSO URL Name* attribute of the SAML client defined at broker. It is
+       this client, which will be made available for IDP Initiated Login from the external IDP.
+
+Please note that you can import basic client settings from the brokering IDP into client settings of the external IDP -
+just use <<_identity_broker_saml_sp_descriptor,SP Descriptor>> available from the settings of the identity provider in
+the brokering IDP, and add `clients/_client-id_` to the endpoint URL.

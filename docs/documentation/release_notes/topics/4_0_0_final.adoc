@@ -1,0 +1,88 @@
+= Client Scopes and support for OAuth 2 scope parameter
+
+We added support for Client Scopes, which replaces Client Templates. Client Scopes are a more flexible approach and also provides
+better support for the OAuth `scope` parameter.
+
+There are changes related to Client Scopes to the consent screen. The list on the consent screen is now linked to client scopes
+instead of protocol mappers and roles.
+
+See the documentation and migration guide for more details.
+
+= OAuth 2 Certificate Bound Access Tokens
+
+We now have a partial implementation of the specification
+https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08[OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens] .
+More accurately we have support for the Certificate Bound Access Tokens. If your confidential client is able to use 2-way SSL,
+{project_name} will be able to add the hash of the client certificate into the tokens issued for the client. At this moment,
+it's just  the {project_name} itself, which verifies the token hashes (for example during `refresh token` requests).
+We plan to add support to adapters as well. We also plan to add support for Mutual TLS Client Authentication.
+
+Thanks to https://github.com/tnorimat[tnorimat] for the contribution.
+
+= Authorization Services
+
+== UMA 2.0 Support
+
+UMA 2.0 is now supported for Authorization Services. Check the documentation for more details
+if you are coming from previous versions of {project_name}.
+
+=== User-Managed Access through the {project_name} Account Service
+
+Now end-users are able to manage their resources and the permissions associated with them through the {project_name} Account Service.
+From there, resource owners can now check their resources, share resources with another users as well approve requests from other users.
+
+=== Asynchronous Authorization Flow
+
+When using UMA, client applications can now choose whether or not an authorization request should start an authorization flow
+to ask for the resource owner approval. This functionality allows applications to ask for resource owner
+approval when trying to access one of his resources on behalf of another user.
+
+=== User-Managed Permission API
+
+Resource servers are now capable of associating additional policies to resources owned by a particular user. The new API provides
+operations to manage these permissions using different policy types such as role, group, user, client or a condition using JavaScript.
+
+== Pushed Claims
+
+Clients applications are now able to send arbitrary claims to {project_name} along with an authorization request in order to
+evaluate permissions based on these claims. This is a very handy addition when access
+should be granted (or denied) in the scope of a specific transaction or based on information about the runtime.
+
+== Resource Attributes
+
+It is now possible to associated attributes with resources protected by {project_name} and use these same attributes to evaluate permissions
+from your policies.
+
+== Policy enforcer now accepts regular access tokens
+
+In some situations, you may want to just send regular access tokens to a resource server but still be able to enforce policies on these resources.
+
+One of the main changes introduced by this release is that you are no longer required to exchange access tokens with RPTs in
+order to access resources protected by a resource server (when not using UMA). Depending on how the policy enforcer is configured on the resource server side, you can just send regular
+access tokens as a bearer token and permissions will still be enforced.
+
+== Policy enforcer can now load resources from the server on-demand
+
+Until now, when deploying an application configured with a `policy-enforcer`, the policy enforcer would either load all protected paths
+from the server or just map these paths from the adapter configuration. Users can now decide to load paths on-demand from the server and avoid
+map these resources in the adapter configuration. Depending on how many protected resources you have this functionality can also improve the time to
+deploy an application.
+
+== Policy enforcer now supports configuring the resource cache
+
+In order to avoid unnecessary hits to the server, the policy enforcer caches the mapping between protected resources and their corresponding paths
+in your application. Users can now configure the behaviour of the cache or even completely disable it.
+
+== Claim Information Points
+
+The `policy-enforcer` definition on the adapters (`keycloak.json`) was also updated to support the concept of pushed claims. There
+you have the concept of a `claim-information-point` which can be set to push claims from different sources such as the HTTP request or even
+from an external HTTP service.
+
+== Improvements to the Evaluation API
+
+The Evaluation API used to implement policies in {project_name}, especially JavaScript and Drools policies, provides now methods to:
+
+* Access information from the current realm such as check for user roles, groups and attributes
+* Push back arbitrary claims to the resource server in order to provide additional information on how a specific permissions should
+be enforced

@@ -1,0 +1,50 @@
+= Highlights
+
+== Keycloak.X distribution preview
+
+Introduction a preview of the new and upcoming Keycloak.X distribution. This distribution is powered by Quarkus, bringing
+significant improvements to startup time and memory consumption, as well as making it a lot easier to configure Keycloak.
+
+== New Account console is now the default
+
+The new account console is no longer a preview feature and is now the default account console in Keycloak. The old account
+console will stay around for a while. For those that have a custom theme for the old account console the old console
+will be used by default, giving you the time to update your custom theme to the new account console.
+
+== OpenID Connect Back-Channel Logout
+
+Support for OpenID Connect Back-Channel Logout is now available, thanks to https://github.com/DaSmoo[DaSmoo] and
+https://github.com/benjamin37[benjamin37].
+
+== Upgrade to Wildfly 21
+
+The {project_name} server was upgraded to use Wildfly 21 as the underlying container.
+
+== Ability to request AuthnContext in SAML identity provider
+
+Support for specification of AuthnContext section in authentication requests issued by SAML identity provider has been added.
+
+Thanks to https://github.com/lscorcia[lscorcia]
+
+== FAPI RW support and initial support to Client policies
+
+There was lots of the work done to have support for Financial-grade API Read and Write API Security Profile (FAPI RW). This is available
+with the usage of Client policies and it is still in the preview state. You can expect more polishing in the next releases.
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] and all the members of the https://github.com/keycloak/kc-sig-fapi[FAPI Special interest group].
+
+== Upgrade login theme to PatternFly 4
+
+The {project_name} login theme components have been upgraded to PatternFly 4.
+The old PatternFly 3 runs simultaneously with the new one, so it's possible to have PF3 components there.
+
+There are also design changes in the login theme for better user experience.
+You can even define an icon for your custom Identity providers.
+For details, please refer to the link:https://www.keycloak.org/ui-customization/themes#custom-identity-providers-icons[themes guide].
+
+== Gatekeeper EOL
+Gatekeeper reached end of life, in November 21. This means that we no longer support, or update it. The announcement is available https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc[here].
+
+== Other improvements
+
+* Support for OAuth2 Client Credentials grant without refresh token and without user session. Thanks to https://github.com/thomasdarimont[Thomas Darimont]
+* Support for send access tokens to the OAuth2 Revocation endpoint

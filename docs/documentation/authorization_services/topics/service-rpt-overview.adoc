@@ -1,0 +1,32 @@
+[[_service_rpt_overview]]
+= Requesting party token
+
+A requesting party token (RPT) is a https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)] digitally signed using https://datatracker.ietf.org/doc/html/rfc7515[JSON web signature (JWS)]. The token is built based on the OAuth2 access token previously issued by {project_name} to a specific client acting on behalf of a user
+or on its own behalf.
+
+When you decode an RPT, you see a payload similar to the following:
+
+```json
+{
+  "authorization": {
+      "permissions": [
+        {
+          "resource_set_id": "d2fe9843-6462-4bfc-baba-b5787bb6e0e7",
+          "resource_set_name": "Hello World Resource"
+        }
+      ]
+  },
+  "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
+  "exp": 1464906971,
+  "nbf": 0,
+  "iat": 1464906671,
+  "sub": "f1888f4d-5172-4359-be0c-af338505d86c",
+  "typ": "kc_ett",
+  "azp": "hello-world-authz-service"
+}
+```
+
+From this token you can obtain all permissions granted by the server from the *permissions* claim.
+
+Also note that permissions are directly related with the resources/scopes you are protecting and completely decoupled from
+the access control methods that were used to actually grant and issue these same permissions.

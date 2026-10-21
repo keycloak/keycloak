@@ -1,0 +1,57 @@
+[[_stream_based_interfaces]]
+=== Stream-based interfaces
+
+Many of the user storage interfaces in {project_name} contain query methods that can return potentially large sets of objects,
+which might lead to significant impacts in terms of memory consumption and processing time. This is especially true when only
+a small subset of the objects' internal state is used in the query method's logic.
+
+To provide developers with a more efficient alternative to process large data sets in these query methods, a `Streams`
+sub-interface has been added to user storage interfaces. These `Streams` sub-interfaces replace the original collection-based
+methods in the super-interfaces with stream-based variants, making the collection-based methods default. The default implementation
+of a collection-based query method invokes its `Stream` counterpart and collects the result into the proper collection type.
+
+The `Streams` sub-interfaces allow for implementations to focus on the stream-based approach for processing sets of data and
+benefit from the potential memory and performance optimizations of that approach. The interfaces that offer a `Streams`
+sub-interface to be implemented include a few _<<_provider_capability_interfaces,capability interfaces>>_, all interfaces in the `org.keycloak.storage.federated`
+package and a few others that might be implemented depending on the scope of the custom storage implementation.
+
+See this list of the interfaces that offer a `Streams` sub-interface to developers.
+
+|===
+| Package | Classes
+ifeval::[{project_community}==true]
+| `org.keycloak.credential` | `CredentialInputUpdater`(*), `UserCredentialStore`
+| `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `UserCredentialManager`, `UserModel`, `UserProvider`
+| `org.keycloak.models.cache` | `CachedUserModel`, `UserCache`
+| `org.keycloak.storage.federated` | All interfaces
+| `org.keycloak.storage.user` | `UserQueryProvider`(*)
+endif::[]
+ifeval::[{project_product}==true]
+| `org.keycloak.credential` | `CredentialInputUpdater`(*)
+| `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `UserModel`
+| `org.keycloak.storage.federated` | All interfaces
+| `org.keycloak.storage.user` | `UserQueryProvider`(*)
+endif::[]
+|===
+(*) indicates the interface is a _<<_provider_capability_interfaces,capability interface>>_
+
+Custom user storage implementation that want to benefit from the streams approach should simply implement the `Streams`
+sub-interfaces instead of the original interfaces. For example, the following code uses the `Streams` variant of the `UserQueryProvider`
+interface:
+
+[source,java]
+----
+public class CustomQueryProvider extends UserQueryProvider.Streams {
+...
+    @Override
+    Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        // custom logic here
+    }
+
+    @Override
+    Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        // custom logic here
+    }
+...
+}
+----

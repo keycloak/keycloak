@@ -1,0 +1,61 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Troubleshooting using metrics"
+summary="Use metrics for troubleshooting errors and performance issues."
+>
+
+For a running {project_name} deployment it is important to understand how the system performs and whether it meets your service level objectives (SLOs).
+For more details on SLOs, proceed to the <@links.observability id="keycloak-service-level-indicators" /> {section}.
+
+This guide will provide directions to answer the question: "`What can I do when my SLOs are not met?`"
+
+{project_name} consists of several components where an issue or misconfiguration of one of them can move your service level indicators to undesirable numbers.
+
+A guidance provided by this guide is illustrated in the following example:
+
+====
+
+*Observation:* Latency service level objective is not met.
+
+*Metrics that indicate a problem*:
+
+. {project_name}'s database connection pool is often exhausted, and there are threads queuing for a connection to be retrieved from the pool.
+. {project_name}'s `users` cache hit ratio is at a low percentage, around 5%. This means only 1 out of 20 user searches is able to obtain user data from the cache and the rest needs to load it from the database.
+
+*Possible mitigations suggested:*
+
+* Increasing the `users` cache size to a higher number which would decrease the number of reads from the database.
+* Increasing the number of connections in the connection pool. This would need to be checked with metrics for your database and tuning it for a higher load, for example, by increasing the number of available processors.
+
+====
+
+[NOTE]
+====
+* This guide focuses on {project_name} metrics.
+Troubleshooting the database itself is out of scope.
+* This guide provides general guidance.
+You should always confirm the configuration change by conducting a performance test comparing the metrics in question for the old and the new configuration.
+====
+
+[NOTE]
+====
+Grafana dashboards for the metrics below can be found in <@links.observability id="grafana-dashboards"/> {section}.
+====
+
+== List of {project_name} key metrics
+
+* <@links.observability id="metrics-for-troubleshooting-keycloak"/>
+* <@links.observability id="metrics-for-troubleshooting-jvm"/>
+* <@links.observability id="metrics-for-troubleshooting-database"/>
+* <@links.observability id="metrics-for-troubleshooting-http"/>
+* <@links.observability id="metrics-for-troubleshooting-cache"/>
+* <@links.ha id="single-cluster-introduction" /> metrics
+** <@links.observability id="metrics-for-troubleshooting-clustering-and-network"/>
+** <@links.observability id="metrics-for-troubleshooting-embedded-caches"/>
+* <@links.ha id="multi-cluster-introduction" /> metrics
+** <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-cluster"/>
+** <@links.observability id="metrics-for-troubleshooting-external-infinispan-multi-cluster"/>
+
+</@tmpl.guide>

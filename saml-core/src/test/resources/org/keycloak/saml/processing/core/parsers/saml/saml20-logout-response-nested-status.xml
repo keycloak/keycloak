@@ -1,0 +1,8 @@
+<samlp:LogoutResponse xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="dasda" Version="2.0" IssueInstant="2018-12-18T03:03:54Z" Destination="http://sp/saml" InResponseTo="aa">
+  <saml:Issuer>http://idp.example.com/metadata.php</saml:Issuer>
+  <samlp:Status>
+    <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Responder">
+      <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:AuthnFailed"/>
+    </samlp:StatusCode>
+  </samlp:Status>
+</samlp:LogoutResponse>

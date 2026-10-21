@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="20.0.0-12964-supported-dbs">
+        <validCheckSum>9:e5f243877199fd96bcc842f27a1656ac</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+                <dbms type="oracle"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="(value::varchar(250))" />
+        </modifySql>
+        <modifySql dbms="oracle">
+            <replace replace="VALUE(255)" with="SUBSTR(VALUE, 1, 250)" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="20.0.0-12964-supported-dbs-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <changeSetExecuted id="20.0.0-12964-supported-dbs" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+            <indexExists tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
+        </preConditions>
+        <dropIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
+        <createIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="(value::varchar(250))" valueComputed="(value::varchar(250))" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="20.0.0-12964-unsupported-dbs">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                    <dbms type="postgresql"/>
+                    <dbms type="oracle"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <!-- Do not include VALUE column -->
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed-pre-drop-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <not>
+                    <changeSetExecuted id="client-attributes-string-accomodation-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed">
+        <addColumn tableName="CLIENT_ATTRIBUTES">
+            <column name="VALUE_NEW" type="NCLOB" />
+        </addColumn>
+
+        <update tableName="CLIENT_ATTRIBUTES">
+            <column name="VALUE_NEW" valueComputed="VALUE"/>
+        </update>
+
+        <dropColumn tableName="CLIENT_ATTRIBUTES" columnName="VALUE"/>
+        <renameColumn tableName="CLIENT_ATTRIBUTES" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="client-attributes-string-accomodation-fixed-post-create-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <not>
+                    <changeSetExecuted id="client-attributes-string-accomodation-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+                </not>
+            </and>
+        </preConditions>
+
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

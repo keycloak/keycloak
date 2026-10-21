@@ -1,0 +1,26 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Planning for securing applications and services"
+priority=10
+summary="Understand basic concepts for securing applications.">
+
+As an OAuth2, OpenID Connect and SAML compliant server, {project_name} can secure any application and service as long
+as the technology stack they are using supports any of these protocols. For more details about the security protocols
+supported by {project_name}, consider looking at link:{adminguide_link}#sso-protocols[{adminguide_name}].
+
+Most of the support for some of these protocols is already available from the programming language, framework,
+or reverse proxy they are using. Leveraging the support already available from the application ecosystem is a key aspect to make your
+application fully compliant with security standards and best practices, so that you avoid vendor lock-in.
+
+For some programming languages, {project_name} provides libraries that try to fill the gap for the lack of support of
+a particular security protocol or to provide a more rich and tightly coupled integration with the server. These libraries
+are known by *Keycloak Client Adapters*, and they should be used as a last resort if you cannot rely on what is available
+from the application ecosystem.
+
+include::partials/overview/basic-steps.adoc[]
+<#include "partials/overview/getting-started.adoc" />
+include::partials/overview/terminology.adoc[]
+
+</@tmpl.guide>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="24.0.0-9758">
+        <addColumn tableName="USER_ATTRIBUTE">
+            <column name="LONG_VALUE_HASH" type="BINARY(64)" />
+            <column name="LONG_VALUE_HASH_LOWER_CASE" type="BINARY(64)" />
+            <column name="LONG_VALUE" type="NCLOB" />
+        </addColumn>
+        <addColumn tableName="FED_USER_ATTRIBUTE">
+            <column name="LONG_VALUE_HASH" type="BINARY(64)" />
+            <column name="LONG_VALUE_HASH_LOWER_CASE" type="BINARY(64)" />
+            <column name="LONG_VALUE" type="NCLOB" />
+        </addColumn>
+        <createIndex tableName="USER_ATTRIBUTE" indexName="USER_ATTR_LONG_VALUES">
+            <column name="LONG_VALUE_HASH" />
+            <column name="NAME" />
+        </createIndex>
+        <createIndex tableName="FED_USER_ATTRIBUTE" indexName="FED_USER_ATTR_LONG_VALUES">
+            <column name="LONG_VALUE_HASH" />
+            <column name="NAME" />
+        </createIndex>
+        <createIndex tableName="USER_ATTRIBUTE" indexName="USER_ATTR_LONG_VALUES_LOWER_CASE">
+            <column name="LONG_VALUE_HASH_LOWER_CASE" />
+            <column name="NAME" />
+        </createIndex>
+        <createIndex tableName="FED_USER_ATTRIBUTE" indexName="FED_USER_ATTR_LONG_VALUES_LOWER_CASE">
+            <column name="LONG_VALUE_HASH_LOWER_CASE" />
+            <column name="NAME" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.0-9758-2">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.FederatedUserAttributeTextColumnMigration" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.0-26618-drop-index-if-present">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                    <dbms type="postgresql"/>
+                    <dbms type="oracle"/>
+                </or>
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.0-26618-reindex">
+        <validCheckSum>9:bd2bd0fc7768cf0845ac96a8786fa735</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="substr(VALUE,1,255)" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.0-26618-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+            <changeSetExecuted id="24.0.0-26618-drop-index-if-present" author="keycloak" changeLogFile="META-INF/jpa-changelog-24.0.0.xml" />
+            <changeSetExecuted id="24.0.0-26618-reindex" author="keycloak" changeLogFile="META-INF/jpa-changelog-24.0.0.xml" />
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="substr(VALUE,1,255)" valueComputed="substr(VALUE,1,255)" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
