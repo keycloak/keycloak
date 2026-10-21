@@ -29,6 +29,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -60,12 +61,12 @@ public class SamlEcpProfileService extends SamlService {
 
     public static final String AUTHN_REQUEST_CANNOT_BE_PROCESSED = "Authentication request cannot be processed.";
 
-    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
-        super(session, event, maxInflatingSize, destinationValidator);
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize) {
+        super(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize);
     }
 
     public Response authenticate(InputStream inputStream) {
-        return authenticate(Soap.extractSoapMessage(inputStream));
+        return authenticate(Soap.extractSoapMessage(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)));
     }
 
     public Response authenticate(Document soapMessage) {

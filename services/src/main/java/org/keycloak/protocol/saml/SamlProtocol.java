@@ -159,6 +159,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String USER_SESSION_ID = "userSessionId";
     public static final String CLIENT_SESSION_ID = "clientSessionId";
 
+    public static final long DEFAULT_MAX_SOAP_MESSAGE_REQUEST_SIZE = 120000;
 
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
 

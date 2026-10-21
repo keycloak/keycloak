@@ -45,6 +45,7 @@ import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
+import static org.junit.Assert.fail;
 
 public class SOAPBindingTest extends AbstractSamlTest {
 
@@ -104,6 +105,36 @@ public class SOAPBindingTest extends AbstractSamlTest {
     }
 
     @Test
+    public void soapBindingRequestOverLimitTest() {
+        getCleanup()
+                .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)
+                        .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                        .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                        .update()
+                );
+
+        SamlClientBuilder samlClientBuilder = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SAML_ASSERTION_CONSUMER_URL_ECP_SP, SOAP)
+                .transformObject(authnRequestType -> {
+                    authnRequestType.setExtensions(createInflatedSamlExtension());
+                    return authnRequestType;
+                })
+                .basicAuthentication(bburkeUser)
+                .build();
+
+        try {
+            SAMLDocumentHolder response =
+                    samlClientBuilder.executeAndTransform(this::checkStatus);
+            fail();
+        } catch (RuntimeException e) {
+            // internal server error
+            assertThat("500", is(e.getCause().getMessage()));
+        }
+
+    }
+
+
+        @Test
     public void soapBindingAuthnWithoutSignatureMissingDestinationTest() {
         getCleanup()
                 .addCleanup(ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_ECP_SP)

@@ -11,6 +11,7 @@ import org.apache.http.util.EntityUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
@@ -31,7 +32,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -62,6 +62,8 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
 
     private Runnable beforeStepChecker;
     private Runnable afterStepChecker;
+
+    private ExtensionsType extensions = null;
 
     private final static Pattern artifactPattern = Pattern.compile("NAME=\"SAMLart\" VALUE=\"([A-Za-z0-9+=/]*)\"");
 
@@ -104,7 +106,12 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         this.afterStepChecker = checker;
         return this;
     }
-    
+
+    public HandleArtifactStepBuilder setExtensions(ExtensionsType extensions) {
+        this.extensions = extensions;
+        return this;
+    }
+
     /**
      * Builder method. Calling this method with "true" will add an assertion to verify that the returned method was a redirect
      * @param verifyRedirect set true to verify redirect
@@ -169,6 +176,11 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         NameIDType nameIDType = new NameIDType();
         nameIDType.setValue(issuer);
         artifactResolve.setIssuer(nameIDType);
+
+        if (extensions != null) {
+            artifactResolve.setExtensions(extensions);
+        }
+
         String artifact = getArtifactFromResponse(currentResponse);
         if (storeArtifact != null) storeArtifact.set(artifact);
         artifactResolve.setArtifact(artifact);

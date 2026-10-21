@@ -9,16 +9,26 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.utils.io.IOUtil;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.w3c.dom.Document;
 
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriBuilderException;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -178,4 +188,38 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
         return null;
     }
+
+    /**
+     * Create over the size limit SAML extension.
+     * @return
+     */
+    protected ExtensionsType createInflatedSamlExtension() {
+        ExtensionsType extensions = new ExtensionsType();
+        StringBuilder sb = new StringBuilder("<extensionPayload>");
+        int index = 0;
+        long extensionLength = 0;
+        while (extensionLength < SamlProtocol.DEFAULT_MAX_SOAP_MESSAGE_REQUEST_SIZE) {
+            String n = "<node>" + index + "</node>";
+            sb.append(n);
+            index++;
+            extensionLength += n.length();
+        }
+        sb.append("</extensionPayload>");
+        log.debugf("Number of created inner nodes = %s", index);
+        log.infof("Extension size = %s", sb.toString().length());
+
+        Document doc = IOUtil.loadXML(new ByteArrayInputStream(sb.toString().getBytes()), true);
+        extensions.addExtension(doc.getFirstChild());
+        return extensions;
+    }
+
+    protected SAMLDocumentHolder checkStatus(CloseableHttpResponse response) throws IOException {
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode == 500) {
+            throw new RuntimeException(String.valueOf(statusCode));
+        } else {
+            throw new RuntimeException("Unexpected response status code (" + statusCode + ")");
+        }
+    }
+
 }

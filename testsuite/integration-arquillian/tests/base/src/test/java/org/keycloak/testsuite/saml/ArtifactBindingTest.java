@@ -76,6 +76,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.ARTIFACT_RESPONSE;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 import static org.keycloak.testsuite.util.SamlUtils.getSPInstallationDescriptor;
+import static org.junit.Assert.fail;
 
 public class ArtifactBindingTest extends AbstractSamlTest {
 
@@ -410,6 +411,25 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifactResponse.getSignature(), nullValue());
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
         assertThat(artifactResponse.getInResponseTo(), is("TestId"));
+    }
+
+    @Test
+    public void testArtifactResponseDeniedDueToRequestSizeLimit() {
+
+        SamlClientBuilder samlClientBuilder = new SamlClientBuilder().authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST, SamlClient.Binding.POST)
+                .setProtocolBinding(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri())
+                .build()
+                .login().user(bburkeUser).build()
+                .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST).setExtensions(createInflatedSamlExtension()).build();
+
+        try {
+            samlClientBuilder.doNotFollowRedirects().executeAndTransform(this::checkStatus);
+            fail();
+        } catch (RuntimeException e) {
+            // internal server error
+            assertThat("500", is(e.getCause().getMessage()));
+        }
     }
 
     /************************ LOGOUT TESTS ************************/

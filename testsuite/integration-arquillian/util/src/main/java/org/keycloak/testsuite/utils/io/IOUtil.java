@@ -84,8 +84,13 @@ public class IOUtil {
     }
 
     public static Document loadXML(InputStream is) {
+        return loadXML(is, false);
+    }
+
+    public static Document loadXML(InputStream is, boolean namespaceAware) {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            dbFactory.setNamespaceAware(namespaceAware);
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             return dBuilder.parse(is);
         } catch (ParserConfigurationException | SAXException | IOException e) {
