@@ -417,7 +417,7 @@ export function KeycloakDataTable<T>({
   const [selected, setSelected] = useState<T[]>([]);
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
