@@ -4,6 +4,12 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client Policies apply to role mapping changes
+
+Client Policies now run before Admin REST API operations that add or remove realm-role and client-role mappings on users and groups, including deletion of all mappings. Review existing policies and custom executors for the new `REGISTER_ROLE_MAPPING` and `UNREGISTER_ROLE_MAPPING` events. A rejecting executor can now block these operations with HTTP 400.
+
+Conditions that require a target client abstain for realm-role mappings. In the default policy mode, other matching conditions can still activate the policy; in strict mode, an abstaining condition prevents activation.
+
 === Client secret no longer returned for view-only client permissions
 // https://github.com/keycloak/keycloak/issues/49220
 
