@@ -19,14 +19,18 @@ package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.AggregatePoliciesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -85,6 +89,29 @@ public final class PermissionTestUtils {
                 ClientPolicyRepresentation clientPolicy = r.clients().get(client.toRepresentation().getId()).authorization().policies().client().findByName(name);
                 if (clientPolicy != null) {
                     r.clients().get(client.toRepresentation().getId()).authorization().policies().client().findById(clientPolicy.getId()).remove();
+                }
+            });
+        }
+        return policy;
+    }
+
+    /**
+     * Admin permissions are evaluated with the UNANIMOUS strategy, so several policies of different types granting the
+     * same scope have to be combined into a single affirmative policy rather than attached to separate permissions.
+     */
+    public static AggregatePolicyRepresentation createAggregatePolicy(ManagedRealm realm, ClientResource client, String name, AbstractPolicyRepresentation... policies) {
+        AggregatePolicyRepresentation policy = new AggregatePolicyRepresentation();
+        policy.setName(name);
+        policy.setLogic(Logic.POSITIVE);
+        policy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        policy.setPolicies(Arrays.stream(policies).map(AbstractPolicyRepresentation::getName).collect(Collectors.toSet()));
+        try (Response response = client.authorization().policies().aggregate().create(policy)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            realm.cleanup().add(r -> {
+                AggregatePoliciesResource aggregate = r.clients().get(client.toRepresentation().getId()).authorization().policies().aggregate();
+                AggregatePolicyRepresentation created = aggregate.findByName(name);
+                if (created != null) {
+                    aggregate.findById(created.getId()).remove();
                 }
             });
         }
