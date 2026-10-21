@@ -10,11 +10,14 @@ import {
   assertDisplayName,
   assertFrontendURL,
   assertRequireSSL,
+  clearAllowedMapperTypes,
   clickRevertButton,
   clickSaveRealm,
   fillDisplayName,
   fillFrontendURL,
   fillRequireSSL,
+  getAllowedMapperTypeChips,
+  selectAllowedMapperTypes,
 } from "./general.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
@@ -119,5 +122,45 @@ test.describe.serial("Realm settings general tab tests", () => {
     await fillDisplayName(page, "should_be_reverted");
     await clickRevertButton(page);
     await assertDisplayName(page, "display_name");
+  });
+
+  test("Allowed protocol mapper types for client administrators", async ({
+    page,
+  }) => {
+    // Two well-known provider IDs present in every Keycloak installation.
+    const mapperIds = [
+      "oidc-usermodel-attribute-mapper",
+      "oidc-usermodel-property-mapper",
+    ];
+
+    // Select both mapper types and save.
+    await selectAllowedMapperTypes(page, mapperIds);
+    await clickSaveRealm(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+
+    // Verify the realm attribute is persisted as a comma-delimited string.
+    const savedRealm = await adminClient.getRealm(realmName);
+    expect(
+      savedRealm?.attributes?.[
+        "allowedProtocolMapperTypesForClientAdministrators"
+      ],
+    ).toBe(mapperIds.join(","));
+
+    // Reload the page and verify both chips are shown.
+    await goToClients(page);
+    await goToRealmSettings(page);
+    const chips = await getAllowedMapperTypeChips(page);
+    expect(chips.sort()).toEqual([...mapperIds].sort());
+
+    // Clear all selections, save, and verify the attribute is removed.
+    await clearAllowedMapperTypes(page);
+    await clickSaveRealm(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+    const clearedRealm = await adminClient.getRealm(realmName);
+    expect(
+      clearedRealm?.attributes?.[
+        "allowedProtocolMapperTypesForClientAdministrators"
+      ],
+    ).toBeFalsy();
   });
 });

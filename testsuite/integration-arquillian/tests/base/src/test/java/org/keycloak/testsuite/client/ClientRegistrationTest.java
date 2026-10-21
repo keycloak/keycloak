@@ -49,12 +49,14 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -74,6 +76,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
@@ -100,6 +103,13 @@ import static org.junit.Assert.fail;
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String CLIENT_ID = "test-client";
+
+    @After
+    @Override
+    public void after() throws Exception {
+        super.after();
+        allowProtocolMapperTypeInRealm(null);
+    }
     private static final String CLIENT_SECRET = "test-client-secret";
 
     private ClientRepresentation buildClient() {
@@ -605,6 +615,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void addClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -620,7 +631,8 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void removeClientProtcolMappers() throws ClientRegistrationException {
+    public void removeClientProtocolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -636,6 +648,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void updateClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -647,6 +660,22 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation updatedClient = reg.get(CLIENT_ID);
         assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    /**
+     * Allows the given protocol mapper type in realm. The allowed protocol mapper must be included in both realm and protocol-mappers client registration policy
+     */
+    private void allowProtocolMapperTypeInRealm(String mapperProviderType) {
+        RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
+        if (realmRep.getAttributes() == null) {
+            realmRep.setAttributes(new HashMap<>());
+        }
+        if (mapperProviderType != null) {
+            realmRep.getAttributes().put(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, mapperProviderType);
+        } else {
+            realmRep.getAttributes().remove(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
+        }
+        adminClient.realm(REALM_NAME).update(realmRep);
     }
 
     private void addProtocolMapper(ClientRepresentation client, String mapperName) {
