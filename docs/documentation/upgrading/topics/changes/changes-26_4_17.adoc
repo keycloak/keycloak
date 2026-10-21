@@ -29,3 +29,10 @@ keytool -importcert -alias <server-alias> -file server.crt \
 ----
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
+
+=== Auto-linking requires a trusted email (CVE-2026-97175)
+
+Identity provider auto-linking now blocks the link when the IdP email is not verified and *Trust Email* is not enabled on the identity provider.
+This prevents an attacker who controls a brokered account with an unverified email from being automatically linked to a victim's existing consumer account.
+
+If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.

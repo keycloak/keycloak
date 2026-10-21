@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.representations.IDToken;
+
 /**
  * <p>Represents all identity information obtained from an {@link org.keycloak.broker.provider.IdentityProvider} after a
  * successful authentication.</p>
@@ -133,6 +135,11 @@ public class BrokeredIdentityContext {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public boolean isEmailVerified() {
+        Object val = contextData.get(IDToken.EMAIL_VERIFIED);
+        return val instanceof Boolean && (Boolean) val;
     }
 
     public String getBrokerSessionId() {
