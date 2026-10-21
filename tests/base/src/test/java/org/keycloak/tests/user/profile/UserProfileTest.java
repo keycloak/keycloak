@@ -225,6 +225,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
                 }
 
                 @Override
+                public String getFederationLink() {
+                    return "test-federation-provider";
+                }
+
+                @Override
                 public String getFirstAttribute(String name) {
                     if (UserModel.USERNAME.equals(name)) {
                         return "LDAP-Case-User";
