@@ -31,6 +31,11 @@ import org.keycloak.urls.UrlType;
 public class ResolveRelative {
 
     public static String resolveRelativeUri(KeycloakSession session, String rootUrl, String url) {
+        // absolute URLs do not need the request URIs, which are not available outside of a request
+        if (url == null || !url.startsWith("/")) {
+            return resolveRelativeUri(null, null, rootUrl, url);
+        }
+
         String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
         String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
         return resolveRelativeUri(frontendUrl, adminUrl, rootUrl, url);

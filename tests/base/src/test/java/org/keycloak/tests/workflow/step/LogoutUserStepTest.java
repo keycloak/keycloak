@@ -1,0 +1,218 @@
+/*
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.tests.workflow.step;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.workflow.LogoutUserStepProvider;
+import org.keycloak.models.workflow.LogoutUserStepProviderFactory;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.LogoutToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.util.HttpServerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.tests.workflow.AbstractWorkflowTest;
+import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
+
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class LogoutUserStepTest extends AbstractWorkflowTest {
+
+    private static final String BACKCHANNEL_LOGOUT_PATH = "/backchannel-logout";
+
+    @InjectTimeOffSet
+    private TimeOffSet timeOffSet;
+
+    @InjectHttpServer
+    private HttpServer httpServer;
+
+    @InjectUser(ref = "alice", config = AliceUserConfig.class, lifecycle = LifeCycle.METHOD, realmRef = DEFAULT_REALM_NAME)
+    private ManagedUser userAlice;
+
+    @Test
+    public void testLogoutUser() {
+        createLogoutWorkflow(null);
+        oauth.scope(null);
+        AccessTokenResponse tokens = login();
+
+        UserResource user = managedRealm.admin().users().get(userAlice.getId());
+        assertThat(user.getUserSessions(), hasSize(1));
+
+        runScheduledSteps(Duration.ofMinutes(2));
+
+        assertThat(user.getUserSessions(), empty());
+        assertThat(user.toRepresentation().getNotBefore(), greaterThan(0));
+        assertRefreshFails(tokens);
+    }
+
+    @Test
+    public void testBackchannelLogoutIsSentToClient() throws Exception {
+        BlockingQueue<String> logoutRequests = new LinkedBlockingQueue<>();
+        httpServer.createContext(BACKCHANNEL_LOGOUT_PATH, exchange -> {
+            logoutRequests.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            HttpServerUtil.sendResponse(exchange, 200, Map.of());
+        });
+
+        try {
+            ClientResource client = managedRealm.admin().clients().get(getClientUuid());
+            ClientRepresentation clientRep = client.toRepresentation();
+            clientRep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "http://"
+                    + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort() + BACKCHANNEL_LOGOUT_PATH);
+            client.update(clientRep);
+
+            createLogoutWorkflow(null);
+            oauth.scope(null);
+            login();
+
+            runScheduledSteps(Duration.ofMinutes(2));
+
+            String logoutRequest = logoutRequests.poll();
+            assertThat(logoutRequest, notNullValue());
+            assertThat(logoutRequest, startsWith("logout_token="));
+
+            LogoutToken logoutToken = new JWSInput(logoutRequest.substring("logout_token=".length())).readJsonContent(LogoutToken.class);
+            assertThat(logoutToken.getSubject(), is(userAlice.getId()));
+        } finally {
+            httpServer.removeContext(BACKCHANNEL_LOGOUT_PATH);
+        }
+    }
+
+    @Test
+    public void testOfflineSessionsAreKeptByDefault() {
+        createLogoutWorkflow(null);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse tokens = login();
+
+        UserResource user = managedRealm.admin().users().get(userAlice.getId());
+        assertThat(user.getOfflineSessions(getClientUuid()), hasSize(1));
+
+        // keep the offset while the step runs, so the tokens are older than the user's not-before time
+        timeOffSet.set(Math.toIntExact(Duration.ofMinutes(2).toSeconds()));
+        runOnServer.run((RunOnServer) session -> session.getProvider(WorkflowProvider.class).runScheduledSteps());
+
+        // the session record stays, but the offline token is rejected because of the user's not-before time
+        assertThat(user.getUserSessions(), empty());
+        assertThat(user.getOfflineSessions(getClientUuid()), hasSize(1));
+        assertThat(user.toRepresentation().getNotBefore(), greaterThan(0));
+        assertRefreshFails(tokens);
+    }
+
+    @Test
+    public void testLogoutUserIncludingOfflineSessions() {
+        createLogoutWorkflow("true");
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse tokens = login();
+
+        UserResource user = managedRealm.admin().users().get(userAlice.getId());
+        assertThat(user.getOfflineSessions(getClientUuid()), hasSize(1));
+
+        runScheduledSteps(Duration.ofMinutes(2));
+
+        assertThat(user.getUserSessions(), empty());
+        assertThat(user.getOfflineSessions(getClientUuid()), empty());
+        assertRefreshFails(tokens);
+    }
+
+    @Test
+    public void testCreateFailsWhenIncludeOfflineSessionsIsNotBoolean() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("logout-bad")
+                .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(LogoutUserStepProviderFactory.ID)
+                                .withConfig(LogoutUserStepProvider.CONFIG_INCLUDE_OFFLINE_SESSIONS, "yes")
+                                .build()
+                ).build())) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        }
+    }
+
+    private void createLogoutWorkflow(String includeOfflineSessions) {
+        WorkflowStepRepresentation.Builder step = WorkflowStepRepresentation.create()
+                .of(LogoutUserStepProviderFactory.ID)
+                .after(Duration.ofMinutes(1));
+
+        if (includeOfflineSessions != null) {
+            step.withConfig(LogoutUserStepProvider.CONFIG_INCLUDE_OFFLINE_SESSIONS, includeOfflineSessions);
+        }
+
+        create(WorkflowRepresentation.withName("logout")
+                .onEvent(UserAuthenticatedWorkflowEventFactory.ID)
+                .withSteps(step.build())
+                .build());
+    }
+
+    private AccessTokenResponse login() {
+        String code = oauth.doLogin(userAlice.getUsername(), userAlice.getPassword()).getCode();
+        AccessTokenResponse tokens = oauth.doAccessTokenRequest(code);
+        assertThat(tokens.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        return tokens;
+    }
+
+    private void assertRefreshFails(AccessTokenResponse tokens) {
+        AccessTokenResponse refreshed = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
+        assertThat(refreshed.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        assertThat(refreshed.getError(), is(OAuthErrorException.INVALID_GRANT));
+    }
+
+    private String getClientUuid() {
+        return managedRealm.admin().clients().findByClientId(oauth.getClientId()).get(0).getId();
+    }
+
+    private static class AliceUserConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("alice").password("alice").name("alice", "alice").email("alice@example.org");
+        }
+    }
+}
