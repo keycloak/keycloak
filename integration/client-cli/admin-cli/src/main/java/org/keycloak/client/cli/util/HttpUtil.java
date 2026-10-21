@@ -239,6 +239,11 @@ public class HttpUtil {
         return httpClient;
     }
 
+    public static void clearHttpClient() {
+        httpClient = null;
+        sslsf = null;
+    }
+
     public static String urlencode(String value) {
         try {
             return URLEncoder.encode(value, UTF_8);
@@ -253,7 +258,7 @@ public class HttpUtil {
         }
         SSLContext theContext = SSLContexts.custom()
                 .useProtocol("TLS")
-                .loadTrustMaterial(file, password == null ? null : password.toCharArray(), TrustSelfSignedStrategy.INSTANCE)
+                .loadTrustMaterial(file, password == null ? null : password.toCharArray())
                 .build();
         sslsf = new SSLConnectionSocketFactory(theContext);
     }
