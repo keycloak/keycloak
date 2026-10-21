@@ -553,7 +553,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 throw new AuthenticationFlowException(result.getError(), result.getEventDetails(), result.getUserErrorMessage());
             case FORK:
                 logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
-                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
                 throw new ForkFlowException(result.getSuccessMessage(), result.getErrorMessage());
             case FORCE_CHALLENGE:
             case CHALLENGE:
