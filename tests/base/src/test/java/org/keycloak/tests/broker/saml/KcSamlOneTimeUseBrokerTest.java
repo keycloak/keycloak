@@ -23,7 +23,6 @@ import java.util.UUID;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -98,25 +97,6 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
     }
 
     @Test
-    void testOneTimeUseWithoutNotOnOrAfterIsRejected() throws Exception {
-        disableSignatureValidation();
-
-        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
-        ResponseType responseType = buildResponseModel(brokerEndpoint.toString(), 300);
-
-        AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
-        assertion.getConditions().setNotOnOrAfter(null);
-
-        Document samlResponse = SAML2Response.convert(responseType);
-
-        try (CloseableHttpResponse response = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertEquals(400, response.getStatusLine().getStatusCode(),
-                    "OneTimeUse assertion without NotOnOrAfter should be rejected");
-        }
-    }
-
-    @Test
     void testOneTimeUseWithExpiredAssertionIsRejected() throws Exception {
         disableSignatureValidation();
 
@@ -132,43 +112,6 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
                 SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
             assertEquals(400, response.getStatusLine().getStatusCode(),
                     "Expired OneTimeUse assertion should be rejected");
-        }
-    }
-
-    @Test
-    void testOneTimeUseWithNotOnOrAfterTooFarInFutureIsRejected() throws Exception {
-        disableSignatureValidation();
-
-        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
-        // MAX_ONE_TIME_USE_TTL_SECONDS is 12 hours; set expiration to 24 hours
-        ResponseType responseType = buildResponseModel(brokerEndpoint.toString(), 24 * 60 * 60);
-
-        Document samlResponse = SAML2Response.convert(responseType);
-
-        try (CloseableHttpResponse response = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertEquals(400, response.getStatusLine().getStatusCode(),
-                    "OneTimeUse assertion with NotOnOrAfter too far in the future should be rejected");
-        }
-    }
-
-    @Test
-    void testOneTimeUseWithExcessivelyLongKeyIsRejected() throws Exception {
-        disableSignatureValidation();
-
-        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
-        ResponseType responseType = buildResponseModel(brokerEndpoint.toString(), 300);
-
-        // Create an issuer long enough that "saml.oneTimeUse." + issuer + "::" + assertionId > 255
-        String longIssuer = "https://idp.example.com/" + "a".repeat(250);
-        responseType.getAssertions().get(0).getAssertion().getIssuer().setValue(longIssuer);
-
-        Document samlResponse = SAML2Response.convert(responseType);
-
-        try (CloseableHttpResponse response = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertEquals(400, response.getStatusLine().getStatusCode(),
-                    "OneTimeUse assertion with cache key exceeding 255 characters should be rejected");
         }
     }
 

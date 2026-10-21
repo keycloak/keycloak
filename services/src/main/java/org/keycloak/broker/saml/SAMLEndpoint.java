@@ -19,6 +19,7 @@ package org.keycloak.broker.saml;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -34,7 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.datatype.XMLGregorianCalendar;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -78,6 +78,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -703,7 +704,14 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
                 }
 
-                if (hasOneTimeUseCondition(assertion)) {
+                long oneTimeUseCount = countOneTimeUseConditions(assertion);
+                if (oneTimeUseCount > 1) {
+                    logger.error("SAML assertion contains more than one OneTimeUse condition. Rejecting.");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+                if (oneTimeUseCount == 1) {
                     Response replayResponse = validateOneTimeUse(assertion, authSession);
                     if (replayResponse != null) {
                         return replayResponse;
@@ -860,17 +868,15 @@ public class SAMLEndpoint {
             return Urls.identityProviderAuthnResponse(session.getContext().getUri().getBaseUri(), providerAlias, realm.getName()).toString();
         }
 
-        private boolean hasOneTimeUseCondition(AssertionType assertion) {
+        private long countOneTimeUseConditions(AssertionType assertion) {
             if (assertion.getConditions() instanceof ConditionsType) {
                 ConditionsType conditions = (ConditionsType) assertion.getConditions();
                 if (conditions.getConditions() != null) {
-                    return conditions.getConditions().stream().anyMatch(OneTimeUseType.class::isInstance);
+                    return conditions.getConditions().stream().filter(OneTimeUseType.class::isInstance).count();
                 }
             }
-            return false;
+            return 0;
         }
-
-        private static final long MAX_ONE_TIME_USE_TTL_SECONDS = 12 * 60 * 60;
 
         private Response validateOneTimeUse(AssertionType assertion, AuthenticationSessionModel authSession) {
             if (assertion.getID() == null) {
@@ -880,53 +886,11 @@ public class SAMLEndpoint {
                 return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
             }
 
-            if (!config.isValidateSignature()) {
-                logger.warn("SAML assertion contains OneTimeUse condition but signature validation is disabled. "
-                        + "Replay check will proceed as defense-in-depth but cannot prevent assertion ID tampering. "
-                        + "Enable signature validation for full OneTimeUse protection.");
-            }
-
-            XMLGregorianCalendar notOnOrAfter = assertion.getConditions().getNotOnOrAfter();
-            if (notOnOrAfter == null) {
-                logger.error("SAML assertion contains OneTimeUse condition but no NotOnOrAfter. Rejecting.");
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
-            }
-
-            long notOnOrAfterMillis = notOnOrAfter.toGregorianCalendar().getTimeInMillis();
-            long nowMillis = System.currentTimeMillis();
-            long clockSkewMillis = 1000L * config.getAllowedClockSkew();
-
-            long remainingLifetimeMillis = notOnOrAfterMillis - nowMillis;
-            long ttlMillis = remainingLifetimeMillis + clockSkewMillis;
-
-            if (ttlMillis <= 0) {
-                logger.error("SAML assertion with OneTimeUse has already expired.");
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
-            }
-
-            long remainingLifetimeSeconds = Math.max(0, (remainingLifetimeMillis + 999) / 1000);
-            if (remainingLifetimeSeconds > MAX_ONE_TIME_USE_TTL_SECONDS) {
-                logger.errorf("SAML assertion with OneTimeUse has NotOnOrAfter too far in the future. Assertion ID: %s", assertion.getID());
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
-            }
-
-            long ttlSeconds = (ttlMillis + 999) / 1000 + 1;
+            long ttlSeconds = config.getOneTimeUseTtlSeconds();
 
             String issuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue() : "";
-            String key = "saml.oneTimeUse." + issuer + "::" + assertion.getID();
-
-            if (key.length() > 255) {
-                logger.errorf("SAML OneTimeUse cache key exceeds 255 characters. Assertion ID: %s, Issuer: %s", assertion.getID(), issuer);
-                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
-            }
+            String rawKey = realm.getId() + "::" + issuer + "::" + assertion.getID();
+            String key = "saml.oneTimeUse." + HashUtils.sha256UrlEncodedHash(rawKey, StandardCharsets.UTF_8);
 
             if (!session.revokedTokens().put(key, ttlSeconds)) {
                 logger.errorf("SAML assertion replay detected. Assertion ID: %s, Issuer: %s", assertion.getID(), issuer);

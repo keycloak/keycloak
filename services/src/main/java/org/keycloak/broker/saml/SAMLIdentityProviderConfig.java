@@ -69,6 +69,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
+    public static final String ONE_TIME_USE_TTL_SECONDS = "oneTimeUseTtlSeconds";
+    public static final long DEFAULT_ONE_TIME_USE_TTL_SECONDS = 12 * 60 * 60;
 
     public SAMLIdentityProviderConfig() {
     }
@@ -474,6 +476,29 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
             throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");
 
+    }
+
+    public long getOneTimeUseTtlSeconds() {
+        String value = getConfig().get(ONE_TIME_USE_TTL_SECONDS);
+        if (value != null && !value.isEmpty()) {
+            try {
+                long result = Long.parseLong(value);
+                if (result > 0) {
+                    return result;
+                }
+            } catch (NumberFormatException e) {
+                // ignore and use default
+            }
+        }
+        return DEFAULT_ONE_TIME_USE_TTL_SECONDS;
+    }
+
+    public void setOneTimeUseTtlSeconds(long oneTimeUseTtlSeconds) {
+        if (oneTimeUseTtlSeconds <= 0) {
+            getConfig().remove(ONE_TIME_USE_TTL_SECONDS);
+        } else {
+            getConfig().put(ONE_TIME_USE_TTL_SECONDS, String.valueOf(oneTimeUseTtlSeconds));
+        }
     }
 
     @Override
