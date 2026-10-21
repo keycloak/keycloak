@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -72,15 +73,21 @@ public interface CLIResult extends LaunchResult {
     }
 
     private static void awaitOutput(String reason, String message, Supplier<String> supplier, CLIResult result) {
-        if (result.exitCode() == -1) {
-            Awaitility.await(reason)
-                .atMost(5, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertThat(reason, supplier.get(), containsString(message)));
-        } else {
-            assertThat(reason, supplier.get(), containsString(message));
+        try {
+            if (result.exitCode() == -1) {
+                Awaitility.await(reason)
+                    .atMost(5, TimeUnit.SECONDS)
+                    .untilAsserted(() -> assertThat(reason, supplier.get(), containsString(message)));
+            } else {
+                assertThat(reason, supplier.get(), containsString(message));
+            }
+        } catch (AssertionError | ConditionTimeoutException e) {
+            // the other stream and the exit code show if the output ended up elsewhere or the process ended early
+            throw new AssertionError("%s (exit code: %s, stdout: %s, stderr: %s)".formatted(e.getMessage(),
+                    result.exitCode(), result.getOutputStream(), result.getErrorStream()), e);
         }
     }
-    
+
     private static void noOutput(String reason, String message, Supplier<String> supplier, CLIResult result, boolean allowRunning) {
         if (!allowRunning && result.exitCode() == -1) {
             throw new AssertionError("This assertion should not be used against a server with manual stop mode");
