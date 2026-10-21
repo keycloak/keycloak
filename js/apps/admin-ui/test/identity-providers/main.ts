@@ -203,7 +203,12 @@ export async function addMapper(
     "#identityProviderMapper",
     page.getByTestId(`${mapperType}-idp-mapper`),
   );
-  await page.getByTestId("name").fill(mapperName);
+  const name = page.getByTestId("name");
+  // Fields that load their options asynchronously take the focus when they appear, which can swallow the text.
+  await expect(async () => {
+    await name.fill(mapperName);
+    await expect(name).toHaveValue(mapperName, { timeout: 1_000 });
+  }).toPass();
 }
 
 export async function clickSaveMapper(page: Page) {
