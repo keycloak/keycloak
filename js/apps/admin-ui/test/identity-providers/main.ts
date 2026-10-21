@@ -134,7 +134,12 @@ export async function addMapper(
   await page.getByTestId("no-mappers-empty-action").click();
   await page.locator("#identityProviderMapper").click();
   await page.getByTestId(`${mapperType}-idp-mapper`).click();
-  await page.getByTestId("name").fill(mapperName);
+  const name = page.getByTestId("name");
+  // Fields that load their options asynchronously take the focus when they appear, which can swallow the text.
+  await expect(async () => {
+    await name.fill(mapperName);
+    await expect(name).toHaveValue(mapperName, { timeout: 1_000 });
+  }).toPass();
 }
 
 export async function clickSaveMapper(page: Page) {
