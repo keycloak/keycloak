@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
+import jakarta.ws.rs.ForbiddenException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -29,6 +30,7 @@ import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -55,9 +57,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -134,6 +139,7 @@ public class ProtocolMappersResource {
     })
     public Response createMapper(ProtocolMapperRepresentation rep) {
         managePermission.require();
+        requireManageProtocolMappers(auth, realm, Collections.singleton(rep.getProtocolMapper()));
 
         ProtocolMapperModel model = null;
         try {
@@ -161,6 +167,7 @@ public class ProtocolMappersResource {
     @APIResponse(responseCode = "204", description = "No Content")
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
+        requireManageProtocolMappers(auth, realm, reps.stream().map(ProtocolMapperRepresentation::getProtocolMapper).collect(Collectors.toSet()));
 
         ProtocolMapperModel model = null;
         for (ProtocolMapperRepresentation rep : reps) {
@@ -235,9 +242,17 @@ public class ProtocolMappersResource {
     @Operation(summary = "Update the mapper")
     public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, ProtocolMapperRepresentation rep) {
         managePermission.require();
+        // The requested type must be permitted. Checked before the lookup so that forbidden callers get 403 rather than 404.
+        requireManageProtocolMappers(auth, realm, Collections.singleton(rep.getProtocolMapper()));
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+
+        // The stored type must be permitted as well. This handles the case when the provider type is changed.
+        if (!Objects.equals(model.getProtocolMapper(), rep.getProtocolMapper())) {
+            requireManageProtocolMappers(auth, realm, Collections.singleton(model.getProtocolMapper()));
+        }
+
         model = RepresentationToModel.toModel(rep);
 
         validateModel(model);
@@ -258,12 +273,40 @@ public class ProtocolMappersResource {
     @Operation(summary = "Delete the mapper")
     public void delete(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         managePermission.require();
-
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        requireManageProtocolMappers(auth, realm, Set.of(model.getProtocolMapper()));
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
+    }
+
+    /**
+     * Shared guard for protocol-mapper writes used by client/client-scope creation and update endpoints.
+     *
+     * @param auth        the permission evaluator for the current request
+     * @param realm       the realm whose attribute carries the allowlist
+     * @param mapperTypes the protocol-mapper provider IDs taken from the request/model
+     */
+    static void requireManageProtocolMappers(AdminPermissionEvaluator auth, RealmModel realm, Set<String> mapperTypes) {
+        // Users with the manage-realm role are always allowed — no type check needed.
+        if (auth.realm().canManageRealm()) {
+            return;
+        }
+
+        // For non-manage-realm administrators every requested type must be in the allowlist.
+        String value = realm.getAttribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
+        Set<String> allowed = (value == null || value.isBlank()) ? Collections.emptySet() :
+                Stream.of(value.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty()).collect(Collectors.toSet());
+
+        if (!allowed.containsAll(mapperTypes)) {
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Forbidden to modify protocol mappers. Allowed protocol mapper types: %s . Types of requested protocol mappers to modify: %s", allowed, mapperTypes);
+            }
+            throw new ForbiddenException();
+        }
     }
 
     private void validateModel(ProtocolMapperModel model) {

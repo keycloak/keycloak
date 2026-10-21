@@ -84,9 +84,14 @@ class AdminClient {
     }
   }
 
-  async getClient(clientName: string) {
+  async getClient(clientName: string, realmName?: string) {
     await this.#login();
-    return (await this.#client.clients.find({ clientId: clientName }))[0];
+    return (
+      await this.#client.clients.find({
+        clientId: clientName,
+        ...(realmName !== undefined && { realm: realmName }),
+      })
+    ).at(0);
   }
 
   async createGroup(groupName: string, realm: string = this.#client.realmName) {

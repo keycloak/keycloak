@@ -17,7 +17,9 @@
 
 package org.keycloak.services.clientregistration.policy;
 
+import java.util.Collections;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -28,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
+import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -98,11 +101,41 @@ public class ClientRegistrationPolicyManager {
     private static void triggerPolicies(KeycloakSession session, ClientRegistrationProvider provider, RegistrationAuth authType,
                                         String opDescription, ClientRegOperation op) throws ClientRegistrationPolicyException {
         RealmModel realm = session.getContext().getRealm();
+        AtomicBoolean allowedProtocolMappersPolicyPresent = new AtomicBoolean(false);
 
         String policyTypeKey = getComponentTypeKey(authType);
         realm.getComponentsStream(realm.getId(), ClientRegistrationPolicy.class.getName())
                 .filter(componentModel -> Objects.equals(componentModel.getSubType(), policyTypeKey))
+                .peek(componentModel -> {
+                    if (ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID.equals(componentModel.getProviderId())) {
+                        allowedProtocolMappersPolicyPresent.set(true);
+                    }
+                })
                 .forEach(policyModel -> runPolicy(policyModel, session, provider, opDescription, op));
+
+        if (!allowedProtocolMappersPolicyPresent.get()) {
+            ensureProtocolMapperPolicyEnforced(session, provider, policyTypeKey, opDescription, op);
+        }
+    }
+
+    /**
+     * Ensures the protocol-mapper allowlist check is always enforced, even when the admin has removed
+     * the "Allowed Protocol Mapper Types" component from the realm. Stick to empty list and not allow
+     * any protocol mappers for this case
+     */
+    private static void ensureProtocolMapperPolicyEnforced(KeycloakSession session,
+                                                           ClientRegistrationProvider provider,
+                                                           String policyTypeKey, String opDescription,
+                                                           ClientRegOperation op) throws ClientRegistrationPolicyException {
+        logger.debugf("No '%s' policy found for auth type '%s' – enforcing deny-all fallback for protocol mappers",
+                ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        ComponentModel fallback = new ComponentModel();
+        fallback.setName("Allowed Protocol Mapper Types (fallback)");
+        fallback.setProviderId(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID);
+        fallback.setProviderType(ClientRegistrationPolicy.class.getName());
+        fallback.setSubType(policyTypeKey);
+        fallback.getConfig().put(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Collections.emptyList());
+        runPolicy(fallback, session, provider, opDescription, op);
     }
 
     private static void runPolicy(ComponentModel policyModel, KeycloakSession session, ClientRegistrationProvider provider,

@@ -18,14 +18,17 @@
 package org.keycloak.testsuite.client;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -39,6 +42,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -67,6 +71,28 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
+
+        allowProtocolMappersInRealm(UserAttributeStatementMapper.PROVIDER_ID);
+    }
+
+    @After
+    @Override
+    public void after() throws Exception {
+        super.after();
+        allowProtocolMappersInRealm(null);
+    }
+
+    private void allowProtocolMappersInRealm(String mapperTypes) {
+        RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
+        if (realmRep.getAttributes() == null) {
+            realmRep.setAttributes(new HashMap<>());
+        }
+        if (mapperTypes != null) {
+            realmRep.getAttributes().put(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, mapperTypes);
+        } else {
+            realmRep.getAttributes().remove(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
+        }
+        adminClient.realm(REALM_NAME).update(realmRep);
     }
 
     @Test

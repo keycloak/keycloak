@@ -38,6 +38,7 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -64,6 +65,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -192,6 +195,13 @@ public class ClientsResource {
     })
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
+
+        if (rep.getProtocolMappers() != null) {
+            Set<String> mapperTypes = rep.getProtocolMappers().stream()
+                    .map(ProtocolMapperRepresentation::getProtocolMapper)
+                    .collect(Collectors.toSet());
+            ProtocolMappersResource.requireManageProtocolMappers(auth, realm, mapperTypes);
+        }
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));

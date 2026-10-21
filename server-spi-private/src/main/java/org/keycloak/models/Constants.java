@@ -225,4 +225,11 @@ public final class Constants {
 
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
+
+    /**
+     * Comma-separated list of protocol-mapper provider IDs that client administrators (users with permissions to manage client(s) or client scope(s), but not with permissions to manage-realm)
+     * are allowed to use when creating, updating, or deleting protocol mappers.
+     * If absent or empty, users without permissions to manage-realm cannot manage protocol mappers.
+     */
+    public static final String ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS = "allowedProtocolMapperTypesForClientAdministrators";
 }
