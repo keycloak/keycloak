@@ -76,11 +76,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.executors.ExecutorsProvider;
-import org.keycloak.headers.SecurityHeadersUtils;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
@@ -1466,19 +1465,16 @@ public class SamlService extends AuthorizationEndpointBase {
     /**
      * Apply realm browser security headers to {@code response} while a Keycloak session is still available.
      * Needed for AsyncResponse flows where {@code KeycloakSecurityHeadersFilter} runs after the session is closed.
+     * Goes through {@link SecurityHeadersProvider} so per-response options (e.g. front-channel logout
+     * {@code allowFrameSrc}) are preserved.
      */
     private static Response withBrowserSecurityHeaders(KeycloakSession session, Response response) {
         if (response == null || session.getContext().getRealm() == null) {
             return response;
         }
-        Map<String, String> headerValues = session.getContext().getRealm().getBrowserSecurityHeaders();
-        MultivaluedMap<String, Object> headers = response.getHeaders();
-        for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
-            SecurityHeadersUtils.addHeader(header, headerValues, (name, value) -> {
-                if (!headers.containsKey(name)) {
-                    headers.putSingle(name, value);
-                }
-            });
+        SecurityHeadersProvider securityHeaders = session.getProvider(SecurityHeadersProvider.class);
+        if (securityHeaders != null) {
+            securityHeaders.addHeaders(response.getHeaders());
         }
         return response;
     }
