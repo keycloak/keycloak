@@ -6,6 +6,7 @@ import java.security.Security;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -27,10 +28,18 @@ public class CryptoIntegration {
     private static volatile CryptoProvider cryptoProvider;
 
     public static void init(ClassLoader classLoader) {
+        init(() -> detectProvider(classLoader));
+    }
+
+    public static void init(ClassLoader classLoader, String providerName, FipsMode fipsMode) {
+        init(() -> detectProvider(classLoader, providerName, fipsMode));
+    }
+
+    private static void init(Supplier<CryptoProvider> providerSupplier) {
         if (cryptoProvider == null) {
             synchronized (lock) {
                 if (cryptoProvider == null) {
-                    cryptoProvider = detectProvider(classLoader);
+                    cryptoProvider = providerSupplier.get();
                     logger.debugv("java security provider: {0}", BouncyIntegration.PROVIDER);
 
                 }
@@ -41,6 +50,27 @@ public class CryptoIntegration {
             logger.tracef(dumpJavaSecurityProviders());
             logger.tracef(dumpSecurityProperties());
         }
+    }
+
+    static CryptoProvider detectProvider(Iterable<CryptoProviderFactory> factories, String providerName, FipsMode fipsMode) {
+        List<CryptoProviderFactory> matchingFactories = StreamSupport.stream(factories.spliterator(), false)
+                .filter(factory -> providerName.equals(factory.getName()))
+                .collect(Collectors.toList());
+
+        if (matchingFactories.size() != 1) {
+            throw new IllegalStateException("Expected one crypto provider named '" + providerName + "', found " + matchingFactories.size());
+        }
+
+        CryptoProvider provider = matchingFactories.get(0).create(fipsMode);
+        if (provider == null) {
+            throw new IllegalStateException("Crypto provider factory '" + providerName + "' returned null");
+        }
+        logger.debugf("Detected crypto provider: %s", provider.getClass().getName());
+        return provider;
+    }
+
+    private static CryptoProvider detectProvider(ClassLoader classLoader, String providerName, FipsMode fipsMode) {
+        return detectProvider(ServiceLoader.load(CryptoProviderFactory.class, classLoader), providerName, fipsMode);
     }
 
     public static boolean isInitialised() {

@@ -124,6 +124,8 @@ public class Profile {
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
+        BRISBANE("Brisbane cryptographic provider", Type.EXPERIMENTAL, Feature.FIPS),
+
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.DEFAULT),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),

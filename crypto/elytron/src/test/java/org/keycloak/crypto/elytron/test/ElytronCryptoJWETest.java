@@ -33,11 +33,4 @@ public class ElytronCryptoJWETest extends JWETest {
 
         testDirectEncryptAndDecrypt(aesKey, hmacKey, JWEConstants.A256CBC_HS512, PAYLOAD, true);
     }
-
-    @Override
-    public void testAesKW_Aes128CbcHmacSha256() throws Exception {
-        // Skipping this test, this test fails when not using BC provider.
-
-    }
-
 }

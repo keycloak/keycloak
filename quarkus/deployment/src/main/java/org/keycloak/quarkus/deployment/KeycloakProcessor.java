@@ -55,6 +55,7 @@ import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.crypto.FipsProvider;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
@@ -1041,8 +1042,10 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     void initCrypto(KeycloakRecorder recorder) {
         FipsMode fipsMode = getFipsMode();
-        recorder.setCryptoProvider(fipsMode);
-        recorder.configureTruststore(fipsMode);
+        FipsProvider fipsProvider = Profile.isFeatureEnabled(Profile.Feature.BRISBANE)
+                ? FipsProvider.BRISBANE : FipsProvider.BOUNCY_CASTLE;
+        recorder.setCryptoProvider(fipsMode, fipsProvider);
+        recorder.configureTruststore(fipsMode, fipsProvider);
     }
 
     private FipsMode getFipsMode() {
