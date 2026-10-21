@@ -146,7 +146,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
         EventRepresentation unauthenticatedOfferEvent = events.poll();
         EventAssertion.assertSuccess(unauthenticatedOfferEvent)
-                .clientId(OID4VCI_CLIENT_ID)
+                .clientId(null)
                 .type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
                 .details(Details.CREDENTIAL_TYPE, credentialConfigurationId);
 

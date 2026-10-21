@@ -35,7 +35,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -55,6 +54,7 @@ import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -65,6 +65,7 @@ import org.keycloak.utils.MediaType;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.getCredentialOfferLifespan;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
@@ -134,6 +135,21 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         validateOriginatingSession(offerState, offerStorage);
 
+        // Checked before the code is marked as used, so that another client cannot invalidate the offer
+        if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(client.getClientId())) {
+            var errorMessage = "Credential offer was not issued to client: " + client.getClientId();
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        if (!Boolean.parseBoolean(client.getAttribute(OID4VCI_ENABLED_ATTRIBUTE_KEY))) {
+            var errorMessage = "Client not enabled for OID4VCI: " + client.getClientId();
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         // Validate tx_code BEFORE marking the pre-authorized code as used.
         // This prevents an attacker who only has the QR code (but not the PIN)
         // from permanently invalidating the credential offer by submitting a wrong tx_code.
@@ -172,27 +188,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        var targetClientId = offerState.getTargetClientId();
-        ClientModel clientModel = realm.getClientByClientId(targetClientId);
-        if (clientModel == null) {
-            var errorMessage = "No client model for: " + targetClientId;
-            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    errorMessage, Response.Status.BAD_REQUEST);
-        }
-
-        if (!clientModel.isEnabled()) {
-            var errorMessage = "Client '" + clientModel.getClientId() + "' disabled";
-            event.detail(REASON, errorMessage).error(Errors.CLIENT_DISABLED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    errorMessage, Response.Status.BAD_REQUEST);
-        }
-
         UserSessionModel userSession = session.sessions().createUserSession(null, realm, targetUserModel, targetUserModel.getUsername(),
                 null, "pre-authorized-code", false, null,
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
-        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
+        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
         clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
         clientSession.setNote(VC_ISSUANCE_FLOW, PRE_AUTH_GRANT_TYPE);
 
@@ -200,10 +200,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         sessionContext.setAttribute(Constants.GRANT_TYPE, PRE_AUTH_GRANT_TYPE);
         sessionContext.setAttribute(OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR, offerState.getCredentialsOfferId());
 
-        // set the client as retrieved from the pre-authorized session
-        session.getContext().setClient(clientModel);
-
-        event.client(clientModel).user(targetUserModel);
+        event.client(client).user(targetUserModel);
 
         // Process authorization_details using provider discovery
         List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponses = processAuthorizationDetails(userSession, sessionContext);
@@ -277,6 +274,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 throw re;
             }
         }
+
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(tokenResponse);
 
         event.success();
         return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));

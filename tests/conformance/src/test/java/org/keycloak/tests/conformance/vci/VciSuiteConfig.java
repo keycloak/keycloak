@@ -48,8 +48,8 @@ record VciSuiteConfig(
         List<BrowserFlow> browser) {
 
     static VciSuiteConfig create(URI keycloakBaseUri, String credentialConfigurationId, JsonNode clientAttesterJwks,
-            JsonNode keyAttestationJwks, JsonNode clientJwks, JsonNode client2Jwks, String trustAnchorPem,
-            BrowserInteraction browserInteraction) {
+            JsonNode keyAttestationJwks, JsonNode clientJwks, JsonNode client2Jwks, String staticTxCode,
+            String trustAnchorPem, BrowserInteraction browserInteraction) {
         // Client attestation (HAIP) and key attestation (HAIP and non-HAIP key-attestation tests) are independent:
         // the client_attestation_* fields are only emitted when a client attester JWKS is supplied, so a non-HAIP
         // private_key_jwt client that still exercises key attestation advertises only key_attestation_jwks.
@@ -60,7 +60,8 @@ record VciSuiteConfig(
                         credentialConfigurationId,
                         clientAttestationIssuer,
                         clientAttesterJwks,
-                        keyAttestationJwks),
+                        keyAttestationJwks,
+                        staticTxCode),
                 new Credential(trustAnchorPem, trustAnchorPem),
                 // HAIP passes null client JWKS (it authenticates with client attestation); non-HAIP passes the
                 // distinct private JWKS the suite signs each client's private_key_jwt assertions with.
@@ -83,7 +84,8 @@ record VciSuiteConfig(
             @JsonProperty("credential_configuration_id") String credentialConfigurationId,
             @JsonProperty("client_attestation_issuer") String clientAttestationIssuer,
             @JsonProperty("client_attester_keys_jwks") JsonNode clientAttesterKeysJwks,
-            @JsonProperty("key_attestation_jwks") JsonNode keyAttestationJwks) {
+            @JsonProperty("key_attestation_jwks") JsonNode keyAttestationJwks,
+            @JsonProperty("static_tx_code") String staticTxCode) {
     }
 
     record Credential(
