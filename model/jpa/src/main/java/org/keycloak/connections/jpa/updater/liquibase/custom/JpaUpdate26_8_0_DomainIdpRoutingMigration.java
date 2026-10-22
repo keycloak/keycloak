@@ -18,10 +18,18 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration;
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Domain;
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration.IdentityProvider;
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Result;
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Routing;
+import org.keycloak.migration.migrators.MigrationUtils;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.DeleteStatement;
@@ -63,153 +71,99 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
     }
 
     private void populateDomainIdpRouting() throws CustomChangeException {
-        String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
-        String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
+        String orgTable = database.correctObjectName("ORG", Table.class);
         String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
+        String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
+        String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
 
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT c.IDENTITY_PROVIDER_ID, c.VALUE FROM " + getTableName(ipcTable) +
-                        " c WHERE c.NAME = 'kc.org.domain'");
-             ResultSet rs = ps.executeQuery()) {
+        try {
+            Map<String, String> organizationNames = new HashMap<>();
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT o.ID, o.NAME FROM " + getTableName(orgTable) + " o");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    organizationNames.put(rs.getString(1), rs.getString(2));
+                }
+            }
 
-            while (rs.next()) {
-                String idpInternalId = rs.getString(1);
-                String domainValue = rs.getString(2);
+            // realm ID -> domain name -> ORG_DOMAIN.ID
+            Map<String, Map<String, String>> domainIds = new HashMap<>();
+            Map<String, List<Domain>> domains = new HashMap<>();
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT d.ID, d.NAME, d.ORG_ID, d.REALM_ID FROM " + getTableName(orgDomainTable) + " d");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String realmId = rs.getString(4);
+                    domainIds.computeIfAbsent(realmId, id -> new HashMap<>()).put(rs.getString(2), rs.getString(1));
+                    domains.computeIfAbsent(realmId, id -> new ArrayList<>()).add(new Domain(rs.getString(3), rs.getString(2)));
+                }
+            }
 
-                boolean autoRedirect = isEmailMatchEnabled(idpInternalId);
-
-                if (!"ANY".equals(domainValue)) {
-                    // Case A: specific domain name — look up ORG_DOMAIN.ID scoped by IdP's realm
-                    try (PreparedStatement domLookup = connection.prepareStatement(
-                            "SELECT dom.ID FROM " + getTableName(orgDomainTable) + " dom" +
-                                    " JOIN " + getTableName(idpTable) + " ip ON dom.REALM_ID = ip.REALM_ID" +
-                                    " AND dom.ORG_ID = ip.ORGANIZATION_ID" +
-                                    " WHERE dom.NAME = ? AND ip.INTERNAL_ID = ?")) {
-                        domLookup.setString(1, domainValue);
-                        domLookup.setString(2, idpInternalId);
-                        try (ResultSet domRs = domLookup.executeQuery()) {
-                            if (domRs.next()) {
-                                String domainId = domRs.getString(1);
-                                statements.add(new UpdateStatement(null, null, orgDomainTable)
-                                        .addNewColumnValue("IDP_ID", idpInternalId)
-                                        .addNewColumnValue("AUTO_REDIRECT", autoRedirect)
-                                        .setWhereClause("ID=?")
-                                        .addWhereParameter(domainId));
-                            }
-                        }
+            // identity provider ID -> config name -> value
+            Map<String, Map<String, String>> configs = new HashMap<>();
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT c.IDENTITY_PROVIDER_ID, c.NAME, c.VALUE FROM " + getTableName(ipcTable) +
+                            " c WHERE c.NAME IN (?, ?, ?)")) {
+                ps.setString(1, MigrationUtils.ORGANIZATION_DOMAIN_ATTRIBUTE);
+                ps.setString(2, MigrationUtils.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
+                ps.setString(3, MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        configs.computeIfAbsent(rs.getString(1), id -> new HashMap<>()).put(rs.getString(2), rs.getString(3));
                     }
-                } else {
-                    // Case B: ANY — set IDP_ID for all org domains not in exclusion list
-                    Set<String> excludedDomains = getExcludedDomains(idpInternalId);
-                    setIdpForOrgDomains(idpInternalId, excludedDomains, autoRedirect);
+                }
+            }
+
+            // query IDENTITY_PROVIDER directly because ORG_IDENTITY_PROVIDER inserts are deferred (not yet executed by Liquibase)
+            Map<String, List<IdentityProvider>> identityProviders = new HashMap<>();
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT ip.INTERNAL_ID, ip.PROVIDER_ALIAS, ip.ORGANIZATION_ID, ip.REALM_ID FROM " + getTableName(idpTable) +
+                            " ip WHERE ip.ORGANIZATION_ID IS NOT NULL");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String idpInternalId = rs.getString(1);
+                    Map<String, String> config = configs.getOrDefault(idpInternalId, Map.of());
+                    identityProviders.computeIfAbsent(rs.getString(4), id -> new ArrayList<>()).add(new IdentityProvider(
+                            idpInternalId, rs.getString(2), rs.getString(3),
+                            config.get(MigrationUtils.ORGANIZATION_DOMAIN_ATTRIBUTE),
+                            config.get(MigrationUtils.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE),
+                            Boolean.parseBoolean(config.get(MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE))));
+                }
+            }
+
+            for (Map.Entry<String, List<IdentityProvider>> entry : identityProviders.entrySet()) {
+                String realmId = entry.getKey();
+                Map<String, String> realmDomainIds = domainIds.getOrDefault(realmId, Map.of());
+                Result result = DomainIdpRoutingMigration.migrate(organizationNames,
+                        domains.getOrDefault(realmId, List.of()), entry.getValue());
+
+                for (Routing routing : result.routings()) {
+                    statements.add(new UpdateStatement(null, null, orgDomainTable)
+                            .addNewColumnValue("IDP_ID", routing.identityProvider().id())
+                            .addNewColumnValue("AUTO_REDIRECT", routing.identityProvider().autoRedirect())
+                            .setWhereClause("ID=?")
+                            .addWhereParameter(realmDomainIds.get(routing.name())));
+                }
+
+                // domains for excluded domains, routed to the identity provider that redirected their emails, if any
+                for (Routing domain : result.newDomains()) {
+                    IdentityProvider idp = domain.identityProvider();
+                    InsertStatement insert = new InsertStatement(null, null, orgDomainTable)
+                            .addColumnValue("ID", UUID.randomUUID().toString())
+                            .addColumnValue("NAME", domain.name())
+                            .addColumnValue("VERIFIED", false)
+                            .addColumnValue("REALM_ID", realmId)
+                            .addColumnValue("ORG_ID", domain.organizationId())
+                            .addColumnValue("AUTO_REDIRECT", idp != null && idp.autoRedirect());
+                    if (idp != null) {
+                        insert.addColumnValue("IDP_ID", idp.id());
+                    }
+                    statements.add(insert);
                 }
             }
             confirmationMessage.append("Migrated domain-IdP routing to DOMAIN.IDP_ID.");
         } catch (Exception e) {
             throw new CustomChangeException(getTaskId() + ": Exception when populating DOMAIN.IDP_ID", e);
-        }
-    }
-
-    private Set<String> getExcludedDomains(String idpInternalId) throws Exception {
-        String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
-
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT c.VALUE FROM " + getTableName(ipcTable) +
-                        " c WHERE c.IDENTITY_PROVIDER_ID = ? AND c.NAME = 'kc.org.excluded.domains'")) {
-            ps.setString(1, idpInternalId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    String value = rs.getString(1);
-                    if (value != null && !value.isEmpty()) {
-                        Set<String> result = new HashSet<>();
-                        for (String d : value.split(",")) {
-                            String trimmed = d.trim();
-                            if (!trimmed.isEmpty()) {
-                                result.add(trimmed);
-                            }
-                        }
-                        return result;
-                    }
-                }
-            }
-        }
-        return Collections.emptySet();
-    }
-
-    private boolean isEmailMatchEnabled(String idpInternalId) throws Exception {
-        String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
-
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT c.VALUE FROM " + getTableName(ipcTable) +
-                        " c WHERE c.IDENTITY_PROVIDER_ID = ? AND c.NAME = 'kc.org.broker.redirect.mode.email-matches'")) {
-            ps.setString(1, idpInternalId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Boolean.parseBoolean(rs.getString(1));
-                }
-            }
-        }
-        return false;
-    }
-
-    private void setIdpForOrgDomains(String idpInternalId, Set<String> excludedDomains, boolean autoRedirect) throws Exception {
-        String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
-        String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
-
-        // Find orgs linked to this IdP — query IDENTITY_PROVIDER directly because
-        // ORG_IDENTITY_PROVIDER inserts are deferred (not yet executed by Liquibase)
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT ip.ORGANIZATION_ID, ip.REALM_ID FROM " + getTableName(idpTable) +
-                        " ip WHERE ip.INTERNAL_ID = ? AND ip.ORGANIZATION_ID IS NOT NULL")) {
-            ps.setString(1, idpInternalId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String orgId = rs.getString(1);
-                    String realmId = rs.getString(2);
-                    Set<String> existingDomainNames = new HashSet<>();
-                    Set<String> insertedDomains = new HashSet<>();
-
-                    // Get all domains for this org (ORG_ID is directly on ORG_DOMAIN)
-                    try (PreparedStatement domPs = connection.prepareStatement(
-                            "SELECT d.ID, d.NAME FROM " + getTableName(orgDomainTable) +
-                                    " d WHERE d.ORG_ID = ? AND d.IDP_ID IS NULL")) {
-                        domPs.setString(1, orgId);
-                        try (ResultSet domRs = domPs.executeQuery()) {
-                            while (domRs.next()) {
-                                String domainId = domRs.getString(1);
-                                String domainName = domRs.getString(2);
-                                existingDomainNames.add(domainName);
-                                if (!excludedDomains.contains(domainName)) {
-                                    statements.add(new UpdateStatement(null, null, orgDomainTable)
-                                            .addNewColumnValue("IDP_ID", idpInternalId)
-                                            .addNewColumnValue("AUTO_REDIRECT", autoRedirect)
-                                            .setWhereClause("ID=?")
-                                            .addWhereParameter(domainId));
-                                }
-                            }
-                        }
-                    }
-
-                    // Create unrouted ORG_DOMAIN rows for excluded patterns not already present
-                    for (String excludedPattern : excludedDomains) {
-                        if (existingDomainNames.contains(excludedPattern)) {
-                            continue;
-                        }
-
-                        if (!insertedDomains.contains(excludedPattern)) {
-                            String domainId = UUID.randomUUID().toString();
-                            statements.add(new InsertStatement(null, null, orgDomainTable)
-                                    .addColumnValue("ID", domainId)
-                                    .addColumnValue("NAME", excludedPattern)
-                                    .addColumnValue("VERIFIED", false)
-                                    .addColumnValue("REALM_ID", realmId)
-                                    .addColumnValue("ORG_ID", orgId)
-                                    .addColumnValue("AUTO_REDIRECT", false));
-                            insertedDomains.add(excludedPattern);
-                        }
-                    }
-                }
-            }
         }
     }
 
