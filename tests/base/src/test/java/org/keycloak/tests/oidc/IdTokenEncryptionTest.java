@@ -184,7 +184,6 @@ public class IdTokenEncryptionTest extends AbstractOIDCScopeTest{
             // authenticate on login page
             authenticatePassword(USERNAME,PASSWORD);
 
-
             // wait for response and get id token but should fail
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
             AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode());
