@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayInfo=true displayMessage=!messagesPerField.existsError('username'); section>
     <#if section = "header">
         ${msg("emailForgotTitle")}
@@ -25,7 +26,7 @@
                 </div>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                    <@buttons.button label="doSubmit" class=["kcButtonLargeClass"] value=msg("doSubmit") />
                 </div>
             </div>
         </form>

@@ -24,7 +24,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
     @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     public void updateAccountInformation(String userName,

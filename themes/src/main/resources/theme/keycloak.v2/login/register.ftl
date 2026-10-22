@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <#import "field.ftl" as field>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
@@ -41,14 +42,12 @@
                     }
                 </script>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha"
-                            data-sitekey="${recaptchaSiteKey}" data-callback="onSubmitRecaptcha" data-action="${recaptchaAction}" type="submit" id="kc-submit">
-                        ${msg("doRegister")}
-                    </button>
+                    <@buttons.button id="kc-submit" label="doRegister" class=["kcButtonLargeClass"] className="g-recaptcha"
+                        attributes={"data-sitekey": recaptchaSiteKey, "data-callback": "onSubmitRecaptcha", "data-action": recaptchaAction} />
                 </div>
             <#else>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
+                    <@buttons.button label="doRegister" class=["kcButtonLargeClass"] value=msg("doRegister") />
                 </div>
             </#if>
 

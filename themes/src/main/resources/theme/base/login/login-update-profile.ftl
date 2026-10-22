@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "user-profile-commons.ftl" as userProfileCommons>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
     <#if section = "header">
         ${msg("loginProfileTitle")}
@@ -16,10 +17,10 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <#if isAppInitiatedAction??>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" formnovalidate>${msg("doCancel")}</button>
+                        <@buttons.button label="doSubmit" fullWidth=false class=["kcButtonLargeClass"] value=msg("doSubmit") />
+                        <@buttons.button name="cancel-aia" label="doCancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" formnovalidate="formnovalidate" />
                     <#else>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+                        <@buttons.button label="doSubmit" class=["kcButtonLargeClass"] value=msg("doSubmit") />
                     </#if>
                 </div>
             </div>
