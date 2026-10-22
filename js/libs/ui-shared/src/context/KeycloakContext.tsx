@@ -3,6 +3,7 @@ import Keycloak from "keycloak-js";
 import {
   PropsWithChildren,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -15,9 +16,24 @@ import { ErrorPage } from "./ErrorPage";
 import { Help } from "./HelpContext";
 import { BaseEnvironment } from "./environment";
 
+const ACTION_UPDATE = "action-update";
+
+export type ActionUpdate = {
+  status: "success" | "cancelled" | "error";
+  action?: string;
+};
+
 export type KeycloakContext<T extends BaseEnvironment = BaseEnvironment> =
   KeycloakContextProps<T> & {
     keycloak: Keycloak;
+    /**
+     * Listens for the result of the application-initiated action the user was redirected back
+     * from. It is emitted once, after the provider has initialized and its children have mounted.
+     * Returns a function that removes the listener.
+     */
+    subscribeActionUpdate: (
+      listener: (update: ActionUpdate) => void,
+    ) => () => void;
   };
 
 const createKeycloakEnvContext = <T extends BaseEnvironment>() =>
@@ -52,6 +68,18 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
   const calledOnce = useRef(false);
   const [init, setInit] = useState(!!externalKeycloak);
   const [error, setError] = useState<unknown>();
+  const pendingActionUpdate = useRef<ActionUpdate>();
+  const actionUpdates = useRef(new EventTarget());
+  const subscribeActionUpdate = useCallback(
+    (listener: (update: ActionUpdate) => void) => {
+      const handler = (event: Event) =>
+        listener((event as CustomEvent<ActionUpdate>).detail);
+      actionUpdates.current.addEventListener(ACTION_UPDATE, handler);
+      return () =>
+        actionUpdates.current.removeEventListener(ACTION_UPDATE, handler);
+    },
+    [],
+  );
   const keycloak = useMemo(() => {
     if (externalKeycloak) {
       return externalKeycloak;
@@ -87,6 +115,10 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
       window.history.replaceState(window.history.state, "", cleanedUrl);
     }
 
+    keycloak.onActionUpdate = (status, action) => {
+      pendingActionUpdate.current = { status, action };
+    };
+
     const init = () =>
       keycloak.init({
         onLoad: "login-required",
@@ -102,6 +134,19 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
     calledOnce.current = true;
   }, [keycloak, externalKeycloak]);
 
+  // Children have mounted (and their effects ran) by the time this runs, so they can subscribe.
+  useEffect(() => {
+    if (!init || !pendingActionUpdate.current) {
+      return;
+    }
+
+    const detail = pendingActionUpdate.current;
+    pendingActionUpdate.current = undefined;
+    actionUpdates.current.dispatchEvent(
+      new CustomEvent(ACTION_UPDATE, { detail }),
+    );
+  }, [init]);
+
   if (error) {
     return <ErrorPage error={error} />;
   }
@@ -111,7 +156,13 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
   }
 
   return (
-    <KeycloakEnvContext.Provider value={{ environment, keycloak }}>
+    <KeycloakEnvContext.Provider
+      value={{
+        environment,
+        keycloak,
+        subscribeActionUpdate,
+      }}
+    >
       <AlertProvider>
         <Help>{children}</Help>
       </AlertProvider>
