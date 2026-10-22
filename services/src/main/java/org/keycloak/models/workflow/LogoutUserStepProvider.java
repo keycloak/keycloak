@@ -19,6 +19,9 @@ package org.keycloak.models.workflow;
 
 import java.util.List;
 
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -74,9 +77,19 @@ public class LogoutUserStepProvider implements WorkflowStepProvider {
     }
 
     private void logout(RealmModel realm, List<UserSessionModel> userSessions) {
-        // steps run without an active request, so there is no request URI or headers to pass
+        // steps run without an active request, so there are no request headers to pass
+        UriInfo uriInfo = getUriInfo();
         ClientConnection connection = session.getContext().getConnection();
         userSessions.forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
-                null, connection, null, true));
+                uriInfo, connection, null, true));
+    }
+
+    private UriInfo getUriInfo() {
+        try {
+            // without an active request, the server URL is only known when the hostname is configured as a full URL
+            return session.getContext().getUri();
+        } catch (ContextNotActiveException e) {
+            return null;
+        }
     }
 }

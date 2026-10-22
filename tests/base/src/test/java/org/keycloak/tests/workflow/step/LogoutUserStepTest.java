@@ -18,8 +18,10 @@
 package org.keycloak.tests.workflow.step;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,8 +31,15 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.saml.SAMLEndpoint;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -40,22 +49,29 @@ import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -76,12 +92,18 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
 
     private static final String BACKCHANNEL_LOGOUT_PATH = "/backchannel-logout";
     private static final String OTHER_CLIENT_ID = "other-app";
+    private static final String SAML_LOGOUT_PATH = "/saml-logout";
+    private static final String SAML_CLIENT_ID = "saml-app";
+    private static final String SAML_IDP_ALIAS = "saml-idp";
 
     @InjectTimeOffSet
     private TimeOffSet timeOffSet;
 
     @InjectHttpServer
     private HttpServer httpServer;
+
+    @InjectKeycloakUrls
+    private KeycloakUrls keycloakUrls;
 
     @InjectUser(ref = "alice", config = AliceUserConfig.class, lifecycle = LifeCycle.METHOD, realmRef = DEFAULT_REALM_NAME)
     private ManagedUser userAlice;
@@ -177,6 +199,85 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
             assertThat(logoutTokens.stream().anyMatch(token -> token.hasAudience(OTHER_CLIENT_ID)), is(true));
         } finally {
             httpServer.removeContext(BACKCHANNEL_LOGOUT_PATH);
+        }
+    }
+
+    @Test
+    public void testSamlBackchannelLogoutIsSentToClient() {
+        managedRealm.admin().clients().create(ClientBuilder.create()
+                .clientId(SAML_CLIENT_ID)
+                .protocol(SamlProtocol.LOGIN_PROTOCOL)
+                .frontchannelLogout(false)
+                .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, getHttpServerUrl() + SAML_LOGOUT_PATH)
+                .build()).close();
+        BlockingQueue<LogoutRequestType> logoutRequests = receiveSamlLogouts();
+
+        try {
+            createLogoutWorkflow(null);
+            oauth.scope(null);
+            login();
+
+            String username = userAlice.getUsername();
+            runOnServer.run((RunOnServer) session -> {
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, username);
+                UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).findFirst().orElseThrow();
+                AuthenticatedClientSessionModel clientSession = session.sessions()
+                        .createClientSession(realm, realm.getClientByClientId(SAML_CLIENT_ID), userSession);
+                clientSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+                clientSession.setNote(SamlProtocol.SAML_NAME_ID, username);
+                clientSession.setNote(SamlProtocol.SAML_NAME_ID_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
+            });
+            // the SAML issuer is the realm URL, which is only known without a request when the hostname is a full URL
+            managedRealm.updateWithCleanup(realm -> realm.attribute("frontendUrl", keycloakUrls.getBase()));
+
+            runScheduledSteps(Duration.ofMinutes(2));
+
+            LogoutRequestType logoutRequest = logoutRequests.poll();
+            assertThat(logoutRequest, notNullValue());
+            assertThat(logoutRequest.getIssuer().getValue(), is(keycloakUrls.getBase() + "/realms/" + managedRealm.getName()));
+            assertThat(logoutRequest.getNameID().getValue(), is(username));
+        } finally {
+            httpServer.removeContext(SAML_LOGOUT_PATH);
+        }
+    }
+
+    @Test
+    public void testSamlBackchannelLogoutIsSentToIdentityProvider() {
+        managedRealm.admin().identityProviders().create(IdentityProviderBuilder.create()
+                .alias(SAML_IDP_ALIAS)
+                .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
+                .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, getHttpServerUrl() + SAML_LOGOUT_PATH)
+                .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "true")
+                .build()).close();
+        BlockingQueue<LogoutRequestType> logoutRequests = receiveSamlLogouts();
+
+        try {
+            createLogoutWorkflow(null);
+            oauth.scope(null);
+            login();
+
+            String username = userAlice.getUsername();
+            runOnServer.run((RunOnServer) session -> {
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, username);
+                UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).findFirst().orElseThrow();
+                NameIDType nameId = new NameIDType();
+                nameId.setValue(username);
+                userSession.setNote(Details.IDENTITY_PROVIDER, SAML_IDP_ALIAS);
+                userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID, nameId.serializeAsString());
+                userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, "session-index");
+            });
+            managedRealm.updateWithCleanup(realm -> realm.attribute("frontendUrl", keycloakUrls.getBase()));
+
+            runScheduledSteps(Duration.ofMinutes(2));
+
+            LogoutRequestType logoutRequest = logoutRequests.poll();
+            assertThat(logoutRequest, notNullValue());
+            assertThat(logoutRequest.getIssuer().getValue(), is(keycloakUrls.getBase() + "/realms/" + managedRealm.getName()));
+            assertThat(logoutRequest.getNameID().getValue(), is(username));
+        } finally {
+            httpServer.removeContext(SAML_LOGOUT_PATH);
         }
     }
 
@@ -277,6 +378,21 @@ public class LogoutUserStepTest extends AbstractWorkflowTest {
         }
 
         return logoutTokens;
+    }
+
+    private BlockingQueue<LogoutRequestType> receiveSamlLogouts() {
+        BlockingQueue<LogoutRequestType> logoutRequests = new LinkedBlockingQueue<>();
+        httpServer.createContext(SAML_LOGOUT_PATH, exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            String samlRequest = Arrays.stream(body.split("&"))
+                    .filter(param -> param.startsWith(GeneralConstants.SAML_REQUEST_KEY + "="))
+                    .map(param -> URLDecoder.decode(param.substring(GeneralConstants.SAML_REQUEST_KEY.length() + 1), StandardCharsets.UTF_8))
+                    .findFirst()
+                    .orElseThrow();
+            logoutRequests.add((LogoutRequestType) SAMLRequestParser.parseRequestPostBinding(samlRequest).getSamlObject());
+            HttpServerUtil.sendResponse(exchange, 200, Map.of());
+        });
+        return logoutRequests;
     }
 
     private String getHttpServerUrl() {
