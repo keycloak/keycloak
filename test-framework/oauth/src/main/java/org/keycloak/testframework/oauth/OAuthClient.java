@@ -49,6 +49,8 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
             managedWebDriver.waiting().waitForOAuthCallback(webdriver1 -> webdriver1.findElement(By.id(OAuth2Constants.CODE)).isDisplayed() || webdriver1.findElement(By.id(OAuth2Constants.ERROR)).isDisplayed());
         } else if (config.getResponseMode() != null && config.getResponseMode().equals(OIDCResponseMode.FORM_POST_JWT.value())) {
             managedWebDriver.waiting().waitForOAuthCallback(webdriver1 -> webdriver1.findElement(By.id(OAuth2Constants.RESPONSE)).isDisplayed());
+        } else if (config.getResponseMode() != null && config.getResponseMode().equals(OIDCResponseMode.JWT.value())) {
+            managedWebDriver.waiting().waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
         } else {
             managedWebDriver.waiting().waitForOAuthCallback();
         }
