@@ -23,8 +23,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -46,86 +44,34 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.JwksProvider;
-import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectJwksProvider;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.ErrorPage;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.OAuthGrantPage;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
-public class AuthorizationTokenEncryptionTest {
-
-    private static final String CLIENT_ID = "test-app";
-    private static final String CLIENT_SECRET = "password";
+public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
     private static final String USERNAME = "test-user@localhost";
     private static final String PASSWORD = "password";
     private static final String STATE = "OpenIdConnect.AuthenticationProperties=2302984sdlk";
 
-    @InjectRealm(config = AuthorizationTokenEncryptionRealmConfig.class)
+    @InjectRealm(config = AuthorizationTokenEncryptionRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
-    @InjectOAuthClient(config = AuthorizationTokenEncryptionClientConfig.class, lifecycle = LifeCycle.METHOD)
-    OAuthClient oauth;
-
-    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
-    Keycloak adminClient;
-
     @InjectJwksProvider
-    private JwksProvider jwksProvider;
-
-    @InjectEvents
-    Events events;
-
-    @InjectWebDriver(lifecycle = LifeCycle.METHOD)
-    ManagedWebDriver driver;
-
-    @InjectPage
-    protected LoginPage loginPage;
-
-    @InjectPage
-    protected OAuthGrantPage grantPage;
-
-    @InjectPage
-    protected ErrorPage errorPage;
-
-    @BeforeEach
-    public void setup() {
-        oauth.client(CLIENT_ID);
-    }
-
-    @AfterEach
-    public void afterTest() {
-        events.clear();
-        oauth.responseMode(null);
-    }
-
+    JwksProvider jwksProvider;
 
     @Test
     public void testAuthorizationEncryptionAlgRSA1_5EncA128CBC_HS256() {
@@ -206,6 +152,48 @@ public class AuthorizationTokenEncryptionTest {
         testAuthorizationTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
+    @Test
+    public void testAuthorizationEncryptionWithoutEncryptionKEK() {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            // generate and register signing/verifying key onto client, not encryption key
+            jwksProvider.generateKeys(Algorithm.RS256);
+
+            clientResource = oauth.clientResource();
+            clientRep = clientResource.toRepresentation();
+            // set signature algorithm and encryption algorithms
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(Algorithm.RS256);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseAlg(JWEConstants.RSA1_5);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+            // use and set jwks_url
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            String jwksUrl = jwksProvider.getUri();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+            clientResource.update(clientRep);
+
+            // open login form with state and responseMode=jwt
+            oauth.responseMode("jwt");
+            oauth.loginForm().state(STATE).open();
+
+            // authenticate on login page
+            authenticatePassword(USERNAME,PASSWORD);
+
+            errorPage.assertCurrent();
+        } finally {
+            // Revert
+            clientResource = oauth.clientResource();
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(Algorithm.RS256);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseAlg(null);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseEnc(null);
+            // Revert jwks_url settings
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
+            clientResource.update(clientRep);
+        }
+    }
+
     private void testAuthorizationTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
         ClientResource clientResource;
         ClientRepresentation clientRep;
@@ -213,7 +201,7 @@ public class AuthorizationTokenEncryptionTest {
             // generate and register encryption key onto client via JwksProvider
             Map<String, String> keyPair = jwksProvider.generateKeys(algAlgorithm);
 
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
+            clientResource = oauth.clientResource();
             clientRep = clientResource.toRepresentation();
             // set authorization response signature algorithm and encryption algorithms
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(sigAlgorithm);
@@ -230,11 +218,10 @@ public class AuthorizationTokenEncryptionTest {
             oauth.loginForm().state(STATE).open();
 
             // authenticate on login page
-            authenticatePassword(USERNAME, PASSWORD);
+            authenticatePassword(USERNAME,PASSWORD);
 
-            // wait for response query parameter in URL and parse response
-            driver.waiting().waitForOAuthCallback(d -> d.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "=") || d.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
-            AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+            response.isError();
 
             // parse JWE and JOSE Header
             String jweStr = response.getResponse();
@@ -256,13 +243,13 @@ public class AuthorizationTokenEncryptionTest {
 
             // verify JWS
             AuthorizationResponseToken authorizationToken = oauth.verifyAuthorizationResponseToken(authorizationTokenString);
-            Assertions.assertEquals(CLIENT_ID, authorizationToken.getAudience()[0]);
+            Assertions.assertEquals(oauth.getClientId(), authorizationToken.getAudience()[0]);
             Assertions.assertEquals(STATE, authorizationToken.getOtherClaims().get("state"));
             Assertions.assertNotNull(authorizationToken.getOtherClaims().get("code"));
         } catch (JWEException e) {
             Assertions.fail(e);
         } finally {
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
+            clientResource = oauth.clientResource();
             clientRep = clientResource.toRepresentation();
             // revert id token signature algorithm and encryption algorithms
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(Algorithm.RS256);
@@ -273,12 +260,6 @@ public class AuthorizationTokenEncryptionTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
             clientResource.update(clientRep);
         }
-    }
-
-    private void authenticatePassword(String username, String password) {
-        loginPage.assertCurrent();
-        loginPage.fillLogin(username, password);
-        loginPage.submit();
     }
 
     private void registerEcKeyProvider(String ecCurve) {
@@ -331,51 +312,7 @@ public class AuthorizationTokenEncryptionTest {
         }
     }
 
-    @Test
-    public void testAuthorizationEncryptionWithoutEncryptionKEK() {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
-        try {
-            // generate and register signing/verifying key onto client, not encryption key
-            jwksProvider.generateKeys(Algorithm.RS256);
-
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
-            clientRep = clientResource.toRepresentation();
-            // set signature algorithm and encryption algorithms
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseAlg(JWEConstants.RSA1_5);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
-            // use and set jwks_url
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
-            String jwksUrl = jwksProvider.getUri();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
-            clientResource.update(clientRep);
-
-            // open login form with state and responseMode=jwt
-            oauth.responseMode("jwt");
-            oauth.loginForm().state(STATE).open();
-
-            // authenticate on login page
-            authenticatePassword(USERNAME, PASSWORD);
-
-            errorPage.assertCurrent();
-            Assertions.assertTrue(driver.page().getPageSource().contains("Unexpected error when handling authentication request to identity provider."));
-        } finally {
-            // Revert
-            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAuthorizationEncryptedResponseEnc(null);
-            // Revert jwks_url settings
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
-            clientResource.update(clientRep);
-        }
-    }
-
     private static class AuthorizationTokenEncryptionRealmConfig implements RealmConfig {
-
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             return realm
@@ -385,16 +322,6 @@ public class AuthorizationTokenEncryptionTest {
                             .firstName("test")
                             .lastName("user")
                             .password(PASSWORD));
-        }
-    }
-
-    private static class AuthorizationTokenEncryptionClientConfig implements ClientConfig {
-
-        @Override
-        public ClientBuilder configure(ClientBuilder client) {
-            return client.clientId(CLIENT_ID)
-                    .secret(CLIENT_SECRET)
-                    .directAccessGrantsEnabled(true);
         }
     }
 }
