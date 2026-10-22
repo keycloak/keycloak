@@ -32,6 +32,22 @@ The frequency of deleting old keys is a tradeoff between security and making sur
 
 Rotating keys also applies to offline tokens. To make sure they are updated, the applications need to refresh the tokens before the old keys are removed.
 
+[[_rotating-keys-gradually]]
+==== Rotating keys gradually with per-client signing key selection
+
+{project_name} supports selecting a specific signing key for each client. This feature enables gradual key rotation, where you can control the timing of key changes per client instead of switching all clients at once.
+
+.Procedure
+. Create a new key provider with *Active* set to *On* and a *Priority* lower than the current active key. The new key is active but will not be used as the realm's active signing key because its priority is lower.
+. Open the client you want to migrate first.
+* For OIDC clients, click the *Advanced* tab and select the new key in the signing key fields under *Fine Grain OpenID Connect Configuration* (for example, *Access token signing key*, *ID token signing key*).
+* For SAML clients, select the new key in the *SAML signing key* field on the *Settings* tab.
+. Verify that the client works correctly with the new key.
+. Repeat for additional clients until all clients are verified.
+. Promote the new key to the realm's active signing key by increasing its *Priority* above the old key.
+. Set the old key to passive, and after sufficient time has passed, disable or delete it.
+. Optionally, remove the per-client signing key settings from each client so they use the realm's active signing key.
+
 ==== Adding a generated key pair
 
 Use this procedure to generate a key pair including a self-signed certificate.
