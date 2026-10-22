@@ -92,12 +92,22 @@ class KubernetesUtilsTest {
             "https://login.microsoftonline.com/common/discovery/v2.0/keys",
             "https://accounts.google.com/.well-known/openid-configuration",
             "https://example.com/jwks",
+            "https://kubernetes.default.svc:6443/openid/v1/jwks",
             "https://kubernetes.default.svc:8443/openid/v1/jwks",
             "https://kubernetes.default.svc:80/openid/v1/jwks",
             "not-a-valid-uri"
     })
     void isTrustedKubernetesEndpointReturnsFalseForUntrustedEndpoints(String uri) {
         assertFalse(KubernetesUtils.isTrustedKubernetesEndpoint(uri));
+    }
+
+    @Test
+    void isTrustedKubernetesEndpointAllowsConfiguredApiServiceAddressOnlyOnItsHttpsPort() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesEndpoint("https://10.0.0.1:8443/jwks", "10.0.0.1", "8443"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesEndpoint("https://10.0.0.1:6443/jwks", "10.0.0.1", "8443"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesEndpoint("https://10.0.0.2:8443/jwks", "10.0.0.1", "8443"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesEndpoint("https://10.0.0.1:8443/jwks", "10.0.0.1", "invalid"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesEndpoint("https://kubernetes.default.svc:8443/jwks", null, null));
     }
 
     @Test

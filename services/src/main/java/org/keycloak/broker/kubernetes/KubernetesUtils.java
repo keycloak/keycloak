@@ -73,17 +73,16 @@ final class KubernetesUtils {
     }
 
     static boolean isTrustedKubernetesEndpoint(String uri) {
+        return isTrustedKubernetesEndpoint(uri, System.getenv("KUBERNETES_SERVICE_HOST"), System.getenv("KUBERNETES_SERVICE_PORT_HTTPS"));
+    }
+
+    static boolean isTrustedKubernetesEndpoint(String uri, String serviceHost, String servicePort) {
         if (Strings.isEmpty(uri)) {
             return false;
         }
         try {
             URI parsed = URI.create(uri);
-            String scheme = parsed.getScheme();
-            if (!"https".equalsIgnoreCase(scheme)) {
-                return false;
-            }
-            int port = parsed.getPort();
-            if (port != -1 && port != 443) {
+            if (!"https".equalsIgnoreCase(parsed.getScheme())) {
                 return false;
             }
             String host = parsed.getHost();
@@ -91,9 +90,16 @@ final class KubernetesUtils {
                 return false;
             }
             host = host.toLowerCase(Locale.ROOT);
-            return host.equals("kubernetes.default.svc")
+            int port = parsed.getPort() == -1 ? 443 : parsed.getPort();
+            boolean standardApiHost = host.equals("kubernetes.default.svc")
                     || host.equals("kubernetes.default.svc.cluster.local")
                     || host.equals("kubernetes.default");
+            if (standardApiHost && port == 443) {
+                return true;
+            }
+            return !Strings.isEmpty(serviceHost) && !Strings.isEmpty(servicePort)
+                    && host.equalsIgnoreCase(serviceHost)
+                    && port == Integer.parseInt(servicePort);
         } catch (IllegalArgumentException e) {
             return false;
         }
