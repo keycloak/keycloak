@@ -201,7 +201,7 @@ public class SessionCodeChecks {
         RootAuthenticationSessionModel existingRootAuthSession = authSessionManager.getCurrentRootAuthenticationSession(realm);
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
 
-        // if restart from cookie was not found check if the user is already authenticated
+        // if restart from cookie was not found check if the user is already authenticated.
         if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
             AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
@@ -231,7 +231,9 @@ public class SessionCodeChecks {
                 }
                 event.error(Errors.ALREADY_LOGGED_IN);
             } else {
-                event.error(Errors.COOKIE_NOT_FOUND);
+                event.error((LoginActionsService.REQUIRED_ACTION.equals(flowPath) || LoginActionsService.RESET_CREDENTIALS_PATH.equals(flowPath))
+                        ? Errors.EXPIRED_CODE
+                        : Errors.COOKIE_NOT_FOUND);
             }
         }
 
@@ -427,7 +429,10 @@ public class SessionCodeChecks {
 
         String cook = RestartLoginCookie.getRestartCookie(session);
         if (cook == null) {
-            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
+            String message = (LoginActionsService.REQUIRED_ACTION.equals(flowPath) || LoginActionsService.RESET_CREDENTIALS_PATH.equals(flowPath))
+                    ? Messages.EXPIRED_CODE
+                    : Messages.COOKIE_NOT_FOUND;
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message);
         }
 
         try {
@@ -466,8 +471,12 @@ public class SessionCodeChecks {
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
             // Finally need to show error as all the fallbacks failed
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
+            boolean expiredFlow = LoginActionsService.REQUIRED_ACTION.equals(flowPath) || LoginActionsService.RESET_CREDENTIALS_PATH.equals(flowPath);
+            event.error(expiredFlow ? Errors.EXPIRED_CODE : Errors.INVALID_CODE);
+            String message = expiredFlow
+                    ? Messages.EXPIRED_CODE
+                    : Messages.INVALID_CODE;
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message);
         }
     }
 
