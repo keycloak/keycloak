@@ -121,6 +121,8 @@ public class BrokerTest extends AbstractSamlTest {
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
               .sessionIndex("idp:" + UUID.randomUUID())
+              // not the email format, which would set the email of brokered users
+              .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "idp-user")
               .buildModel();
 
             AttributeStatementType attrStatement = new AttributeStatementType();
