@@ -21,7 +21,11 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
+import org.keycloak.crypto.AesGcmContentEncryptionProvider;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -112,6 +116,25 @@ public abstract class AbstractOIDCScopeTest {
         loginPage.assertCurrent();
         loginPage.fillLogin(username, password);
         loginPage.submit();
+    }
+
+    protected JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
+        JWEEncryptionProvider jweEncryptionProvider = null;
+        switch (encAlgorithm) {
+            case JWEConstants.A128GCM:
+            case JWEConstants.A192GCM:
+            case JWEConstants.A256GCM:
+                jweEncryptionProvider = new AesGcmContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
+                break;
+            case JWEConstants.A128CBC_HS256:
+            case JWEConstants.A192CBC_HS384:
+            case JWEConstants.A256CBC_HS512:
+                jweEncryptionProvider = new AesCbcHmacShaContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
+                break;
+            default:
+                break;
+        }
+        return jweEncryptionProvider;
     }
 
     static class Tokens {

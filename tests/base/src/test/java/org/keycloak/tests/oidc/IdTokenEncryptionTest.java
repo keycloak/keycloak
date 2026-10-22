@@ -28,8 +28,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
-import org.keycloak.crypto.AesGcmContentEncryptionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.RsaCekManagementProvider;
 import org.keycloak.jose.JOSEHeader;
@@ -65,7 +63,6 @@ import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class IdTokenEncryptionTest extends AbstractOIDCScopeTest{
-    private static final String CLIENT_ID = "test-app";
     private static final String USERNAME = "test-user@localhost";
     private static final String PASSWORD = "password";
 
@@ -262,7 +259,7 @@ public class IdTokenEncryptionTest extends AbstractOIDCScopeTest{
             // verify JWS
             IDToken idToken = oauth.verifyIDToken(idTokenString);
             Assertions.assertEquals(USERNAME, idToken.getPreferredUsername());
-            Assertions.assertEquals(CLIENT_ID, idToken.getIssuedFor());
+            Assertions.assertEquals(oauth.getClientId(), idToken.getIssuedFor());
         } catch (JWEException e) {
             Assertions.fail(e);
         } finally {
@@ -299,25 +296,6 @@ public class IdTokenEncryptionTest extends AbstractOIDCScopeTest{
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
         return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-    }
-
-    private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
-        JWEEncryptionProvider jweEncryptionProvider = null;
-        switch (encAlgorithm) {
-            case JWEConstants.A128GCM:
-            case JWEConstants.A192GCM:
-            case JWEConstants.A256GCM:
-                jweEncryptionProvider = new AesGcmContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
-                break;
-            case JWEConstants.A128CBC_HS256:
-            case JWEConstants.A192CBC_HS384:
-            case JWEConstants.A256CBC_HS512:
-                jweEncryptionProvider = new AesCbcHmacShaContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
-                break;
-            default:
-                break;
-        }
-        return jweEncryptionProvider;
     }
 
     private JOSEHeader getHeader(String base64Header) {
