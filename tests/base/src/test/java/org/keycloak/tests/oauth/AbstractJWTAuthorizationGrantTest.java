@@ -98,7 +98,8 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         assertFailure("Token is not active", response, events.poll());
 
         //test max exp default settings
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 305L));
+        // margin of more than 1s over the limit avoids flakiness when the clock ticks between test and server
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 310L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
@@ -108,7 +109,8 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false");
         });
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
+        // margin of more than 1s over the limit avoids flakiness when the clock ticks between test and server
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 12L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
