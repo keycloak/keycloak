@@ -90,6 +90,9 @@ public class SsfTransmitterPushFailureTests {
     static final String HEALTHY_CONTEXT_PATH = "/ssf/push-failure-healthy";
     static final String HEALTHY_PUSH_ENDPOINT = "http://127.0.0.1:8500" + HEALTHY_CONTEXT_PATH;
 
+    static final String ERROR_BODY_CONTEXT_PATH = "/ssf/push-failure-error-body";
+    static final String ERROR_BODY_PUSH_ENDPOINT = "http://127.0.0.1:8500" + ERROR_BODY_CONTEXT_PATH;
+
     static final String EXPECTED_PUSH_AUTH_HEADER = "Bearer dummy-push-failure-receiver";
 
     static final long PUSH_WAIT_SECONDS = 10;
@@ -138,7 +141,7 @@ public class SsfTransmitterPushFailureTests {
         List.of(RECEIVER_ERROR, RECEIVER_UNREACH, RECEIVER_HEALTHY)
                 .forEach(this::bestEffortDeleteStream);
 
-        for (String ctx : List.of(ERROR_CONTEXT_PATH, HEALTHY_CONTEXT_PATH)) {
+        for (String ctx : List.of(ERROR_CONTEXT_PATH, HEALTHY_CONTEXT_PATH, ERROR_BODY_CONTEXT_PATH)) {
             try {
                 mockReceiverServer.removeContext(ctx);
             } catch (IllegalArgumentException ignored) {
@@ -196,6 +199,44 @@ public class SsfTransmitterPushFailureTests {
         // dispatch executor.
         Assertions.assertNotNull(healthyPushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
                 "healthy stream should receive a push despite the unreachable sibling");
+    }
+
+    @Test
+    public void testErrorResponseWithNullCharacterDoesNotBlockOutbox() throws Exception {
+        // PostgreSQL cannot store U+0000 in a text column
+        assertErrorResponseDoesNotBlockOutbox("{\"error\":\"invalid request\"}");
+    }
+
+    @Test
+    public void testErrorResponseLongerThanLastErrorColumnInBytesDoesNotBlockOutbox() throws Exception {
+        // fits LAST_ERROR VARCHAR(2048) in characters, but not in bytes
+        assertErrorResponseDoesNotBlockOutbox("{\"error\":\"" + "é".repeat(1100) + "\"}");
+    }
+
+    /**
+     * The failing receiver's response body ends up in the outbox row's LAST_ERROR. If it cannot be stored, the
+     * drainer tick must not roll back the outcome of the other rows of the batch.
+     */
+    protected void assertErrorResponseDoesNotBlockOutbox(String errorBody) throws Exception {
+        BlockingQueue<CapturedPush> errorBodyPushes = new LinkedBlockingQueue<>();
+        mockReceiverServer.createContext(ERROR_BODY_CONTEXT_PATH, new CapturingHandler(errorBodyPushes, 500, errorBody));
+
+        String errorToken = obtainReceiverToken(RECEIVER_ERROR, RECEIVER_ERROR_SECRET);
+        createPushStream(errorToken, ERROR_BODY_PUSH_ENDPOINT, Set.of(CaepSessionRevoked.TYPE));
+
+        String healthyToken = obtainReceiverToken(RECEIVER_HEALTHY, RECEIVER_HEALTHY_SECRET);
+        createPushStream(healthyToken, HEALTHY_PUSH_ENDPOINT, Set.of(CaepSessionRevoked.TYPE));
+
+        triggerUserLogout();
+
+        Assertions.assertNotNull(errorBodyPushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "the failing receiver should receive the push");
+        Assertions.assertNotNull(healthyPushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "the healthy receiver should receive the push");
+
+        // the drainer ticks every 500 ms; a rolled back tick would push the delivered row again
+        Thread.sleep(5000);
+        Assertions.assertEquals(0, healthyPushes.size(), "the healthy receiver should receive the push only once");
     }
 
     // --- helpers ---------------------------------------------------------
