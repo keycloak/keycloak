@@ -38,12 +38,20 @@ public class KeycloakLogger extends AbstractLogger {
 
     @Override
     public void severe(String message) {
-        this.delegate.error(message);
+        if (isExpectedAnalyticsDisabledMessage(message)) {
+            this.delegate.debug(message);
+        } else {
+            this.delegate.error(message);
+        }
     }
 
     @Override
     public void severe(String message, Throwable e) {
-        this.delegate.error(message, e);
+        if (isExpectedAnalyticsDisabledMessage(message)) {
+            this.delegate.debug(message, e);
+        } else {
+            this.delegate.error(message, e);
+        }
     }
 
     @Override
@@ -88,7 +96,11 @@ public class KeycloakLogger extends AbstractLogger {
         if (level.equals(Level.OFF)) {
             return;
         } else if (level.equals(Level.SEVERE)) {
-            this.delegate.error(message, e);
+            if (isExpectedAnalyticsDisabledMessage(message)) {
+                this.delegate.debug(message, e);
+            } else {
+                this.delegate.error(message, e);
+            }
         } else if (level.equals(Level.WARNING)) {
             this.delegate.warn(message, e);
         } else if (level.equals(Level.INFO)) {
@@ -97,5 +109,13 @@ public class KeycloakLogger extends AbstractLogger {
             if (this.delegate.isTraceEnabled())
                 this.delegate.trace(message, e);
         }
+    }
+
+    /**
+     * Liquibase logs expected "analytics disabled" conditions at severe level (e.g. non-release builds).
+     * That is not a Keycloak failure; demote to debug to avoid false-positive ERROR alerts.
+     */
+    private static boolean isExpectedAnalyticsDisabledMessage(String message) {
+        return message != null && message.startsWith("Analytics is disabled because");
     }
 }
