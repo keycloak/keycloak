@@ -85,3 +85,22 @@ Previously {project_name} treated the semicolon (`;`) as a query parameter delim
 Because different layers of the server applied this rule inconsistently, the parameters used to process a request could differ from those used to verify its signature.
 {project_name} now treats the semicolon as a literal character, so the same request yields a single parameter.
 If any of your clients rely on the semicolon as a query parameter delimiter, update them to use the ampersand instead.
+
+=== OIDC identity provider now respects `email_verified=false` from the ID token when Trust Email is enabled
+// https://github.com/keycloak/keycloak/issues/54245
+
+When brokering through an OpenID Connect identity provider with *Trust Email* enabled, {project_name} now correctly honors an `email_verified=false` claim in the ID token, even when the UserInfo endpoint does not include an `email_verified` field.
+
+Previously, if a provider such as GitLab supplied `email_verified=false` in the ID token but omitted the claim from UserInfo, {project_name} ignored the token value and fell back to the `trustEmail` setting, marking the email as verified despite the IdP explicitly stating otherwise.
+
+After upgrading, the following behavior applies when *Trust Email* is enabled:
+
+* If UserInfo includes `email_verified`, that value is used and the ID token value is ignored.
+* If UserInfo provides an email but omits `email_verified`, the ID token's `email_verified` value is used, provided the two emails match.
+* If UserInfo returns a different email than the ID token, the ID token's `email_verified` claim is discarded because it does not apply to the email that was actually selected. {project_name} falls back to the default trust-email behavior for that email.
+* If a custom provider stores the validated ID token under `VALIDATED_ID_TOKEN` in the brokered identity context but does not explicitly set an `EMAIL_VERIFIED` context entry, {project_name} reads `email_verified` directly from the token as a fallback, again only when the token and context emails match.
+
+The change affects existing users under FORCE synchronization mode. When UserInfo provides the user's email but omits `email_verified`, {project_name} now applies the ID token's `email_verified` value, whether `true` or `false`, on every login, even if the user's email address has not changed since the last login.
+For example, if an administrator marked the user's email as not verified, a later login whose ID token carries `email_verified=true` sets the flag back to `true`. Conversely, a token carrying `email_verified=false` sets it to `false` even if the administrator marked the email as verified.
+Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
+If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
