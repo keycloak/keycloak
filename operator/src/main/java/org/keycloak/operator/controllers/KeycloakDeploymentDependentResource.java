@@ -60,7 +60,9 @@ import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -136,6 +138,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
                 .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, allConfigMaps));
+        addVolumes(primary, baseDeployment, kcContainer, allSecrets, allConfigMaps);
 
         watchedResources.annotateDeployment(allSecrets, Secret.class, baseDeployment, context);
         watchedResources.annotateDeployment(allConfigMaps, ConfigMap.class, baseDeployment, context);
@@ -208,6 +211,27 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             kcContainer.getVolumeMounts().add(0, volumeMount);
             allConfigMaps.add(configFile.getName(), configFile.getOptional());
         });
+    }
+
+    private void addVolumes(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, WatchedResources.Watched allSecrets, WatchedResources.Watched allConfigMaps) {
+        var podVolumes = deployment.getSpec().getTemplate().getSpec().getVolumes();
+        Set<String> volumeNames = podVolumes.stream().map(Volume::getName).collect(Collectors.toSet());
+        for (Volume volume : keycloakCR.getSpec().getVolumes()) {
+            if (!volumeNames.add(volume.getName())) {
+                throw new IllegalStateException("Volume " + volume.getName() + " is already defined for the Keycloak pod");
+            }
+            podVolumes.add(volume);
+            Optional.ofNullable(volume.getConfigMap()).ifPresent(c -> allConfigMaps.add(c.getName(), c.getOptional()));
+            Optional.ofNullable(volume.getSecret()).ifPresent(s -> allSecrets.add(s.getSecretName(), s.getOptional()));
+        }
+
+        Set<String> mountPaths = kcContainer.getVolumeMounts().stream().map(VolumeMount::getMountPath).collect(Collectors.toSet());
+        for (VolumeMount volumeMount : keycloakCR.getSpec().getVolumeMounts()) {
+            if (!mountPaths.add(volumeMount.getMountPath())) {
+                throw new IllegalStateException("Mount path " + volumeMount.getMountPath() + " is already used in the Keycloak container");
+            }
+            kcContainer.getVolumeMounts().add(volumeMount);
+        }
     }
 
     private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, WatchedResources.Watched allSecrets, WatchedResources.Watched allConfigMaps) {
