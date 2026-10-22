@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -44,6 +45,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -58,12 +60,14 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.StaticAttestationKeyReso
 import org.keycloak.protocol.oid4vc.issuance.keybinding.TrustedAttestationKeyResolver;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -102,6 +106,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX;
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.protocol.oidc.utils.JWKSServerUtils.toJwk;
@@ -323,6 +328,53 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runJwtProofWithKeyAttestationMustContainProofKeyTest(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexZeroEnforcesFirstAttestedKey() {
+        String cNonce = getCNonce();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runProofKeyIndexZeroEnforcesFirstAttestedKey(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexIsParsedFromCredentialScope() {
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
+            try {
+                credentialScope.setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "0");
+
+                SupportedCredentialConfiguration config = SupportedCredentialConfiguration.parse(
+                        session, credentialScope, List.of("ES256"));
+
+                assertEquals(Integer.valueOf(0), config.getRequiredProofKeyIndex(),
+                        "Configured proof key index should be part of the credential configuration");
+            } finally {
+                credentialScope.removeAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX);
+            }
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexOtherThanZeroIsRejected() {
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
+            try {
+                credentialScope.setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "1");
+
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                        () -> SupportedCredentialConfiguration.parse(session, credentialScope, List.of("ES256")));
+
+                assertTrue(exception.getMessage().contains(VC_KEY_ATTESTATION_PROOF_KEY_INDEX),
+                        "Expected rejection of unsupported proof key index but got: " + exception.getMessage());
+            } finally {
+                credentialScope.removeAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX);
+            }
         });
     }
 
@@ -1328,6 +1380,50 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
         assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext),
                 "Expected proof key mismatch against attested_keys to fail");
+    }
+
+    private static void runProofKeyIndexZeroEnforcesFirstAttestedKey(KeycloakSession session, String cNonce) {
+        KeyWrapper attestationKey = getECKey("attestationKey");
+        KeyWrapper firstProofKey = getECKey("firstProofKey");
+        KeyWrapper secondProofKey = getECKey("secondProofKey");
+
+        String attestationJwt = createValidAttestationJwt(attestationKey,
+                List.of(toJwk(firstProofKey), toJwk(secondProofKey)), cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+
+        AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(
+                Map.of(attestationKey.getKid(), JWKBuilder.create().ec(attestationKey.getPublicKey()))
+        );
+        JwtProofValidator validator = new JwtProofValidator(session, keyResolver);
+
+        VCIssuerException exception = assertThrows(VCIssuerException.class,
+                () -> validator.validateProof(proofContextWithRequiredKeyIndex(session, secondProofKey,
+                        attestationJwt, cNonce)));
+        assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
+        assertEquals("JWT proof key is not attested_keys[0], it is at index 1", exception.getMessage());
+
+        List<JWK> validatedKeys = validator.validateProof(
+                proofContextWithRequiredKeyIndex(session, firstProofKey, attestationJwt, cNonce));
+        assertEquals(1, validatedKeys.size(), "Proof signed by attested_keys[0] should be accepted");
+    }
+
+    private static VCIssuanceContext proofContextWithRequiredKeyIndex(KeycloakSession session,
+                                                                      KeyWrapper proofKey,
+                                                                      String attestationJwt,
+                                                                      String cNonce) {
+        VCIssuanceContext context = createVCIssuanceContext(session);
+        context.getCredentialConfig().setRequiredProofKeyIndex(0);
+        context.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(
+                generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce))));
+        return context;
+    }
+
+    private static CredentialScopeModel requireJwtCredentialScope(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        return Optional.ofNullable(CredentialScopeUtils.findCredentialScopeModelByName(
+                        realm, realm::getClientScopesStream, jwtTypeCredentialScopeName))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No such credential scope: " + jwtTypeCredentialScopeName));
     }
 
     private static void runJwtProofWithJwkAndKidHeadersIsRejectedTest(KeycloakSession session, String cNonce) {
