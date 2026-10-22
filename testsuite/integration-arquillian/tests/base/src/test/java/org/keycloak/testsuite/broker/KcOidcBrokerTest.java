@@ -917,6 +917,167 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         }
     }
 
+    @Test
+    public void testTrustEmailWhenEmailVerifiedClaimIsMissingFromUserInfo() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        identityProviderResource.update(idpRep);
+
+        // Send the email only through UserInfo and omit email_verified.
+        sendEmailOnlyThroughUserInfoWithoutEmailVerified(providerRealm);
+
+        logInAndUpdateAccountInformation();
+
+        UserRepresentation consumerUser = getFederatedIdentity();
+        assertEquals(bc.getUserEmail(), consumerUser.getEmail());
+        Assert.assertTrue("the email must be verified when no email_verified claim is available and Trust Email is enabled",
+                consumerUser.isEmailVerified());
+    }
+
+    @Test
+    public void testUserInfoOnlyEmailWithoutEmailVerifiedPreservesTokenEmailVerifiedFalse() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        identityProviderResource.update(idpRep);
+
+        // The ID token has no email claim and UserInfo has the email without email_verified.
+        sendEmailOnlyThroughUserInfoWithoutEmailVerified(providerRealm);
+
+        // The ID token carries only email_verified=false.
+        addIdTokenEmailVerifiedFalseMapper(getBrokerAppClient(providerRealm), "id-token-email-verified-false-no-email");
+
+        logInAndUpdateAccountInformation();
+
+        UserRepresentation consumerUser = getFederatedIdentity();
+        assertEquals(bc.getUserEmail(), consumerUser.getEmail());
+        Assert.assertFalse("email_verified=false from ID token must be applied when the ID token has no email and UserInfo omits email_verified",
+                consumerUser.isEmailVerified());
+    }
+
+    @Test
+    public void testUserInfoEmailWithoutEmailVerifiedPreservesTokenValue() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        identityProviderResource.update(idpRep);
+
+        removeEmailVerifiedFromEmailScope(providerRealm);
+        addIdTokenEmailVerifiedFalseMapper(getBrokerAppClient(providerRealm), "id-token-email-verified-false");
+
+        logInAndUpdateAccountInformation();
+
+        UserRepresentation consumerUser = getFederatedIdentity();
+        assertEquals(bc.getUserEmail(), consumerUser.getEmail());
+        Assert.assertFalse("email_verified=false from ID token should be preserved when userinfo provides email without email_verified",
+                consumerUser.isEmailVerified());
+    }
+
+    @Test
+    public void testForceSyncReLoginPreservesTokenEmailVerifiedFalse() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        // trustEmail=true, FORCE sync, UserInfo enabled
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        idpRep.getConfig().put("disableUserInfo", "false");
+        idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        identityProviderResource.update(idpRep);
+
+        // email_verified is absent from UserInfo, and email_verified=false is only in the ID token
+        removeEmailVerifiedFromEmailScope(providerRealm);
+        addIdTokenEmailVerifiedFalseMapper(getBrokerAppClient(providerRealm), "id-token-email-verified-false-force");
+
+        // first login: user is created with emailVerified=false
+        logInAndUpdateAccountInformation();
+
+        UserRepresentation consumerUser = getFederatedIdentity();
+        assertEquals(bc.getUserEmail(), consumerUser.getEmail());
+        Assert.assertFalse("first login: email_verified=false from ID token must be applied", consumerUser.isEmailVerified());
+
+        // admin marks the account as verified
+        consumerUser.setEmailVerified(true);
+        consumerRealm.users().get(consumerUser.getId()).update(consumerUser);
+        Assert.assertTrue("pre-condition: admin must be able to set emailVerified=true", getFederatedIdentity().isEmailVerified());
+
+        AccountHelper.logout(consumerRealm, bc.getUserLogin());
+        AccountHelper.logout(providerRealm, bc.getUserLogin());
+
+        loginPage.open(bc.consumerRealmName());
+        logInWithBroker(bc);
+        appPage.assertCurrent();
+
+        // FORCE sync must re-apply the token's false, overriding the locally-set true
+        Assert.assertFalse("second login with FORCE sync: email_verified=false from ID token must override locally-set true",
+                getFederatedIdentity().isEmailVerified());
+    }
+
+    private void logInAndUpdateAccountInformation() {
+        oauth.client("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        logInWithBroker(bc);
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+    }
+
+    private ClientResource getBrokerAppClient(RealmResource providerRealm) {
+        return providerRealm.clients().get(providerRealm.clients().findByClientId("brokerapp").get(0).getId());
+    }
+
+    private void removeEmailVerifiedFromEmailScope(RealmResource providerRealm) {
+        ClientScopeResource emailScope = ApiUtil.findClientScopeByName(providerRealm, "email");
+        emailScope.getProtocolMappers().getMappers().forEach(mapper -> {
+            if (IDToken.EMAIL_VERIFIED.equals(mapper.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+                emailScope.getProtocolMappers().delete(mapper.getId());
+            }
+        });
+    }
+
+    // Send the email only through UserInfo and omit email_verified from UserInfo.
+    private void sendEmailOnlyThroughUserInfoWithoutEmailVerified(RealmResource providerRealm) {
+        ClientScopeResource emailScope = ApiUtil.findClientScopeByName(providerRealm, "email");
+        emailScope.getProtocolMappers().getMappers().forEach(mapper -> {
+            if (IDToken.EMAIL_VERIFIED.equals(mapper.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+                emailScope.getProtocolMappers().delete(mapper.getId());
+            } else if (IDToken.EMAIL.equals(mapper.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+                mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+                emailScope.getProtocolMappers().update(mapper.getId(), mapper);
+            }
+        });
+        ClientResource brokerAppResource = getBrokerAppClient(providerRealm);
+        brokerAppResource.getProtocolMappers().getMappers().forEach(mapper -> {
+            if (IDToken.EMAIL.equals(mapper.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME))) {
+                mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+                brokerAppResource.getProtocolMappers().update(mapper.getId(), mapper);
+            }
+        });
+    }
+
+    private void addIdTokenEmailVerifiedFalseMapper(ClientResource client, String mapperName) {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName(mapperName);
+        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        mapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        mapper.getConfig().put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, IDToken.EMAIL_VERIFIED);
+        mapper.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        mapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "false");
+        mapper.getConfig().put(HardcodedClaim.CLAIM_VALUE, "false");
+
+        ApiUtil.getCreatedId(client.getProtocolMappers().createMapper(mapper));
+    }
+
     private void allowUserEdit(RealmResource realmResource) {
         RealmRepresentation realm = realmResource.toRepresentation();
         realm.setEditUsernameAllowed(true);
