@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Path } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -24,7 +24,7 @@ type MapperListProps = {
   onAdd: (
     mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ) => void;
-  onDelete: (mapper: ProtocolMapperRepresentation) => void;
+  onDelete: (mapper: ProtocolMapperRepresentation) => Promise<boolean>;
   detailLink: (id: string) => Partial<Path>;
 };
 
@@ -53,22 +53,9 @@ export const MapperList = ({
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = model.protocolMappers;
   const mapperTypes = useServerInfo().protocolMapperTypes![model.protocol!];
+  const [deletingMapperId, setDeletingMapperId] = useState<string>();
 
-  const [key, setKey] = useState(0);
-  useEffect(() => setKey(key + 1), [mapperList]);
-
-  const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
-  const [filter, setFilter] = useState(model.protocolMappers);
-  const toggleAddMapperDialog = (buildIn: boolean) => {
-    if (buildIn) {
-      setFilter(mapperList || []);
-    } else {
-      setFilter(undefined);
-    }
-    setAddMapperDialogOpen(!addMapperDialogOpen);
-  };
-
-  const loader = async () => {
+  const rows = useMemo<Row[]>(() => {
     if (!mapperList) {
       return [];
     }
@@ -91,6 +78,30 @@ export const MapperList = ({
     }, []);
 
     return list.sort((a, b) => a.priority - b.priority);
+  }, [mapperList, mapperTypes, deletingMapperId]);
+
+  const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
+  const [filter, setFilter] = useState(model.protocolMappers);
+  const toggleAddMapperDialog = (buildIn: boolean) => {
+    if (buildIn) {
+      setFilter(mapperList || []);
+    } else {
+      setFilter(undefined);
+    }
+    setAddMapperDialogOpen(!addMapperDialogOpen);
+  };
+
+  const onDeleteMapper = async (mapper: Row) => {
+    if (!mapper.id || deletingMapperId) {
+      return false;
+    }
+
+    setDeletingMapperId(mapper.id);
+    try {
+      return await onDelete(mapper);
+    } finally {
+      setDeletingMapperId(undefined);
+    }
   };
 
   return (
@@ -104,8 +115,7 @@ export const MapperList = ({
       />
 
       <KeycloakDataTable
-        key={key}
-        loader={loader}
+        loader={rows}
         ariaLabelKey="clientScopeList"
         searchPlaceholderKey="searchForMapper"
         toolbarItem={
@@ -118,6 +128,7 @@ export const MapperList = ({
                 variant="primary"
                 id="mapperAction"
                 onClick={() => setMapperAction(!mapperAction)}
+                isDisabled={!!deletingMapperId}
               >
                 {t("addMapper")}
               </MenuToggle>
@@ -137,9 +148,10 @@ export const MapperList = ({
         actions={[
           {
             title: t("delete"),
-            onRowClick: onDelete,
+            onRowClick: onDeleteMapper,
           } as Action<Row>,
         ]}
+        isRowDisabled={(row) => row.id === deletingMapperId}
         columns={[
           {
             name: "name",
