@@ -67,8 +67,19 @@ function CatchAllRedirect() {
 }
 
 export const Root = () => {
+  const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
+  const { subscribeActionUpdate } = context;
+  const { addAlert } = useAlerts();
   const [content, setContent] = useState<RouteObject[]>();
+
+  useEffect(() => {
+    return subscribeActionUpdate((update) => {
+      if (update.status === "success" && update.action === "UPDATE_PASSWORD") {
+        addAlert(t("accountPasswordUpdatedMessage"));
+      }
+    });
+  }, [subscribeActionUpdate, addAlert, t]);
 
   usePromise(
     (signal) => fetchContentJson({ signal, context }),
