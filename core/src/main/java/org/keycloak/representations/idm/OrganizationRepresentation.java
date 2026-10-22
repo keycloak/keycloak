@@ -79,10 +79,18 @@ public class OrganizationRepresentation {
         this.description = description;
     }
 
+    /**
+     * @deprecated Use {@code client_id} on invitation endpoints instead.
+     */
+    @Deprecated
     public String getRedirectUrl() {
         return redirectUrl;
     }
 
+    /**
+     * @deprecated Use {@code client_id} on invitation endpoints instead.
+     */
+    @Deprecated
     public void setRedirectUrl(String redirectUrl) {
         this.redirectUrl = redirectUrl;
     }
