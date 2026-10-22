@@ -48,6 +48,15 @@ import jakarta.persistence.Table;
                         " on conflict (id) do update set expire = :expire" +
                         " where expire <= :currentTime"
         ),
+        @NamedQuery(
+                name = "deleteExpiredRevokeToken",
+                query = "delete from RevokedTokenEntity t where t.id = :id and t.expire <= :currentTime"
+        ),
+        @NamedQuery(
+                name = "insertRevokeTokenIfAbsentNoUpdate",
+                query = "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
+                        " on conflict (id) do nothing"
+        ),
 })
 @Table(name="REVOKED_TOKEN")
 @Entity
