@@ -22,24 +22,38 @@ import org.junit.Test;
 
 public class NotEmailPasswordPolicyProviderTest {
 
+    private final PasswordPolicyContext context = PasswordPolicyContext.builder()
+            .username("username")
+            .email("email")
+            .build();
+
     @Test
-    public void testUsernameValidateIsNoOp() {
-        // String-based SPI receives username, not email
-        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate("email", "email"));
+    public void testUsernameValidationIsNoOp() {
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate("username", "username"));
     }
 
     @Test
     public void test() {
-        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "password"));
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate(context, "password"));
+    }
+
+    @Test
+    public void testPasswordEqualsUsername() {
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate(context, "username"));
+    }
+
+    @Test
+    public void testNullEmail() {
+        Assert.assertNull(new NotEmailPasswordPolicyProvider(null).validate(PasswordPolicyContext.builder().username("username").build(), "username"));
     }
 
     @Test
     public void testEquals() {
-        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "email"));
+        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validate(context, "email"));
     }
 
     @Test
     public void testEqualsIgnoreCase() {
-        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validateEmail("email", "EMAIL"));
+        Assert.assertNotNull(new NotEmailPasswordPolicyProvider(null).validate(context, "EMAIL"));
     }
 }

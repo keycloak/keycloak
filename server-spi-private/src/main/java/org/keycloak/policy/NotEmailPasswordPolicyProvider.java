@@ -37,20 +37,14 @@ public class NotEmailPasswordPolicyProvider implements PasswordPolicyProvider {
         this.context = context;
     }
 
-    /**
-     * The {@link PasswordPolicyProvider} String-based API receives a username (see callers such as
-     * registration). Email cannot be derived from that, so this overload is a no-op. Use
-     * {@link #validateEmail(String, String)} or {@link #validate(RealmModel, UserModel, String)}.
-     */
     @Override
     public PolicyError validate(String user, String password) {
-        return null;
+        return validate(PasswordPolicyContext.builder().username(user).build(), password);
     }
 
-    /**
-     * Validates that the password is not the same as the email (case-insensitive).
-     */
-    public PolicyError validateEmail(String email, String password) {
+    @Override
+    public PolicyError validate(PasswordPolicyContext context, String password) {
+        String email = context.email();
         if (email == null) {
             return null;
         }
@@ -59,7 +53,11 @@ public class NotEmailPasswordPolicyProvider implements PasswordPolicyProvider {
 
     @Override
     public PolicyError validate(RealmModel realm, UserModel user, String password) {
-        return validateEmail(user.getEmail(), password);
+        PasswordPolicyContext context = PasswordPolicyContext.builder()
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
+        return validate(context, password);
     }
 
     @Override
