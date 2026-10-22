@@ -584,6 +584,18 @@ export class Users extends Resource<{ realm?: string }> {
   });
 
   /**
+   * revoke all issued verifiable credentials for a user
+   */
+  public revokeAllIssuedVerifiableCredentials = this.makeRequest<
+    { id: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{id}/vc/issued-credentials",
+    urlParamKeys: ["id"],
+  });
+
+  /**
    * revoke an issued verifiable credential
    */
   public revokeIssuedVerifiableCredential = this.makeRequest<
