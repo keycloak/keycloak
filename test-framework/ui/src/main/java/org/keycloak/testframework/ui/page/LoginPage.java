@@ -26,7 +26,7 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-    @FindBy(linkText = "Forgot Password?")
+    @FindBy(linkText = "Forgot password?")
     private WebElement resetPasswordLink;
 
     @FindBy(className = "pf-m-success")

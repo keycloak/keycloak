@@ -34,7 +34,7 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement confirmLogoutButton;
 
-    @FindBy(linkText = "« Back to Application")
+    @FindBy(linkText = "« Back to application")
     private WebElement backToApplicationLink;
 
     @Override

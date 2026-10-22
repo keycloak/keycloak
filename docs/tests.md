@@ -169,7 +169,7 @@ Once configured, you can test various email-related features:
 
 - **Password Reset**:
     1. In **Realm settings** → **Login** tab, enable "Forgot password".
-    2. Go to the login page and click "Forgot Password?".
+    2. Go to the login page and click "Forgot password?".
     3. Enter a user's email and check the mail server console.
 
 - **Update Email**:
@@ -249,7 +249,7 @@ To log in as one of these users:
 
 1. Navigate to your realm's login page, e.g., `http://localhost:8080/realms/master/account`
 2. Enter the username (e.g., `jbrown`) and password (`password`).
-3. Click **Sign In**.
+3. Click **Sign in**.
 4. The user will be federated from LDAP on first login.
 
 To verify the user was synced, go to the Keycloak Admin Console → **Users** and confirm

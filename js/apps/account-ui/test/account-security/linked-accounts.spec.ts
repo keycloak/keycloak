@@ -106,7 +106,7 @@ async function loginWithUsernamePassword(
 ) {
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign In" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
 }
 
 async function loginWithIdp(page: Page, idpAlias: string) {

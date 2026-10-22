@@ -864,7 +864,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
 
-        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to Application"));
+        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to application"));
         assertThat(backToApplicationLink, Matchers.notNullValue());
     }
 

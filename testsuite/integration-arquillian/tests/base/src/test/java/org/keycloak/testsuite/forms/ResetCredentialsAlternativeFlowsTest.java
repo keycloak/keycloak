@@ -389,7 +389,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
     }
 
 
-    // KEYCLOAK-12168 Verify the 'Device Name' label is optional for the first OTP credential created
+    // KEYCLOAK-12168 Verify the 'Device name' label is optional for the first OTP credential created
     // (either via Account page or by registering new user), but required for each next created OTP credential
     @Test
     public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
@@ -408,7 +408,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
                     Arrays.asList("reset-credential-email", "reset-password")
             );
 
-            /* Verify the 'Device Name' is optional when creating new OTP credential via the Account page */
+            /* Verify the 'Device name' is optional when creating new OTP credential via the Account page */
 
             // Login & set up the initial OTP code for the user
             oauth.openLoginForm();
@@ -430,7 +430,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
+            /* Verify the 'Device name' is optional when creating the first OTP credential via the login config TOTP page */
 
             // Register new user
             oauth.openLoginForm();
@@ -456,7 +456,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            /* Verify the 'Device Name' is required for each next OTP credential created via the login config TOTP page */
+            /* Verify the 'Device name' is required for each next OTP credential created via the login config TOTP page */
 
             // Click "Forgot password" to define another OTP credential
             oauth.openLoginForm();
@@ -470,7 +470,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // should fail with error since OTP label is required in this case already
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
             Assertions.assertTrue(AccountHelper.totpCountEquals(managedRealm.admin(), "bwilson", 1));
-            // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
+            // Create 2nd OTP credential with valid (non-empty) Device name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);
 
