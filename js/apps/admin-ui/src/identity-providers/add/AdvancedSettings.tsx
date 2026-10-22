@@ -423,6 +423,24 @@ export const AdvancedSettings = ({
             />
           </FormGroupField>
         )}
+      {isSAML && (
+        <FormGroupField label="oneTimeUseTtlSeconds">
+          <Controller
+            name="config.oneTimeUseTtlSeconds"
+            defaultValue=""
+            control={control}
+            render={({ field }) => (
+              <TimeSelector
+                className="kc-one-time-use-ttl-seconds"
+                data-testid="one-time-use-ttl-seconds-input"
+                value={field.value!}
+                onChange={field.onChange}
+                units={["second", "minute", "hour"]}
+              />
+            )}
+          />
+        </FormGroupField>
+      )}
     </>
   );
 };

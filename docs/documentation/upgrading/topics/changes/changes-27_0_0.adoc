@@ -177,6 +177,18 @@ If you need the full user representation for the service account, use the user I
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== SAML assertions with a OneTimeUse condition are no longer replayable
+// https://github.com/keycloak/keycloak/issues/46325
+
+When {project_name} acts as a SAML service provider through identity brokering, an assertion that contains a `OneTimeUse` condition is now accepted only once.
+Previously, the condition was parsed but not enforced, so the same assertion could be presented again within its validity period.
+
+After upgrading, a replayed assertion is rejected with an error page and an `IDENTITY_PROVIDER_RESPONSE` error event, and the user is not logged in.
+This affects only identity providers that include the condition in their assertions, including a {project_name} realm acting as the identity provider when the *Include OneTimeUse Condition* option is enabled on the SAML client.
+Assertions without the condition are not affected.
+The new *OneTimeUse TTL* setting of the SAML identity provider controls how long a consumed assertion is remembered and defaults to 12 hours (43,200 seconds).
+Set it to a value at least as long as the validity period of the assertions issued by the external identity provider.
+
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 

@@ -17,28 +17,23 @@
 package org.keycloak.tests.broker.saml;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
-import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
 import org.keycloak.tests.saml.SamlClient;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,73 +41,91 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
 
     private static final String IDP_INITIATED_SSO_URL_NAME = "sales-post";
+    private static final int ASSERTION_VALIDITY_SECONDS = 3600;
 
     @InjectHttpClient(followRedirects = false)
     CloseableHttpClient httpClient;
 
-    @BeforeEach
-    void configureOneTimeUseAndSigning() {
-        String samlClientId = consumerRealm.getBaseUrl();
-        ClientRepresentation client = providerRealm.admin().clients().findByClientId(samlClientId).get(0);
-        client.getAttributes().put(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, "true");
-        client.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
-        providerRealm.admin().clients().get(client.getId()).update(client);
+    @InjectTimeOffSet(enableForCaches = true)
+    TimeOffSet timeOffSet;
 
-        String providerSigningCert = activeRs256SigCert(providerRealm);
-        IdentityProviderRepresentation idp = consumerRealm.admin()
-                .identityProviders().get(getIdpAlias()).toRepresentation();
-        idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
-        idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerSigningCert);
-        consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
+    @BeforeEach
+    void disableSignatureValidation() {
+        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false"));
     }
 
     @Test
     void testOneTimeUseReplayDetected() throws Exception {
-        disableSignatureValidation();
+        Document samlResponse = buildResponse(true);
 
-        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
-        Document samlResponse = buildOneTimeUseResponse(brokerEndpoint.toString(), 300);
+        assertAccepted(samlResponse, "First use of OneTimeUse assertion should be accepted");
+        assertRejected(samlResponse, "Replayed OneTimeUse assertion should be rejected");
+    }
 
-        try (CloseableHttpResponse firstResponse = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertNotEquals(400, firstResponse.getStatusLine().getStatusCode(),
-                    "First use of OneTimeUse assertion should not be rejected as replay");
-        }
+    @Test
+    void testDistinctOneTimeUseAssertionsAreAccepted() throws Exception {
+        assertAccepted(buildResponse(true), "First OneTimeUse assertion should be accepted");
+        assertAccepted(buildResponse(true), "A different OneTimeUse assertion should also be accepted");
+    }
 
-        try (CloseableHttpResponse secondResponse = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertEquals(400, secondResponse.getStatusLine().getStatusCode(),
-                    "Replayed OneTimeUse assertion should be rejected");
-            String body = IOUtils.toString(secondResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue(body.contains("Invalid") || body.contains("expired") || body.contains("error"),
-                    "Error page should indicate the assertion was rejected");
-        }
+    @Test
+    void testAssertionWithoutOneTimeUseIsNotTracked() throws Exception {
+        Document samlResponse = buildResponse(false);
+
+        assertAccepted(samlResponse, "First use of assertion without OneTimeUse should be accepted");
+        assertAccepted(samlResponse, "Assertion without OneTimeUse is not subject to replay detection");
     }
 
     @Test
     void testOneTimeUseWithExpiredAssertionIsRejected() throws Exception {
-        disableSignatureValidation();
-
-        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
-        ResponseType responseType = buildResponseModel(brokerEndpoint.toString(), 0);
-
+        ResponseType responseType = buildResponseModel(true);
         ConditionsType conditions = responseType.getAssertions().get(0).getAssertion().getConditions();
         conditions.setNotOnOrAfter(conditions.getNotBefore());
 
-        Document samlResponse = SAML2Response.convert(responseType);
+        assertRejected(SAML2Response.convert(responseType), "Expired OneTimeUse assertion should be rejected");
+    }
 
-        try (CloseableHttpResponse response = httpClient.execute(
-                SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse))) {
-            assertEquals(400, response.getStatusLine().getStatusCode(),
-                    "Expired OneTimeUse assertion should be rejected");
+    @Test
+    void testReplayAllowedAfterConfiguredTtlElapsesWhileAssertionStillValid() throws Exception {
+        // Documents the consequence of configuring a retention TTL shorter than the assertion validity window:
+        // once the TTL elapses the replay marker is gone and the (still valid) assertion can be presented again.
+        // Administrators are advised to set the TTL to at least the assertion validity plus the allowed clock skew
+        // (see the oneTimeUseTtlSeconds documentation); this test intentionally uses an unrealistically short TTL.
+        int ttlSeconds = 60;
+        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.ONE_TIME_USE_TTL_SECONDS, String.valueOf(ttlSeconds)));
+
+        Document samlResponse = buildResponse(true);
+
+        assertAccepted(samlResponse, "First use of OneTimeUse assertion should be accepted");
+
+        timeOffSet.set(ttlSeconds / 2);
+        assertRejected(samlResponse, "Replay within the configured TTL should be rejected");
+
+        // the assertion is still within its validity period, but the configured TTL has elapsed
+        timeOffSet.set(ttlSeconds * 2);
+        assertAccepted(samlResponse, "Assertion is no longer tracked once the configured TTL has elapsed, even while still valid");
+    }
+
+    private void assertAccepted(Document samlResponse, String message) throws Exception {
+        try (CloseableHttpResponse response = post(samlResponse)) {
+            assertEquals(302, response.getStatusLine().getStatusCode(), message);
         }
+    }
+
+    private void assertRejected(Document samlResponse, String message) throws Exception {
+        try (CloseableHttpResponse response = post(samlResponse)) {
+            assertEquals(400, response.getStatusLine().getStatusCode(), message);
+        }
+    }
+
+    private CloseableHttpResponse post(Document samlResponse) throws Exception {
+        URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint());
+        return httpClient.execute(SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse));
     }
 
     private String getIdpInitiatedBrokerEndpoint() {
@@ -120,36 +133,26 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
                 + "/endpoint/clients/" + IDP_INITIATED_SSO_URL_NAME;
     }
 
-    private ResponseType buildResponseModel(String destination, int expirationSeconds) throws Exception {
-        ResponseType responseType = new SAML2LoginResponseBuilder()
+    private Document buildResponse(boolean includeOneTimeUse) throws Exception {
+        return SAML2Response.convert(buildResponseModel(includeOneTimeUse));
+    }
+
+    private ResponseType buildResponseModel(boolean includeOneTimeUse) throws Exception {
+        return new SAML2LoginResponseBuilder()
                 .issuer(providerRealm.getBaseUrl())
-                .destination(destination)
+                .destination(getIdpInitiatedBrokerEndpoint())
                 .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get(), USER_EMAIL)
                 .sessionIndex("session-" + UUID.randomUUID())
                 .requestIssuer(consumerRealm.getBaseUrl())
-                .assertionExpiration(expirationSeconds)
-                .subjectExpiration(expirationSeconds)
-                .includeOneTimeUseCondition(true)
+                .assertionExpiration(ASSERTION_VALIDITY_SECONDS)
+                .subjectExpiration(ASSERTION_VALIDITY_SECONDS)
+                .includeOneTimeUseCondition(includeOneTimeUse)
                 .buildModel();
-        return responseType;
     }
 
-    private Document buildOneTimeUseResponse(String destination, int expirationSeconds) throws Exception {
-        return SAML2Response.convert(buildResponseModel(destination, expirationSeconds));
-    }
-
-    private void disableSignatureValidation() {
-        IdentityProviderRepresentation idp = consumerRealm.admin()
-                .identityProviders().get(getIdpAlias()).toRepresentation();
-        idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+    private void updateIdp(Consumer<IdentityProviderRepresentation> update) {
+        IdentityProviderRepresentation idp = consumerRealm.admin().identityProviders().get(getIdpAlias()).toRepresentation();
+        update.accept(idp);
         consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
-    }
-
-    private static String activeRs256SigCert(ManagedRealm realm) {
-        return realm.admin().keys().getKeyMetadata().getKeys().stream()
-                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
-                        && Algorithm.RS256.equals(k.getAlgorithm()))
-                .map(KeyMetadataRepresentation::getCertificate)
-                .findFirst().orElseThrow();
     }
 }
