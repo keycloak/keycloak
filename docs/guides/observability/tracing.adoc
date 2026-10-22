@@ -165,7 +165,19 @@ Proper HTTP headers (especially `tracestate`) filtering and adequate measures of
 
 For more information, see the https://www.w3.org/TR/trace-context/#security-considerations[W3C Trace context] document.
 
+<@profile.ifCommunity>
+
 == Propagating trace context in other formats
+
+[NOTE]
+====
+This section has been contributed by the Keycloak community.
+As the {project_name} core team does not test this setup, it is provided as-is.
+If you find this documentation outdated or incomplete, please contribute to improve it.
+
+The setup relies on raw Quarkus properties, which are not supported options of {project_name}.
+For details, see <@links.server id="configuration" anchor="_format_for_raw_quarkus_properties"/>.
+====
 
 When {project_name} receives a request, it continues an existing trace from the trace context headers of the request.
 By default, it accepts the W3C Trace Context and W3C Baggage formats.
@@ -202,7 +214,7 @@ ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 
 If the extension is missing, {project_name} fails to start with an error that contains `Unrecognized value for otel.propagators`.
 
-NOTE: `QUARKUS_OTEL_PROPAGATORS` sets a Quarkus property directly. Quarkus properties are not supported options of {project_name}, so this setup is community guidance rather than an officially supported configuration. For details, see <@links.server id="configuration" anchor="_format_for_raw_quarkus_properties"/>.
+</@profile.ifCommunity>
 
 == Tracing in Kubernetes environment
 When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
