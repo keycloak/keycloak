@@ -11,6 +11,7 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
+import { get } from "lodash-es";
 
 import { getRuleValue } from "../utils/getRuleValue";
 import { FormLabel } from "./FormLabel";
@@ -64,13 +65,14 @@ export const NumberControl = <
     control,
     formState: { errors },
   } = useFormContext();
+  const error = get(errors, name);
 
   return (
     <FormLabel
       name={name}
       label={label}
       isRequired={controller.rules?.required === true}
-      error={errors[name]}
+      error={error}
       labelIcon={labelIcon}
     >
       <Controller
@@ -91,9 +93,14 @@ export const NumberControl = <
             <NumberInput
               {...rest}
               id={name}
+              inputProps={{
+                ...rest.inputProps,
+                "aria-invalid": !!error,
+                "aria-errormessage": error ? `${name}-error` : undefined,
+              }}
               value={value}
               validated={
-                errors[name] ? ValidatedOptions.error : ValidatedOptions.default
+                error ? ValidatedOptions.error : ValidatedOptions.default
               }
               required={required}
               min={Number(min)}

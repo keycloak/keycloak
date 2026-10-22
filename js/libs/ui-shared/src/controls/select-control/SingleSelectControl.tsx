@@ -83,6 +83,10 @@ export const SingleSelectControl = <
                 isExpanded={open}
                 isFullWidth={isFullWidth}
                 status={get(errors, name) ? MenuToggleStatus.danger : undefined}
+                aria-invalid={!!get(errors, name)}
+                aria-errormessage={
+                  get(errors, name) ? `${id || name}-error` : undefined
+                }
                 aria-label={label}
                 isDisabled={isDisabled}
               >
