@@ -19,8 +19,13 @@ package org.keycloak.testsuite.oidc;
 import java.io.IOException;
 import java.net.URI;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.StreamReadFeature;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -225,6 +230,29 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         assertNotEquals(0, responseToken.getAudience().length);
         assertTrue(responseToken.getOtherClaims().containsKey("error"));
         assertTrue(responseToken.getOtherClaims().containsKey("error_description"));
+    }
+
+    @Test
+    public void testJwtSecuredResponseHasNoDuplicateIssuerClaim() throws Exception {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").implicitFlow(true);
+        oauth.responseMode("query.jwt");
+        oauth.responseType("code id_token");
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").nonce("123456").open();
+
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
+
+        // Decode the raw JWT payload ourselves - oauth.verifyAuthorizationResponseToken() goes
+        // through Jackson's default (lenient) databind, which silently resolves a duplicate "iss"
+        // key last-value-wins and would never observe this regression (KEYCLOAK-44563).
+        byte[] payload = Base64Url.decode(errorResponse.getResponse().split("\\.")[1]);
+        JsonFactory strictFactory = JsonFactory.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+        try (JsonParser parser = strictFactory.createParser(payload)) {
+            while (parser.nextToken() != null) {
+                // fully consume the stream - STRICT_DUPLICATE_DETECTION throws during traversal
+            }
+        }
     }
 
     @Override
