@@ -203,6 +203,11 @@ public class TokenManager {
         } else {
             // Find userSession regularly for online tokens
             userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
+            if (userSession != null && userSession.getState() != UserSessionModel.State.LOGGED_IN) {
+                // Reject refresh as soon as logout starts, without removing the session and
+                // redirect state still needed to finish a pending browser logout.
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
+            }
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                 if (userSession != null) {
                     UserSessionModel onlineSession = userSession;
