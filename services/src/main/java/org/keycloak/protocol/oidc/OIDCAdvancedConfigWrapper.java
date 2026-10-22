@@ -267,6 +267,15 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
                 enable == null || enable == TokenExchangeRefreshTokenEnabled.NO? null : enable.name());
     }
 
+    public boolean isStandardTokenExchangeAllowExpirationAfterSubject() {
+        String val = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setStandardTokenExchangeAllowExpirationAfterSubject(boolean enable) {
+        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, String.valueOf(enable));
+    }
+
     public boolean getJWTAuthorizationGrantEnabled() {
         String val = getAttribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "false");
         return Boolean.parseBoolean(val);
