@@ -101,12 +101,12 @@ export default function AuthenticationSection() {
     );
   };
 
-  const useTab = (tab: AuthenticationTab) =>
-    useRoutableTab(toAuthentication({ realm: realmName, tab }));
+  const tab = (tab: AuthenticationTab) =>
+    toAuthentication({ realm: realmName, tab });
 
-  const flowsTab = useTab("flows");
-  const requiredActionsTab = useTab("required-actions");
-  const policiesTab = useTab("policies");
+  const flowsTab = useRoutableTab(tab("flows"));
+  const requiredActionsTab = useRoutableTab(tab("required-actions"));
+  const policiesTab = useRoutableTab(tab("policies"));
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deleteConfirmFlow",
