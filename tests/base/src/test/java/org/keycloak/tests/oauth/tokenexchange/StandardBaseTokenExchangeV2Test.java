@@ -65,6 +65,9 @@ import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -932,17 +935,29 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
                 .clientLevel(realmManagementClient.toRepresentation().getId())
                 .add(List.of(viewRealmRole));
 
-        // Assign role to john and add optional scope to requester-client
+        // Assign role to john and add optional scopes to requester-client. The exchanged token must carry the
+        // kc-admin-api scope (and its audience) to be accepted by the Admin REST API.
         realm.admin().users().get(john.getId()).roles().clientLevel(realmManagementClient.toRepresentation().getId())
                 .add(List.of(viewRealmRole));
         realm.admin().clients().get(requesterClient.getId()).addOptionalClientScope(clientScopeId);
+        addAdminApiClientScope(realm.admin(), realm.admin().clients().get(requesterClient.getId()), false);
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
 
-        // Token exchange with the realm-management-view optional scope
-        oauth.scope("realm-management-view-scope");
-        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), null);
-        assertAudiencesAndScopes(response, john, List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), List.of("realm-management-view-scope"));
+        // Token exchange without an explicit audience restriction, requesting the realm-management-view and kc-admin-api
+        // optional scopes. A requested audience would restrict the token audience and strip the kc-admin-api audience,
+        // which the Admin REST API requires (see TokenManager.restrictRequestedAudience).
+        oauth.scope("realm-management-view-scope " + Constants.KEYCLOAK_ADMIN_API_SCOPE);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken exchangedToken = verifyAccessToken(response.getAccessToken());
+        assertTrue(TokenUtil.hasScope(exchangedToken.getScope(), "realm-management-view-scope"),
+                "Exchanged token must keep the realm-management-view-scope");
+        assertTrue(TokenUtil.hasScope(exchangedToken.getScope(), Constants.KEYCLOAK_ADMIN_API_SCOPE),
+                "Exchanged token must carry the kc-admin-api scope");
+        AccessToken.Access realmManagementAccess = exchangedToken.getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        assertNotNull(realmManagementAccess, "Exchanged token must grant realm-management access");
+        assertTrue(realmManagementAccess.isUserInRole(AdminRoles.VIEW_REALM),
+                "Exchanged token must carry the view-realm role");
         assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT,
                 AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
@@ -958,7 +973,8 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
             realm.admin().deleteSession(exchangedToken.getSessionId(), false);
             assertThrows(NotAuthorizedException.class, () -> keycloak.realm(realm.getName()).toRepresentation().getRealm());
         }
-        // Cleanup: remove client scope
+        // Cleanup: remove optional scope and client scope
+        removeAdminApiClientScope(realm.admin(), realm.admin().clients().get(requesterClient.getId()), false);
         realm.admin().clientScopes().get(clientScopeId).remove();
     }
 

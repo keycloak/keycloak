@@ -1014,7 +1014,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                     "Non-manage-realm user should not be able to enable allowAdminRoleMapping");
         });
     }
-    
+
     @Test
     public void testCompositeRealmRoleWithAdminSubRolesNotStrippedFromToken() {
         String realmName = "test-realm";
@@ -1475,6 +1475,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             tokenClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(testRealm, tokenClient.getId());
         testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewClientsScope.getId());
         testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewUsersScope.getId());
 
@@ -1517,6 +1518,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             client.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(realm, client.getId());
         return client;
     }
 
@@ -1532,6 +1534,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             client.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(realm, client.getId());
         return client;
     }
 
@@ -1723,6 +1726,13 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 attackerClient.realm(realmName).organizations().get(orgId).groups().group(groupId).addMember(victim.getId());
             });
         });
+    }
+
+    private void addAdminApiScope(RealmResource realm, String clientDbId) {
+        realm.clientScopes().findAll().stream()
+                .filter(scope -> Constants.KEYCLOAK_ADMIN_API_SCOPE.equals(scope.getName()))
+                .findFirst()
+                .ifPresent(scope -> realm.clients().get(clientDbId).addDefaultClientScope(scope.getId()));
     }
 
     private void grantRealmManagementRole(RealmResource testRealm, GroupRepresentation group, String role) {

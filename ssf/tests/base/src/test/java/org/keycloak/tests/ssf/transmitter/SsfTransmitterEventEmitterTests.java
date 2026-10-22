@@ -64,6 +64,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 /**
  * Integration tests for the synthetic SSF event emitter admin endpoint
  * ({@code POST /admin/realms/{realm}/ssf/clients/{clientIdentifier}/events/emit}).
@@ -125,7 +127,7 @@ public class SsfTransmitterEventEmitterTests {
     @InjectRealm(config = EmitRealm.class)
     ManagedRealm realm;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(adminApiAccess = true)
     OAuthClient oauthClient;
 
     @InjectSimpleHttp
@@ -175,6 +177,8 @@ public class SsfTransmitterEventEmitterTests {
         ensureReceiverRole(EMITTER_ROLE);
         grantRoleToServiceAccount(MGMT_EMITTER, RECEIVER, EMITTER_ROLE);
 
+        addAdminApiClientScope(realm.admin(), MGMT_EMITTER);
+        addAdminApiClientScope(realm.admin(), MGMT_NO_ROLE);
         // Pre-subscribe TEST_USER so the subject filter doesn't drop
         // the happy-path event. Tests that cover the unsubscribed
         // branch use a different subject lookup.

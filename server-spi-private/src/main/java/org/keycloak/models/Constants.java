@@ -39,6 +39,8 @@ public final class Constants {
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
     public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
 
+    public static final String KEYCLOAK_ADMIN_API_SCOPE = "kc-admin-api";
+
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
