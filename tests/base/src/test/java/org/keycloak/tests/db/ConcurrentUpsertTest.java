@@ -41,6 +41,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Concurrent first inserts of the same key through the {@code insert ... on conflict} upserts must not fail with a
@@ -100,11 +101,59 @@ public class ConcurrentUpsertTest {
     }
 
     @TestOnServer
+    public void testConcurrentPutIfAbsentReplacesExpiredRow(KeycloakSession session) throws Exception {
+        List<String> keys = newKeys();
+        int originalTimeOffset = Time.getOffset();
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> keys.forEach(key ->
+                    assertTrue(s.singleUseObjects().putIfAbsent(key, 1), "the initial single-use object must be inserted")));
+            Time.setOffset(originalTimeOffset + 2);
+
+            List<String> errors = new ArrayList<>();
+            List<Integer> results = race(session, errors, keys,
+                    (s, key) -> s.singleUseObjects().putIfAbsent(key, 60) ? 1 : 0);
+            assertEquals(List.of(), errors, "concurrent replacement of expired single-use objects must not fail");
+            assertEquals(ROUNDS, results.stream().mapToInt(Integer::intValue).sum(),
+                    "exactly one putIfAbsent per expired key must succeed");
+            int present = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), s ->
+                    (int) keys.stream().filter(key -> s.singleUseObjects().contains(key)).count());
+            assertEquals(ROUNDS, present, "every expired single-use object must be replaced");
+        } finally {
+            Time.setOffset(originalTimeOffset);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                    s -> keys.forEach(key -> s.singleUseObjects().remove(key)));
+        }
+    }
+
+    @TestOnServer
     public void testConcurrentRevokeToken(KeycloakSession session) throws Exception {
         List<String> errors = new ArrayList<>();
         List<Integer> results = race(session, errors, (s, id) -> s.revokedTokens().put(id, 60) ? 1 : 0);
         assertEquals(List.of(), errors, "concurrent revocations must not fail");
         assertEquals(ROUNDS, results.stream().mapToInt(Integer::intValue).sum(), "exactly one revocation per token must be new");
+    }
+
+    @TestOnServer
+    public void testConcurrentRevokeTokenReplacesExpiredRow(KeycloakSession session) throws Exception {
+        List<String> ids = newKeys();
+        int originalTimeOffset = Time.getOffset();
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), s -> ids.forEach(id ->
+                    assertTrue(s.revokedTokens().put(id, 1), "the initial token revocation must be inserted")));
+            Time.setOffset(originalTimeOffset + 2);
+
+            List<String> errors = new ArrayList<>();
+            List<Integer> results = race(session, errors, ids,
+                    (s, id) -> s.revokedTokens().put(id, 60) ? 1 : 0);
+            assertEquals(List.of(), errors, "concurrent replacement of expired token revocations must not fail");
+            assertEquals(ROUNDS, results.stream().mapToInt(Integer::intValue).sum(),
+                    "exactly one revocation per expired token must succeed");
+            int present = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), s ->
+                    (int) ids.stream().filter(id -> s.revokedTokens().contains(id)).count());
+            assertEquals(ROUNDS, present, "every expired token revocation must be replaced");
+        } finally {
+            Time.setOffset(originalTimeOffset);
+        }
     }
 
     @TestOnServer
@@ -138,12 +187,24 @@ public class ConcurrentUpsertTest {
      */
     private static List<Integer> race(KeycloakSession session, List<String> errors,
                                       BiFunction<KeycloakSession, String, Integer> task) throws Exception {
+        return race(session, errors, newKeys(), task);
+    }
+
+    private static List<String> newKeys() {
+        List<String> keys = new ArrayList<>(ROUNDS);
+        for (int round = 0; round < ROUNDS; round++) {
+            // a plain UUID fits every key column, e.g. ROOT_AUTHENTICATION_SESSION.ID is VARCHAR(36)
+            keys.add(UUID.randomUUID().toString());
+        }
+        return keys;
+    }
+
+    private static List<Integer> race(KeycloakSession session, List<String> errors, List<String> keys,
+                                      BiFunction<KeycloakSession, String, Integer> task) throws Exception {
         List<Integer> results = new ArrayList<>();
         ExecutorService executor = Executors.newFixedThreadPool(THREADS);
         try {
-            for (int round = 0; round < ROUNDS; round++) {
-                // a plain UUID fits every key column, e.g. ROOT_AUTHENTICATION_SESSION.ID is VARCHAR(36)
-                String key = UUID.randomUUID().toString();
+            for (String key : keys) {
                 CyclicBarrier barrier = new CyclicBarrier(THREADS);
                 List<Future<Integer>> futures = new ArrayList<>();
                 for (int i = 0; i < THREADS; i++) {
