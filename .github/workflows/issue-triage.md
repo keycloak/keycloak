@@ -39,11 +39,11 @@ tools:
 safe-outputs:
   set-issue-type:
     allowed: ["bug", "enhancement"]
-    target: "*"
+    target: ${{ github.event.inputs.issue_number }}
     max: 1
   add-labels:
     allowed: ["area/*", "status/triage", "status/labeled-by-bot"]
-    target: "*"
+    target: ${{ github.event.inputs.issue_number }}
     max: 2
     max-labels: 3
 
