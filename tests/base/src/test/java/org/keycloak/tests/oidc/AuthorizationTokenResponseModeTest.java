@@ -17,6 +17,7 @@
 package org.keycloak.tests.oidc;
 
 import java.net.URI;
+import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -30,16 +31,8 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -55,32 +48,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
-
-    private static final String CLIENT_ID = "test-app";
-    private static final String USERNAME = "test-user@localhost";
+    private static final String USERNAME =  "basic-user";
     private static final String PASSWORD = "password";
-    private static final String CLIENT_SECRET = "password";
     private static final String STATE = "OpenIdConnect.AuthenticationProperties=2302984sdlk";
 
-    @InjectRealm(config = AuthorizationTokenResponseModeRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = BasicRealmWithUserConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
-
-    @InjectOAuthClient(config = AuthorizationTokenResponseModeClientConfig.class)
-    OAuthClient oauth;
-
-    @InjectWebDriver
-    ManagedWebDriver driver;
 
     @Test
     public void authorizationRequestQueryJWTResponseMode() {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(OIDCResponseMode.QUERY_JWT.value());
-        AuthorizationEndpointResponse response = oauth.loginForm().state(STATE).doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).open();
+
+        authenticatePassword(USERNAME, PASSWORD);
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
@@ -93,19 +80,21 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
         // jwt response_mode. It should fallback to query.jwt
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode("jwt");
-        AuthorizationEndpointResponse response = oauth.loginForm().state(STATE).doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).open();
+
+        authenticatePassword(USERNAME, PASSWORD);
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
         // should not return code when response_type not 'token'
         assertFalse(responseToken.getOtherClaims().containsKey(OAuth2Constants.SCOPE));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
-
-        URI currentUri = new URI(driver.getCurrentUrl());
+        URI currentUri = new URI(Objects.requireNonNull(oauth.getDriver().getCurrentUrl()));
         Assertions.assertNotNull(currentUri.getRawQuery());
         Assertions.assertNull(currentUri.getRawFragment());
 
@@ -116,17 +105,20 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
     public void authorizationRequestFragmentJWTResponseMode() throws Exception {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(OIDCResponseMode.FRAGMENT_JWT.value());
-        AuthorizationEndpointResponse response = oauth.loginForm().state(STATE).doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).open();
+
+        authenticatePassword(USERNAME, PASSWORD);
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
 
-        URI currentUri = new URI(driver.getCurrentUrl());
+        URI currentUri = new URI(Objects.requireNonNull(oauth.getDriver().getCurrentUrl()));
         Assertions.assertNull(currentUri.getRawQuery());
         Assertions.assertNotNull(currentUri.getRawFragment());
 
@@ -137,15 +129,14 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
     public void authorizationRequestFormPostJWTResponseMode() {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
-        oauth.loginForm().state(STATE).doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).open();
 
-        String sources = driver.page().getPageSource();
-        System.out.println(sources);
+        authenticatePassword(USERNAME, PASSWORD);
 
-        String responseTokenEncoded = driver.findElement(By.id("response")).getText();
+        String responseTokenEncoded = oauth.getDriver().findElement(By.id("response")).getText();
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(responseTokenEncoded);
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
@@ -155,16 +146,20 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
 
     @Test
     public void authorizationRequestJWTResponseModeIdTokenResponseType() throws Exception {
-        managedRealm.updateClientWithCleanup(CLIENT_ID, c -> c.implicitFlowEnabled(true));
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
         // jwt response_mode. It should fallback to fragment.jwt when its hybrid flow
         oauth.responseMode("jwt");
         oauth.responseType("code id_token");
-        AuthorizationEndpointResponse response = oauth.loginForm().state(STATE).nonce("123456").doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).nonce("123456").open();
+
+        authenticatePassword(USERNAME, PASSWORD);
+
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
@@ -174,7 +169,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
         IDToken idToken = oauth.verifyIDToken(idTokenEncoded);
         assertEquals("123456", idToken.getNonce());
 
-        URI currentUri = new URI(driver.getCurrentUrl());
+        URI currentUri = new URI(Objects.requireNonNull(oauth.getDriver().getCurrentUrl()));
         Assertions.assertNull(currentUri.getRawQuery());
         Assertions.assertNotNull(currentUri.getRawFragment());
 
@@ -183,16 +178,20 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
 
     @Test
     public void authorizationRequestJWTResponseModeAccessTokenResponseType() throws Exception {
-        managedRealm.updateClientWithCleanup(CLIENT_ID, c -> c.implicitFlowEnabled(true));
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
         // jwt response_mode. It should fallback to fragment.jwt when its hybrid flow
         oauth.responseMode("jwt");
         oauth.responseType("token id_token");
-        AuthorizationEndpointResponse response = oauth.loginForm().state(STATE).nonce("123456").doLogin(USERNAME, PASSWORD);
+        oauth.loginForm().state(STATE).nonce("123456").open();
+
+        authenticatePassword(USERNAME, PASSWORD);
+
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
 
-        assertEquals(CLIENT_ID, responseToken.getAudience()[0]);
+        assertEquals(oauth.getClientId(), responseToken.getAudience()[0]);
         Assertions.assertNull(responseToken.getOtherClaims().get("code"));
         assertEquals(STATE, responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
@@ -207,19 +206,21 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
         AccessToken accessToken = oauth.verifyToken(accessTokenEncoded);
         assertNull(accessToken.getNonce());
 
-        URI currentUri = new URI(driver.getCurrentUrl());
+        URI currentUri = new URI(Objects.requireNonNull(oauth.getDriver().getCurrentUrl()));
         Assertions.assertNull(currentUri.getRawQuery());
         Assertions.assertNotNull(currentUri.getRawFragment());
+
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
     public void authorizationRequestFailInvalidResponseModeQueryJWT() {
-        managedRealm.updateClientWithCleanup(CLIENT_ID, c -> c.implicitFlowEnabled(true));
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
         oauth.responseMode("query.jwt");
         oauth.responseType("code id_token");
         oauth.loginForm().state(STATE).nonce("123456").open();
-        driver.waiting().waitForOAuthCallback(d -> d.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "="));
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
         Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, responseToken.getOtherClaims().get("error"));
@@ -230,12 +231,12 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
 
     @Test
     public void testErrorObjectExpectedClaims() {
-        managedRealm.updateClientWithCleanup(CLIENT_ID, c -> c.implicitFlowEnabled(true));
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
         oauth.responseMode("query.jwt");
         oauth.responseType("code id_token");
         oauth.loginForm().state(STATE).nonce("123456").open();
-        driver.waiting().waitForOAuthCallback(d -> d.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "="));
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
 
@@ -245,32 +246,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractOIDCScopeTest {
         assertNotEquals(0, responseToken.getAudience().length);
         assertTrue(responseToken.getOtherClaims().containsKey("error"));
         assertTrue(responseToken.getOtherClaims().containsKey("error_description"));
-    }
 
-    private static class AuthorizationTokenResponseModeRealmConfig implements RealmConfig {
-
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm
-                    .users(UserBuilder.create("test-user")
-                            .email(USERNAME)
-                            .username(USERNAME)
-                            .firstName("test")
-                            .lastName("user")
-                            .password(PASSWORD));
-        }
-    }
-
-    private static class AuthorizationTokenResponseModeClientConfig implements ClientConfig {
-
-        @Override
-        public ClientBuilder configure(ClientBuilder client) {
-            return client
-                    .clientId(CLIENT_ID)
-                    .secret(CLIENT_SECRET)
-                    .redirectUris("*")
-                    .implicitFlowEnabled(true)
-                    .directAccessGrantsEnabled(true);
-        }
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 }

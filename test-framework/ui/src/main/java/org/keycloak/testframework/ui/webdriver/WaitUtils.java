@@ -37,7 +37,7 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForOAuthCallback() {
-        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
+        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "="));
         return this;
     }
 
