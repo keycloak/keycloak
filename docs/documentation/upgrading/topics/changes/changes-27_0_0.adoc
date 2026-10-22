@@ -338,6 +338,22 @@ Updating an existing client scope does not revalidate its stored mappers.
 Existing deployments continue to start, because mappers that are read from the database at startup are not validated.
 If you provision realms from an exported JSON file, import the file once after upgrading to find out whether it contains a mapper that is now rejected.
 
+=== Tokens issued by the standard token exchange cannot outlive the subject token (CVE-2026-96460)
+// https://github.com/keycloak/keycloak/issues/54700
+
+Previously, the `exp` claim of the access token and the ID token issued by the standard token exchange was computed from the request time and the configured access token lifespan, with no relation to the `subject_token`, so a requester client could exchange each issued token again before it expired and extend the lifetime of the identity indefinitely.
+Starting with this release, the `exp` claim of both tokens is capped by the `exp` claim of the `subject_token`, and `expires_in` is reduced accordingly.
+
+To restore the previous behavior, enable the new switch *Allow exchange token expiration after subject token expiration* on the requester client, in the *OpenID Connect Compatibility Modes* section of the *Advanced* tab, or set the `standard.token.exchange.allowTokenExpirationAfterSubjectTokenExpiration` client attribute.
+Keeping it off is recommended.
+
+The cap applies to access and ID tokens only.
+Refresh tokens are controlled by the separate switch *Allow refresh token in Standard Token Exchange*, which is unchanged.
+
+WARNING: With *Allow exchange token expiration after subject token expiration* off and *Allow refresh token in Standard Token Exchange* on, the access token expiration can still be increased indirectly: the requester client exchanges for a refresh token, which is not capped, and refreshes it for an access token with the regular lifespan.
+
+See the link:{securing_apps_token_exchange_link}#_standard-token-exchange-expiration[{securing_apps_token_exchange_name}] for more information.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
