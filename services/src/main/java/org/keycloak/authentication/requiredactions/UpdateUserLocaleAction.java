@@ -69,7 +69,7 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
 
     @Override
     public void processAction(RequiredActionContext context) {
-        context.ignore();
+        context.success();
     }
 
     @Override
