@@ -326,6 +326,88 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
     }
 
     @Test
+    public void testExchangedTokenExpirationCappedBySubjectToken() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        // exchange late in the subject token lifetime
+        timeOffSet.set(120);
+
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+        assertEquals(subjectToken.getExp(), verifyIdToken(response.getIdToken()).getExp());
+        assertTrue(response.getExpiresIn() > 0 && response.getExpiresIn() <= 180, "Unexpected expires_in: " + response.getExpiresIn());
+
+        // ID token requested as the exchanged token, returned inside "access_token"
+        AccessTokenResponse idTokenResponse = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ID_TOKEN_TYPE);
+        assertEquals(OAuth2Constants.ID_TOKEN_TYPE, idTokenResponse.getIssuedTokenType());
+        assertEquals(subjectToken.getExp(), verifyIdToken(idTokenResponse.getAccessToken()).getExp());
+
+        // second exchange cannot extend the expiration either
+        response = tokenExchange(response.getAccessToken(), "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+    }
+
+    @Test
+    public void testExchangedTokenExpirationAfterSubjectTokenAllowed() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+        realm.cleanup().add(realm1 -> {
+            requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, Boolean.FALSE.toString());
+            realm1.clients().get(requesterClient.getId()).update(requesterClient);
+        });
+
+        requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, Boolean.TRUE.toString());
+        realm.admin().clients().get(requesterClient.getId()).update(requesterClient);
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        timeOffSet.set(120);
+
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertTrue(verifyAccessToken(response.getAccessToken()).getExp() > subjectToken.getExp());
+        assertTrue(verifyIdToken(response.getIdToken()).getExp() > subjectToken.getExp());
+    }
+
+    @Test
+    public void testExchangedTokenExpirationCappedWithRefreshTokenAllowed() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+        realm.cleanup().add(realm1 -> {
+            requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name());
+            realm1.clients().get(requesterClient.getId()).update(requesterClient);
+        });
+
+        requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name());
+        realm.admin().clients().get(requesterClient.getId()).update(requesterClient);
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        timeOffSet.set(120);
+
+        // the two options are independent, so the access token is still capped
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+        assertNotNull(response.getRefreshToken());
+
+        // the refresh token is not capped and can be refreshed for an access token with the regular lifespan
+        oauth.client("requester-client", "secret");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertTrue(verifyAccessToken(response.getAccessToken()).getExp() > subjectToken.getExp());
+    }
+
+    @Test
     public void testExchangeUsingServiceAccount() {
         String saUserId = realm.admin().clients().get(subjectClient.getId()).toRepresentation().getServiceAccountUserId();
         final UserRepresentation user = realm.admin().users().get(saUserId).toRepresentation();
@@ -1019,7 +1101,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
         realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().delete(newMapperId);
-        subjectClient.getAttributes().remove(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
+        subjectClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.FALSE.toString());
         realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
     }
 
