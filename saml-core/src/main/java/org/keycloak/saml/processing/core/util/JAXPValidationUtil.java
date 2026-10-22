@@ -59,9 +59,7 @@ public class JAXPValidationUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    protected static Validator validator;
-
-    protected static SchemaFactory schemaFactory;
+    private static Schema schema;
 
     public static void validate(InputStream stream) throws SAXException, IOException {
         try {
@@ -91,25 +89,24 @@ public class JAXPValidationUtil {
     public static Validator validator() throws SAXException, IOException {
         SystemPropertiesUtil.ensure();
 
-        if (validator == null) {
-            Schema schema = getSchema();
-            if (schema == null)
-                throw logger.nullValueError("schema");
+        Schema schema = getSchema();
+        if (schema == null)
+            throw logger.nullValueError("schema");
 
-            validator = schema.newValidator();
-            // Do not optimize the following into setProperty(...) && setProperty(...).
-            // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
-            // which it would not due to short-circuiting in case of an && expression.
-            boolean successful1 = setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
-            successful1 &= setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
-            successful2 &= setFeature(validator, feature_external_general_entities, false);
-            successful2 &= setFeature(validator, feature_external_parameter_entities, false);
-            if (! successful1 && ! successful2) {
-                logger.warn("Cannot disable external access in XML validator");
-            }
-            validator.setErrorHandler(new CustomErrorHandler());
+        // Schema is thread-safe, but each validation needs its own Validator.
+        Validator validator = schema.newValidator();
+        // Do not optimize the following into setProperty(...) && setProperty(...).
+        // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
+        // which it would not due to short-circuiting in case of an && expression.
+        boolean successful1 = setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_DTD, "");
+        successful1 &= setProperty(validator, FixXMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
+        successful2 &= setFeature(validator, feature_external_general_entities, false);
+        successful2 &= setFeature(validator, feature_external_parameter_entities, false);
+        if (! successful1 && ! successful2) {
+            logger.warn("Cannot disable external access in XML validator");
         }
+        validator.setErrorHandler(new CustomErrorHandler());
         return validator;
     }
 
@@ -133,10 +130,15 @@ public class JAXPValidationUtil {
         return true;
     }
 
-    private static Schema getSchema() throws IOException {
+    private static synchronized Schema getSchema() throws IOException {
+        if (schema != null) {
+            return schema;
+        }
+
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false").equalsIgnoreCase("true");
 
         ClassLoader prevTCCL = SecurityActions.getTCCL();
+        SchemaFactory schemaFactory;
         try {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(JAXPValidationUtil.class.getClassLoader());
@@ -150,13 +152,12 @@ public class JAXPValidationUtil {
                 SecurityActions.setTCCL(prevTCCL);
             }
         }
-        Schema schemaGrammar = null;
         try {
-            schemaGrammar = schemaFactory.newSchema(sources());
+            schema = schemaFactory.newSchema(sources());
         } catch (SAXException e) {
             logger.xmlCouldNotGetSchema(e);
         }
-        return schemaGrammar;
+        return schema;
     }
 
     private static Source[] sources() throws IOException {
