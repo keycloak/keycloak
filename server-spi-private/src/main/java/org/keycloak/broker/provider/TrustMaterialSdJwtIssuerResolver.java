@@ -60,6 +60,7 @@ public class TrustMaterialSdJwtIssuerResolver implements TrustedSdJwtIssuerResol
                 .kid(header.getKeyId())
                 .algorithm(header.getRawAlgorithm())
                 .issuer(issuer != null && issuer.isTextual() ? issuer.textValue() : null)
+                .purpose(TrustMaterialRequest.Purpose.SD_JWT_ISSUER)
                 .build();
 
         JWK leafKey = trustMaterial.validateX509Chain(request, header.getX5c(), header.getRawAlgorithm());
