@@ -22,6 +22,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -35,6 +36,20 @@ public interface RoleMappingResource {
 
     @GET
     MappingsRepresentation getAll();
+
+    @Path("composite")
+    @GET
+    MappingsRepresentation getAllComposite();
+
+    @Path("inherited")
+    @GET
+    MappingsRepresentation getAllInherited();
+
+    @Path("available")
+    @GET
+    MappingsRepresentation getAllAvailable(@QueryParam("search") String search,
+                                           @QueryParam("first") Integer first,
+                                           @QueryParam("max") Integer max);
 
     @Path("realm")
     RoleScopeResource realmLevel();

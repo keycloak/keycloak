@@ -115,6 +115,33 @@ export class Users extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  public listRoleMappingsComposite = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/role-mappings/composite",
+    urlParamKeys: ["id"],
+  });
+
+  public listRoleMappingsInherited = this.makeRequest<
+    { id: string },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/role-mappings/inherited",
+    urlParamKeys: ["id"],
+  });
+
+  public listRoleMappingsAvailable = this.makeRequest<
+    { id: string; search?: string; first?: number; max?: number },
+    MappingsRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/role-mappings/available",
+    urlParamKeys: ["id"],
+  });
+
   public addRealmRoleMappings = this.makeRequest<
     { id: string; roles: RoleMappingPayload[] },
     void
