@@ -488,7 +488,10 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             }
 
             if (config.getAllowPermittedDomains() != null && !config.getAllowPermittedDomains().isEmpty()) {
-                if (!matchDomains(config.getAllowPermittedDomains())) {
+                List<String> validPermittedDomains = config.getAllowPermittedDomains().stream()
+                        .filter(domain -> domain != null && !domain.isBlank())
+                        .toList();
+                if (!validPermittedDomains.isEmpty() && !matchDomains(validPermittedDomains)) {
                     logger.debugv("Invalid NormalUri: no permitted domain matched - input = {0}", uri.toString());
                     return false;
                 }
