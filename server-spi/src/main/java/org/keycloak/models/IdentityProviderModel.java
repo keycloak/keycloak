@@ -57,6 +57,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String ORGANIZATION_ID_NOT_NULL = "organizationIdNotNull";
     public static final String PASS_MAX_AGE = "passMaxAge";
     public static final String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
+    public static final String RESET_LOGIN_FAILURES = "resetLoginFailures";
     public static final String SEARCH = "search";
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
@@ -455,6 +456,18 @@ public class IdentityProviderModel implements Serializable {
         if (!(obj instanceof IdentityProviderModel)) return false;
         return Objects.equals(getInternalId(), ((IdentityProviderModel) obj).getInternalId()) &&
                Objects.equals(getAlias(), ((IdentityProviderModel) obj).getAlias());
+    }
+
+    /**
+     * Whether a successful login through this identity provider resets the user's brute force login failures,
+     * the same way a successful password login does.
+     */
+    public boolean isResetLoginFailures() {
+        return getBooleanConfig(RESET_LOGIN_FAILURES);
+    }
+
+    public void setResetLoginFailures(Boolean resetLoginFailures) {
+        setBooleanConfig(RESET_LOGIN_FAILURES, resetLoginFailures);
     }
 
     public boolean isAllowAdminRoleMapping() {

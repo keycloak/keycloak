@@ -371,6 +371,10 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      <SwitchField
+        field="config.resetLoginFailures"
+        label="resetLoginFailures"
+      />
       {hasAccess("manage-realm") && (
         <SwitchField
           field="config.allowAdminRoleMapping"
