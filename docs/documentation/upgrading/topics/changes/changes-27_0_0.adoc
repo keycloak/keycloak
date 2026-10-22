@@ -58,6 +58,13 @@ After upgrading, logins through a SAML identity provider, or through an applicat
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
 
+=== SAML logins with an empty principal are rejected
+// https://github.com/keycloak/keycloak/issues/53816
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when the principal that identifies the user is empty or contains only whitespace.
+Depending on the Principal type of the identity provider, the principal is the subject `NameID` or the value of the configured attribute.
+Accounts whose link to the identity provider has an empty user ID can no longer log in through it; remove this link so that their owners can link the accounts again once the identity provider sends a non-empty principal.
+
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
 

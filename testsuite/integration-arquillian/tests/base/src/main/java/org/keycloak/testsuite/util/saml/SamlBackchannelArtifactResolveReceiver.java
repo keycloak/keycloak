@@ -21,6 +21,7 @@ import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -106,6 +107,7 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
                         .issuer(samlClient.getClientId())
                         .requestIssuer(artifactResolve.getIssuer().getValue())
                         .requestID(inResponseTo)
+                        .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "idp-user")
                         .assertionExpiration(60)
                         .subjectExpiration(60)
                         .sessionExpiration(60)
