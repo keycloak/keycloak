@@ -16,44 +16,29 @@
  */
 package org.keycloak.tests.oidc;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.util.Map;
 
-import jakarta.ws.rs.core.Response;
-
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.RsaCekManagementProvider;
-import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
-import org.keycloak.keys.Attributes;
-import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.JwksProvider;
 import org.keycloak.testframework.oauth.annotations.InjectJwksProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Assertions;
@@ -61,11 +46,11 @@ import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
-    private static final String USERNAME = "test-user@localhost";
+    private static final String USERNAME = "basic-user";
     private static final String PASSWORD = "password";
     private static final String STATE = "OpenIdConnect.AuthenticationProperties=2302984sdlk";
 
-    @InjectRealm(config = AuthorizationTokenEncryptionRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = BasicRealmWithUserConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
     @InjectJwksProvider
@@ -73,7 +58,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
 
     @Test
     public void testAuthorizationEncryptionAlgRSA1_5EncA128CBC_HS256() {
-        registerEcKeyProvider("P-256");
+        registerEcKeyProvider("P-256",managedRealm);
         testAuthorizationTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
     }
 
@@ -104,7 +89,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
 
     @Test
     public void testAuthorizationEncryptionAlgRSA_OAEPEncA128CBC_HS256() {
-        registerEcKeyProvider("P-521");
+        registerEcKeyProvider("P-521",managedRealm);
         testAuthorizationTokenSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
     }
 
@@ -120,7 +105,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
 
     @Test
     public void testAuthorizationEncryptionAlgRSA_OAEP256EncA128CBC_HS256() {
-        registerEcKeyProvider("P-521");
+        registerEcKeyProvider("P-521",managedRealm);
         testAuthorizationTokenSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA_OAEP_256, JWEConstants.A128CBC_HS256);
     }
 
@@ -136,7 +121,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
 
     @Test
     public void testAuthorizationEncryptionAlgRSA_OAEPEncA128GCM() {
-        registerEcKeyProvider("P-256");
+        registerEcKeyProvider("P-256",managedRealm);
         testAuthorizationTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
     }
 
@@ -257,50 +242,6 @@ public class AuthorizationTokenEncryptionTest extends AbstractOIDCScopeTest{
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
             clientResource.update(clientRep);
-        }
-    }
-
-    private void registerEcKeyProvider(String ecCurve) {
-        ComponentRepresentation rep = new ComponentRepresentation();
-        rep.setName("ecdsa-" + ecCurve);
-        rep.setParentId(managedRealm.admin().toRepresentation().getId());
-        rep.setProviderId(GeneratedEcdsaKeyProviderFactory.ID);
-        rep.setProviderType(KeyProvider.class.getName());
-        rep.setConfig(new MultivaluedHashMap<>());
-        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(System.currentTimeMillis()));
-        rep.getConfig().putSingle("active", "true");
-        rep.getConfig().putSingle("enabled", "true");
-        rep.getConfig().putSingle(GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY, ecCurve);
-
-        try (Response response = managedRealm.admin().components().add(rep)) {
-            String id = ApiUtil.getCreatedId(response);
-            managedRealm.cleanup().add(r -> r.components().component(id).remove());
-        }
-    }
-
-    private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
-        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-    }
-
-    private JOSEHeader getHeader(String base64Header) {
-        try {
-            byte[] decodedHeader = Base64Url.decode(base64Header);
-            return JsonSerialization.readValue(decodedHeader, JWEHeader.class);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-    }
-
-    private static class AuthorizationTokenEncryptionRealmConfig implements RealmConfig {
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm
-                    .users(UserBuilder.create("test-user")
-                            .email(USERNAME)
-                            .username(USERNAME)
-                            .firstName("test")
-                            .lastName("user")
-                            .password(PASSWORD));
         }
     }
 }
