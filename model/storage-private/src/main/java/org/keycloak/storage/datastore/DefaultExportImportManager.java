@@ -66,6 +66,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationModel;
@@ -85,12 +86,14 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -479,7 +482,20 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-
+        // Mapper validation may resolve other clients or realm components. Validate only after those
+        // dependencies exist, but before importing users, which can commit batches independently.
+        for (ClientModel client : createdClients.values()) {
+            ValidationUtil.validateClient(session, client, false, r -> {
+                throw new ModelValidationException("Invalid client " + client.getClientId() + ": " + r.getAllErrorsAsString());
+            });
+        }
+        for (ClientScopeModel clientScope : clientScopes.values()) {
+            try {
+                ProtocolMapperValidationUtil.validateProtocolMappers(session, newRealm, clientScope);
+            } catch (ProtocolMapperConfigException ex) {
+                throw new ModelValidationException("Invalid client scope " + clientScope.getName() + ": " + ex.getMessage());
+            }
+        }
 
         // create users and their role mappings and social mappings
 
@@ -609,10 +625,6 @@ public class DefaultExportImportManager implements ExportImportManager {
                 addSamlEncryptionAttributes(app);
             }
             appMap.put(app.getClientId(), app);
-
-            ValidationUtil.validateClient(session, app, false, r -> {
-                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
-            });
         }
         return appMap;
     }
