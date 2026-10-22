@@ -12,6 +12,22 @@ Previously `manage-clients` was sufficient, even though these lists determine wh
 Administrators who hold only `manage-clients` can still create, update, and delete individual client scopes, and can still read the realm-level lists; they can no longer change which of them are realm defaults.
 If you have automation that manages realm default client scopes with a `manage-clients` account, grant it `manage-realm` or run it with an account that already has it.
 
+=== Client scope assignment permissions for per-client delegated administrators
+// https://github.com/keycloak/keycloak/issues/54002
+
+When Fine-Grained Admin Permissions (FGAP) are enabled, the following rules apply to the client scope assignment endpoints on a specific client:
+
+* *View* (`GET .../clients/\{id}/default-client-scopes`, `GET .../clients/\{id}/optional-client-scopes`, and the `defaultClientScopes`/`optionalClientScopes` fields in `GET .../clients/\{id}`): a per-client `view` permission is sufficient.
+Only scopes currently assigned to that specific client are returned.
+* *Remove* (`DELETE .../clients/\{id}/default-client-scopes/\{scopeId}`, `DELETE .../clients/\{id}/optional-client-scopes/\{scopeId}`): a per-client `manage` permission is sufficient, but only for scopes already assigned to this client.
+Attempting to remove a scope that is not currently assigned to this client returns `404 Not Found`.
+* *Add and change type* (`PUT .../clients/\{id}/default-client-scopes/\{scopeId}`, `PUT .../clients/\{id}/optional-client-scopes/\{scopeId}`): requires a type-level `manage` permission on the Clients resource type, or the `manage-clients` realm admin role.
+Changing the type of an assigned scope (default ↔ optional) is performed as a remove followed by an add, so it is equally subject to this restriction.
+
+Delegated administrators with per-client `view` and `manage` permissions can view and remove assigned scopes, but cannot add scopes or change the type of an assigned scope.
+In FGAP v2, `manage` does not imply `view`; both permissions must be granted to list and remove assigned scopes through the Admin Console.
+To allow a delegated administrator to add or change the type of client scopes, grant them a type-level `manage` permission on the Clients resource type.
+
 === Deleting required client scopes
 // https://github.com/keycloak/keycloak/issues/51248
 
