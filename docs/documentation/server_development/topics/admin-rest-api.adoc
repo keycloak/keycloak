@@ -67,6 +67,18 @@ curl \
   "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 
+=== User session device information
+
+The `GET /admin/realms/{realm}/users/{user-id}/sessions` response includes device information in each `UserSessionRepresentation` when it was recorded for the session. The following fields are derived from the user agent used to authenticate:
+
+`os`:: Operating system family.
+`osVersion`:: Operating system version.
+`browser`:: Browser family and version.
+`device`:: Device family.
+`mobile`:: Whether the user agent represents a mobile device.
+
+The string fields are omitted when no device information is attached to the session. In that case, `mobile` is `false`.
+
 === Additional resources
 [role="_additional-resources"]
 * {adminguide_link}[{adminguide_name}]
