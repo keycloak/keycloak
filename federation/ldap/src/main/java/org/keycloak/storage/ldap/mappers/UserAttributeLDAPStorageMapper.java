@@ -167,6 +167,18 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return Collections.singleton(getUserModelAttribute());
     }
 
+    @Override
+    public Set<String> getUserProfileAttributes() {
+        // The property lookup below is case-insensitive - a mapper configured as e.g. "FirstName" still updates
+        // the real firstName property on import (see setPropertyOnUserModel()). Canonicalize to the property's
+        // real name here, or such a differently-cased attribute would be exposed under its configured spelling as
+        // a separate attribute from the real one decorateUserProfile() already knows, defeating the read-only
+        // bypass override on the real attribute.
+        String userModelAttrName = getUserModelAttribute();
+        Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
+        return Collections.singleton(userModelProperty == null ? userModelAttrName : userModelProperty.getName());
+    }
+
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;
@@ -546,6 +558,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     private boolean isReadOnly() {
         return parseBooleanParameter(mapperModel, READ_ONLY);
+    }
+
+    @Override
+    public boolean isUserAttributeReadOnly(String attrName) {
+        return isReadOnly();
     }
 
     protected void setPropertyOnUserModel(Property<Object> userModelProperty, UserModel user, String ldapAttrValue) {
