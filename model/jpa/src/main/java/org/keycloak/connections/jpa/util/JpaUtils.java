@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.dialect.OracleDialect;
 import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
@@ -68,6 +69,16 @@ public class JpaUtils {
     public static boolean isUpsertRowCountUnreliable(EntityManager em) {
         return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof MySQLDialect;
+    }
+
+    /**
+     * Oracle emulates {@code on conflict ... do update} with a MERGE, which fails with a unique constraint violation
+     * when a concurrent transaction inserts the same key. {@code on conflict ... do nothing} is safe there, see
+     * {@link org.keycloak.connections.jpa.dialect.KeycloakOracleDialect}.
+     */
+    public static boolean isConflictUpdateRacy(EntityManager em) {
+        return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
+                .getJdbcServices().getDialect() instanceof OracleDialect;
     }
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
