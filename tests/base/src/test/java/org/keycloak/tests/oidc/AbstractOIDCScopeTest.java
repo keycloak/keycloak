@@ -101,6 +101,19 @@ public abstract class AbstractOIDCScopeTest {
                 "Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope);
     }
 
+    /**
+     * Helper function to authenticate with a username and password
+     *
+     * @param password The password to log in with
+     * @param username The username to log in with
+     */
+
+    protected void authenticatePassword(String username, String password) {
+        loginPage.assertCurrent();
+        loginPage.fillLogin(username, password);
+        loginPage.submit();
+    }
+
     static class Tokens {
         final IDToken idToken;
         final AccessToken accessToken;

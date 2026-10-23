@@ -153,8 +153,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
         // Assign the role to TEST_CLIENT service account
         String testClientId = realm.clients().findByClientId(TEST_CLIENT).get(0).getId();
-        UserRepresentation serviceAccount = realm.clients().get(testClientId).getServiceAccountUser();
-        realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
+        String serviceAccountUserId = realm.clients().get(testClientId).toRepresentation().getServiceAccountUserId();
+        realm.users().get(serviceAccountUserId).roles().clientLevel(resourceServerId).add(Collections.singletonList(role));
 
         // Assign the role to test-user@localhost for user flows
         UserRepresentation testUser = realm.users().search("test-user@localhost").get(0);
@@ -590,8 +590,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         masterRealm.clients().create(transientClient);
         transientClient = masterRealm.clients().findByClientId(transientClient.getClientId()).get(0);
 
-        UserRepresentation userRep = masterRealm.clients().get(transientClient.getId()).getServiceAccountUser();
-        masterRealm.users().get(userRep.getId()).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get(AdminRoles.ADMIN).toRepresentation()));
+        String serviceAccountUserId = masterRealm.clients().get(transientClient.getId()).toRepresentation().getServiceAccountUserId();
+        masterRealm.users().get(serviceAccountUserId).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get(AdminRoles.ADMIN).toRepresentation()));
         try {
             oauth.realm("master");
             oauth.client(transientClient.getClientId(), transientClient.getSecret());

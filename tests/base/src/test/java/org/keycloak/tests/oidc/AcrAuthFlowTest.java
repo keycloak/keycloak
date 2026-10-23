@@ -106,6 +106,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
     private static String TOTP_SECRET = "totpsecret";
     private static String PASSWORD_FLOW_ALIAS = "password-flow";
     private static String PASSWORD_OTP_FLOW_ALIAS = "password-otp-flow";
+    private static String USERNAME = "test-user";
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -122,7 +123,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-password");
 
         logout(user.getId(), tokens);
@@ -136,7 +137,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
         logout(user.getId(), tokens);
@@ -157,7 +158,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-otp");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
@@ -175,7 +176,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
@@ -198,14 +199,14 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
         loginWithAcr(new ArrayList<>() {{
             add("acr-password");
         }});
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         assertLoginWithAcr(user.getId(), "acr-password");
 
         // ensure re-auth forced with different acr
         loginWithAcr(new ArrayList<>() {{
             add("acr-otp");
         }});
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
@@ -372,21 +373,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
                 .clientId(client.getClientId())
                 .userId(userId)
                 .withoutDetails(Details.REDIRECT_URI);
-    }
-
-    /**
-     * Helper function to authenticate with a username and password
-     *
-     * @param password The password to log in with
-     */
-    private void authenticatePassword(String password) {
-        authenticatePassword("test-user", password);
-    }
-
-    private void authenticatePassword(String username, String password) {
-        loginPage.assertCurrent();
-        loginPage.fillLogin(username, password);
-        loginPage.submit();
     }
 
     /**

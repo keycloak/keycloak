@@ -327,7 +327,8 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
 
     @Test
     public void testExchangeUsingServiceAccount() {
-        final UserRepresentation user = realm.admin().clients().get(subjectClient.getId()).getServiceAccountUser();
+        String saUserId = realm.admin().clients().get(subjectClient.getId()).toRepresentation().getServiceAccountUserId();
+        final UserRepresentation user = realm.admin().users().get(saUserId).toRepresentation();
         oauth.scope(null);
         oauth.client("subject-client", "secret");
 

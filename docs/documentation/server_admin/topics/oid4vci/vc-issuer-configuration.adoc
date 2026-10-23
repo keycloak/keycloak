@@ -26,9 +26,14 @@ OpenID4VCI supports multiple credential formats for encoding and issuing credent
 
 - https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-13.html[SD-JWT VC] – Selective Disclosure JSON Web Token Verifiable Credential
 - https://github.com/decentralized-identity/jwt-vc-presentation-profile[JWT VC] – JSON Web Token Verifiable Credential
+ifeval::[{project_community}==true]
 - https://www.iso.org/standard/69084.html[mDL/mdoc] – Mobile driver's license / mobile document format
+endif::[]
 
-{project_name} currently supports both SD-JWT VC and JWT VC for issuance. mDL/mdoc format has just experimental support in {project_name} and should not be used in production environments. It is planned for a proper support in the future releases.
+{project_name} currently supports both SD-JWT VC and JWT VC for issuance.
+ifeval::[{project_community}==true]
+mDL/mdoc format has just experimental support in {project_name} and should not be used in production environments.
+endif::[]
 
 === The Issuer-Holder-Verifier Model
 
@@ -88,8 +93,11 @@ image::images/oid4vci/authorization-code-flow.drawio.svg[Sequence diagram of the
 
 This flow is best suited for scenarios where the user should be in control and give explicit permission for each credential issued.
 
+ifeval::[{project_community}==true]
 [[_oid4vci_pre_authorized_code_flow]]
 ==== Pre-Authorized Code Flow
+
+WARNING: The Pre-Authorized Code Flow is experimental and not supported. It is disabled by default and requires the experimental `oid4vc-vci-preauth-code` feature in addition to `oid4vc-vci`. Creating offers via the `/protocol/oid4vc/create-credential-offer` endpoint additionally requires the experimental `oid4vc-vci-rest-credential-offer` feature. Do not use these features in production environments.
 
 The Pre-Authorized Code Flow is a non-interactive flow. The issuer creates a pre-approved credential offer, and the wallet can claim the credential without real-time user authentication. This is useful for bulk issuance, offline-capable scenarios, or when the user has already been authenticated through other means.
 
@@ -108,6 +116,7 @@ Pre-authorized credential offers can be created through the {project_name} Admin
 image::images/oid4vci/pre-authorized-code-flow.drawio.svg[Sequence diagram of the Pre-Authorized Code Flow, width=700]
 
 An optional transaction code (`tx_code`) can add a second layer of security. The `tx_code` must be communicated through a separate channel from the pre-authorized code itself.
+endif::[]
 
 === What This Chapter Covers
 
@@ -407,7 +416,10 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Supported Format
 | SD-JWT VC (`dc+sd-jwt`)
-| The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`). There is also experimental support for the mdoc format, which is available just if the {project_name} server is started with the feature `oid4vc-mdoc` (Not recommended to use in the production environments).
+| The credential format. Supported options: *SD-JWT VC* (`dc+sd-jwt`) and *JWT VC* (`jwt_vc_json`).
+ifeval::[{project_community}==true]
+There is also experimental support for the mdoc format, which is available just if the {project_name} server is started with the feature `oid4vc-mdoc` (Not recommended to use in the production environments).
+endif::[]
 
 | Token JWS Type
 | (auto)
@@ -431,7 +443,10 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Cryptographic Binding Methods
 | (when binding enabled)
-| Comma-separated cryptographic binding methods. The default is `jwk` for SD-JWT VC and JWT VC, while mdoc uses `cose_key`.
+| Comma-separated cryptographic binding methods. The default is `jwk` for SD-JWT VC and JWT VC.
+ifeval::[{project_community}==true]
+The mdoc format uses `cose_key`.
+endif::[]
 
 | Binding Supported Proof Types
 | (when binding enabled)

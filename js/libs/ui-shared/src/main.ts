@@ -10,6 +10,7 @@ export { Help, useHelp } from "./context/HelpContext";
 export {
   KeycloakProvider,
   useEnvironment,
+  type ActionUpdate,
   type KeycloakContext,
 } from "./context/KeycloakContext";
 export {

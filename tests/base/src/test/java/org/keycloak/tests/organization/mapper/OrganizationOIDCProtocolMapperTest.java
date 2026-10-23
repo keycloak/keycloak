@@ -2141,7 +2141,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         realm.admin().clients().get(createdClient.getId()).addOptionalClientScope(orgScope.getId());
 
         // make the service account user a member of the organization
-        String serviceAccountUserId = realm.admin().clients().get(createdClient.getId()).getServiceAccountUser().getId();
+        String serviceAccountUserId = realm.admin().clients().get(createdClient.getId()).toRepresentation().getServiceAccountUserId();
         realm.admin().organizations().get(orgA.getId()).members().addMember(serviceAccountUserId).close();
 
         // first, verify organization claim IS present when organizations are enabled
