@@ -182,6 +182,10 @@ public abstract class AbstractOAuthClient<T> {
         return wellknownRequest().send().getOidcConfiguration();
     }
 
+    public ClientAttestationChallengeRequest clientAttestationChallengeRequest() {
+        return new ClientAttestationChallengeRequest(this);
+    }
+
     public UserInfoRequest userInfoRequest(String accessToken) {
         return new UserInfoRequest(accessToken, this);
     }

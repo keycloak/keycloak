@@ -40,6 +40,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.ClientAttestationChallengeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
@@ -116,6 +117,10 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "token");
     }
 
+    public static UriBuilder clientAttestationChallengeUrl(UriBuilder baseUriBuilder) {
+        return ClientAttestationChallengeEndpoint.challengeUrl(baseUriBuilder);
+    }
+
     public static UriBuilder certsUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "certs");
@@ -177,6 +182,14 @@ public class OIDCLoginProtocolService {
     @Path("token")
     public Object token() {
         return new TokenEndpoint(session, tokenManager, event);
+    }
+
+    /**
+     * Attestation-Based Client Authentication challenge endpoint
+     */
+    @Path(ClientAttestationChallengeEndpoint.PATH)
+    public Object clientAttestationChallenge() {
+        return new ClientAttestationChallengeEndpoint(session);
     }
 
     @Path("login-status-iframe.html")
