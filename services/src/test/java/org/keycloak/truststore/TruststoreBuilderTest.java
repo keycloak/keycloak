@@ -18,10 +18,15 @@
 package org.keycloak.truststore;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +35,7 @@ import java.util.Map;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
@@ -104,6 +110,42 @@ public class TruststoreBuilderTest {
 
         KeyStore savedLoaded = TruststoreBuilder.loadStore(saved.getAbsolutePath(), TruststoreBuilder.PKCS12, null);
         assertEquals(certs, Collections.list(savedLoaded.aliases()).size());
+    }
+
+    @Test
+    public void testJksDefaultTruststoreIsMerged() throws Exception {
+        File javaHome = temporaryFolder.newFolder();
+        File security = new File(javaHome, "lib" + File.separator + "security");
+        assertTrue(security.mkdirs());
+
+        // a JKS truststore named like the JRE one, so the format cannot be detected from the extension
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        KeyPair keyPair = generator.generateKeyPair();
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "jks-default-ca");
+        KeyStore jks = KeyStore.getInstance("JKS");
+        jks.load(null, null);
+        jks.setCertificateEntry("jks-default-ca", certificate);
+        try (OutputStream os = Files.newOutputStream(new File(security, "cacerts").toPath())) {
+            jks.store(os, "changeit".toCharArray());
+        }
+
+        String originalJavaHome = System.getProperty("java.home");
+        String originalCompat = Security.getProperty("keystore.type.compat");
+        // mimic providers such as BC-FIPS that reject JKS content when loaded as PKCS12
+        Security.setProperty("keystore.type.compat", "false");
+        System.clearProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
+        System.setProperty("java.home", javaHome.getAbsolutePath());
+        try {
+            KeyStore merged = TruststoreBuilder.createMergedTruststore(new String[0], true);
+            List<String> aliases = Collections.list(merged.aliases());
+            assertEquals(1, aliases.size());
+            assertEquals(certificate, merged.getCertificate(aliases.get(0)));
+        } finally {
+            // an empty value would disable compatibility mode, so fall back to the JDK default
+            Security.setProperty("keystore.type.compat", originalCompat == null ? "true" : originalCompat);
+            System.setProperty("java.home", originalJavaHome);
+        }
     }
 
     @Test
