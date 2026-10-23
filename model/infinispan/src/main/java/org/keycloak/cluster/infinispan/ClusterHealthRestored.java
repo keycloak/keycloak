@@ -21,7 +21,8 @@ import org.keycloak.provider.ProviderEvent;
 
 /**
  * Published when {@code KEYCLOAK_JDBC_PING2}'s periodic health check detects a transition
- * from any non-healthy state back to {@code HEALTHY}. This covers:
+ * from any non-healthy state back to {@code HEALTHY}, or prepares to reopen a quarantined node's traffic.
+ * This covers:
  *
  * <ul>
  *     <li>Database reconnect — the health check could not reach the database ({@code ERROR})
@@ -30,10 +31,13 @@ import org.keycloak.provider.ProviderEvent;
  *         and has rejoined the correct cluster view.</li>
  *     <li>Coordinator election — no coordinator was present in the database table
  *         ({@code NO_COORDINATOR}) and one has since been elected.</li>
+ *     <li>Quarantine recovery — the node has a singleton view and database access is restored,
+ *         but traffic and readiness remain blocked until local cache cleanup completes.</li>
  * </ul>
  *
- * <p>Only available when the JDBC-PING cache stack is in use. Listened to by
- * {@link DatabaseAwareClusterProviderFactory} in stateless mode, which broadcasts a
+ * <p>Only available when the JDBC-PING cache stack is in use.
+ * {@link InfinispanClusterProviderFactory} clears local caches synchronously before a quarantined node
+ * becomes ready again. In stateless mode, {@link DatabaseAwareClusterProviderFactory} also broadcasts a
  * {@code CLEAR_ALL_LOCAL_CACHES_EVENT} to all cluster nodes so that stale cache entries
  * from the outage period are discarded.
  */

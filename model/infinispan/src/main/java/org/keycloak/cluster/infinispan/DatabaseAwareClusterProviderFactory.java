@@ -154,6 +154,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     @Override
     public void onEvent(ProviderEvent event) {
         if (event instanceof ClusterHealthRestored) {
+            clearLocalCachesAfterRecovery();
             localExecutor.execute(() -> {
                 logger.info("Broadcasting cache clear to all cluster nodes after health recovery");
                 KeycloakModelUtils.runJobInTransaction(factory, session -> {

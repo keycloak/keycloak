@@ -132,7 +132,7 @@ The table below shows the available checks.
 |Yes
 
 |Cluster
-|Returns the status of the cluster (network partitions).
+|Returns the status of the cluster (network partitions) and access to its database discovery metadata.
 |No
 
 |Graceful shutdown
@@ -151,5 +151,14 @@ use the `metrics-enabled` option as follows:
 <@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
 
 The cluster health check is only available for clustered setups when the cache transport stacks `jdbc-ping` or `jdbc-ping-udp` are used.
+For these stacks, failure to query the discovery database makes the node not ready, even when metrics are disabled.
+If a coordinator in a multi-node cluster cannot refresh discovery metadata for the staleness timeout (60 seconds by default, measured from the first failed publication attempt), it isolates its remote cluster traffic.
+Normal failure detection then allows the other members to elect a coordinator and refresh discovery metadata.
+This can cause cache rebalancing.
+Once isolated, the node waits until failure detection reduces its local view to a singleton, even if database access returns earlier.
+It restores cluster traffic and resumes discovery publication only after database reads and writes succeed and potentially stale local caches have been cleared.
+Normal partition-health checks determine readiness, preferring the largest partition and using coordinator address order to break ties.
+Normal merging reunites reachable partitions, so the previous healthy partition's coordinator is not guaranteed to retain its role.
+Recovery does not require restarting the process, cache manager, or channel.
 
 </@tmpl.guide>
