@@ -190,7 +190,7 @@ $ git commit -m "Summary
 > 
 > Optional description
 > 
-> Closes #1234"
+> Closes #12345"
 ```
 
 For more information linking PRs to issues refer to the [GitHub Documentation](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).
@@ -198,3 +198,10 @@ For more information linking PRs to issues refer to the [GitHub Documentation](h
 ### Contributing Translations
 
 In order to provide translations for Keycloak, kindly follow the instructions provided in [Translation Docs](./docs/translation.md).
+
+git. clone "Miguel"
+
+
+
+
+
