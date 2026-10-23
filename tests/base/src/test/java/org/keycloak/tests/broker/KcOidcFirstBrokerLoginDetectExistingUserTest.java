@@ -1,6 +1,7 @@
 package org.keycloak.tests.broker;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.mail.MessagingException;
@@ -11,6 +12,9 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -19,6 +23,8 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -187,6 +193,73 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
         assertEquals(email, userRepresentation.getEmail(), "Email is not correct");
         assertEquals(firstname, userRepresentation.getFirstName(), "Firstname is not correct");
         assertEquals(lastname, userRepresentation.getLastName(), "Lastname is not correct");
+    }
+
+    /**
+     * The link on the consumer user holds the provider user ID in a different case than the ID the
+     * provider sends, so the returning user is not found and the first-broker-login flow links the
+     * existing user by email again. The login then fails with the already-linked error, and the
+     * events must carry the ID as sent by the provider and the ID the user is already linked with,
+     * so the conflict can be diagnosed from the events instead of the server log.
+     */
+    @Test
+    public void loginWhenIncomingFederatedUserIdDiffersOnlyInCase() {
+        disableUpdateProfileOnFirstLogin();
+        consumerRealm.updateWithCleanup(r -> r.eventsEnabled(true));
+
+        final String username = "casedrift";
+        final String email = "casedrift@example.org";
+        createUser(providerRealm, username, USER_PASSWORD, "CaseDrift", "Test", email);
+
+        // The OIDC sub sent by the provider is the provider user ID.
+        UserRepresentation providerUser = providerRealm.admin().users().search(username).get(0);
+        String incomingFederatedUserId = providerUser.getId();
+
+        String consumerUserId;
+        try (Response response = consumerRealm.admin().users().create(UserBuilder.create(username)
+                .email(email)
+                .password("THIS PASSWORD IS USELESS")
+                .enabled(true)
+                .build())) {
+            assertEquals(201, response.getStatus());
+            consumerUserId = ApiUtil.getCreatedId(response);
+            consumerRealm.cleanup().add(r -> r.users().get(consumerUserId).remove());
+        }
+
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setIdentityProvider(IDP_OIDC_ALIAS);
+        link.setUserId(incomingFederatedUserId.toUpperCase());
+        link.setUserName(username);
+        try (Response response = consumerRealm.admin().users().get(consumerUserId).addFederatedIdentity(IDP_OIDC_ALIAS, link)) {
+            assertEquals(204, response.getStatus());
+        }
+
+        logInWithIdp(username, USER_PASSWORD);
+
+        errorPage.assertCurrent();
+        assertTrue(errorPage.getError().contains("Your account is already linked to the identity provider"),
+                "Unexpected error: " + errorPage.getError());
+
+        List<EventRepresentation> events = consumerRealm.admin().getEvents();
+
+        EventRepresentation firstBrokerLogin = findEvent(events, EventType.IDENTITY_PROVIDER_FIRST_LOGIN.name());
+        assertEquals(incomingFederatedUserId, firstBrokerLogin.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The first-broker-login event should carry the federated user ID as sent by the provider");
+
+        EventRepresentation loginError = findEvent(events, EventType.IDENTITY_PROVIDER_LOGIN_ERROR.name());
+        assertEquals(Errors.IDENTITY_PROVIDER_ERROR, loginError.getError());
+        assertEquals(incomingFederatedUserId, loginError.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The login error event should carry the federated user ID as sent by the provider");
+        assertEquals(incomingFederatedUserId.toUpperCase(),
+                loginError.getDetails().get(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID),
+                "The login error event should carry the ID the user is already linked with");
+    }
+
+    private EventRepresentation findEvent(List<EventRepresentation> events, String type) {
+        return events.stream()
+                .filter(e -> type.equals(e.getType()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected event " + type + ", but events were: " + events));
     }
 
 

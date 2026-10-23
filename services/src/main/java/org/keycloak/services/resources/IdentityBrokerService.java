@@ -752,6 +752,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
                 .detail(Details.IDENTITY_PROVIDER, providerAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
@@ -896,6 +897,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             event.detail(Details.IDENTITY_PROVIDER, providerAlias);
             event.detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+            event.detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId());
 
             // Ensure the first-broker-login flow was successfully finished
             String authProvider = authSession.getAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS);
@@ -931,6 +933,15 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             // Add federated identity link here
             if (!(federatedUser instanceof LightweightUserAdapter)) {
                 checkOverrideLink(authSession, federatedUser, providerAlias);
+
+                // The stored federated identity can differ from the incoming one, for example when the provider
+                // sent the same federated user ID in a different case than the one the link was created with, so
+                // the lookup of the returning user above missed. Record the stored ID in the event to make this
+                // situation visible in the events instead of only in the server log.
+                FederatedIdentityModel storedIdentity = session.users().getFederatedIdentity(realmModel, federatedUser, providerAlias);
+                if (storedIdentity != null) {
+                    event.detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, storedIdentity.getUserId());
+                }
 
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
@@ -1099,6 +1110,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         event.detail(Details.IDENTITY_PROVIDER, providerAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         if (isDebugEnabled()) {
