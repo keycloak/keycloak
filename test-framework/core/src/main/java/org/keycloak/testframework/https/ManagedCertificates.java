@@ -5,21 +5,27 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HexFormat;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
 import org.apache.http.conn.ssl.TrustAllStrategy;
@@ -48,6 +54,7 @@ public class ManagedCertificates {
     private KeyStore clientKeyStore;
 
     private final Path clientTruststorePath;
+    private final Path clientTruststorePemPath;
     private KeyStore clientTrustStore;
 
     private final SSLContext clientSslContext;
@@ -83,12 +90,14 @@ public class ManagedCertificates {
                 clientKeyStore = load(clientKeystorePath);
                 clientTrustStore = load(clientTruststorePath);
             }
+            clientTruststorePemPath = saveAsPem(clientTrustStore);
             clientSslContext = createClientSSLContext();
         } else {
             serverKeystorePath = null;
             serverTruststorePath = null;
             clientKeystorePath = null;
             clientTruststorePath = null;
+            clientTruststorePemPath = null;
             clientSslContext = null;
         }
     }
@@ -126,6 +135,16 @@ public class ManagedCertificates {
      */
     public String getServerTrustStorePassword() {
         return mTlsEnabled ? STORE_PASSWORD : null;
+    }
+
+    /**
+     * The path of a PEM bundle containing certificates trusted by managed clients. The server uses the same bundle
+     * for outbound TLS connections.
+     *
+     * @return path to PEM trust bundle
+     */
+    public String getClientTrustStorePath() {
+        return tlsEnabled ? clientTruststorePemPath.toString() : null;
     }
 
     /**
@@ -258,6 +277,26 @@ public class ManagedCertificates {
 
     private Path resolvePath(String fileName) {
         return KEYSTORES_DIR.resolve(fileName + "." + keystoreFormat.getPrimaryExtension());
+    }
+
+    private Path saveAsPem(KeyStore trustStore) {
+        try {
+            StringBuilder pem = new StringBuilder();
+            for (String alias : Collections.list(trustStore.aliases())) {
+                Certificate certificate = trustStore.getCertificate(alias);
+                if (certificate != null) {
+                    pem.append(PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(certificate))).append('\n');
+                }
+            }
+
+            byte[] trustMaterial = pem.toString().getBytes(StandardCharsets.UTF_8);
+            String trustMaterialHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(trustMaterial));
+            Path trustStorePath = KEYSTORES_DIR.resolve("kc-testing-client-truststore-" + trustMaterialHash + ".pem");
+            Files.write(trustStorePath, trustMaterial);
+            return trustStorePath;
+        } catch (Exception e) {
+            throw new ManagedCertificatesException(e);
+        }
     }
 
     private void save(KeyStore store, Path storePath) throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
