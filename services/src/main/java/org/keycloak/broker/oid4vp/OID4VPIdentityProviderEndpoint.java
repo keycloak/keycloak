@@ -354,17 +354,14 @@ public class OID4VPIdentityProviderEndpoint {
         return requestObject;
     }
 
-    // TODO infer the DCQL from identity provider mappers.
-    protected JsonNode dcqlQuery() {
-        String dcql = provider.getConfig().getDcqlQuery();
-        if (StringUtil.isBlank(dcql)) {
-            throw new IllegalStateException("No DCQL query configured on the OID4VP identity provider");
+    protected DcqlQuery dcqlQuery() {
+        OID4VPIdentityProviderConfig config = provider.getConfig();
+        if (StringUtil.isNotBlank(config.getDcqlQuery())) {
+            return DcqlQuery.parse(config.getDcqlQuery());
         }
-        try {
-            return JsonSerialization.readValue(dcql, JsonNode.class);
-        } catch (Exception e) {
-            throw new IllegalStateException("The configured OID4VP DCQL query is not valid JSON", e);
-        }
+        return DcqlQuery.fromMappers(session.getKeycloakSessionFactory(),
+                session.identityProviders().getMappersByAliasStream(config.getAlias()),
+                config.getDefaultCredentialTypes(), config.getPrincipalAttribute());
     }
 
     protected DecryptedResponse decryptResponse(String response) throws VerificationException {
@@ -455,10 +452,9 @@ public class OID4VPIdentityProviderEndpoint {
                 .build();
 
         // TODO bind the presentation to the requested credential type and claims, so that not any
-        // credential from a trusted issuer satisfies the login. Planned for the DCQL generation
-        // task: derive PresentationRequirements from the configured identity provider mappers
-        // (required or optional per mapper) and enforce them here. The principal check in
-        // requirePrincipalClaim then becomes just another required claim.
+        // credential from a trusted issuer satisfies the login: derive PresentationRequirements from
+        // the DCQL query and enforce them here. The principal check in requirePrincipalClaim then
+        // becomes just another requested claim. https://github.com/keycloak/keycloak/issues/50657
         PresentationRequirements noAdditionalRequirements = disclosedPayload -> {
         };
         TrustedSdJwtIssuer trustedIssuer = provider.trustedIssuerResolver().resolve(sdJwtVP.getIssuerSignedJWT());

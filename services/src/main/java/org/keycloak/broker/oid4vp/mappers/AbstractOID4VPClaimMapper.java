@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.Config;
+import org.keycloak.broker.oid4vp.DcqlQuery;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProvider;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
@@ -44,7 +45,7 @@ import org.jboss.logging.Logger;
  * JSON under {@link OID4VPIdentityProvider#CREDENTIAL_CLAIMS} can build on it.
  */
 public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProviderMapper
-        implements EnvironmentDependentProviderFactory {
+        implements EnvironmentDependentProviderFactory, DcqlQueryContributor {
 
     protected static final Logger logger = Logger.getLogger(AbstractOID4VPClaimMapper.class);
 
@@ -61,6 +62,38 @@ public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProvider
                 + "To use dot (.) literally, escape it with backslash (\\.)");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         return property;
+    }
+
+    // Null when the claim path is missing or malformed.
+    protected ClaimPath claimPath(IdentityProviderMapperModel mapperModel) {
+        String claimPath = mapperModel.getConfig().get(CLAIM);
+        if (StringUtil.isBlank(claimPath)) {
+            logger.warnf("No claim configured for mapper %s", mapperModel.getName());
+            return null;
+        }
+        ClaimPath path = ClaimPath.parse(claimPath.trim());
+        if (path == null) {
+            logger.warnf("Invalid claim path '%s' in mapper %s", claimPath, mapperModel.getName());
+        }
+        return path;
+    }
+
+    /**
+     * The name of the attribute the claim is stored in, null if none is configured.
+     */
+    protected abstract String attribute(IdentityProviderMapperModel mapperModel);
+
+    @Override
+    public List<DcqlQuery.ClaimsQuery> requestedClaims(IdentityProviderMapperModel mapperModel) {
+        // Without an attribute the claim is never stored, so the wallet should not have to disclose it.
+        if (attribute(mapperModel) == null) {
+            return List.of();
+        }
+        ClaimPath path = claimPath(mapperModel);
+        if (path == null) {
+            return List.of();
+        }
+        return List.of(new DcqlQuery.ClaimsQuery(null, path.toClaimsPathPointer(), null));
     }
 
     @Override
@@ -93,14 +126,8 @@ public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProvider
 
     // Null when the claim is absent or the mapper is misconfigured.
     protected List<String> claimValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String claimPath = mapperModel.getConfig().get(CLAIM);
-        if (StringUtil.isBlank(claimPath)) {
-            logger.warnf("No claim configured for mapper %s", mapperModel.getName());
-            return null;
-        }
-        ClaimPath path = ClaimPath.parse(claimPath.trim());
+        ClaimPath path = claimPath(mapperModel);
         if (path == null) {
-            logger.warnf("Invalid claim path '%s' in mapper %s", claimPath, mapperModel.getName());
             return null;
         }
         List<JsonNode> matches = path.select(credentialClaims(context));

@@ -17,12 +17,16 @@
 
 package org.keycloak.broker.oid4vp;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
+    public static final String DEFAULT_CREDENTIAL_TYPES = "defaultCredentialTypes";
     public static final String DCQL_QUERY = "dcqlQuery";
     public static final String TRUSTED_ISSUER_JWKS = "trustedIssuerJwks";
     public static final String TRUST_MATERIAL_IDPS = "trustMaterialIdps";
@@ -40,7 +44,22 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         super(model);
     }
 
-    // TODO: Revisit if configuring DCQL by hand should stay or eliminated completely by mapper-inferred auto-generation
+    public List<String> getDefaultCredentialTypes() {
+        String credentialTypes = getConfig().get(DEFAULT_CREDENTIAL_TYPES);
+        if (StringUtil.isBlank(credentialTypes)) {
+            return List.of();
+        }
+        return Arrays.stream(credentialTypes.split(","))
+                .map(String::trim)
+                .filter(StringUtil::isNotBlank)
+                .distinct()
+                .toList();
+    }
+
+    public void setDefaultCredentialTypes(List<String> credentialTypes) {
+        getConfig().put(DEFAULT_CREDENTIAL_TYPES, String.join(",", credentialTypes));
+    }
+
     public String getDcqlQuery() {
         return getConfig().get(DCQL_QUERY);
     }
@@ -100,6 +119,12 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         String responseMode = getConfig().get(RESPONSE_MODE);
         if (StringUtil.isNotBlank(responseMode)) {
             ResponseMode.from(responseMode);
+        }
+        if (StringUtil.isNotBlank(getDcqlQuery())) {
+            DcqlQuery.parse(getDcqlQuery());
+        } else if (getDefaultCredentialTypes().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Default credential types are required unless a DCQL query is configured");
         }
         if (StringUtil.isBlank(getTrustedIssuerJwks()) && StringUtil.isBlank(getTrustMaterialIdps())) {
             throw new IllegalArgumentException(

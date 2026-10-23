@@ -36,11 +36,23 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
             .property()
+                .name(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES)
+                .label("Default Credential Types")
+                .helpText("Comma separated credential types (vct) the wallet may present, for example "
+                        + "'urn:eudi:pid:de:1,urn:eudi:pid:it:1'. The wallet presents one credential of any of "
+                        + "these types, disclosing the claims the identity provider mappers read. Required unless a "
+                        + "DCQL query is configured.")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+            .property()
                 .name(OID4VPIdentityProviderConfig.DCQL_QUERY)
                 .label("DCQL Query (JSON)")
-                .helpText("Digital Credentials Query Language query describing the requested credential and claims.")
+                .helpText("Digital Credentials Query Language query describing the requested credential and "
+                        + "claims. Leave empty to infer it: one credential of the default credential types, "
+                        + "disclosing the claims the identity provider mappers read and the principal attribute. "
+                        + "Set it only for queries the mappers cannot express. Only a single credential is "
+                        + "supported.")
                 .type(ProviderConfigProperty.TEXT_TYPE)
-                .required(true)
                 .add()
             .property()
                 .name(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS)
