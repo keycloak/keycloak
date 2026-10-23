@@ -55,7 +55,6 @@ public class OID4VPCrossDeviceTest extends OID4VPVerifierTestBase {
         super.configureTestRealm();
         createVerifierIdp(Map.of(
                 OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
-                OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
     }
 
