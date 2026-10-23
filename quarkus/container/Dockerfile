@@ -37,19 +37,22 @@ RUN echo "keycloak:x:0:root" >> /etc/group && \
 # output is parsed in shell.
 RUN KS=/etc/pki/ca-trust/extracted/java/cacerts && \
     distrusted() { \
-      keytool -list -v -keystore "${KS}" -storepass changeit | while IFS= read -r line; do \
+      listing="$(keytool -list -v -keystore "${KS}" -storepass changeit)" || return 1; \
+      printf '%s\n' "${listing}" | while IFS= read -r line; do \
         case "${line}" in \
           "Alias name: "*) alias="${line#Alias name: }" ;; \
           "Owner: "*emSign*|"Owner: "*"AAA Certificate Services"*) echo "${alias}" ;; \
         esac; \
       done; \
     } && \
+    aliases="$(distrusted)" && \
     chmod u+w "${KS}" && \
-    distrusted | sort -u | while IFS= read -r alias; do \
-      keytool -delete -alias "${alias}" -keystore "${KS}" -storepass changeit || exit 1; \
+    printf '%s\n' "${aliases}" | sort -u | while IFS= read -r alias; do \
+      [ -z "${alias}" ] || keytool -delete -alias "${alias}" -keystore "${KS}" -storepass changeit || exit 1; \
     done && \
     chmod a-w "${KS}" && \
-    [ -z "$(distrusted)" ] && \
+    remaining="$(distrusted)" && \
+    [ -z "${remaining}" ] && \
     rm -rf /tmp/hsperfdata_root
 
 USER 1000
