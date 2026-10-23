@@ -113,9 +113,7 @@ public class OAuth2CodeParser {
         }
 
         String persistedClientUUID = result.codeData.getClientUUID();
-        // We allow "persistedClientUUID" to be null just because zero-downtime upgrade between micro versions (as older KC versions might not have clientUUID stored).
-        // This might be removed in the future version
-        if (persistedClientUUID != null && !clientUUID.equals(persistedClientUUID)) {
+        if (!clientUUID.equals(persistedClientUUID)) {
             logger.warnf("Code is bound to a different client '%s'", clientUUID);
             return result.illegalCode();
         }
