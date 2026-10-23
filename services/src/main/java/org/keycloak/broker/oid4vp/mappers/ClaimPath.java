@@ -68,6 +68,22 @@ public class ClaimPath {
     }
 
     /**
+     * The path in DCQL notation, for example {@code ["address", "locality"]} for
+     * {@code address.locality} and {@code ["nationalities", null]} for {@code nationalities[]}.
+     */
+    public List<Object> toClaimsPathPointer() {
+        List<Object> pointer = new ArrayList<>();
+        for (Step step : steps) {
+            switch (step.kind()) {
+                case FIELD -> pointer.add(step.field());
+                case ALL_ELEMENTS -> pointer.add(null);
+                case FIRST_ELEMENT -> pointer.add(0);
+            }
+        }
+        return pointer;
+    }
+
+    /**
      * Parses the dot notation path, returning {@code null} if it is not well formed.
      */
     public static ClaimPath parse(String path) {
