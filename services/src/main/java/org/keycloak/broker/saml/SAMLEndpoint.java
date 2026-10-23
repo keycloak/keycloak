@@ -857,7 +857,8 @@ public class SAMLEndpoint {
             long ttlSeconds = config.getOneTimeUseTtlSeconds();
 
             String issuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue() : "";
-            String rawKey = realm.getId() + "::" + issuer + "::" + assertion.getID();
+            // length-prefixed parts keep the key unambiguous, whatever characters the IdP puts in issuer or ID
+            String rawKey = lengthPrefixed(realm.getId()) + lengthPrefixed(issuer) + lengthPrefixed(assertion.getID());
             String key = "saml.oneTimeUse." + HashUtils.sha256UrlEncodedHash(rawKey, StandardCharsets.UTF_8);
 
             boolean firstUse = session.revokedTokens().put(key, ttlSeconds);
@@ -866,6 +867,10 @@ public class SAMLEndpoint {
             }
 
             return firstUse;
+        }
+
+        private static String lengthPrefixed(String value) {
+            return value.length() + ":" + value;
         }
     }
 
