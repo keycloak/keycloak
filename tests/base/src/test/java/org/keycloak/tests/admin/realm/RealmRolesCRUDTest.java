@@ -207,6 +207,63 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         });
     }
 
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 255;
+    private static final int MAX_ATTRIBUTE_NAME_LENGTH = 255;
+
+    @Test
+    public void createRoleWithTooLongAttributeValueReturnsBadRequest() {
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        RoleRepresentation role = RoleBuilder.create()
+                .name("role-long-attr")
+                .attributes(Map.of("key", List.of(tooLongValue)))
+                .build();
+        Assertions.assertThrows(BadRequestException.class, () -> managedRealm.admin().roles().create(role));
+    }
+
+    @Test
+    public void createRoleWithTooLongAttributeNameReturnsBadRequest() {
+        String tooLongName = "a".repeat(MAX_ATTRIBUTE_NAME_LENGTH + 1);
+        RoleRepresentation role = RoleBuilder.create()
+                .name("role-long-attr-name")
+                .attributes(Map.of(tooLongName, List.of("val")))
+                .build();
+        Assertions.assertThrows(BadRequestException.class, () -> managedRealm.admin().roles().create(role));
+    }
+
+    @Test
+    public void updateRoleWithTooLongAttributeValueReturnsBadRequest() {
+        RoleRepresentation role = managedRealm.admin().roles().get("role-a").toRepresentation();
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        role.setAttributes(Map.of("key", List.of(tooLongValue)));
+        Assertions.assertThrows(BadRequestException.class, () -> managedRealm.admin().roles().get("role-a").update(role));
+    }
+
+    @Test
+    public void createRoleWithMaxLengthAttributeValueSucceeds() {
+        String maxValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH);
+        RoleRepresentation role = RoleBuilder.create()
+                .name("role-max-attr")
+                .attributes(Map.of("key", List.of(maxValue)))
+                .build();
+        managedRealm.admin().roles().create(role);
+        managedRealm.cleanup().add(r -> r.roles().deleteRole("role-max-attr"));
+
+        RoleRepresentation created = managedRealm.admin().roles().get("role-max-attr").toRepresentation();
+        assertEquals(maxValue, created.getAttributes().get("key").get(0));
+    }
+
+
+    @Test
+    public void createRoleWithTooManyUnicodeUnitsReturnsBadRequest() {
+        // 254 ASCII chars + 1 emoji (2 UTF-16 units) = 256 UTF-16 units, exceeds NVARCHAR(255)
+        String tooLongUnicodeValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH - 1) + "😀";
+        RoleRepresentation role = RoleBuilder.create()
+                .name("role-unicode-overflow")
+                .attributes(Map.of("key", List.of(tooLongUnicodeValue)))
+                .build();
+        Assertions.assertThrows(BadRequestException.class, () -> managedRealm.admin().roles().create(role));
+    }
+
     private List<String> convertRolesToNames(List<RoleRepresentation> roles) {
         return roles.stream().map(RoleRepresentation::getName).collect(Collectors.toList());
     }

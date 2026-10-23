@@ -39,6 +39,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -245,8 +246,18 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return em.createQuery(queryBuilder).getSingleResult();
     }
 
+    private void checkAttribute(String name, String value) {
+        if (name != null && name.length() > GroupAttributeEntity.NAME_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute name must not exceed " + GroupAttributeEntity.NAME_MAX_LENGTH + " characters");
+        }
+        if (value != null && value.length() > GroupAttributeEntity.VALUE_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute value must not exceed " + GroupAttributeEntity.VALUE_MAX_LENGTH + " characters");
+        }
+    }
+
     @Override
     public void setSingleAttribute(String name, String value) {
+        checkAttribute(name, value);
         boolean found = false;
         List<GroupAttributeEntity> toRemove = new ArrayList<>();
         for (GroupAttributeEntity attr : group.getAttributes()) {
@@ -282,16 +293,27 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             return;
         }
 
+        if (values != null && !values.isEmpty()) {
+            for (String value : values) {
+                checkAttribute(name, value);
+            }
+        } else if (name != null && name.length() > GroupAttributeEntity.NAME_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute name must not exceed " + GroupAttributeEntity.NAME_MAX_LENGTH + " characters");
+        }
+
         // Remove all existing
         removeAttribute(name);
 
         // Put all new
-        for (String value : values) {
-            persistAttributeValue(name, value);
+        if (values != null) {
+            for (String value : values) {
+                persistAttributeValue(name, value);
+            }
         }
     }
 
     private void persistAttributeValue(String name, String value) {
+        checkAttribute(name, value);
         GroupAttributeEntity attr = new GroupAttributeEntity();
         attr.setId(KeycloakModelUtils.generateId());
         attr.setName(name);
