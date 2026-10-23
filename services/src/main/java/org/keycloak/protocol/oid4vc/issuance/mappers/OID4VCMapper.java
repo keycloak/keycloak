@@ -40,6 +40,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.JsonUtils;
@@ -344,6 +345,23 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
      */
     public abstract void setClaim(Map<String, Object> claims,
                                   UserSessionModel userSessionModel);
+
+    /**
+     * Set credential claims with issuance context, including an optional external claims reference.
+     * Delegates to the original method so existing mappers remain compatible.
+     */
+    public void setClaim(VerifiableCredential verifiableCredential, UserSessionModel userSessionModel,
+                         VCIssuanceContext context) {
+        setClaim(verifiableCredential, userSessionModel);
+    }
+
+    /**
+     * Set credential subject claims with issuance context. External data source mappers can use
+     * {@link VCIssuanceContext#getClaimsRef()} to identify a record without storing its data on the user.
+     */
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel, VCIssuanceContext context) {
+        setClaim(claims, userSessionModel);
+    }
 
     /**
      * Reads a mapper-produced claim from the intermediate, un-prefixed claim map.
