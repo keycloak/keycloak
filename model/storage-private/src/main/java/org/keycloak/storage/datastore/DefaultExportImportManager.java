@@ -324,6 +324,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isDuplicateEmailsAllowed() != null) newRealm.setDuplicateEmailsAllowed(rep.isDuplicateEmailsAllowed());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
+        if (rep.isUsernamePasswordFormEnabled() != null) newRealm.setUsernamePasswordFormEnabled(rep.isUsernamePasswordFormEnabled());
         if (rep.isOrganizationsEnabled() != null) newRealm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
         if (rep.isScimApiEnabled() != null) newRealm.setScimApiEnabled(rep.isScimApiEnabled());
         if (rep.isAdminPermissionsEnabled() != null) newRealm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
@@ -847,6 +848,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isDuplicateEmailsAllowed() != null) realm.setDuplicateEmailsAllowed(rep.isDuplicateEmailsAllowed());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
+        if (rep.isUsernamePasswordFormEnabled() != null) realm.setUsernamePasswordFormEnabled(rep.isUsernamePasswordFormEnabled());
         if (rep.isOrganizationsEnabled() != null) realm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
         if (rep.isScimApiEnabled() != null) realm.setScimApiEnabled(rep.isScimApiEnabled());
         if (rep.isAdminPermissionsEnabled() != null) realm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());

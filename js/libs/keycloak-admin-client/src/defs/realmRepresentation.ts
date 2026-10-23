@@ -129,6 +129,7 @@ export default interface RealmRepresentation {
   // UserFederationProviderRepresentation
   userFederationProviders?: any[];
   userManagedAccessAllowed?: boolean;
+  usernamePasswordFormEnabled?: boolean;
   users?: UserRepresentation[];
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;

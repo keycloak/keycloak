@@ -129,6 +129,16 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean isScimApiEnabled();
 
+    String USERNAME_PASSWORD_FORM_ENABLED = "usernamePasswordFormEnabled";
+
+    default boolean isUsernamePasswordFormEnabled() {
+        return getAttribute(USERNAME_PASSWORD_FORM_ENABLED, Boolean.TRUE);
+    }
+
+    default void setUsernamePasswordFormEnabled(boolean usernamePasswordFormEnabled) {
+        setAttribute(USERNAME_PASSWORD_FORM_ENABLED, usernamePasswordFormEnabled);
+    }
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
