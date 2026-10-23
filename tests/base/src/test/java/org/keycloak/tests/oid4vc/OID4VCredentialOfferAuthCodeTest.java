@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -25,7 +26,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.PROMPT_VALUE_LOGIN;
 import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
 
@@ -34,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Credential Offer Validity Matrix
@@ -51,6 +51,62 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
+
+    @Test
+    public void testAuthCodeOffer_RemainsAvailableWhenTokenIssuanceFails() {
+        String offlineAccessScopeId = testRealm.admin().clientScopes().findAll().stream()
+                .filter(scope -> "offline_access".equals(scope.getName()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+        var clientResource = testRealm.admin().clients().get(client.getId());
+        clientResource.addOptionalClientScope(offlineAccessScopeId);
+
+        try {
+            var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+            CredentialsOffer credentialOffer = wallet.createCredentialOffer(ctx, req -> req.targetUser(null));
+            String issuerState = credentialOffer.getIssuerState();
+            CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+
+            AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()
+                    .scope(ctx.getScope() + " offline_access")
+                    .issuerState(issuerState)
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authorizationResponse.getCode()).send();
+            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+            assertEquals("invalid_request", tokenResponse.getError());
+            assertEquals("Unsupported to request offline access together with oid4vci credential", tokenResponse.getErrorDescription());
+
+            CredentialOfferResponse offerResponse = wallet.credentialsOfferRequest(ctx, offerURI).send();
+            assertEquals(HttpStatus.SC_OK, offerResponse.getStatusCode(), "Credential offer must remain available after token issuance fails");
+        } finally {
+            clientResource.removeOptionalClientScope(offlineAccessScopeId);
+        }
+    }
+
+    @Test
+    public void testAuthCodeOffer_TokenExchangeRejectsMissingOfferState() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        CredentialsOffer credentialOffer = wallet.createCredentialOffer(ctx, req -> req.targetUser(null));
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        String credentialOfferId = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce()).credentialsOfferId();
+
+        AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(credentialOffer.getIssuerState())
+                .send(ctx.getHolder(), TEST_PASSWORD);
+
+        runOnServer.run(session -> {
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            offerStorage.removeOfferState(offerStorage.getOfferStateById(credentialOfferId));
+        });
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authorizationResponse.getCode()).send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertEquals("Invalid authorization_details: No credential offer state for: " + credentialOfferId,
+                tokenResponse.getErrorDescription());
+    }
 
     @Test
     public void testAuthCodeOffer_Anonymous() throws Exception {
@@ -187,51 +243,63 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthCodeOffer_Anonymous_expiredOffer() throws Exception {
-        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+    public void testAuthCodeOffer_Anonymous_accessTokenRemainsValidAfterOfferExpires() throws Exception {
+        // Make the access token outlive the offer to verify that offer expiry is only evaluated during token issuance.
         testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
+        var realm = testRealm.admin().toRepresentation();
+        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "60");
+        testRealm.admin().update(realm);
+        int credentialExpiry = jwtTypeCredentialScope.getExpiryInSeconds();
+        jwtTypeCredentialScope.setExpiryInSeconds(600);
+        updateCredentialScope(jwtTypeCredentialScope);
 
-        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        try {
+            var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
-        // Create Authorization Code CredentialOffer
-        //
-        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
-            req.targetUser(null);
-        });
+            // Create Authorization Code CredentialOffer
+            //
+            CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+                req.targetUser(null);
+            });
 
-        String issuerState = credOffer.getIssuerState();
-        assertNotNull(issuerState, "No IssuerState");
+            String issuerState = credOffer.getIssuerState();
+            assertNotNull(issuerState, "No IssuerState");
 
-        // Send AuthorizationRequest
-        //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .issuerState(issuerState)
-                .send(ctx.getHolder(), TEST_PASSWORD);
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No authCode");
+            // Send AuthorizationRequest
+            //
+            AuthorizationEndpointResponse authResponse = wallet
+                    .authorizationRequest()
+                    .scope(ctx.getScope())
+                    .issuerState(issuerState)
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "No authCode");
 
-        // Build and send AccessTokenRequest
-        //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
-        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken, "No accessToken");
+            // Build and send AccessTokenRequest
+            //
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+            String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+            assertNotNull(accessToken, "No accessToken");
 
-        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
+            String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+            assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
-        // Move time forward to make sure offer is expired
-        timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
+            // Move time forward past the offer lifetime but before the issued credential expires.
+            timeOffSet.set(65);
 
-        // Send the CredentialRequest
-        IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> wallet.credentialRequest(ctx, accessToken)
-                        .credentialIdentifier(authorizedIdentifier)
-                        .proofs(wallet.generateJwtProof(ctx))
-                        .send().getCredentialResponse());
-        assertTrue(error.getMessage().contains("Credential offer has already expired"), error.getMessage());
-        timeOffSet.set(0);
+            CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                    .credentialIdentifier(authorizedIdentifier)
+                    .proofs(wallet.generateJwtProof(ctx))
+                    .send().getCredentialResponse();
+            verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+        } finally {
+            timeOffSet.set(0);
+            realm = testRealm.admin().toRepresentation();
+            realm.getAttributes().remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+            testRealm.admin().update(realm);
+            jwtTypeCredentialScope.setExpiryInSeconds(credentialExpiry);
+            updateCredentialScope(jwtTypeCredentialScope);
+        }
     }
 
     @Test
