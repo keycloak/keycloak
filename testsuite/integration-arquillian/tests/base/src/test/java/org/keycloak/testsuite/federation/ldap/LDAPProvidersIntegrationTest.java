@@ -18,11 +18,20 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.naming.AuthenticationException;
 import javax.naming.directory.SearchControls;
@@ -36,6 +45,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -1694,6 +1704,49 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             String newKeycloakUserId = user.getId();
             // Need to remove double quotes from server response
             Assertions.assertEquals(origKeycloakUserId.replace("\"",""), newKeycloakUserId);
+        });
+    }
+
+    @Test
+    public void testConcurrentImportOfSameUser() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "racer", "Racer", "Doe", "racer@email.org", null, "123");
+        });
+
+        testingClient.server().run(session -> {
+            String realmId = LDAPTestContext.init(session).getRealm().getId();
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            int threads = 8;
+            CyclicBarrier barrier = new CyclicBarrier(threads);
+            ExecutorService executor = Executors.newFixedThreadPool(threads);
+            try {
+                List<Future<String>> results = new ArrayList<>();
+                for (int i = 0; i < threads; i++) {
+                    results.add(executor.submit(() -> {
+                        barrier.await();
+                        return KeycloakModelUtils.runJobInTransactionWithResult(factory, s -> {
+                            RealmModel realm = s.realms().getRealm(realmId);
+                            s.getContext().setRealm(realm);
+                            return s.users().getUserByUsername(realm, "racer").getId();
+                        });
+                    }));
+                }
+                Set<String> userIds = new HashSet<>();
+                for (Future<String> result : results) {
+                    userIds.add(result.get());
+                }
+                Assertions.assertEquals(1, userIds.size());
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            } finally {
+                executor.shutdownNow();
+                try {
+                    executor.awaitTermination(30, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         });
     }
 
