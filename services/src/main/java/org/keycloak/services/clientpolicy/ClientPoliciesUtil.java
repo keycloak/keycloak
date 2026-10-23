@@ -54,6 +54,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.FileUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.jboss.logging.Logger;
 
 /**
@@ -344,9 +345,16 @@ public class ClientPoliciesUtil {
             if (Objects.nonNull(session.getContext().getRealm())){
                 ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId,
                         RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
+                JsonNode configurationJson = RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration());
+                if (configurationJson == null || configurationJson.isNull()) {
+                    // An omitted configuration is validated like an explicitly empty one, so executors which
+                    // require their configuration reject the profile here, instead of the profile saving and
+                    // the matching client operations failing later.
+                    configurationJson = JsonNodeFactory.instance.objectNode();
+                }
                 ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(
-                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()), provider.getExecutorConfigurationClass());
-                return configuration == null || configuration.validateConfig();
+                        configurationJson, provider.getExecutorConfigurationClass());
+                return configuration.validateConfig();
             } else {
                 return true;
             }
