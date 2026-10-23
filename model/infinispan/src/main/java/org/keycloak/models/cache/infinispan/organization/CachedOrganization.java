@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationIdentityProviderLinkModel;
@@ -51,7 +50,6 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final Set<OrganizationDomainModel> domains;
     private final Map<String, OrganizationDomainModel> domainsByName;
     private final Map<String, String> domainNames;
-    private final Set<IdentityProviderModel> idps;
     private final Map<String, OrganizationIdentityProviderLinkModel> idpLinks;
 
     public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization,
@@ -81,7 +79,6 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
             }
         });
         organization.getDomains().forEach(domain -> domainNames.put(domain.getName(), domain.getName()));
-        this.idps = organization.getIdentityProviders().collect(Collectors.toSet());
         this.idpLinks = idpLinks != null ? Map.copyOf(idpLinks) : Map.of();
     }
 
@@ -124,10 +121,6 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public void addDomainName(String domainName) {
         domainNames.put(domainName, domainName);
-    }
-
-    public Stream<IdentityProviderModel> getIdentityProviders() {
-        return idps.stream();
     }
 
     public OrganizationIdentityProviderLinkModel getIdentityProviderLink(String idpInternalId) {
