@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.Details;
@@ -114,6 +115,9 @@ public class AuthorizationEndpointRequestParserProcessor {
             ServicesLogger.LOGGER.invalidRequest(e);
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
+            if (endpointType == EndpointType.OIDC_AUTH_ENDPOINT) {
+                throw ErrorPageException.oauthError(session, null, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, Messages.INVALID_REQUEST);
+            }
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }
@@ -127,7 +131,7 @@ public class AuthorizationEndpointRequestParserProcessor {
             logger.warnf(errorMessage);
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            throw ErrorPageException.oauthError(session, null, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, Messages.INVALID_REQUEST);
         }
     }
 
