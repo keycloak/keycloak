@@ -80,6 +80,7 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSe
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class UserSessionLimitsTest {
@@ -601,6 +602,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -648,6 +650,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -698,6 +701,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
