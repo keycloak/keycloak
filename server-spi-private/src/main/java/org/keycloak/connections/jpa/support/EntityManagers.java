@@ -77,6 +77,9 @@ public class EntityManagers {
                 em.clear();
             }
         });
+        if (clear) {
+            EntityManagerClearListeners.notifyListeners(session);
+        }
     }
 
     /**
