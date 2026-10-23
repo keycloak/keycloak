@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -15,6 +17,7 @@ import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -37,6 +40,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_R
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
@@ -77,6 +81,14 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
     @Override
     protected String getIdpAlias() {
         return IDP_SAML_ALIAS;
+    }
+
+    protected static String activeRs256SigCert(ManagedRealm realm) {
+        return realm.admin().keys().getKeyMetadata().getKeys().stream()
+                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
+                        && Algorithm.RS256.equals(k.getAlgorithm()))
+                .map(KeysMetadataRepresentation.KeyMetadataRepresentation::getCertificate)
+                .findFirst().orElseThrow();
     }
 
     // Mirrors the OIDC config's configureBrokerEndpoints(): the SAML broker endpoints and the consumer's
@@ -231,6 +243,7 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
                     .attribute(POST_BINDING_RESPONSE, "true")
                     .attribute(POST_BINDING_AUTHN_REQUEST, "true")
                     .attribute(VALIDATE_SIGNATURE, "false")
+                    .attribute(WANT_ASSERTIONS_SIGNED, "false")
                     .attribute(WANT_AUTHN_REQUESTS_SIGNED, "false")
                     .attribute(BACKCHANNEL_SUPPORTED, "false")
                     .attribute(ARTIFACT_BINDING_RESPONSE, "false")

@@ -490,14 +490,17 @@ public class LoginPageTest {
             realm = super.configure(realm);
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("github")
+                        .attribute("validateSignature", "false")
                         .alias("github")
                         .build());
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("saml")
+                        .attribute("validateSignature", "false")
                         .alias("mysaml")
                         .build());
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("oidc")
+                        .attribute("validateSignature", "false")
                         .alias("myoidc")
                         .displayName("MyOIDC")
                         .build());

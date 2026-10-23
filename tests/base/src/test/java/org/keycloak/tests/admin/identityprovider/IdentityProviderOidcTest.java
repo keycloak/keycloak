@@ -893,6 +893,25 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertImportConfigFails(200, "<html>not metadata</html>", "Cannot parse identity provider metadata");
     }
 
+    @Test
+    public void importConfigDefaultsSignatureValidationToEnabledWhenMetadataOmitsJwksUri() {
+        String path = "/oidc-metadata-without-jwks";
+        String metadata = "{\"issuer\":\"https://idp.example\",\"authorization_endpoint\":\"https://idp.example/auth\","
+                + "\"token_endpoint\":\"https://idp.example/token\"}";
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200, null, metadata));
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("providerId", "oidc");
+            data.put("fromUrl", "http://127.0.0.1:" + httpServer.getAddress().getPort() + path);
+
+            Map<String, String> config = managedRealm.admin().identityProviders().importFrom(data);
+
+            assertEquals("true", config.get(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE));
+        } finally {
+            httpServer.removeContext(path);
+        }
+    }
+
     private void assertImportConfigFails(int status, String body, String expectedMessage) {
         String path = "/import-config";
         httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, status, null, body));

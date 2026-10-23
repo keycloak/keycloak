@@ -171,6 +171,19 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== Identity provider signature validation defaults to enabled
+// https://github.com/keycloak/keycloak/pull/53868
+
+When signature settings are absent from an identity provider's configuration, {project_name} now treats them as enabled.
+For SAML identity providers, this applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`). Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+For OpenID Connect identity providers, this applies to *Validate Signatures* (`validateSignature`).
+
+After upgrading, logins may fail for providers that send unsigned assertions or ID tokens, or whose signatures {project_name} cannot verify. Configure the provider to sign its assertions or ID tokens and configure the corresponding verification key or JWKS URL in {project_name}.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting. For SAML, disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*. For OpenID Connect, disable *Validate Signatures* if signature validation is not possible.
+
+Disabling signature validation reduces protection against forged identity-provider responses.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

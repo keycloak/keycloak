@@ -240,7 +240,8 @@ public class OrganizationMemberIdpLinkTest {
             secondIdp.setEnabled(true);
             secondIdp.setConfig(Map.of("clientId", "dummy", "clientSecret", "dummy",
                     "authorizationUrl", "http://localhost/dummy/auth",
-                    "tokenUrl", "http://localhost/dummy/token"));
+                    "tokenUrl", "http://localhost/dummy/token",
+                    "validateSignature", "false"));
             consumerRealm.admin().identityProviders().create(secondIdp).close();
             consumerRealm.cleanup().add(r -> {
                 try {
