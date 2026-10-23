@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  MAVEN_ARGS: "-B -nsu"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
   KC_TEST_GITHUB_SLOW_METHOD: "10"
