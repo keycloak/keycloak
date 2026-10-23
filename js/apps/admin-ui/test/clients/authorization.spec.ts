@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
-import { clickSaveButton } from "../utils/form.ts";
+import { clickCancelButton, clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
@@ -152,6 +152,27 @@ test.describe.serial("Client authentication subtab", () => {
     );
     await goToScopesSubTab(page);
     await assertRowExists(page, "The scope");
+  });
+
+  test("Should cancel editing a scope and return to the scopes list", async ({
+    page,
+  }) => {
+    await goToScopesSubTab(page);
+    await clickTableRowItem(page, "The scope");
+
+    // The edit form keeps its Revert button and gains a Cancel button that
+    // navigates back without saving, like resources, policies and permissions.
+    await expect(page.getByTestId("revert")).toBeVisible();
+    await fillForm(page, { displayName: "Should not be saved" });
+    await clickCancelButton(page);
+
+    await expect(page).toHaveURL(/\/authorization\/scopes$/);
+    await assertRowExists(page, "The scope");
+
+    await clickTableRowItem(page, "The scope");
+    await expect(page.getByTestId("displayName")).toHaveValue(
+      "Display something",
+    );
   });
 
   test("Should create a permission", async ({ page }) => {
