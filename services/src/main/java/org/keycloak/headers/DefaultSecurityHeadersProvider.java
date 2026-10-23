@@ -97,6 +97,15 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
         }
     }
 
+    @Override
+    public void addHeaders(MultivaluedMap<String, Object> responseHeaders) {
+        if (options != null && options.isSkipHeaders()) {
+            return;
+        }
+        // HTML path so per-response options (allowFrameSrc, allowAnyFrameAncestor) are applied.
+        addHtmlHeaders(responseHeaders);
+    }
+
     private void addGenericHeaders(MultivaluedMap<String, Object> headers) {
         addHeader(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, headers);
         addHeader(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, headers);
