@@ -27,10 +27,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.naming.directory.SearchControls;
 
@@ -64,6 +65,23 @@ import org.jboss.logging.Logger;
 public class LDAPUtils {
 
     private static final Logger log = Logger.getLogger(LDAPUtils.class);
+
+    private static final Pattern VARIABLES_PATTERN;
+
+    static {
+        String variablesRegex = "\\{([^}]*)\\}";
+        VARIABLES_PATTERN = Pattern.compile(variablesRegex);
+    }
+
+    /**
+     * Method to create a matcher of an input string that matches tokens that are enclosed by curly brackets.
+     *
+     * @param input The input String to match the regex.
+     * @return the matcher corresponding to the input
+     */
+    public static Matcher matchVariableInString(String input) {
+        return VARIABLES_PATTERN.matcher(input);
+    }
 
     /**
      * Method to create a user in the LDAP. The user will be created when all
@@ -178,19 +196,25 @@ public class LDAPUtils {
     }
 
     public static String getUsername(LDAPObject ldapUser, LDAPConfig config) {
-        String usernameAttr = config.getUsernameLdapAttribute();
-        String ldapUsername = ldapUser.getAttributeAsString(usernameAttr);
+		String ldapUsername = resolveLdapAttributeValue(
+			ldapUser,
+			config.getUsernameLdapAttribute());
 
-        if (ldapUsername == null) {
-            throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                    config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
-        }
+		if (ldapUsername == null) {
+			throw new ModelException(
+				"User returned from LDAP has null username! "
+					+ "Check configuration of your LDAP mappings. "
+					+ "Mapped username LDAP attribute: "
+					+ config.getUsernameLdapAttribute()
+					+ ", user DN: " + ldapUser.getDn()
+					+ ", attributes from LDAP: " + ldapUser.getAttributes());
+		}
 
-        if (config.isImportEnabled()) {
-            return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
-        }
+		if (config.isImportEnabled() && ldapUsername != null) {
+			return ldapUsername.toLowerCase();
+		}
 
-        return  ldapUsername;
+		return ldapUsername;
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {
@@ -200,6 +224,32 @@ public class LDAPUtils {
                     "Mapped UUID LDAP attribute: " + config.getUuidLDAPAttributeName() + ", user DN: " + ldapUser.getDn());
         }
     }
+
+	public static String resolveLdapAttributeValue(LDAPObject ldapUser, String mapping) {
+		Matcher matcher = LDAPUtils.matchVariableInString(mapping);
+		StringBuilder resolved = new StringBuilder();
+		boolean hasPlaceholders = false;
+
+		while (matcher.find()) {
+			hasPlaceholders = true;
+
+			String attributeName = matcher.group(1);
+			String attributeValue = ldapUser.getAttributeAsString(attributeName);
+
+			if (attributeValue == null) {
+				throw new ModelException("Cannot resolve LDAP attribute placeholder {" + attributeName + "} in mapping: " + mapping);
+			}
+
+			matcher.appendReplacement(resolved, Matcher.quoteReplacement(attributeValue));
+		}
+
+		if (!hasPlaceholders) {
+			return ldapUser.getAttributeAsString(mapping);
+		}
+
+		matcher.appendTail(resolved);
+		return resolved.toString();
+	}
 
 
     // roles & groups
