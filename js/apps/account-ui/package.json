@@ -78,6 +78,7 @@
         "public",
         "src",
         "tsconfig.json",
+        "../../tsconfig.json",
         "vite.config.ts"
       ],
       "output": [
