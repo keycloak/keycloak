@@ -78,6 +78,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -320,6 +321,10 @@ public class UserResource {
         List<String> reqActions = rep.getRequiredActions();
 
         if (reqActions != null) {
+            boolean verifyEmailAdded = isUpdateExistingUser
+                    && reqActions.contains(UserModel.RequiredAction.VERIFY_EMAIL.name())
+                    && user.getRequiredActionsStream().noneMatch(UserModel.RequiredAction.VERIFY_EMAIL.name()::equals);
+
             session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(RequiredActionProvider.class)
                     .map(ProviderFactory::getId)
@@ -332,6 +337,11 @@ public class UserResource {
                             user.removeRequiredAction(action);
                         }
                     });
+
+            // VERIFY_EMAIL is skipped at login while the email is verified, so asking for it again resets the flag
+            if (verifyEmailAdded && isVerifyEmailEnabled(session.getContext().getRealm())) {
+                user.setEmailVerified(false);
+            }
         }
 
         List<CredentialRepresentation> credentials = rep.getCredentials();
@@ -343,6 +353,11 @@ public class UserResource {
                 }
             }
         }
+    }
+
+    private static boolean isVerifyEmailEnabled(RealmModel realm) {
+        RequiredActionProviderModel verifyEmail = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        return verifyEmail != null && verifyEmail.isEnabled();
     }
 
     /**
