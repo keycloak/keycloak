@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.cache.LocalCache;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
@@ -46,6 +48,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
@@ -57,8 +60,10 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpointFactory.UserCodeFailureCounter;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.OAuth2DeviceAuthorizationResponse;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
@@ -91,6 +96,13 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     private final HttpRequest request;
 
     private Cors cors;
+
+    /**
+     * The attempt this request took out of the user code failure budget, held so it can be given back if the
+     * submitted code turns out to be a recognized one. Safe as instance state because the endpoint is created per
+     * request, both by {@link DeviceEndpointFactory#create} and by the authorization endpoint.
+     */
+    private UserCodeFailureCounter reservedAttempt;
 
     public DeviceEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
@@ -247,15 +259,27 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         if (StringUtil.isNullOrEmpty(userCode)) {
             return createVerificationPage(null);
         } else {
+            if (!reserveVerificationAttempt()) {
+                event.detail(Details.REASON, "rate limit exceeded for source IP");
+                event.error(Errors.INVALID_OAUTH2_USER_CODE);
+                logger.debugf("rate limit exceeded for source IP: %s", clientConnection != null ? clientConnection.getRemoteAddr() : "unknown");
+                return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);
+            }
+
             // code exists, probably due to using a verification_uri_complete. Start the authentication considering the client
             // that started the flow.
             OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
             String formattedUserCode = userCodeProvider.format(userCode);
             OAuth2DeviceCodeModel deviceCode = getDeviceByUserCode(session, realm, formattedUserCode);
 
+            // Only rate-limit unrecognized codes: the reservation above stands for a code nobody issued, and is
+            // given back below for one that was. Rejections for real codes (e.g., expired or resubmitted) reflect
+            // ordinary user mistakes, not guessing attempts, and shouldn't penalize shared IP addresses.
             if (deviceCode == null) {
                 return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code not found (it may already have been used)");
             }
+
+            refundVerificationAttempt();
 
             if (!deviceCode.isPending()) {
                 event.detail("device_code_user_session_id", deviceCode.getUserSessionId());
@@ -336,6 +360,114 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
 
         return null;
+    }
+
+    private String getRateLimitKey() {
+        String clientIp = clientConnection != null && clientConnection.getRemoteAddr() != null
+                ? clientConnection.getRemoteAddr() : "unknown";
+        return realm.getId() + "." + clientIp;
+    }
+
+    /**
+     * The counters live on the provider factory rather than on this instance, which is created per request. They
+     * are resolved through the session factory because this endpoint is also reachable as a sub-resource of the
+     * authorization endpoint ({@code AuthorizationEndpoint#authorizeDevice}), which constructs it directly; were
+     * the cache injected only via {@link DeviceEndpointFactory#create}, that route would silently skip the limit.
+     */
+    private LocalCache<String, UserCodeFailureCounter> getFailureCounters() {
+        ProviderFactory<RealmResourceProvider> factory = session.getKeycloakSessionFactory()
+                .getProviderFactory(RealmResourceProvider.class, DeviceEndpointFactory.PROVIDER_ID);
+
+        if (factory instanceof DeviceEndpointFactory deviceEndpointFactory) {
+            return deviceEndpointFactory.getUserCodeFailureCache();
+        }
+
+        logger.warn("Device endpoint provider factory unavailable, user code verification is not rate limited");
+        return null;
+    }
+
+    /**
+     * The window failures are counted over, taken from the realm device code lifespan.
+     * <p>
+     * It is only ever a proxy for how long a guessable code lives, because the code being guessed at may have
+     * been issued by a client overriding {@link OAuth2DeviceConfig#OAUTH2_DEVICE_CODE_LIFESPAN_PER_CLIENT}, and
+     * at verification time there is no client to ask: that is the whole premise of this endpoint. So a
+     * non-positive realm lifespan says nothing about whether live flows exist, and must not switch the limit off
+     * for a client that overrides it; fall back to the default window instead.
+     */
+    private int getCountingWindowSeconds() {
+        int lifespan = realm.getOAuth2DeviceConfig().getLifespan();
+
+        return lifespan > 0 ? lifespan : OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
+    }
+
+    /**
+     * Takes one attempt out of the budget for this realm and source address before the submitted code is looked
+     * up, which is what makes the budget hold under concurrency: reading the count first and charging the failure
+     * afterwards lets every request that arrives while one attempt remains pass the check and go on to guess, so
+     * a caller with request concurrency C gets roughly C guesses for the price of one.
+     * <p>
+     * The attempt is given back by {@link #refundVerificationAttempt()} once the code turns out to be one this
+     * realm actually issued, so in the steady state only unrecognized codes cost anything. The price of charging
+     * first is that a counter now exists for any source that submits a code, not only for one that guesses wrong;
+     * such an entry rests at zero until the cache expires it.
+     *
+     * @return {@code false} if the budget is spent, in which case the code must not be looked up
+     */
+    private boolean reserveVerificationAttempt() {
+        int maxFailures = realm.getOAuth2DeviceConfig().getMaxFailedVerificationAttempts();
+
+        // The limit has exactly one switch, and this is it.
+        if (maxFailures <= 0) {
+            return true;
+        }
+
+        LocalCache<String, UserCodeFailureCounter> counters = getFailureCounters();
+
+        if (counters == null) {
+            return true;
+        }
+
+        UserCodeFailureCounter counter = getOrCreateCounter(counters, getRateLimitKey(), getCountingWindowSeconds());
+
+        if (counter.incrementAndGet() > maxFailures) {
+            // A blocked attempt costs nothing, so that a sustained flood leaves the counter resting at the limit
+            // rather than driving it arbitrarily far past it.
+            counter.decrement();
+            return false;
+        }
+
+        reservedAttempt = counter;
+        return true;
+    }
+
+    /**
+     * Gives back the attempt taken by {@link #reserveVerificationAttempt()}, for a code that was recognized and so
+     * was not a guess. It is given back on the very counter it was taken from, which is why that counter is held
+     * for the request rather than looked up again: the entry under the key may by then be a later one, created
+     * after this window expired, and must not be credited with an attempt that was never charged to it.
+     */
+    private void refundVerificationAttempt() {
+        if (reservedAttempt != null) {
+            reservedAttempt.decrement();
+            reservedAttempt = null;
+        }
+    }
+
+    private UserCodeFailureCounter getOrCreateCounter(LocalCache<String, UserCodeFailureCounter> counters, String key, int lifespan) {
+        UserCodeFailureCounter counter = counters.get(key);
+
+        if (counter == null) {
+            synchronized (counters) {
+                counter = counters.get(key);
+                if (counter == null) {
+                    counter = new UserCodeFailureCounter(Duration.ofSeconds(lifespan));
+                    counters.put(key, counter);
+                }
+            }
+        }
+
+        return counter;
     }
 
     /**

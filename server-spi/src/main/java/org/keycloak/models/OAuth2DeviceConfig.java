@@ -32,8 +32,12 @@ public final class OAuth2DeviceConfig implements Serializable {
     public static final int DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL = 5;
 
     // realm attribute names
+    public static final int DEFAULT_OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS = 20;
+
+    // realm attribute names
     public static String OAUTH2_DEVICE_CODE_LIFESPAN = "oauth2DeviceCodeLifespan";
     public static String OAUTH2_DEVICE_POLLING_INTERVAL = "oauth2DevicePollingInterval";
+    public static String OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS = "oauth2DeviceMaxFailedVerificationAttempts";
 
     // client attribute names
     public static String OAUTH2_DEVICE_CODE_LIFESPAN_PER_CLIENT = "oauth2.device.code.lifespan";
@@ -42,6 +46,7 @@ public final class OAuth2DeviceConfig implements Serializable {
 
     private int lifespan = DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
     private int poolingInterval = DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL;
+    private int maxFailedVerificationAttempts = DEFAULT_OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS;
 
     public OAuth2DeviceConfig(RealmModel realm) {
         String lifespan = realm.getAttribute(OAUTH2_DEVICE_CODE_LIFESPAN);
@@ -54,6 +59,12 @@ public final class OAuth2DeviceConfig implements Serializable {
 
         if (pooling != null && !pooling.trim().isEmpty()) {
             setOAuth2DevicePollingInterval(Integer.parseInt(pooling));
+        }
+
+        String maxFailures = realm.getAttribute(OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS);
+
+        if (maxFailures != null && !maxFailures.trim().isEmpty()) {
+            setMaxFailedVerificationAttempts(Integer.parseInt(maxFailures));
         }
     }
 
@@ -88,6 +99,23 @@ public final class OAuth2DeviceConfig implements Serializable {
         this.poolingInterval = seconds;
 
         persistRealmAttribute(realm, OAUTH2_DEVICE_POLLING_INTERVAL, poolingInterval);
+    }
+
+    public int getMaxFailedVerificationAttempts() {
+        return maxFailedVerificationAttempts;
+    }
+
+    public void setMaxFailedVerificationAttempts(Integer maxFailures) {
+        setMaxFailedVerificationAttempts(null, maxFailures);
+    }
+
+    public void setMaxFailedVerificationAttempts(RealmModel realm, Integer maxFailures) {
+        if (maxFailures == null) {
+            maxFailures = DEFAULT_OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS;
+        }
+        this.maxFailedVerificationAttempts = maxFailures;
+
+        persistRealmAttribute(realm, OAUTH2_DEVICE_MAX_FAILED_VERIFICATION_ATTEMPTS, maxFailedVerificationAttempts);
     }
 
     public int getLifespan(ClientModel client) {
