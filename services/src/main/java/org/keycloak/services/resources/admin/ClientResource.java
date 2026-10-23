@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,11 +213,6 @@ public class ClientResource {
 
         if (!auth.clients().canManage(client)) {
             StripSecretsUtils.stripClient(representation);
-        }
-
-        if (!auth.clients().canViewClientScopes()) {
-            representation.setDefaultClientScopes(Collections.emptyList());
-            representation.setOptionalClientScopes(Collections.emptyList());
         }
 
         representation.setAccess(auth.clients().getAccess(client));
@@ -423,10 +417,6 @@ public class ClientResource {
 
     private Stream<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
         auth.clients().requireView(client);
-
-        if (!auth.clients().canViewClientScopes()) {
-            return Stream.empty();
-        }
 
         return client.getClientScopes(defaultScope).values().stream().map(ClientResource::toRepresentation);
     }

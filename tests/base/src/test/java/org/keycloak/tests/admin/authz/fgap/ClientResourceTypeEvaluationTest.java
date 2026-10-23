@@ -84,6 +84,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
@@ -126,6 +127,10 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertSupportForPolicyType("js", () -> getPolicies().js().create(new JSPolicyRepresentation()), true);
         assertSupportForPolicyType("regex", () -> getPolicies().regex().create(new RegexPolicyRepresentation()), true);
         assertSupportForPolicyType("time", () -> getPolicies().time().create(new TimePolicyRepresentation()), true);
+    }
+
+    private static String[] scopeNames(List<ClientScopeRepresentation> scopes) {
+        return scopes.stream().map(ClientScopeRepresentation::getName).toArray(String[]::new);
     }
 
     private void assertSupportForPolicyType(String type, Supplier<Response> operation, boolean supported) {
@@ -182,9 +187,15 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // the caller can view myclient
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
-        // client representation should not expose client scopes without view-client-scopes permission
-        assertThat(clientRep.getDefaultClientScopes(), empty());
-        assertThat(clientRep.getOptionalClientScopes(), empty());
+        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
+        List<ClientScopeRepresentation> adminOptionalScopes = realm.admin().clients().get(myclient.getId()).getOptionalClientScopes();
+        assertThat(adminDefaultScopes, not(empty()));
+        assertThat(adminOptionalScopes, not(empty()));
+
+        // the scopes assigned to the client are part of the client's own configuration, so a caller
+        // with view permission on the client can see them (issue #54002)
+        assertThat(clientRep.getDefaultClientScopes(), containsInAnyOrder(scopeNames(adminDefaultScopes)));
+        assertThat(clientRep.getOptionalClientScopes(), containsInAnyOrder(scopeNames(adminOptionalScopes)));
 
         // the caller can list myclient
         List<ClientRepresentation> allClients = realmAdminClient.realm(realm.getName()).clients().findAll();
@@ -194,12 +205,18 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         myclient.setName("somethingNew");
         clientResource.update(myclient);
 
-        // can't view default or optional client scopes without view-client-scopes permission
-        assertThat(clientResource.getDefaultClientScopes(), empty());
-        assertThat(clientResource.getOptionalClientScopes(), empty());
+        // the caller can list the scopes assigned to the client they are allowed to view,
+        // the same as a global admin (issue #54002)
+        assertThat(List.of(scopeNames(clientResource.getDefaultClientScopes())), containsInAnyOrder(scopeNames(adminDefaultScopes)));
+        assertThat(List.of(scopeNames(clientResource.getOptionalClientScopes())), containsInAnyOrder(scopeNames(adminOptionalScopes)));
+
+        // the realm-wide client scopes catalog stays restricted to admins with the type-level
+        // view-client-scopes permission: the caller can reach the catalog endpoint but cannot
+        // discover scopes that are not assigned to the client, the response is empty
+        // (CVE-2026-14614)
+        assertThat(realmAdminClient.realm(realm.getName()).clientScopes().findAll(), empty());
 
         // can't remove a default client scope without manage-client-scopes permission
-        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
         ClientScopeRepresentation clientScopeRep = adminDefaultScopes.get(1);
         try {
             clientResource.removeDefaultClientScope(clientScopeRep.getId());
@@ -237,9 +254,10 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myclient.getId());
 
-        // per-client MANAGE is not enough to view or manage client scopes
-        assertThat(clientResource.getDefaultClientScopes(), empty());
-        assertThat(clientResource.getOptionalClientScopes(), empty());
+        // per-client MANAGE lets the caller view the scopes assigned to that client - they are part
+        // of the client's own configuration (issue #54002) - but not manage the assignments
+        assertThat(clientResource.getDefaultClientScopes(), not(empty()));
+        assertThat(clientResource.getOptionalClientScopes(), not(empty()));
 
         List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
         assertThat(adminDefaultScopes, not(empty()));
