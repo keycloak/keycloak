@@ -38,6 +38,7 @@ import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useLocale from "../utils/useLocale";
+import { DEFLATE_COMPRESSION } from "./constants";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
@@ -250,6 +251,13 @@ export const RealmSettingsTabs = () => {
             .map(({ acr, loa }) => [acr, loa]),
         ),
       );
+    }
+
+    // Older versions of the DEF compression switch stored "true"/"false".
+    if (r.attributes?.["oid4vci.request.zip.algorithms"] === "true") {
+      r.attributes["oid4vci.request.zip.algorithms"] = DEFLATE_COMPRESSION;
+    } else if (r.attributes?.["oid4vci.request.zip.algorithms"] === "false") {
+      delete r.attributes["oid4vci.request.zip.algorithms"];
     }
 
     try {
