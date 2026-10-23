@@ -185,6 +185,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a password from login form.");
         addProviderInfo(result, "conditional-user-role", "Condition - user role",
                 "Flow is executed only if user has the given role.");
+        addProviderInfo(result, "conditional-user-group", "Condition - user group",
+                "Flow is executed only if user is member of the given group.");
         addProviderInfo(result, "conditional-user-configured", "Condition - user configured",
                 "Executes the current flow only if authenticators are configured");
         addProviderInfo(result, "conditional-user-attribute", "Condition - user attribute",
