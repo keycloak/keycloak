@@ -39,3 +39,4 @@ org.keycloak.services.clientpolicy.executor.AllowedProtocolMappersExecutorFactor
 org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutorFactory
 org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureClientNodeExecutorFactory
+org.keycloak.services.clientpolicy.executor.JWTAuthorizationGrantSettingsDisabledExecutorFactory
