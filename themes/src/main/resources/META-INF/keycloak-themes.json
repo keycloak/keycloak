@@ -6,7 +6,7 @@
         "name" : "keycloak",
         "types": [ "login", "common", "email", "welcome" ]
     }, {
-        "name" : "keycloak.v2",
+        "name" : "keycloak.v3",
         "types": [ "login" ]
     }]
 }
