@@ -31,6 +31,27 @@ COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
 RUN echo "keycloak:x:0:root" >> /etc/group && \
     echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
+# CVE-2026-91403: remove the compromised eMudhra/emSign roots (and the Sectigo "AAA Certificate
+# Services" cross-sign root, if present) from the Java trust store until the OpenJDK and
+# ca-certificates packages ship the fix. gawk is not available in this image, so the keytool
+# output is parsed in shell.
+RUN KS=/etc/pki/ca-trust/extracted/java/cacerts && \
+    distrusted() { \
+      keytool -list -v -keystore "${KS}" -storepass changeit | while IFS= read -r line; do \
+        case "${line}" in \
+          "Alias name: "*) alias="${line#Alias name: }" ;; \
+          "Owner: "*emSign*|"Owner: "*"AAA Certificate Services"*) echo "${alias}" ;; \
+        esac; \
+      done; \
+    } && \
+    chmod u+w "${KS}" && \
+    distrusted | sort -u | while IFS= read -r alias; do \
+      keytool -delete -alias "${alias}" -keystore "${KS}" -storepass changeit || exit 1; \
+    done && \
+    chmod a-w "${KS}" && \
+    [ -z "$(distrusted)" ] && \
+    rm -rf /tmp/hsperfdata_root
+
 USER 1000
 
 EXPOSE 8080
