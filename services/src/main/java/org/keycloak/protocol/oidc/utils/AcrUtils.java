@@ -25,15 +25,15 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
-import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLevelOfAuthenticationProvider;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
@@ -50,52 +50,47 @@ public class AcrUtils {
     }
 
 
-    public static List<String> getAcrValues(String claimsParam, String acrValuesParam, ClientModel client) {
+    public static List<String> getAcrValues(KeycloakSession session, String claimsParam, String acrValuesParam, ClientModel client) {
         List<String> acrValues = getAcrValues(claimsParam, acrValuesParam, false);
 
         if (acrValues.isEmpty()) {
             // Fallback to default ACR values of client (if configured)
             acrValues = getDefaultAcrValues(client);
         }
-        return enforceMinimumAcr(acrValues, client);
+        return enforceMinimumAcr(session, acrValues, client);
     }
 
     /**
-     * Maps ACR values to LoA and returns the lowest. Unmapped or non-numeric ACRs fall back to {@link Constants#MINIMUM_LOA}.
+     * Maps ACR values to LoA and returns the lowest. ACRs which cannot be mapped fall back to {@link Constants#MINIMUM_LOA}.
      */
-    public static OptionalInt getLowestLoaForAcrValues(List<String> acrValues, ClientModel client) {
-        Map<String, Integer> acrLoaMap = getAcrLoaMap(client);
-        return acrValues.stream().mapToInt(acr -> {
-            Integer loa = acrLoaMap.get(acr);
-            try {
-                return loa == null ? Integer.parseInt(acr) : loa;
-            } catch (NumberFormatException e) {
-                LOGGER.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);
-                return Constants.MINIMUM_LOA;
-            }
-        }).min();
+    public static OptionalInt getLowestLoaForAcrValues(KeycloakSession session, List<String> acrValues, ClientModel client) {
+        OIDCLevelOfAuthenticationProvider loaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
+        return acrValues.stream().mapToInt(acr -> loaProvider.getRequestedLoa(client, acr).orElseGet(() -> {
+            LOGGER.warnf("Requested acr value '%s' cannot be mapped to a level of authentication. Please doublecheck the ACR-to-LoA mapping or correct used ACR.", acr);
+            return Constants.MINIMUM_LOA;
+        })).min();
     }
 
-    public static List<String> enforceMinimumAcr(List<String> acrValues, ClientModel client) {
+    public static List<String> enforceMinimumAcr(KeycloakSession session, List<String> acrValues, ClientModel client) {
         String minimumAcr = getMinimumAcrValue(client);
 
         // If a minimum is set, we need to validate the client didn't request a lower ACR
         if (minimumAcr != null) {
             List<String> acrCopy = new ArrayList<>(acrValues);
-            Map<String, Integer> acrMap = getAcrLoaMap(client);
-            Integer minimumLoa = getLoaForAcr(minimumAcr, acrMap, client);
-            if (minimumLoa == null) {
+            OIDCLevelOfAuthenticationProvider loaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
+            OptionalInt minimumLoa = loaProvider.getRequestedLoa(client, minimumAcr);
+            if (minimumLoa.isEmpty()) {
                 LOGGER.warnf("ACR '%s' can not be mapped to a LoA value.", minimumAcr);
             } else {
                 // Remove all ACRs lower than the minimum
                 Iterator<String> iterator = acrCopy.iterator();
                 while (iterator.hasNext()) {
                     String acrValue = iterator.next();
-                    Integer loa = getLoaForAcr(acrValue, acrMap, client);
-                    if (loa == null) {
+                    OptionalInt loa = loaProvider.getRequestedLoa(client, acrValue);
+                    if (loa.isEmpty()) {
                         LOGGER.warnf("ACR '%s' can not be mapped to a LoA value.", acrValue);
                         iterator.remove();
-                    } else if (loa < minimumLoa) {
+                    } else if (loa.getAsInt() < minimumLoa.getAsInt()) {
                         iterator.remove();
                     }
                 }
@@ -107,19 +102,6 @@ public class AcrUtils {
             return acrCopy;
         }
         return acrValues;
-    }
-
-    private static Integer getLoaForAcr(String acr, Map<String, Integer> acrMap, ClientModel client) {
-        Integer loa = acrMap.get(acr);
-        if (loa == null) {
-            Optional<Integer> loaFromFlows = LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
-                    .filter(l -> acr.equals(String.valueOf(l)))
-                    .findFirst();
-            if (loaFromFlows.isPresent()) {
-                loa = loaFromFlows.get();
-            }
-        }
-        return loa;
     }
 
     private static List<String> getAcrValues(String claimsParam, String acrValuesParam, boolean essential) {
