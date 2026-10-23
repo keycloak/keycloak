@@ -180,6 +180,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder usernamePasswordFormEnabled(boolean enabled) {
+        rep.setUsernamePasswordFormEnabled(enabled);
+        return this;
+    }
+
     public RealmBuilder verifyEmail(boolean verifyEmail) {
         rep.setVerifyEmail(verifyEmail);
         return this;

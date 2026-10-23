@@ -6,7 +6,7 @@
     <#elseif section = "form">
         <div id="kc-form">
           <div id="kc-form-wrapper">
-            <#if realm.password>
+            <#if realm.password && realm.usernamePasswordFormEnabled>
                 <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
                     <#if !usernameHidden??>
                         <div class="${properties.kcFormGroupClass!}">
@@ -94,7 +94,10 @@
     <#elseif section = "socialProviders" >
         <#if realm.password && social?? && social.providers?has_content>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
-                <hr/>
+                <#-- Only show the separator when the username/password form is rendered above the providers. -->
+                <#if realm.usernamePasswordFormEnabled>
+                    <hr/>
+                </#if>
                 <h2>${msg("identity-provider-login-label")}</h2>
 
                 <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">

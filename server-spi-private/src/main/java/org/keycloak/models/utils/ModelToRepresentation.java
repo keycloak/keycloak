@@ -214,6 +214,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
         REALM_EXCLUDED_ATTRIBUTES.add("scimEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add(Constants.USERNAME_PASSWORD_FORM_ENABLED);
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -501,6 +502,7 @@ public class ModelToRepresentation {
         rep.setNotBefore(realm.getNotBefore());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
+        rep.setUsernamePasswordFormEnabled(realm.isUsernamePasswordFormEnabled());
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());

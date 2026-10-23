@@ -58,6 +58,30 @@ export const RealmSettingsLoginTab = ({
       >
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
+            label={t("usernamePasswordFormEnabled")}
+            fieldId="kc-username-password-form"
+            labelIcon={
+              <HelpItem
+                helpText={t("usernamePasswordFormHelpText")}
+                fieldLabelId="usernamePasswordFormEnabled"
+              />
+            }
+            hasNoPaddingTop
+          >
+            <Switch
+              id="kc-username-password-form-switch"
+              data-testid="username-password-form-switch"
+              value={(realm.usernamePasswordFormEnabled ?? true) ? "on" : "off"}
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={realm.usernamePasswordFormEnabled ?? true}
+              onChange={async (_event, value) => {
+                await updateSwitchValue({ usernamePasswordFormEnabled: value });
+              }}
+              aria-label={t("usernamePasswordFormEnabled")}
+            />
+          </FormGroup>
+          <FormGroup
             label={t("registrationAllowed")}
             fieldId="kc-user-reg"
             labelIcon={

@@ -76,6 +76,7 @@ public class RealmRepresentation {
     @Deprecated
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
+    protected Boolean usernamePasswordFormEnabled;
     protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
@@ -622,6 +623,14 @@ public class RealmRepresentation {
 
     public void setRegistrationAllowed(Boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public Boolean isUsernamePasswordFormEnabled() {
+        return usernamePasswordFormEnabled;
+    }
+
+    public void setUsernamePasswordFormEnabled(Boolean usernamePasswordFormEnabled) {
+        this.usernamePasswordFormEnabled = usernamePasswordFormEnabled;
     }
 
     public Boolean isRegistrationEmailAsUsername() {
