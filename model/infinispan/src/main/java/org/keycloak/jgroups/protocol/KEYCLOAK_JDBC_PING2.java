@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -82,7 +83,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private volatile Future<?> healthCheckTask;
     private volatile Runnable onHealthRestored;
 
-    @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
+    @Property(description="Staleness timeout in milliseconds. Each member periodically refreshes its own entry before it expires.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
 
     @Override
@@ -154,7 +155,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
         super.handleView(new_view, old_view, coord_changed);
-        if (coord_changed) {
+        if (!is_coord) {
+            // In contrast to the parent original method, we now need to write our own entry even if we are not the coordinator,
+            // because the coordinator may not be able to access the database.
+            writeLocalAddress();
+        }
+        // info-writer is started on all nodes, as the coordinator may not be able to access the database and we need to keep our own entry fresh.
+        startInfoWriter();
+        if (is_coord && coord_changed) {
             try {
                 removeStaleEntries();
             } catch (Exception e) {
@@ -190,20 +198,62 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         }
     }
 
+    @Override
+    protected void writeAll(Address[] excluded_mbrs) {
+        // A fresh row must reflect this member's database access and view, not another member's publication.
+        writeLocalAddress();
+    }
+
     /**
-     * The infowriter will run on the coordinator only. It will continue to run while this is the coordinator, not only after the view change
+     * Keeps every member's own entry fresh for as long as it participates in the cluster.
+     * The inherited writer stops after a bounded number of writes; readiness needs continuous
+     * publications, including from non-coordinators when their coordinator cannot access the database.
+     * Uses the same lock as {@link #stopInfoWriter()} to protect the task reference without monitor-based locking.
      */
-    protected synchronized void startInfoWriter() {
-        if(info_writer == null || info_writer.isDone())
-            info_writer=timer.scheduleWithDynamicInterval(new InfoWriter(info_writer_max_writes_after_view, info_writer_sleep_time) {
-                @Override
-                public long nextInterval() {
-                    return is_coord ? (staleness_timeout / 2 + Util.random(sleep_interval / 4)) : 0;
-                }
-            });
+    @Override
+    protected void startInfoWriter() {
+        lock.lock();
+        try {
+            if(info_writer == null || info_writer.isDone())
+                info_writer=timer.scheduleWithDynamicInterval(new InfoWriter(info_writer_max_writes_after_view, info_writer_sleep_time) {
+                    @Override
+                    public long nextInterval() {
+                        return staleness_timeout / 2 + Util.random(sleep_interval / 4);
+                    }
+                });
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Cancels publication using the same lock as {@link #startInfoWriter()}.
+     * The inherited method uses a different, monitor-based lock and would not serialize access to the task reference.
+     */
+    @Override
+    protected void stopInfoWriter() {
+        lock.lock();
+        try {
+            if (info_writer != null) {
+                info_writer.cancel(false);
+                info_writer = null;
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
+        return readDiscoveryData(cluster).entries();
+    }
+
+    protected record DiscoveryData(List<PingData> entries, Map<Address, Set<Address>> partitions) {
+        Optional<Map.Entry<Address, Set<Address>>> winningPartition() {
+            return partitions.entrySet().stream().min(SPLIT_BRAIN_DECIDER);
+        }
+    }
+
+    protected DiscoveryData readDiscoveryData(String cluster) throws Exception {
         try(Connection conn=getConnection();
             PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
             ps.setString(1, cluster);
@@ -234,7 +284,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     }
                 }
                 retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
-                return retval;
+                return new DiscoveryData(retval, members);
             }
         }
     }
@@ -317,8 +367,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                         + "the same cluster name — each deployment must be assigned a distinct cluster name via "
                         + "'cache-embedded-cluster-name'.",
                         cluster_name, local_addr);
-                case NO_COORDINATOR -> logger.warn("No coordinator found in the database for cluster '%s'. "
-                        + "This is most likely transient and will resolve once a coordinator is elected.", cluster_name);
+                case NO_COORDINATOR -> logger.warn("No fresh member entry reports a coordinator for cluster '%s'. "
+                        + "This may be transient while members publish their cluster view.", cluster_name);
                 case ERROR -> logger.warn("Failed to determine cluster health for cluster '%s' from the database. "
                         + "This may indicate a database connectivity issue.",
                         cluster_name);
@@ -345,10 +395,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         this.onHealthRestored = onHealthRestored;
     }
 
-    // Pick the largest partition first, then order by address to allow for a stable result
-    private final static Comparator<PingData> SPLIT_BRAIN_DECIDER = Comparator
-            .<PingData, Integer>comparing(p -> p.mbrs() != null ? p.mbrs().size() : 0).reversed()
-            .thenComparing(PingData::getAddress);
+    // Count fresh member publications, even when their coordinator's own row has expired.
+    private static final Comparator<Map.Entry<Address, Set<Address>>> SPLIT_BRAIN_DECIDER = Comparator
+            .<Map.Entry<Address, Set<Address>>>comparingInt(partition -> partition.getValue().size()).reversed()
+            .thenComparing(Map.Entry::getKey);
 
     /**
      * Detects a network partition and decides if the node belongs to the winning partition.
@@ -358,9 +408,9 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      * <ul>
      *     <li>Reads the data from the database</li>
      *     <li>If an error occurs fetching the data, it returns {@link HealthStatus#ERROR}</li>
-     *     <li>Filters out non coordinator members</li>
-     *     <li>If no coordinator is found, it return {@link HealthStatus#NO_COORDINATOR}</li>
-     *     <li>If multiple coordinators are found, it compares them and uses the coordinator with the lowest {@link UUID}</li>
+     *     <li>Groups fresh member entries by their reported coordinator</li>
+     *     <li>If no member reports a coordinator, it returns {@link HealthStatus#NO_COORDINATOR}</li>
+     *     <li>Chooses the partition with the most fresh entries, breaking ties by the lowest coordinator {@link UUID}</li>
      *     <li>Finally, it compares if the coordinator is the same as the current view coordinator. If so, it returns {@link HealthStatus#HEALTHY}, otherwise {@link HealthStatus#UNHEALTHY}</li>
      * </ul>
      *
@@ -369,22 +419,43 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      */
     public HealthStatus healthStatus() {
         try {
-            HealthStatus status = readFromDB(cluster_name)
-                    .stream()
-                    .filter(PingData::isCoord)
-                    .sorted(SPLIT_BRAIN_DECIDER)
-                    .map(PingData::getAddress)
-                    .findFirst()
-                    .map(view.getCoord()::equals)
-                    .map(isCoordinatorInView -> isCoordinatorInView ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY)
+            return readDiscoveryData(cluster_name).winningPartition()
+                    .map(partition -> healthStatus(partition.getKey()))
                     .orElse(HealthStatus.NO_COORDINATOR);
-
-            if (status == HealthStatus.HEALTHY && !allow_multiple_clusters && hasOtherClusters()) {
-                return HealthStatus.MULTIPLE_CLUSTERS;
-            }
-            return status;
         } catch (Exception e) {
             return HealthStatus.ERROR;
+        }
+    }
+
+    private HealthStatus healthStatus(Address coordinator) {
+        if (!view.getCoord().equals(coordinator)) {
+            return HealthStatus.UNHEALTHY;
+        }
+        return !allow_multiple_clusters && hasOtherClusters() ? HealthStatus.MULTIPLE_CLUSTERS : HealthStatus.HEALTHY;
+    }
+
+    /**
+     * Selects a database-task owner only in the partition accepted by the readiness check.
+     * Prefers its coordinator while its own publication is fresh, otherwise the lowest-address fresh member.
+     * This is not an exclusive lease: publication expiry and concurrent snapshots can cause overlapping workers.
+     */
+    public boolean isDatabaseTaskCoordinator() {
+        try {
+            var winner = readDiscoveryData(cluster_name).winningPartition();
+            if (winner.isEmpty()) {
+                return false;
+            }
+            var partition = winner.get();
+            if (healthStatus(partition.getKey()) != HealthStatus.HEALTHY) {
+                return false;
+            }
+            Address coordinator = partition.getKey();
+            Address owner = partition.getValue().contains(coordinator) ? coordinator
+                    : partition.getValue().stream().min(Address::compareTo).orElseThrow();
+            return owner.equals(local_addr);
+        } catch (Exception e) {
+            log.warn(String.format("Failed to determine database task ownership for cluster '%s'.", cluster_name), e);
+            return false;
         }
     }
 
@@ -412,7 +483,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
          */
         UNHEALTHY,
         /**
-         * No coordinator present in the database table.
+         * No fresh member entry reports a coordinator in the database table.
          */
         NO_COORDINATOR,
         /**

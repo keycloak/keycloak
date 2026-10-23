@@ -119,7 +119,6 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
 
     private static boolean shouldProcessEvents(KeycloakSession session) {
         InfinispanConnectionProviderFactory providerFactory = (InfinispanConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(InfinispanConnectionProvider.class);
-        // It is sufficient to run this on the coordinator only, let's save the bandwidth on the other nodes
-        return !providerFactory.isCoordinatorSupported() || providerFactory.isCoordinator();
+        return providerFactory.isDatabaseTaskCoordinator();
     }
 }

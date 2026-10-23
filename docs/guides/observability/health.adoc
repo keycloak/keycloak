@@ -132,7 +132,7 @@ The table below shows the available checks.
 |Yes
 
 |Cluster
-|Returns the status of the cluster (network partitions).
+|Returns the status of the cluster (network partitions) and access to the discovery database.
 |No
 
 |Graceful shutdown
