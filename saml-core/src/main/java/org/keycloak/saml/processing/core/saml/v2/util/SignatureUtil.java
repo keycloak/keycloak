@@ -61,10 +61,6 @@ public class SignatureUtil {
      */
     public static void marshall(SignatureType signature, OutputStream os) throws JAXBException, SAXException {
         throw logger.notImplementedYet("NYI");
-        /*
-         * JAXBElement<SignatureType> jsig = objectFactory.createSignature(signature); Marshaller marshaller =
-         * JAXBUtil.getValidatingMarshaller(pkgName, schemaLocation); marshaller.marshal(jsig, os);
-         */
     }
 
     /**
