@@ -253,6 +253,17 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         return getMetadataAttributePath(attributeName);
     }
 
+    /**
+     * Returns the externally visible claim paths this mapper contributes to credential metadata. Most mappers
+     * produce exactly one claim per instance, so the default wraps {@link #getMetadataAttributePath()}. A
+     * mapper that can produce more than one claim from a single instance (e.g. one that spreads an external
+     * response's fields into individual top-level claims) overrides this instead.
+     */
+    public List<List<String>> getMetadataAttributePaths() {
+        var path = getMetadataAttributePath();
+        return path.isEmpty() ? Collections.emptyList() : List.of(path);
+    }
+
     protected List<String> getMetadataAttributePath(String attributeName) {
         if (attributeName == null) {
             return Collections.emptyList();
