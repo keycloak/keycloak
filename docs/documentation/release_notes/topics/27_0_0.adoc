@@ -12,3 +12,11 @@ See the upgrading guide for migration details.
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+= Administration
+
+== LDAP mapper for translated group memberships
+
+The new *Translated Membership Mapper* for LDAP providers grants realm roles, client roles, or groups whose names are translated from the names of the LDAP groups a user is member of, by a table, by a regular expression with a template, or by both. Previously, the LDAP role and group mappers required the LDAP group name to equal the role or group name, so an LDAP group such as `myapp-Admin-users` could not grant the role `Admin`.
+
+For more details, see the link:{adminguide_link}#_translated_membership_mapper[{adminguide_name}].
