@@ -23,6 +23,7 @@ import org.keycloak.testsuite.util.UIUtils;
 
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -100,11 +101,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getCssSelectorForLookupActiveCard() {
-        return By.cssSelector(".pf-m-selected");
+        return By.cssSelector("input[name='selectedCredentialId']:checked + label");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
@@ -112,6 +113,12 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
+    }
+
+    // Moves from the one-time code field back to the credential selector with Shift+Tab and returns the focused element
+    public WebElement focusOtpCredentialSelectorWithKeyboard() {
+        otpInput.sendKeys(Keys.chord(Keys.SHIFT, Keys.TAB));
+        return driver.switchTo().activeElement();
     }
 
 }
