@@ -194,7 +194,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 if (client == null) {
                     throw invalidRedirectUri("Invalid parameter: clientId");
                 }
-                if (isAuthFlowWithRedirectEnabled(client)) {
+                if (redirectUriParam != null && isAuthFlowWithRedirectEnabled(client)) {
                     verifyRedirectUri(redirectUriParam, true);
                 }
                 return;

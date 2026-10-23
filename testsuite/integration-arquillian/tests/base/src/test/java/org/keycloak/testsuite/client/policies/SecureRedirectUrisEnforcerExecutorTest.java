@@ -42,6 +42,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -702,6 +703,91 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         // The redirect_uri matches the registered redirect URI, but HTTP scheme should be rejected
         // by secure-redirect-uris-enforcer when AUTHORIZATION_REQUEST is enforced.
         testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequestWithRedirectUriToClient(alphaClientId, "http://oauth.redirect/some");
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_parAuthorizationRequest() throws Exception {
+        // Register profile
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder())
+                        .createProfile(PROFILE_NAME, "Secure Redirect URIs Profile")
+                        .addExecutor(
+                                SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it -> {
+                                        it.setAllowIPv4LoopbackAddress(true);
+                                        it.setAllowIPv6LoopbackAddress(true);
+                                        it.setAllowHttpScheme(true);
+                                })
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Register policy
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder())
+                        .createPolicy(
+                                POLICY_NAME,
+                                "Secure Redirect URIs Policy",
+                                Boolean.TRUE
+                        )
+                        .addCondition(
+                                AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig()
+                        )
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String redirectUri =
+                ServerURLs.getAuthServerContextRoot()
+                        + "/auth/realms/master/app/auth";
+
+        // Register client
+        List<String> registerResult =
+                testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                        List.of(redirectUri)
+                );
+
+        String clientId = registerResult.get(0);
+
+        // Pushed Authorization Request
+        oauth.client(clientId, "secret");
+        oauth.redirectUri(redirectUri);
+
+        ParResponse parResponse = oauth.doPushedAuthorizationRequest();
+
+        assertEquals(201, parResponse.getStatusCode());
+        Assertions.assertNotNull(parResponse.getRequestUri());
+
+        // Authorization Request containing client_id and request_uri,
+        // but not redirect_uri, scope, or response_type
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+
+        String state =
+                "testSecureRedirectUrisEnforcerExecutor_parAuthorizationRequest";
+
+        AuthorizationEndpointResponse authorizationResponse =
+                oauth.loginForm()
+                        .requestUri(parResponse.getRequestUri())
+                        .state(state)
+                        .doLogin("test-user@localhost", "password");
+
+        assertEquals(state, authorizationResponse.getState());
+        Assertions.assertNotNull(authorizationResponse.getCode());
+
+        // Token Request
+        oauth.redirectUri(redirectUri);
+
+        AccessTokenResponse tokenResponse =
+                oauth.doAccessTokenRequest(authorizationResponse.getCode());
+
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        oauth.doLogout(tokenResponse.getRefreshToken());
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List<String> redirectUrisList) {
