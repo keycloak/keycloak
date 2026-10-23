@@ -55,6 +55,11 @@ public class SamlClient {
                 return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY);
             }
 
+            @Override
+            public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlResponse) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlResponse, GeneralConstants.SAML_RESPONSE_KEY);
+            }
+
             private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType) {
                 HttpPost post = new HttpPost(samlEndpoint);
                 List<NameValuePair> parameters = new LinkedList<>();
@@ -88,6 +93,7 @@ public class SamlClient {
         };
 
         public abstract HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
+        public abstract HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlResponse);
         public abstract URI getBindingUri();
     }
 
