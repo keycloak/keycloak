@@ -778,7 +778,7 @@ export const RealmSettingsTokensTab = ({
                         .includes(DEFLATE_COMPRESSION)
                     }
                     onChange={(_event, checked) =>
-                      field.onChange(checked ? DEFLATE_COMPRESSION : undefined)
+                      field.onChange(checked ? DEFLATE_COMPRESSION : "")
                     }
                   />
                 )}

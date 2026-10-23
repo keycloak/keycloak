@@ -253,10 +253,13 @@ export const RealmSettingsTabs = () => {
       );
     }
 
-    // Older versions of the DEF compression switch stored "true"/"false".
+    // The DEF compression switch uses "" when off; older versions stored "true"/"false".
     if (r.attributes?.["oid4vci.request.zip.algorithms"] === "true") {
       r.attributes["oid4vci.request.zip.algorithms"] = DEFLATE_COMPRESSION;
-    } else if (r.attributes?.["oid4vci.request.zip.algorithms"] === "false") {
+    } else if (
+      r.attributes?.["oid4vci.request.zip.algorithms"] === "false" ||
+      r.attributes?.["oid4vci.request.zip.algorithms"] === ""
+    ) {
       delete r.attributes["oid4vci.request.zip.algorithms"];
     }
 

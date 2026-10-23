@@ -414,6 +414,38 @@ test("should save Deflate Compression setting", async ({ page }) => {
   ).toBeUndefined();
 });
 
+test("should disable saved Deflate Compression value", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "DEF",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  const deflateSwitch = page.getByTestId(
+    "attributes.oid4vci.request.zip.algorithms",
+  );
+  await expect(deflateSwitch).toBeChecked();
+
+  await deflateSwitch.click({ force: true });
+  await expect(deflateSwitch).not.toBeChecked();
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+});
+
 test("should normalize legacy enabled Deflate Compression value on save", async ({
   page,
 }) => {
