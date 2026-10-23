@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @KeycloakIntegrationTest
 public class GeneratedEcdsaKeyProviderTest {
@@ -223,6 +224,79 @@ public class GeneratedEcdsaKeyProviderTest {
         assertNotEquals(originalKey.getAlgorithm(), key.getAlgorithm());
         assertEquals(ToEcInNistRep, GeneratedEcdsaKeyProviderFactory.convertJWSAlgorithmToECDomainParmNistRep(key.getAlgorithm()));
         assertEquals(ToEcInNistRep, getCurveFromPublicKey(key.getPublicKey()));
+    }
+
+    @Test
+    public void certificateIsStableAcrossProviderReloads() {
+        String keyComponentId = supportedEc("P-256", true);
+        KeyMetadataRepresentation originalKey = getKey(keyComponentId);
+        assertCertificateMatchesPublicKey(originalKey);
+
+        assertEquals(originalKey.getCertificate(), getKey(keyComponentId).getCertificate());
+
+        // updating the component invalidates the cached component and re-creates the key provider
+        updatePriority(keyComponentId);
+
+        KeyMetadataRepresentation key = getKey(keyComponentId);
+        assertEquals(originalKey.getKid(), key.getKid());
+        assertEquals(originalKey.getCertificate(), key.getCertificate());
+    }
+
+    @Test
+    public void certificateIsGeneratedWhenEnabledOnExistingKey() {
+        String keyComponentId = supportedEc("P-256", false);
+        KeyMetadataRepresentation originalKey = getKey(keyComponentId);
+        assertNull(originalKey.getCertificate());
+
+        ComponentRepresentation rep = realm.admin().components().component(keyComponentId).toRepresentation();
+        rep.getConfig().putSingle(Attributes.EC_GENERATE_CERTIFICATE_KEY, "true");
+        realm.admin().components().component(keyComponentId).update(rep);
+
+        KeyMetadataRepresentation key = getKey(keyComponentId);
+        assertEquals(originalKey.getKid(), key.getKid());
+        assertCertificateMatchesPublicKey(key);
+
+        updatePriority(keyComponentId);
+        assertEquals(key.getCertificate(), getKey(keyComponentId).getCertificate());
+    }
+
+    @Test
+    public void certificateIsRegeneratedWhenCurveChanges() {
+        String keyComponentId = supportedEc("P-256", true);
+        KeyMetadataRepresentation originalKey = getKey(keyComponentId);
+
+        ComponentRepresentation rep = realm.admin().components().component(keyComponentId).toRepresentation();
+        rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, "P-384");
+        realm.admin().components().component(keyComponentId).update(rep);
+
+        KeyMetadataRepresentation key = getKey(keyComponentId);
+        assertNotEquals(originalKey.getKid(), key.getKid());
+        assertNotEquals(originalKey.getCertificate(), key.getCertificate());
+        assertCertificateMatchesPublicKey(key);
+
+        updatePriority(keyComponentId);
+        assertEquals(key.getCertificate(), getKey(keyComponentId).getCertificate());
+    }
+
+    private KeyMetadataRepresentation getKey(String keyComponentId) {
+        for (KeyMetadataRepresentation k : realm.admin().keys().getKeyMetadata().getKeys()) {
+            if (KeyType.EC.equals(k.getType()) && keyComponentId.equals(k.getProviderId())) {
+                return k;
+            }
+        }
+        throw new AssertionError("Key not found for component " + keyComponentId);
+    }
+
+    private void updatePriority(String keyComponentId) {
+        ComponentRepresentation rep = realm.admin().components().component(keyComponentId).toRepresentation();
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(System.currentTimeMillis()));
+        realm.admin().components().component(keyComponentId).update(rep);
+    }
+
+    private void assertCertificateMatchesPublicKey(KeyMetadataRepresentation key) {
+        assertNotNull(key.getCertificate());
+        X509Certificate certificate = PemUtils.decodeCertificate(key.getCertificate());
+        assertEquals(key.getPublicKey(), Base64.getEncoder().encodeToString(certificate.getPublicKey().getEncoded()));
     }
 
     protected ComponentRepresentation createRep(String name, String providerId) {
