@@ -373,20 +373,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
 
-        OIDCLevelOfAuthenticationProvider acrToLoaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
-
-        try {
-            acrValues.stream()
-                    .map(acrToLoaProvider::getRequestedLoa)
-                    .flatMap(Optional::stream)
-                    .mapToInt(Integer::intValue)
-                    .min()
-                    .ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
-        } catch (ErrorPageException e) {
-            event.detail(Details.REASON, "Invalid requested essential acr value");
-            event.error(Errors.INVALID_REQUEST);
-            throw e;
-        }
+        boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
+        OIDCLevelOfAuthenticationProvider loaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
+        acrValues.stream().mapToInt(acr -> loaProvider.getRequestedLoa(acr).orElseGet(() -> {
+            // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot meet the specification requirement. Otherwise fallback to minimum LoA
+            if (essential) {
+                logger.errorf("Requested essential acr value '%s' cannot be mapped to a level of authentication. Please doublecheck the ACR-to-LoA mapping or correct ACR passed in the 'claims' parameter.", acr);
+                event.detail(Details.REASON, "Invalid requested essential acr value");
+                event.error(Errors.INVALID_REQUEST);
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+            }
+            logger.warnf("Requested acr value '%s' cannot be mapped to a level of authentication. Please doublecheck the ACR-to-LoA mapping or correct used ACR.", acr);
+            return Constants.MINIMUM_LOA;
+        })).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
 
         if (request.getAdditionalReqParams() != null) {

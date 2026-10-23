@@ -17,19 +17,20 @@
 
 package org.keycloak.protocol.oidc;
 
-import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.keycloak.provider.Provider;
 
 /**
- * Determines the requested level of authentication for the current request, for example using acr_values.
+ * Maps the acr values requested by an OIDC client, through the acr_values parameter or the acr claim of the claims parameter,
+ * to the numerical level of authentication used by the authentication flow.
  */
 public interface OIDCLevelOfAuthenticationProvider extends Provider {
     /**
-     * Determines the current requested level of authentication.
+     * Maps a single requested acr value to a level of authentication.
      *
-     * @param acrValue provided acr-value
-     * @return Numerical level of authentication or Optional.empty, if no mapping is possible
+     * @param acrValue requested acr value
+     * @return numerical level of authentication or an empty OptionalInt if the acr value cannot be mapped
      */
-    Optional<Integer> getRequestedLoa(String acrValue);
+    OptionalInt getRequestedLoa(String acrValue);
 }
