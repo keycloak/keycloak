@@ -54,4 +54,5 @@ At the moment, workflows support event functions for the following realm resourc
 | `user-group-membership-removed` | User is removed from a group. | The group name or path
 | `client-created` | Client is added to the realm. | None
 | `client-authenticated` | Client authenticates to the realm. | None
+| `client-activity` | A user signs in through the client, or the client exchanges an authorization code or refreshes a token for a user. Failed attempts are not counted. | None
 |===
