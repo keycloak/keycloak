@@ -533,10 +533,10 @@ public class LDAPOperationManager {
      *
      * @param dn
      * @param password
-     * @throws AuthenticationException if authentication is not successful
+     * @throws NamingException if authentication is not successful
      *
      */
-    public void authenticate(LdapName dn, String password) throws AuthenticationException {
+    public void authenticate(LdapName dn, String password) throws NamingException {
 
         if (password == null || password.isEmpty()) {
             throw new AuthenticationException("Empty password used");
@@ -606,7 +606,7 @@ public class LDAPOperationManager {
             }
             success = true;
 
-        } catch (AuthenticationException ae) {
+        } catch (NamingException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }

@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.keycloak.storage.ldap.mappers.freeipa.FreeIPAUserAccountControlStorageMapperFactory
 org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory
 org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory
 org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapperFactory

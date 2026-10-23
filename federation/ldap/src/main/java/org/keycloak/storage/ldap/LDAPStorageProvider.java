@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.naming.AuthenticationException;
 import javax.naming.CommunicationException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
@@ -864,7 +863,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), realm.getName());
                 }
                 return true;
-            } catch (AuthenticationException ae) {
+            } catch (NamingException ae) {
                 AtomicReference<Boolean> processed = new AtomicReference<>(false);
                 realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                         .sorted(ldapMappersComparator.sortDesc())
