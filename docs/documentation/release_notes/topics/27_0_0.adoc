@@ -12,3 +12,11 @@ See the upgrading guide for migration details.
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+= Administration
+
+== Token request parameters for OpenID Connect and OAuth 2.0 identity providers
+
+OpenID Connect and OAuth 2.0 identity providers have a new *Token request parameters* setting. The configured name/value pairs are added to the authorization code exchange and the refresh token request that {project_name} sends to the token endpoint of the external identity provider.
+
+For more information, see the link:{adminguide_link}#_identity_broker_oidc[OpenID Connect v1.0 identity providers] and link:{adminguide_link}#_identity_broker_oauth[OAuth v2 identity providers] sections in the {adminguide_name}.

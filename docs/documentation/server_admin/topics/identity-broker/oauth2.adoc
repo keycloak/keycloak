@@ -56,6 +56,9 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 |Requires short state parameter
 |This switch needs to be enabled if identity provider does not support long value of the `state` parameter sent in the initial OAuth2 authorization request (EG. more than 100 characters). In this case, {project_name} will try to make shorter `state` parameter and may omit some client data to be sent in the initial request. This may result in the limited functionality in some very corner case scenarios (EG. in case that IDP redirects to {project_name} with the error in the OAuth2 authorization response, {project_name} might need to display error page instead of being able to redirect to the client in case that login session is expired).
 
+|Token request parameters
+|Name/value pairs {project_name} adds to the requests it sends to the token endpoint of the external IDP: the authorization code exchange and the refresh token request. Use them for an IDP that expects non-standard parameters on these requests. Names and values are sent as entered; a name with leading or trailing whitespace is refused. Values can contain any character. Each name can be configured once. Parameters that {project_name} sets itself cannot be configured: `code`, `redirect_uri`, `grant_type`, `code_verifier`, `refresh_token`, `client_id`, `client_secret`, `client_assertion` and `client_assertion_type`. The Bitbucket, Facebook, GitHub, GitLab, Google, Instagram, LinkedIn, Microsoft, OpenShift v4, PayPal and Stack Overflow social identity providers also send these parameters; for them, the setting is available only through the Admin REST API.
+
 |===
 
 After the user authenticates to the identity provider and is redirected back to {project_name}, the broker will fetch the user profile information from the endpoint defined in the `User Info URL` setting. For that,
