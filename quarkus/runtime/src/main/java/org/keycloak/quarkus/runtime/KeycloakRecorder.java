@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,6 +72,10 @@ import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationStaticInitListener;
+import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
+import io.quarkus.hibernate.orm.runtime.tenant.DataSourceTenantConnectionResolver;
+import io.quarkus.hibernate.orm.runtime.tenant.HibernateCurrentTenantIdentifierResolver;
+import io.quarkus.hibernate.orm.runtime.tenant.HibernateMultiTenantConnectionProvider;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
@@ -260,6 +265,36 @@ public class KeycloakRecorder {
                 // no-op
             }
         };
+    }
+
+    public HibernateOrmIntegrationStaticInitListener createMultiTenancyListener(String persistenceUnitName, MultiTenancyStrategy multiTenancyStrategy) {
+        return new HibernateOrmIntegrationStaticInitListener() {
+            @Override
+            public void contributeBootProperties(BiConsumer<String, Object> propertyCollector) {
+                if (multiTenancyStrategy.requiresMultiTenantConnectionProvider()) {
+                    propertyCollector.accept(AvailableSettings.MULTI_TENANT_CONNECTION_PROVIDER,
+                            new HibernateMultiTenantConnectionProvider(persistenceUnitName));
+                }
+                propertyCollector.accept(AvailableSettings.MULTI_TENANT_IDENTIFIER_RESOLVER,
+                        new HibernateCurrentTenantIdentifierResolver(persistenceUnitName));
+            }
+
+            @Override
+            public void onMetadataInitialized(Metadata metadata, BootstrapContext bootstrapContext,
+                    BiConsumer<String, Object> propertyCollector) {
+                // no-op
+            }
+        };
+    }
+
+    /**
+     * Supplies the default {@link DataSourceTenantConnectionResolver} for a DATABASE/SCHEMA multi-tenant user
+     * persistence unit, pointed at the given datasource (used as-is for SCHEMA; for DATABASE the tenant identifier
+     * selects the datasource and this value is ignored).
+     */
+    public Supplier<DataSourceTenantConnectionResolver> createDataSourceTenantConnectionResolver(String persistenceUnitName,
+            String dataSourceName, MultiTenancyStrategy multiTenancyStrategy) {
+        return () -> new DataSourceTenantConnectionResolver(persistenceUnitName, Optional.of(dataSourceName), multiTenancyStrategy);
     }
 
     /**
