@@ -50,12 +50,16 @@ public class AsymmetricSignatureVerifierContext implements SignatureVerifierCont
             verifier.update(data);
             return verifier.verify(signature);
         } catch (Exception e) {
-            throw new VerificationException("Signing failed", e);
+            throw new VerificationException("Verification failed", e);
         }
     }
 
     private Signature getSignature()
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        if (KeyType.AKP.equals(key.getType())) {
+            return CryptoIntegration.getProvider().getSignature(key.getAlgorithmOrDefault());
+        }
+
         try {
             return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
         } catch (NoSuchAlgorithmException e) {

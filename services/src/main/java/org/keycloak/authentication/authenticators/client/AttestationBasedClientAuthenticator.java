@@ -409,7 +409,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         // Client Attestation JWT signature check
         //
         Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.getName());
         if (signatureProvider == null) {
             throw new TokenVerificationException(attestationJwt, "Signature provider not found for algorithm: " + algorithm);
         }
@@ -486,7 +486,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         // Client Attestation PoP JWT signature check
         //
         Algorithm algorithm = jws.getHeader().getAlgorithm();
-        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.getName());
         if (signatureProvider == null) {
             throw new TokenVerificationException(attestationPoPJwt, "Signature provider not found for algorithm: " + algorithm);
         }
