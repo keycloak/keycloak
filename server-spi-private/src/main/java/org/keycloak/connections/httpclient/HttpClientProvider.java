@@ -23,6 +23,7 @@ import java.io.InputStream;
 import org.keycloak.provider.Provider;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,6 +39,8 @@ public interface HttpClientProvider extends Provider {
      * by the code that instantiated them.
      * @return 
      */
+    // TODO: Change return type to HttpClient in next major release to make non-ownership contract explicit
+    @NotOwning
     CloseableHttpClient getHttpClient();
 
     /**

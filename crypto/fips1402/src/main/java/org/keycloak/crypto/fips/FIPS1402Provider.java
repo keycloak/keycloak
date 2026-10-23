@@ -247,6 +247,10 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
+    // Socket ownership is returned directly or through AbstractDelegatingSSLSocket, but the anonymous
+    // factory's inherited contracts do not model these transfers. Revisit when socket-factory ownership
+    // and alias contracts are modeled.
+    @SuppressWarnings({"override.return", "required.method.not.called", "reset.not.owning"})
     public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
         // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
         return new CustomSSLSocketFactory(delegate) {

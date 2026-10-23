@@ -264,11 +264,8 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
         Ipatuura ipatuura = this.ipatuura;
 
         SCIMUser user = null;
-        SimpleHttpResponse response;
-        try {
-            response = ipatuura.clientRequest("/Users", "GET", null);
+        try (SimpleHttpResponse response = ipatuura.clientRequest("/Users", "GET", null)) {
             user = response.asJson(SCIMUser.class);
-            response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);

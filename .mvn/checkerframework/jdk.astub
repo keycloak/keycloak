@@ -1,0 +1,79 @@
+import org.checkerframework.checker.mustcall.qual.MustCall;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+import org.checkerframework.checker.mustcall.qual.Owning;
+
+package org.infinispan.manager;
+
+// Incremental-checking exemption: the shared cache manager is stopped by its provider factory.
+// Replace with explicit ownership/stop contracts when enabling model/infinispan checking.
+@MustCall({})
+interface EmbeddedCacheManager extends CacheContainer {}
+
+package org.jgroups;
+
+// Lifecycle checking is deferred with model/infinispan; channels still require close().
+// Replace this blanket exemption with transport ownership/close contracts when enabling that module.
+@MustCall({})
+class JChannel extends Channel {}
+
+package org.hibernate.engine.jdbc.connections.spi;
+
+interface JdbcConnectionAccess {
+    void releaseConnection(@Owning Connection connection) throws SQLException;
+}
+
+package jakarta.persistence;
+
+interface ConnectionFunction<C, T> {
+    T apply(@NotOwning C connection) throws Exception;
+}
+
+interface ConnectionConsumer<C> {
+    void accept(@NotOwning C connection) throws Exception;
+}
+
+package liquibase.database;
+
+interface Database {
+    @NotOwning DatabaseConnection getConnection();
+}
+
+package liquibase.database.jvm;
+
+class JdbcConnection {
+    @NotOwning Connection getWrappedConnection();
+}
+
+package io.quarkus.runtime;
+
+abstract class Application {
+    @NotOwning static Application currentApplication();
+}
+
+package org.apache.http.impl.client;
+
+class AbstractResponseHandler<T> implements ResponseHandler<T> {
+    T handleResponse(@NotOwning HttpResponse response) throws HttpResponseException, IOException;
+}
+
+package com.fasterxml.jackson.core;
+
+abstract class JsonGenerator {
+    @NotOwning JsonGenerator useDefaultPrettyPrinter();
+}
+
+package com.fasterxml.jackson.databind;
+
+class JsonSerializer<T> {
+    void serialize(T value, @NotOwning JsonGenerator gen, SerializerProvider serializers) throws IOException;
+}
+
+class SerializerProvider {
+    @NotOwning JsonGenerator getGenerator();
+}
+
+package tools.jackson.databind;
+
+class ValueSerializer<T> {
+    void serialize(T value, @NotOwning JsonGenerator gen, SerializationContext ctxt);
+}

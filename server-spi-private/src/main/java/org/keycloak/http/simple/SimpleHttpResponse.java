@@ -20,7 +20,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.entity.ContentType;
+import org.checkerframework.checker.mustcall.qual.InheritableMustCall;
 
+@InheritableMustCall("close")
 public class SimpleHttpResponse implements AutoCloseable {
 
     private final HttpResponse response;
