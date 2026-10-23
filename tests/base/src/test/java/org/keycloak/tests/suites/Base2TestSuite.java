@@ -20,6 +20,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.error",
         "org.keycloak.tests.exportimport",
         "org.keycloak.tests.events",
+        "org.keycloak.tests.federation",
         "org.keycloak.tests.forms",
 })
 public class Base2TestSuite {
