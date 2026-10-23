@@ -18,6 +18,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -29,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeResources;
 import org.keycloak.theme.ThemeResourcesParser;
@@ -110,7 +112,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             String templateName = "error.ftl";
 
             String content = freeMarker.processTemplate(attributes, templateName, theme);
-            return Response.status(responseStatus).type(MediaType.TEXT_HTML_UTF_8_TYPE).entity(content).build();
+            return Response.status(responseStatus).type(MediaType.TEXT_HTML_UTF_8_TYPE).cacheControl(CacheControlUtil.noCache()).entity(content).build();
         } catch (Throwable t) {
             logger.error("Failed to create error page", t);
             return Response.serverError().build();
@@ -199,6 +201,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         String errorMessage = messagesBundle.getProperty(errorKey);
 
         attributes.put("message", new MessageBean(errorMessage, MessageType.ERROR));
+        attributes.put("nonce", new NonceBean());
         // Default fallback in case an error occurs determining the dark mode later on.
         attributes.put("darkMode", true);
 

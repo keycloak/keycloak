@@ -27,6 +27,7 @@ import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
+import org.keycloak.tests.utils.InlineScriptNonceUtil;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -77,6 +79,23 @@ public class OID4VPCrossDeviceTest extends OID4VPVerifierTestBase {
         byte[] png = Base64.getDecoder().decode(qrImage.group(1).trim());
         assertTrue(png.length > 8 && png[1] == 'P' && png[2] == 'N' && png[3] == 'G',
                 "The QR code image is not a PNG");
+    }
+
+    @Test
+    public void walletLoginPageInlineScriptsContainNonce() {
+        openWalletPage();
+        var pageSource = driver.driver().getPageSource();
+
+        var inlineScriptsWithoutNonce = InlineScriptNonceUtil.getInlineScriptTagsWithoutNonce(pageSource);
+        assertTrue(inlineScriptsWithoutNonce.isEmpty(),
+                () -> String.format("Page contains %d scripts without nonce: %s", inlineScriptsWithoutNonce.size(), inlineScriptsWithoutNonce));
+
+        var nonces = InlineScriptNonceUtil.getScriptNonceValues(pageSource);
+        assertFalse(nonces.isEmpty(), "Wallet login page should contain at least one inline script with a nonce");
+
+        openWalletPage();
+        assertNotEquals(nonces, InlineScriptNonceUtil.getScriptNonceValues(driver.driver().getPageSource()),
+                "Nonces should be unique per page invocation");
     }
 
     @Test

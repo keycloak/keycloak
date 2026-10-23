@@ -53,7 +53,7 @@
         padding-top: 32px;
       }
     </style>
-    <script type="importmap">
+    <script type="importmap" nonce="${nonce.value}">
       {
         "imports": {
           "react": "${resourceCommonUrl}/vendor/react/react.production.min.js",
@@ -63,7 +63,7 @@
       }
     </script>
     <#if darkMode>
-      <script type="module" async blocking="render">
+      <script type="module" async blocking="render" nonce="${nonce.value}">
           const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -85,14 +85,14 @@
       <script type="module" src="${resourceCommonUrl}/vendor/web-crypto-shim/web-crypto-shim.js"></script>
     </#if>
     <#if devServerUrl?has_content>
-      <script type="module">
+      <script type="module" nonce="${nonce.value}">
         import { injectIntoGlobalHook } from "${devServerUrl}/@react-refresh";
 
         injectIntoGlobalHook(window);
         window.$RefreshReg$ = () => {};
         window.$RefreshSig$ = () => (type) => type;
       </script>
-      <script type="module">
+      <script type="module" nonce="${nonce.value}">
         import { inject } from "${devServerUrl}/@vite-plugin-checker-runtime";
 
         inject({

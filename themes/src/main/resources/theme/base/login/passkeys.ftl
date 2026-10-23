@@ -15,7 +15,7 @@
                 </#list>
             </form>
         </#if>
-        <script type="module">
+        <script type="module" nonce="${nonce.value}">
            <#outputformat "JavaScript">
            import { authenticateByWebAuthn } from "${url.resourcesPath}/js/webauthnAuthenticate.js";
            import { initAuthenticate } from "${url.resourcesPath}/js/passkeysConditionalAuth.js";

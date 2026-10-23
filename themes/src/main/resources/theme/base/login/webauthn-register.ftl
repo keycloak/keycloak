@@ -22,7 +22,7 @@
             </div>
         </form>
 
-        <script type="module">
+        <script type="module" nonce="${nonce.value}">
             <#outputformat "JavaScript">
             import { registerByWebAuthn } from "${url.resourcesPath}/js/webauthnRegister.js";
             const registerButton = document.getElementById('registerWebAuthn');
