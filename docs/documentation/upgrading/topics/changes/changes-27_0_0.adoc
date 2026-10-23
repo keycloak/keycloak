@@ -183,7 +183,7 @@ It also lists significant changes to internal APIs.
 When {project_name} acts as a SAML service provider through identity brokering, an assertion that contains a `OneTimeUse` condition is now accepted only once.
 Previously, the condition was parsed but not enforced, so the same assertion could be presented again within its validity period.
 
-After upgrading, a replayed assertion is rejected with an error page and an `IDENTITY_PROVIDER_RESPONSE` error event, and the user is not logged in.
+After upgrading, a replayed assertion is rejected with an error page and an `IDENTITY_PROVIDER_RESPONSE_ERROR` event, and the user is not logged in.
 The event has a plain-text `reason` detail that explains why the assertion was rejected, for example that it was already used or that it exceeds the maximum age.
 This affects only identity providers that include the condition in their assertions, including a {project_name} realm acting as the identity provider when the *Include OneTimeUse Condition* option is enabled on the SAML client.
 Assertions without the condition are not affected.
