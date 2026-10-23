@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -70,12 +71,23 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig imp
     }
 
     @Override
-    public void validate(RealmModel realm) {
+    public void validate(KeycloakSession session, RealmModel realm) {
+        // Google has fixed, well-known endpoints, so it intentionally replaces the generic OIDC URL/PKCE
+        // validation (super.validate) with an issuer-only check rather than extending it. The mTLS
+        // (tls_client_auth) validation, however, is not Google-specific: a Google IdP created/updated via
+        // REST or import with tls_client_auth must be rejected here if it has no usable client-certificate
+        // key provider, instead of being persisted and then deterministically failing on the first
+        // backchannel request. So we invoke the extracted mTLS checks explicitly while preserving the
+        // issuer-only exception above.
         if (!GoogleIdentityProvider.ISSUER_URL.equals(getConfig().get(ISSUER))) {
            throw new IllegalArgumentException("The issuer url [" + getConfig().get(ISSUER) + "] is invalid");
         }
         if (isJWTAuthorizationGrantEnabled()) {
             validateIssuer(realm, IdentityProviderType.JWT_AUTHORIZATION_GRANT);
+        }
+        if (isTlsClientAuth()) {
+            validateTlsClientAuth(realm);
+            validateTlsClientAuthKeyResolution(session, realm);
         }
     }
 }
