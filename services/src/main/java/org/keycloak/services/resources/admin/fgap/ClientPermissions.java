@@ -675,6 +675,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         map.put("view", canView(client));
         boolean isAdminPermissionsClient = AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, client.getId());
         map.put("manage", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canManage(client));
+        map.put("manageClientScopes", map.get("manage") && canManageClientScopes());
         map.put("configure", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canConfigure(client));
         return map;
     }

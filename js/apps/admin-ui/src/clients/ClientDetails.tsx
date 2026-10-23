@@ -582,6 +582,7 @@ export default function ClientDetails() {
                       clientId={clientId}
                       protocol={client!.protocol!}
                       fineGrainedAccess={client!.access?.manage}
+                      canManageClientScopes={client!.access?.manageClientScopes}
                     />
                   </Tab>
                   <Tab

@@ -21,9 +21,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -46,6 +48,32 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest(config = AbstractFineGrainedAdminTest.FineGrainedAdminServerConf.class)
 public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
+
+    @Test
+    public void testDelegatedClientManagerScopeAssignments() {
+        runOnServer.run(FineGrainedAdminRestTest::setupPolices);
+        runOnServer.run(FineGrainedAdminRestTest::setupUsers);
+
+        ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_NAME).get(0);
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("delegated-manager-scope");
+        scope.setProtocol("openid-connect");
+        String scopeId;
+        try (Response response = managedRealm.admin().clientScopes().create(scope)) {
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.admin().clients().get(client.getId()).addDefaultClientScope(scopeId);
+
+        try (Keycloak delegatedAdmin = adminClientFactory.create()
+                .realm(REALM_NAME).username("clientManager").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
+            ClientResource resource = delegatedAdmin.realm(REALM_NAME).clients().get(client.getId());
+            Assertions.assertTrue(resource.getDefaultClientScopes().stream().anyMatch(s -> scopeId.equals(s.getId())));
+            Assertions.assertFalse(resource.toRepresentation().getAccess().get("manageClientScopes"));
+            resource.removeDefaultClientScope(scopeId);
+            Assertions.assertTrue(resource.getDefaultClientScopes().stream().noneMatch(s -> scopeId.equals(s.getId())));
+            Assertions.assertThrows(ForbiddenException.class, () -> resource.addDefaultClientScope(scopeId));
+        }
+    }
 
     @Test
     public void testRestEvaluation() throws Exception {

@@ -53,6 +53,7 @@ export type ClientScopesProps = {
   protocol: string;
   clientName: string;
   fineGrainedAccess?: boolean;
+  canManageClientScopes?: boolean;
 };
 
 export type Row = ClientScopeRepresentation & {
@@ -64,14 +65,14 @@ const DEDICATED_ROW = "dedicated";
 
 type TypeSelectorProps = Row & {
   clientId: string;
-  fineGrainedAccess?: boolean;
+  canManageClientScopes: boolean;
   refresh: () => void;
 };
 
 const TypeSelector = ({
   clientId,
   refresh,
-  fineGrainedAccess,
+  canManageClientScopes,
   ...scope
 }: TypeSelectorProps) => {
   const { adminClient } = useAdminClient();
@@ -79,14 +80,11 @@ const TypeSelector = ({
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const { hasAccess } = useAccess();
-
   const isDedicatedRow = (value: Row) => value.id === DEDICATED_ROW;
-  const isManager = hasAccess("manage-clients") || fineGrainedAccess;
 
   return (
     <CellDropdown
-      isDisabled={isDedicatedRow(scope) || !isManager}
+      isDisabled={isDedicatedRow(scope) || !canManageClientScopes}
       clientScope={scope}
       type={scope.type}
       onSelect={async (value) => {
@@ -113,6 +111,7 @@ export const ClientScopes = ({
   protocol,
   clientName,
   fineGrainedAccess,
+  canManageClientScopes = false,
 }: ClientScopesProps) => {
   const { adminClient } = useAdminClient();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -151,30 +150,15 @@ export const ClientScopes = ({
       await adminClient.clients.listOptionalClientScopes({ id: clientId });
     const clientScopes = await adminClient.clientScopes.find();
 
-    const find = (id: string) =>
-      clientScopes.find((clientScope) => id === clientScope.id);
+    const optional = optionalClientScopes.map<Row>((scope) => ({
+      ...scope,
+      type: ClientScope.optional,
+    }));
 
-    const optional = optionalClientScopes.map((c) => {
-      const scope = find(c.id!);
-      const row: Row = {
-        ...c,
-        type: ClientScope.optional,
-        description: scope?.description,
-        attributes: scope?.attributes,
-      };
-      return row;
-    });
-
-    const defaultScopes = defaultClientScopes.map((c) => {
-      const scope = find(c.id!);
-      const row: Row = {
-        ...c,
-        type: ClientScope.default,
-        description: scope?.description,
-        attributes: scope?.attributes,
-      };
-      return row;
-    });
+    const defaultScopes = defaultClientScopes.map<Row>((scope) => ({
+      ...scope,
+      type: ClientScope.default,
+    }));
 
     let rows = [...optional, ...defaultScopes];
     const names = rows.map((row) => row.name);
@@ -241,7 +225,7 @@ export const ClientScopes = ({
 
   return (
     <>
-      {rest && (
+      {canManageClientScopes && rest && (
         <AddScopeDialog
           clientScopes={rest}
           clientName={clientName!}
@@ -300,18 +284,22 @@ export const ClientScopes = ({
             {isManager && (
               <>
                 <DeleteConfirm />
-                <ToolbarItem>
-                  <Button onClick={() => setAddDialogOpen(true)}>
-                    {t("addClientScope")}
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <ChangeTypeDropdown
-                    clientId={clientId}
-                    selectedRows={selectedRows}
-                    refresh={refresh}
-                  />
-                </ToolbarItem>
+                {canManageClientScopes && (
+                  <>
+                    <ToolbarItem>
+                      <Button onClick={() => setAddDialogOpen(true)}>
+                        {t("addClientScope")}
+                      </Button>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                      <ChangeTypeDropdown
+                        clientId={clientId}
+                        selectedRows={selectedRows}
+                        refresh={refresh}
+                      />
+                    </ToolbarItem>
+                  </>
+                )}
                 <ToolbarItem>
                   <Dropdown
                     onOpenChange={(isOpen) => setKebabOpen(isOpen)}
@@ -388,7 +376,12 @@ export const ClientScopes = ({
             name: "type",
             displayKey: "assignedType",
             cellRenderer: (row) => (
-              <TypeSelector clientId={clientId} refresh={refresh} {...row} />
+              <TypeSelector
+                clientId={clientId}
+                refresh={refresh}
+                {...row}
+                canManageClientScopes={canManageClientScopes}
+              />
             ),
           },
           { name: "description", cellFormatters: [translationFormatter(t)] },
@@ -411,7 +404,11 @@ export const ClientScopes = ({
           <ListEmptyState
             message={t("emptyClientScopes")}
             instructions={t("emptyClientScopesInstructions")}
-            primaryActionText={t("emptyClientScopesPrimaryAction")}
+            primaryActionText={
+              canManageClientScopes
+                ? t("emptyClientScopesPrimaryAction")
+                : undefined
+            }
             onPrimaryAction={() => setAddDialogOpen(true)}
           />
         }
