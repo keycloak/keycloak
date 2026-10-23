@@ -649,8 +649,8 @@ public class SAMLEndpoint {
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 
-                if (principal == null) {
-                    logger.errorf("no principal in assertion; expected: %s", expectedPrincipalType());
+                if (StringUtil.isBlank(principal)) {
+                    logger.errorf("missing or blank principal in assertion; expected: %s", expectedPrincipalType());
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
