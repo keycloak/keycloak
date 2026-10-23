@@ -19,18 +19,31 @@ package org.keycloak.protocol.oidc;
 
 import java.util.OptionalInt;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.provider.Provider;
 
 /**
- * Maps the acr values requested by an OIDC client, through the acr_values parameter or the acr claim of the claims parameter,
- * to the numerical level of authentication used by the authentication flow.
+ * Maps between the acr values used by OIDC clients and the numerical level of authentication used by the authentication flow.
+ * Acr values requested through the acr_values parameter or the acr claim of the claims parameter are mapped to a level of
+ * authentication, and the authentication performed in the client session is mapped back to the acr claim of the token.
  */
 public interface OIDCLevelOfAuthenticationProvider extends Provider {
     /**
-     * Maps a single requested acr value to a level of authentication.
+     * Maps a single acr value to a level of authentication. Used for the acr values requested by the client as well as for
+     * enforcing the minimum acr value configured for the client.
      *
+     * @param client client requesting the acr value
      * @param acrValue requested acr value
      * @return numerical level of authentication or an empty OptionalInt if the acr value cannot be mapped
      */
-    OptionalInt getRequestedLoa(String acrValue);
+    OptionalInt getRequestedLoa(ClientModel client, String acrValue);
+
+    /**
+     * Determines the acr claim of the token issued for the given client session.
+     *
+     * @param clientSession authenticated client session the token is issued for
+     * @return acr value for the token
+     */
+    String getAcr(AuthenticatedClientSessionModel clientSession);
 }

@@ -81,7 +81,7 @@ public class AcrCondition extends AbstractClientPolicyConditionProvider<AcrCondi
     }
 
     private boolean containsAcr(AuthorizationRequestContext context) {
-        List<String> acrValues = AcrUtils.getAcrValues(context.getAuthorizationEndpointRequest().getClaims(), context.getAuthorizationEndpointRequest().getAcr(), session.getContext().getClient());
+        List<String> acrValues = AcrUtils.getAcrValues(session, context.getAuthorizationEndpointRequest().getClaims(), context.getAuthorizationEndpointRequest().getAcr(), session.getContext().getClient());
         return acrValues != null && !acrValues.isEmpty() && acrValues.contains(configuration.getAcrProperty());
     }
 

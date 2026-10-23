@@ -360,9 +360,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());
 
         if (acrValues.isEmpty()) {
-            acrValues = AcrUtils.getAcrValues(request.getClaims(), request.getAcr(), authenticationSession.getClient());
+            acrValues = AcrUtils.getAcrValues(session, request.getClaims(), request.getAcr(), authenticationSession.getClient());
         } else {
-            List<String> minimizedAcrValues = AcrUtils.enforceMinimumAcr(acrValues, client);
+            List<String> minimizedAcrValues = AcrUtils.enforceMinimumAcr(session, acrValues, client);
             // If enforcing a minimum here changes the list, the client has an essential claim that is too low
             if (!minimizedAcrValues.equals(acrValues)) {
                 logger.errorf("Requested essential acr value list contains values lower than the client minimum. Please doublecheck the client configuration or correct ACR passed in the 'claims' parameter.");
@@ -374,18 +374,18 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         boolean essential = Boolean.parseBoolean(authenticationSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
-        OIDCLevelOfAuthenticationProvider loaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
-        acrValues.stream().mapToInt(acr -> loaProvider.getRequestedLoa(acr).orElseGet(() -> {
-            // this is an unknown acr. In case of an essential claim, we directly reject authentication as we cannot meet the specification requirement. Otherwise fallback to minimum LoA
-            if (essential) {
+        if (essential) {
+            OIDCLevelOfAuthenticationProvider loaProvider = session.getProvider(OIDCLevelOfAuthenticationProvider.class);
+            acrValues.stream().mapToInt(acr -> loaProvider.getRequestedLoa(authenticationSession.getClient(), acr).orElseThrow(() -> {
                 logger.errorf("Requested essential acr value '%s' cannot be mapped to a level of authentication. Please doublecheck the ACR-to-LoA mapping or correct ACR passed in the 'claims' parameter.", acr);
                 event.detail(Details.REASON, "Invalid requested essential acr value");
                 event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
-            }
-            logger.warnf("Requested acr value '%s' cannot be mapped to a level of authentication. Please doublecheck the ACR-to-LoA mapping or correct used ACR.", acr);
-            return Constants.MINIMUM_LOA;
-        })).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+                return new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+            })).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        } else {
+            AcrUtils.getLowestLoaForAcrValues(session, acrValues, authenticationSession.getClient()).ifPresent(loa ->
+                authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+        }
 
 
         if (request.getAdditionalReqParams() != null) {

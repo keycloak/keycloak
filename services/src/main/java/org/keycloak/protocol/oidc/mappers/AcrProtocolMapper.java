@@ -24,29 +24,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OIDCLevelOfAuthenticationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.managers.AuthenticationManager;
-
-import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
-
-    private static final Logger logger = Logger.getLogger(AcrProtocolMapper.class);
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -85,7 +78,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
                             ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-        String acr = getAcr(clientSession);
+        String acr = keycloakSession.getProvider(OIDCLevelOfAuthenticationProvider.class).getAcr(clientSession);
         token.setAcr(acr);
     }
 
@@ -100,32 +93,6 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
-    }
-
-    protected String getAcr(AuthenticatedClientSessionModel clientSession) {
-        int loa = LoAUtil.getCurrentLevelOfAuthentication(clientSession);
-        logger.tracef("Loa level when authenticated to client %s: %d", clientSession.getClient().getClientId(), loa);
-        if (loa < Constants.MINIMUM_LOA) {
-            loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
-        }
-
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(clientSession.getClient());
-        String acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getRequiredAcrValues(
-                clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM)));
-        if (acr == null) {
-            acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getAcrValues(
-                    clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
-                    clientSession.getNote(OIDCLoginProtocol.ACR_PARAM), clientSession.getClient()));
-            if (acr == null) {
-                acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, acrLoaMap.keySet());
-                if (acr == null) {
-                    acr = String.valueOf(loa);
-                }
-            }
-        }
-
-        logger.tracef("Level sent in the token to client %s: %s. Original loa from the authentication: %d", clientSession.getClient().getClientId(), acr, loa);
-        return acr;
     }
 
     @Override
