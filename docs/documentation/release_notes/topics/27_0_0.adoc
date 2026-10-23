@@ -13,7 +13,7 @@ See the upgrading guide for migration details.
 
 When an external SAML identity provider issues an assertion with a `OneTimeUse` condition, {project_name} now rejects any later attempt to present the same assertion, as required by the SAML 2.0 specification.
 This protects brokered logins against assertion replay, in particular in IdP-initiated flows where no `InResponseTo` binding is available.
-How long a consumed assertion is remembered is controlled by the new *OneTimeUse TTL* setting of the SAML identity provider, which defaults to 12 hours.
+How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
 See the upgrading guide for details.
 
 == Credential ID in credential update events

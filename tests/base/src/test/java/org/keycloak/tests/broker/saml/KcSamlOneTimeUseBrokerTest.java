@@ -17,18 +17,31 @@
 package org.keycloak.tests.broker.saml;
 
 import java.net.URI;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
@@ -41,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
@@ -51,11 +65,16 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
     @InjectHttpClient(followRedirects = false)
     CloseableHttpClient httpClient;
 
+    @InjectEvents(realmRef = "consumer")
+    Events events;
+
     @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @BeforeEach
-    void disableSignatureValidation() {
+    void configureConsumerRealm() {
+        // error events of the broker endpoint are not saved by default, so they are invisible to the test events otherwise
+        consumerRealm.updateWithCleanup(realm -> realm.enabledEventTypes(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR.name()));
         updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false"));
     }
 
@@ -64,7 +83,35 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
         Document samlResponse = buildResponse(true);
 
         assertAccepted(samlResponse, "First use of OneTimeUse assertion should be accepted");
+        events.skipAll();
         assertRejected(samlResponse, "Replayed OneTimeUse assertion should be rejected");
+
+        EventAssertion event = EventAssertion.assertError(events.poll())
+                .type(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
+                .error(Errors.INVALID_SAML_RESPONSE)
+                .clientId(SAML_CLIENT_ID_SALES_POST + ".dot/ted")
+                .details(Details.IDENTITY_PROVIDER, getIdpAlias());
+        assertTrue(event.getEvent().getDetails().get(Details.REASON).startsWith("OneTimeUse assertion has already been used"));
+    }
+
+    @Test
+    void testSignedOneTimeUseReplayDetected() throws Exception {
+        KeyPair signingKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate signingCertificate = CertificateUtils.generateV1SelfSignedCertificate(signingKeyPair, "test-idp");
+        updateIdp(idp -> {
+            idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+            idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY,
+                    PemUtils.encodeCertificate(signingCertificate));
+        });
+
+        Document samlResponse = buildResponse(true);
+        BaseSAML2BindingBuilder<?> bindingBuilder = new BaseSAML2BindingBuilder<>()
+                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                .signWith("test-idp", signingKeyPair, signingCertificate);
+        bindingBuilder.signDocument(samlResponse);
+
+        assertAccepted(samlResponse, "First use of signed OneTimeUse assertion should be accepted");
+        assertRejected(samlResponse, "Replayed signed OneTimeUse assertion should be rejected");
     }
 
     @Test
@@ -91,24 +138,20 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
     }
 
     @Test
-    void testReplayAllowedAfterConfiguredTtlElapsesWhileAssertionStillValid() throws Exception {
-        // Documents the consequence of configuring a retention TTL shorter than the assertion validity window:
-        // once the TTL elapses the replay marker is gone and the (still valid) assertion can be presented again.
-        // Administrators are advised to set the TTL to at least the assertion validity plus the allowed clock skew
-        // (see the oneTimeUseTtlSeconds documentation); this test intentionally uses an unrealistically short TTL.
-        int ttlSeconds = 60;
-        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.ONE_TIME_USE_TTL_SECONDS, String.valueOf(ttlSeconds)));
+    void testAssertionOlderThanMaxAgeIsRejectedWhileStillValid() throws Exception {
+        int maxAgeSeconds = 60;
+        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.ONE_TIME_USE_MAX_AGE_SECONDS, String.valueOf(maxAgeSeconds)));
 
         Document samlResponse = buildResponse(true);
 
         assertAccepted(samlResponse, "First use of OneTimeUse assertion should be accepted");
 
-        timeOffSet.set(ttlSeconds / 2);
-        assertRejected(samlResponse, "Replay within the configured TTL should be rejected");
+        timeOffSet.set(maxAgeSeconds / 2);
+        assertRejected(samlResponse, "Replay within the maximum age should be rejected");
 
-        // the assertion is still within its validity period, but the configured TTL has elapsed
-        timeOffSet.set(ttlSeconds * 2);
-        assertAccepted(samlResponse, "Assertion is no longer tracked once the configured TTL has elapsed, even while still valid");
+        // the assertion is still within its validity period, but beyond the maximum age
+        timeOffSet.set(maxAgeSeconds * 2);
+        assertRejected(samlResponse, "Replay beyond the maximum age should be rejected even after the replay marker is gone");
     }
 
     private void assertAccepted(Document samlResponse, String message) throws Exception {

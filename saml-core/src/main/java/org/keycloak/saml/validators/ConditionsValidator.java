@@ -236,7 +236,7 @@ public class ConditionsValidator {
         }
 
         if (oneTimeUseHandler != null && !oneTimeUseHandler.validate(assertionId)) {
-            LOG.infof("Assertion %s with a <OneTimeUse/> condition has already been used.", assertionId);
+            LOG.infof("Assertion %s with a <OneTimeUse/> condition was rejected as already used or too old.", assertionId);
             return Result.INVALID;
         }
 

@@ -69,8 +69,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
-    public static final String ONE_TIME_USE_TTL_SECONDS = "oneTimeUseTtlSeconds";
-    public static final long DEFAULT_ONE_TIME_USE_TTL_SECONDS = 12 * 60 * 60;
+    public static final String ONE_TIME_USE_MAX_AGE_SECONDS = "oneTimeUseMaxAgeSeconds";
+    public static final long DEFAULT_ONE_TIME_USE_MAX_AGE_SECONDS = 60 * 60;
 
     public SAMLIdentityProviderConfig() {
     }
@@ -478,8 +478,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     }
 
-    public long getOneTimeUseTtlSeconds() {
-        String value = getConfig().get(ONE_TIME_USE_TTL_SECONDS);
+    public long getOneTimeUseMaxAgeSeconds() {
+        String value = getConfig().get(ONE_TIME_USE_MAX_AGE_SECONDS);
         if (value != null && !value.isEmpty()) {
             try {
                 long result = Long.parseLong(value);
@@ -490,14 +490,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
                 // ignore and use default
             }
         }
-        return DEFAULT_ONE_TIME_USE_TTL_SECONDS;
+        return DEFAULT_ONE_TIME_USE_MAX_AGE_SECONDS;
     }
 
-    public void setOneTimeUseTtlSeconds(long oneTimeUseTtlSeconds) {
-        if (oneTimeUseTtlSeconds <= 0) {
-            getConfig().remove(ONE_TIME_USE_TTL_SECONDS);
+    public void setOneTimeUseMaxAgeSeconds(long oneTimeUseMaxAgeSeconds) {
+        if (oneTimeUseMaxAgeSeconds <= 0) {
+            getConfig().remove(ONE_TIME_USE_MAX_AGE_SECONDS);
         } else {
-            getConfig().put(ONE_TIME_USE_TTL_SECONDS, String.valueOf(oneTimeUseTtlSeconds));
+            getConfig().put(ONE_TIME_USE_MAX_AGE_SECONDS, String.valueOf(oneTimeUseMaxAgeSeconds));
         }
     }
 

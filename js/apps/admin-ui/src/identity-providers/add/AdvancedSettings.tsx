@@ -424,15 +424,15 @@ export const AdvancedSettings = ({
           </FormGroupField>
         )}
       {isSAML && (
-        <FormGroupField label="oneTimeUseTtlSeconds">
+        <FormGroupField label="oneTimeUseMaxAgeSeconds">
           <Controller
-            name="config.oneTimeUseTtlSeconds"
+            name="config.oneTimeUseMaxAgeSeconds"
             defaultValue=""
             control={control}
             render={({ field }) => (
               <TimeSelector
-                className="kc-one-time-use-ttl-seconds"
-                data-testid="one-time-use-ttl-seconds-input"
+                className="kc-one-time-use-max-age-seconds"
+                data-testid="one-time-use-max-age-seconds-input"
                 value={field.value!}
                 onChange={field.onChange}
                 units={["second", "minute", "hour"]}
