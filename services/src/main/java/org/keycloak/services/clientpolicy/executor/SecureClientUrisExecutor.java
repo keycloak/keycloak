@@ -22,13 +22,18 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -96,7 +101,9 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientCRUDContext crudContext = (ClientCRUDContext)context;
+                    confirmSecureUris(effectiveClientRepresentation(crudContext.getProposedClientRepresentation(),
+                            crudContext.getTargetClient()));
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -171,6 +178,70 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
         // policyUri
         String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.POLICY_URI);
         if (policyUri != null) confirmSecureUris(List.of(policyUri), "policyUri");
+    }
+
+    /**
+     * Returns the client state that is effective for this update: the proposed {@code ClientRepresentation}
+     * merged with the stored client. A partial update only carries the fields being changed, and the fields
+     * absent from it keep their stored value (see {@code RepresentationToModel#updateClient}), so the URI
+     * fields omitted by a partial update are taken from the stored client and validated as well. On register
+     * there is no stored client to merge with and the proposed representation is returned unchanged.
+     *
+     * The merge mirrors the persistence semantics of {@code RepresentationToModel#updateClientProperties}:
+     * an attribute set to null (or to an empty value) removes the stored key during the update, and web
+     * origins omitted from an update of a client without stored web origins are derived from the effective
+     * redirect URIs (see {@code RepresentationToModel#defaultWebOrigins}).
+     */
+    static ClientRepresentation effectiveClientRepresentation(ClientRepresentation proposed, ClientModel storedClient) {
+        if (storedClient == null) {
+            return proposed;
+        }
+
+        ClientRepresentation effective = new ClientRepresentation();
+        effective.setRootUrl(proposed.getRootUrl() != null ? proposed.getRootUrl() : storedClient.getRootUrl());
+        effective.setAdminUrl(proposed.getAdminUrl() != null ? proposed.getAdminUrl() : storedClient.getManagementUrl());
+        effective.setBaseUrl(proposed.getBaseUrl() != null ? proposed.getBaseUrl() : storedClient.getBaseUrl());
+        List<String> effectiveRedirectUris = proposed.getRedirectUris() != null ? proposed.getRedirectUris()
+                : new ArrayList<>(storedClient.getRedirectUris());
+        effective.setRedirectUris(effectiveRedirectUris);
+        effective.setWebOrigins(effectiveWebOrigins(proposed, storedClient, effectiveRedirectUris));
+
+        Map<String, String> attributes = new HashMap<>(storedClient.getAttributes());
+        if (proposed.getAttributes() != null) {
+            proposed.getAttributes().forEach((key, value) -> {
+                // setting an attribute to null (or to an empty value) removes the stored attribute during
+                // the update, see RepresentationToModel#updateClientProperties and ClientAdapter#setAttribute -
+                // a remediation deleting a stored URI must not keep the stale URI in the effective state
+                if (value == null || value.trim().isEmpty()) {
+                    attributes.remove(key);
+                } else {
+                    attributes.put(key, value);
+                }
+            });
+        }
+        effective.setAttributes(attributes);
+
+        return effective;
+    }
+
+    /**
+     * Returns the web origins that are effective for this update. Web origins omitted from the update are
+     * not simply preserved: for a client without stored web origins {@code RepresentationToModel#defaultWebOrigins}
+     * derives them from the redirect URIs effective after the update when it is persisted, so that derivation
+     * is mirrored here and the derived origins are validated too.
+     */
+    private static List<String> effectiveWebOrigins(ClientRepresentation proposed, ClientModel storedClient, List<String> effectiveRedirectUris) {
+        if (proposed.getWebOrigins() != null) {
+            return proposed.getWebOrigins();
+        }
+        if (!storedClient.getWebOrigins().isEmpty()) {
+            return new ArrayList<>(storedClient.getWebOrigins());
+        }
+        return effectiveRedirectUris.stream()
+                .filter(uri -> uri != null && uri.startsWith("http"))
+                .map(UriUtils::getOrigin)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {

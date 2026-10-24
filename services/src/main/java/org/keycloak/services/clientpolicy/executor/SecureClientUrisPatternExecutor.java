@@ -136,7 +136,9 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    validateClientUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientCRUDContext crudContext = (ClientCRUDContext)context;
+                    validateClientUris(SecureClientUrisExecutor.effectiveClientRepresentation(crudContext.getProposedClientRepresentation(),
+                            crudContext.getTargetClient()));
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
