@@ -238,9 +238,10 @@ public class UserResource {
                     .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
                 auth.users().requireResetPassword(user);
             }
-            // record the credentials set from the representation, so that listeners can react to credential updates
-            adminEvent.detail(Details.CREDENTIAL_TYPE, getCredentialTypesToSet(rep));
+            List<CredentialRepresentation> credentialsToSet = getCredentialsToSet(rep);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            // record the credentials set from the representation, so that listeners can react to credential updates
+            adminEvent.detail(Details.CREDENTIAL_TYPE, getCredentialTypes(credentialsToSet));
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
             if (wasPermanentlyLockedOut) {
@@ -309,15 +310,25 @@ public class UserResource {
     }
 
     /**
-     * Returns the types of the credentials that {@link RepresentationToModel#createCredentials} sets from the given
-     * representation, skipping the credentials that are already stored.
+     * Returns the credentials that {@link RepresentationToModel#createCredentials} sets from the given representation, which
+     * skips the credentials that are already stored. This has to be checked before setting them, as new credentials are
+     * stored with the id they are sent with.
      */
-    private String getCredentialTypesToSet(UserRepresentation rep) {
+    private List<CredentialRepresentation> getCredentialsToSet(UserRepresentation rep) {
         if (rep.getCredentials() == null) {
-            return null;
+            return List.of();
         }
         return rep.getCredentials().stream()
                 .filter(credential -> credential.getId() == null || user.credentialManager().getStoredCredentialById(credential.getId()) == null)
+                .toList();
+    }
+
+    /**
+     * Returns the types of the given credentials. They have to be read after setting the credentials, as legacy
+     * representations are converted when they are set, such as from the totp and hotp types to otp.
+     */
+    private static String getCredentialTypes(List<CredentialRepresentation> credentials) {
+        return credentials.stream()
                 .map(credential -> credential.getValue() != null && !credential.getValue().isEmpty() ? CredentialRepresentation.PASSWORD : credential.getType())
                 .filter(Objects::nonNull)
                 .distinct()

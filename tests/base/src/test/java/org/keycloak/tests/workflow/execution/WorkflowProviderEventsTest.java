@@ -1,5 +1,6 @@
 package org.keycloak.tests.workflow.execution;
 
+import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
@@ -38,6 +39,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -696,7 +698,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testAdminOperationsTriggerWorkflows() {
+    public void testAdminOperationsTriggerWorkflows() throws IOException {
         registerTestListener();
 
         // allow custom attributes, so that admin updates send them back along with the root attributes
@@ -761,6 +763,15 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         userRep.setCredentials(List.of(anotherPassword));
         user.update(userRep);
         assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
+
+        // setting a legacy OTP credential when updating the user should activate the workflow listening for OTP updates only,
+        // as its totp type is converted to otp when it is set
+        CredentialRepresentation legacyOtp = JsonSerialization.readValue("{\"type\": \"totp\", \"hashedSaltedValue\": \"legacy-secret\", "
+                + "\"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}", CredentialRepresentation.class);
+        userRep = user.toRepresentation();
+        userRep.setCredentials(List.of(legacyOtp));
+        user.update(userRep);
+        assertActivations(List.of(wOtpCredentialId), List.of(wCredentialId));
 
         // removing an OTP credential should activate the workflow listening for OTP credential removals
         String credentialId = runOnServer.fetch(session -> {
