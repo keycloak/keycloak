@@ -237,6 +237,20 @@ The provider's last-sync time is now recorded when a sync starts rather than whe
 
 If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
 
+=== Stricter enforcement of the requested level of authentication
+// https://github.com/keycloak/keycloak/issues/53157
+
+Previously, {project_name} could complete a login at a lower level of authentication than the client requested, when the authentication flow skipped the steps for the requested level, usually because the user already had a session.
+{project_name} now rejects such logins.
+For OpenID Connect clients, the requested level is the level of an essential `acr` claim.
+For SAML clients, it is the level of the requested authentication context or of the minimum ACR value of the client.
+The level is now enforced in every authentication flow, including flows without a `Conditional - Level Of Authentication` condition and the registration and reset credentials flows.
+An active login in a flow without the condition now always reaches at least level 1, and the `acr` claim reports it accordingly.
+
+A rejected interactive login ends on an error page.
+A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
+For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
