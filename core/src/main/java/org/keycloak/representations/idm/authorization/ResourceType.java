@@ -29,6 +29,7 @@ public class ResourceType {
     private final Set<String> scopes;
     private final Map<String, Set<String>> scopeAliases;
     private final String groupType;
+    private final String organizationType;
 
     @JsonCreator
     public ResourceType(@JsonProperty("type") String type, @JsonProperty("scopes") Set<String> scopes) {
@@ -36,14 +37,15 @@ public class ResourceType {
     }
 
     public ResourceType(String type, Set<String> scopes, Map<String, Set<String>> scopeAliases) {
-        this(type, scopes, scopeAliases, null);
+        this(type, scopes, scopeAliases, null, null);
     }
 
-    public ResourceType(String type, Set<String> scopes, Map<String, Set<String>> scopeAliases, String groupType) {
+    public ResourceType(String type, Set<String> scopes, Map<String, Set<String>> scopeAliases, String groupType, String organizationType) {
         this.type = type;
         this.scopes = Collections.unmodifiableSet(scopes);
         this.scopeAliases = scopeAliases;
         this.groupType = groupType;
+        this.organizationType = organizationType;
     }
 
     public String getType() {
@@ -60,5 +62,9 @@ public class ResourceType {
 
     public String getGroupType() {
         return groupType;
+    }
+
+    public String getOrganizationType() {
+        return organizationType;
     }
 }

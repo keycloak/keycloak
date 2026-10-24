@@ -106,14 +106,14 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
     }
 
     @Override
-    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject) {
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, ResourceType organizationResourceType, UserModel subject) {
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         RealmModel realm = session.getContext().getRealm();
         ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
 
-        return storeFactory.getPolicyStore().findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), AggregatePolicyProviderFactory.ID, null, List.of());
+        return storeFactory.getPolicyStore().findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), organizationResourceType == null ? null : organizationResourceType.getType(), AggregatePolicyProviderFactory.ID, null, List.of());
     }
 
     @Override
