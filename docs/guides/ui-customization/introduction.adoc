@@ -10,5 +10,7 @@ summary="Learn how to customize the user interfaces.">
 
 You can customize, extend, and modify these UIs to accommodate many use cases on your production systems.  At a minimum, you will need to change the logos and colors to match your corporate identity.  Also, you may modify the UIs to implement new functionality.
 
+To add Admin Console pages or tabs from a Java provider without maintaining a custom React theme, see <@links.uicustomization id="declarative-ui"/>.
+
 This guide provides all the information needed to customize the {project_name} UIs for your needs.
 </@tmpl.guide>

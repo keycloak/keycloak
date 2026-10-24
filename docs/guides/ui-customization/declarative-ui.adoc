@@ -1,0 +1,151 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Extending the Admin Console with the Declarative UI SPI"
+priority=40
+summary="Add Admin Console pages and tabs from a Java SPI without a custom React theme.">
+
+You can extend the Admin Console by implementing the Declarative UI SPI.
+Instead of forking the Admin Console React theme, you describe forms and navigation in Java.
+{project_name} renders those forms in the Admin Console and stores the submitted values as components.
+
+Use this SPI when you need a configuration UI for a custom provider, or when you want a simple master-detail page in the Admin Console menu.
+
+There are two provider types:
+
+* `org.keycloak.services.ui.extend.UiPageProvider` — adds a top-level section in the Admin Console side menu, with a list view and a detail form
+* `org.keycloak.services.ui.extend.UiTabProvider` — adds a tab on an existing Admin Console page
+
+Both use `org.keycloak.provider.ProviderConfigProperty` (typically via `ProviderConfigurationBuilder`) to declare the fields on the form.
+
+A full working example is available in the https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-admin-console-spi[extend-admin-console-spi] Keycloak quickstart.
+
+== Adding a top-level page
+
+Implement `UiPageProvider` and `UiPageProviderFactory`.
+Register the factory with the Java ServiceLoader under `META-INF/services/org.keycloak.services.ui.extend.UiPageProviderFactory`.
+
+The provider ID becomes the menu label.
+`getHelpText()` is shown on the page.
+`getConfigProperties()` defines the fields on the create and edit form.
+Optionally override `getTypeMetadata()` and set `displayFields` to choose which fields appear as columns in the list view.
+
+.Example page provider
+[source,java]
+----
+public class TodoPage implements UiPageProvider, UiPageProviderFactory<ComponentModel> {
+
+    @Override
+    public String getId() {
+        return "Todo";
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Store todo items for this realm";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("name")
+                .label("Name")
+                .helpText("Short name of the task")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property()
+                .name("prio")
+                .label("Priority")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options("critical", "high priority", "neutral", "low priority")
+                .add()
+                .build();
+    }
+
+    @Override
+    public Map<String, Object> getTypeMetadata() {
+        Map<String, Object> metaData = new HashMap<>();
+        metaData.put("displayFields", List.of("name", "prio"));
+        return metaData;
+    }
+
+    // implement init, postInit, and close as needed
+}
+----
+
+== Adding a tab to an existing page
+
+Implement `UiTabProvider` and `UiTabProviderFactory`.
+Register the factory under `META-INF/services/org.keycloak.services.ui.extend.UiTabProviderFactory`.
+
+`getPath()` must match a route pattern used by the Admin Console.
+Valid paths are defined in the `routes` modules of the Admin Console source.
+`getParams()` supplies the path parameters, including the tab identifier.
+
+You can react to create, update, and delete through the component lifecycle callbacks on the factory, such as `onCreate` and `onUpdate`.
+After the first save, the Admin Console updates the existing component, so override `onUpdate` whenever you need side effects on later edits.
+
+.Example tab provider
+[source,java]
+----
+public class AttributesTab implements UiTabProvider, UiTabProviderFactory<ComponentModel> {
+
+    @Override
+    public String getId() {
+        return "Attributes";
+    }
+
+    @Override
+    public String getPath() {
+        return "/:realm/realm-settings/:tab";
+    }
+
+    @Override
+    public Map<String, String> getParams() {
+        Map<String, String> params = new HashMap<>();
+        params.put("tab", "attributes");
+        return params;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("logo")
+                .label("Logo")
+                .helpText("Logo shown in the Account Console")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .build();
+    }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        realm.setAttribute("logo", model.get("logo"));
+    }
+
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        realm.setAttribute("logo", newModel.get("logo"));
+    }
+
+    // implement remaining Provider methods as needed
+}
+----
+
+== Packaging and deploying
+
+Package the providers in a JAR with the ServiceLoader descriptors, copy the JAR to the `providers/` directory of the {project_name} server, and restart the server.
+For details on packaging providers, see the link:{server_providers}[Service Provider Interfaces] chapter in the {developerguide_name}.
+
+The Declarative UI SPI is enabled by default.
+To disable it, start the server with:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features-disabled=declarative-ui
+----
+
+</@tmpl.guide>

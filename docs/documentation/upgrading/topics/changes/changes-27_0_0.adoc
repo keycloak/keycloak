@@ -177,6 +177,14 @@ If you need the full user representation for the service account, use the user I
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Declarative UI SPI enabled by default
+// https://github.com/keycloak/keycloak/issues/54149
+
+The `declarative-ui` feature is now supported and enabled by default.
+You no longer need to start the server with `--features=declarative-ui` to use `UiPageProvider` and `UiTabProvider` extensions.
+If you previously enabled the feature explicitly, you can remove that option from your configuration.
+To disable the feature, start the server with `--features-disabled=declarative-ui`.
+
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 
