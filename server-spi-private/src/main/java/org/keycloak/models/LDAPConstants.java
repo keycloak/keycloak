@@ -30,6 +30,16 @@ public class LDAPConstants {
     public static final String MSAD_USER_ACCOUNT_CONTROL_MAPPER = "msad-user-account-control-mapper";
     public static final String MSADLDS_USER_ACCOUNT_CONTROL_MAPPER = "msad-lds-user-account-control-mapper";
 
+    /**
+     * Authentication session note set by the LDAP provider when the directory itself requires the user to change the
+     * password (MSAD {@code pwdLastSet} set to 0, the {@code PASSWORD_EXPIRED} flag of {@code userAccountControl}, or
+     * an LDAP password policy response control) and the provider cannot perform the change, because the edit mode is
+     * not {@code WRITABLE}. Password authenticators read this note when the credential validation failed, so that the
+     * login outcome says that the password must be changed instead of a generic invalid credentials error. Nothing is
+     * written to the directory when setting this note.
+     */
+    public static final String PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY = "LDAP_PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY";
+
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";
     public static final String VENDOR_ACTIVE_DIRECTORY = "ad";
