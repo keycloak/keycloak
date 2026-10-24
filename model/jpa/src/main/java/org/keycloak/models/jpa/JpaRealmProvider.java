@@ -811,10 +811,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        CriteriaQuery<GroupEntity> queryBuilder = builder.createQuery(GroupEntity.class);
         Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        queryBuilder.select(root.get("id"));
+        queryBuilder.select(root);
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -834,6 +834,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         queryBuilder.orderBy(builder.asc(root.get("name")));
 
         return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
+            // The selected entities are managed by the persistence context, so the by-id lookup is served
+            // from it (or the group cache) without issuing one additional query per group.
+            .map(GroupEntity::getId)
             .map(realm::getGroupById)
             // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
             .filter(Objects::nonNull)
@@ -1467,10 +1470,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        CriteriaQuery<GroupEntity> queryBuilder = builder.createQuery(GroupEntity.class);
         Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        queryBuilder.select(root.get("id"));
+        queryBuilder.select(root);
 
         List<Predicate> predicates = new ArrayList<>();
 
@@ -1490,6 +1493,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         queryBuilder.orderBy(builder.asc(root.get("name")));
 
         return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
+                // The selected entities are managed by the persistence context, so the by-id lookup is served
+                // from it (or the group cache) without issuing one additional query per group.
+                .map(GroupEntity::getId)
                 .map(id -> session.groups().getGroupById(realm, id))
                 .filter(Objects::nonNull)
                 .distinct());
