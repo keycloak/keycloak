@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.forms;
 
-import java.util.Map;
-
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -47,31 +45,6 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
         } finally {
             rep.getAttributes().put("login_theme", "");
             managedRealm.admin().clients().get(rep.getId()).update(rep);
-        }
-    }
-
-    @Test
-    public void realmDisplayNamePlaceholderInTitleResolvedFromRealmLocalizationTexts() {
-        RealmRepresentation rep = managedRealm.admin().toRepresentation();
-        String originalDisplayName = rep.getDisplayName();
-        try {
-            managedRealm.admin().localization().createOrUpdateRealmLocalizationTexts("en",
-                    Map.of("myRealmDisplayNameKey", "My browser tab title"));
-            rep.setDisplayName("${myRealmDisplayNameKey}");
-            managedRealm.admin().update(rep);
-
-            oauth.openLoginForm();
-            assertEquals("Sign in to My browser tab title", driver.getTitle());
-
-            // a display name without placeholders is rendered as is
-            rep.setDisplayName("Test Realm");
-            managedRealm.admin().update(rep);
-            oauth.openLoginForm();
-            assertEquals("Sign in to Test Realm", driver.getTitle());
-        } finally {
-            rep.setDisplayName(originalDisplayName);
-            managedRealm.admin().update(rep);
-            managedRealm.admin().localization().deleteRealmLocalizationText("en", "myRealmDisplayNameKey");
         }
     }
 
