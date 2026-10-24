@@ -690,7 +690,11 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // updating an attribute other than the one in the filter should not activate the workflow
         fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_LAST_NAME, "NewLastName"));
-        assertActivations(List.of(), List.of(wUpdateProfileId));
+        assertActivations(List.of(), List.of(wUpdateProfileId, wUpdateEmailId));
+
+        // updating the email along with the profile should activate the workflow listening for email updates
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_EMAIL, "trigger-user-new@example.com"));
+        assertActivations(List.of(wUpdateEmailId), List.of(wUpdateProfileId));
 
         // removing the attribute in the filter should activate the workflow, even though only its previous value is set
         fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.PREVIOUS_FIRST_NAME, "NewFirstName"));
@@ -712,6 +716,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         String wUpdateEmailId = createSimpleWorkflow("admin-w-update-email", "user-update-email");
         String wUpdateProfileId = createSimpleWorkflow("admin-w-update-profile", "user-update-profile(firstName)");
         String wUpdateDepartmentId = createSimpleWorkflow("admin-w-update-department", "user-update-profile(department)");
+        String wUpdateAnyProfileId = createSimpleWorkflow("admin-w-update-any-profile", "user-update-profile");
 
         String userId;
         try (Response response = managedRealm.admin().users().create(UserBuilder.create()
@@ -729,7 +734,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         UserRepresentation userRep = user.toRepresentation();
         userRep.setLastName("NewLast");
         user.update(userRep);
-        assertActivations(List.of(), List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
+        assertActivations(List.of(wUpdateAnyProfileId), List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
 
         // an update that changes the email, the firstName and a custom attribute should activate all of them
         userRep = user.toRepresentation();
@@ -762,7 +767,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         userRep = user.toRepresentation();
         userRep.setCredentials(List.of(anotherPassword));
         user.update(userRep);
-        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
+        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId, wUpdateAnyProfileId));
 
         // setting a legacy OTP credential when updating the user should activate the workflow listening for OTP updates only,
         // as its totp type is converted to otp when it is set
@@ -771,7 +776,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         userRep = user.toRepresentation();
         userRep.setCredentials(List.of(legacyOtp));
         user.update(userRep);
-        assertActivations(List.of(wOtpCredentialId), List.of(wCredentialId));
+        assertActivations(List.of(wOtpCredentialId), List.of(wCredentialId, wUpdateAnyProfileId));
 
         // removing an OTP credential should activate the workflow listening for OTP credential removals
         String credentialId = runOnServer.fetch(session -> {

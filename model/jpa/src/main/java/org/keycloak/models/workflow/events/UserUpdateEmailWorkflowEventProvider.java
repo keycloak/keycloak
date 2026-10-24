@@ -27,19 +27,25 @@ public class UserUpdateEmailWorkflowEventProvider extends AbstractWorkflowEventP
 
     @Override
     public boolean supports(Event event) {
-        return EventType.UPDATE_EMAIL.equals(event.getType());
+        // the email is also updated with the profile when the update email action is disabled
+        return EventType.UPDATE_EMAIL.equals(event.getType())
+                || (EventType.UPDATE_PROFILE.equals(event.getType()) && hasEmailChangeDetails(event.getDetails()));
     }
 
     @Override
     public boolean supports(AdminEvent adminEvent) {
-        // admin user updates only carry the email details when the email has actually changed, and only the previous email
-        // when it has been cleared
-        Map<String, String> details = adminEvent.getDetails();
         return org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())
                 && OperationType.UPDATE.equals(adminEvent.getOperationType())
                 && adminEvent.getResourcePath() != null
                 && USER_PATH.matcher(adminEvent.getResourcePath()).matches()
-                && details != null
-                && (details.containsKey(Details.UPDATED_EMAIL) || details.containsKey(Details.PREVIOUS_EMAIL));
+                && hasEmailChangeDetails(adminEvent.getDetails());
+    }
+
+    /**
+     * Profile updates only carry the email details when the email has actually changed, and only the previous email when it
+     * has been cleared.
+     */
+    private static boolean hasEmailChangeDetails(Map<String, String> details) {
+        return details != null && (details.containsKey(Details.UPDATED_EMAIL) || details.containsKey(Details.PREVIOUS_EMAIL));
     }
 }

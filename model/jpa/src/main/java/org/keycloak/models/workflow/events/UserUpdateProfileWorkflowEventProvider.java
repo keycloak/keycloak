@@ -38,7 +38,18 @@ public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEven
         return org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())
                 && OperationType.UPDATE.equals(adminEvent.getOperationType())
                 && adminEvent.getResourcePath() != null
-                && USER_PATH.matcher(adminEvent.getResourcePath()).matches();
+                && USER_PATH.matcher(adminEvent.getResourcePath()).matches()
+                && hasAttributeChangeDetails(adminEvent.getDetails());
+    }
+
+    /**
+     * Admin user updates carry the previous and updated value details of the profile attributes that have actually changed,
+     * along with details unrelated to the profile, such as the enabled state.
+     */
+    private static boolean hasAttributeChangeDetails(Map<String, String> details) {
+        return details != null && details.keySet().stream()
+                .filter(key -> !Details.PREVIOUS_ENABLED.equals(key) && !Details.UPDATED_ENABLED.equals(key))
+                .anyMatch(key -> key.startsWith(Details.PREF_PREVIOUS) || key.startsWith(Details.PREF_UPDATED));
     }
 
     @Override
