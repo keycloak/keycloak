@@ -16,6 +16,10 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 class DriverUtils {
 
     static ChromeDriver createChromeDriver(boolean headless) {
+        return createChromeDriver(headless, new String[0]);
+    }
+
+    static ChromeDriver createChromeDriver(boolean headless, String... extraArguments) {
         ChromeDriverService.Builder builder = new ChromeDriverService.Builder();
 
         File driver = resolveDriver("CHROMEWEBDRIVER", "chromedriver");
@@ -24,7 +28,7 @@ class DriverUtils {
         }
 
         ChromeDriverService driverService = builder.build();
-        return new ChromeDriver(driverService, DriverOptions.createChromeOptions(headless));
+        return new ChromeDriver(driverService, DriverOptions.createChromeOptions(headless, extraArguments));
     }
 
     static FirefoxDriver  createFirefoxDriver(boolean headless) {
