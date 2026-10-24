@@ -1112,7 +1112,20 @@ public class OID4VCIssuerEndpoint {
             LOGGER.debugf("Removed credential offer state after successful issuance");
         }
 
+        // Tag the issued-credential row created during the token request, so that lists of issued
+        // credentials can tell a delivered credential apart from a leftover of an incomplete attempt
+        markIssuedCredentialCompleted(tokenAuthDetail.getIssuedCredentialId());
+
         return response;
+    }
+
+    private void markIssuedCredentialCompleted(String issuedCredentialId) {
+        if (issuedCredentialId == null) {
+            return;
+        }
+        if (!session.users().markIssuedVerifiableCredentialCompleted(issuedCredentialId)) {
+            LOGGER.warnf("Issued credential %s could not be marked as completed", issuedCredentialId);
+        }
     }
 
     private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {
