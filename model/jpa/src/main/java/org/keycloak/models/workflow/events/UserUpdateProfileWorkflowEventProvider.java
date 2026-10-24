@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow.events;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -59,23 +60,24 @@ public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEven
             details = adminEvent.getDetails();
         }
 
-        return details != null && details.containsKey(getUpdatedDetail(configParameter));
+        return details != null && getChangeDetails(configParameter).stream().anyMatch(details::containsKey);
     }
 
     /**
-     * Returns the event detail that holds the updated value of the given attribute, as set by the user profile when auditing
-     * attribute changes.
+     * Returns the event details that hold the previous and the updated value of the given attribute, as set by the user
+     * profile when auditing attribute changes. Only the previous value is set when the attribute is removed, and only the
+     * updated value when the attribute is added.
      */
-    private static String getUpdatedDetail(String attributeName) {
+    private static List<String> getChangeDetails(String attributeName) {
         if (UserModel.FIRST_NAME.equalsIgnoreCase(attributeName) || "first_name".equalsIgnoreCase(attributeName)) {
-            return Details.UPDATED_FIRST_NAME;
+            return List.of(Details.PREVIOUS_FIRST_NAME, Details.UPDATED_FIRST_NAME);
         }
         if (UserModel.LAST_NAME.equalsIgnoreCase(attributeName) || "last_name".equalsIgnoreCase(attributeName)) {
-            return Details.UPDATED_LAST_NAME;
+            return List.of(Details.PREVIOUS_LAST_NAME, Details.UPDATED_LAST_NAME);
         }
         if (UserModel.EMAIL.equalsIgnoreCase(attributeName)) {
-            return Details.UPDATED_EMAIL;
+            return List.of(Details.PREVIOUS_EMAIL, Details.UPDATED_EMAIL);
         }
-        return Details.PREF_UPDATED + attributeName;
+        return List.of(Details.PREF_PREVIOUS + attributeName, Details.PREF_UPDATED + attributeName);
     }
 }

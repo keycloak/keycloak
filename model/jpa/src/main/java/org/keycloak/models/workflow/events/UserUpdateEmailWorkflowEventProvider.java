@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow.events;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.keycloak.events.Details;
@@ -31,12 +32,14 @@ public class UserUpdateEmailWorkflowEventProvider extends AbstractWorkflowEventP
 
     @Override
     public boolean supports(AdminEvent adminEvent) {
-        // admin user updates only carry the updated email detail when the email has actually changed
+        // admin user updates only carry the email details when the email has actually changed, and only the previous email
+        // when it has been cleared
+        Map<String, String> details = adminEvent.getDetails();
         return org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())
                 && OperationType.UPDATE.equals(adminEvent.getOperationType())
                 && adminEvent.getResourcePath() != null
                 && USER_PATH.matcher(adminEvent.getResourcePath()).matches()
-                && adminEvent.getDetails() != null
-                && adminEvent.getDetails().containsKey(Details.UPDATED_EMAIL);
+                && details != null
+                && (details.containsKey(Details.UPDATED_EMAIL) || details.containsKey(Details.PREVIOUS_EMAIL));
     }
 }

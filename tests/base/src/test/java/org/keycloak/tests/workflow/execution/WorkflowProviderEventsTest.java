@@ -677,18 +677,22 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
 
         // updating a credential of a type other than the one in the filter should not activate the workflow
         fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
-        assertNotActivated(wCredentialId);
+        assertActivations(List.of(), List.of(wCredentialId));
 
         fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE));
         fireUserEvent(EventType.REMOVE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
         fireUserEvent(EventType.UPDATE_EMAIL, userId, Map.of());
         fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_FIRST_NAME, "NewFirstName"));
         fireUserEvent(EventType.UPDATE_CONSENT, userId, Map.of());
-        assertActivated(wCredentialId, wRemoveCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateConsentId);
+        assertActivations(List.of(wCredentialId, wRemoveCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateConsentId), List.of());
 
         // updating an attribute other than the one in the filter should not activate the workflow
         fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_LAST_NAME, "NewLastName"));
-        assertNotActivated(wUpdateProfileId);
+        assertActivations(List.of(), List.of(wUpdateProfileId));
+
+        // removing the attribute in the filter should activate the workflow, even though only its previous value is set
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.PREVIOUS_FIRST_NAME, "NewFirstName"));
+        assertActivations(List.of(wUpdateProfileId), List.of());
     }
 
     @Test
@@ -723,7 +727,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         UserRepresentation userRep = user.toRepresentation();
         userRep.setLastName("NewLast");
         user.update(userRep);
-        assertNotActivated(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId);
+        assertActivations(List.of(), List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
 
         // an update that changes the email, the firstName and a custom attribute should activate all of them
         userRep = user.toRepresentation();
@@ -731,7 +735,14 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         userRep.setFirstName("NewFirst");
         userRep.singleAttribute("department", "engineering");
         user.update(userRep);
-        assertActivated(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId);
+        assertActivations(List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId), List.of());
+
+        // an update that clears the email and removes the custom attribute should activate the workflows listening for them
+        userRep = user.toRepresentation();
+        userRep.setEmail("");
+        userRep.getAttributes().remove("department");
+        user.update(userRep);
+        assertActivations(List.of(wUpdateEmailId, wUpdateDepartmentId), List.of(wUpdateProfileId));
 
         // resetting the password should activate the workflow listening for password updates only
         CredentialRepresentation newPassword = new CredentialRepresentation();
@@ -739,8 +750,17 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
         newPassword.setValue("new-password");
         newPassword.setTemporary(false);
         user.resetPassword(newPassword);
-        assertActivated(wCredentialId);
-        assertNotActivated(wOtpCredentialId);
+        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId));
+
+        // setting the password when updating the user should activate the workflow listening for password updates only
+        CredentialRepresentation anotherPassword = new CredentialRepresentation();
+        anotherPassword.setType(CredentialRepresentation.PASSWORD);
+        anotherPassword.setValue("another-password");
+        anotherPassword.setTemporary(false);
+        userRep = user.toRepresentation();
+        userRep.setCredentials(List.of(anotherPassword));
+        user.update(userRep);
+        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
 
         // removing an OTP credential should activate the workflow listening for OTP credential removals
         String credentialId = runOnServer.fetch(session -> {
@@ -751,7 +771,7 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
             return userModel.credentialManager().createStoredCredential(credential).getId();
         }, String.class);
         user.removeCredential(credentialId);
-        assertActivated(wRemoveCredentialId);
+        assertActivations(List.of(wRemoveCredentialId), List.of());
     }
 
     private String createSimpleWorkflow(String name, String onEvent) {
@@ -784,29 +804,16 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
     }
 
     /**
-     * Asserts that the given workflows were activated since the collector was last cleared, and clears it.
+     * Asserts which of the given workflows were activated since the collector was last cleared, and clears it.
      */
-    private void assertActivated(String... workflowIds) {
+    private void assertActivations(List<String> activatedWorkflowIds, List<String> notActivatedWorkflowIds) {
         runOnServer.run(session -> {
             WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
             List<String> activated = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class).stream()
                     .map(WorkflowProviderEvent.WorkflowActivatedEvent::getWorkflowId)
                     .toList();
-            assertThat(activated, hasItems(workflowIds));
-            collector.clear();
-        });
-    }
-
-    /**
-     * Asserts that none of the given workflows were activated since the collector was last cleared, and clears it.
-     */
-    private void assertNotActivated(String... workflowIds) {
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<String> activated = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class).stream()
-                    .map(WorkflowProviderEvent.WorkflowActivatedEvent::getWorkflowId)
-                    .toList();
-            for (String workflowId : workflowIds) {
+            assertThat(activated, hasItems(activatedWorkflowIds.toArray(String[]::new)));
+            for (String workflowId : notActivatedWorkflowIds) {
                 assertThat(activated, not(hasItem(workflowId)));
             }
             collector.clear();

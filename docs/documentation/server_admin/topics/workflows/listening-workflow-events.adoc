@@ -52,7 +52,7 @@ At the moment, workflows support event functions for the following realm resourc
 | `user-role-revoked` | A role is revoked from the user. | The role name.
 | `user-group-membership-added` | User joined a group. | The group name or path
 | `user-group-membership-removed` | User is removed from a group. | The group name or path
-| `user-update-credential` | User sets up or updates a credential, or an administrator resets the user's password. | The credential type, such as `password` or `otp`.
+| `user-update-credential` | User sets up or updates a credential, or an administrator resets the user's password or sets credentials when updating the user. | The credential type, such as `password` or `otp`.
 | `user-remove-credential` | User or an administrator removes a credential of the user. | The credential type, such as `password` or `otp`.
 | `user-update-email` | User or an administrator changes the user's email. | None
 | `user-update-profile` | User or an administrator updates the user's profile. | The name of an attribute, such as `firstName` or `email`, to trigger only when that attribute changes.

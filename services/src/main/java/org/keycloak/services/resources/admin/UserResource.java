@@ -238,6 +238,8 @@ public class UserResource {
                     .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
                 auth.users().requireResetPassword(user);
             }
+            // record the credentials set from the representation, so that listeners can react to credential updates
+            adminEvent.detail(Details.CREDENTIAL_TYPE, getCredentialTypesToSet(rep));
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -304,6 +306,22 @@ public class UserResource {
             adminEvent.detail(Details.PREF_PREVIOUS + name, previousValue)
                     .detail(Details.PREF_UPDATED + name, updatedUser.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.joining("::")));
         }
+    }
+
+    /**
+     * Returns the types of the credentials that {@link RepresentationToModel#createCredentials} sets from the given
+     * representation, skipping the credentials that are already stored.
+     */
+    private String getCredentialTypesToSet(UserRepresentation rep) {
+        if (rep.getCredentials() == null) {
+            return null;
+        }
+        return rep.getCredentials().stream()
+                .filter(credential -> credential.getId() == null || user.credentialManager().getStoredCredentialById(credential.getId()) == null)
+                .map(credential -> credential.getValue() != null && !credential.getValue().isEmpty() ? CredentialRepresentation.PASSWORD : credential.getType())
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining("::"));
     }
 
     public static Response validateUserProfile(UserProfile profile, KeycloakSession session, AdminAuth adminAuth) {
