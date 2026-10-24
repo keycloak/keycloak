@@ -369,6 +369,9 @@ public class IdentityProviderResource {
         // the mapper belongs to the identity provider from the path, whatever alias the representation carries
         model.setIdentityProviderAlias(identityProviderModel.getAlias());
 
+        // Reject attempts with mixed group types (e.g a realm group and an organization group) in one request.
+        validateMapperGroupTypeConsistency(model);
+
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
         Organizations.checkGroupMapperOrgPermission(session, model, auth);
         validateMapperAdminRoleMapping(model);
@@ -446,6 +449,9 @@ public class IdentityProviderResource {
         model = RepresentationToModel.toModel(rep);
         model.setId(id);
         model.setIdentityProviderAlias(identityProviderModel.getAlias());
+
+        // Reject attempts with mixed group types (e.g a realm group and an organization group) in one request.
+        validateMapperGroupTypeConsistency(model);
 
         Organizations.validateGroupMapperOrganization(session, identityProviderModel, model);
         Organizations.checkGroupMapperOrgPermission(session, model, auth);
@@ -576,7 +582,7 @@ public class IdentityProviderResource {
         if (mapperModel.getConfig() == null) {
            throw ErrorResponse.error("Mapper config must not be null.", Response.Status.BAD_REQUEST);
         }
-        
+
         if (mapperGrantsAdminRole(mapperModel) || mapperJoinsAdminGroup(mapperModel)) {
             if (!identityProviderModel.isAllowAdminRoleMapping()) {
                 throw ErrorResponse.error("This identity provider is not configured to allow granting admin roles via mappers. "
@@ -596,15 +602,56 @@ public class IdentityProviderResource {
     }
 
     private boolean mapperJoinsAdminGroup(IdentityProviderMapperModel mapperModel) {
-        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
-        if (groupPath == null || groupPath.trim().isEmpty()) {
+        String groupPathList = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        if (groupPathList == null || groupPathList.trim().isEmpty()) {
             return false;
         }
-        GroupModel group = GroupModel.Type.ORGANIZATION.name().equals(mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE))
-          ? KeycloakModelUtils.findGroupByPath(session, realm,
-                 KeycloakModelUtils.getOrganizationForIdpMapper(session, mapperModel, identityProviderModel), groupPath)
-          : KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
-        return group != null && AdminRoles.groupHasAdminRoles(group);
+
+        var shouldJoinGroup = false;
+        final var groups = groupPathList.split(",");
+        for (String groupPath : groups) {
+            GroupModel group = GroupModel.Type.ORGANIZATION.name().equals(mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE))
+                    ? KeycloakModelUtils.findGroupByPath(session, realm,
+                    KeycloakModelUtils.getOrganizationForIdpMapper(session, mapperModel, identityProviderModel), groupPath)
+                    : KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
+
+            if (!shouldJoinGroup) {
+                shouldJoinGroup =  group != null && AdminRoles.groupHasAdminRoles(group);
+            }
+        }
+
+        return shouldJoinGroup;
     }
 
+    private void validateMapperGroupTypeConsistency(IdentityProviderMapperModel mapperModel) {
+        if (mapperModel.getConfig() == null) {
+            throw ErrorResponse.error("Mapper config must not be null.", Response.Status.BAD_REQUEST);
+        }
+
+        final var groupPathList = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        if (groupPathList == null || groupPathList.isBlank()) {
+            return;
+        }
+
+        final var groups = groupPathList.split(",");
+        final var groupType = mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE);
+        if ("REALM".equals(groupType)) {
+            for (String groupPath: groups) {
+                final var group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
+                if (group == null) {
+                    throw ErrorResponse.error("Group '" + groupPath + "' does not exist in the realm.", Response.Status.BAD_REQUEST);
+                }
+            }
+        }
+
+        if ("ORGANIZATION".equals(groupType)) {
+            for (String groupPath: groups) {
+                final var group = KeycloakModelUtils.findGroupByPath(session, realm,
+                        KeycloakModelUtils.getOrganizationForIdpMapper(session, mapperModel, identityProviderModel), groupPath);
+                if (group == null) {
+                    throw ErrorResponse.error("Group '" + groupPath + "' does not exist in any organization.", Response.Status.BAD_REQUEST);
+                }
+            }
+        }
+    }
 }
