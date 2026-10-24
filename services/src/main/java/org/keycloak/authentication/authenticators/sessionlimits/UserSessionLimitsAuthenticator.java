@@ -31,6 +31,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static final Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
     public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
+    public static final String SESSION_FLOW_NOTE = "kc.session.flow";
     protected final KeycloakSession session;
 
     String behavior;
@@ -58,16 +59,24 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         final boolean newClientSession = authResult == null || authResult.session() == null
                 || authResult.session().getAuthenticatedClientSessionByClient(currentClient.getId()) == null;
 
+        // Stamp the current top-level flow on the authentication session
+        String flowAlias = context.getTopLevelFlow() != null ? context.getTopLevelFlow().getAlias() : null;
+        if (flowAlias != null && context.getAuthenticationSession() != null) {
+            context.getAuthenticationSession().setUserSessionNote(SESSION_FLOW_NOTE, flowAlias);
+        }
+
         // Get the configuration for this authenticator
         behavior = config.get(UserSessionLimitsAuthenticatorFactory.BEHAVIOR);
         int userRealmLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, config);
         int userClientLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, config);
+        boolean countSessionsPerFlow = Boolean.parseBoolean(config.get(UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW));
 
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
             List<UserSessionModel> userSessionsForRealm = session.sessions()
                     .getUserSessionsStream(context.getRealm(), context.getUser())
+                    .filter(userSession -> !countSessionsPerFlow || (flowAlias != null && flowAlias.equals(userSession.getNote(SESSION_FLOW_NOTE))))
                     .collect(Collectors.toList());
             int userSessionCountForRealm = userSessionsForRealm.size();
 
@@ -76,6 +85,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             int userSessionCountForClient = userSessionsForClient.size();
             logger.debugf("session-limiter's configured realm session limit: %s", userRealmLimit);
             logger.debugf("session-limiter's configured client session limit: %s", userClientLimit);
+            logger.debugf("session-limiter's configured count sessions per flow: %s", countSessionsPerFlow);
             logger.debugf("session-limiter's count of total user sessions for the entire realm (could be apps other than web apps): %s", userSessionCountForRealm);
             logger.debugf("session-limiter's count of total user sessions for this keycloak client: %s", userSessionCountForClient);
 

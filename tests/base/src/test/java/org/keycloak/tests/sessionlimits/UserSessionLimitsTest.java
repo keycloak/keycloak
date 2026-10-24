@@ -828,6 +828,178 @@ public class UserSessionLimitsTest {
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
     }
 
+    @Test
+    public void testPerFlowSessionLimitsDenied() throws Exception {
+        try {
+            // Enable per-flow counting on browser flow (realm limit = 1) and direct grant flow (realm limit = 2)
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "true");
+
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "true");
+
+            // 1st Direct Grant session -> succeeds
+            AccessTokenResponse response1 = oauth.doPasswordGrantRequest(username, password);
+            assertEquals(200, response1.getStatusCode());
+
+            // 2nd Direct Grant session -> succeeds
+            AccessTokenResponse response2 = oauth.doPasswordGrantRequest(username, password);
+            assertEquals(200, response2.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+
+            // Now log in via Browser flow. Even though there are already 2 realm sessions from direct grant,
+            // browser flow has 0 sessions created by browser flow, so 1st browser login succeeds
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+
+            // Total sessions in realm is now 3
+            runOnServer.run(assertSessionCount(realmName, username, 3));
+
+            // Delete browser cookies to attempt a 2nd login in browser flow
+            deleteAllCookiesForRealm(driver);
+
+            // 2nd Browser flow login exceeds the limit of 1 for browser flow -> denied
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation errorEvent = events.poll();
+            EventAssertion.assertError(errorEvent)
+                    .type(EventType.LOGIN_ERROR)
+                    .userId(null);
+            errorPage.assertCurrent();
+            assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+
+            // Direct Grant sessions are still active and untouched
+            runOnServer.run(assertSessionCount(realmName, username, 3));
+        } finally {
+            // Revert configuration back to defaults
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+        }
+    }
+
+    @Test
+    public void testPerFlowSessionLimitsOldestSessionRemoved() throws Exception {
+        try {
+            // Enable per-flow counting with TERMINATE_OLDEST_SESSION
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "true");
+
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "true");
+
+            // 1st Direct Grant session
+            AccessTokenResponse directGrantResponse1 = oauth.doPasswordGrantRequest(username, password);
+            assertEquals(200, directGrantResponse1.getStatusCode());
+            runOnServer.run(assertSessionCount(realmName, username, 1));
+
+            // 1st Browser login -> succeeds
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation loginEvent1 = events.poll();
+            EventAssertion.assertSuccess(loginEvent1).type(EventType.LOGIN);
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+
+            deleteAllCookiesForRealm(driver);
+
+            // 2nd Browser login -> succeeds and terminates the oldest browser session
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation logoutEvent = events.poll();
+            EventAssertion.assertSuccess(logoutEvent).type(EventType.LOGOUT);
+            EventRepresentation loginEvent2 = events.poll();
+            EventAssertion.assertSuccess(loginEvent2).type(EventType.LOGIN);
+
+            // Still 2 sessions total: 1 direct grant + 1 browser (the old browser session was replaced)
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+
+            // Verify direct grant session is still valid
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(directGrantResponse1.getRefreshToken(), password);
+            assertEquals(200, refreshResponse.getStatusCode());
+        } finally {
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+        }
+    }
+
+    @Test
+    public void testMixedPerFlowDirectGrantAndGlobalBrowserFlow() throws Exception {
+        try {
+            // Direct grant has countSessionsPerFlow = true (limit = 1)
+            // Browser flow has countSessionsPerFlow = false (limit = 2, realm-wide)
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "true");
+
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+
+            // 1st Browser login -> succeeds (1 realm session total)
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+            runOnServer.run(assertSessionCount(realmName, username, 1));
+
+            // 1st Direct Grant login -> succeeds because Direct Grant only counts direct grant sessions (0 so far)
+            AccessTokenResponse directGrant1 = oauth.doPasswordGrantRequest(username, password);
+            assertEquals(200, directGrant1.getStatusCode());
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+
+            // 2nd Direct Grant login -> denied because Direct Grant limit is 1
+            AccessTokenResponse directGrant2 = oauth.doPasswordGrantRequest(username, password);
+            assertEquals(403, directGrant2.getStatusCode());
+            assertEquals(ERROR_TO_DISPLAY, directGrant2.getError());
+
+            // 2nd Browser login attempt -> denied because Browser flow has countSessionsPerFlow = false
+            // and the realm-wide limit of 2 is already reached (1 browser + 1 direct grant)
+            deleteAllCookiesForRealm(driver);
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation errorEvent = events.poll();
+            EventAssertion.assertError(errorEvent)
+                    .type(EventType.LOGIN_ERROR)
+                    .userId(null);
+            errorPage.assertCurrent();
+            assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+        } finally {
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("browser", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+            setAuthenticatorConfigItem("direct grant", UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, "false");
+        }
+    }
+
     private void restoreAndRemoveFlow(String realmName) {
         // Cleanup: restore original browser flow and remove custom flow
         String currentRealm = this.realmName;
