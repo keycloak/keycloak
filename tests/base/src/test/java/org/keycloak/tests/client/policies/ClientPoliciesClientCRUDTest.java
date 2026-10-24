@@ -2,8 +2,10 @@ package org.keycloak.tests.client.policies;
 
 import java.util.List;
 
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -16,6 +18,8 @@ import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFact
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
@@ -373,5 +377,71 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException cpe) {
             assertEquals("Invalid client metadata: implicit flow enabled", cpe.getErrorDetail());
         }
+    }
+
+    @Test
+    public void testSecureLogoutExecutorOmittedConfiguration() throws Exception {
+        // A profile can be saved with an executor whose configuration is omitted. The executor
+        // must then run with its documented defaults instead of failing every matching client
+        // operation with an internal server error.
+        setupPolicyWithOmittedExecutorConfiguration(realm, SecureLogoutExecutorFactory.PROVIDER_ID);
+
+        // A client without front-channel logout is not affected.
+        createClientByAdmin(realm, "client-no-frontchannel-logout", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {});
+
+        // A client with front-channel logout is rejected with the executor's policy error.
+        try {
+            createClientByAdmin(realm, "client-frontchannel-logout", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setFrontchannelLogout(Boolean.TRUE);
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setFrontChannelLogoutUrl("https://client.example.org/logout");
+            });
+            fail("Front-channel logout should not be allowed by default");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Front-channel logout is not allowed for this client", cpe.getErrorDetail());
+        }
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutorOmittedConfiguration() throws Exception {
+        // Same as above for an executor whose defaults make the checks strict rather than lenient.
+        setupPolicyWithOmittedExecutorConfiguration(realm, SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID);
+
+        // A client with a regular https redirect is not affected.
+        createClientByAdmin(realm, "client-regular-redirect", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+            clientRep.setRedirectUris(List.of("https://client.example.org/callback"));
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(List.of("https://client.example.org/logout"));
+        });
+
+        // A client with a private use scheme redirect is rejected with the executor's policy error.
+        try {
+            createClientByAdmin(realm, "client-private-scheme-redirect", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setRedirectUris(List.of("myapp://callback"));
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(List.of());
+            });
+            fail("A private use scheme redirect should not be allowed by default");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Invalid Redirect Uri: invalid private use scheme", cpe.getErrorDetail());
+        }
+    }
+
+    private void setupPolicyWithOmittedExecutorConfiguration(ManagedRealm realm, String executorId) {
+        ClientProfileRepresentation profile = ClientProfileBuilder.create()
+                .name("executor")
+                .description("executor description")
+                .executor(executorId, new ClientPolicyExecutorConfigurationRepresentation())
+                .build();
+        // omit the configuration so that the profile is stored without it
+        profile.getExecutors().get(0).setConfiguration(null);
+
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles().clientProfile(profile);
+            r.resetClientPolicies().clientPolicy(ClientPolicyBuilder.create()
+                    .name("policy")
+                    .description("description of policy")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                    .profile("executor")
+                    .build());
+            return r;
+        });
     }
 }

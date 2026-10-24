@@ -150,6 +150,20 @@ public class ClientPoliciesUtil {
         return profileModel;
     }
 
+    /**
+     * Returns the given configuration node, or an empty JSON object when the configuration is
+     * omitted or an explicit JSON null. A client profile can be saved with an executor or
+     * condition whose configuration is omitted, so such a profile has to be loadable as well:
+     * converting the omitted configuration as-is would set the provider up with a null
+     * configuration and fail the first matching client operation with a NullPointerException.
+     * Loading it like an explicitly empty configuration gives the provider its documented
+     * default values, which is also what the built-in profiles rely on via an explicitly empty
+     * configuration object.
+     */
+    private static JsonNode emptyConfigurationIfOmitted(JsonNode config) {
+        return config == null || config.isNull() ? JsonNodeFactory.instance.objectNode() : config;
+    }
+
     private static ClientPolicyExecutorProvider getExecutorProvider(KeycloakSession session, RealmModel realm, String providerId, JsonNode config) {
         ComponentModel componentModel = new JsonConfigComponentModel(ClientPolicyExecutorProvider.class, realm.getId(), providerId, config);
         ClientPolicyExecutorProvider executorProvider = session.getComponentProvider(ClientPolicyExecutorProvider.class, componentModel.getId(), sessionFactory -> componentModel);
@@ -158,7 +172,7 @@ public class ClientPoliciesUtil {
             throw new IllegalStateException("Executor with provider ID " + providerId + " not found");
         }
 
-        ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(config, executorProvider.getExecutorConfigurationClass());
+        ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(emptyConfigurationIfOmitted(config), executorProvider.getExecutorConfigurationClass());
         executorProvider.setupConfiguration(configuration);
         return executorProvider;
     }
@@ -462,7 +476,7 @@ public class ClientPoliciesUtil {
             throw new IllegalStateException("Condition with provider ID " + providerId + " not found");
         }
 
-        ClientPolicyConditionConfigurationRepresentation configuration =  (ClientPolicyConditionConfigurationRepresentation) JsonSerialization.mapper.convertValue(config, conditionProvider.getConditionConfigurationClass());
+        ClientPolicyConditionConfigurationRepresentation configuration =  (ClientPolicyConditionConfigurationRepresentation) JsonSerialization.mapper.convertValue(emptyConfigurationIfOmitted(config), conditionProvider.getConditionConfigurationClass());
         conditionProvider.setupConfiguration(configuration);
         return conditionProvider;
     }
