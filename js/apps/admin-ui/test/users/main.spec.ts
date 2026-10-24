@@ -357,3 +357,61 @@ test.describe("Existing users", () => {
     await assertRowExists(page, "test-group");
   });
 });
+
+test.describe("User attribute search", () => {
+  const exactUserName = "search-exact-user";
+  const partialUserName = "search-partial-user";
+  const overrides: RealmRepresentation = {
+    attributes: {
+      userProfileEnabled: "true",
+    },
+    users: [
+      {
+        username: exactUserName,
+        attributes: { custom: ["94"] },
+      },
+      {
+        username: partialUserName,
+        attributes: { custom: ["94#381"] },
+      },
+    ],
+  };
+
+  test("matches partially when Exact search is unchecked", async ({ page }) => {
+    await using testBed = await createTestBed(overrides);
+    await adminClient.addUserProfile(testBed.realm, {
+      attributes: [
+        {
+          name: "custom",
+          displayName: "custom",
+          permissions: { view: ["admin", "user"], edit: ["admin", "user"] },
+        },
+      ],
+    });
+
+    await login(page, { to: toUsers({ realm: testBed.realm }) });
+
+    // switch to attribute search and add a `custom = 94` filter
+    await page.getByTestId("user-search-toggle").click();
+    await page.getByRole("menuitem", { name: "Attribute search" }).click();
+    await page.getByTestId("dropdown-panel-btn").click();
+    await page.getByPlaceholder("Select attribute").click();
+    await page.getByPlaceholder("Select attribute").fill("custom");
+    await page.getByRole("option", { name: "custom" }).click();
+    await page.getByPlaceholder("Type a value").fill("94");
+    await page.getByTestId("user-attribute-search-add-filter-button").click();
+
+    // an unchecked "Exact search" must also match `94#381` partially
+    await expect(page.getByTestId("exact")).not.toBeChecked();
+    await page.getByTestId("search-user-attribute-btn").click();
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, partialUserName);
+
+    // a checked "Exact search" still narrows to the exact match only
+    await page.getByTestId("dropdown-panel-btn").click();
+    await page.getByTestId("exact").check();
+    await page.getByTestId("search-user-attribute-btn").click();
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, partialUserName, false);
+  });
+});
