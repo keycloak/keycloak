@@ -417,7 +417,10 @@ public class LoginPageTest {
         String originalDisplayName = rep.getDisplayName();
         realm.cleanup().add(r -> {
             RealmRepresentation cleanupRep = r.toRepresentation();
-            cleanupRep.setDisplayName(originalDisplayName);
+            // DefaultExportImportManager.updateRealm ignores a null display name, so an
+            // originally unset one can only be restored as an empty string, which makes
+            // RealmBean fall back to the realm name.
+            cleanupRep.setDisplayName(originalDisplayName == null ? "" : originalDisplayName);
             r.update(cleanupRep);
         });
 
