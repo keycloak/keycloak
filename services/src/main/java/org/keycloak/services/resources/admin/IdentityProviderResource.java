@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,6 +40,7 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.RoleGrantingIdentityProviderMapper;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -51,7 +53,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -587,12 +588,22 @@ public class IdentityProviderResource {
     }
 
     private boolean mapperGrantsAdminRole(IdentityProviderMapperModel mapperModel) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        if (roleName == null || roleName.trim().isEmpty()) {
-            return false;
-        }
-        RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
-        return role != null && AdminRoles.isAdminRoleOrComposite(role);
+        return grantableRoleReferences(mapperModel)
+                .filter(roleReference -> !roleReference.trim().isEmpty())
+                .flatMap(roleReference -> Stream.ofNullable(KeycloakModelUtils.getRoleFromString(session, realm, roleReference)))
+                .anyMatch(AdminRoles::isAdminRoleOrComposite);
+    }
+
+    private Stream<String> grantableRoleReferences(IdentityProviderMapperModel mapperModel) {
+        return Stream.concat(Stream.ofNullable(mapperModel.getConfig().get(ConfigConstants.ROLE)),
+                additionalGrantableRoleReferences(mapperModel));
+    }
+
+    private Stream<String> additionalGrantableRoleReferences(IdentityProviderMapperModel mapperModel) {
+        return RoleGrantingIdentityProviderMapper.of(session.getKeycloakSessionFactory(), mapperModel)
+                .map(mapper -> mapper.getGrantableRoleReferences(mapperModel.getConfig()))
+                .orElse(Set.of())
+                .stream();
     }
 
     private boolean mapperJoinsAdminGroup(IdentityProviderMapperModel mapperModel) {
