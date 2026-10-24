@@ -88,6 +88,44 @@ test.describe("Personal info (user profile enabled)", () => {
     await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
+  test("hidden field has no visible controls and its value survives save", async ({ page }) => {
+    await using testBed = await createTestBed(userProfileRealm);
+    await waitForRealmReady();
+
+    await retryOperation(() =>
+      adminClient.users.updateProfile({
+        ...userProfile,
+        realm: testBed.realm,
+      }),
+    );
+
+    // Pre-populate the hidden attribute so we can verify it survives submission
+    const users = await adminClient.users.find({ realm: testBed.realm, username: testBed.username });
+    await adminClient.users.update(
+      { id: users[0].id!, realm: testBed.realm },
+      { ...users[0], attributes: { ...users[0].attributes, tenantId: ["acme-corp"] } },
+    );
+
+    await login(page, testBed.realm);
+
+    // No visible control (textbox, label) for the hidden field
+    await expect(page.getByTestId("tenantId")).not.toBeAttached();
+    await expect(page.locator("label[for='attributes\\.tenantId']")).not.toBeVisible();
+
+    // The hidden input must be in the DOM so the value is submitted
+    const hiddenInput = page.locator("input[type='hidden'][name='attributes.tenantId']");
+    await expect(hiddenInput).toBeAttached();
+    await expect(hiddenInput).toHaveValue("acme-corp");
+
+    // Save another field; the hidden value must survive the round-trip
+    await page.getByTestId("firstName").fill("Test");
+    await page.getByTestId("save").click();
+    await assertLastAlert(page, "Your account has been updated.");
+
+    const updated = await adminClient.users.findOne({ id: users[0].id!, realm: testBed.realm });
+    expect(updated?.attributes?.["tenantId"]?.[0]).toBe("acme-corp");
+  });
+
   test("saves user profile", async ({ page }) => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();

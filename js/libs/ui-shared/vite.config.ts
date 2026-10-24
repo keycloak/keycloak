@@ -32,5 +32,11 @@ export default defineConfig({
   test: {
     watch: false,
     environment: "jsdom",
+    server: {
+      deps: {
+        // Inline PatternFly so vitest can handle its CSS imports during tests.
+        inline: [/@patternfly\/.*/],
+      },
+    },
   },
 });
