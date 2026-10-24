@@ -72,6 +72,17 @@ export const getAllEffectiveRoles = (
 ): Promise<EffectiveRole[]> =>
   fetchEndpoint(adminClient, { ...query, endpoint: "effective-roles-all" });
 
+export const getEvaluatedEffectiveRoles = (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  scope: string,
+): Promise<EffectiveRole[]> =>
+  fetchAdminUI(
+    adminClient,
+    `/ui-ext/effective-roles-all/clients/${encodeURIComponent(clientId)}/evaluate`,
+    { scope },
+  );
+
 type RoleRepresentation = {
   id: string;
   name: string;
