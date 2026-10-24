@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.util.Base64;
 
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
@@ -55,6 +56,38 @@ public abstract class AKPJWKTest {
         testPrefix(Algorithm.ML_DSA_87);
     }
 
+    @Test
+    public void rejectUnknownAlgorithm() {
+        assertInvalidPublicKey(Base64.getUrlEncoder().withoutPadding().encodeToString(new byte[1]), "ML-DSA-unknown");
+    }
+
+    @Test
+    public void rejectMissingAlgorithm() {
+        assertInvalidPublicKey(Base64.getUrlEncoder().withoutPadding().encodeToString(new byte[1]), null);
+    }
+
+    @Test
+    public void rejectMissingPublicKey() {
+        assertInvalidPublicKey(null, Algorithm.ML_DSA_44);
+    }
+
+    @Test
+    public void rejectInvalidBase64Url() {
+        assertInvalidPublicKey("%%%", Algorithm.ML_DSA_44);
+    }
+
+    @Test
+    public void rejectWrongPublicKeyLength() {
+        assertInvalidPublicKey(Base64.getUrlEncoder().withoutPadding().encodeToString(new byte[1311]), Algorithm.ML_DSA_44);
+    }
+
+    @Test
+    public void rejectCrossParameterPublicKeyEncoding() throws NoSuchAlgorithmException {
+        PublicKey publicKey = KeyPairGenerator.getInstance(Algorithm.ML_DSA_65).generateKeyPair().getPublic();
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> AKPUtils.toEncodedPub(publicKey, Algorithm.ML_DSA_44));
+    }
+
     private void testDecodingAndEncodingPublicKey(String algorithm, String sampleJwk) throws IOException {
         JWK jwk = JsonSerialization.readValue(sampleJwk, JWK.class);
 
@@ -87,6 +120,10 @@ public abstract class AKPJWKTest {
         }
 
         Assert.assertArrayEquals(AKPUtils.PREFIXES.get(algorithm), expectedPrefix);
+    }
+
+    private static void assertInvalidPublicKey(String publicKey, String algorithm) {
+        Assert.assertThrows(IllegalArgumentException.class, () -> AKPUtils.fromEncodedPub(publicKey, algorithm));
     }
 
     private static byte[] findMatchingPrefix(byte[] a, byte[] b) {

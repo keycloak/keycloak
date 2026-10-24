@@ -18,6 +18,18 @@ public class CryptoUtilsTest extends AbstractUtilSessionTest {
     }
 
     @Test
+    public void getAsymmetricSignatureProviderReturnsProviderForSupportedAlgorithm() throws VerificationException {
+        assertNotNull(CryptoUtils.getAsymmetricSignatureProvider(session, "RS256"));
+    }
+
+    @Test
+    public void getAsymmetricSignatureProviderRejectsSymmetricAlgorithm() {
+        VerificationException thrown = assertThrows(VerificationException.class,
+                () -> CryptoUtils.getAsymmetricSignatureProvider(session, "HS256"));
+        assertThat(thrown.getMessage(), containsString("asymmetric"));
+    }
+
+    @Test
     public void getSignatureProviderThrowsForNoneAlgorithm() {
         VerificationException thrown = assertThrows(VerificationException.class,
                 () -> CryptoUtils.getSignatureProvider(session, "none"));
