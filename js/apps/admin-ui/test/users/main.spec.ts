@@ -414,4 +414,26 @@ test.describe("User attribute search", () => {
     await assertRowExists(page, exactUserName);
     await assertRowExists(page, partialUserName, false);
   });
+
+  test("does not list service account users in the default list", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed(overrides);
+    await adminClient.createClient({
+      realm: testBed.realm,
+      clientId: "sa-client",
+      enabled: true,
+      publicClient: false,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    await login(page, { to: toUsers({ realm: testBed.realm }) });
+
+    // the default user list sends no attribute query, so it must not send an
+    // `exact` flag either - otherwise the server switches to a filtered query
+    // that includes service account users in the results
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, "service-account-sa-client", false);
+  });
 });

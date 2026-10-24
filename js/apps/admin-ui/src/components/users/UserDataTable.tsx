@@ -170,7 +170,9 @@ export function UserDataTable() {
       params.search = searchParam;
     }
 
-    params.exact = activeFilters.exact;
+    if (query || activeFilters.exact) {
+      params.exact = activeFilters.exact;
+    }
 
     if (!listUsers && !(params.search || params.q)) {
       return [];
