@@ -132,6 +132,7 @@ public class OID4VPSdJwtUserAttributeMapper extends AbstractOID4VPClaimMapper {
         }
     }
 
+    @Override
     protected String attribute(IdentityProviderMapperModel mapperModel) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         if (StringUtil.isBlank(attribute)) {
