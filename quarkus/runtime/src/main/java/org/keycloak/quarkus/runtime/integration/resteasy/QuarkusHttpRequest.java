@@ -81,6 +81,9 @@ public final class QuarkusHttpRequest implements HttpRequest {
                 }
 
                 for (FormValue value : values) {
+                    if (value.isFileItem()) {
+                        throw new IllegalArgumentException("File form values are not supported");
+                    }
                     decodedFormParameters.add(name, value.getValue());
                 }
             }
