@@ -4,12 +4,20 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.models.RealmModel;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowProviderEvent;
@@ -17,6 +25,10 @@ import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserGroupMembershipAddedWorkflowEventFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -33,12 +45,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for workflow provider events.
@@ -645,239 +657,101 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testNewWorkflowTriggers() {
+    public void testUserEventsTriggerWorkflows() {
         registerTestListener();
 
-        // 1. Create workflows for each of the new triggers
-        // update-credential with optional type password
         String wCredentialId = createSimpleWorkflow("w-credential", "user-update-credential(password)");
-        // remove-credential
         String wRemoveCredentialId = createSimpleWorkflow("w-remove-credential", "user-remove-credential");
-        // update-email
         String wUpdateEmailId = createSimpleWorkflow("w-update-email", "user-update-email");
-        // update-profile with optional type firstName
         String wUpdateProfileId = createSimpleWorkflow("w-update-profile", "user-update-profile(firstName)");
-        // update-consent
         String wUpdateConsentId = createSimpleWorkflow("w-update-consent", "user-update-consent");
 
-        // create a user to act upon
-        Response response = managedRealm.admin().users().create(UserBuilder.create()
-                .username("test-trigger-user").email("trigger-user@example.com").build());
-        String userId = ApiUtil.getCreatedId(response);
-        response.close();
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
+                .username("test-trigger-user").email("trigger-user@example.com").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
-        // Clear collector so user creation events are discarded
-        runOnServer.run(session -> {
-            WorkflowEventCollector.getInstance().clear();
-        });
+        // clear the collector so that the user creation events are discarded
+        runOnServer.run(session -> WorkflowEventCollector.getInstance().clear());
 
-        // Trigger Update Credential (via UPDATE_CREDENTIAL event)
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.UPDATE_CREDENTIAL)
-                    .user(userId)
-                    .detail(org.keycloak.events.Details.CREDENTIAL_TYPE, "password")
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
+        // updating a credential of a type other than the one in the filter should not activate the workflow
+        fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
+        assertNotActivated(wCredentialId);
 
-        // Trigger Remove Credential
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.REMOVE_CREDENTIAL)
-                    .user(userId)
-                    .detail(org.keycloak.events.Details.CREDENTIAL_TYPE, "otp")
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
+        fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE));
+        fireUserEvent(EventType.REMOVE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
+        fireUserEvent(EventType.UPDATE_EMAIL, userId, Map.of());
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_FIRST_NAME, "NewFirstName"));
+        fireUserEvent(EventType.UPDATE_CONSENT, userId, Map.of());
+        assertActivated(wCredentialId, wRemoveCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateConsentId);
 
-        // Trigger Update Email
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.UPDATE_EMAIL)
-                    .user(userId)
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
-
-        // Trigger Update Profile
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.UPDATE_PROFILE)
-                    .user(userId)
-                    .detail("updated_first_name", "NewFirstName")
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
-
-        // Trigger Update Consent
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.UPDATE_CONSENT)
-                    .user(userId)
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
-
-        // Verify that all 5 workflows were activated
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            
-            // We expect at least one activation event for each workflow
-            boolean credentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wCredentialId));
-            boolean removeCredentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wRemoveCredentialId));
-            boolean updateEmailActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateEmailId));
-            boolean updateProfileActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateProfileId));
-            boolean updateConsentActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateConsentId));
-
-            assertTrue(credentialActivated, "Credential update workflow should have activated");
-            assertTrue(removeCredentialActivated, "Credential remove workflow should have activated");
-            assertTrue(updateEmailActivated, "Email update workflow should have activated");
-            assertTrue(updateProfileActivated, "Profile update workflow should have activated");
-            assertTrue(updateConsentActivated, "Consent update workflow should have activated");
-        });
-
-        // Trigger Update Profile with non-matching attribute firstName (e.g. updating lastName)
-        runOnServer.run(session -> {
-            WorkflowEventCollector.getInstance().clear();
-            RealmModel realm = session.getContext().getRealm();
-            org.keycloak.events.EventBuilder eventBuilder = new org.keycloak.events.EventBuilder(realm, session, session.getContext().getConnection());
-            org.keycloak.events.Event event = eventBuilder.event(org.keycloak.events.EventType.UPDATE_PROFILE)
-                    .user(userId)
-                    .detail("updated_last_name", "NewLastName")
-                    .getEvent();
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(event);
-        });
-
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean updateProfileActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateProfileId));
-            assertFalse(updateProfileActivated, "Profile update workflow with firstName filter should not have activated when only lastName was updated");
-        });
+        // updating an attribute other than the one in the filter should not activate the workflow
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_LAST_NAME, "NewLastName"));
+        assertNotActivated(wUpdateProfileId);
     }
 
     @Test
     public void testAdminOperationsTriggerWorkflows() {
         registerTestListener();
 
-        // 1. Create workflows for each of the admin triggers
-        // update-credential (acting on password reset or update credential)
-        String wCredentialId = createSimpleWorkflow("admin-w-credential", "user-update-credential(password)");
-        // remove-credential
-        String wRemoveCredentialId = createSimpleWorkflow("admin-w-remove-credential", "user-remove-credential(otp)");
-        // update-email
-        String wUpdateEmailId = createSimpleWorkflow("admin-w-update-email", "user-update-email");
-        // update-profile with optional type firstName
-        String wUpdateProfileId = createSimpleWorkflow("admin-w-update-profile", "user-update-profile(firstName)");
+        // allow custom attributes, so that admin updates send them back along with the root attributes
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
 
-        // 2. Create a test user
+        String wCredentialId = createSimpleWorkflow("admin-w-credential", "user-update-credential(password)");
+        String wOtpCredentialId = createSimpleWorkflow("admin-w-otp-credential", "user-update-credential(otp)");
+        String wRemoveCredentialId = createSimpleWorkflow("admin-w-remove-credential", "user-remove-credential(otp)");
+        String wUpdateEmailId = createSimpleWorkflow("admin-w-update-email", "user-update-email");
+        String wUpdateProfileId = createSimpleWorkflow("admin-w-update-profile", "user-update-profile(firstName)");
+        String wUpdateDepartmentId = createSimpleWorkflow("admin-w-update-department", "user-update-profile(department)");
+
         String userId;
         try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("admin-trigger-user").email("admin-trigger@example.com")
-                .firstName("OldFirst").lastName("OldLast").build())) {
+                .firstName("OldFirst").lastName("OldLast")
+                .attribute("department", "sales").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
+        UserResource user = managedRealm.admin().users().get(userId);
 
-        // Clear collector so creation events are discarded
-        runOnServer.run(session -> {
-            WorkflowEventCollector.getInstance().clear();
-        });
+        // clear the collector so that the user creation events are discarded
+        runOnServer.run(session -> WorkflowEventCollector.getInstance().clear());
 
-        // 3. Perform an admin update that changes lastName but NOT firstName or email
-        org.keycloak.representations.idm.UserRepresentation userRep = managedRealm.admin().users().get(userId).toRepresentation();
+        // an update that only changes the lastName should not activate workflows listening for other attributes
+        UserRepresentation userRep = user.toRepresentation();
         userRep.setLastName("NewLast");
-        managedRealm.admin().users().get(userId).update(userRep);
+        user.update(userRep);
+        assertNotActivated(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId);
 
-        // Verify that neither update-email nor update-profile(firstName) workflows were activated
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean updateEmailActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateEmailId));
-            boolean updateProfileActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateProfileId));
-            assertFalse(updateEmailActivated, "Email update workflow should not have activated when email was not changed");
-            assertFalse(updateProfileActivated, "Profile update workflow should not have activated when firstName was not changed");
-            collector.clear();
-        });
-
-        // 4. Perform an admin update that changes email and firstName
-        userRep = managedRealm.admin().users().get(userId).toRepresentation();
+        // an update that changes the email, the firstName and a custom attribute should activate all of them
+        userRep = user.toRepresentation();
         userRep.setEmail("admin-trigger-new@example.com");
         userRep.setFirstName("NewFirst");
-        managedRealm.admin().users().get(userId).update(userRep);
+        userRep.singleAttribute("department", "engineering");
+        user.update(userRep);
+        assertActivated(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId);
 
-        // Verify that both update-email and update-profile(firstName) workflows were activated
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean updateEmailActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateEmailId));
-            boolean updateProfileActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wUpdateProfileId));
-            assertTrue(updateEmailActivated, "Email update workflow should have activated when email was changed");
-            assertTrue(updateProfileActivated, "Profile update workflow should have activated when firstName was changed");
-            collector.clear();
-        });
-
-        // 5. Trigger admin password reset (should trigger update credential workflow)
-        org.keycloak.representations.idm.CredentialRepresentation newPassword = new org.keycloak.representations.idm.CredentialRepresentation();
-        newPassword.setType(org.keycloak.representations.idm.CredentialRepresentation.PASSWORD);
+        // resetting the password should activate the workflow listening for password updates only
+        CredentialRepresentation newPassword = new CredentialRepresentation();
+        newPassword.setType(CredentialRepresentation.PASSWORD);
         newPassword.setValue("new-password");
         newPassword.setTemporary(false);
-        managedRealm.admin().users().get(userId).resetPassword(newPassword);
+        user.resetPassword(newPassword);
+        assertActivated(wCredentialId);
+        assertNotActivated(wOtpCredentialId);
 
-        // Verify credential workflow activated
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean credentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wCredentialId));
-            assertTrue(credentialActivated, "Credential update workflow should have activated on admin password reset");
-            collector.clear();
-        });
-
-        // 6. Create an OTP credential to remove
-        String credId = runOnServer.fetch(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserById(realm, userId);
-            org.keycloak.credential.CredentialModel cred = new org.keycloak.credential.CredentialModel();
-            cred.setType("otp");
-            cred.setUserLabel("My OTP");
-            org.keycloak.credential.CredentialModel created = user.credentialManager().createStoredCredential(cred);
-            return created.getId();
+        // removing an OTP credential should activate the workflow listening for OTP credential removals
+        String credentialId = runOnServer.fetch(session -> {
+            UserModel userModel = session.users().getUserById(session.getContext().getRealm(), userId);
+            CredentialModel credential = new CredentialModel();
+            credential.setType(OTPCredentialModel.TYPE);
+            credential.setUserLabel("My OTP");
+            return userModel.credentialManager().createStoredCredential(credential).getId();
         }, String.class);
-
-        // Now call the admin delete credential endpoint
-        managedRealm.admin().users().get(userId).removeCredential(credId);
-
-        // Verify remove credential workflow activated
-        runOnServer.run(session -> {
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean removeCredentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wRemoveCredentialId));
-            assertTrue(removeCredentialActivated, "Remove credential workflow should have activated on admin credential removal");
-            collector.clear();
-        });
-
-        // 7. Verify AdminEvent with OperationType.DELETE also activates remove credential workflow
-        runOnServer.run(session -> {
-            org.keycloak.events.admin.AdminEvent adminEvent = new org.keycloak.events.admin.AdminEvent();
-            adminEvent.setOperationType(org.keycloak.events.admin.OperationType.DELETE);
-            adminEvent.setResourceType(org.keycloak.events.admin.ResourceType.USER);
-            adminEvent.setResourcePath("users/" + userId + "/credentials/dummy-cred-id");
-            adminEvent.setRealmId(session.getContext().getRealm().getId());
-            adminEvent.setDetails(java.util.Map.of(org.keycloak.events.Details.CREDENTIAL_TYPE, "otp"));
-
-            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(adminEvent, false);
-
-            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
-            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
-            boolean removeCredentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wRemoveCredentialId));
-            assertTrue(removeCredentialActivated, "Remove credential workflow should have activated on admin credential removal with OperationType.DELETE");
-        });
+        user.removeCredential(credentialId);
+        assertActivated(wRemoveCredentialId);
     }
 
     private String createSimpleWorkflow(String name, String onEvent) {
@@ -893,6 +767,50 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
             assertThat(response.getStatus(), is(201));
             return ApiUtil.getCreatedId(response);
         }
+    }
+
+    /**
+     * Sends a user event to the workflow event listener. Workflows are only activated once the session is committed, so
+     * activations must be checked from another {@code runOnServer} call.
+     */
+    private void fireUserEvent(EventType type, String userId, Map<String, String> details) {
+        runOnServer.run(session -> {
+            EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
+                    .event(type)
+                    .user(userId);
+            details.forEach((key, value) -> event.detail(key, value));
+            session.getProvider(EventListenerProvider.class, "workflow-event-listener").onEvent(event.getEvent());
+        });
+    }
+
+    /**
+     * Asserts that the given workflows were activated since the collector was last cleared, and clears it.
+     */
+    private void assertActivated(String... workflowIds) {
+        runOnServer.run(session -> {
+            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
+            List<String> activated = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class).stream()
+                    .map(WorkflowProviderEvent.WorkflowActivatedEvent::getWorkflowId)
+                    .toList();
+            assertThat(activated, hasItems(workflowIds));
+            collector.clear();
+        });
+    }
+
+    /**
+     * Asserts that none of the given workflows were activated since the collector was last cleared, and clears it.
+     */
+    private void assertNotActivated(String... workflowIds) {
+        runOnServer.run(session -> {
+            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
+            List<String> activated = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class).stream()
+                    .map(WorkflowProviderEvent.WorkflowActivatedEvent::getWorkflowId)
+                    .toList();
+            for (String workflowId : workflowIds) {
+                assertThat(activated, not(hasItem(workflowId)));
+            }
+            collector.clear();
+        });
     }
 
     /**

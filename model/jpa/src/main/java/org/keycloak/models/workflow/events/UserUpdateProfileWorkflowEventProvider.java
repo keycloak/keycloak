@@ -1,6 +1,6 @@
 package org.keycloak.models.workflow.events;
 
-import java.util.regex.Matcher;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.keycloak.events.Details;
@@ -9,14 +9,14 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.AbstractWorkflowEventProvider;
 import org.keycloak.models.workflow.ResourceType;
-import org.keycloak.models.workflow.WorkflowEvent;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
 
 public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEventProvider {
 
-    private static final Pattern USER_PATH = Pattern.compile("^users/([^/]+)$");
+    private static final Pattern USER_PATH = Pattern.compile("^users/[^/]+$");
 
     public UserUpdateProfileWorkflowEventProvider(KeycloakSession session, String configParameter, String providerId) {
         super(session, configParameter, providerId);
@@ -34,38 +34,10 @@ public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEven
 
     @Override
     public boolean supports(AdminEvent adminEvent) {
-        if (!org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())) {
-            return false;
-        }
-        if (!OperationType.UPDATE.equals(adminEvent.getOperationType())) {
-            return false;
-        }
-        String path = adminEvent.getResourcePath();
-        if (path == null) {
-            return false;
-        }
-        return USER_PATH.matcher(path).matches();
-    }
-
-    @Override
-    public WorkflowEvent create(AdminEvent adminEvent) {
-        if (supports(adminEvent)) {
-            String userId = getUserIdFromPath(adminEvent);
-            return userId != null ? new WorkflowEvent(getSupportedResourceType(), userId, adminEvent, providerId) : null;
-        }
-        return null;
-    }
-
-    private String getUserIdFromPath(AdminEvent adminEvent) {
-        String path = adminEvent.getResourcePath();
-        if (path == null) {
-            return null;
-        }
-        Matcher matcher = USER_PATH.matcher(path);
-        if (matcher.matches()) {
-            return matcher.group(1);
-        }
-        return null;
+        return org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())
+                && OperationType.UPDATE.equals(adminEvent.getOperationType())
+                && adminEvent.getResourcePath() != null
+                && USER_PATH.matcher(adminEvent.getResourcePath()).matches();
     }
 
     @Override
@@ -74,39 +46,36 @@ public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEven
             return false;
         }
         if (configParameter == null || configParameter.isBlank()) {
+            // nothing else to check
             return true;
         }
-        
+        // this is the case when the attribute name is passed as a parameter to the event provider - like user-update-profile(firstName)
         Object originalEvent = context.getEvent().getEvent();
-        
+        Map<String, String> details = null;
+
         if (originalEvent instanceof Event event) {
-            if (event.getDetails() == null) {
-                return false;
-            }
-            if ("email".equalsIgnoreCase(configParameter)) {
-                return event.getDetails().containsKey(Details.UPDATED_EMAIL);
-            } else if ("firstName".equalsIgnoreCase(configParameter) || "first_name".equalsIgnoreCase(configParameter)) {
-                return event.getDetails().containsKey("updated_first_name");
-            } else if ("lastName".equalsIgnoreCase(configParameter) || "last_name".equalsIgnoreCase(configParameter)) {
-                return event.getDetails().containsKey("updated_last_name");
-            } else {
-                return event.getDetails().containsKey("updated_" + configParameter);
-            }
+            details = event.getDetails();
         } else if (originalEvent instanceof AdminEvent adminEvent) {
-            if (adminEvent.getDetails() == null) {
-                return false;
-            }
-            if ("email".equalsIgnoreCase(configParameter)) {
-                return adminEvent.getDetails().containsKey(Details.UPDATED_EMAIL);
-            } else if ("firstName".equalsIgnoreCase(configParameter) || "first_name".equalsIgnoreCase(configParameter)) {
-                return adminEvent.getDetails().containsKey("updated_first_name");
-            } else if ("lastName".equalsIgnoreCase(configParameter) || "last_name".equalsIgnoreCase(configParameter)) {
-                return adminEvent.getDetails().containsKey("updated_last_name");
-            } else {
-                return adminEvent.getDetails().containsKey("updated_" + configParameter);
-            }
+            details = adminEvent.getDetails();
         }
-        
-        return false;
+
+        return details != null && details.containsKey(getUpdatedDetail(configParameter));
+    }
+
+    /**
+     * Returns the event detail that holds the updated value of the given attribute, as set by the user profile when auditing
+     * attribute changes.
+     */
+    private static String getUpdatedDetail(String attributeName) {
+        if (UserModel.FIRST_NAME.equalsIgnoreCase(attributeName) || "first_name".equalsIgnoreCase(attributeName)) {
+            return Details.UPDATED_FIRST_NAME;
+        }
+        if (UserModel.LAST_NAME.equalsIgnoreCase(attributeName) || "last_name".equalsIgnoreCase(attributeName)) {
+            return Details.UPDATED_LAST_NAME;
+        }
+        if (UserModel.EMAIL.equalsIgnoreCase(attributeName)) {
+            return Details.UPDATED_EMAIL;
+        }
+        return Details.PREF_UPDATED + attributeName;
     }
 }

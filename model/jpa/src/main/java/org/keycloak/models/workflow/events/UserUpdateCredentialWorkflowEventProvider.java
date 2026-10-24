@@ -9,8 +9,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.workflow.AbstractWorkflowEventProvider;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowEvent;
@@ -18,8 +17,8 @@ import org.keycloak.models.workflow.WorkflowExecutionContext;
 
 public class UserUpdateCredentialWorkflowEventProvider extends AbstractWorkflowEventProvider {
 
+    // resetting the password is the only admin operation that updates a credential of a user
     private static final Pattern RESET_PASSWORD_PATH = Pattern.compile("^users/([^/]+)/reset-password$");
-    private static final Pattern CREDENTIALS_PATH = Pattern.compile("^users/([^/]+)/credentials/([^/]+)$");
 
     public UserUpdateCredentialWorkflowEventProvider(KeycloakSession session, String configParameter, String providerId) {
         super(session, configParameter, providerId);
@@ -37,38 +36,18 @@ public class UserUpdateCredentialWorkflowEventProvider extends AbstractWorkflowE
 
     @Override
     public boolean supports(AdminEvent adminEvent) {
-        if (!org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())) {
-            return false;
-        }
-        String path = adminEvent.getResourcePath();
-        if (path == null) {
-            return false;
-        }
-        return (RESET_PASSWORD_PATH.matcher(path).matches() && OperationType.ACTION.equals(adminEvent.getOperationType())) 
-            || (CREDENTIALS_PATH.matcher(path).matches() && OperationType.UPDATE.equals(adminEvent.getOperationType()));
+        return org.keycloak.events.admin.ResourceType.USER.equals(adminEvent.getResourceType())
+                && OperationType.ACTION.equals(adminEvent.getOperationType())
+                && adminEvent.getResourcePath() != null
+                && RESET_PASSWORD_PATH.matcher(adminEvent.getResourcePath()).matches();
     }
 
     @Override
     public WorkflowEvent create(AdminEvent adminEvent) {
         if (supports(adminEvent)) {
-            String userId = getUserIdFromPath(adminEvent);
-            return userId != null ? new WorkflowEvent(getSupportedResourceType(), userId, adminEvent, providerId) : null;
-        }
-        return null;
-    }
-
-    private String getUserIdFromPath(AdminEvent adminEvent) {
-        String path = adminEvent.getResourcePath();
-        if (path == null) {
-            return null;
-        }
-        Matcher resetMatcher = RESET_PASSWORD_PATH.matcher(path);
-        if (resetMatcher.matches()) {
-            return resetMatcher.group(1);
-        }
-        Matcher credsMatcher = CREDENTIALS_PATH.matcher(path);
-        if (credsMatcher.matches()) {
-            return credsMatcher.group(1);
+            // the user id is not the last segment of the resource path, so it can't be resolved by the default implementation
+            Matcher matcher = RESET_PASSWORD_PATH.matcher(adminEvent.getResourcePath());
+            return matcher.matches() ? new WorkflowEvent(getSupportedResourceType(), matcher.group(1), adminEvent, providerId) : null;
         }
         return null;
     }
@@ -79,52 +58,19 @@ public class UserUpdateCredentialWorkflowEventProvider extends AbstractWorkflowE
             return false;
         }
         if (configParameter == null || configParameter.isBlank()) {
+            // nothing else to check
             return true;
         }
-        
+        // this is the case when the credential type is passed as a parameter to the event provider - like user-update-credential(password)
         Object originalEvent = context.getEvent().getEvent();
         String credentialType = null;
-        
-        if (originalEvent instanceof Event event) {
-            if (EventType.RESET_PASSWORD.equals(event.getType())) {
-                credentialType = "password";
-            } else if (event.getDetails() != null) {
-                credentialType = event.getDetails().get(Details.CREDENTIAL_TYPE);
-            }
-        } else if (originalEvent instanceof AdminEvent adminEvent) {
-            credentialType = getCredentialType(adminEvent);
-        }
-        
-        return configParameter.equalsIgnoreCase(credentialType);
-    }
 
-    private String getCredentialType(AdminEvent adminEvent) {
-        String path = adminEvent.getResourcePath();
-        if (path == null) {
-            return null;
+        if (originalEvent instanceof Event event) {
+            credentialType = event.getDetails() != null ? event.getDetails().get(Details.CREDENTIAL_TYPE) : null;
+        } else if (originalEvent instanceof AdminEvent) {
+            credentialType = PasswordCredentialModel.TYPE;
         }
-        Matcher resetMatcher = RESET_PASSWORD_PATH.matcher(path);
-        if (resetMatcher.matches()) {
-            return "password";
-        }
-        Matcher credsMatcher = CREDENTIALS_PATH.matcher(path);
-        if (credsMatcher.matches()) {
-            String userId = credsMatcher.group(1);
-            String credentialId = credsMatcher.group(2);
-            RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
-            if (realm != null) {
-                UserModel user = session.users().getUserById(realm, userId);
-                if (user != null) {
-                    org.keycloak.credential.CredentialModel stored = user.credentialManager().getStoredCredentialById(credentialId);
-                    if (stored != null) {
-                        return stored.getType();
-                    }
-                }
-            }
-            if (adminEvent.getDetails() != null) {
-                return adminEvent.getDetails().get(Details.CREDENTIAL_TYPE);
-            }
-        }
-        return null;
+
+        return configParameter.equalsIgnoreCase(credentialType);
     }
 }

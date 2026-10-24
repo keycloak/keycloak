@@ -199,28 +199,6 @@ public class UserResource {
 
         auth.users().requireManage(user);
         try {
-            boolean emailChanged = rep.getEmail() != null && !Objects.equals(rep.getEmail(), user.getEmail());
-            boolean firstNameChanged = rep.getFirstName() != null && !Objects.equals(rep.getFirstName(), user.getFirstName());
-            boolean lastNameChanged = rep.getLastName() != null && !Objects.equals(rep.getLastName(), user.getLastName());
-
-            Set<String> changedAttributes = new HashSet<>();
-            if (rep.getAttributes() != null) {
-                Map<String, List<String>> userAttrs = user.getAttributes();
-                for (Map.Entry<String, List<String>> entry : rep.getAttributes().entrySet()) {
-                    List<String> newVal = entry.getValue();
-                    List<String> oldVal = userAttrs != null ? userAttrs.get(entry.getKey()) : null;
-                    if (!Objects.equals(newVal, oldVal)) {
-                        changedAttributes.add(entry.getKey());
-                    }
-                }
-                if (userAttrs != null) {
-                    for (String oldKey : userAttrs.keySet()) {
-                        if (!rep.getAttributes().containsKey(oldKey)) {
-                            changedAttributes.add(oldKey);
-                        }
-                    }
-                }
-            }
 
             boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
@@ -254,7 +232,7 @@ public class UserResource {
             if (response != null) {
                 return response;
             }
-            profile.update(rep.getAttributes() != null);
+            profile.update(rep.getAttributes() != null, this::addAttributeChangeDetails);
             updateUserFromRep(profile, user, rep, session, true);
             if (rep.getCredentials() != null && rep.getCredentials().stream()
                     .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
@@ -275,20 +253,8 @@ public class UserResource {
                 adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
                         .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep);
-            if (emailChanged) {
-                adminEvent.detail(org.keycloak.events.Details.UPDATED_EMAIL, "true");
-            }
-            if (firstNameChanged) {
-                adminEvent.detail("updated_first_name", "true");
-            }
-            if (lastNameChanged) {
-                adminEvent.detail("updated_last_name", "true");
-            }
-            for (String attrKey : changedAttributes) {
-                adminEvent.detail("updated_" + attrKey, "true");
-            }
-            adminEvent.success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
@@ -318,6 +284,25 @@ public class UserResource {
             session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Adds the attribute changes reported by the user profile to the admin event, using the same details as
+     * {@link org.keycloak.userprofile.EventAuditingAttributeChangeListener} adds to user events.
+     */
+    private void addAttributeChangeDetails(String name, UserModel updatedUser, List<String> oldValue) {
+        String previousValue = oldValue == null ? null : String.join("::", oldValue);
+
+        if (UserModel.FIRST_NAME.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_FIRST_NAME, previousValue).detail(Details.UPDATED_FIRST_NAME, updatedUser.getFirstName());
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_LAST_NAME, previousValue).detail(Details.UPDATED_LAST_NAME, updatedUser.getLastName());
+        } else if (UserModel.EMAIL.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_EMAIL, previousValue).detail(Details.UPDATED_EMAIL, updatedUser.getEmail());
+        } else {
+            adminEvent.detail(Details.PREF_PREVIOUS + name, previousValue)
+                    .detail(Details.PREF_UPDATED + name, updatedUser.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.joining("::")));
         }
     }
 
