@@ -545,6 +545,7 @@ If both session limits and client session limits are enabled, it makes sense to 
   - *Deny new session* - when a new session is requested and the session limit is reached, no new sessions can be created.
   - *Terminate oldest session* - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
 
+. Optionally, enable *Count only sessions created by this flow*. When enabled, only sessions created through this authentication flow are counted against the configured limits. This allows different limits to be configured for different flows (for example, 3 for browser and 5 for direct grant).
 . Optionally, add a custom error message to be displayed when the limit is reached.
 
 Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
@@ -567,8 +568,8 @@ image:images/authentication-user-session-limits-browser.png[Authentication User 
 Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that
 the authentication with Identity providers also participates in the session limits.
 
-NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same the configuration
-of `User Session Limits`.
+NOTE: When *Count only sessions created by this flow* is disabled, limits are counted across all flows, so the administrator is responsible for maintaining consistency between the different configurations. Make sure that all your flows use the same configuration
+of `User Session Limits` if you want a uniform global limit.
 
 NOTE: User session limit feature is not available for CIBA.
 
