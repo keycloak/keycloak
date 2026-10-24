@@ -932,13 +932,15 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             // Add federated identity link here
             if (!(federatedUser instanceof LightweightUserAdapter)) {
-                checkOverrideLink(authSession, federatedUser, providerAlias);
-
                 // The stored federated identity can differ from the incoming one, for example when the provider
                 // sent the same federated user ID in a different case than the one the link was created with, so
                 // the lookup of the returning user above missed. Record the stored ID in the event to make this
-                // situation visible in the events instead of only in the server log.
+                // situation visible in the events instead of only in the server log. The stored link is read
+                // before checkOverrideLink, which removes it when the user confirmed to override an existing link.
                 FederatedIdentityModel storedIdentity = session.users().getFederatedIdentity(realmModel, federatedUser, providerAlias);
+
+                checkOverrideLink(authSession, federatedUser, providerAlias);
+
                 if (storedIdentity != null) {
                     event.detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, storedIdentity.getUserId());
                 }
@@ -1008,6 +1010,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         event.clone()
                 .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
                 .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previous.getUserId())
                 .success();
     }
 
