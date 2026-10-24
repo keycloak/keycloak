@@ -21,6 +21,7 @@ import {
   goToRealmSection,
   getTextArea,
   assertTextAreaContains,
+  assertRealmsSorted,
 } from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
@@ -117,6 +118,13 @@ test.describe.serial("Realm tests", () => {
 
     await goToClients(page);
     await assertRowExists(page, "account-console");
+  });
+
+  test("should be sorted alphabetically", async ({ page }) => {
+    const realms = await page
+      .locator(".pf-v5-c-table tr td:nth-child(2)")
+      .allInnerTexts();
+    assertRealmsSorted(realms, 3);
   });
 
   test("should disable preview if json very long", async ({ page }) => {
