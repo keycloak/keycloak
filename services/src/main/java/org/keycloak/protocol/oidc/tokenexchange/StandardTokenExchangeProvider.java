@@ -124,7 +124,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     protected AuthenticationManager.AuthResult processSubjectToken() {
-        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType())) {
+        if (!getSupportedSubjectTokenType().equals(context.getParams().getSubjectTokenType())) {
             event.detail(Details.REASON, "subject_token_type invalid");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid subject token type", Response.Status.BAD_REQUEST);
@@ -134,8 +134,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());
 
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null,
-                false, subjectToken, context.getHeaders(), verifier -> {});
+        AuthenticationManager.AuthResult authResult = verifySubjectToken(subjectToken);
         if (authResult == null) {
             event.detail(Details.REASON, "subject_token validation failure");
             event.error(Errors.INVALID_TOKEN);
@@ -159,6 +158,22 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         validateSubjectToken(token);
 
         return authResult;
+    }
+
+    /**
+     * The subject_token_type accepted by this provider.
+     */
+    protected String getSupportedSubjectTokenType() {
+        return OAuth2Constants.ACCESS_TOKEN_TYPE;
+    }
+
+    /**
+     * Verifies the subject token and resolves its user and session.
+     * Returns null if the token is invalid.
+     */
+    protected AuthenticationManager.AuthResult verifySubjectToken(String subjectToken) {
+        return AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true,
+            true, null, false, subjectToken, context.getHeaders(), verifier -> {});
     }
 
 
@@ -261,6 +276,33 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
                     "Missing consents for Token Exchange in client " + client.getClientId(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected Response buildTokenExchangeResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, String requestedTokenType, List<ClientModel> targetAudienceClients) {
+
+        AccessTokenResponse res;
+        if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
+            // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
+            res = responseBuilder.generateIDToken().build();
+            res.setToken(res.getIdToken());
+            res.setIdToken(null);
+            res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
+        } else {
+            String scopeParam = params.getScope();
+            if (TokenUtil.isOIDCRequest(scopeParam)) {
+                responseBuilder.generateIDToken().generateAccessTokenHash();
+            }
+            res = responseBuilder.build();
+        }
+
+        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
+
+        if (responseBuilder.getAccessToken().getAudience() != null) {
+            event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
+        }
+        event.success();
+
+        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
     // For now, include "scope" parameter as is
@@ -371,30 +413,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
             }
 
-            AccessTokenResponse res;
-            if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
-                // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
-                res = responseBuilder.generateIDToken().build();
-                res.setToken(res.getIdToken());
-                res.setIdToken(null);
-                res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
-            } else {
-                String scopeParam = params.getScope();
-                if (TokenUtil.isOIDCRequest(scopeParam)) {
-                    responseBuilder.generateIDToken().generateAccessTokenHash();
-                }
-                res = responseBuilder.build();
-            }
+            return buildTokenExchangeResponse(responseBuilder, requestedTokenType, targetAudienceClients);
 
-            res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
-
-            if (responseBuilder.getAccessToken().getAudience() != null) {
-                event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
-            }
-
-            event.success();
-
-            return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
         } catch (RuntimeException e) {
             // Cleanup client-session if created in this request
             if (newClientSessionCreated) {
