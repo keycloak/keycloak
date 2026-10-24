@@ -232,13 +232,16 @@ public class UserResource {
             if (response != null) {
                 return response;
             }
-            profile.update(rep.getAttributes() != null);
+            profile.update(rep.getAttributes() != null, this::addAttributeChangeDetails);
             updateUserFromRep(profile, user, rep, session, true);
             if (rep.getCredentials() != null && rep.getCredentials().stream()
                     .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
                 auth.users().requireResetPassword(user);
             }
+            List<CredentialRepresentation> credentialsToSet = getCredentialsToSet(rep);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            // record the credentials set from the representation, so that listeners can react to credential updates
+            adminEvent.detail(Details.CREDENTIAL_TYPE, getCredentialTypes(credentialsToSet));
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
             if (wasPermanentlyLockedOut) {
@@ -285,6 +288,51 @@ public class UserResource {
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
+    }
+
+    /**
+     * Adds the attribute changes reported by the user profile to the admin event, using the same details as
+     * {@link org.keycloak.userprofile.EventAuditingAttributeChangeListener} adds to user events.
+     */
+    private void addAttributeChangeDetails(String name, UserModel updatedUser, List<String> oldValue) {
+        String previousValue = oldValue == null ? null : String.join("::", oldValue);
+
+        if (UserModel.FIRST_NAME.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_FIRST_NAME, previousValue).detail(Details.UPDATED_FIRST_NAME, updatedUser.getFirstName());
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_LAST_NAME, previousValue).detail(Details.UPDATED_LAST_NAME, updatedUser.getLastName());
+        } else if (UserModel.EMAIL.equals(name)) {
+            adminEvent.detail(Details.PREVIOUS_EMAIL, previousValue).detail(Details.UPDATED_EMAIL, updatedUser.getEmail());
+        } else {
+            adminEvent.detail(Details.PREF_PREVIOUS + name, previousValue)
+                    .detail(Details.PREF_UPDATED + name, updatedUser.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.joining("::")));
+        }
+    }
+
+    /**
+     * Returns the credentials that {@link RepresentationToModel#createCredentials} sets from the given representation, which
+     * skips the credentials that are already stored. This has to be checked before setting them, as new credentials are
+     * stored with the id they are sent with.
+     */
+    private List<CredentialRepresentation> getCredentialsToSet(UserRepresentation rep) {
+        if (rep.getCredentials() == null) {
+            return List.of();
+        }
+        return rep.getCredentials().stream()
+                .filter(credential -> credential.getId() == null || user.credentialManager().getStoredCredentialById(credential.getId()) == null)
+                .toList();
+    }
+
+    /**
+     * Returns the types of the given credentials. They have to be read after setting the credentials, as legacy
+     * representations are converted when they are set, such as from the totp and hotp types to otp.
+     */
+    private static String getCredentialTypes(List<CredentialRepresentation> credentials) {
+        return credentials.stream()
+                .map(credential -> credential.getValue() != null && !credential.getValue().isEmpty() ? CredentialRepresentation.PASSWORD : credential.getType())
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining("::"));
     }
 
     public static Response validateUserProfile(UserProfile profile, KeycloakSession session, AdminAuth adminAuth) {
