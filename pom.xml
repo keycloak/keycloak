@@ -248,7 +248,6 @@
         <!-- webauthn support -->
         <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
 
-        <!-- hot reloadable ssl material -->
         <ayza.version>10.1.0</ayza.version>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
@@ -1241,7 +1240,6 @@
                 <artifactId>webauthn4j-util</artifactId>
                 <version>${webauthn4j.version}</version>
             </dependency>
-            <!-- hot reloadable ssl material -->
             <dependency>
                 <groupId>io.github.hakky54</groupId>
                 <artifactId>ayza</artifactId>
