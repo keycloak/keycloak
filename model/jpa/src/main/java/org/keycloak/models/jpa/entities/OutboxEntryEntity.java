@@ -28,11 +28,16 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+import org.keycloak.events.outbox.OutboxEntry;
+import org.keycloak.events.outbox.OutboxEntryStatus;
+
 import org.hibernate.annotations.Nationalized;
 
 /**
  * Generic durable outbox row: a single message persisted for asynchronous,
- * at-least-once delivery by a feature-scoped drainer.
+ * at-least-once delivery by a feature-scoped drainer. Consumers see it
+ * through the read-only {@link OutboxEntry} view; mutation goes through
+ * {@code OutboxStore}.
  *
  * <p>Backed by the {@code OUTBOX_ENTRY} table created in
  * {@code META-INF/jpa-changelog-26.7.0.xml}. Multiple subsystems
@@ -77,7 +82,41 @@ import org.hibernate.annotations.Nationalized;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.status = :status"
                         + "   AND e.nextAttemptAt <= :now"
-                        + " ORDER BY e.nextAttemptAt ASC"),
+                        + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now)"
+                        + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.id ASC"),
+        // Owner-fair drain: which owners have due rows (oldest first),
+        // then the due rows of one owner. Both use IDX_OUTBOX_OWNER /
+        // IDX_OUTBOX_DRAIN.
+        @NamedQuery(
+                name = "OutboxEntryEntity.findOwnersWithDueRows",
+                query = "SELECT e.ownerId, MIN(e.nextAttemptAt) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.nextAttemptAt <= :now"
+                        + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now)"
+                        + " GROUP BY e.ownerId"
+                        + " ORDER BY MIN(e.nextAttemptAt) ASC, e.ownerId ASC"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.findDueForOwner",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"
+                        + "   AND e.nextAttemptAt <= :now"
+                        + "   AND (e.claimedUntil IS NULL OR e.claimedUntil <= :now)"
+                        // Rows the calling tick holds itself do not fence the owner:
+                        // the owner-fair claim takes an owner's rows over several rounds.
+                        + "   AND NOT EXISTS (SELECT f.id FROM OutboxEntryEntity f"
+                        + "        WHERE f.entryKind = e.entryKind AND f.ownerId = e.ownerId"
+                        + "          AND f.claimedUntil > :now"
+                        + "          AND (f.claimToken IS NULL OR f.claimToken <> :token))"
+                        + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.id ASC"),
         @NamedQuery(
                 name = "OutboxEntryEntity.findByOwnerAndCorrelationId",
                 query = "SELECT e FROM OutboxEntryEntity e"
@@ -108,6 +147,13 @@ import org.hibernate.annotations.Nationalized;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.realmId = :realmId"
                         + " GROUP BY e.status"),
+        // Kind-wide depth snapshot (metrics): one aggregate per tick
+        // instead of a COUNT per realm.
+        @NamedQuery(
+                name = "OutboxEntryEntity.countByEntryKindGroupedByRealmAndStatus",
+                query = "SELECT e.realmId, e.status, COUNT(e) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + " GROUP BY e.realmId, e.status"),
         @NamedQuery(
                 name = "OutboxEntryEntity.countByEntryKindOwnerAndStatus",
                 query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"
@@ -191,9 +237,17 @@ import org.hibernate.annotations.Nationalized;
         // them. Bumps neither attempts nor deliveredAt — these rows
         // never actually retried; they aged out.
         @NamedQuery(
+                name = "OutboxEntryEntity.findStaleQueued",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status IN :statuses"
+                        + "   AND e.createdAt < :olderThan"
+                        + " ORDER BY e.createdAt ASC, e.id ASC"),
+        @NamedQuery(
                 name = "OutboxEntryEntity.promoteStaleQueuedToDeadLetter",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.status IN :statuses"
                         + "    AND e.createdAt < :olderThan"),
@@ -215,6 +269,68 @@ import org.hibernate.annotations.Nationalized;
                         + "   AND e.ownerId = :ownerId"
                         + "   AND e.correlationId IN :correlationIds"
                         + "   AND e.status = :status"),
+        // Paged owner listings for admin / replay tooling. Ordered by
+        // arrival, with the id as tie-breaker so paging is stable when
+        // many rows share a createdAt.
+        @NamedQuery(
+                name = "OutboxEntryEntity.findByOwner",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + " ORDER BY e.createdAt ASC, e.id ASC"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.findByOwnerAndStatus",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"
+                        + " ORDER BY e.createdAt ASC, e.id ASC"),
+        // Re-arm: DEAD_LETTER (admin retry) or DELIVERED (replay) back
+        // to PENDING with a fresh attempt budget. In-place rather than
+        // a new row because the (entryKind, ownerId, correlationId)
+        // unique constraint forbids re-enqueueing the same message.
+        // created_at is reset too: it is the pending-age baseline for
+        // the pendingMaxAge backstop, and a re-armed row is "enqueued
+        // now", not when it first arrived.
+        @NamedQuery(
+                name = "OutboxEntryEntity.requeueByIds",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :pending, e.attempts = 0, e.nextAttemptAt = :now,"
+                        + "        e.createdAt = :now, e.deliveredAt = NULL, e.lastError = NULL,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.id IN :ids"
+                        + "    AND e.status IN :fromStatuses"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.requeueForOwnerByStatus",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :pending, e.attempts = 0, e.nextAttemptAt = :now,"
+                        + "        e.createdAt = :now, e.deliveredAt = NULL, e.lastError = NULL,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status = :fromStatus"),
+        // Drainer lease: hands back rows a tick claimed but could not
+        // process within its budget. Conditional on the token so a
+        // row re-claimed by another tick in the meantime is left alone.
+        // next_attempt_at is untouched: the row is still due.
+        @NamedQuery(
+                name = "OutboxEntryEntity.releaseClaims",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.claimToken = NULL, e.claimedUntil = NULL"
+                        + "  WHERE e.id IN :ids"
+                        + "    AND e.claimToken = :token"),
+        // Admin "destination fixed": pull an owner's deferred / backed-off
+        // rows forward. Rows in flight (token set) are left to their tick.
+        @NamedQuery(
+                name = "OutboxEntryEntity.makeDueForOwner",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.nextAttemptAt = :now"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status = :pending"
+                        + "    AND e.claimToken IS NULL"
+                        + "    AND e.nextAttemptAt > :now"),
         @NamedQuery(
                 name = "OutboxEntryEntity.countByEntryKindOwnerStatus",
                 query = "SELECT COUNT(e) FROM OutboxEntryEntity e"
@@ -224,32 +340,37 @@ import org.hibernate.annotations.Nationalized;
         // Owner-scoped lifecycle: pause/resume, disable, narrowed
         // type allow-list. Drives consumer-side lifecycle operations
         // such as SSF stream pause / resume / disable / events_requested
-        // narrowing.
+        // narrowing. Every one of them clears the claim token and lease:
+        // a row in flight whose status or kind an admin changes must
+        // not be delivered or recorded by the tick that claimed it.
         @NamedQuery(
                 name = "OutboxEntryEntity.releaseHeldForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :pending, e.nextAttemptAt = :now"
+                        + "    SET e.status = :pending, e.nextAttemptAt = :now,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :held"),
         @NamedQuery(
                 name = "OutboxEntryEntity.holdPendingForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :held"
+                        + "    SET e.status = :held, e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :pending"),
         @NamedQuery(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses"),
         @NamedQuery(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwnerNotMatchingTypes",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "    SET e.status = :dead, e.lastError = :reason,"
+                        + "        e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses"
@@ -262,12 +383,12 @@ import org.hibernate.annotations.Nationalized;
         @NamedQuery(
                 name = "OutboxEntryEntity.migrateEntryKindForOwner",
                 query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.entryKind = :newKind"
+                        + "    SET e.entryKind = :newKind, e.claimToken = NULL, e.claimedUntil = NULL"
                         + "  WHERE e.entryKind = :currentKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses")
 })
-public class OutboxEntryEntity {
+public class OutboxEntryEntity implements OutboxEntry {
 
     @Id
     @Column(name = "ID", length = 36)
@@ -314,17 +435,40 @@ public class OutboxEntryEntity {
     @Column(name = "ATTEMPTS", nullable = false)
     protected int attempts;
 
+    /** Epoch milliseconds. Exposed as {@link Instant} through the accessors. */
     @Column(name = "NEXT_ATTEMPT_AT", nullable = false)
-    protected Instant nextAttemptAt;
+    protected Long nextAttemptAt;
 
     @Column(name = "LAST_ERROR", length = 2048)
     protected String lastError;
 
+    /** Epoch milliseconds. Exposed as {@link Instant} through the accessors. */
     @Column(name = "CREATED_AT", nullable = false)
-    protected Instant createdAt;
+    protected Long createdAt;
 
+    /** Epoch milliseconds. Exposed as {@link Instant} through the accessors. */
     @Column(name = "DELIVERED_AT")
-    protected Instant deliveredAt;
+    protected Long deliveredAt;
+
+    /**
+     * Token of the drainer tick that currently holds this row for
+     * delivery, {@code null} when the row is not in flight. Set
+     * together with a {@code nextAttemptAt} lease by
+     * {@code OutboxStore#claimDueForDrain}; the transition recorded
+     * after delivery is conditional on it.
+     */
+    @Column(name = "CLAIM_TOKEN", length = 36)
+    protected String claimToken;
+
+    /**
+     * End of the lease the holder of {@link #claimToken} has on this
+     * row, epoch milliseconds; {@code null} when the row is not in
+     * flight. Rows with a live lease are not due for other ticks;
+     * once it has passed the row is re-claimable and the late holder's
+     * record is skipped.
+     */
+    @Column(name = "CLAIMED_UNTIL")
+    protected Long claimedUntil;
 
     public String getId() {
         return id;
@@ -415,11 +559,11 @@ public class OutboxEntryEntity {
     }
 
     public Instant getNextAttemptAt() {
-        return nextAttemptAt;
+        return nextAttemptAt == null ? null : Instant.ofEpochMilli(nextAttemptAt);
     }
 
     public void setNextAttemptAt(Instant nextAttemptAt) {
-        this.nextAttemptAt = nextAttemptAt;
+        this.nextAttemptAt = nextAttemptAt == null ? null : nextAttemptAt.toEpochMilli();
     }
 
     public String getLastError() {
@@ -431,19 +575,35 @@ public class OutboxEntryEntity {
     }
 
     public Instant getCreatedAt() {
-        return createdAt;
+        return createdAt == null ? null : Instant.ofEpochMilli(createdAt);
     }
 
     public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
+        this.createdAt = createdAt == null ? null : createdAt.toEpochMilli();
     }
 
     public Instant getDeliveredAt() {
-        return deliveredAt;
+        return deliveredAt == null ? null : Instant.ofEpochMilli(deliveredAt);
     }
 
     public void setDeliveredAt(Instant deliveredAt) {
-        this.deliveredAt = deliveredAt;
+        this.deliveredAt = deliveredAt == null ? null : deliveredAt.toEpochMilli();
+    }
+
+    public String getClaimToken() {
+        return claimToken;
+    }
+
+    public void setClaimToken(String claimToken) {
+        this.claimToken = claimToken;
+    }
+
+    public Instant getClaimedUntil() {
+        return claimedUntil == null ? null : Instant.ofEpochMilli(claimedUntil);
+    }
+
+    public void setClaimedUntil(Instant claimedUntil) {
+        this.claimedUntil = claimedUntil == null ? null : claimedUntil.toEpochMilli();
     }
 
     @Override

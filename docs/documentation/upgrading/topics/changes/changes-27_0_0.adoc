@@ -174,6 +174,16 @@ If you need the full user representation for the service account, use the user I
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Outbox entry timestamps stored as epoch milliseconds
+// https://github.com/keycloak/keycloak/issues/54137
+
+The `OUTBOX_ENTRY` table, which backs the push delivery of the experimental SSF transmitter, now stores its `CREATED_AT`, `NEXT_ATTEMPT_AT` and `DELIVERED_AT` columns as `BIGINT` epoch milliseconds, like every other {project_name} table, instead of `TIMESTAMP`.
+`TIMESTAMP` has whole-second precision on MySQL and MariaDB, which made the delivery order of entries created within the same second undefined.
+Two nullable columns, `CLAIM_TOKEN` and `CLAIMED_UNTIL`, are added for the lease a drainer holds on an entry while delivering it.
+
+The migration converts existing rows and makes every queued entry due immediately, so all pending push deliveries are attempted on the first drainer tick after the upgrade.
+The table exists in every installation since {project_name} 26.7, so the migration runs for everyone; on an empty table it completes instantly.
+
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 

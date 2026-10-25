@@ -17,53 +17,58 @@
 package org.keycloak.events.outbox;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 
 /**
- * Per-kind plug-in that knows how to actually deliver an
- * {@link OutboxEntryEntity}'s payload to its destination. The drainer
- * is generic — for each due row it calls {@link #deliver(KeycloakSession, OutboxEntryEntity)}
- * and transitions the row based on the returned {@link OutboxDeliveryResult}.
+ * Per-kind plug-in that knows how to deliver an {@link OutboxEntry}'s
+ * payload to its destination. The drainer is generic — for each
+ * claimed row it calls {@link #prepare(KeycloakSession, OutboxEntry)}
+ * inside a short transaction, runs the returned {@link OutboxDelivery}
+ * outside any transaction, and then records the transition the result
+ * asks for.
  *
- * <p>One handler per registered {@code entryKind}; the drainer locates
- * a handler by the row's {@code entryKind} value. Implementations are
+ * <p>Two phases, so that no database connection or transaction is held
+ * while a destination is being called:
+ * <ol>
+ *   <li>{@code prepare} runs with a session in a transaction. Resolve
+ *       the realm, the destination's configuration, credentials and the
+ *       HTTP client here, and capture them in the returned delivery.
+ *       Outcomes known at this point — destination gone (orphaned),
+ *       paused or backed off (defer) — are returned as
+ *       {@link OutboxDelivery#settled(OutboxDeliveryResult)}.</li>
+ *   <li>{@link OutboxDelivery#execute()} runs with no session bound to
+ *       the thread and no transaction, possibly on a delivery worker
+ *       thread when the kind is configured for parallel delivery.
+ *       It must not touch the model; it performs the call and maps the
+ *       response to an {@link OutboxDeliveryResult}.</li>
+ * </ol>
+ *
+ * <p>One handler per registered {@code entryKind}. Implementations are
  * free to interpret the {@code payload} and {@code metadata} columns
  * however they like — the store treats both as opaque text.
  *
- * <p>Synchronous by design — the handler returns when delivery has
- * either succeeded, failed retryably, or failed terminally. Long-poll
- * or fire-and-forget delivery semantics should be modelled by
- * returning {@link OutboxDeliveryResult#delivered()} as soon as the
- * payload has been handed off (e.g. enqueued in an external broker).
+ * <p>Keep a delivery bounded well inside {@link OutboxConfig#claimLease()}
+ * (HTTP connect and read timeouts): a delivery that outlives its lease
+ * can be re-claimed by another tick and delivered a second time.
+ *
+ * <p>The returned result's {@code errorMessage} is persisted into the
+ * row's {@code last_error} column ({@code VARCHAR(2048)}, truncated by
+ * the store) and logged at DEBUG only, so it may carry the
+ * destination's response text.
  */
 public interface OutboxDeliveryHandler {
 
     /**
      * The {@code entryKind} this handler is responsible for. Must
      * match the {@code entry_kind} column of every row this handler
-     * will be invoked for; the drainer uses this to map locked rows
-     * back to a handler.
+     * will be invoked for.
      */
     String entryKind();
 
     /**
-     * Attempts delivery for one outbox row. The drainer holds a
-     * pessimistic write lock on the row for the duration of the call;
-     * implementations should keep the call bounded (no indefinite
-     * blocking) and avoid touching unrelated database rows so the
-     * lock window stays tight.
-     *
-     * <p>Implementations may throw {@link RuntimeException}; the
-     * drainer treats an uncaught exception as
-     * {@link OutboxDeliveryOutcome#RETRY} and records the exception
-     * class + message in {@code last_error}.
-     *
-     * <p>The returned {@link OutboxDeliveryResult}'s
-     * {@code errorMessage} (if any) is persisted into the row's
-     * {@code last_error} column. Handlers should pack as much
-     * diagnostic detail (HTTP status, response body excerpt, exception
-     * class) into that single string as fits the column
-     * ({@code VARCHAR(2048)}).
+     * Phase one, inside a transaction: resolve what the delivery needs
+     * and return it as an {@link OutboxDelivery}, or a settled result.
+     * A thrown {@link RuntimeException} or a {@code null} return is
+     * treated as {@link OutboxDeliveryResult#retry(String)}.
      */
-    OutboxDeliveryResult deliver(KeycloakSession session, OutboxEntryEntity row);
+    OutboxDelivery prepare(KeycloakSession session, OutboxEntry row);
 }
