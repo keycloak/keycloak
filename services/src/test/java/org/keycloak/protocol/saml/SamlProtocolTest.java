@@ -97,8 +97,7 @@ public class SamlProtocolTest {
             @Override
             public KeyManager keys() {
                 return new DefaultKeyManager(null) {
-                    @Override
-                    public ActiveRsaKey getActiveRsaKey(RealmModel realm) {
+                    private KeyWrapper createTestKey() {
                         KeyWrapper key = new KeyWrapper();
                         key.setProviderId("dummy");
                         key.setKid("1234");
@@ -108,7 +107,17 @@ public class SamlProtocolTest {
                         key.setStatus(KeyStatus.ACTIVE);
                         key.setPrivateKey(rsaKeyPair.getPrivate());
                         key.setPublicKey(rsaKeyPair.getPublic());
-                        return new ActiveRsaKey(key);
+                        return key;
+                    }
+
+                    @Override
+                    public ActiveRsaKey getActiveRsaKey(RealmModel realm) {
+                        return new ActiveRsaKey(createTestKey());
+                    }
+
+                    @Override
+                    public KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm) {
+                        return createTestKey();
                     }
                 };
             }
