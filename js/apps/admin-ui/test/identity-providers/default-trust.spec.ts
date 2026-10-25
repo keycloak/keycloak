@@ -26,7 +26,11 @@ test.describe.serial("Default Trust identity provider test", () => {
 
   test.afterEach(async ({}, testInfo) => {
     if (testInfo.title.includes("create and edit")) {
-      await adminClient.deleteIdentityProvider(alias);
+      try {
+        await adminClient.deleteIdentityProvider(alias);
+      } catch {
+        // The provider may already be deleted when creation fails.
+      }
     }
   });
 
