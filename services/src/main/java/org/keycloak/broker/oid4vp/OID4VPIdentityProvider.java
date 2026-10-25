@@ -252,9 +252,14 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     }
 
     protected String buildWalletUrl(String clientId, URI requestUri) {
-        String scheme = getConfig().getWalletScheme();
-        if (!scheme.endsWith("://")) {
-            scheme = scheme + "://";
+        String scheme = OID4VPIdentityProviderConfig.DEFAULT_WALLET_SCHEME;
+        try {
+            scheme = OID4VPIdentityProviderConfig.resolveWalletScheme(getConfig().getWalletScheme()) + "://";
+        } catch (IllegalArgumentException e) {
+            // The scheme is validated when the identity provider is saved, but a value stored
+            // before that must never reach the login page as the wallet button href.
+            logger.warnf("Ignoring invalid wallet scheme '%s' of the OID4VP identity provider '%s', falling back to '%s'",
+                    getConfig().getWalletScheme(), getConfig().getAlias(), OID4VPIdentityProviderConfig.DEFAULT_WALLET_SCHEME);
         }
         return scheme + "?" + OAuth2Constants.CLIENT_ID + "=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
                 + "&request_uri=" + URLEncoder.encode(requestUri.toString(), StandardCharsets.UTF_8);

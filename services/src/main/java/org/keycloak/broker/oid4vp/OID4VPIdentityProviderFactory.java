@@ -91,7 +91,7 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
             .property()
                 .name(OID4VPIdentityProviderConfig.WALLET_SCHEME)
                 .label("Wallet URL Scheme")
-                .helpText("Custom URL scheme used in the wallet link (defaults to openid4vp://).")
+                .helpText("Custom URL scheme used in the wallet link (defaults to openid4vp://). Must be a valid URI scheme; schemes a browser executes or resolves locally (for example javascript or data) are rejected.")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(OID4VPIdentityProviderConfig.DEFAULT_WALLET_SCHEME)
                 .required(true)

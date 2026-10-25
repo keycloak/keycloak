@@ -17,6 +17,9 @@
 
 package org.keycloak.broker.oid4vp;
 
+import java.util.Locale;
+import java.util.Set;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
@@ -32,6 +35,11 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
     public static final String RESPONSE_MODE = "responseMode";
 
     public static final String DEFAULT_WALLET_SCHEME = "openid4vp://";
+
+    // The scheme becomes the href of the wallet button on the login page, so schemes a browser
+    // executes or resolves locally must never reach it, however they are configured.
+    private static final Set<String> FORBIDDEN_WALLET_SCHEMES = Set.of("javascript", "data", "vbscript", "blob", "file", "about");
+    private static final String URI_SCHEME_PATTERN = "[A-Za-z][A-Za-z0-9+.-]*";
 
     public OID4VPIdentityProviderConfig() {
     }
@@ -105,6 +113,33 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
             throw new IllegalArgumentException(
                     "Either a trusted issuer JWKS or trust material identity provider aliases are required");
         }
+        String walletScheme = getConfig().get(WALLET_SCHEME);
+        if (StringUtil.isNotBlank(walletScheme)) {
+            resolveWalletScheme(walletScheme);
+        }
+    }
+
+    /**
+     * Normalizes and validates the configured wallet scheme, returning its bare form without the
+     * {@code ://} separator. The scheme is rendered as the href of the wallet button on the login
+     * page, so anything a browser executes or resolves locally (for example {@code javascript} or
+     * {@code data}) must be rejected, as must values that are not a single valid URI scheme.
+     *
+     * @throws IllegalArgumentException when the value is not a valid URI scheme or is a scheme
+     *         that must not be linked from the login page
+     */
+    static String resolveWalletScheme(String walletScheme) {
+        String scheme = walletScheme.trim();
+        if (scheme.endsWith("://")) {
+            scheme = scheme.substring(0, scheme.length() - 3);
+        }
+        if (scheme.isEmpty() || !scheme.matches(URI_SCHEME_PATTERN)) {
+            throw new IllegalArgumentException("Wallet scheme '" + walletScheme + "' is not a valid URI scheme");
+        }
+        if (FORBIDDEN_WALLET_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Wallet scheme '" + scheme + "' is not allowed for the wallet URL");
+        }
+        return scheme;
     }
 
     public String getWalletScheme() {
