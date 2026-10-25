@@ -2,6 +2,7 @@ import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { Label } from "@patternfly/react-core";
 import {
   CodeBranchIcon,
+  ExclamationTriangleIcon,
   MapMarkerIcon,
   ProcessAutomationIcon,
   TaskIcon,
@@ -16,6 +17,7 @@ type FlowTitleProps = {
   title: string;
   subtitle: string;
   providerId?: string;
+  providerUnavailable?: boolean;
 };
 
 const FlowIcon = ({ type }: { type: FlowType }) => {
@@ -54,11 +56,13 @@ export const FlowTitle = ({
   title,
   subtitle,
   providerId,
+  providerUnavailable,
 }: FlowTitleProps) => {
   const { t } = useTranslation();
   const { providers } = useAuthenticationProvider();
-  const helpText =
-    providers?.find((p) => p.id === providerId)?.description || subtitle;
+  const helpText = providerUnavailable
+    ? t("providerUnavailableHelp")
+    : providers?.find((p) => p.id === providerId)?.description || subtitle;
   return (
     <div data-testid={title}>
       <span data-id={id} id={`title-id-${id}`}>
@@ -66,6 +70,15 @@ export const FlowTitle = ({
           {t(type)}
         </Label>{" "}
         {title}{" "}
+        {providerUnavailable && (
+          <Label
+            data-testid={`${title}-provider-unavailable`}
+            color="red"
+            icon={<ExclamationTriangleIcon />}
+          >
+            {t("providerUnavailable")}
+          </Label>
+        )}{" "}
         {helpText && <HelpItem helpText={helpText} fieldLabelId={id!} />}
       </span>
     </div>

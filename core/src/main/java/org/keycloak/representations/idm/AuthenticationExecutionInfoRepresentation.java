@@ -40,6 +40,7 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
     protected int level;
     protected int index;
     protected int priority;
+    protected Boolean providerUnavailable;
 
     public String getId() {
         return id;
@@ -151,5 +152,13 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public Boolean getProviderUnavailable() {
+        return providerUnavailable;
+    }
+
+    public void setProviderUnavailable(Boolean providerUnavailable) {
+        this.providerUnavailable = providerUnavailable;
     }
 }
