@@ -72,8 +72,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
     public static final String ALLOW_REDIRECTS = "allow-redirects";
-    public static final String CLIENT_KEYSTORE_RELOAD_PERIOD = "client-keystore-reload-period";
-    public static final String DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD = "12h";
+    public static final String CLIENT_SSL_RELOAD_PERIOD = "client-ssl-reload-period";
+    public static final String DEFAULT_CLIENT_SSL_RELOAD_PERIOD = "12h";
 
     private volatile CloseableHttpClient httpClient;
     private final SslReloadService sslReloadService = new SslReloadService();
@@ -266,7 +266,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                     if (sslReloadService.isSslMaterialPresent()) {
                         builder.sslContext(sslReloadService.getSslContext());
 
-                        String reloadPeriodValue = config.get(CLIENT_KEYSTORE_RELOAD_PERIOD, DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD);
+                        String reloadPeriodValue = config.get(CLIENT_SSL_RELOAD_PERIOD, DEFAULT_CLIENT_SSL_RELOAD_PERIOD);
                         CertificateReloadScheduler.parsePeriod(reloadPeriodValue).ifPresent(sslReloadService::scheduleReload);
                     }
 
@@ -415,10 +415,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                 .defaultValue(-1L)
                 .add()
                 .property()
-                .name(CLIENT_KEYSTORE_RELOAD_PERIOD)
+                .name(CLIENT_SSL_RELOAD_PERIOD)
                 .type("string")
                 .helpText("Interval on which to reload the client key store. " + "May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. Use -1 to disable.")
-                .defaultValue(DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD)
+                .defaultValue(DEFAULT_CLIENT_SSL_RELOAD_PERIOD)
                 .add()
                 .property()
                 .name("disable-trust-manager")

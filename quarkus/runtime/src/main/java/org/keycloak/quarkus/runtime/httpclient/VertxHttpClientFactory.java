@@ -204,7 +204,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             }
         }
 
-        String reloadPeriodValue = config.get(DefaultHttpClientFactory.CLIENT_KEYSTORE_RELOAD_PERIOD, DefaultHttpClientFactory.DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD);
+        String reloadPeriodValue = config.get(DefaultHttpClientFactory.CLIENT_SSL_RELOAD_PERIOD, DefaultHttpClientFactory.DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD);
         CertificateReloadScheduler.parsePeriod(reloadPeriodValue).ifPresent(sslReloadService::scheduleReload);
     }
 
