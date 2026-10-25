@@ -59,6 +59,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
     private static final Logger log = Logger.getLogger(FileTruststoreProviderFactory.class);
 
+    private Config.Scope config;
     private TruststoreProvider provider;
 
     @Override
@@ -72,7 +73,13 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
     }
 
     @Override
+    public void reInit() {
+        init(config);
+    }
+
+    @Override
     public void init(Config.Scope config) {
+        this.config = config;
 
         String storepath = config.get("file");
         String pass = config.get("password");

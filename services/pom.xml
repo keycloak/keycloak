@@ -266,6 +266,10 @@
             <artifactId>webauthn4j-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.hakky54</groupId>
+            <artifactId>ayza</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
         </dependency>

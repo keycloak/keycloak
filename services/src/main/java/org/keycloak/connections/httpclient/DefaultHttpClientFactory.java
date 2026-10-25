@@ -22,16 +22,19 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.EnvUtil;
-import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.tls.CertificateReloadScheduler;
+import org.keycloak.tls.SslReloadService;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
 
 import org.apache.http.HttpEntity;
@@ -69,8 +72,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     private static final String NO_PROXY = "no_proxy";
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
     public static final String ALLOW_REDIRECTS = "allow-redirects";
+    public static final String CLIENT_KEYSTORE_RELOAD_PERIOD = "client-keystore-reload-period";
+    public static final String DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD = "12h";
 
     private volatile CloseableHttpClient httpClient;
+    private final SslReloadService sslReloadService = new SslReloadService();
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -154,6 +160,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
 
     @Override
     public void close() {
+        sslReloadService.close();
         try {
             if (httpClient != null) {
                 httpClient.close();
@@ -230,11 +237,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                     	logger.warn("TruststoreProvider is disabled");
                     } else {
                         builder.hostnameVerification(truststoreProvider.getPolicy());
-                        try {
-                            builder.trustStore(truststoreProvider.getTruststore());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load truststore", e);
-                        }
+                        Supplier<KeyStore> truststoreSupplier = () -> {
+                            FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+                            factory.reInit();
+                            return factory.create(session).getTruststore();
+                        };
+                        sslReloadService.setTrustMaterial(truststoreSupplier);
                     }
 
                     if (disableTrustManager) {
@@ -249,11 +257,17 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                     if (clientKeystore != null) {
                         clientKeystore = EnvUtil.replace(clientKeystore);
                         try {
-                            KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                            builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
+                            sslReloadService.setIdentityMaterial(clientKeystore, clientKeystorePassword, clientPrivateKeyPassword);
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to load keystore", e);
                         }
+                    }
+
+                    if (sslReloadService.isSslMaterialPresent()) {
+                        builder.sslContext(sslReloadService.getSslContext());
+
+                        String reloadPeriodValue = config.get(CLIENT_KEYSTORE_RELOAD_PERIOD, DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD);
+                        CertificateReloadScheduler.parsePeriod(reloadPeriodValue).ifPresent(sslReloadService::scheduleReload);
                     }
 
                     // Configure retry behavior
@@ -399,6 +413,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                 .type("string")
                 .helpText("The key password.")
                 .defaultValue(-1L)
+                .add()
+                .property()
+                .name(CLIENT_KEYSTORE_RELOAD_PERIOD)
+                .type("string")
+                .helpText("Interval on which to reload the client key store. " + "May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. Use -1 to disable.")
+                .defaultValue(DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD)
                 .add()
                 .property()
                 .name("disable-trust-manager")

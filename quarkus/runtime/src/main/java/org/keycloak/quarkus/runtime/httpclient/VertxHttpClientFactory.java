@@ -1,15 +1,17 @@
 package org.keycloak.quarkus.runtime.httpclient;
 
-import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
+import io.vertx.core.net.KeyCertOptions;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.util.EnvUtil;
-import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.connections.httpclient.DefaultHttpClientFactory;
 import org.keycloak.connections.httpclient.HttpClientFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.httpclient.ProxyMappings;
@@ -18,13 +20,16 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.tls.CertificateReloadScheduler;
+import org.keycloak.tls.SslReloadService;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
 
 import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.jboss.logging.Logger;
@@ -39,6 +44,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     private volatile WebClient webClient;
     private volatile HttpClient httpClient;
+    private SslReloadService sslReloadService;
     private Config.Scope config;
     private long maxConsumedResponseSize;
     private long socketTimeoutMs;
@@ -79,11 +85,14 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         backoffMultiplier = Double.parseDouble(config.get("backoff-multiplier", "2.0"));
         useJitter = config.getBoolean("use-jitter", true);
         jitterFactor = Double.parseDouble(config.get("jitter-factor", "0.5"));
-
+        sslReloadService = new SslReloadService();
     }
 
     @Override
     public void close() {
+        if (sslReloadService != null) {
+            sslReloadService.close();
+        }
         try {
             if (webClient != null) {
                 webClient.close();
@@ -158,13 +167,24 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             options.setTrustAll(true);
             options.setVerifyHost(false);
         } else {
+            Supplier<KeyStore> truststoreSupplier = () -> {
+                ProviderFactory<TruststoreProvider> providerFactory = session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+                if (providerFactory instanceof FileTruststoreProviderFactory) {
+                    FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) providerFactory;
+                    factory.reInit();
+                    return factory.create(session).getTruststore();
+                }
+                return providerFactory.create(session).getTruststore();
+            };
+            sslReloadService.setTrustMaterial(truststoreSupplier);
+
             TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
             if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
                 logger.warn("TruststoreProvider is disabled");
             } else {
                 HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
                 options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
-                options.setTrustOptions(keystoreToOptions(truststoreProvider.getTruststore(), null));
+                options.setTrustOptions(TrustOptions.wrap(sslReloadService.getTrustManager()));
                 options.setSsl(true);
             }
         }
@@ -174,28 +194,18 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             clientKeystore = EnvUtil.replace(clientKeystore);
             String clientKeystorePassword = config.get("client-keystore-password");
             try {
-                KeyStore ks = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                options.setKeyCertOptions(keystoreToOptions(ks, config.get("client-key-password", clientKeystorePassword)));
+                sslReloadService.setIdentityMaterial(clientKeystore, clientKeystorePassword, clientKeystorePassword);
+
+                options.setKeyCertOptions(KeyCertOptions.wrap(sslReloadService.getKeyManager()));
                 options.setSsl(true);
                 logger.debug("Client keystore configured for mutual TLS");
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load client keystore: " + clientKeystore, e);
             }
         }
-    }
 
-    private KeyStoreOptions keystoreToOptions(KeyStore keyStore, String password) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            char[] pw = password != null ? password.toCharArray() : new char[0];
-            keyStore.store(baos, pw);
-            return new KeyStoreOptions()
-                    .setType(keyStore.getType())
-                    .setValue(Buffer.buffer(baos.toByteArray()))
-                    .setPassword(password != null ? password : "");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize keystore", e);
-        }
+        String reloadPeriodValue = config.get(DefaultHttpClientFactory.CLIENT_KEYSTORE_RELOAD_PERIOD, DefaultHttpClientFactory.DEFAULT_CLIENT_KEYSTORE_RELOAD_PERIOD);
+        CertificateReloadScheduler.parsePeriod(reloadPeriodValue).ifPresent(sslReloadService::scheduleReload);
     }
 
     private void configureProxy() {
