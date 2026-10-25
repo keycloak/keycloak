@@ -23,13 +23,13 @@ import java.util.Map;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
