@@ -32,6 +32,8 @@
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
+        <!-- Keep the JBoss Logging processor active next to the Checker Framework one in the checkerframework profile. -->
+        <checkerframework.processors>org.checkerframework.checker.resourceleak.ResourceLeakChecker,org.jboss.logging.processor.apt.LoggingToolsProcessor</checkerframework.processors>
     </properties>
 
     <dependencies>

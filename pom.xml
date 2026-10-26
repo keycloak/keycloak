@@ -224,6 +224,7 @@
         <plugin.antrun.version>1.8</plugin.antrun.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <checkerframework.version>4.3.1</checkerframework.version>
+        <checkerframework.processors>org.checkerframework.checker.resourceleak.ResourceLeakChecker</checkerframework.processors>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 
         <!-- Surefire Settings -->
@@ -1676,7 +1677,8 @@
                                 <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
                                 <arg>-Xlint:-removal</arg>
                                 <arg>-processor</arg>
-                                <arg>org.checkerframework.checker.resourceleak.ResourceLeakChecker</arg>
+                                <!-- An explicit -processor list disables processor discovery; modules with other processors append them via this property. -->
+                                <arg>${checkerframework.processors}</arg>
                                 <!-- Exclude test sources and helpers by directory, regardless of their class names.
                                      Backslashes are doubled for the forked javac argument file. -->
                                 <arg>-AskipFiles=(^|[/\\\\])src[/\\\\]test[/\\\\]</arg>
