@@ -111,6 +111,8 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
 
    @Test
    public void testRevokedTokensReloadedOnMergeEvent() throws InterruptedException {
+      // The actionTokens cache does not exist when STATELESS is enabled
+      Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.STATELESS));
       var numFactories = 2;
       var partitionManager = new PartitionManager(numFactories);
       var factoryIndex = new AtomicInteger(0);
