@@ -35,7 +35,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
-import org.keycloak.authentication.authenticators.util.AcrStore;
+import org.keycloak.authentication.authenticators.util.AcrNotFulfilledException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -900,6 +900,10 @@ public class AuthenticationProcessor {
                 }
                 event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
                 if (e.getResponse() != null) return e.getResponse();
+                if (e instanceof AcrNotFulfilledException) {
+                    // the flow finished without reaching the forced level, so do not keep its changes, e.g. a user created by the registration
+                    session.getTransactionManager().setRollbackOnly();
+                }
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, e.getUserErrorMessage());
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
@@ -1236,8 +1240,6 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
-        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
-
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
