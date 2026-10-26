@@ -202,21 +202,26 @@ public class JdbcPing2Test {
             assertFalse(second.isDatabaseTaskCoordinator());
 
             setLastUpdate(first, a.getAddress(), Time.currentTime() - 120);
+            Time.setOffset(11);
             assertFalse(coordinator.isDatabaseTaskCoordinator());
             assertTrue(first.isDatabaseTaskCoordinator());
             assertFalse(second.isDatabaseTaskCoordinator());
 
             setLastUpdate(second, b.getAddress(), Time.currentTime() - 120);
+            Time.setOffset(22);
             assertFalse(first.isDatabaseTaskCoordinator());
             assertTrue(second.isDatabaseTaskCoordinator());
 
             coordinator.writeAll();
+            Time.setOffset(33);
             assertTrue(coordinator.isDatabaseTaskCoordinator());
             assertFalse(first.isDatabaseTaskCoordinator());
             assertFalse(second.isDatabaseTaskCoordinator());
             assertEquals(originalView, a.getView());
             assertEquals(originalView, b.getView());
             assertEquals(originalView, c.getView());
+        } finally {
+            Time.setOffset(0);
         }
     }
 
@@ -259,6 +264,7 @@ public class JdbcPing2Test {
                 assertEquals(originalView, b.getView());
 
                 member.setDatabaseAvailable(false);
+                Time.setOffset(11);
                 memberHealth.triggerClusterHealthCheck();
                 assertFalse(memberHealth.isHealthy());
                 assertFalse(member.isDatabaseTaskCoordinator());
@@ -269,11 +275,13 @@ public class JdbcPing2Test {
 
                 coordinator.setDatabaseAvailable(true);
                 coordinator.writeAll();
+                Time.setOffset(22);
                 coordinatorHealth.triggerClusterHealthCheck();
                 assertTrue(coordinatorHealth.isHealthy());
                 assertTrue(coordinator.isDatabaseTaskCoordinator());
                 assertFalse(member.isDatabaseTaskCoordinator());
             } finally {
+                Time.setOffset(0);
                 coordinator.setDatabaseAvailable(true);
                 member.setDatabaseAvailable(true);
             }

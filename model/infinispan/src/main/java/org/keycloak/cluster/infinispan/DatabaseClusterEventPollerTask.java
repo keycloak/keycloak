@@ -62,14 +62,14 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
 
     @Override
     public void run(KeycloakSession session) {
+        if (!shouldProcessEvents(session)) return;
+
         JpaClusterEventStoreProvider store = new JpaClusterEventStoreProvider(session);
         processEvents(session, store, clusterName, marshaller);
-        cleanupStaleEvents(session, store);
+        cleanupStaleEvents(store);
     }
 
     static void processEvents(KeycloakSession session, JpaClusterEventStoreProvider store, String clusterName, Marshaller marshaller) {
-        if (!shouldProcessEvents(session)) return;
-
         List<StoredClusterEvent> events = store.readEvents(clusterName, BATCH_SIZE);
         if (events.isEmpty()) {
             return;
@@ -108,9 +108,8 @@ public class DatabaseClusterEventPollerTask implements ScheduledTask {
         }
     }
 
-    private void cleanupStaleEvents(KeycloakSession session, JpaClusterEventStoreProvider store) {
+    private void cleanupStaleEvents(JpaClusterEventStoreProvider store) {
         if (staleEventHorizon < Time.currentTimeMillis()) {
-            if (!shouldProcessEvents(session)) return;
             store.deleteEventsOlderThan(Time.currentTimeMillis() - STALE_EVENT_RETENTION_MS);
             // Stale event deletion should run less frequently than the processing of events
             staleEventHorizon = Time.currentTimeMillis() + STALE_EVENT_RETENTION_MS;

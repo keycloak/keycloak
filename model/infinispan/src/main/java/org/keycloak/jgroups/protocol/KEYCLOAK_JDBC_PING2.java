@@ -35,6 +35,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -82,6 +84,15 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private volatile int cyclesSinceLastLog = 0;
     private volatile Future<?> healthCheckTask;
     private volatile Runnable onHealthRestored;
+    private final ReentrantLock databaseTaskOwnershipLock = new ReentrantLock();
+    private final AtomicReference<DatabaseTaskOwnership> databaseTaskOwnership =
+            new AtomicReference<>(new DatabaseTaskOwnership(null, 0, false));
+
+    private record DatabaseTaskOwnership(View view, long expiresAt, boolean coordinator) {
+        boolean isValid(View currentView) {
+            return view == currentView && Time.currentTimeMillis() < expiresAt;
+        }
+    }
 
     @Property(description="Staleness timeout in milliseconds. Each member periodically refreshes its own entry before it expires.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
@@ -154,6 +165,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
+        invalidateDatabaseTaskOwnership();
         super.handleView(new_view, old_view, coord_changed);
         if (!is_coord) {
             // In contrast to the parent original method, we now need to write our own entry even if we are not the coordinator,
@@ -315,6 +327,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     public void start() throws Exception {
+        invalidateDatabaseTaskOwnership();
         super.start();
         healthCheckTask = timer.scheduleWithFixedDelay(() -> runHealthCheck(log),
                 HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
@@ -322,6 +335,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     public void stop() {
+        invalidateDatabaseTaskOwnership();
         Future<?> task = healthCheckTask;
         if (task != null) {
             task.cancel(false);
@@ -438,8 +452,38 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      * Selects a database-task owner only in the partition accepted by the readiness check.
      * Prefers its coordinator while its own publication is fresh, otherwise the lowest-address fresh member.
      * This is not an exclusive lease: publication expiry and concurrent snapshots can cause overlapping workers.
+     * Decisions, including failed queries, are cached for the health-check interval.
      */
     public boolean isDatabaseTaskCoordinator() {
+        var cached = databaseTaskOwnership.get();
+        if (cached.isValid(view)) {
+            return cached.coordinator();
+        }
+        databaseTaskOwnershipLock.lock();
+        try {
+            cached = databaseTaskOwnership.get();
+            View currentView = view;
+            if (cached.isValid(currentView)) {
+                return cached.coordinator();
+            }
+            if (currentView == null) {
+                return false;
+            }
+            boolean coordinator = queryDatabaseTaskCoordinator();
+            var refreshed = new DatabaseTaskOwnership(currentView,
+                    Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(HEALTH_CHECK_INTERVAL_SECONDS), coordinator);
+            // Do not restore a decision invalidated by a concurrent view or lifecycle change.
+            return databaseTaskOwnership.compareAndSet(cached, refreshed) && view == currentView && coordinator;
+        } finally {
+            databaseTaskOwnershipLock.unlock();
+        }
+    }
+
+    private void invalidateDatabaseTaskOwnership() {
+        databaseTaskOwnership.set(new DatabaseTaskOwnership(null, 0, false));
+    }
+
+    private boolean queryDatabaseTaskCoordinator() {
         try {
             var winner = readDiscoveryData(cluster_name).winningPartition();
             if (winner.isEmpty()) {
