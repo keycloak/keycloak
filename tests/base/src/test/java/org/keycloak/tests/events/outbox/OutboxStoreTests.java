@@ -293,7 +293,7 @@ public class OutboxStoreTests {
             Assertions.assertEquals(3, after.getAttempts(), "attempts must be incremented");
             Assertions.assertEquals(nextAttempt, after.getNextAttemptAt());
             Assertions.assertNotNull(after.getLastError());
-            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_LENGTH,
+            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_BYTES,
                     "lastError must be truncated to the column width");
             Assertions.assertTrue(after.getLastError().endsWith("..."),
                     "truncated lastError must carry an ellipsis marker");
@@ -325,7 +325,7 @@ public class OutboxStoreTests {
             Assertions.assertEquals(1, after.getAttempts(), "attempts must be incremented");
             Assertions.assertTrue(after.getLastError().startsWith("HTTP 500 https://receiver.example/push: invalidrequest "),
                     "lastError must keep the message without the null character");
-            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_LENGTH,
+            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_BYTES,
                     "lastError must fit the column width in bytes");
             Assertions.assertTrue(after.getLastError().endsWith("..."),
                     "truncated lastError must carry an ellipsis marker");

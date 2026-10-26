@@ -65,7 +65,7 @@ public class OutboxStore {
      * width in bytes (Oracle by default, SQL Server with a UTF-8
      * collation).
      */
-    public static final int MAX_LAST_ERROR_LENGTH = 2048;
+    public static final int MAX_LAST_ERROR_BYTES = 2048;
 
     protected final KeycloakSession session;
 
@@ -749,11 +749,11 @@ public class OutboxStore {
         if (error.indexOf('\0') >= 0) {
             error = error.replace("\0", "");
         }
-        if (error.length() * 3 <= MAX_LAST_ERROR_LENGTH
-                || error.getBytes(StandardCharsets.UTF_8).length <= MAX_LAST_ERROR_LENGTH) {
+        if (error.length() * 3 <= MAX_LAST_ERROR_BYTES
+                || error.getBytes(StandardCharsets.UTF_8).length <= MAX_LAST_ERROR_BYTES) {
             return error;
         }
-        int limit = MAX_LAST_ERROR_LENGTH - 3;
+        int limit = MAX_LAST_ERROR_BYTES - 3;
         int bytes = 0;
         int end = 0;
         while (end < error.length()) {
