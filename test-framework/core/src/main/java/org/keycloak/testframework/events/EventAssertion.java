@@ -1,5 +1,7 @@
 package org.keycloak.testframework.events;
 
+import java.util.Set;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -47,6 +49,37 @@ public class EventAssertion {
     public static EventAssertion assertError(EventRepresentation event) {
         Assertions.assertTrue(event.getType().endsWith("_ERROR"), "Expected error event");
         return new EventAssertion(event);
+    }
+
+    /**
+     * Assert an expected LOGIN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLoginSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGIN)
+                .isCodeId()
+                .hasSessionId()
+                .hasIpAddress()
+                .loginSuccessEventHasAllRequiredDetails();
+    }
+
+    /**
+     * Assert an expected LOGOUT_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGOUT_ERROR)
+                .hasIpAddress()
+                .sessionId(null)
+                .clientId(null)
+                .userId(null)
+                .withoutDetails(Details.CODE_ID);
     }
 
     /**
@@ -163,4 +196,16 @@ public class EventAssertion {
         return this;
     }
 
+    /**
+     * Assert the LOGIN event details with required key set
+     *
+     * @return
+     */
+    private EventAssertion loginSuccessEventHasAllRequiredDetails() {
+        Set<String> keyDetails = Set.of("auth_method", "response_type", "redirect_uri", "consent", "code_id", "response_mode");
+        for (String key : keyDetails) {
+            MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey(key));
+        }
+        return this;
+    }
 }

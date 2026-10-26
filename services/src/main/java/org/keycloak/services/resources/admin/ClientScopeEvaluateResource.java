@@ -302,11 +302,11 @@ public class ClientScopeEvaluateResource {
             return function.apply(userSession, clientSessionCtx, audienceClients);
 
         } finally {
-            if (authSession != null) {
-                authSessionManager.removeAuthenticationSession(realm, authSession, false);
-            }
             if (userSession != null) {
-                session.sessions().removeUserSession(realm, userSession);
+                AuthenticationManager.removeUserSessionAndRootAuthSession(session, realm, userSession);
+            } else if (authSession != null) {
+                // userSession was never created; clean up the root auth session on its own
+                authSessionManager.removeAuthenticationSession(realm, authSession, false);
             }
         }
     }
