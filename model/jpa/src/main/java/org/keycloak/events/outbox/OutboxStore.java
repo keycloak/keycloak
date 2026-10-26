@@ -60,9 +60,9 @@ public class OutboxStore {
      * Hard cap on the {@code last_error} column width — matches the
      * VARCHAR(2048) defined in the changelog. Truncation is applied
      * here so callers can pass arbitrarily long exception messages
-     * without worrying about persistence-layer rejection. The cap is
-     * applied to the UTF-8 encoded length, as some databases measure the
-     * column width in bytes (Oracle by default, SQL Server with a UTF-8
+     * without worrying about persistence-layer rejection. The cap is in
+     * UTF-8 bytes, not characters, as some databases measure the column
+     * width in bytes (Oracle by default, SQL Server with a UTF-8
      * collation).
      */
     public static final int MAX_LAST_ERROR_LENGTH = 2048;
