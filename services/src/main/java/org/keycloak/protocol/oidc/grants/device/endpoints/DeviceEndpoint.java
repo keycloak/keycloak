@@ -465,8 +465,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         if ( scope != null)
             authenticationSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        List<String> acrValues = AcrUtils.getAcrValues(null, null, client);
-        AcrUtils.getLowestLoaForAcrValues(acrValues, client).ifPresent(loa ->
+        List<String> acrValues = AcrUtils.getAcrValues(session, null, null, client);
+        AcrUtils.getLowestLoaForAcrValues(session, acrValues, client).ifPresent(loa ->
             authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
         return authenticationSession;

@@ -199,7 +199,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             validateBindingMessage(endpointRequest.getBindingMessage());
             request.setBindingMessage(endpointRequest.getBindingMessage());
         }
-        List<String> acrValues = AcrUtils.getAcrValues(null, endpointRequest.getAcr(), client);
+        List<String> acrValues = AcrUtils.getAcrValues(session, null, endpointRequest.getAcr(), client);
         if (!acrValues.isEmpty()) {
             request.setAcrValues(String.join(" ", acrValues));
         }

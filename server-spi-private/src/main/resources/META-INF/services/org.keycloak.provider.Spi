@@ -73,6 +73,7 @@ org.keycloak.deployment.DeployedConfigurationsSpi
 org.keycloak.models.cache.authorization.CachedStoreFactorySpi
 org.keycloak.protocol.oidc.TokenExchangeSpi
 org.keycloak.protocol.oidc.TokenIntrospectionSpi
+org.keycloak.protocol.oidc.OIDCLevelOfAuthenticationSpi
 org.keycloak.protocol.oidc.grants.OAuth2GrantTypeSpi
 org.keycloak.protocol.oidc.verifier.TokenVerifierSpi
 org.keycloak.protocol.saml.ArtifactResolverSpi

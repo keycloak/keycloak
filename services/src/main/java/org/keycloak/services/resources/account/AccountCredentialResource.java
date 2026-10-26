@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -46,7 +45,7 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oidc.utils.AcrUtils;
+import org.keycloak.protocol.oidc.OIDCLevelOfAuthenticationProvider;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -273,24 +272,16 @@ public class AccountCredentialResource {
 
     private Integer getCurrentAuthenticatedLevel() {
         ClientModel client = realm.getClientByClientId(auth.getToken().getIssuedFor());
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(client);
         String tokenAcr = auth.getToken().getAcr();
         if (tokenAcr == null) {
             logger.warnf("Not able to remove credential of user '%s' as no acr claim on the token", user.getUsername());
             throw new ForbiddenException("No LoA on the token");
         }
-        Integer currentAuthenticatedLevel = acrLoaMap.get(tokenAcr);
-        if (currentAuthenticatedLevel != null) {
-            return currentAuthenticatedLevel;
-        } else {
-            try {
-                return Integer.parseInt(tokenAcr);
-            } catch (NumberFormatException nfe) {
-                logger.warnf("Token acr '%s' not found in acrLoaMap of client '%s' or realm '%s'. Not able to remove credential of user '%s'",
-                        tokenAcr, client.getClientId(), realm.getName(), user.getUsername());
-                throw new ForbiddenException("Unsupported acr on the token");
-            }
-        }
+        return session.getProvider(OIDCLevelOfAuthenticationProvider.class).getRequestedLoa(client, tokenAcr).orElseThrow(() -> {
+            logger.warnf("Token acr '%s' cannot be mapped to a level of authentication for client '%s' in realm '%s'. Not able to remove credential of user '%s'",
+                    tokenAcr, client.getClientId(), realm.getName(), user.getUsername());
+            return new ForbiddenException("Unsupported acr on the token");
+        });
     }
 
     /**
