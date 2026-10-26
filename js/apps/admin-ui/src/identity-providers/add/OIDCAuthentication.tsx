@@ -6,6 +6,7 @@ import { sortProviders } from "../../util";
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
+import { ClientCertificateKeyProvider } from "./ClientCertificateKeyProvider";
 
 const clientAuthentications = [
   "client_secret_post",
@@ -13,6 +14,7 @@ const clientAuthentications = [
   "client_secret_basic_unencoded",
   "client_secret_jwt",
   "private_key_jwt",
+  "tls_client_auth",
 ];
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
@@ -42,20 +44,25 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
       />
       <ClientIdSecret
         secretRequired={clientAuthMethod !== "private_key_jwt"}
+        hideSecret={clientAuthMethod === "tls_client_auth"}
         create={create}
       />
-      <SelectControl
-        name="config.clientAssertionSigningAlg"
-        label={t("clientAssertionSigningAlg")}
-        labelIcon={t("clientAssertionSigningAlgHelp")}
-        options={[
-          { key: "", value: t("algorithmNotSpecified") },
-          ...sortProviders(providers).map((p) => ({ key: p, value: p })),
-        ]}
-        controller={{
-          defaultValue: "",
-        }}
-      />
+      {clientAuthMethod === "tls_client_auth" ? (
+        <ClientCertificateKeyProvider />
+      ) : (
+        <SelectControl
+          name="config.clientAssertionSigningAlg"
+          label={t("clientAssertionSigningAlg")}
+          labelIcon={t("clientAssertionSigningAlgHelp")}
+          options={[
+            { key: "", value: t("algorithmNotSpecified") },
+            ...sortProviders(providers).map((p) => ({ key: p, value: p })),
+          ]}
+          controller={{
+            defaultValue: "",
+          }}
+        />
+      )}
       {(clientAuthMethod === "private_key_jwt" ||
         clientAuthMethod === "client_secret_jwt") && (
         <TextField

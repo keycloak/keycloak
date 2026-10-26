@@ -3,6 +3,7 @@ package org.keycloak.cache;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -13,11 +14,13 @@ import java.util.function.Function;
  * @param expiration the {@link Duration} to wait before entries are expired. A {@code null} value indicates no expiration.
  * @param loader an optional {@link Function} which is used to retrieve cache values on cache miss.
  * @param expirationMode the expiration mode
+ * @param removalListener an optional {@link Consumer} which is called with the value of every entry that is removed.
  * @param <K> the type of the cache Keys used for lookup
  * @param <V> the type of the cache Values to be stored
  */
 public record LocalCacheConfiguration<K, V>(String name, int maxSize, BiFunction<K, V, Duration> expiration,
-                                            Function<K, V> loader, ExpirationMode expirationMode) {
+                                            Function<K, V> loader, ExpirationMode expirationMode,
+                                            Consumer<V> removalListener) {
 
     public LocalCacheConfiguration {
         Objects.requireNonNull(name, "A cache name must be configured");
@@ -26,6 +29,10 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, BiFunction
 
     public boolean hasLoader() {
         return loader != null;
+    }
+
+    public boolean hasRemovalListener() {
+        return removalListener != null;
     }
 
     public static <K, V> Builder<K, V> builder() {
@@ -45,6 +52,7 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, BiFunction
         private BiFunction<K, V, Duration> expiration;
         private Function<K, V> loader;
         private ExpirationMode expirationMode = ExpirationMode.DISABLED;
+        private Consumer<V> removalListener;
 
         public Builder<K, V> name(String name) {
             this.name = name;
@@ -92,8 +100,17 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, BiFunction
             return this;
         }
 
+        /**
+         * Sets a listener called with the value of every removed entry, including when the cache is closed, to release
+         * values that hold resources.
+         */
+        public Builder<K, V> removalListener(Consumer<V> removalListener) {
+            this.removalListener = removalListener;
+            return this;
+        }
+
         public LocalCacheConfiguration<K, V> build() {
-            return new LocalCacheConfiguration<>(name, maxSize, expiration, loader, expirationMode);
+            return new LocalCacheConfiguration<>(name, maxSize, expiration, loader, expirationMode, removalListener);
         }
     }
 

@@ -67,16 +67,19 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         if (managedCert.isMTlsEnabled()) {
             command.option("https-client-auth", "request");
+            // the server trusts its own certificate on outgoing connections
+            String additionalPem = null;
             if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(KeystoreUtil.getTruststoreType(
                     null, managedCert.getServerTrustStorePath(), managedCert.getKeystoreFormat().name()))) {
                 // for PEM file use common truststore paths option
-                command.option("truststore-paths", managedCert.getServerTrustStorePath());
+                additionalPem = managedCert.getServerTrustStorePath();
             } else {
                 // for other formats use the https-trust-store-file option
                 command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
                 command.option("https-trust-store-password", managedCert.getServerTrustStorePassword());
                 command.option("https-trust-store-type", managedCert.getKeystoreFormat().name());
             }
+            command.option("truststore-paths", managedCert.getClientTrustStorePemPath(additionalPem));
         }
 
         command.log().fromConfig(Config.getConfig());

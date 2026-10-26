@@ -15,7 +15,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
+import org.keycloak.connections.httpclient.ClientCertificate;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.httpclient.ProxyMappings;
 
@@ -38,6 +40,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
 
     private final WebClient webClient;
     private final HttpClient httpClient;
+    private final Function<ClientCertificate, HttpClient> clientCertificateHttpClients;
     private final CloseableHttpClient bridge;
     private final long maxConsumedResponseSize;
     private final long socketTimeoutMs;
@@ -49,11 +52,13 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     private final ProxyMappings proxyMappings;
 
     VertxHttpClientProvider(WebClient webClient, HttpClient httpClient,
+                            Function<ClientCertificate, HttpClient> clientCertificateHttpClients,
                             long maxConsumedResponseSize, long socketTimeoutMs, int maxRetries,
                             long initialBackoffMillis, double backoffMultiplier, boolean useJitter, double jitterFactor,
                             ProxyMappings proxyMappings) {
         this.webClient = webClient;
         this.httpClient = httpClient;
+        this.clientCertificateHttpClients = clientCertificateHttpClients;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
         this.socketTimeoutMs = socketTimeoutMs;
         this.maxRetries = maxRetries;
@@ -68,6 +73,11 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     @Override
     public CloseableHttpClient getHttpClient() {
         return bridge;
+    }
+
+    @Override
+    public CloseableHttpClient getHttpClient(ClientCertificate certificate) {
+        return new VertxHttpClientBridge(clientCertificateHttpClients.apply(certificate), this);
     }
 
     @Override

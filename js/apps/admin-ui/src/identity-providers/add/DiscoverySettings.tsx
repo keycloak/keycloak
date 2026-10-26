@@ -36,6 +36,10 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
     control,
     name: "config.supportsClientAssertions",
   });
+  const clientAuthMethod = useWatch({
+    control,
+    name: "config.clientAuthMethod",
+  });
 
   return (
     <div className="pf-v5-c-form pf-m-horizontal">
@@ -78,6 +82,31 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
         type="url"
         readOnly={readOnly}
       />
+      {clientAuthMethod === "tls_client_auth" && (
+        <>
+          <TextControl
+            name="config.mtlsTokenUrl"
+            label={t("mtlsTokenUrl")}
+            labelIcon={t("mtlsEndpointHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+          <TextControl
+            name="config.mtlsUserInfoUrl"
+            label={t("mtlsUserInfoUrl")}
+            labelIcon={t("mtlsEndpointHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+          <TextControl
+            name="config.mtlsTokenIntrospectionUrl"
+            label={t("mtlsTokenIntrospectionUrl")}
+            labelIcon={t("mtlsEndpointHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+        </>
+      )}
       {isOIDC && (
         <TextControl
           name="config.issuer"

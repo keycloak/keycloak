@@ -672,7 +672,7 @@ class AdminClient {
     realm: string = this.#client.realmName,
   ) {
     await this.#login();
-    await this.#client.components.create({
+    const { id } = await this.#client.components.create({
       realm,
       name,
       config: {
@@ -683,6 +683,12 @@ class AdminClient {
       providerId: providerType,
       providerType: "org.keycloak.keys.KeyProvider",
     });
+    return id;
+  }
+
+  async deleteKeyProvider(id: string, realm: string = this.#client.realmName) {
+    await this.#login();
+    await this.#client.components.del({ realm, id });
   }
 
   async createUserFederation(

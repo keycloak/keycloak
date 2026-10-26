@@ -425,7 +425,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken))) {
+                    try (SimpleHttpResponse response = executeRequest(userInfoUrl, MtlsAwareHttp.create(session, getConfig()).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken))) {
                         String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                         MediaType contentMediaType;
                         try {
@@ -534,7 +534,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     protected String getUserInfoUrl() {
-        return getConfig().getUserInfoUrl();
+        return getConfig().getEffectiveUserInfoUrl();
     }
 
     private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {

@@ -34,7 +34,13 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |An endpoint the OIDC protocol defines. This endpoint points to user profile information.
 
 |Client Authentication
-|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key, {project_name} uses the realm private key. In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
+|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key or `Client certificate with mutual TLS`, {project_name} uses a realm key. In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
+
+|Client certificate
+|The realm key whose certificate is presented to the token, introspection and user info endpoints. Anyone who can manage identity providers can choose any signing key with a certificate, and anyone who can view identity providers can see the certificates of those keys. A disabled key fails the login. An expired certificate is still presented.
+
+|Test client certificate
+|Checks that the identity provider accepts the client certificate by sending a token request with an invalid authorization code, using the settings on this page.
 
 |Client ID
 |A realm acting as an OIDC client to the external IDP. The realm must have an OIDC client ID if you use the Authorization Code Flow to interact with the external IDP.

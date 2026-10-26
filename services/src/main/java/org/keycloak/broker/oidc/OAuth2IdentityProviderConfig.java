@@ -25,7 +25,9 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.representations.IDToken;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -38,8 +40,15 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public static final String PKCE_METHOD = "pkceMethod";
     public static final String TOKEN_ENDPOINT_URL = "tokenUrl";
     public static final String TOKEN_INTROSPECTION_URL = "tokenIntrospectionUrl";
+    public static final String USER_INFO_URL = "userInfoUrl";
 
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
+    // id of the realm key provider that holds the client certificate used with tls_client_auth
+    public static final String CLIENT_CERTIFICATE_KEY_PROVIDER_ID = "clientCertificateKeyProviderId";
+    // mutual TLS endpoint URLs (RFC 8705 mtls_endpoint_aliases), preferred over the regular ones with tls_client_auth
+    public static final String MTLS_TOKEN_ENDPOINT_URL = "mtlsTokenUrl";
+    public static final String MTLS_TOKEN_INTROSPECTION_URL = "mtlsTokenIntrospectionUrl";
+    public static final String MTLS_USER_INFO_URL = "mtlsUserInfoUrl";
 
     public static final String REQUIRES_SHORT_STATE_PARAMETER = "requiresShortStateParameter";
 
@@ -68,11 +77,11 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     }
 
     public String getUserInfoUrl() {
-        return getConfig().get("userInfoUrl");
+        return getConfig().get(USER_INFO_URL);
     }
 
     public void setUserInfoUrl(String userInfoUrl) {
-        getConfig().put("userInfoUrl", userInfoUrl);
+        getConfig().put(USER_INFO_URL, userInfoUrl);
     }
 
     public String getTokenIntrospectionUrl() {
@@ -129,6 +138,79 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public boolean isBasicAuthenticationUnencoded(){
         return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC_UNENCODED);
+    }
+
+    public boolean isTlsClientAuthentication() {
+        return getClientAuthMethod().equals(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+    }
+
+    /**
+     * @return the id of the realm key provider that holds the client certificate and its private key
+     */
+    public String getClientCertificateKeyProviderId() {
+        return getConfig().get(CLIENT_CERTIFICATE_KEY_PROVIDER_ID);
+    }
+
+    public void setClientCertificateKeyProviderId(String keyProviderId) {
+        getConfig().put(CLIENT_CERTIFICATE_KEY_PROVIDER_ID, keyProviderId);
+    }
+
+    public String getMtlsTokenUrl() {
+        return getConfig().get(MTLS_TOKEN_ENDPOINT_URL);
+    }
+
+    public void setMtlsTokenUrl(String url) {
+        getConfig().put(MTLS_TOKEN_ENDPOINT_URL, url);
+    }
+
+    public String getMtlsTokenIntrospectionUrl() {
+        return getConfig().get(MTLS_TOKEN_INTROSPECTION_URL);
+    }
+
+    public void setMtlsTokenIntrospectionUrl(String url) {
+        getConfig().put(MTLS_TOKEN_INTROSPECTION_URL, url);
+    }
+
+    public String getMtlsUserInfoUrl() {
+        return getConfig().get(MTLS_USER_INFO_URL);
+    }
+
+    public void setMtlsUserInfoUrl(String url) {
+        getConfig().put(MTLS_USER_INFO_URL, url);
+    }
+
+    /**
+     * Sets the mutual TLS endpoint URLs from the {@code mtls_endpoint_aliases} of the discovery document. A missing
+     * alias is set to empty, so that importing the discovery document again clears an alias that was removed.
+     */
+    public void setMtlsEndpointAliases(MTLSEndpointAliases aliases) {
+        MTLSEndpointAliases present = aliases != null ? aliases : new MTLSEndpointAliases();
+        setMtlsTokenUrl(Objects.toString(present.getTokenEndpoint(), ""));
+        setMtlsTokenIntrospectionUrl(Objects.toString(present.getIntrospectionEndpoint(), ""));
+        setMtlsUserInfoUrl(Objects.toString(present.getUserInfoEndpoint(), ""));
+    }
+
+    /**
+     * @return the token endpoint to call: the mutual TLS alias if configured and the client uses mutual TLS
+     */
+    public String getEffectiveTokenUrl() {
+        return preferMtlsUrl(getMtlsTokenUrl(), getTokenUrl());
+    }
+
+    public String getEffectiveTokenIntrospectionUrl() {
+        return preferMtlsUrl(getMtlsTokenIntrospectionUrl(), getTokenIntrospectionUrl());
+    }
+
+    public String getEffectiveUserInfoUrl() {
+        return preferMtlsUrl(getMtlsUserInfoUrl(), getUserInfoUrl());
+    }
+
+    private String preferMtlsUrl(String mtlsUrl, String url) {
+        return isTlsClientAuthentication() && !StringUtil.isBlank(mtlsUrl) ? mtlsUrl : url;
+    }
+
+    private static String blankToNull(String url) {
+        return StringUtil.isBlank(url) ? null : url;
     }
 
     public boolean isUiLocales() {
@@ -236,6 +318,18 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         checkUrl(sslRequired, getTokenUrl(), "token_url");
         checkUrl(sslRequired, getUserInfoUrl(), "userinfo_url");
         checkUrl(sslRequired, getTokenIntrospectionUrl(), "tokenIntrospection_url");
+        checkUrl(sslRequired, blankToNull(getMtlsTokenUrl()), MTLS_TOKEN_ENDPOINT_URL);
+        checkUrl(sslRequired, blankToNull(getMtlsTokenIntrospectionUrl()), MTLS_TOKEN_INTROSPECTION_URL);
+        checkUrl(sslRequired, blankToNull(getMtlsUserInfoUrl()), MTLS_USER_INFO_URL);
+
+        if (isTlsClientAuthentication()) {
+            if (StringUtil.isBlank(getClientCertificateKeyProviderId())) {
+                throw new IllegalArgumentException("The client certificate key provider is required for " + OIDCLoginProtocol.TLS_CLIENT_AUTH);
+            }
+            // The key provider is not looked up here. Realm import creates identity providers before key providers,
+            // and a key provider can become invalid after the save, so it should not block here.
+            // The admin REST API checks the key provider when it is chosen or changed.
+        }
 
         if (isPkceEnabled()) {
             String pkceMethod = getPkceMethod();

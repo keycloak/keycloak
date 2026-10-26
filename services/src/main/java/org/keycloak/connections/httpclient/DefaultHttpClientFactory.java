@@ -20,16 +20,24 @@ package org.keycloak.connections.httpclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.KeyManager;
 
 import org.keycloak.Config;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
@@ -71,6 +79,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     public static final String ALLOW_REDIRECTS = "allow-redirects";
 
     private volatile CloseableHttpClient httpClient;
+    private volatile LocalCache<CacheKey, CloseableHttpClient> clientCertificateHttpClients;
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -99,6 +108,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
             @Override
             public CloseableHttpClient getHttpClient() {
                 return httpClient;
+            }
+
+            @Override
+            public CloseableHttpClient getHttpClient(ClientCertificate certificate) {
+                return getClientCertificateHttpClient(session, certificate);
             }
 
             @Override
@@ -152,6 +166,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         };
     }
 
+    private CloseableHttpClient getClientCertificateHttpClient(KeycloakSession session, ClientCertificate certificate) {
+        return clientCertificateHttpClients.computeIfAbsent(new CacheKey(certificate.getId(), List.of(certificate.getCertificateChain())), key -> {
+            KeyManager keyManager = new SingleIdentityKeyManager(certificate.getPrivateKey(), certificate.getCertificateChain());
+            // the certificate must only be presented to the configured endpoints, so redirects are not followed
+            return createBuilder(session, new KeyManager[] { keyManager }).disableRedirectHandling().build();
+        });
+    }
+
     @Override
     public void close() {
         try {
@@ -161,11 +183,19 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         } catch (IOException ignored) {
 
         }
+        if (clientCertificateHttpClients != null) {
+            clientCertificateHttpClients.close();
+        }
     }
 
     @Override
     public String getId() {
         return "default";
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(LocalCacheProvider.class); // for caching of the client certificate clients
     }
 
     @Override
@@ -177,92 +207,99 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
-                    long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
-                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
-                    int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
-                    int connectionPoolSize = config.getInt("connection-pool-size", 128);
-                    long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-                    long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
-                    boolean disableCookies = config.getBoolean("disable-cookies", true);
-                    String clientKeystore = config.get("client-keystore");
-                    String clientKeystorePassword = config.get("client-keystore-password");
-                    String clientPrivateKeyPassword = config.get("client-key-password");
-                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
-
-                    boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
-                    boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
-
-                    // optionally configure proxy mappings
-                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
-                    // lower case env vars take precedence over upper case env vars
-                    ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
-                    if (proxyMappings == null || proxyMappings.isEmpty()) {
-                        logger.debug("Trying to use proxy mapping from env vars");
-                        String httpProxy = getEnvVarValue(HTTPS_PROXY);
-                        if (isBlank(httpProxy)) {
-                            httpProxy = getEnvVarValue(HTTP_PROXY);
-                        }
-                        String noProxy = getEnvVarValue(NO_PROXY);
-
-                        logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
-                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
-                    }
-
-                    HttpClientBuilder builder = newHttpClientBuilder(session);
-
-                    builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                            .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
-                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
-                            .maxPooledPerRoute(maxPooledPerRoute)
-                            .connectionPoolSize(connectionPoolSize)
-                            .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
-                            .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies)
-                            .proxyMappings(proxyMappings)
-                            .expectContinueEnabled(expectContinueEnabled)
-                            .reuseConnections(reuseConnections);
-
-                    TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-                    boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
-
-                    if (disableTruststoreProvider) {
-                    	logger.warn("TruststoreProvider is disabled");
-                    } else {
-                        builder.hostnameVerification(truststoreProvider.getPolicy());
-                        try {
-                            builder.trustStore(truststoreProvider.getTruststore());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load truststore", e);
-                        }
-                    }
-
-                    if (disableTrustManager) {
-                    	logger.warn("TrustManager is disabled");
-                    	builder.disableTrustManager();
-                    }
-
-                    if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
-                        builder.disableRedirectHandling();
-                    }
-
-                    if (clientKeystore != null) {
-                        clientKeystore = EnvUtil.replace(clientKeystore);
-                        try {
-                            KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                            builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load keystore", e);
-                        }
-                    }
-
-                    // Configure retry behavior
-                    configureRetries(builder);
-
-                    httpClient = builder.build();
+                    httpClient = createBuilder(session, null).build();
                 }
             }
         }
+    }
+
+    private HttpClientBuilder createBuilder(KeycloakSession session, KeyManager[] clientCertificateKeyManagers) {
+        long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
+        long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+        long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
+        int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
+        int connectionPoolSize = config.getInt("connection-pool-size", 128);
+        long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+        long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
+        boolean disableCookies = config.getBoolean("disable-cookies", true);
+        String clientKeystore = config.get("client-keystore");
+        String clientKeystorePassword = config.get("client-keystore-password");
+        String clientPrivateKeyPassword = config.get("client-key-password");
+        boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+
+        boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+        boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+        // optionally configure proxy mappings
+        // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
+        // lower case env vars take precedence over upper case env vars
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+        if (proxyMappings == null || proxyMappings.isEmpty()) {
+            logger.debug("Trying to use proxy mapping from env vars");
+            String httpProxy = getEnvVarValue(HTTPS_PROXY);
+            if (isBlank(httpProxy)) {
+                httpProxy = getEnvVarValue(HTTP_PROXY);
+            }
+            String noProxy = getEnvVarValue(NO_PROXY);
+
+            logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+            proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+        }
+
+        HttpClientBuilder builder = newHttpClientBuilder(session);
+
+        builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
+                .maxPooledPerRoute(maxPooledPerRoute)
+                .connectionPoolSize(connectionPoolSize)
+                .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
+                .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
+                .disableCookies(disableCookies)
+                .proxyMappings(proxyMappings)
+                .expectContinueEnabled(expectContinueEnabled)
+                .reuseConnections(reuseConnections);
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
+
+        if (disableTruststoreProvider) {
+            logger.warn("TruststoreProvider is disabled");
+        } else {
+            builder.hostnameVerification(truststoreProvider.getPolicy());
+            try {
+                builder.trustStore(truststoreProvider.getTruststore());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load truststore", e);
+            }
+        }
+
+        if (disableTrustManager) {
+            logger.warn("TrustManager is disabled");
+            builder.disableTrustManager();
+        }
+
+        if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
+            builder.disableRedirectHandling();
+        }
+
+        if (clientCertificateKeyManagers != null) {
+            // takes precedence over the client keystore of the server
+            builder.keyManagers(clientCertificateKeyManagers);
+        } else if (clientKeystore != null) {
+            clientKeystore = EnvUtil.replace(clientKeystore);
+            try {
+                KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
+                builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore", e);
+            }
+        }
+
+        // Configure retry behavior
+        configureRetries(builder);
+
+        return builder;
     }
 
     /**
@@ -326,6 +363,26 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
     public void postInit(KeycloakSessionFactory factory) {
         maxConsumedResponseSize = config.getLong(MAX_CONSUMED_RESPONSE_SIZE, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
         stringResponseHandler = new SafeBasicResponseHandler(maxConsumedResponseSize);
+        try (KeycloakSession session = factory.create()) {
+            initClientCertificateHttpClients(session.getProvider(LocalCacheProvider.class));
+        }
+    }
+
+    void initClientCertificateHttpClients(LocalCacheProvider cacheProvider) {
+        clientCertificateHttpClients = cacheProvider.create(LocalCacheConfiguration.<CacheKey, CloseableHttpClient>builder()
+                .name("clientCertificateHttpClients")
+                .expirationAfterAccess(Duration.ofMinutes(15))
+                .removalListener(client -> {
+                    try {
+                        client.close();
+                    } catch (IOException ignored) {
+
+                    }
+                })
+                .build());
+    }
+
+    private record CacheKey(String id, List<X509Certificate> chain) {
     }
 
     @Override
