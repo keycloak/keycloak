@@ -1,11 +1,15 @@
 package org.keycloak.tests.theme;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.zip.GZIPInputStream;
 
 import org.keycloak.common.Version;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.encoding.GzipResourceEncodingProvider;
+import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -13,12 +17,15 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.theme.Theme;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,11 +61,11 @@ public class ThemeResourceTest {
             }
 
             runOnServer.run(session -> {
-                Path cachedFile = Path.of(KeycloakApplication.getTmpDirectory()).resolve("kc-gzip-cache")
-                        .resolve(Version.RESOURCES_VERSION).resolve("login/keycloak.v2/css/styles.css.gz");
-                Files.delete(cachedFile);
+                GzipResourceEncodingProvider encodingProvider = (GzipResourceEncodingProvider) session.getProvider(ResourceEncodingProvider.class, "gzip");
+                File cachedFile = encodingProvider.getResourceFile("login", "keycloak.v2", "css/styles.css");
+                Files.delete(cachedFile.toPath());
                 // A directory at the cache path forces the cached-file open to fail
-                Files.createDirectory(cachedFile);
+                Files.createDirectory(cachedFile.toPath());
             });
             try (CloseableHttpResponse response = httpClient.execute(get)) {
                 assertEquals(200, response.getStatusLine().getStatusCode());
@@ -66,8 +73,13 @@ public class ThemeResourceTest {
                 assertTrue(response.getEntity().getContentType().getValue().startsWith("text/css"));
                 assertEquals(expected, EntityUtils.toString(response.getEntity()));
             } finally {
-                runOnServer.run(session -> Files.deleteIfExists(Path.of(KeycloakApplication.getTmpDirectory())
-                        .resolve("kc-gzip-cache").resolve(Version.RESOURCES_VERSION).resolve("login/keycloak.v2/css/styles.css.gz")));
+                runOnServer.run(session -> {
+                    GzipResourceEncodingProvider encodingProvider = (GzipResourceEncodingProvider) session.getProvider(ResourceEncodingProvider.class, "gzip");
+                    File cachedFile = encodingProvider.getResourceFile("login", "keycloak.v2", "css/styles.css");
+                    if (cachedFile != null) {
+                        Files.deleteIfExists(cachedFile.toPath());
+                    }
+                });
             }
         }
     }
@@ -80,4 +92,68 @@ public class ThemeResourceTest {
             return config.option("spi-theme--cache-themes", "true");
         }
     }
+
+    @Test
+    public void getResourceDoesNotCreateGzipCacheEntryForBogusTheme() throws IOException {
+        String resourcesVersion = runOnServer.fetch(session -> Version.RESOURCES_VERSION, String.class);
+        String bogusTheme1 = "bogus-theme-1";
+        String bogusTheme2 = "bogus-theme-2";
+        String resourcePath = "css/styles.css";
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableContentCompression().build()) {
+            // Request with bogus theme 1 — should resolve to the default theme and serve content
+            String url1 = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/" + bogusTheme1 + "/" + resourcePath;
+            HttpGet get1 = new HttpGet(url1);
+            get1.addHeader("Accept-Encoding", "gzip");
+            try (CloseableHttpResponse response = httpClient.execute(get1)) {
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+                Assertions.assertNotNull(response.getFirstHeader("Content-Encoding"));
+                Assertions.assertEquals("gzip", response.getFirstHeader("Content-Encoding").getValue());
+                try (InputStream is = response.getEntity().getContent();
+                     GZIPInputStream gzip = new GZIPInputStream(is)) {
+                    String content = IOUtils.toString(gzip, StandardCharsets.UTF_8);
+                    Assertions.assertFalse(content.isEmpty());
+                }
+            }
+
+            // Request with bogus theme 2 — should resolve to the same default theme, not create a second cache entry
+            String url2 = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/" + bogusTheme2 + "/" + resourcePath;
+            HttpGet get2 = new HttpGet(url2);
+            get2.addHeader("Accept-Encoding", "gzip");
+            try (CloseableHttpResponse response = httpClient.execute(get2)) {
+                Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+                Assertions.assertNotNull(response.getFirstHeader("Content-Encoding"));
+                Assertions.assertEquals("gzip", response.getFirstHeader("Content-Encoding").getValue());
+                try (InputStream is = response.getEntity().getContent();
+                     GZIPInputStream gzip = new GZIPInputStream(is)) {
+                    String content = IOUtils.toString(gzip, StandardCharsets.UTF_8);
+                    Assertions.assertFalse(content.isEmpty());
+                }
+            }
+        }
+
+        runOnServer.run(session -> {
+            GzipResourceEncodingProvider encodingProvider = (GzipResourceEncodingProvider) session.getProvider(ResourceEncodingProvider.class, "gzip");
+
+            // The single entry must contain the cached resource file
+            Theme theme = session.theme().getTheme(bogusTheme1, Theme.Type.LOGIN);
+            File resolvedCacheFile = encodingProvider.getResourceFile(theme.getType().toString().toLowerCase(), theme.getName(), resourcePath);
+            Assertions.assertNotNull(resolvedCacheFile);
+            Assertions.assertTrue(resolvedCacheFile.isFile(),
+                    "Cache file should exist under the resolved default theme: " + resolvedCacheFile.getPath());
+            
+            // Neither request should create a directory under its bogus theme name.
+            File loginCacheDir = resolvedCacheFile.getParentFile();
+            while (!loginCacheDir.getName().equals("login")) {
+                loginCacheDir = loginCacheDir.getParentFile();
+            }
+            Assertions.assertFalse(new File(loginCacheDir, bogusTheme1).exists(),
+                    "The first bogus theme must not have a cache directory");
+            Assertions.assertFalse(new File(loginCacheDir, bogusTheme2).exists(),
+                    "The second bogus theme must not have a cache directory");
+
+        });
+    }
+
+
 }
