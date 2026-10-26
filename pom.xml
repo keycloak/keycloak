@@ -759,6 +759,12 @@
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
             </dependency>
+            <!-- Override the MariaDB driver version from the quarkus-bom so the driver reaches the shipped server -->
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${mariadb-jdbc.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>
                 <artifactId>wildfly-common</artifactId>
