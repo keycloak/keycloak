@@ -38,7 +38,3 @@ overrides:
 allowBuilds:
   '@swc/core': true
   esbuild: true
-patchedDependencies:
-  # Backport of https://github.com/google/wireit/pull/1542 for https://github.com/google/wireit/issues/1536,
-  # see https://github.com/keycloak/keycloak/issues/54285. Remove when upgrading to a Wireit release that includes the fix.
-  wireit@0.14.12: patches/wireit@0.14.12.patch
