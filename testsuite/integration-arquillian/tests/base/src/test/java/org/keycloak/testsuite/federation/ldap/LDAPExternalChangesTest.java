@@ -19,7 +19,6 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.core.Response;
 
@@ -172,8 +171,10 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         assertEquals(user.getUsername(), updatedUsername);
     }
 
-    private void addLdapUserAndRecordExpectedId(String username, AtomicReference<String> expectedUserId) {
-        testingClient.server().run(session -> {
+    private String addLdapUserAndRecordExpectedId(String username) {
+        // The lambda passed to the testing client is serialized and runs on the server, so the expected id has to be
+        // returned to the client rather than captured in a client-side reference
+        return testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
             // The reported scenario runs against a read-only federation, where deleting the user removes just the
@@ -182,8 +183,8 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
             realm.updateComponent(ctx.getLdapModel());
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), realm, username, "Stable", "Id", username + "@ldap.org", null, "1234");
             LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, username);
-            expectedUserId.set(LDAPUtils.generateStableUserId(realm.getId(), ctx.getLdapModel().getId(), ldapUser.getUuid()));
-        });
+            return LDAPUtils.generateStableUserId(realm.getId(), ctx.getLdapModel().getId(), ldapUser.getUuid());
+        }, String.class);
     }
 
     private UserRepresentation importUserFromLdap(String username) {
@@ -194,19 +195,17 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
 
     @Test
     public void testImportedUserIdDerivedFromFederationAnchors() {
-        AtomicReference<String> expectedUserId = new AtomicReference<>();
-        addLdapUserAndRecordExpectedId("stableid1", expectedUserId);
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid1");
         UserRepresentation imported = importUserFromLdap("stableid1");
-        assertEquals(expectedUserId.get(), imported.getId());
+        assertEquals(expectedUserId, imported.getId());
         assertNotNull(UUID.fromString(imported.getId()));
     }
 
     @Test
     public void testUserIdRestoredAfterDeleteAndReimport() {
-        AtomicReference<String> expectedUserId = new AtomicReference<>();
-        addLdapUserAndRecordExpectedId("stableid2", expectedUserId);
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid2");
         UserRepresentation imported = importUserFromLdap("stableid2");
-        assertEquals(expectedUserId.get(), imported.getId());
+        assertEquals(expectedUserId, imported.getId());
         try (Response resp = managedRealm.admin().users().delete(imported.getId())) {
             assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
         }
@@ -217,11 +216,10 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
 
     @Test
     public void testUserIdStableAcrossRepeatedImports() {
-        AtomicReference<String> expectedUserId = new AtomicReference<>();
-        addLdapUserAndRecordExpectedId("stableid3", expectedUserId);
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid3");
         UserRepresentation first = importUserFromLdap("stableid3");
         UserRepresentation second = importUserFromLdap("stableid3");
-        assertEquals(expectedUserId.get(), first.getId());
+        assertEquals(expectedUserId, first.getId());
         assertEquals(first.getId(), second.getId());
     }
 }

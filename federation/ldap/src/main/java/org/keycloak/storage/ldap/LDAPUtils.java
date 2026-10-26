@@ -18,9 +18,11 @@
 package org.keycloak.storage.ldap;
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -79,8 +81,8 @@ public class LDAPUtils {
      * intent of the derived ids used when importing is disabled ({@code f:<provider-id>:<username>}), but it anchors
      * on the LDAP entry UUID, which does not change when the username is renamed in the directory.
      * <p/>
-     * The identifier is a UUID-formatted string derived from a SHA-256 digest of the federation anchors, in the same
-     * way stable subject identifiers are derived in {@code SHA256PairwiseSubMapper}.
+     * The identifier is an RFC 9562 UUID-formatted string derived from a SHA-256 digest of the federation anchors,
+     * mirroring how {@code SHA256PairwiseSubMapper} derives stable subject identifiers from a salted SHA-256 digest.
      *
      * @param realmId id of the realm the user is imported to
      * @param providerId id of the user storage provider importing the user
@@ -91,7 +93,14 @@ public class LDAPUtils {
         try {
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
             byte[] digest = sha256.digest((realmId + ':' + providerId + ':' + ldapUuid).getBytes(StandardCharsets.UTF_8));
-            return UUID.nameUUIDFromBytes(digest).toString();
+            // Format the first digest bytes directly as an RFC 9562 custom-format UUID. UUID.nameUUIDFromBytes() would
+            // re-hash the digest with MD5, which is unavailable on runtimes that exclude MD5, for instance strict FIPS
+            // profiles, and would then break every import from LDAP.
+            byte[] uuidBytes = Arrays.copyOf(digest, 16);
+            uuidBytes[6] = (byte) ((uuidBytes[6] & 0x0F) | 0x80); // version 8: custom, digest-derived
+            uuidBytes[8] = (byte) ((uuidBytes[8] & 0x3F) | 0x80); // RFC 9562 variant
+            ByteBuffer uuidByteBuffer = ByteBuffer.wrap(uuidBytes);
+            return new UUID(uuidByteBuffer.getLong(), uuidByteBuffer.getLong()).toString();
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
