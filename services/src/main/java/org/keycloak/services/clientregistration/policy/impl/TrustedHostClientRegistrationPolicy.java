@@ -26,18 +26,17 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+import org.keycloak.validation.ClientUriField;
 
 import org.jboss.logging.Logger;
 
@@ -221,29 +220,50 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         List<String> trustedDomains = getTrustedDomains();
 
         ClientRepresentation client = context.getClient();
-        String rootUrl = client.getRootUrl();
-        String baseUrl = client.getBaseUrl();
-        String adminUrl = client.getAdminUrl();
-        List<String> redirectUris = client.getRedirectUris();
+        ClientUriField.validate(client, (field, values) -> {
+            for (String value : values) {
+                // These values do not designate a host. Redirect references are covered by
+                // REDIRECT_URIS, including when explicit post-logout URLs accompany the marker.
+                if (field == ClientUriField.POST_LOGOUT_REDIRECT_URIS && ("+".equals(value) || "-".equals(value))) {
+                    continue;
+                }
+                if (field == ClientUriField.WEB_ORIGINS && ("+".equals(value) || "*".equals(value) || "null".equals(value))) {
+                    continue;
+                }
+                if (field == ClientUriField.LOGO_URI && value.regionMatches(true, 0, "data:", 0, 5)) {
+                    continue;
+                }
+                String uri = field == ClientUriField.ROOT_URL ? value : relativeToAbsoluteURI(field, client.getRootUrl(), value);
+                if (uri == null) {
+                    continue;
+                }
+                if (field == ClientUriField.WEB_ORIGINS && !uri.contains("://")) {
+                    // Legacy web origins can omit the scheme, including IPv6 literals and ports.
+                    uri = "https://" + uri;
+                }
+                switch (field) {
+                    case REDIRECT_URIS, POST_LOGOUT_REDIRECT_URIS, REQUEST_URIS, WEB_ORIGINS -> checkURITrusted(uri, trustedHosts, trustedDomains);
+                    default -> checkURLTrusted(uri, trustedHosts, trustedDomains);
+                }
+            }
+        });
+    }
 
-        baseUrl = relativeToAbsoluteURI(rootUrl, baseUrl);
-        adminUrl = relativeToAbsoluteURI(rootUrl, adminUrl);
-        Set<String> resolvedRedirects = PairwiseSubMapperUtils.resolveValidRedirectUris(rootUrl, redirectUris);
-
-        if (rootUrl != null) {
-            checkURLTrusted(rootUrl, trustedHosts, trustedDomains);
+    private String relativeToAbsoluteURI(ClientUriField field, String rootUrl, String value) {
+        boolean resolvesAgainstRoot = switch (field) {
+            case ADMIN_URL, REDIRECT_URIS, POST_LOGOUT_REDIRECT_URIS, REQUEST_URIS,
+                    BACKCHANNEL_LOGOUT_URL, JWKS_URL -> true;
+            default -> false;
+        };
+        if (value.startsWith("//") && !resolvesAgainstRoot) {
+            // Front-channel logout uses its URI (or the base URL fallback) as supplied to the browser.
+            // RedirectUtils and ResolveRelative instead append even double-slash paths to the root.
+            return "https:" + value;
         }
-
-        if (baseUrl != null) {
-            checkURLTrusted(baseUrl, trustedHosts, trustedDomains);
+        if (!value.startsWith("/")) {
+            return value;
         }
-        if (adminUrl != null) {
-            checkURLTrusted(adminUrl, trustedHosts, trustedDomains);
-        }
-        for (String redirect : resolvedRedirects) {
-            checkURITrusted(redirect, trustedHosts, trustedDomains);
-        }
-
+        return rootUrl == null || rootUrl.isEmpty() ? null : rootUrl + value;
     }
 
     protected void checkURLTrusted(String url, List<String> trustedHosts, List<String> trustedDomains) throws ClientRegistrationPolicyException {
@@ -279,6 +299,10 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
     }
 
     private boolean checkHostTrusted(String host, List<String> trustedHosts, List<String> trustedDomains) {
+        if (host == null) {
+            return false;
+        }
+
         for (String trustedHost : trustedHosts) {
             if (host.equals(trustedHost)) {
                 return true;
@@ -294,20 +318,6 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         return false;
     }
 
-
-    private static String relativeToAbsoluteURI(String rootUrl, String relative) {
-        if (relative == null) {
-            return null;
-        }
-
-        if (!relative.startsWith("/")) {
-            return relative;
-        } else if (rootUrl == null || rootUrl.isEmpty()) {
-            return null;
-        }
-
-        return rootUrl + relative;
-    }
 
     boolean isHostMustMatch() {
         return parseBoolean(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH);

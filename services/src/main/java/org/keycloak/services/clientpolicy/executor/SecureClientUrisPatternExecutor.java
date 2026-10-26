@@ -18,19 +18,12 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.models.CibaConfig;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -40,6 +33,7 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.validation.ClientUriField;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -50,7 +44,7 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
 
     private final KeycloakSession session;
     private List<Pattern> allowedPatterns;
-    private List<String> clientUriFields;
+    private List<ClientUriField> clientUriFields;
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
         @JsonProperty("allowed-patterns")
@@ -100,12 +94,12 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
 
         if (configuredFields == null || configuredFields.isEmpty()) {
             logger.debug("No specific URI fields configured. Validating ALL known URI fields.");
-            this.clientUriFields = new ArrayList<>(SecureClientUrisPatternExecutorFactory.ALL_CLIENT_URI_FIELDS);
+            this.clientUriFields = List.of(ClientUriField.values());
         } else {
             this.clientUriFields = new ArrayList<>();
             for (String field : configuredFields) {
                 if (SecureClientUrisPatternExecutorFactory.ALL_CLIENT_URI_FIELDS.contains(field)) {
-                    this.clientUriFields.add(field);
+                    this.clientUriFields.add(ClientUriField.fromName(field).orElseThrow());
                 } else {
                     logger.warnv("Ignored unknown or unsupported field in configuration: {0}", field);
                 }
@@ -120,7 +114,7 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
 
     @Override
     public String getProviderId() {
-        return SecureClientUrisExecutorFactory.PROVIDER_ID;
+        return SecureClientUrisPatternExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -151,12 +145,7 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
             return;
         }
 
-        for (String fieldName : clientUriFields) {
-            List<String> valuesToValidate = getValuesForField(clientRep, fieldName);
-            if (valuesToValidate != null && !valuesToValidate.isEmpty()) {
-                confirmSecureUris(valuesToValidate, fieldName);
-            }
-        }
+        ClientUriField.validate(clientRep, clientUriFields, (field, values) -> confirmSecureUris(values, field.getName()));
     }
 
     private void confirmSecureUris(List<String> uris, String uriType) throws ClientPolicyException {
@@ -182,51 +171,4 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
         }
     }
 
-    private List<String> getValuesForField(ClientRepresentation client, String fieldName) {
-        if (client == null || fieldName == null) return Collections.emptyList();
-
-        Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(Collections.emptyMap());
-
-        switch (fieldName) {
-            case "rootUrl":
-                return singletonOrEmpty(client.getRootUrl());
-            case "adminUrl":
-                return singletonOrEmpty(client.getAdminUrl());
-            case "baseUrl":
-                return singletonOrEmpty(client.getBaseUrl());
-            case "redirectUris":
-                return client.getRedirectUris();
-            case "webOrigins":
-                return client.getWebOrigins();
-
-            //attributes
-            case "jwksUri":
-                return singletonOrEmpty(attributes.get(OIDCConfigAttributes.JWKS_URL));
-            case "requestUris":
-                return getAttributeMultivalued(attributes, OIDCConfigAttributes.REQUEST_URIS);
-            case "backchannelLogoutUrl":
-                return singletonOrEmpty(attributes.get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
-            case "frontChannelLogoutUrl":
-                return singletonOrEmpty(attributes.get(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI));
-            case "postLogoutRedirectUris":
-                return getAttributeMultivalued(attributes, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
-            case "cibaClientNotificationEndpoint":
-                return singletonOrEmpty(attributes.get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT));
-            default:
-                // for the rest just use the fieldName as the attribute name
-                return singletonOrEmpty(attributes.get(fieldName));
-        }
-    }
-
-    private List<String> singletonOrEmpty(String value) {
-        return (value != null && !value.isEmpty()) ? Collections.singletonList(value) : Collections.emptyList();
-    }
-
-    private List<String> getAttributeMultivalued(Map<String, String> attributes, String attrKey) {
-        String attrValue = attributes.get(attrKey);
-        if (attrValue == null || attrValue.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
-    }
 }
