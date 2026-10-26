@@ -189,6 +189,17 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
     // Filled in case that logout was triggered with "initiating idp"
     public static final String LOGOUT_INITIATING_IDP = "LOGOUT_INITIATING_IDP";
+    // Id of the user session that a logout authentication session was created for
+    public static final String LOGOUT_USER_SESSION_ID = "LOGOUT_USER_SESSION_ID";
+    /**
+     * User session note holding the (random) id of the root authentication session of a browser-bound logout, so the
+     * logout session can be found again without the AUTH_SESSION_ID cookie (for example when an upstream identity
+     * provider sends the browser back with a cross-site POST that does not carry a SameSite=Lax cookie).
+     */
+    public static final String LOGOUT_ROOT_SESSION_ID = "LOGOUT_ROOT_SESSION_ID";
+    // Keycloak session attribute (valid for the current request only) holding the id of a logout root that was recovered
+    // from the user session instead of being found through the AUTH_SESSION_ID cookie
+    private static final String RECOVERED_LOGOUT_ROOT_ID = "RECOVERED_LOGOUT_ROOT_ID";
 
     // Parameter of LogoutEndpoint
     public static final String INITIATING_IDP_PARAM = "initiating_idp";
@@ -338,9 +349,8 @@ public class AuthenticationManager {
         boolean expireUserSessionCookieSucceeded =
                 expireUserSessionCookie(session, userSession, realm, uriInfo);
 
-        final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession =
-                createOrJoinLogoutSession(session, realm, asm, userSession, false, false);
+                createOrJoinLogoutSession(session, realm, userSession, false, false);
 
         boolean userSessionOnlyHasLoggedOutClients = false;
         try {
@@ -365,23 +375,53 @@ public class AuthenticationManager {
                     session.sessions().getUserSession(realm, userSession.getId());
 
             if (onlineUserSession != null) {
-                session.sessions().removeUserSession(realm, onlineUserSession);
+                removeUserSessionAndRootAuthSession(session, realm, onlineUserSession);
             }
         } else {
-            session.sessions().removeUserSession(realm, userSession);
+            removeUserSessionAndRootAuthSession(session, realm, userSession);
         }
         backchannelLogoutResponse
                 .setLocalLogoutSucceeded(expireUserSessionCookieSucceeded && userSessionOnlyHasLoggedOutClients);
         return backchannelLogoutResponse;
     }
 
+    /**
+     * Creates or joins the logout authentication session.
+     *
+     * @param userSession the user session being logged out, may be null. The logout session is bound to it
+     *                    through the {@link #LOGOUT_USER_SESSION_ID} note.
+     * @param bindToBrowser if true the logout session is tied to the browser: the root authentication session that
+     *                      the AUTH_SESSION_ID cookie points to is joined if there is one, otherwise a new root with a
+     *                      random id is created. The root id is recorded in the user session
+     *                      ({@link #LOGOUT_ROOT_SESSION_ID}). The AUTH_SESSION_ID cookie is guaranteed to point to
+     *                      the root of the returned logout session when this method returns, so that the browser can
+     *                      find it again (for example when it returns from an upstream identity provider), except for
+     *                      a recovered root, see {@code initiateLogout}. The cookie is replaced if it points to a
+     *                      different root, which can only happen when an existing logout session is reused. If false
+     *                      the cookie is neither read nor written and the logout session is created in a new root
+     *                      with a random id. Only bind to the browser if the root is dedicated to the logout, as the
+     *                      whole root is removed once the logout finishes.
+     * @param initiateLogout true if the request starts a logout. If false the request continues a logout that was
+     *                      started earlier (for example the callback of an upstream identity provider, which can
+     *                      arrive without the AUTH_SESSION_ID cookie): if the cookie does not lead to a root, the
+     *                      root recorded in the user session is joined, provided it still holds the logout session of
+     *                      this user session. The cookie is never written for a recovered root, not even when the
+     *                      recovered logout session is joined again later in the same request. The user session may
+     *                      only be known from an unauthenticated value (id_token_hint, state), so the recorded root id
+     *                      must never be planted in a browser, it would let the owner of that user session fixate
+     *                      the session id of a later login in that browser.
+     */
     public static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm,
-            final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie, boolean initiateLogout) {
+            UserSessionModel userSession, boolean bindToBrowser, boolean initiateLogout) {
+        final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
+        final RootAuthenticationSessionModel cookieRoot = bindToBrowser ? asm.getCurrentRootAuthenticationSession(realm) : null;
         AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
         // Don't reuse logout session if it belongs to a different user session
         if (logoutSession != null && AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(logoutSession.getAction())
-                && (userSession == null || (logoutSession.getParentSession() != null
-                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
+                && (userSession == null || userSession.getId().equals(logoutSession.getAuthNote(LOGOUT_USER_SESSION_ID)))) {
+            if (bindToBrowser) {
+                bindLogoutRootToBrowser(session, asm, cookieRoot, userSession, logoutSession.getParentSession());
+            }
             return logoutSession;
         }
         ClientModel client = session.getContext().getClient();
@@ -390,31 +430,21 @@ public class AuthenticationManager {
             client = SystemClientUtil.getSystemClient(realm);
         }
 
-        String authSessionId;
-        RootAuthenticationSessionModel rootLogoutSession = null;
-        boolean browserCookiePresent = false;
-
-        // Try to lookup current authSessionId from browser cookie. If doesn't exist, use the same as current userSession if it can be reused
-        if (browserCookie) {
-            rootLogoutSession = asm.getCurrentRootAuthenticationSession(realm);
+        RootAuthenticationSessionModel rootLogoutSession = cookieRoot;
+        if (rootLogoutSession == null && bindToBrowser && !initiateLogout && userSession != null) {
+            // The browser may come back without the cookie, so recover the root recorded by the request that started the logout
+            rootLogoutSession = findRecordedLogoutRoot(session, realm, userSession);
+            if (rootLogoutSession != null) {
+                // Remember it, as the recovered logout session may be joined again later in this request
+                session.setAttribute(RECOVERED_LOGOUT_ROOT_ID, rootLogoutSession.getId());
+            }
         }
-        if (rootLogoutSession != null) {
-            authSessionId = rootLogoutSession.getId();
-            browserCookiePresent = true;
-        } else if (userSession != null && (logoutSession == null || (logoutSession.getParentSession() != null
-                && userSession.getId().equals(logoutSession.getParentSession().getId())))) {
-            authSessionId = userSession.getId();
-            rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-        } else {
-            authSessionId = KeycloakModelUtils.generateId();
-        }
-
         if (rootLogoutSession == null) {
-            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm, authSessionId);
+            // Never derive the root id from the user session id, it would be predictable
+            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm);
         }
-        if (browserCookie && !browserCookiePresent) {
-            // Update cookie if needed
-            asm.setAuthSessionCookie(authSessionId);
+        if (bindToBrowser) {
+            bindLogoutRootToBrowser(session, asm, cookieRoot, userSession, rootLogoutSession);
         }
 
         // See if we have logoutAuthSession inside current rootSession. Create new if not
@@ -442,10 +472,45 @@ public class AuthenticationManager {
                 logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
             }
         }
+        if (userSession != null) {
+            logoutAuthSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
+        }
         session.getContext().setAuthenticationSession(logoutAuthSession);
         session.getContext().setClient(client);
 
         return logoutAuthSession;
+    }
+
+    private static RootAuthenticationSessionModel findRecordedLogoutRoot(KeycloakSession session, RealmModel realm, UserSessionModel userSession) {
+        String recordedRootId = userSession.getNote(LOGOUT_ROOT_SESSION_ID);
+        if (recordedRootId == null) {
+            return null;
+        }
+        RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, recordedRootId);
+        if (root == null) {
+            return null;
+        }
+        boolean holdsLogoutOfUserSession = root.getAuthenticationSessions().values().stream()
+                .anyMatch(authSession -> AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSession.getAction())
+                        && userSession.getId().equals(authSession.getAuthNote(LOGOUT_USER_SESSION_ID)));
+        return holdsLogoutOfUserSession ? root : null;
+    }
+
+    /**
+     * Makes the browser able to find the logout root again: points the AUTH_SESSION_ID cookie to it, unless the
+     * cookie already does or the root was recovered (see {@code createOrJoinLogoutSession}), and records its id in
+     * the user session.
+     */
+    private static void bindLogoutRootToBrowser(KeycloakSession session, AuthenticationSessionManager asm,
+            RootAuthenticationSessionModel cookieRoot, UserSessionModel userSession, RootAuthenticationSessionModel logoutRoot) {
+        // Never plant the id of a recovered root in the browser
+        boolean recovered = logoutRoot.getId().equals(session.getAttribute(RECOVERED_LOGOUT_ROOT_ID));
+        if (!recovered && (cookieRoot == null || !cookieRoot.getId().equals(logoutRoot.getId()))) {
+            asm.setAuthSessionCookie(logoutRoot.getId());
+        }
+        if (userSession != null && !logoutRoot.getId().equals(userSession.getNote(LOGOUT_ROOT_SESSION_ID))) {
+            userSession.setNote(LOGOUT_ROOT_SESSION_ID, logoutRoot.getId());
+        }
     }
 
     private static BackchannelLogoutResponse backchannelLogoutAll(KeycloakSession session, RealmModel realm,
@@ -730,8 +795,7 @@ public class AuthenticationManager {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
-        final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, userSession, true, false);
 
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
@@ -776,8 +840,7 @@ public class AuthenticationManager {
     }
 
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, userSession, true, false);
         EventBuilder event = new EventBuilder(realm, session, connection);
         Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession, event);
         if (response != null) {
@@ -820,6 +883,10 @@ public class AuthenticationManager {
         // Do not remove user session, it will be removed when last clientSession will be logged out
         if (numberOfUnconfirmedSessions < 1) {
             session.sessions().removeUserSession(realm, userSession);
+            // the logout session may have a different (random) id, so also remove a root auth session sharing the user session id
+            if (!userSession.getId().equals(logoutAuthSession.getParentSession().getId())) {
+                session.authenticationSessions().removeRootAuthenticationSession(realm, userSession.getId());
+            }
         }
 
         logger.tracef("Removing logout session '%s'.", logoutAuthSession.getParentSession().getId());
@@ -838,7 +905,7 @@ public class AuthenticationManager {
             }
         }
 
-        session.sessions().removeUserSession(realm, userSessionModel);
+        removeUserSessionAndRootAuthSession(session, realm, userSessionModel);
     }
 
 
@@ -919,6 +986,18 @@ public class AuthenticationManager {
         session.getProvider(CookieProvider.class).expire(CookieType.AUTH_SESSION_ID);
     }
 
+    /**
+     * Removes an online user session and the root authentication session that shares its ID.
+     * These two always come as a pair: {@link org.keycloak.protocol.AuthorizationEndpointBase} creates a root
+     * authentication session keyed to the user session ID when the browser revisits the authorize endpoint under
+     * SSO.  Removing only one without the other leaves a dangling root that can be picked up by a subsequent
+     * authorize request, bypassing the identity-cookie liveness check and causing incorrect SSO behaviour.
+     */
+    public static void removeUserSessionAndRootAuthSession(KeycloakSession session, RealmModel realm, UserSessionModel userSession) {
+        session.sessions().removeUserSession(realm, userSession);
+        session.authenticationSessions().removeRootAuthenticationSession(realm, userSession.getId());
+    }
+
     public static String getRealmCookiePath(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
         // KEYCLOAK-5270
@@ -970,7 +1049,7 @@ public class AuthenticationManager {
                 UserSessionModel oldSession = result.session();
                 if (oldSession != null && !oldSession.getId().equals(userSession.getId())) {
                     logger.debugv("Removing old user session: session: {0}", oldSession.getId());
-                    session.sessions().removeUserSession(realm, oldSession);
+                    removeUserSessionAndRootAuthSession(session, realm, oldSession);
                 }
             }
         }
@@ -1606,7 +1685,7 @@ public class AuthenticationManager {
                 });
                 // remove the user session here so that the external persistent session tx becomes aware of the removal that happened
                 // during the backchannel logout.
-                session.sessions().removeUserSession(realm, userSession);
+                removeUserSessionAndRootAuthSession(session, realm, userSession);
             };
 
             UserSessionModel userSession = null;
