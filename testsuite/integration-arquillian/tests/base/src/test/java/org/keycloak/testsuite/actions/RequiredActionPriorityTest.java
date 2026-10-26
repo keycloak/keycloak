@@ -32,6 +32,7 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -93,6 +94,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginConfigTotpPage totpPage;
+
+    @Page
+    protected InfoPage infoPage;
 
     @Page
     protected LoginConfigTotpPage configureTotpRequiredActionPage;
@@ -314,9 +318,10 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
-        // Logged in
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-        EventAssertion.expectLoginSuccess(events.poll());
+        // Re-authentication is forced after a credential reset by default, so the info page is
+        // displayed instead of the user being automatically logged in to the application.
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     @Test
