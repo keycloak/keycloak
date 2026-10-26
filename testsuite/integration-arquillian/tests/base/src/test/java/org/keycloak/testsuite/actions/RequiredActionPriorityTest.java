@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
@@ -92,6 +93,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginConfigTotpPage totpPage;
+
+    @Page
+    protected LoginConfigTotpPage configureTotpRequiredActionPage;
 
     private String testUserId;
 
@@ -440,8 +444,30 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL);
     }
 
+    @Test
+    public void setupTotpAfterUpdateUserLocale() throws Exception {
+        // change order to have update user locale before otp and assign them to the customer
+        final List<String> requiredActionsCustomOrdered = List.of(
+                DefaultRequiredActions.Action.UPDATE_USER_LOCALE.getAlias(),
+                DefaultRequiredActions.Action.CONFIGURE_TOTP.getAlias()
+        );
+        AdminApiUtil.updateRequiredActionsOrderByAlias(managedRealm.admin(), requiredActionsCustomOrdered);
+
+        enableRequiredActionForUser(DefaultRequiredActions.Action.UPDATE_USER_LOCALE.getAlias());
+        enableRequiredActionForUser(DefaultRequiredActions.Action.CONFIGURE_TOTP.getAlias());
+
+        // Login and check OTP is shown to be configured
+        oauth.openLoginForm();
+        loginPage.login(USERNAME, PASSWORD);
+        configureTotpRequiredActionPage.assertCurrent();
+    }
+
     private void enableRequiredActionForUser(final RequiredAction requiredAction) {
-        setRequiredActionEnabled(TEST_REALM_NAME, testUserId, requiredAction.name(), true);
+        enableRequiredActionForUser(requiredAction.name());
+    }
+
+    private void enableRequiredActionForUser(final String requiredAction) {
+        setRequiredActionEnabled(TEST_REALM_NAME, testUserId, requiredAction, true);
     }
 
 }
