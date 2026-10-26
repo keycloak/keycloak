@@ -255,6 +255,8 @@ To require PKCE with the `S256` method, add `pkce-enforcer` to a separate policy
 
 When {project_name} creates a client from a Client ID Metadata Document, it does so without an access token, so this policy matches and sets the client's PKCE method to `S256`. Authorization requests from that client without a `code_challenge` parameter, or with the `plain` method, are then rejected. The policy also applies to clients registered through anonymous Dynamic Client Registration.
 
+NOTE: This policy does not retroactively configure existing clients. To require PKCE immediately for previously registered CIMD clients, also set their PKCE method to `S256` explicitly. Cached metadata, including refreshes returning `304 Not Modified`, does not trigger the executor.
+
 ===== Client ID URL validation
 
 In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document] specification, {project_name} validates the `client_id` URL and rejects the authorization request if it does not meet the following requirements:
