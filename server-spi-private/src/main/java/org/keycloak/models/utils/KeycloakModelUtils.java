@@ -814,10 +814,6 @@ public final class KeycloakModelUtils {
      * This method allows escaping of slashes for example: /parent\/group/child which
      * is a two level path for ["parent/group", "child"].
      *
-     * <p>
-     * Resolving a group does not authorize access to it. Administrative callers must enforce the appropriate
-     * permissions before exposing or modifying the returned group.
-     *
      * @param session Keycloak session
      * @param realm The realm
      * @param path Path that will be searched among groups
@@ -836,9 +832,6 @@ public final class KeycloakModelUtils {
     /**
      * Finds group by path. Variant when you have the path already separated by
      * group names.
-     * <p>
-     * Resolving a group does not authorize access to it. Administrative callers must enforce the appropriate
-     * permissions before exposing or modifying the returned group.
      *
      * @param session Keycloak session
      * @param realm The realm

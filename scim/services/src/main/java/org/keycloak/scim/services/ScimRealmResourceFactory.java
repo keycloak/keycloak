@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.Token;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
@@ -85,6 +86,7 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                                 .build());
                     }
 
+                    AdminPermissionsSchema.enableAuthorizationFilters(session, authResult.user());
                     return new ScimRealmResource(session);
                 }
 

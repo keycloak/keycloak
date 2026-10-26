@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.http.HttpRequest;
@@ -220,6 +221,7 @@ public class AdminRoot {
 
         AdminAuth result = new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
         session.setAttribute(ADMIN_AUTH_KEY, result);
+        AdminPermissionsSchema.enableAuthorizationFilters(session, authResult.user());
         return result;
     }
 

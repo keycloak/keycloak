@@ -225,14 +225,19 @@ The new *OneTimeUse maximum age* setting of the SAML identity provider defaults 
 Assertions with a `OneTimeUse` condition that are older than this are rejected.
 Increase the setting if users need more time to complete a login with such an assertion.
 
-=== Group lookups and administrative permissions
+=== Fine-grained admin permission query filtering
 // https://github.com/keycloak/keycloak/issues/54054
 
-The JPA implementation of `GroupProvider#getGroupByName` no longer applies fine-grained admin permission filters.
-This fixes LDAP authentication and group membership resolution incorrectly treating existing groups as missing when a user has limited administrative permissions.
-Custom extensions using this method, or `KeycloakModelUtils.findGroupByPath`, for administrative operations must explicitly check the appropriate permissions before exposing or modifying the resolved group.
-A successful group lookup does not authorize access to the group; previously, filtering also depended on whether the lookup was served from the cache.
-No realm configuration changes are required.
+Automatic fine-grained admin permission query filters are now enabled only after authentication to the Admin or SCIM API.
+Ordinary user operations, such as login and token issuance, and background jobs do not enable these filters.
+This fixes LDAP group resolution incorrectly treating existing groups as missing for users with limited administrative permissions.
+Explicit permission checks are unchanged.
+
+Extensions that need filtered model queries outside these APIs can use `AdminPermissionsSchema.runWithAuthorizationFilters`,
+with the target realm set in the session context and the admin loaded in that session.
+Background jobs must opt in within their own session; the filtering context is not propagated to new sessions.
+Filtering ends when the callback returns, so streams and other lazy results must be consumed inside the callback.
+The wrapper does not replace authentication or explicit permission checks. No realm configuration changes are required.
 
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
