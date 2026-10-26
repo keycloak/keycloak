@@ -52,7 +52,7 @@ public class ValidateX509CertificateUsernameFactory extends AbstractX509ClientCe
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return new ValidateX509CertificateUsername(isLegacyCriticalBehavior());
+        return new ValidateX509CertificateUsername(isLegacyCriticalBehavior(), getCrlLdapContext());
     }
 
     @Override
