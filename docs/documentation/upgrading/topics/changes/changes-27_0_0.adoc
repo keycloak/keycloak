@@ -4,6 +4,27 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Realm-level default client scopes require `manage-realm`
+// https://github.com/keycloak/keycloak/issues/50588
+
+Changing the realm-level default and optional client scopes through the Admin REST API endpoints `default-default-client-scopes/{clientScopeId}` and `default-optional-client-scopes/{clientScopeId}` now requires the `manage-realm` role.
+Previously `manage-clients` was sufficient, even though these lists determine which client scopes every newly created client in the realm receives.
+Administrators who hold only `manage-clients` can still create, update, and delete individual client scopes, and can still read the realm-level lists; they can no longer change which of them are realm defaults.
+If you have automation that manages realm default client scopes with a `manage-clients` account, grant it `manage-realm` or run it with an account that already has it.
+
+=== Deleting required client scopes
+// https://github.com/keycloak/keycloak/issues/51248
+
+Deleting a required client scope now retains the requirement.
+The policy and any enclosing aggregated policies deny access while the scope is missing, regardless of positive or negative logic.
+A warning identifies affected policies; an authorization administrator can remove or replace the missing reference to resume normal evaluation.
+Requirements removed before upgrading cannot be restored automatically.
+
+The Java authorization SPI adds `Decision.Effect.INVALID` for invalid policy configuration.
+The partial-evaluation SPI adds the equivalent `Outcome.INVALID`.
+Custom extensions must handle these new enum values: aggregated policies propagate them unchanged, while permission decision strategies count them as a denial.
+Admin REST API evaluation responses continue to report only `PERMIT` or `DENY`.
+
 === Realm client session statistics respect client visibility
 // https://github.com/keycloak/keycloak/issues/50917
 
@@ -19,6 +40,23 @@ Client visibility follows the same permission checks as the client-specific sess
 * Fine-grained admin permissions v2 keep the Clients `view` and `manage` scopes independent. When access is granted only through fine-grained permissions, `manage` alone does not grant visibility.
 
 Counts for visible clients continue to include all their sessions, independently of the caller's permission to view the associated users.
+
+=== SAML logins require a valid Bearer SubjectConfirmationData
+// https://github.com/keycloak/keycloak/issues/53475
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when none of the assertion's Bearer `SubjectConfirmation` elements carries a valid `SubjectConfirmationData` element, as required by the SAML 2.0 Web Browser SSO Profile.
+This affects both SAML identity provider brokering and applications secured with the {project_name} SAML adapter.
+
+The following conditions are now enforced:
+
+* The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
+* `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
+* For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
+
+After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
+Broker logins fail with an invalid response error; adapter logins restart the login flow.
+If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
 
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
@@ -88,7 +126,7 @@ If your OIDC identity provider has `Validate Signatures` set to *OFF* and uses b
 
 === Identity provider client secret must be re-entered when changing its destination (CVE-2026-15943)
 
-When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `**********`.
+When reading an OpenID Connect, OAuth 2.0, or social identity provider through the Admin REST API, the `clientSecret` is returned masked as `+**********+`.
 Previously, an update that sent this masked value back always kept the stored secret, even if the request also changed where that secret is sent.
 A user with the `manage-identity-providers` role could therefore point the identity provider at an attacker-controlled token endpoint and have {project_name} send the real client secret there.
 
@@ -104,6 +142,34 @@ Updates that change other settings, or that use a `${vault.<key>}` expression as
 
 Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
 Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
+
+=== CIBA requires client authentication (CVE-2026-109082)
+// https://github.com/keycloak/keycloak/issues/53937
+
+The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
+Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
+
+=== Service account user endpoint removed from Admin REST API
+// https://github.com/keycloak/keycloak/issues/54047
+
+The `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
+The service account user ID is now available directly on the client representation as the `serviceAccountUserId` field, which is populated when `serviceAccountsEnabled` is `true`.
+This field is read-only and managed by the server.
+
+If you previously called this endpoint to obtain the service account user ID for role mapping or other operations, retrieve the client representation instead:
+
+[source,java]
+----
+// Before:
+UserRepresentation sa = clientResource.getServiceAccountUser();
+String saUserId = sa.getId();
+
+// After:
+String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
+----
+
+The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
+If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -121,6 +187,11 @@ Roles that the caller is allowed only to map to client scopes are returned witho
 For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
 With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
 In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
+
+// https://github.com/keycloak/keycloak/issues/53555
+The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}/evaluate-scopes/scope-mappings/\{role-container}/granted` and `not-granted`) apply the same role visibility rules under both legacy RBAC and fine-grained admin permissions V2.
+After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
+Callers allowed only to map roles to client scopes can still see those roles, and roles in the effective scope appear under `granted` rather than `not-granted`.
 
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790

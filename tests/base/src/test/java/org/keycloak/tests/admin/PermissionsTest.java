@@ -163,7 +163,6 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.clients().get(foo.getId()).regenerateRegistrationAccessToken(), Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getSecret(), Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getClientRotatedSecret(), Resource.CLIENT, true);
-        invoke(realm -> realm.clients().get(foo.getId()).getServiceAccountUser(), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).pushRevocation(), Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getApplicationSessionCount(), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).getUserSessions(0, 100), Resource.CLIENT, false);
@@ -295,6 +294,49 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 clients.get(AdminRoles.QUERY_USERS), false);
     }
 
+    /**
+     * The realm-level default and optional client scopes determine which client scopes every newly created
+     * client receives, so changing them requires manage-realm. Managing an individual client scope still only
+     * requires manage-clients, and reading the realm-level lists still only requires view access on clients.
+     */
+    @Test
+    public void realmDefaultClientScopes() {
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("realm-default-scope-permissions-test");
+        scope.setProtocol("openid-connect");
+        String scopeId = ApiUtil.getCreatedId(managedRealm1.admin().clientScopes().create(scope));
+        managedRealm1.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+
+        Invocation addDefault = realm -> realm.addDefaultDefaultClientScope(scopeId);
+        Invocation removeDefault = realm -> realm.removeDefaultDefaultClientScope(scopeId);
+        Invocation addOptional = realm -> realm.addDefaultOptionalClientScope(scopeId);
+        Invocation removeOptional = realm -> realm.removeDefaultOptionalClientScope(scopeId);
+
+        // manage-clients is enough to manage the client scope itself, but not to make it a realm default
+        invoke(addDefault, clients.get("none"), false);
+        invoke(addDefault, clients.get("master-none"), false);
+        invoke(addDefault, clients.get(AdminRoles.VIEW_REALM), false);
+        invoke(addDefault, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(removeDefault, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(addOptional, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+        invoke(removeOptional, clients.get(AdminRoles.MANAGE_CLIENTS), false);
+
+        invoke(addDefault, clients.get(AdminRoles.MANAGE_REALM), true);
+        invoke(removeDefault, clients.get(AdminRoles.MANAGE_REALM), true);
+        invoke(addOptional, clients.get(AdminRoles.MANAGE_REALM), true);
+        invoke(removeOptional, clients.get(AdminRoles.MANAGE_REALM), true);
+
+        invoke(addDefault, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(removeDefault, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(addDefault, clients.get("master-admin"), true);
+        invoke(removeDefault, clients.get("master-admin"), true);
+
+        // reading the realm-level lists is unchanged
+        invoke(realm -> realm.getDefaultDefaultClientScopes(), clients.get(AdminRoles.VIEW_CLIENTS), true);
+        invoke(realm -> realm.getDefaultOptionalClientScopes(), clients.get(AdminRoles.VIEW_CLIENTS), true);
+        invoke(realm -> realm.getDefaultDefaultClientScopes(), clients.get(AdminRoles.MANAGE_CLIENTS), true);
+    }
+
     @Test
     public void clientInitialAccess() {
         invoke(realm -> realm.clientInitialAccess().list(), Resource.CLIENT, false);
@@ -424,7 +466,13 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).update(user), Resource.USER, true);
         invoke(realm -> realm.users().count(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).getUserSessions(), Resource.USER, false);
-        invoke(realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId()), Resource.USER, false);
+        // offline sessions need view on both the user and the client, and an unknown client is only reported to admins
+        // that can list clients
+        Invocation offlineSessions = realm -> realm.users().get(user.getId()).getOfflineSessions(KeycloakModelUtils.generateId());
+        invoke(offlineSessions, clients.get(AdminRoles.REALM_ADMIN), true);
+        invoke(offlineSessions, clients.get("none"), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_USERS), false);
+        invoke(offlineSessions, clients.get(AdminRoles.VIEW_CLIENTS), false);
         invoke(realm -> realm.users().get(user.getId()).getFederatedIdentity(), Resource.USER, false);
         invoke((realm, response) -> response.set(realm.users().get(user.getId()).addFederatedIdentity("nosuch",
                         FederatedIdentityBuilder.create().identityProvider("nosuch").userId("nosuch").userName("nosuch").build()

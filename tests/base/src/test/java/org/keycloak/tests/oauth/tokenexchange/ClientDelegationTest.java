@@ -534,11 +534,11 @@ public class ClientDelegationTest {
     }
 
     private String getServiceAccountUserId() {
-        return agentApp.admin().getServiceAccountUser().getId();
+        return agentApp.admin().toRepresentation().getServiceAccountUserId();
     }
 
     private String getServiceAccountUserId(String clientUuid) {
-        return realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
+        return realm.admin().clients().get(clientUuid).toRepresentation().getServiceAccountUserId();
     }
 
     private String createClient(String clientId, String clientSecret) {

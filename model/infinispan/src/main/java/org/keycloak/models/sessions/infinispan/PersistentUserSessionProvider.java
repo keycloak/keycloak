@@ -435,14 +435,14 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, offline)
                 .filter(Predicate.not(expiration::isUserSessionExpired))
                 .filter(s -> s.getUser() != null);
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
         return paginatedStream(session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline, -1, -1)
                         .filter(Predicate.not(expiration::isUserSessionExpired))
                         .filter(s -> s.getUser() != null),

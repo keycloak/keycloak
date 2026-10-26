@@ -59,7 +59,7 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     DataSourceHealthCheck dataSourceHealthCheck;
 
     @Inject
-    @ManagedExecutorConfig(maxAsync = 1, maxQueued = 20)
+    @ManagedExecutorConfig
     ManagedExecutor executor;
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();

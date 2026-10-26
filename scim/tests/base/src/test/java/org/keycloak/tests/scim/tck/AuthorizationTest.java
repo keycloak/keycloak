@@ -309,10 +309,10 @@ public class AuthorizationTest extends AbstractScimTest {
         GroupRepresentation group = createGroup();
         managedUser.admin().joinGroup(group.getId());
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
@@ -338,10 +338,10 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
@@ -517,12 +517,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM user management");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -622,12 +622,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -664,12 +664,12 @@ public class AuthorizationTest extends AbstractScimTest {
         managedUser.admin().joinGroup(group.getId());
 
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -700,12 +700,12 @@ public class AuthorizationTest extends AbstractScimTest {
         managedUser.admin().joinGroup(group.getId());
 
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -741,12 +741,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -797,12 +797,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -1115,11 +1115,11 @@ public class AuthorizationTest extends AbstractScimTest {
             clientDbId = ApiUtil.getCreatedId(response);
         }
 
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles()
                 .get(AdminRoles.MANAGE_USERS).toRepresentation();
-        realm.admin().users().get(serviceAccountUser.getId()).roles()
+        realm.admin().users().get(serviceAccountUserId).roles()
                 .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
         realm.admin().clients().get(clientDbId).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
@@ -1210,11 +1210,11 @@ public class AuthorizationTest extends AbstractScimTest {
             try {
                 ClientRepresentation masterRealmMgmt = adminClient.realm("master").clients()
                         .findByClientId("master-realm").get(0);
-                UserRepresentation scimServiceAccount = adminClient.realm("master").clients()
-                        .get(scimMasterClient.getId()).getServiceAccountUser();
+                String scimServiceAccountUserId = adminClient.realm("master").clients()
+                        .get(scimMasterClient.getId()).toRepresentation().getServiceAccountUserId();
                 RoleRepresentation manageUsersRole = adminClient.realm("master").clients()
                         .get(masterRealmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
-                adminClient.realm("master").users().get(scimServiceAccount.getId())
+                adminClient.realm("master").users().get(scimServiceAccountUserId)
                         .roles().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
                 adminClient.realm("master").clients().get(scimMasterClient.getId())
                         .getScopeMappings().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
@@ -1490,7 +1490,8 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     private UserRepresentation getServiceAccount() {
-        return realm.admin().clients().get(getScimClient().getId()).getServiceAccountUser();
+        String saUserId = realm.admin().clients().get(getScimClient().getId()).toRepresentation().getServiceAccountUserId();
+        return realm.admin().users().get(saUserId).toRepresentation();
     }
 
     private ScopePermissionRepresentation createPermission(String resourceType, Set<String> resources, Set<String> scopes, String policyName) {
@@ -1526,7 +1527,8 @@ public class AuthorizationTest extends AbstractScimTest {
 
     private void grantAdminRole(String role) {
         ClientRepresentation clientRep = getScimClient();
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientRep.getId()).toRepresentation().getServiceAccountUserId();
+        UserRepresentation serviceAccountUser = realm.admin().users().get(serviceAccountUserId).toRepresentation();
         grantAdminRole(role, serviceAccountUser, clientRep.getId());
     }
 
@@ -1669,7 +1671,7 @@ public class AuthorizationTest extends AbstractScimTest {
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation role = realm.admin().clients().get(realmMgmt.getId()).roles().get(name).toRepresentation();
         ClientRepresentation clientRep = getScimClient();
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
-        realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).remove(List.of(role));
+        String serviceAccountUserId = realm.admin().clients().get(clientRep.getId()).toRepresentation().getServiceAccountUserId();
+        realm.admin().users().get(serviceAccountUserId).roles().clientLevel(realmMgmt.getId()).remove(List.of(role));
     }
 }

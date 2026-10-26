@@ -61,7 +61,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -76,7 +75,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -130,6 +128,8 @@ public class ClientResource {
     protected final KeycloakSession session;
 
     protected final ClientConnection clientConnection;
+
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
 
     public ClientResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -223,6 +223,10 @@ public class ClientResource {
 
         representation.setAccess(auth.clients().getAccess(client));
 
+        if (client.isServiceAccountsEnabled()) {
+            ModelToRepresentation.setServiceAccountUserId(session, client, representation);
+        }
+
         return representation;
     }
 
@@ -259,7 +263,8 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri());
+        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri(),
+                auth.clients().canManage(client));
     }
 
     /**
@@ -520,26 +525,6 @@ public class ClientResource {
     }
 
     /**
-     * Get a user dedicated to the service account
-     *
-     * @return
-     */
-    @Path("service-account-user")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get a user dedicated to the service account")
-    public UserRepresentation getServiceAccountUser() {
-        auth.clients().requireView(client);
-
-        UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
-                .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
-
-        return ModelToRepresentation.toRepresentation(session, realm, user);
-    }
-
-    /**
      * Push the client's revocation policy to its admin URL
      *
      * If the client has an admin URL, push revocation policy to it.
@@ -603,7 +588,7 @@ public class ClientResource {
                         .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
                         .filter(userSession -> auth.users().canView(userSession.getUser())),
                 computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -950,7 +935,7 @@ public class ClientResource {
      * @return a reference to the constructed representation.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
 
         // Update lastSessionRefresh with the timestamp from clientSession
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
@@ -958,6 +943,13 @@ public class ClientResource {
             rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         }
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
     }
 
     private static ClientScopeRepresentation toRepresentation(ClientScopeModel clientScopeModel) {

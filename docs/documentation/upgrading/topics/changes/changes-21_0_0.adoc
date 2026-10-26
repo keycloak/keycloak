@@ -21,8 +21,8 @@ Before upgrading it is recommended to review all metrics returned from the endpo
 |`base_thread_count`
 |`jvm_threads_live_threads`
 
-|`vendor_agroal_*`
-|`agroal_*`
+|`+vendor_agroal_*+`
+|`+agroal_*+`
 
 |===
 

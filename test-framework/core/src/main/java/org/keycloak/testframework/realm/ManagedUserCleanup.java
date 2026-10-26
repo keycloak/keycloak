@@ -25,8 +25,7 @@ public class ManagedUserCleanup {
     }
 
     void runCleanupTasks(UserResource user) {
-        cleanupTasks.forEach(t -> t.cleanup(user));
-        cleanupTasks.clear();
+        CleanupTasks.runAll(cleanupTasks, t -> t.cleanup(user), "user");
     }
 
     public interface UserCleanup {

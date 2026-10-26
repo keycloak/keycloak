@@ -1211,7 +1211,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [Base1TestSuite, Base2TestSuite, Base3TestSuite]
+        suite: [Base1TestSuite, Base2TestSuite, Base3TestSuite, Base4TestSuite]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

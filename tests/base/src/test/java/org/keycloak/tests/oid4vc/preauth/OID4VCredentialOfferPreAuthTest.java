@@ -274,7 +274,8 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
     @Test
     public void testPreAuthOffer_ServiceAccountCanRedeemCode() {
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
-        UserRepresentation serviceAccount = testRealm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String saUserId = testRealm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
+        UserRepresentation serviceAccount = testRealm.admin().users().get(saUserId).toRepresentation();
         UserResource serviceAccountResource = testRealm.admin().users().get(serviceAccount.getId());
         RoleRepresentation credentialOfferRole = testRealm.admin().roles()
                 .get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();

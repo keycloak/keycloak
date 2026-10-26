@@ -287,7 +287,9 @@ public class RealmAdminResource {
     }
 
     private void addDefaultClientScope(String clientScopeId, boolean defaultScope) {
-        auth.clients().requireManageClientScopes();
+        // Realm-wide configuration affecting every newly created client, so manage-realm is required
+        // rather than the manage-clients level needed to manage an individual client scope.
+        auth.realm().requireManageRealm();
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {
@@ -318,7 +320,8 @@ public class RealmAdminResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void removeDefaultDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
-        auth.clients().requireManageClientScopes();
+        // See addDefaultClientScope - realm-wide configuration requires manage-realm.
+        auth.realm().requireManageRealm();
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {

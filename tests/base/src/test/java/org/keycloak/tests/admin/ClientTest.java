@@ -844,7 +844,8 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccountsEnabled(true).build());
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        UserRepresentation userRep = managedRealm.admin().clients().get(id).getServiceAccountUser();
+        String saUserId = managedRealm.admin().clients().get(id).toRepresentation().getServiceAccountUserId();
+        UserRepresentation userRep = managedRealm.admin().users().get(saUserId).toRepresentation();
         MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalTo(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
