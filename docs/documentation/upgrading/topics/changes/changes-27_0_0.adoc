@@ -4,6 +4,25 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client registration policies restrict default roles and full scope (CVE-2026-109081)
+// https://github.com/keycloak/keycloak/issues/54702
+
+Dynamic Client Registration can no longer change the realm-wide default-role composite through the deprecated `defaultRoles` field, and authenticated registration can no longer enable `fullScopeAllowed`, unless a realm administrator removes the corresponding client registration policies.
+
+Starting with this release:
+
+* A *Default Roles Disabled* client registration policy is added to both the anonymous and authenticated client registration policies (including during migration of existing realms).
+While this policy is present, create or update requests that would add, change, or remove roles in the realm `default-roles-<realm>` composite through `defaultRoles` are rejected with HTTP `403 Forbidden`.
+* The existing *Full Scope Disabled* policy (`scope`) is also added to the authenticated client registration policies (it was already present for anonymous registration).
+Newly registered clients through authenticated Dynamic Client Registration have `fullScopeAllowed` disabled, and updates that try to enable it are rejected with HTTP `403 Forbidden`.
+
+Realm administrators who intentionally want Dynamic Client Registration to manage these settings can remove the corresponding policies under *Clients* -> *Client registration* -> *Client registration policies*.
+Removing them restores the previous behavior and should be done only when the security implications are understood.
+Use the Admin REST API to manage realm default roles and full scope when the policies remain in place.
+
+This migration installs a new client registration policy provider that earlier nodes do not know.
+A rolling upgrade is therefore not supported for this change; shut down the cluster and upgrade all nodes together (or use a recreate update) so that older nodes never process Dynamic Client Registration requests against the new policy components.
+
 === PAR metadata omitted when PAR is disabled
 
 When the `par` feature is disabled, OpenID Connect discovery now omits `pushed_authorization_request_endpoint` from both the top-level metadata and `mtls_endpoint_aliases`, and omits `require_pushed_authorization_requests`.
