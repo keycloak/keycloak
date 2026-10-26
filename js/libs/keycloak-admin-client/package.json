@@ -29,7 +29,8 @@
       ],
       "files": [
         "src",
-        "tsconfig.json"
+        "tsconfig.json",
+        "../../tsconfig.json"
       ],
       "output": [
         "lib"
