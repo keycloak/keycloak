@@ -71,7 +71,8 @@ public class CookieAuthenticator implements Authenticator {
                 int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication(topLevelFlowId);
                 AuthenticatorUtils.updateCompletedExecutions(context.getAuthenticationSession(), authResult.session(), context.getExecution().getId());
 
-                if (acrStore.getRequestedLevelOfAuthentication(context.getTopLevelFlow()) > previouslyAuthenticatedLevel) {
+                // an SSO session satisfies level 0 also when no level was recorded for it
+                if (acrStore.getRequestedLevelOfAuthentication(context.getTopLevelFlow()) > Math.max(previouslyAuthenticatedLevel, Constants.MINIMUM_LOA)) {
                     // Step-up authentication, we keep the loa from the existing user session.
                     // The cookie alone is not enough and other authentications must follow.
                     acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
