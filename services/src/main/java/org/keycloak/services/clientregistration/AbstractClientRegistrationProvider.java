@@ -331,9 +331,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         removeDefaultRoles(client, remove.toArray(new String[] {}));
 
         for (String roleName : defaultRoles) {
-            if (!already.contains(roleName)) {
-                addDefaultRole(client, roleName);
+            if (roleName == null || already.contains(roleName)) {
+                continue;
             }
+            addDefaultRole(client, roleName);
         }
     }
 

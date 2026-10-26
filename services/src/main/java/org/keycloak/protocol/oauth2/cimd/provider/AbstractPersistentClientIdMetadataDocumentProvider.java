@@ -154,12 +154,6 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
 
             ClientModel clientModel = ClientManager.createClient(session, realm, clientRep);
 
-            if (clientRep.getDefaultRoles() != null) {
-                for (String name : clientRep.getDefaultRoles()) {
-                    addDefaultRole(clientModel, name);
-                }
-            }
-
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
             }
@@ -264,20 +258,6 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
 
     private static ClientPolicyException invalidClientMetadata(String errorDetail) {
         return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
-    }
-
-    // the same as AbstractClientRegistrationProvider.addDefaultRole
-    private void addDefaultRole(ClientModel client, String name) {
-        client.getRealm().getDefaultRole().addCompositeRole(getOrAddRoleId(client, name));
-    }
-
-    // the same as AbstractClientRegistrationProvider.getOrAddRoleId
-    private RoleModel getOrAddRoleId(ClientModel client, String name) {
-        RoleModel role = client.getRole(name);
-        if (role == null) {
-            role = client.addRole(name);
-        }
-        return role;
     }
 
     // the same as AbstractClientRegistrationProvider.getDefaultRolesStream
