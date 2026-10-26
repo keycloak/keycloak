@@ -261,7 +261,11 @@ Client scopes can contain role scope mappings and various protocol mappers, whic
 When a client is assigned an allowed client scope, all of those role scope mappings and protocol mappers will be applied.
 
 * Full Scope Policy - Newly registered clients will have `Full Scope Allowed` switch disabled. This means they won't have any scoped
-realm roles or client roles of other clients.
+realm roles or client roles of other clients. This policy is present by default for both anonymous and authenticated client registration.
+
+* Default Roles Policy - Rejects create or update requests that would change the realm-wide default-role composite through the deprecated
+`defaultRoles` field. This policy is present by default for both anonymous and authenticated client registration.
+Realm administrators who still need this behaviour through Dynamic Client Registration can remove the policy.
 
 * Max Clients Policy - Rejects registration if current number of clients in the realm is same or bigger than specified limit. It's 200 by default for anonymous registrations.
 
