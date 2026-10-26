@@ -38,6 +38,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.IdpConfirmOverrideLinkPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -62,6 +63,9 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
 
     @InjectPage
     IdpConfirmOverrideLinkPage idpConfirmOverrideLinkPage;
+
+    @InjectPage
+    LoginUpdateProfilePage loginUpdateProfilePage;
 
     // Injecting the mail server also configures the SMTP settings of the realms created for the test,
     // so Keycloak can send the account linking emails to it.
@@ -330,6 +334,57 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
                 .findFirst().orElseThrow();
         assertEquals(incomingFederatedUserId, updatedLink.getUserId(),
                 "The confirmed override should replace the stored link");
+    }
+
+    /**
+     * When the brokered authentication is followed by a required action, the login event is rebuilt
+     * in the next request from the user session notes (LoginActionsService.initLoginEvent), which
+     * restored only the provider and the username. The federated user ID must be persisted alongside
+     * them, otherwise the completed login event lacks identity_provider_user_id and a user ID that
+     * differs from the stored link is only visible in the events of the first request.
+     */
+    @Test
+    public void loginWithRequiredActionKeepsFederatedUserIdInLoginEvent() {
+        disableUpdateProfileOnFirstLogin();
+        consumerRealm.updateWithCleanup(r -> r.eventsEnabled(true));
+
+        final String username = "requiredaction";
+        final String email = "requiredaction@example.org";
+        createUser(providerRealm, username, USER_PASSWORD, "Required", "Action", email);
+        createUser(consumerRealm, username, "THIS PASSWORD IS USELESS", null, null, email);
+
+        // The OIDC sub sent by the provider is the provider user ID.
+        UserRepresentation providerUser = providerRealm.admin().users().search(username).get(0);
+        String incomingFederatedUserId = providerUser.getId();
+
+        // The user has to pass the update-profile required action during the broker login, so the
+        // login event is rebuilt from the user session notes in a separate request.
+        UserRepresentation consumerUser = consumerRealm.admin().users().search(username).get(0);
+        consumerUser.setRequiredActions(List.of("UPDATE_PROFILE"));
+        consumerRealm.admin().users().get(consumerUser.getId()).update(consumerUser);
+
+        logInWithIdp(username, USER_PASSWORD);
+
+        loginUpdateProfilePage.assertCurrent();
+        loginUpdateProfilePage.update("Updated", "Profile");
+
+        assertTrue(oauth.parseLoginResponse().isSuccess(), "The login should complete after the required action");
+
+        List<EventRepresentation> events = consumerRealm.admin().getEvents();
+
+        assertTrue(events.stream().anyMatch(e -> EventType.UPDATE_PROFILE.name().equals(e.getType())),
+                "The login should have gone through the update-profile required action");
+
+        EventRepresentation login = events.stream()
+                .filter(e -> EventType.LOGIN.name().equals(e.getType()))
+                .reduce((first, second) -> second.getTime() >= first.getTime() ? second : first)
+                .orElseThrow(() -> new AssertionError("Expected a LOGIN event, but events were: " + events));
+        assertEquals(IDP_OIDC_ALIAS, login.getDetails().get(Details.IDENTITY_PROVIDER),
+                "The rebuilt login event should carry the provider");
+        assertEquals(username, login.getDetails().get(Details.IDENTITY_PROVIDER_USERNAME),
+                "The rebuilt login event should carry the broker username");
+        assertEquals(incomingFederatedUserId, login.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The rebuilt login event should carry the federated user ID as sent by the provider");
     }
 
     private void addConfirmOverrideLinkExecution(AuthenticationManagementResource authMgmtResource) {

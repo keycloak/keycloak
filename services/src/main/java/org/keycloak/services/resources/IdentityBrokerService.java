@@ -1110,6 +1110,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         context.getIdp().authenticationFinished(authSession, context);
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER, providerAlias);
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+        // When the brokered authentication is followed by a required action or consent, the login event
+        // is rebuilt from the user session notes in the next request, so the federated user ID is
+        // persisted alongside the provider and the username to survive that rebuild.
+        authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USER_ID, context.getId());
 
         event.detail(Details.IDENTITY_PROVIDER, providerAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())

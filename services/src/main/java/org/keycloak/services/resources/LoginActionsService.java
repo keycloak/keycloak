@@ -1171,6 +1171,10 @@ public class LoginActionsService {
         if (identityProvider != null) {
             event.detail(Details.IDENTITY_PROVIDER, identityProvider)
                     .detail(Details.IDENTITY_PROVIDER_USERNAME, userSessionNotes.get(Details.IDENTITY_PROVIDER_USERNAME));
+            String identityProviderUserId = userSessionNotes.get(Details.IDENTITY_PROVIDER_USER_ID);
+            if (identityProviderUserId != null) {
+                event.detail(Details.IDENTITY_PROVIDER_USER_ID, identityProviderUserId);
+            }
         }
     }
 
