@@ -464,6 +464,25 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user = updateAndGet(user, token);
         Assertions.assertNull(user.getAttributes().get("phoneNumber"));
         Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+
+        // Omitting the number while submitting the flag as true - the flag must stay false and not show up in the event
+        org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
+        ur.singleAttribute("phoneNumber", "+15555550123");
+        ur.singleAttribute("phoneNumberVerified", "false");
+        userResource.update(ur);
+        events.clear();
+        user = getUser(token);
+        user.getAttributes().remove("phoneNumber");
+        user.getAttributes().put("phoneNumberVerified", List.of("true"));
+        user = updateAndGet(user, token);
+        Assertions.assertNull(user.getAttributes().get("phoneNumber"));
+        Assertions.assertEquals(List.of("false"), user.getAttributes().get("phoneNumberVerified"));
+        EventRepresentation event = events.poll();
+        EventAssertion.assertSuccess(event)
+            .type(EventType.UPDATE_PROFILE)
+            .userId(user.getId());
+        Assertions.assertFalse(event.getDetails().containsKey(Details.PREF_PREVIOUS + "phoneNumberVerified"));
+        Assertions.assertFalse(event.getDetails().containsKey(Details.PREF_UPDATED + "phoneNumberVerified"));
     }
 
     private void registerPhoneNumberCleanup(String username) {

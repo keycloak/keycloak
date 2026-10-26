@@ -77,6 +77,7 @@ public class IdpReviewProfileAuthenticatorTest {
         upResource.update(testUpConfig);
         consumerRealm.cleanup().add(r -> r.users().userProfile().update(upConfig));
 
+        configureBrokerEndpoints();
         setUpdateProfileOnFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
         addHardcodedAttributeMapper("phone-number-mapper", "phoneNumber", "+15555550123");
         addHardcodedAttributeMapper("phone-number-verified-mapper", "phoneNumberVerified", "true");
@@ -124,6 +125,20 @@ public class IdpReviewProfileAuthenticatorTest {
         String userId = users.get(0).getId();
         consumerRealm.cleanup().add(r -> r.users().get(userId).remove());
         return consumerRealm.admin().users().get(userId).toRepresentation();
+    }
+
+    private void configureBrokerEndpoints() {
+        // the realm config only has placeholders, the server may run on another scheme or port
+        String providerBaseUrl = providerRealm.getBaseUrl();
+        IdentityProviderRepresentation idp = consumerRealm.admin().identityProviders().get(IDP_ALIAS).toRepresentation();
+        Map<String, String> config = idp.getConfig();
+        config.put("authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth");
+        config.put("tokenUrl", providerBaseUrl + "/protocol/openid-connect/token");
+        config.put("userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo");
+        config.put("jwksUrl", providerBaseUrl + "/protocol/openid-connect/certs");
+        // the admin API masks the secret, and rejects a changed token URL without the real one
+        config.put("clientSecret", CLIENT_SECRET);
+        consumerRealm.admin().identityProviders().get(IDP_ALIAS).update(idp);
     }
 
     private void setUpdateProfileOnFirstLogin(String mode) {

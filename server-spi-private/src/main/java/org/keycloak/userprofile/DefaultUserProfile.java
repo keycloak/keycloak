@@ -133,6 +133,10 @@ public final class DefaultUserProfile implements UserProfile {
             Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
 
             boolean phoneNumberVerifiedReset = false;
+            // the number is removed below, which resets the flag, so a submitted flag must not be written first
+            boolean phoneNumberRemoved = removeAttributes && metadata.getContext().isResetPhoneNumberVerified()
+                    && user.getAttributes().containsKey(PHONE_NUMBER) && !attributes.nameSet().contains(PHONE_NUMBER)
+                    && !attributes.isReadOnly(PHONE_NUMBER);
 
             for (Map.Entry<String, List<String>> attribute : writable.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 String name = attribute.getKey();
@@ -144,7 +148,7 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                if (PHONE_NUMBER_VERIFIED.equals(name) && phoneNumberVerifiedReset) {
+                if (PHONE_NUMBER_VERIFIED.equals(name) && (phoneNumberVerifiedReset || phoneNumberRemoved)) {
                     continue;
                 }
 
@@ -179,9 +183,6 @@ public final class DefaultUserProfile implements UserProfile {
                 Set<String> attrsToRemove = new HashSet<>(user.getAttributes().keySet());
 
                 attrsToRemove.removeAll(attributes.nameSet());
-
-                boolean phoneNumberRemoved = attrsToRemove.contains(PHONE_NUMBER) && !attributes.isReadOnly(PHONE_NUMBER)
-                        && metadata.getContext().isResetPhoneNumberVerified();
 
                 if (phoneNumberVerifiedReset || phoneNumberRemoved) {
                     // reset rather than removed
