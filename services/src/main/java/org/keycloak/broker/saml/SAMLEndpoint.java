@@ -19,6 +19,7 @@ package org.keycloak.broker.saml;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -56,6 +59,7 @@ import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -75,6 +79,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -293,7 +298,8 @@ public class SAMLEndpoint {
         }
 
         public Response execute(String samlRequest, String samlResponse, String samlArt, String relayState, String clientId) {
-            event = new EventBuilder(realm, session, clientConnection);
+            event = new EventBuilder(realm, session, clientConnection)
+                    .detail(Details.IDENTITY_PROVIDER, config.getAlias());
             Response response = basicChecks(samlRequest, samlResponse, samlArt);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);
@@ -553,6 +559,7 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
                 session.getContext().setAuthenticationSession(authSession);
+                event.client(authSession.getClient());
 
                 if (! isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
@@ -649,8 +656,8 @@ public class SAMLEndpoint {
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 
-                if (principal == null) {
-                    logger.errorf("no principal in assertion; expected: %s", expectedPrincipalType());
+                if (StringUtil.isBlank(principal)) {
+                    logger.errorf("missing or blank principal in assertion; expected: %s", expectedPrincipalType());
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
@@ -682,7 +689,8 @@ public class SAMLEndpoint {
                 }
 
                 ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
-                        .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+                        .clockSkewInMillis(1000 * config.getAllowedClockSkew())
+                        .oneTimeUseHandler(assertionId -> registerOneTimeUse(assertion));
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
@@ -694,8 +702,13 @@ public class SAMLEndpoint {
                     // warning has been already emitted in DeploymentBuilder
                 }
                 if (! cvb.build().isValid()) {
-                    logger.error("Assertion expired.");
+                    logger.debug("Assertion conditions are not valid.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    // a OneTimeUse rejection has already recorded a more specific reason; don't overwrite it
+                    Map<String, String> details = event.getEvent().getDetails();
+                    if (details == null || !details.containsKey(Details.REASON)) {
+                        event.detail(Details.REASON, "Assertion conditions are not valid (expired, not yet valid, or audience mismatch)");
+                    }
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
                 }
@@ -848,6 +861,83 @@ public class SAMLEndpoint {
                 return Urls.identityProviderAuthnResponse(session.getContext().getUri().getBaseUri(), providerAlias, realm.getName(), clientId).toString();
             }
             return Urls.identityProviderAuthnResponse(session.getContext().getUri().getBaseUri(), providerAlias, realm.getName()).toString();
+        }
+
+        /**
+         * Marks a OneTimeUse assertion as used. Design decisions to keep in mind when changing this:
+         * <ul>
+         * <li>The marker lifetime is derived from IssueInstant (not from "now") so the accepted window is bounded
+         * by the configured maximum age, even if the IdP sets a very distant NotOnOrAfter. This also bounds the
+         * storage an IdP can consume.</li>
+         * <li>IssueInstant is mandatory here: without it the age cannot be bounded, so the assertion is rejected.</li>
+         * <li>The marker is also written when signature validation is disabled (the default today). Skipping it
+         * would silently turn off replay protection; an unsigned assertion can be forged anyway, so the
+         * admin is expected to enable signature validation.</li>
+         * <li>Known limitation: this runs while ConditionsValidator iterates the conditions, so an assertion that
+         * fails a later condition (for example the audience) is still marked as used.</li>
+         * </ul>
+         */
+        private boolean registerOneTimeUse(AssertionType assertion) {
+            String issuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue() : "";
+
+            if (assertion.getID() == null) {
+                return rejectOneTimeUse(assertion, "OneTimeUse assertion has no ID");
+            }
+
+            if (assertion.getIssueInstant() == null) {
+                return rejectOneTimeUse(assertion, "OneTimeUse assertion has no IssueInstant");
+            }
+
+            long now = Time.currentTimeSeconds();
+            long skewSeconds = config.getAllowedClockSkew();
+            long issueInstant = assertion.getIssueInstant().toGregorianCalendar().getTimeInMillis() / 1000;
+            if (issueInstant > now + skewSeconds) {
+                return rejectOneTimeUse(assertion, "OneTimeUse assertion has an IssueInstant in the future");
+            }
+
+            // The assertion is only accepted until the earlier of its maximum age and its NotOnOrAfter (plus skew).
+            // After that point a replay is rejected anyway, so the marker only needs to be kept until then.
+            long expiry = issueInstant + config.getOneTimeUseMaxAgeSeconds();
+            XMLGregorianCalendar notOnOrAfter = assertion.getConditions() == null ? null : assertion.getConditions().getNotOnOrAfter();
+            if (notOnOrAfter != null) {
+                expiry = Math.min(expiry, notOnOrAfter.toGregorianCalendar().getTimeInMillis() / 1000);
+            }
+            long remainingSeconds = expiry + skewSeconds - now;
+            if (remainingSeconds <= 0) {
+                return rejectOneTimeUse(assertion, "OneTimeUse assertion exceeds the maximum age");
+            }
+
+            // Keep the marker for one additional second because the absolute timestamps above are truncated to
+            // whole seconds, while ConditionsValidator evaluates NotOnOrAfter with sub-second precision.
+            long ttlSeconds = remainingSeconds + 1;
+
+            // length-prefixed parts keep the key unambiguous, whatever characters the IdP puts in issuer or ID
+            String rawKey = lengthPrefixed(realm.getId()) + lengthPrefixed(issuer) + lengthPrefixed(assertion.getID());
+            String key = "saml.oneTimeUse." + HashUtils.sha256UrlEncodedHash(rawKey, StandardCharsets.UTF_8);
+
+            // Add a few seconds to the TTL to account for clock skew between the IdP and Keycloak.
+            // TODO: consolidate that within Keycloak, and put a hard requirement for time synchronization in the docs.
+            ttlSeconds = ttlSeconds + 10;
+
+            boolean firstUse = session.revokedTokens().put(key, ttlSeconds);
+            if (!firstUse) {
+                return rejectOneTimeUse(assertion, "OneTimeUse assertion has already been used");
+            }
+
+            return true;
+        }
+
+        private boolean rejectOneTimeUse(AssertionType assertion, String reason) {
+            // the ID is chosen by the IdP, so keep the event detail bounded
+            String id = assertion.getID();
+            String message = reason + " (assertion ID: " + (id != null && id.length() > 128 ? id.substring(0, 128) + "..." : id) + ")";
+            logger.debugf("%s. Issuer: %s", message, assertion.getIssuer() != null ? assertion.getIssuer().getValue() : "");
+            event.detail(Details.REASON, message);
+            return false;
+        }
+
+        private static String lengthPrefixed(String value) {
+            return value.length() + ":" + value;
         }
     }
 

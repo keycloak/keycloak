@@ -58,6 +58,13 @@ After upgrading, logins through a SAML identity provider, or through an applicat
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
 
+=== SAML logins with an empty principal are rejected
+// https://github.com/keycloak/keycloak/issues/53816
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when the principal that identifies the user is empty or contains only whitespace.
+Depending on the Principal type of the identity provider, the principal is the subject `NameID` or the value of the configured attribute.
+Accounts whose link to the identity provider has an empty user ID can no longer log in through it; remove this link so that their owners can link the accounts again once the identity provider sends a non-empty principal.
+
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
 
@@ -177,6 +184,20 @@ If you need the full user representation for the service account, use the user I
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== SAML assertions with a OneTimeUse condition are no longer replayable
+// https://github.com/keycloak/keycloak/issues/46325
+
+When {project_name} acts as a SAML service provider through identity brokering, an assertion that contains a `OneTimeUse` condition is now accepted only once.
+Previously, the condition was parsed but not enforced, so the same assertion could be presented again within its validity period.
+
+After upgrading, a replayed assertion is rejected with an error page and an `IDENTITY_PROVIDER_RESPONSE_ERROR` event, and the user is not logged in.
+The event has a plain-text `reason` detail that explains why the assertion was rejected, for example that it was already used or that it exceeds the maximum age.
+This affects only identity providers that include the condition in their assertions, including a {project_name} realm acting as the identity provider when the *Include OneTimeUse Condition* option is enabled on the SAML client.
+Assertions without the condition are not affected.
+The new *OneTimeUse maximum age* setting of the SAML identity provider defaults to 1 hour (3,600 seconds).
+Assertions with a `OneTimeUse` condition that are older than this are rejected.
+Increase the setting if users need more time to complete a login with such an assertion.
+
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 
@@ -236,6 +257,20 @@ A regression caused a sync to run only on every other scheduled tick, so the eff
 The provider's last-sync time is now recorded when a sync starts rather than when it finishes, so the schedule no longer drifts by the sync duration.
 
 If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
+
+=== Stricter enforcement of the requested level of authentication
+// https://github.com/keycloak/keycloak/issues/53157
+
+Previously, {project_name} could complete a login at a lower level of authentication than the client requested, when the authentication flow skipped the steps for the requested level, usually because the user already had a session.
+{project_name} now rejects such logins.
+For OpenID Connect clients, the requested level is the level of an essential `acr` claim.
+For SAML clients, it is the level of the requested authentication context or of the minimum ACR value of the client.
+The level is now enforced in every authentication flow, including flows without a `Conditional - Level Of Authentication` condition and the registration and reset credentials flows.
+An active login in a flow without the condition now always reaches at least level 1, and the `acr` claim reports it accordingly.
+
+A rejected interactive login ends on an error page.
+A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
+For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

@@ -1379,17 +1379,7 @@ public class AuthenticationManager {
 
         actionProvider.requiredActionChallenge(context);
 
-        if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getAuthenticationSession().getProtocol());
-            protocol.setRealm(context.getRealm())
-                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                    .setUriInfo(context.getUriInfo())
-                    .setEventBuilder(event);
-            Response response = protocol.sendError(context.getAuthenticationSession(), Error.CONSENT_DENIED, null);
-            event.error(Errors.REJECTED_BY_USER);
-            return response;
-        }
-        else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+        if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, model.getProviderId());
             return context.getChallenge();
         }
@@ -1405,9 +1395,17 @@ public class AuthenticationManager {
             authSession.removeRequiredAction(factory.getId());
             setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.SUCCESS, authSession);
             return nextActionAfterAuthentication(session, authSession, session.getContext().getConnection(), request, session.getContext().getUri(), event, ignoredActions);
+        } else {
+            // manage any other status as failure just in case
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getAuthenticationSession().getProtocol());
+            protocol.setRealm(context.getRealm())
+                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                    .setUriInfo(context.getUriInfo())
+                    .setEventBuilder(event);
+            Response response = protocol.sendError(context.getAuthenticationSession(), Error.CONSENT_DENIED, null);
+            event.error(Errors.REJECTED_BY_USER);
+            return response;
         }
-
-        return null;
     }
 
     private static RequiredActionProviderModel getFirstApplicableRequiredAction(final RealmModel realm,
