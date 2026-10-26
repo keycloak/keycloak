@@ -167,7 +167,7 @@
                     <plugin>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <!-- ResourceLeakChecker coverage of this module is deferred; keep its other annotation processors enabled. -->
+                            <!-- Excluded from ResourceLeakChecker until keycloak/keycloak#54332; keep its other annotation processors enabled. -->
                             <compilerArgs combine.self="override" />
                         </configuration>
                     </plugin>
