@@ -17,6 +17,8 @@
 
 package org.keycloak.email.freemarker;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.Config;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.email.EmailTemplateProviderFactory;
@@ -28,9 +30,11 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class FreeMarkerEmailTemplateProviderFactory implements EmailTemplateProviderFactory {
 
+    private final AtomicInteger backgroundDeliveries = new AtomicInteger();
+
     @Override
     public EmailTemplateProvider create(KeycloakSession session) {
-        return new FreeMarkerEmailTemplateProvider(session);
+        return new FreeMarkerEmailTemplateProvider(session, backgroundDeliveries);
     }
 
     @Override
@@ -48,6 +52,13 @@ public class FreeMarkerEmailTemplateProviderFactory implements EmailTemplateProv
     @Override
     public String getId() {
         return "freemarker";
+    }
+
+    /**
+     * Emails being sent in the background right now.
+     */
+    protected AtomicInteger getBackgroundDeliveries() {
+        return backgroundDeliveries;
     }
 
 }

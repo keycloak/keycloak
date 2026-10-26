@@ -283,6 +283,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        Assertions.assertTrue(mail.waitForIncomingEmail(1));
         assertEquals(1, mail.getReceivedMessages().length);
         final var message = mail.getLastReceivedMessage();
         final var resetUrl = getEmailLink(message);
