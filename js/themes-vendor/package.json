@@ -10,7 +10,9 @@
     "build": {
       "command": "rollup --config && pnpm build:rewrite-import",
       "files": [
+        "package.json",
         "rollup.config.js",
+        "scripts/rewrite-imports.js",
         "src"
       ],
       "output": [
