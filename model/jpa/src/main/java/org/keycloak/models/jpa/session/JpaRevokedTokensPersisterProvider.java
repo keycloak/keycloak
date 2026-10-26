@@ -20,7 +20,6 @@ package org.keycloak.models.jpa.session;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -45,7 +44,7 @@ public class JpaRevokedTokensPersisterProvider implements RevokedTokenPersisterP
     @Override
     public void revokeToken(String tokenId, long lifetime) {
         RevokedTokenEntity revokedTokenEntity = em.find(RevokedTokenEntity.class, tokenId);
-        long expire = Time.currentTime() + lifetime;
+        long expire = Time.currentTimeSeconds() + lifetime;
         if (revokedTokenEntity != null) {
             // The token has already been revoked.
             // There shouldn't be much need to update the expiry of the token, let's do it anyway to be on the safe side.
@@ -64,13 +63,12 @@ public class JpaRevokedTokensPersisterProvider implements RevokedTokenPersisterP
     @Override
     public Stream<RevokedToken> getAllRevokedTokens() {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<RevokedTokenEntity> cq = cb.createQuery(RevokedTokenEntity.class);
+        CriteriaQuery<RevokedToken> cq = cb.createQuery(RevokedToken.class);
         Root<RevokedTokenEntity> rootEntry = cq.from(RevokedTokenEntity.class);
-        CriteriaQuery<RevokedTokenEntity> all = cq.select(rootEntry)
-                .where(cb.gt(rootEntry.get("expire"), Time.currentTime()));
+        CriteriaQuery<RevokedToken> all = cq.select(cb.construct(RevokedToken.class, rootEntry.get("id"), rootEntry.get("expire")))
+                .where(cb.gt(rootEntry.get("expire"), Time.currentTimeSeconds()));
 
-        TypedQuery<RevokedTokenEntity> allQuery = em.createQuery(all);
-        return allQuery.getResultStream().map(revokedTokenEntity -> new RevokedToken(revokedTokenEntity.getId(), revokedTokenEntity.getExpire()));
+        return em.createQuery(all).getResultStream();
     }
 
     @Override
@@ -78,7 +76,7 @@ public class JpaRevokedTokensPersisterProvider implements RevokedTokenPersisterP
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<RevokedTokenEntity> cd = cb.createCriteriaDelete(RevokedTokenEntity.class);
         Root<RevokedTokenEntity> rootEntry = cd.from(RevokedTokenEntity.class);
-        cd.where(cb.lt(rootEntry.get("expire"), Time.currentTime()));
+        cd.where(cb.lt(rootEntry.get("expire"), Time.currentTimeSeconds()));
         em.createQuery(cd).executeUpdate();
     }
 
