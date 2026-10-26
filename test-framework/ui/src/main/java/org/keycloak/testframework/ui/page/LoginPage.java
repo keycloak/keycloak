@@ -21,6 +21,9 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
+    @FindBy(linkText = "Register")
+    private WebElement registerLink;
+
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
@@ -71,6 +74,10 @@ public class LoginPage extends AbstractLoginPage {
 
     public void resetPassword() {
         resetPasswordLink.click();
+    }
+
+    public void clickRegister() {
+        registerLink.click();
     }
 
     public String getSuccessMessage() {

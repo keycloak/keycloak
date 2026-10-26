@@ -78,7 +78,7 @@ public class AuthenticationFlowResolver {
         return authSession.getRealm().getDirectGrantFlow();
     }
 
-    private static String getRequestedFlowAlias(AuthenticationSessionModel authSession) {
+    public static String getRequestedFlowAlias(AuthenticationSessionModel authSession) {
         // Prefer the client note; fall back to the auth note for logins started on an older server.
         String requestedFlowAlias = authSession.getClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
         return requestedFlowAlias != null ? requestedFlowAlias : authSession.getAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW);
