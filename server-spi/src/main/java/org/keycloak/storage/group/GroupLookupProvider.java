@@ -26,9 +26,6 @@ public interface GroupLookupProvider {
 
     /**
      * Returns a group from the given realm with the corresponding id
-     * <p>
-     * A successful lookup does not authorize access to the group. Administrative callers must enforce the
-     * appropriate permissions before exposing or modifying the returned group.
      *
      * @param realm Realm.
      * @param id Id.
@@ -38,10 +35,6 @@ public interface GroupLookupProvider {
 
     /**
      * Returns a group from the given realm with the corresponding name and parent
-     * <p>
-     * This lookup is also used by internal operations such as authentication. A successful lookup does not
-     * authorize access to the group, and callers must not rely on it to apply fine-grained admin permission filters.
-     * Administrative callers must enforce the appropriate permissions before exposing or modifying the returned group.
      *
      * @param realm  Realm.
      * @param parent parent Group. If {@code null} top level groups are searched

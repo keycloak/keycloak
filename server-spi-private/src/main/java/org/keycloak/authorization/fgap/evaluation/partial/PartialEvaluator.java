@@ -47,6 +47,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 
 public final class PartialEvaluator {
 
@@ -60,31 +61,32 @@ public final class PartialEvaluator {
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(session, storage, builder, queryBuilder, path));
         }
 
-        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
-        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
-        if (isSkipEvaluation(session)) {
+        UserModel adminUser = AdminPermissionsSchema.getAuthorizationUser(session);
+
+        if (adminUser == null || isSkipEvaluation(session)) {
             return List.of();
         }
 
-        UserModel adminUser = session.getContext().getUser();
+        // Resolving the admin's roles and policies can itself query groups, for example through LDAP.
+        // Those internal lookups must not be filtered by the permissions being evaluated.
+        return runWithoutAuthorization(session, () -> {
+            if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
+                return List.of();
+            }
 
-        if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
-            // only run partial evaluation if the admin user does not have view-* or manage-* role for specified resourceType or has any query-* role
-            return List.of();
-        }
-
-        // collect the result from the partial evaluation so that the filters can be applied
-        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
-
-        return buildPredicates(context);
+            PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
+            return buildPredicates(context);
+        });
     }
 
     public boolean isActive(KeycloakSession session, ResourceType resourceType) {
-        if (isSkipEvaluation(session)) {
+        UserModel adminUser = AdminPermissionsSchema.getAuthorizationUser(session);
+
+        if (adminUser == null || isSkipEvaluation(session)) {
             return false;
         }
-        UserModel user = session.getContext().getUser();
-        return !shouldSkipPartialEvaluation(session, user, resourceType);
+
+        return runWithoutAuthorization(session, () -> !shouldSkipPartialEvaluation(session, adminUser, resourceType));
     }
 
     private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
@@ -269,14 +271,6 @@ public final class PartialEvaluator {
     }
 
     private boolean shouldSkipPartialEvaluation(KeycloakSession session, UserModel user, ResourceType resourceType) {
-        if (user == null) {
-            return true;
-        }
-
-        if (isSkipEvaluation(session)) {
-            return true;
-        }
-
         ClientModel client = getRealmManagementClient(session);
 
         if (client == null) {

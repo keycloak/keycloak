@@ -21,11 +21,16 @@ import java.net.ServerSocket;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AdminRoles;
@@ -37,6 +42,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.SynchronizationResultRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -67,6 +74,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
@@ -120,12 +128,13 @@ public class LDAPGroupMapperFgapTest {
 
     @BeforeEach
     public void configureLdap() {
+        String ldapUrl = UriBuilder.newInstance().scheme("ldap").host(ldap.getBindHost()).port(ldap.getBindPort()).build().toString();
         ComponentRepresentation provider = new ComponentRepresentation();
         provider.setName("test-ldap");
         provider.setProviderId(LDAPStorageProviderFactory.PROVIDER_NAME);
         provider.setProviderType(UserStorageProvider.class.getName());
         provider.setConfig(new MultivaluedHashMap<>(Map.of(
-                LDAPConstants.CONNECTION_URL, List.of("ldap://localhost:" + ldap.getBindPort()),
+                LDAPConstants.CONNECTION_URL, List.of(ldapUrl),
                 LDAPConstants.USERS_DN, List.of("ou=People,dc=keycloak,dc=org"),
                 LDAPConstants.BIND_DN, List.of("uid=admin,ou=system"),
                 LDAPConstants.BIND_CREDENTIAL, List.of("secret"),
@@ -139,12 +148,24 @@ public class LDAPGroupMapperFgapTest {
 
     @Test
     public void testFlatGroupsUnderCustomPath() throws Exception {
-        assertUserOperations(configureGroups(false, LDAPGroupMapperMode.READ_ONLY, "/Applications/App1"), false);
+        String groupPath = configureGroups(false, LDAPGroupMapperMode.READ_ONLY, "/Applications/App1");
+        assertLoginAndTokens(groupPath);
+        assertAdminPermissions(groupPath);
     }
 
     @Test
-    public void testInheritedGroupsAndAutomaticSync() throws Exception {
-        assertUserOperations(configureGroups(true, LDAPGroupMapperMode.LDAP_ONLY, ""), true);
+    public void testInheritedGroupsAndSync() throws Exception {
+        String groupPath = configureGroups(true, LDAPGroupMapperMode.LDAP_ONLY, "");
+        assertLoginAndTokens(groupPath);
+
+        // Discovering a new LDAP membership must sync it without losing sight of existing groups.
+        runOnServer.run(ServerCode.addGroup("new-group"));
+        managedRealm.admin().clearRealmCache();
+        assertToken(oauth.doPasswordGrantRequest("johnkeycloak", "Password1"), groupPath);
+        assertNotNull(managedRealm.admin().getGroupByPath("/new-group"));
+
+        GroupPolicyRepresentation policy = assertAdminPermissions(groupPath);
+        assertManualSync(policy);
     }
 
     @Test
@@ -159,7 +180,8 @@ public class LDAPGroupMapperFgapTest {
                 HardcodedLDAPGroupStorageMapper.GROUP, List.of("/hardcoded-parent/hardcoded-child"))));
         ApiUtil.getCreatedId(managedRealm.admin().components().add(mapper));
         grantRoles(parentId);
-        assertUserOperations("/hardcoded-parent/hardcoded-child", false);
+        assertLoginAndTokens("/hardcoded-parent/hardcoded-child");
+        assertAdminPermissions("/hardcoded-parent/hardcoded-child");
     }
 
     private String configureGroups(boolean preserveInheritance, LDAPGroupMapperMode mode, String groupsPath) {
@@ -207,7 +229,7 @@ public class LDAPGroupMapperFgapTest {
         assertTrue(((List<?>) oauth.verifyIDToken(response.getIdToken()).getOtherClaims().get("ldap-groups")).contains(groupPath));
     }
 
-    private void assertUserOperations(String groupPath, boolean addNewGroup) throws Exception {
+    private void assertLoginAndTokens(String groupPath) throws Exception {
         driver.cookies().deleteAll();
         // Clear group lookups populated by setup so the first login reaches the database.
         managedRealm.admin().clearRealmCache();
@@ -221,23 +243,57 @@ public class LDAPGroupMapperFgapTest {
         oauth.openLoginForm();
         oauth.fillLoginForm("johnkeycloak", "Password1");
         assertToken(oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode()), groupPath);
+    }
 
-        if (addNewGroup) {
-            runOnServer.run(ServerCode.addGroup("new-group"));
-            // Discovering a new LDAP membership must sync it without losing sight of existing groups.
-            managedRealm.admin().clearRealmCache();
-            assertToken(oauth.doPasswordGrantRequest("johnkeycloak", "Password1"), groupPath);
-            assertNotNull(managedRealm.admin().getGroupByPath("/new-group"));
-        }
-
+    private GroupPolicyRepresentation assertAdminPermissions(String groupPath) {
         // Group visibility must still be enforced after login and after clearing cached group lookups.
-        try (Keycloak delegatedAdmin = KeycloakBuilder.builder().serverUrl(oauth.getBaseUrl())
-                .realm(managedRealm.getName()).username("johnkeycloak").password("Password1")
-                .clientId("test-app").clientSecret("password").build()) {
-            assertThrows(ForbiddenException.class, () -> delegatedAdmin.realm(managedRealm.getName()).getGroupByPath(groupPath));
+        String groupId = managedRealm.admin().getGroupByPath(groupPath).getId();
+        try (Keycloak delegatedAdmin = createDelegatedAdmin()) {
+            assertThrows(ForbiddenException.class, () -> delegatedAdmin.realm(managedRealm.getName()).groups().group(groupId).toRepresentation());
             managedRealm.admin().clearRealmCache();
-            assertThrows(ForbiddenException.class, () -> delegatedAdmin.realm(managedRealm.getName()).getGroupByPath(groupPath));
+            assertThrows(ForbiddenException.class, () -> delegatedAdmin.realm(managedRealm.getName()).groups().group(groupId).toRepresentation());
+
+            // Explicit authorization must still recognize the admin's LDAP membership.
+            ClientResource permissionsClient = managedRealm.admin().clients().get(managedRealm.admin().clients()
+                    .findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
+            GroupPolicyRepresentation policy = new GroupPolicyRepresentation();
+            policy.setName("ldap-membership");
+            policy.addGroup(groupId);
+            try (Response created = permissionsClient.authorization().policies().group().create(policy)) {
+                assertEquals(201, created.getStatus());
+            }
+            PermissionTestUtils.createPermission(permissionsClient, groupId, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                    Set.of(AdminPermissionsSchema.VIEW), policy);
+            managedRealm.admin().clearRealmCache();
+            assertEquals(groupId, delegatedAdmin.realm(managedRealm.getName()).groups().group(groupId).toRepresentation().getId());
+            return policy;
         }
+    }
+
+    private void assertManualSync(GroupPolicyRepresentation policy) {
+        String mapperId = managedRealm.admin().components().query(ldapId, LDAPStorageMapper.class.getName(), "groupsMapper").get(0).getId();
+        ClientResource permissionsClient = managedRealm.admin().clients().get(managedRealm.admin().clients()
+                .findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
+        try (Keycloak delegatedAdmin = createDelegatedAdmin()) {
+            assertThrows(ForbiddenException.class, () -> delegatedAdmin.realm(managedRealm.getName()).userStorage()
+                    .syncMapperData(ldapId, mapperId, "fedToKeycloak"));
+            PermissionTestUtils.createAllPermission(permissionsClient, AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                    policy, Set.of(AdminPermissionsSchema.MANAGE));
+            // Once authorized, manual sync must see all groups, just like automatic sync.
+            for (String direction : List.of("fedToKeycloak", "keycloakToFed")) {
+                managedRealm.admin().clearRealmCache();
+                SynchronizationResultRepresentation sync = delegatedAdmin.realm(managedRealm.getName()).userStorage()
+                        .syncMapperData(ldapId, mapperId, direction);
+                assertEquals(0, sync.getFailed());
+                assertEquals(3, sync.getUpdated());
+            }
+        }
+    }
+
+    private Keycloak createDelegatedAdmin() {
+        return KeycloakBuilder.builder().serverUrl(oauth.getBaseUrl())
+                .realm(managedRealm.getName()).username("johnkeycloak").password("Password1")
+                .clientId("test-app").clientSecret("password").build();
     }
 
     public static class RealmConfiguration implements RealmConfig {

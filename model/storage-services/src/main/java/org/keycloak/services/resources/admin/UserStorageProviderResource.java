@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
@@ -256,14 +257,14 @@ public class UserStorageProviderResource {
         SynchronizationResult syncResult;
         if ("fedToKeycloak".equals(direction)) {
             try {
-                syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
+                syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> mapper.syncDataFromFederationProviderToKeycloak(realm));
             } catch(Exception e) {
                 String errorMsg = getErrorCode(e);
                 throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
             }
         } else if ("keycloakToFed".equals(direction)) {
             try {
-                syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
+                syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> mapper.syncDataFromKeycloakToFederationProvider(realm));
             } catch(Exception e) {
                 String errorMsg = getErrorCode(e);
                 throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
