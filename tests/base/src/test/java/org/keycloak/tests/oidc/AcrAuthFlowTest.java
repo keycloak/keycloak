@@ -356,7 +356,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
 
         loginWithAcr(List.of("acr-password"), true);
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME, user.getPassword());
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-password");
 
         logout(user.getId(), tokens);
@@ -369,7 +369,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
 
         loginWithAcr(List.of("acr-otp"), true);
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME, user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
