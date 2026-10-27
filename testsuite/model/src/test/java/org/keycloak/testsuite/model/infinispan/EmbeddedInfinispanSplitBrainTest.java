@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.model.infinispan;
 
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -25,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -155,13 +157,16 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
          }
          awaitBarrier(barrier);
 
-         var restored = new AtomicBoolean();
-         eventually(() -> "Persisted revocation was not restored after the view merge", () -> {
-            inComittedTransaction(session -> {
-               restored.set(session.revokedTokens().contains(tokenId));
-            });
-            return restored.get();
-         }, 30_000, 10, TimeUnit.MILLISECONDS);
+         // The reload runs asynchronously after the merge view is installed.
+         await("Persisted revocation was not restored after the view merge")
+               .atMost(Duration.ofSeconds(30))
+               .pollInterval(Duration.ofMillis(10))
+               // the session factory is bound to the thread running inIndependentFactories
+               .pollInSameThread()
+               .until(() -> {
+                  Function<KeycloakSession, Boolean> contains = session -> session.revokedTokens().contains(tokenId);
+                  return inComittedTransaction(contains);
+               });
       });
    }
 

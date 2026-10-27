@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.executors.ExecutorsProvider;
@@ -64,8 +63,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
-    private static final int RELOAD_RETRY_ATTEMPTS = 3;
-    private static final long RELOAD_RETRY_INTERVAL_MILLIS = 10_000;
     private static final String RELOAD_EXECUTOR_TASK = "revoked-token-reload";
 
     public static final String CONFIG_PERSIST_REVOKED_TOKENS = "persistRevokedTokens";
@@ -223,36 +220,27 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             return;
         }
 
-        try {
-            // Retry blocks this managed worker, never the Infinispan notification thread. It also gives the cache time
-            // to finish the topology change before persisted entries are restored.
-            Retry.execute(this::reloadRevokedTokensOnce, RELOAD_RETRY_ATTEMPTS, RELOAD_RETRY_INTERVAL_MILLIS);
-        } catch (RuntimeException e) {
-            if (!closed) {
-                logger.warn("Failed to reload revoked tokens after a cluster membership change", e);
-            }
-        }
-    }
-
-    private void reloadRevokedTokensOnce() {
-        if (closed) {
-            return;
-        }
-
         // Every member observes the view change. Restrict the database scan to one node; writes to the distributed
         // cache restore the entries for the whole cluster.
         if (!singleUseObjectCache.getCacheManager().isCoordinator()) {
             return;
         }
 
-        var distributionManager = singleUseObjectCache.getAdvancedCache().getDistributionManager();
-        if (distributionManager.isRehashInProgress() || !distributionManager.isJoinComplete()) {
-            throw new IllegalStateException("The actionTokens cache topology is not stable yet");
+        try {
+            logger.debug("Reloading revoked tokens after a cluster membership change");
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session ->
+                    loadRevokedTokens(session.getProvider(RevokedTokenPersisterProvider.class)));
+        } catch (RuntimeException e) {
+            if (!closed) {
+                logger.warn("Failed to reload revoked tokens after a cluster membership change", e);
+                try {
+                    // Without the marker, the next node starting up loads the persisted revocations again.
+                    singleUseObjectCache.remove(LOADED);
+                } catch (RuntimeException removeFailure) {
+                    logger.warn("Failed to clear the revoked tokens loaded marker", removeFailure);
+                }
+            }
         }
-
-        logger.debug("Reloading revoked tokens after a cluster membership change");
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, session ->
-                loadRevokedTokens(session.getProvider(RevokedTokenPersisterProvider.class)));
     }
 
     @Listener
