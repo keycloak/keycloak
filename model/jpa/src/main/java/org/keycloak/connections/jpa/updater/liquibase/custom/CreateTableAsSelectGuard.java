@@ -8,13 +8,13 @@ import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
 import liquibase.sqlgenerator.SqlGeneratorChain;
 import liquibase.sqlgenerator.core.AbstractSqlGenerator;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 
 /**
  * Rejects {@code CREATE TABLE ... AS SELECT} on MySQL — incompatible with Group Replication (ERROR 3098).
  * Only raw SQL from {@link CustomKeycloakTask} subclasses needs guarding, as XML changelogs cannot express this pattern.
  */
-public class CreateTableAsSelectGuard extends AbstractSqlGenerator<RawSqlStatement> {
+public class CreateTableAsSelectGuard extends AbstractSqlGenerator<RawParameterizedSqlStatement> {
 
     private static final Pattern CTAS_PATTERN = Pattern.compile("(?i)CREATE\\s+TABLE\\s+\\S+\\s+AS\\s+SELECT");
 
@@ -24,17 +24,17 @@ public class CreateTableAsSelectGuard extends AbstractSqlGenerator<RawSqlStateme
     }
 
     @Override
-    public boolean supports(RawSqlStatement statement, Database database) {
+    public boolean supports(RawParameterizedSqlStatement statement, Database database) {
         return database instanceof MySQLDatabase;
     }
 
     @Override
-    public ValidationErrors validate(RawSqlStatement statement, Database database, SqlGeneratorChain<RawSqlStatement> chain) {
+    public ValidationErrors validate(RawParameterizedSqlStatement statement, Database database, SqlGeneratorChain<RawParameterizedSqlStatement> chain) {
         return new ValidationErrors();
     }
 
     @Override
-    public Sql[] generateSql(RawSqlStatement statement, Database database, SqlGeneratorChain<RawSqlStatement> chain) {
+    public Sql[] generateSql(RawParameterizedSqlStatement statement, Database database, SqlGeneratorChain<RawParameterizedSqlStatement> chain) {
         String sql = statement.getSql().trim();
         if (CTAS_PATTERN.matcher(sql).find()) {
             throw new RuntimeException("CREATE TABLE ... AS SELECT is incompatible with MySQL Group Replication "
