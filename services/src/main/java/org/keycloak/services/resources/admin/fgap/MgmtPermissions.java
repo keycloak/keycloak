@@ -107,7 +107,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
         AccessToken accessToken = auth.getToken();
-        this.identity = runWithoutAuthorization(session, () -> new KeycloakIdentity(accessToken, session, adminsRealm, true));
+        this.identity = runWithoutAuthorization(session, () -> new KeycloakIdentity(accessToken, session, adminsRealm, true, admin));
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel adminsRealm, UserModel admin) {
@@ -397,6 +397,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
+            // policies resolve the admin's roles, groups and attributes, which must not be subject to query filtering
             return runWithoutAuthorization(session, () -> authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class));
         } finally {
             session.getContext().setRealm(oldRealm);

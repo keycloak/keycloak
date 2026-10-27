@@ -55,13 +55,14 @@ public final class PartialEvaluator {
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
 
-    public List<Predicate> getPredicates(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    /**
+     * @param adminUser the admin bound to the current management request, or {@code null} if none, in which case no filtering is applied
+     */
+    public List<Predicate> getPredicates(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             // feature not enabled, if a storage evaluator is provided try to resolve any filter from there
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(session, storage, builder, queryBuilder, path));
         }
-
-        UserModel adminUser = AdminPermissionsSchema.getAuthorizationUser(session);
 
         if (adminUser == null || isSkipEvaluation(session)) {
             return List.of();
@@ -79,9 +80,7 @@ public final class PartialEvaluator {
         });
     }
 
-    public boolean isActive(KeycloakSession session, ResourceType resourceType) {
-        UserModel adminUser = AdminPermissionsSchema.getAuthorizationUser(session);
-
+    public boolean isActive(KeycloakSession session, UserModel adminUser, ResourceType resourceType) {
         if (adminUser == null || isSkipEvaluation(session)) {
             return false;
         }

@@ -18,31 +18,19 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -58,12 +46,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests that federated (non-imported) users are excluded from search results
@@ -75,9 +58,6 @@ public class UserFederationFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests", lifecycle = LifeCycle.METHOD)
-    RunOnServerClient runOnServer;
 
     private String fedUsername;
     private String fedUserId;
@@ -155,77 +135,6 @@ public class UserFederationFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(fedUsername, 0, 10);
         assertThat(search, hasSize(1));
         assertThat(search.get(0).getUsername(), is(fedUsername));
-    }
-
-    @Test
-    public void testScheduledTaskFilteringIsExplicitAndScoped() {
-        runOnServer.run(ServerCode.assertScheduledFiltering(realm.getName(), fedUsername));
-    }
-
-    public static class ServerCode {
-
-        public static RunOnServer assertScheduledFiltering(String realmName, String username) {
-            return session -> {
-                RealmModel realmModel = session.realms().getRealmByName(realmName);
-                session.getContext().setRealm(realmModel);
-                UserModel admin = session.users().getUserByUsername(realmModel, "myadmin");
-                AtomicBoolean completed = new AtomicBoolean();
-
-                AdminPermissionsSchema.runWithAuthorizationFilters(session, admin, () -> {
-                    new ScheduledTaskRunner(session.getKeycloakSessionFactory(), jobSession -> {
-                        RealmModel jobRealm = jobSession.realms().getRealmByName(realmName);
-                        jobSession.getContext().setRealm(jobRealm);
-                        // A new task session must not inherit the caller's filtering context or HTTP identity.
-                        assertNull(AdminPermissionsSchema.getAuthorizationUser(jobSession));
-                        assertNull(jobSession.getContext().getUser());
-                        assertFederatedUserVisible(jobSession, jobRealm, username, true);
-                        UserModel jobAdmin = jobSession.users().getUserByUsername(jobRealm, "myadmin");
-
-                        // Materialize results inside the scope; returning a stream would leave its work outside it.
-                        List<String> users = AdminPermissionsSchema.runWithAuthorizationFilters(jobSession, jobAdmin, () -> {
-                            try (Stream<UserModel> stream = jobSession.users().searchForUserStream(jobRealm, Map.of(UserModel.USERNAME, username))) {
-                                return stream.map(UserModel::getUsername).toList();
-                            }
-                        });
-                        assertEquals(List.of(), users);
-                        assertNull(AdminPermissionsSchema.getAuthorizationUser(jobSession));
-                        assertFederatedUserVisible(jobSession, jobRealm, username, true);
-
-                        assertThrows(IllegalStateException.class, () -> AdminPermissionsSchema.runWithAuthorizationFilters(jobSession, jobAdmin, () -> {
-                            assertTrue(AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(jobSession, AdminPermissionsSchema.USERS));
-                            assertFederatedUserVisible(jobSession, jobRealm, username, false);
-                            // Local queries must also apply the default-deny predicate.
-                            assertEquals(0, jobSession.users().searchForUserStream(jobRealm, Map.of(UserModel.USERNAME, "myadmin")).count());
-
-                            AdminPermissionsSchema.runWithoutAuthorization(jobSession, () -> {
-                                assertFederatedUserVisible(jobSession, jobRealm, username, true);
-                                assertThrows(IllegalArgumentException.class, () -> AdminPermissionsSchema.runWithAuthorizationFilters(jobSession, jobAdmin, () -> {
-                                    assertFederatedUserVisible(jobSession, jobRealm, username, false);
-                                    throw new IllegalArgumentException("nested work failed");
-                                }));
-                                assertFederatedUserVisible(jobSession, jobRealm, username, true);
-                            });
-
-                            assertFederatedUserVisible(jobSession, jobRealm, username, false);
-                            throw new IllegalStateException("work failed");
-                        }));
-                        assertNull(AdminPermissionsSchema.getAuthorizationUser(jobSession));
-                        assertFalse(AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(jobSession, AdminPermissionsSchema.USERS));
-                        assertFederatedUserVisible(jobSession, jobRealm, username, true);
-                        completed.set(true);
-                    }).run();
-                    assertTrue(completed.get(), "Scheduled task assertions failed");
-                    assertSame(admin, AdminPermissionsSchema.getAuthorizationUser(session));
-                });
-                assertNull(AdminPermissionsSchema.getAuthorizationUser(session));
-            };
-        }
-
-        private static void assertFederatedUserVisible(KeycloakSession session, RealmModel realm, String username, boolean visible) {
-            Map<String, String> search = Map.of(UserModel.USERNAME, username, UserModel.EXACT, "true");
-            assertEquals(visible ? 1 : 0, session.users().searchForUserStream(realm, search).count());
-            assertEquals(visible ? 1 : 0, session.users().getUsersCount(realm, search));
-        }
     }
 
     public static class ServerConfig implements KeycloakServerConfig {
