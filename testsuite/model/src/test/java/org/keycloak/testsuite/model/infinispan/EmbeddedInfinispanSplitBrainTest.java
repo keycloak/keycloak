@@ -161,7 +161,7 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
                restored.set(session.revokedTokens().contains(tokenId));
             });
             return restored.get();
-         });
+         }, 30_000, 10, TimeUnit.MILLISECONDS);
       });
    }
 
