@@ -31,6 +31,9 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.events.Errors;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -41,6 +44,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -58,6 +62,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -100,6 +105,7 @@ public class UserSessionNoteMapperValidationTest {
         return BROKER_CREDENTIAL_NOTES.stream().flatMap(note -> Stream.of(
                 note,
                 note + ":google",
+                note + ":<img src=x onerror=alert(1)>",
                 note.toLowerCase(Locale.ROOT),
                 note.charAt(0) + note.substring(1).toLowerCase(Locale.ROOT)));
     }
@@ -110,8 +116,15 @@ public class UserSessionNoteMapperValidationTest {
         try (Response response = mappers.createMapper(noteMapper("blocked-note-mapper", noteName))) {
             assertThat("Broker credential note '" + noteName + "' must be rejected",
                     response, Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-            assertThat(response.readEntity(OAuth2ErrorRepresentation.class).getError(),
-                    containsString("cannot be mapped"));
+            assertMapperError(response);
+        }
+    }
+
+    @Test
+    public void shouldRejectInternalUserModelNote() {
+        try (Response response = mappers.createMapper(noteMapper("internal-user-model", Constants.SESSION_NOTE_LIGHTWEIGHT_USER))) {
+            assertThat(response, Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
+            assertMapperError(response);
         }
     }
 
@@ -130,8 +143,7 @@ public class UserSessionNoteMapperValidationTest {
                 "Updating mapper to FEDERATED_ACCESS_TOKEN must be rejected"
         );
         assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        assertThat(ex.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError(),
-                containsString("cannot be mapped"));
+        assertMapperError(ex.getResponse());
 
         // The stored mapper must keep its original note
         assertThat(mappers.getMapperById(createdId).getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE),
@@ -148,8 +160,7 @@ public class UserSessionNoteMapperValidationTest {
                 "Bulk add-models with FEDERATED_ACCESS_TOKEN must be rejected"
         );
         assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-        assertThat(ex.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError(),
-                containsString("cannot be mapped"));
+        assertMapperError(ex.getResponse());
     }
 
     /**
@@ -160,7 +171,7 @@ public class UserSessionNoteMapperValidationTest {
     @Test
     public void shouldRejectBlockedNoteOnClientUpdate() {
         ClientRepresentation rep = client.admin().toRepresentation();
-        rep.setProtocolMappers(List.of(noteMapper("inline-update-blocker",
+        rep.setProtocolMappers(List.of(noteMapper("<img src=x onerror=alert(1)>",
                 UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN)));
 
         ClientErrorException ex = assertThrows(
@@ -170,9 +181,11 @@ public class UserSessionNoteMapperValidationTest {
         );
         assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
 
+        assertMapperError(ex.getResponse());
+
         // The mapper must not have been persisted
         assertThat(mappers.getMappers().stream().map(ProtocolMapperRepresentation::getName).toList(),
-                not(hasItem("inline-update-blocker")));
+                not(hasItem("<img src=x onerror=alert(1)>")));
     }
 
     @Test
@@ -220,12 +233,13 @@ public class UserSessionNoteMapperValidationTest {
         ClientScopeRepresentation rep = new ClientScopeRepresentation();
         rep.setName("inline-create-blocker-scope");
         rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        rep.setProtocolMappers(List.of(noteMapper("scope-create-blocker",
+        rep.setProtocolMappers(List.of(noteMapper("<img src=x onerror=alert(1)>",
                 UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN)));
 
         try (Response response = realm.admin().clientScopes().create(rep)) {
             assertThat("Client scope creation with an inline FEDERATED_ACCESS_TOKEN mapper must be rejected",
                     response, Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
+            assertMapperError(response);
         }
 
         // The scope is written before its mappers are validated, so the rejection relies on the transaction being
@@ -235,7 +249,7 @@ public class UserSessionNoteMapperValidationTest {
     }
 
     /**
-     * Realm import must report the offending client scope rather than failing with an opaque 500.
+     * Realm import must return a generic validation error rather than reflecting mapper details or returning a 500.
      */
     @Test
     public void shouldRejectBlockedNoteOnClientScopeRealmImport() {
@@ -256,7 +270,7 @@ public class UserSessionNoteMapperValidationTest {
         );
         assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
         assertThat(ex.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage(),
-                containsString("imported-blocker-scope"));
+                is("Invalid protocol mapper configuration"));
 
         // The scopes are imported before the clients, so a realm left half-built would still carry the mapper.
         assertThat(adminClient.realms().findAll().stream().map(RealmRepresentation::getRealm).toList(),
@@ -266,20 +280,19 @@ public class UserSessionNoteMapperValidationTest {
     /**
      * The SAML mapper reads the same session notes under its own configuration key.
      */
-    @Test
-    public void shouldRejectBlockedNoteOnSamlMapper() {
+    @ParameterizedTest
+    @ValueSource(strings = {"FEDERATED_ACCESS_TOKEN", "keycloak.userModel"})
+    public void shouldRejectBlockedNoteOnSamlMapper(String noteName) {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
         rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         rep.setName("saml-blocker");
         rep.setProtocolMapper(UserSessionNoteStatementMapper.PROVIDER_ID);
-        rep.setConfig(Map.of(UserSessionNoteStatementMapper.NOTE_CONFIG_KEY,
-                UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
+        rep.setConfig(Map.of(UserSessionNoteStatementMapper.NOTE_CONFIG_KEY, noteName));
 
         try (Response response = samlClient.admin().getProtocolMappers().createMapper(rep)) {
-            assertThat("SAML mapper for FEDERATED_ACCESS_TOKEN must be rejected",
+            assertThat("SAML mapper for " + noteName + " must be rejected",
                     response, Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
-            assertThat(response.readEntity(OAuth2ErrorRepresentation.class).getError(),
-                    containsString("cannot be mapped"));
+            assertMapperError(response);
         }
     }
 
@@ -310,6 +323,38 @@ public class UserSessionNoteMapperValidationTest {
     public void shouldAllowMapperWithoutNoteName() {
         String id = createMapper("no-note-mapper", null);
         assertThat(mappers.getMapperById(id).getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE), nullValue());
+    }
+
+    @Test
+    public void shouldRejectBlockedNoteOnPartialImport() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("partial-import-blocker");
+        rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        rep.setProtocolMappers(List.of(noteMapper("<img src=x onerror=alert(1)>",
+                UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN + ":<script>alert(1)</script>")));
+        PartialImportRepresentation partialImport = new PartialImportRepresentation();
+        partialImport.setClients(List.of(rep));
+        partialImport.setIfResourceExists("FAIL");
+
+        try (Response response = realm.admin().partialImport(partialImport)) {
+            assertThat(response, Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
+                    is("Failed to import client partial-import-blocker: Invalid protocol mapper configuration"));
+        }
+        assertThat(realm.admin().clients().findByClientId(rep.getClientId()).size(), is(0));
+    }
+
+    @Test
+    public void shouldAllowKerberosDelegationCredential() {
+        String id = createMapper("kerberos-delegation", KerberosConstants.GSS_DELEGATION_CREDENTIAL);
+        assertThat(mappers.getMapperById(id).getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE),
+                is(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
+    }
+
+    private void assertMapperError(Response response) {
+        OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+        assertThat(error.getError(), is(Errors.INVALID_INPUT));
+        assertThat(error.getErrorDescription(), is("Invalid protocol mapper configuration"));
     }
 
     // -------------------------------------------------------------------------

@@ -58,7 +58,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -136,7 +135,7 @@ public class KcSamlBrokerCredentialNoteMapperTest extends AbstractKcSamlBrokerTe
         // parameter on a redirect to the SP rather than in a form this test can read
         loginRequest.setProtocolBinding(SamlClient.Binding.POST.getBindingUri());
         Document samlRequest = SAML2Request.convert(loginRequest);
-        HttpPost post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
+        HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
 
         String body = followRedirects(post, brokeredSsoSession(consumerBaseUrl));
 

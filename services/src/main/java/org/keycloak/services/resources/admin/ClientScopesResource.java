@@ -29,6 +29,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientScopeModel;
@@ -137,8 +138,9 @@ public class ClientScopesResource {
             try {
                 ProtocolMapperValidationUtil.validateProtocolMappers(session, realm, clientScope);
             } catch (ProtocolMapperConfigException ex) {
-                throw new ErrorResponseException(ex.getMessage(),
-                        AdminRoot.getLocalizedMessage(session, realm, auth.adminAuth().getToken().getLocale(), ex),
+                logger.warnf("Invalid protocol mapper configuration in client scope '%s': %s", clientScope.getName(), ex.getMessage());
+                throw new ErrorResponseException(Errors.INVALID_INPUT,
+                        ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE,
                         Response.Status.BAD_REQUEST);
             }
 

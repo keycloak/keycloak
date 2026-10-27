@@ -47,39 +47,6 @@ You can use the following provider option to increase or decrease the limit.
 bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
 ----
 
-=== Session note mappers no longer expose identity provider tokens
-
-When a user authenticates through an external identity provider, {project_name} stores the tokens issued by that provider as notes on the user session.
-The supported way to retrieve them is the broker token endpoint; its authorization requirements depend on the enabled Identity Brokering API version.
-Previously, the *User Session Note* mapper copied any session note into a token claim without checking what the note held.
-An administrator who only held the `manage` permission on a single client could therefore configure a mapper for `FEDERATED_ACCESS_TOKEN` and receive the upstream token of every user who logged in to that client, bypassing the broker token endpoint's authorization checks entirely.
-The same applied to the SAML *User Session Note* mapper, which copied the note into a SAML attribute.
-
-Both mappers now refuse to read the session notes that hold identity provider tokens: `FEDERATED_ACCESS_TOKEN`, `FEDERATED_REFRESH_TOKEN`, `FEDERATED_TOKEN_EXPIRATION`, and `FEDERATED_ID_TOKEN`, together with the per-provider forms such as `FEDERATED_ACCESS_TOKEN:my-idp`.
-Creating or updating a client with such a mapper is rejected with a `400 Bad Request`, and so is importing a realm that contains one.
-A mapper that already exists, because it was configured before upgrading, is retained but no longer produces a claim or an attribute, and {project_name} logs a warning naming the mapper and the client.
-
-Existing deployments continue to start because the mappers are read from the database rather than imported, but a client with such a mapper cannot be updated until the mapper is removed.
-If you provision realms from an exported JSON file, remove the mapper from the file before importing it again.
-
-After upgrading, if any of your applications read an identity provider token from a token claim or a SAML attribute, change them to call the broker token endpoint; its authorization requirements depend on the enabled Identity Brokering API version.
-For more details, see the link:{adminguide_link}#retrieving-external-idp-tokens[Retrieving external IDP tokens] section of the {adminguide_name}.
-
-=== Protocol mappers are validated when a client or a client scope is written as a whole
-
-Previously, a protocol mapper was validated only when it was written through the mapper endpoints of the Admin REST API.
-A mapper sent as part of a client or a client scope, such as during client registration, partial import, or realm import, was stored without being validated, so a mapper rejected by one path was accepted by another.
-
-Starting with this release, every protocol mapper of a client is validated whenever the client is created or updated as a whole, using the same rules as the mapper endpoints. Client scope creation and realm import also validate their protocol mappers.
-A mapper with an invalid configuration is now rejected with a `400 Bad Request`, where it was previously stored and silently ignored, or failed later at runtime.
-
-The validation covers all the mappers of the client, not only the one being changed.
-A client that carries a mapper stored before the upgrade whose configuration is no longer valid cannot be updated at all, even for an unrelated field, until that mapper is corrected or removed.
-Updating an existing client scope does not revalidate its stored mappers.
-
-Existing deployments continue to start, because mappers that are read from the database at startup are not validated.
-If you provision realms from an exported JSON file, import the file once after upgrading to find out whether it contains a mapper that is now rejected.
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

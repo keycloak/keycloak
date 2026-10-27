@@ -48,6 +48,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
 
+    @Test
+    public void testValidationErrorWithoutMessageKey() {
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getRoleMapper("<img src=x onerror=alert(1)>");
+        String scopeId = createCredentialScope("invalid-target-role", List.of());
+        try (Response response = testRealm.admin().clientScopes().get(scopeId).getProtocolMappers().createMapper(mapper)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_input", error.getError());
+            assertEquals("Invalid protocol mapper configuration", error.getErrorDescription());
+        }
+    }
+
     // ---- Functional tests ----
 
     @Test
@@ -153,23 +165,23 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
     @Test
     public void testUserAttributeMapperCannotMapToReservedClaim() {
         ProtocolMapperRepresentation mapper1 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute");
-        assertReservedClaimMapperIsRejected(mapper1, CLAIM_NAME_EXP);
+        assertReservedClaimMapperIsRejected(mapper1);
 
         // The user-attribute mapper interprets dotted claim names as nested paths, so "cnf.jwk" emits a top-level
         // "cnf" claim. Validation must guard the actual top-level path segment, not the literal claim name.
         ProtocolMapperRepresentation mapper2 = ProtocolMapperUtils.getUserAttributeMapper("cnf.jwk", "some-user-attribute");
-        assertReservedClaimMapperIsRejected(mapper2, "cnf.jwk");
+        assertReservedClaimMapperIsRejected(mapper2);
 
         // The SD-JWT builder emits a top-level "id" claim as "sub" (see SdJwtCredentialBuilder), so targeting "id"
         // is an indirect write to the reserved "sub" claim and must be guarded too.
         ProtocolMapperRepresentation mapper3 = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_SUBJECT_ID, "some-user-attribute");
-        assertReservedClaimMapperIsRejected(mapper3, CLAIM_NAME_SUBJECT_ID);
+        assertReservedClaimMapperIsRejected(mapper3);
     }
 
     @Test
     public void testSubjectIdMapperCannotMapToReservedClaim() {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getSubjectIdMapper(CLAIM_NAME_JTI, DidSubjectId.DID);
-        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_JTI);
+        assertReservedClaimMapperIsRejected(mapper);
     }
 
     @Test
@@ -177,7 +189,7 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getRoleMapper(client.getClientId());
         mapper.setConfig(new HashMap<>(mapper.getConfig()));
         mapper.getConfig().put(OID4VCMapper.CLAIM_NAME, CLAIM_NAME_EXP);
-        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_EXP);
+        assertReservedClaimMapperIsRejected(mapper);
     }
 
     @Test
@@ -209,7 +221,7 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         // For JWT VC, mapper claims live under credentialSubject, but mapping a user-controlled value to a reserved
         // claim name is still treated as a misconfiguration and must be rejected.
         ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute");
-        assertReservedClaimMapperIsRejected(mapper, CLAIM_NAME_EXP, VCFormat.JWT_VC);
+        assertReservedClaimMapperIsRejected(mapper, VCFormat.JWT_VC);
     }
 
     @Test
@@ -331,11 +343,11 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         }
     }
 
-    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String expectedClaimName) {
-        assertReservedClaimMapperIsRejected(mapper, expectedClaimName, VCFormat.SD_JWT_VC);
+    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper) {
+        assertReservedClaimMapperIsRejected(mapper, VCFormat.SD_JWT_VC);
     }
 
-    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String expectedClaimName, String format) {
+    private void assertReservedClaimMapperIsRejected(ProtocolMapperRepresentation mapper, String format) {
         String scopeId = createCredentialScope("reserved-claim-scope-" + UUID.randomUUID(), List.of(), format);
 
         // Create the scope without the mapper, then add the mapper directly through the protocol-mappers
@@ -347,10 +359,8 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
             OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
             assertNotNull(error, "The rejection response must carry an error representation");
             assertNotNull(error.getError(), "The rejection must carry an error code");
-            assertTrue(error.getErrorDescription() != null
-                            && error.getErrorDescription().contains(
-                                    String.format("Claim name %s is reserved and must not be used by this OID4VC mapper.", expectedClaimName)),
-                    "Rejection should report the reserved claim, but was: " + error.getErrorDescription());
+            assertEquals("invalid_input", error.getError());
+            assertEquals("Invalid protocol mapper configuration", error.getErrorDescription());
         }
     }
 
