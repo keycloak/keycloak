@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
@@ -54,6 +56,7 @@ import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -61,6 +64,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.awaitility.Awaitility;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
@@ -76,6 +80,9 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Override
     protected LDAPRule getLDAPRule() {
@@ -730,4 +737,17 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             ctx.getRealm().updateComponent(mapperModel);
         });
     }
+    // https://github.com/keycloak/keycloak/issues/9769
+    @Test
+    public void test10RemoveImportedUsersLogsAdminEvent() {
+        managedRealm.admin().userStorage().removeImportedUsers(ldapModelId);
+
+        assertAdminEvents.assertEvent(
+            managedRealm.admin().toRepresentation().getId(),
+            OperationType.ACTION,
+            "user-storage/" + ldapModelId + "/remove-imported-users",
+            ResourceType.REALM
+        );
+    }
+
 }
