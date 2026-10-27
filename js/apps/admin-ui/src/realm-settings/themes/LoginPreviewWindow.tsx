@@ -78,7 +78,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
         <LoginPage loginTitle="Sign in to your account">
           <LoginForm
             usernameLabel="Username or email"
-            loginButtonLabel="Sign In"
+            loginButtonLabel="Sign in"
           />
         </LoginPage>
       </div>

@@ -30,7 +30,7 @@ public class InfoPage extends AbstractLoginPage {
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
-    @FindBy(linkText = "« Back to Application")
+    @FindBy(linkText = "« Back to application")
     private WebElement backToApplicationLink;
 
     public InfoPage(ManagedWebDriver driver) {
