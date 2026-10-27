@@ -33,8 +33,10 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -1145,6 +1147,46 @@ public class AuthenticationProcessor {
         return clientSessionCtx;
     }
 
+    // A null id lets the store generate one.
+    private static UserSessionModel createUserSession(AuthenticationSessionModel authSession, KeycloakSession session, RealmModel realm, ClientConnection connection,
+                                                      String id, String username, boolean remember, String brokerSessionId, String brokerUserId) {
+        UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
+
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(id, realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
+                , remember, brokerSessionId, brokerUserId, persistenceState);
+
+        if (isLightweightUser(userSession.getUser())) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
+            lua.setOwningUserSessionId(userSession.getId());
+        }
+
+        return userSession;
+    }
+
+    /**
+     * Removes every authentication session of the root session except the one that is currently finishing. Those other
+     * browser tabs were started against the identity that is being replaced, and completing one of them would create a
+     * user session under the root session ID, reviving the ID of the session just retired. They have to start over.
+     * <p>
+     * A tab that created a new user through first-broker-login but has not yet been through {@code /after-first-broker-login}
+     * is kept: removing it would drop the pending identity link and leave the new user orphaned.
+     */
+    private static void retireOtherAuthenticationSessions(AuthenticationSessionModel authSession) {
+        RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
+        rootAuthSession.getAuthenticationSessions().entrySet().stream()
+                .filter(entry -> !entry.getKey().equals(authSession.getTabId()))
+                .filter(entry -> !hasPendingNewUserRegistration(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(rootAuthSession::removeAuthenticationSessionByTabId);
+    }
+
+    // The brokered context note is removed once the identity link is saved, so while it is present the registration is pending.
+    private static boolean hasPendingNewUserRegistration(AuthenticationSessionModel tab) {
+        return Boolean.parseBoolean(tab.getAuthNote(AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER))
+                && tab.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null;
+    }
+
     // May create new userSession too (if userSession argument is null)
     public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
         String username = authSession.getAuthenticatedUser().getUsername();
@@ -1159,15 +1201,7 @@ public class AuthenticationProcessor {
 
             userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
-                UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
-
-                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
-                        , remember, brokerSessionId, brokerUserId, persistenceState);
-
-                if (isLightweightUser(userSession.getUser())) {
-                    LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
-                    lua.setOwningUserSessionId(userSession.getId());
-                }
+                userSession = createUserSession(authSession, session, realm, connection, authSession.getParentSession().getId(), username, remember, brokerSessionId, brokerUserId);
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
@@ -1177,8 +1211,21 @@ public class AuthenticationProcessor {
                 logger.debugf("No SSO login, but found existing userSession with ID '%s' after finished authentication.", userSession.getId());
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
                     event.detail(Details.EXISTING_USER, userSession.getUser().getId());
-                    event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+
+                    // Asking the protocol rather than reading the FORCED_REAUTHENTICATION auth note: the note does
+                    // not survive a brokered login, because starting first-broker-login resets the auth session notes.
+                    LoginProtocol protocol = session.getProvider(LoginProtocol.class, authSession.getProtocol());
+                    if (protocol == null || !protocol.requireReauthentication(userSession, authSession)) {
+                        event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
+                        throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+                    }
+
+                    // Re-authentication was explicitly requested (eg. prompt=login or max_age) and completed as a
+                    // different user. Replace the previous session rather than rebinding it: a session ID must not
+                    // carry over to another user, and restartSession leaves this adapter serving the previous one.
+                    session.sessions().removeUserSession(realm, userSession);
+                    retireOtherAuthenticationSessions(authSession);
+                    userSession = createUserSession(authSession, session, realm, connection, null, username, remember, brokerSessionId, brokerUserId);
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);

@@ -849,12 +849,23 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (shouldMigrateId) {
                 migrateFederatedIdentityId(context, federatedUser);
             }
+            clearAssuranceLevelsOfReplacedUser(authenticationSession, federatedUser);
             authenticationSession.setAuthenticatedUser(federatedUser);
 
             return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
         }
     }
 
+
+    // On forced re-authentication the previous user's level-of-assurance map is copied into the auth session. Unlike
+    // first-broker-login, this branch does not reset the auth session, so drop the map when another user takes over;
+    // otherwise a post-broker flow would store it on the new user's session.
+    private void clearAssuranceLevelsOfReplacedUser(AuthenticationSessionModel authSession, UserModel newUser) {
+        UserSessionModel previous = session.sessions().getUserSession(realmModel, authSession.getParentSession().getId());
+        if (previous != null && previous.getUser() != null && !previous.getUser().equals(newUser)) {
+            authSession.removeAuthNote(Constants.LOA_MAP);
+        }
+    }
 
     public Response validateUser(AuthenticationSessionModel authSession, UserModel user, RealmModel realm) {
         if (!user.isEnabled()) {
