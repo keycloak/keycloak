@@ -952,15 +952,17 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, mappableRealmRole.getId(), AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
         createPermission(adminPermissionsClient, mappableClientRole.getId(), AdminPermissionsSchema.ROLES.getType(), Set.of(MAP_ROLE), policy);
 
-        GroupRepresentation groupRep = realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).toRepresentation();
+        for (GroupRepresentation groupRep : List.of(
+                realmAdminClient.realm(realm.getName()).groups().group(targetGroup.getId()).toRepresentation(),
+                realmAdminClient.realm(realm.getName()).getGroupByPath("/" + targetGroup.getName()))) {
+            assertThat(groupRep.getRealmRoles(), notNullValue());
+            assertThat(groupRep.getRealmRoles(), hasItem("GROUP_REP_MAPPABLE_REALM_ROLE"));
+            assertThat(groupRep.getRealmRoles(), not(hasItem("GROUP_REP_HIDDEN_REALM_ROLE")));
 
-        assertThat(groupRep.getRealmRoles(), notNullValue());
-        assertThat(groupRep.getRealmRoles(), hasItem("GROUP_REP_MAPPABLE_REALM_ROLE"));
-        assertThat(groupRep.getRealmRoles(), not(hasItem("GROUP_REP_HIDDEN_REALM_ROLE")));
-
-        assertThat(groupRep.getClientRoles(), notNullValue());
-        assertThat(groupRep.getClientRoles(), hasKey("group-rep-hidden-client"));
-        assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), hasItem("GROUP_REP_MAPPABLE_CLIENT_ROLE"));
-        assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), not(hasItem("GROUP_REP_HIDDEN_CLIENT_ROLE")));
+            assertThat(groupRep.getClientRoles(), notNullValue());
+            assertThat(groupRep.getClientRoles(), hasKey("group-rep-hidden-client"));
+            assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), hasItem("GROUP_REP_MAPPABLE_CLIENT_ROLE"));
+            assertThat(groupRep.getClientRoles().get("group-rep-hidden-client"), not(hasItem("GROUP_REP_HIDDEN_CLIENT_ROLE")));
+        }
     }
 }
