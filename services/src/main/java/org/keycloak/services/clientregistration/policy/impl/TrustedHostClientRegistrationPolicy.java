@@ -36,6 +36,7 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+import org.keycloak.urls.UrlType;
 import org.keycloak.validation.ClientUriField;
 
 import org.jboss.logging.Logger;
@@ -259,6 +260,16 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
             // Front-channel logout uses its URI (or the base URL fallback) as supplied to the browser.
             // RedirectUtils and ResolveRelative instead append even double-slash paths to the root.
             return "https:" + value;
+        }
+        if (field == ClientUriField.LOGO_URI) {
+            try {
+                URI logoUri = new URI(value);
+                // Logos are rendered as supplied to the browser, independently of the client root.
+                return logoUri.isAbsolute() ? value
+                        : session.getContext().getUri(UrlType.FRONTEND).getBaseUri().resolve(logoUri).toString();
+            } catch (URISyntaxException e) {
+                throw new ClientRegistrationPolicyException("URI is malformed");
+            }
         }
         if (!value.startsWith("/")) {
             return value;

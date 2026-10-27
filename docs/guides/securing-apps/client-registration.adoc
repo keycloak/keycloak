@@ -241,6 +241,7 @@ The policy checks supplied fields regardless of the client's protocol. Add exter
 Web origin markers `+`, `*` and `null`, post-logout markers `+` and `-`, and embedded `data:` logos remain accepted.
 Redirect URIs referenced by `+` are checked separately; explicit URLs supplied alongside the marker are also checked.
 Web origins without a scheme and scheme-relative browser URLs, including front-channel logout and its home URL fallback, are checked against their own host.
+Relative logo URLs are checked against the {project_name} frontend host instead of the client's root URL, and their configured values are preserved.
 Redirect paths retain the runtime resolution against the client's root URL, including paths starting with `//`.
 By default, the trusted-host list is empty, so anonymous registration is disabled.
 

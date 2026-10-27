@@ -326,6 +326,95 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     }
 
     @Test
+    public void testTrustedHostsPreservesRelativeLogos() throws Exception {
+        setTrustedHost("localhost");
+        for (String root : Arrays.asList(null, "https://localhost/client-root")) {
+            for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
+                reg.auth(null);
+                ClientRepresentation client = createRep(uniqueClientId("relative-logo"));
+                client.setRootUrl(root);
+                client.setRedirectUris(List.of("https://localhost/callback"));
+                client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo));
+                ClientRepresentation registered = reg.create(client);
+                Assertions.assertEquals(logo, registered.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+                reg.auth(Auth.token(registered));
+                registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, "../updated-logo.png");
+                registered = reg.update(registered);
+                reg.auth(Auth.token(registered));
+                Assertions.assertEquals("../updated-logo.png", registered.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+
+                for (String untrusted : List.of("//untrusted.host/logo.png", "///untrusted.host/logo.png", "\\\\untrusted.host\\logo.png")) {
+                    ClientRepresentation rejected = createRep(uniqueClientId("untrusted-logo"));
+                    rejected.setRootUrl(root);
+                    rejected.setRedirectUris(List.of("https://localhost/callback"));
+                    rejected.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, untrusted));
+                    reg.auth(null);
+                    assertFail(ClientRegOp.CREATE, rejected, 403, null);
+                    reg.auth(Auth.token(registered));
+                    registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, untrusted);
+                    assertFail(ClientRegOp.UPDATE, registered, 403, null);
+                }
+
+                registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, logo);
+                registered.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##https://untrusted.host/logout");
+                assertFail(ClientRegOp.UPDATE, registered, 403, "URI doesn't match");
+                client.setClientId(uniqueClientId("untrusted-logout-with-logo"));
+                client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo,
+                        OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##https://untrusted.host/logout"));
+                reg.auth(null);
+                assertFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+                Assertions.assertEquals("../updated-logo.png", managedRealm.admin().clients().get(registered.getId())
+                        .toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+            }
+        }
+    }
+
+    @Test
+    public void testTrustedHostsPreservesRelativeOidcLogos() throws Exception {
+        setTrustedHost("localhost");
+        OIDCClientRepresentation client = createRepOidc();
+        client.setLogoUri("images/logo.png");
+        OIDCClientRepresentation registered = reg.oidc().create(client);
+        ClientResource resource = managedRealm.admin().clients().get(managedRealm.admin().clients()
+                .findByClientId(registered.getClientId()).get(0).getId());
+        Assertions.assertEquals("images/logo.png", resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        reg.auth(Auth.token(registered));
+        registered.setLogoUri("../updated-logo.png");
+        registered = reg.oidc().update(registered);
+        reg.auth(Auth.token(registered));
+        Assertions.assertEquals("../updated-logo.png", resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        registered.setLogoUri("../updated-logo.png");
+        registered.setPostLogoutRedirectUris(List.of("+", "https://untrusted.host/logout"));
+        assertOidcFail(ClientRegOp.UPDATE, registered, 403, "URI doesn't match");
+        client.setPostLogoutRedirectUris(List.of("+", "https://untrusted.host/logout"));
+        reg.auth(null);
+        assertOidcFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+    }
+
+    @Test
+    public void testTrustedHostsChecksRelativeLogoFrontendHost() throws Exception {
+        setTrustedHost("localhost");
+        managedRealm.updateWithCleanup(realm -> realm.attribute("frontendUrl", "https://untrusted.host"));
+        ClientRepresentation client = createRep(uniqueClientId("frontend-logo"));
+        client.setRootUrl("https://localhost/client-root");
+        client.setRedirectUris(List.of("https://localhost/callback"));
+        for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
+            client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo));
+            assertFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
+        }
+
+        client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, "//localhost/logo.png"));
+        ClientRepresentation registered = reg.create(client);
+        reg.auth(Auth.token(registered));
+        for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
+            registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, logo);
+            assertFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
+        }
+        Assertions.assertEquals("//localhost/logo.png", managedRealm.admin().clients().get(registered.getId())
+                .toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+    }
+
+    @Test
     public void testTrustedHostsPreservesSpecialValuesAndAllowsAdditionalHosts() throws Exception {
         setTrustedHost("localhost");
         ClientRepresentation client = createRep("special-uri-values");

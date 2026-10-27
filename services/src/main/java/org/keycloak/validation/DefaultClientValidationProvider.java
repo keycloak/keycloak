@@ -139,7 +139,11 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                     continue;
                 }
                 if (field == ClientUriField.WEB_ORIGINS
-                        && ("+".equals(value) || "*".equals(value) || "null".equals(value))) {
+                        && ("+".equals(value) || "*".equals(value) || "null".equals(value)
+                        || Constants.AUTH_BASE_URL_PROP.equals(value) || Constants.AUTH_ADMIN_URL_PROP.equals(value)
+                        || "file://".equalsIgnoreCase(value))) {
+                    // Preserve legacy origin literals that are not standalone URIs. Keep the
+                    // configured value unchanged; client policies apply their own constraints.
                     continue;
                 }
                 String url = switch (field) {

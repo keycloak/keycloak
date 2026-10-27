@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -84,6 +85,23 @@ public class ClientUriFieldTest {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
         ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context);
         ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null);
+    }
+
+    @Test
+    public void legacyWebOriginsRemainSubjectToClientPolicies() {
+        for (String origin : List.of(Constants.AUTH_ADMIN_URL_PROP, Constants.AUTH_BASE_URL_PROP, "file://", "FILE://")) {
+            ClientRepresentation client = new ClientRepresentation();
+            client.setWebOrigins(List.of(origin));
+            DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+            assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
+            assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
+            SecureClientUrisExecutor secureUris = new SecureClientUrisExecutor(null);
+            assertThrows(ClientPolicyException.class, () -> secureUris.executeOnEvent(new AdminClientRegisterContext(client, null)));
+            assertThrows(ClientPolicyException.class, () -> secureUris.executeOnEvent(new AdminClientUpdateContext(client, null, null)));
+            SecureClientUrisPatternExecutor pattern = ClientUriPolicyTest.patternPolicy(List.of("webOrigins"));
+            assertThrows(ClientPolicyException.class, () -> pattern.executeOnEvent(new AdminClientRegisterContext(client, null)));
+            assertThrows(ClientPolicyException.class, () -> pattern.executeOnEvent(new AdminClientUpdateContext(client, null, null)));
+        }
     }
 
     @Test

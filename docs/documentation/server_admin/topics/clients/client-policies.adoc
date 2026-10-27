@@ -253,6 +253,7 @@ Trusted Hosts checks supplied URI fields regardless of the client's protocol. We
 It preserves web origin markers `+`, `*` and `null`, post-logout markers `+` and `-`, and embedded `data:` logos.
 The `+` marker refers to the client's redirect URIs, which Trusted Hosts checks separately. Explicit URLs supplied alongside a marker are also checked.
 For front-channel logout and its home URL fallback, a scheme-relative URL such as `//example.org/logout` is checked against `example.org`, even if the client has a different root URL.
+Relative logo URLs are checked against the host of the {project_name} frontend URL, where the browser loads them, independently of the client's root URL. The configured logo value is preserved.
 Redirect paths retain the runtime resolution against the root URL, including paths starting with `//`.
 
 The Secure Client URIs executor resolves `+` in web origins and post-logout redirects using the client's redirect URIs; `-` disables post-logout redirects.

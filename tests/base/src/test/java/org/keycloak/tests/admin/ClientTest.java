@@ -415,9 +415,38 @@ public class ClientTest {
     public void testMalformedWebOriginClientValidation() {
         for (boolean create : List.of(false, true)) {
             ClientRepresentation client = create ? ClientBuilder.create().clientId("invalid-web-origin").build() : createClient();
-            for (String origin : List.of("https://localhost/white space", "127.0.0.1:invalid", "[::1", "123.example.com:8080/path", "123@example.com:8080")) {
+            for (String origin : List.of("https://localhost/white space", "127.0.0.1:invalid", "[::1", "123.example.com:8080/path", "123@example.com:8080",
+                    "${authAdminUrl}.example.org", "${unknownOrigin}", "file://white space")) {
                 client.setWebOrigins(List.of(origin));
                 createOrUpdateClientExpectingValidationErrors(client, create, "A web origin is not a valid URI");
+            }
+        }
+    }
+
+    @Test
+    public void testLegacyWebOriginsOnCreateAndUpdate() {
+        for (String origin : List.of(Constants.AUTH_ADMIN_URL_PROP, Constants.AUTH_BASE_URL_PROP, "file://", "FILE://")) {
+            ClientRepresentation client = ClientBuilder.create().clientId("legacy-web-origin").build();
+            // Match the Account UI linked-accounts fixture, including its relative redirects.
+            client.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+            client.setRedirectUris(List.of("/realms/*"));
+            client.setWebOrigins(List.of(origin));
+            String id;
+            try (Response response = managedRealm.admin().clients().create(client)) {
+                id = ApiUtil.getCreatedId(response);
+            }
+            ClientResource resource = managedRealm.admin().clients().get(id);
+            try {
+                assertEquals(List.of(origin), resource.toRepresentation().getWebOrigins());
+                client.setWebOrigins(List.of(origin, "https://localhost"));
+                resource.update(client);
+                assertEquals(Set.copyOf(client.getWebOrigins()), Set.copyOf(resource.toRepresentation().getWebOrigins()));
+                ClientRepresentation unrelatedUpdate = new ClientRepresentation();
+                unrelatedUpdate.setName("Updated without changing web origins");
+                resource.update(unrelatedUpdate);
+                assertEquals(Set.copyOf(client.getWebOrigins()), Set.copyOf(resource.toRepresentation().getWebOrigins()));
+            } finally {
+                resource.remove();
             }
         }
     }
