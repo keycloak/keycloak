@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +42,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,8 +50,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 /**
- * The abstract class implements OAuth Client ID Metadata Document specification (Internet Draft v00).
- * @see <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00">OAuth Client ID Metadata Document (CIMD) [Internet Draft]]</a>
+ * The abstract class implements OAuth Client ID Metadata Document specification (Internet Draft v02).
+ * @see <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02">OAuth Client ID Metadata Document (CIMD) [Internet Draft]]</a>
  *
  * <p>Moreover, the abstract class implements Authorization part of Model Context Protocol (MCP) specification (version 2025-11-25).
  * @see <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization">Model Context Protocol (MCP) [2025-11-25]]</a>
@@ -448,6 +450,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     public static final String ERR_METADATA_CLIENTID_UNMATCH = "Invalid Client Metadata: client_id property does not exactly match client_id parameter.";
     public static final String ERR_METADATA_NOTALLOWED_CLIENTAUTH = "Invalid Client Metadata: token_endpoint_auth_method property in client metadata is not-allowed authentication method..";
     public static final String ERR_METADATA_CLIENTSECRET = "Invalid Client Metadata: client_secret or client_secret_expires_at property in client metadata is must not included.";
+    public static final String ERR_METADATA_PRIVATE_KEY = "Invalid Client Metadata: jwks property in client metadata must not include private key material.";
+    public static final String ERR_METADATA_MALFORMED_JWKS = "Invalid Client Metadata: jwks property in client metadata includes a null key.";
     public static final String ERR_METADATA_REDIRECTURI = "Invalid Client Metadata: redirect_uri parameter does not exactly match the one of redirect_uris property in client metadata.";
     public static final String ERR_METADATA_MALFORMED_URL = "Invalid Client Metadata: malformed URL.";
 
@@ -698,6 +702,19 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             throw invalidClientIdMetadata(ERR_METADATA_CLIENTSECRET);
         }
 
+        if (clientOIDC.getJwks() != null && clientOIDC.getJwks().getKeys() != null) {
+            if (Arrays.stream(clientOIDC.getJwks().getKeys()).anyMatch(Objects::isNull)) {
+                getLogger().warn("client metadata includes a null key in jwks.");
+                throw invalidClientIdMetadata(ERR_METADATA_MALFORMED_JWKS);
+            }
+            Set<String> privateKeyClaims = new HashSet<>(CertificateInfoHelper.getAllJwkPrivateKeyClaims(session.getKeycloakSessionFactory()));
+            privateKeyClaims.add("priv");
+            if (Arrays.stream(clientOIDC.getJwks().getKeys()).anyMatch(jwk -> !Collections.disjoint(jwk.getOtherClaims().keySet(), privateKeyClaims))) {
+                getLogger().warn("client metadata includes private key material in jwks.");
+                throw invalidClientIdMetadata(ERR_METADATA_PRIVATE_KEY);
+            }
+        }
+
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
         if (clientOIDC.getRedirectUris() == null || RedirectUtils.verifyRedirectUri(session, clientOIDC.getClientUri(), redirectUri, Set.copyOf(clientOIDC.getRedirectUris()), true) == null) {
@@ -841,10 +858,34 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // the ranges below have no JDK predicate
         byte[] bytes = address.getAddress();
         if (address instanceof Inet6Address) {
-            return (bytes[0] & 0xFE) == 0xFC;                               // fc00::/7, RFC 4193
+            return (bytes[0] & 0xFE) == 0xFC                               // fc00::/7, RFC 4193
+                    || startsWith(bytes, 0x00, 0x64, 0xFF, 0x9B)            // 64:ff9b::/32, RFC 6052, RFC 8215
+                    || startsWith(bytes, 0x01, 0x00, 0, 0, 0, 0, 0, 0)      // 100::/64, RFC 6666
+                    || startsWith(bytes, 0x01, 0x00, 0, 0, 0, 0, 0, 0x01)   // 100:0:0:1::/64, RFC 9780
+                    || (startsWith(bytes, 0x20, 0x01) && (bytes[2] & 0xFE) == 0) // 2001::/23, RFC 2928
+                    || startsWith(bytes, 0x20, 0x01, 0x0D, 0xB8)            // 2001:db8::/32, RFC 3849
+                    || startsWith(bytes, 0x20, 0x02)                        // 2002::/16, RFC 3056
+                    || (startsWith(bytes, 0x3F, 0xFF) && (bytes[2] & 0xF0) == 0) // 3fff::/20, RFC 9637
+                    || startsWith(bytes, 0x5F, 0x00);                       // 5f00::/16, RFC 9602
         }
         return (bytes[0] & 0xFF) == 0                                       // 0.0.0.0/8, RFC 1122
-                || ((bytes[0] & 0xFF) == 100 && (bytes[1] & 0xC0) == 0x40); // 100.64.0.0/10, RFC 6598
+                || ((bytes[0] & 0xFF) == 100 && (bytes[1] & 0xC0) == 0x40)  // 100.64.0.0/10, RFC 6598
+                || startsWith(bytes, 192, 0, 0)                             // 192.0.0.0/24, RFC 6890
+                || startsWith(bytes, 192, 0, 2)                             // 192.0.2.0/24, RFC 5737
+                || startsWith(bytes, 192, 88, 99)                           // 192.88.99.0/24, RFC 7526
+                || ((bytes[0] & 0xFF) == 198 && (bytes[1] & 0xFE) == 18)    // 198.18.0.0/15, RFC 2544
+                || startsWith(bytes, 198, 51, 100)                          // 198.51.100.0/24, RFC 5737
+                || startsWith(bytes, 203, 0, 113)                           // 203.0.113.0/24, RFC 5737
+                || (bytes[0] & 0xF0) == 0xF0;                               // 240.0.0.0/4, RFC 1112
+    }
+
+    private static boolean startsWith(byte[] bytes, int... prefix) {
+        for (int i = 0; i < prefix.length; i++) {
+            if ((bytes[i] & 0xFF) != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public interface ErrorHandler {

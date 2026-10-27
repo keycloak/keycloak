@@ -9,7 +9,9 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -929,7 +931,7 @@ public class ClientIdMetadataDocumentTest {
         // the domains below are trusted, but resolve to an address that must not be fetched from
         ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
         executorConfig.setTrustedDomains(List.of("localhost", "127.0.0.1", "[::1]", "10.0.0.1", "169.254.0.1",
-                "192.168.0.1", "224.0.0.1"));
+                "192.168.0.1", "224.0.0.1", "192.0.2.1", "198.18.0.1", "240.0.0.1", "[64:ff9b::a00:1]", "[2002:a00:1::]", "[3fff::1]"));
         updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
                 ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
 
@@ -947,6 +949,14 @@ public class ClientIdMetadataDocumentTest {
 
         // multicast address
         assertLoginAndError("https://224.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // special-use addresses
+        assertLoginAndError("https://192.0.2.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://198.18.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://240.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://[64:ff9b::a00:1]:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://[2002:a00:1::]:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://[3fff::1]:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
 
         // the check can be switched off for development
         executorConfig.setAllowPrivateUseAddresses(true);
@@ -1042,9 +1052,25 @@ public class ClientIdMetadataDocumentTest {
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_CLIENTSECRET);
 
         // Client Metadata Verification:
+        // Private key material MUST NOT be included in the Client ID Metadata Document.
+        cimd.getRepresentation().setClientSecret(null);
+        JWK privateJwk = new JWK();
+        privateJwk.setKeyType(KeyType.RSA);
+        privateJwk.setOtherClaims("d", "private");
+        JSONWebKeySet privateJwks = new JSONWebKeySet();
+        privateJwks.setKeys(new JWK[]{privateJwk});
+        cimd.getRepresentation().setJwks(privateJwks);
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PRIVATE_KEY);
+        privateJwk.getOtherClaims().remove("d");
+        privateJwk.setOtherClaims("priv", "private");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PRIVATE_KEY);
+        privateJwks.setKeys(new JWK[]{null});
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_MALFORMED_JWKS);
+
+        // Client Metadata Verification:
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
-        cimd.getRepresentation().setClientSecret(null);
+        cimd.getRepresentation().setJwks(null);
         cimd.getRepresentation().setRedirectUris(List.of("https://mcp.example.com/mcp/123abc"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_REDIRECTURI);
 
