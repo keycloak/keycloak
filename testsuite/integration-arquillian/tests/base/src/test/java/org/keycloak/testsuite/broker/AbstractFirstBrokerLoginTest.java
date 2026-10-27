@@ -526,7 +526,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertEquals("Your account has been updated.", infoPage.getInfo());
         assertNumFederatedIdentities(existingUser, 1);
     }
 
@@ -585,7 +585,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertEquals("Your account has been updated.", infoPage.getInfo());
         assertNumFederatedIdentities(existingUser, 1);
     }
 
