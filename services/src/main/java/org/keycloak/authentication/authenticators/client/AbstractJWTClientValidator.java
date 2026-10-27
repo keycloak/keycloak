@@ -145,17 +145,36 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
     }
 
     public boolean failure(String error, String errorDescription, int statusCode) {
+        logger.warnf("JWT client authentication failed for client '%s': %s",
+                sanitizeForLog(getClientIdForLog()), sanitizeForLog(errorDescription));
         Response challengeResponse = ClientAuthUtil.errorResponse(statusCode, error, errorDescription);
         return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 
     protected boolean failure(AuthenticationFlowError error) {
+        logger.warnf("JWT client authentication failed for client '%s': %s",
+                sanitizeForLog(getClientIdForLog()), error);
         return failure(error, null);
     }
 
     protected boolean failure(AuthenticationFlowError error, Response response) {
         context.failure(error, response);
         return false;
+    }
+
+    private String getClientIdForLog() {
+        ClientModel client = getClient();
+        // Only log the resolved client id (trusted, from the realm), never the raw JWT sub claim
+        return client != null ? client.getClientId() : "unknown";
+    }
+
+    private static String sanitizeForLog(String value) {
+        if (value == null) {
+            return "unknown";
+        }
+        // Neutralize CR/LF and other control characters to prevent log injection
+        String sanitized = value.replaceAll("\\p{Cntrl}", "_");
+        return sanitized.length() > 200 ? sanitized.substring(0, 200) + "..." : sanitized;
     }
 
     @Override
