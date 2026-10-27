@@ -56,7 +56,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.login.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: theme.renderedName || theme.name,
                 description: theme.description,
               })),
             )}
@@ -71,7 +71,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.account.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: theme.renderedName || theme.name,
                 description: theme.description,
               })),
             )}
@@ -86,7 +86,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.admin.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: theme.renderedName || theme.name,
                 description: theme.description,
               })),
             )}
@@ -101,7 +101,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.email.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: theme.renderedName || theme.name,
                 description: theme.description,
               })),
             )}
