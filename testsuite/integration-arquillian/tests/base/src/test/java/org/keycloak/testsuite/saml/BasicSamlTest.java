@@ -15,9 +15,11 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
@@ -33,7 +35,9 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -43,10 +47,12 @@ import org.keycloak.testsuite.util.SamlClient.RedirectStrategyWithSwitchableFoll
 import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.SamlUtils;
+import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.utils.StringUtil;
 
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -233,6 +239,74 @@ public class BasicSamlTest extends AbstractSamlTest {
     @Test
     public void testReauthnWithForceAuthnTrue() throws Exception {
         testReauthnWithForceAuthn(true);
+    }
+
+    @Test
+    public void testForceAuthnAfterRestartPost() {
+        testForceAuthnAfterRestart(Binding.POST);
+    }
+
+    @Test
+    public void testForceAuthnAfterRestartRedirect() {
+        testForceAuthnAfterRestart(Binding.REDIRECT);
+    }
+
+    private void testForceAuthnAfterRestart(Binding requestBinding) {
+        Step assertSamlSuccess = (client, currentURI, currentResponse, context) -> {
+            assertThat(Binding.POST.extractResponse(currentResponse).getSamlObject(),
+                    Matchers.isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            return null;
+        };
+        Step restartLogin = (client, currentURI, currentResponse, context) -> {
+            assertThat(currentResponse, statusCodeIsHC(Status.OK));
+            String loginPage = EntityUtils.toString(currentResponse.getEntity(), StandardCharsets.UTF_8);
+            assertThat("ForceAuthn must require credentials after every restart", loginPage, containsString("id=\"password\""));
+            URI loginAction = URI.create(SamlClient.extractFormFromPostResponse(loginPage).attr("action"));
+            return new HttpGet(UriBuilder.fromUri(loginAction)
+                    .replacePath(loginAction.getPath().substring(0, loginAction.getPath().lastIndexOf('/') + 1) + LoginActionsService.RESTART_PATH)
+                    .replaceQueryParam("session_code")
+                    .replaceQueryParam("execution")
+                    .replaceQueryParam(Constants.SKIP_LOGOUT, "true")
+                    .build());
+        };
+
+        // Keep the same client's cookies throughout the initial login and reauthentication.
+        SamlClient samlClient = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, requestBinding)
+                    .setProtocolBinding(Binding.POST.getBindingUri())
+                    .build()
+                .login().user(bburkeUser).build()
+                .addStep(assertSamlSuccess)
+                .execute();
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), bburkeUser.getUsername());
+        String userSessionId = user.getUserSessions().get(0).getId();
+
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST2, SAML_ASSERTION_CONSUMER_URL_SALES_POST2, requestBinding)
+                    .setProtocolBinding(Binding.POST.getBindingUri())
+                    .transformObject(request -> {
+                        request.setForceAuthn(true);
+                        return request;
+                    })
+                    .build()
+                .addStep(restartLogin)
+                .addStep(restartLogin)
+                .addStep((client, currentURI, currentResponse, context) -> {
+                    assertThat(currentResponse, statusCodeIsHC(Status.OK));
+                    String loginPage = EntityUtils.toString(currentResponse.getEntity(), StandardCharsets.UTF_8);
+                    assertThat("ForceAuthn must still require credentials after repeated restarts", loginPage, containsString("id=\"password\""));
+                    assertThat("Restarting with skip_logout=true must preserve the original SSO session",
+                            user.getUserSessions().stream().anyMatch(userSession -> userSessionId.equals(userSession.getId())), is(true));
+                    return LoginBuilder.handleLoginPage(bburkeUser, loginPage);
+                })
+                .addStep(assertSamlSuccess)
+                // A subsequent request without ForceAuthn must still be able to use SSO.
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, requestBinding)
+                    .setProtocolBinding(Binding.POST.getBindingUri())
+                    .build()
+                .addStep(assertSamlSuccess)
+                .getSteps());
     }
 
     private void testReauthnWithForceAuthn(Boolean reloginRequired) throws Exception {
