@@ -1,9 +1,16 @@
-import { UserProfileAttributeGroupMetadata, UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  UserProfileAttributeGroupMetadata,
+  UserProfileAttributeMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { cleanup, render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { afterEach, describe, it, expect } from "vitest";
 import { HiddenComponent } from "./HiddenComponent";
-import { FIELDS, UserProfileFields, determineInputType } from "./UserProfileFields";
+import {
+  FIELDS,
+  UserProfileFields,
+  determineInputType,
+} from "./UserProfileFields";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -55,25 +62,33 @@ const FieldsHarness = ({
 describe("determineInputType", () => {
   it("returns 'hidden' for a regular attribute annotated as hidden", () => {
     expect(
-      determineInputType(attr({ name: "customField", annotations: { inputType: "hidden" } })),
+      determineInputType(
+        attr({ name: "customField", annotations: { inputType: "hidden" } }),
+      ),
     ).toBe("hidden");
   });
 
   it("returns 'hidden' for a root attribute (username) annotated as hidden, overriding the text fallback", () => {
     expect(
-      determineInputType(attr({ name: "username", annotations: { inputType: "hidden" } })),
+      determineInputType(
+        attr({ name: "username", annotations: { inputType: "hidden" } }),
+      ),
     ).toBe("hidden");
   });
 
   it("returns 'hidden' for a root attribute (email) annotated as hidden", () => {
     expect(
-      determineInputType(attr({ name: "email", annotations: { inputType: "hidden" } })),
+      determineInputType(
+        attr({ name: "email", annotations: { inputType: "hidden" } }),
+      ),
     ).toBe("hidden");
   });
 
   it("returns 'text' for a root attribute (username) with a non-hidden annotation", () => {
     expect(
-      determineInputType(attr({ name: "username", annotations: { inputType: "textarea" } })),
+      determineInputType(
+        attr({ name: "username", annotations: { inputType: "textarea" } }),
+      ),
     ).toBe("text");
   });
 
@@ -84,14 +99,20 @@ describe("determineInputType", () => {
   it("returns 'hidden' for a multivalued attribute annotated as hidden", () => {
     expect(
       determineInputType(
-        attr({ name: "tags", multivalued: true, annotations: { inputType: "hidden" } }),
+        attr({
+          name: "tags",
+          multivalued: true,
+          annotations: { inputType: "hidden" },
+        }),
       ),
     ).toBe("hidden");
   });
 
   it("returns 'hidden' for a locale attribute annotated as hidden", () => {
     expect(
-      determineInputType(attr({ name: "locale", annotations: { inputType: "hidden" } })),
+      determineInputType(
+        attr({ name: "locale", annotations: { inputType: "hidden" } }),
+      ),
     ).toBe("hidden");
   });
 
@@ -101,7 +122,9 @@ describe("determineInputType", () => {
 
   it("returns the annotated type for a non-root attribute with a valid annotation", () => {
     expect(
-      determineInputType(attr({ name: "bio", annotations: { inputType: "textarea" } })),
+      determineInputType(
+        attr({ name: "bio", annotations: { inputType: "textarea" } }),
+      ),
     ).toBe("textarea");
   });
 
@@ -235,7 +258,9 @@ describe("UserProfileFields integration", () => {
   it("renders a hidden input for a regular attribute via FormField → determineInputType", () => {
     const { container } = render(
       <FieldsHarness
-        attributes={[attr({ name: "customField", annotations: { inputType: "hidden" } })]}
+        attributes={[
+          attr({ name: "customField", annotations: { inputType: "hidden" } }),
+        ]}
       />,
     );
     expect(container.querySelector("input[type='hidden']")).not.toBeNull();
@@ -245,7 +270,9 @@ describe("UserProfileFields integration", () => {
   it("renders a hidden input for a root attribute (username) via FormField → determineInputType", () => {
     const { container } = render(
       <FieldsHarness
-        attributes={[attr({ name: "username", annotations: { inputType: "hidden" } })]}
+        attributes={[
+          attr({ name: "username", annotations: { inputType: "hidden" } }),
+        ]}
       />,
     );
     expect(container.querySelector("input[type='hidden']")).not.toBeNull();
@@ -256,7 +283,11 @@ describe("UserProfileFields integration", () => {
     const { container } = render(
       <FieldsHarness
         attributes={[
-          attr({ name: "tags", multivalued: true, annotations: { inputType: "hidden" } }),
+          attr({
+            name: "tags",
+            multivalued: true,
+            annotations: { inputType: "hidden" },
+          }),
         ]}
       />,
     );
@@ -268,7 +299,9 @@ describe("UserProfileFields integration", () => {
   it("renders a hidden input for a locale attribute via FormField → determineInputType", () => {
     const { container } = render(
       <FieldsHarness
-        attributes={[attr({ name: "locale", annotations: { inputType: "hidden" } })]}
+        attributes={[
+          attr({ name: "locale", annotations: { inputType: "hidden" } }),
+        ]}
       />,
     );
     expect(container.querySelector("input[type='hidden']")).not.toBeNull();
@@ -278,7 +311,11 @@ describe("UserProfileFields integration", () => {
     render(
       <FieldsHarness
         attributes={[
-          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+          attr({
+            name: "tenantId",
+            group: "internal",
+            annotations: { inputType: "hidden" },
+          }),
         ]}
         groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
       />,
@@ -290,7 +327,11 @@ describe("UserProfileFields integration", () => {
     render(
       <FieldsHarness
         attributes={[
-          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+          attr({
+            name: "tenantId",
+            group: "internal",
+            annotations: { inputType: "hidden" },
+          }),
         ]}
         groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
         isAdminContext
@@ -303,7 +344,11 @@ describe("UserProfileFields integration", () => {
     const { container } = render(
       <FieldsHarness
         attributes={[
-          attr({ name: "tenantId", group: "internal", annotations: { inputType: "hidden" } }),
+          attr({
+            name: "tenantId",
+            group: "internal",
+            annotations: { inputType: "hidden" },
+          }),
         ]}
         groups={[{ name: "internal", displayHeader: "Internal Fields" }]}
       />,
@@ -317,7 +362,9 @@ describe("UserProfileFields integration", () => {
   it("renders a text input (not hidden) for a hidden attribute in admin context", () => {
     render(
       <FieldsHarness
-        attributes={[attr({ name: "customField", annotations: { inputType: "hidden" } })]}
+        attributes={[
+          attr({ name: "customField", annotations: { inputType: "hidden" } }),
+        ]}
         isAdminContext
       />,
     );

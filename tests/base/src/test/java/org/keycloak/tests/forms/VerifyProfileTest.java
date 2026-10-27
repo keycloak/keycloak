@@ -1111,15 +1111,22 @@ public class VerifyProfileTest {
     public void testHiddenAttributeValueSurvivesSubmission() {
         final String HIDDEN_VALUE = "preset-value";
 
-        prepareUser("login-test5", user -> {
-            user.setFirstName("ExistingFirst");
-            user.setLastName("ExistingLast");
-            user.singleAttribute("hiddenAttribute", HIDDEN_VALUE);
-        });
-
-        UPConfig config = config(required(ATTRIBUTE_DEPARTMENT, ALL));
-        config.addOrReplaceAttribute(input("hiddenAttribute", Map.of("inputType", "hidden")));
+        UPConfig config = config(
+                attribute(FIRST_NAME, ALL),
+                attribute(LAST_NAME, ALL),
+                requiredForRole(ATTRIBUTE_DEPARTMENT, ROLE_USER),
+                input("hiddenAttribute", Map.of("inputType", "hidden"))
+        );
         setUserProfileConfiguration(config);
+
+        UserResource userResource = getUserResource("login-test5");
+        registerUserCleanup(userResource);
+        UserRepresentation user = userResource.toRepresentation();
+        user.setFirstName("ExistingFirst");
+        user.setLastName("ExistingLast");
+        user.singleAttribute(ATTRIBUTE_DEPARTMENT, null);
+        user.singleAttribute("hiddenAttribute", HIDDEN_VALUE);
+        userResource.update(user);
 
         oauth.openLoginForm();
         login("login-test5");
@@ -1134,7 +1141,7 @@ public class VerifyProfileTest {
         // Submit the form; the hidden value must survive the round-trip
         verifyProfilePage.prepareUpdate().department("Sales").submit();
         managedRealm.cleanup().add(RealmResource::logoutAll);
-        driver.waiting().waitForOAuthCallback();
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         List<String> saved = getUserResource("login-test5").toRepresentation()
                 .getAttributes().get("hiddenAttribute");

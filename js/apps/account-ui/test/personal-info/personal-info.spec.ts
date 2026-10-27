@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { assertLastAlert, login } from "../support/actions.ts";
 import { createTestBed } from "../support/testbed.ts";
+import { DEFAULT_USERNAME } from "../support/common.ts";
 import { retryOperation, waitForRealmReady } from "../support/test-utils.ts";
 import userProfile from "./user-profile.json" with { type: "json" };
 import { adminClient } from "../support/admin-client.ts";
@@ -88,7 +89,9 @@ test.describe("Personal info (user profile enabled)", () => {
     await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
-  test("hidden field has no visible controls and its value survives save", async ({ page }) => {
+  test("hidden field has no visible controls and its value survives save", async ({
+    page,
+  }) => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();
 
@@ -100,20 +103,34 @@ test.describe("Personal info (user profile enabled)", () => {
     );
 
     // Pre-populate the hidden attribute so we can verify it survives submission
-    const users = await adminClient.users.find({ realm: testBed.realm, username: testBed.username });
+    const users = await adminClient.users.find({
+      realm: testBed.realm,
+      username: DEFAULT_USERNAME,
+    });
     await adminClient.users.update(
       { id: users[0].id!, realm: testBed.realm },
-      { ...users[0], attributes: { ...users[0].attributes, tenantId: ["acme-corp"] } },
+      {
+        ...users[0],
+        attributes: {
+          ...users[0].attributes,
+          tenantId: ["acme-corp"],
+          email2: ["test@email.com"],
+        },
+      },
     );
 
     await login(page, testBed.realm);
 
     // No visible control (textbox, label) for the hidden field
     await expect(page.getByTestId("tenantId")).not.toBeAttached();
-    await expect(page.locator("label[for='attributes\\.tenantId']")).not.toBeVisible();
+    await expect(
+      page.locator("label[for='attributes\\.tenantId']"),
+    ).toBeHidden();
 
     // The hidden input must be in the DOM so the value is submitted
-    const hiddenInput = page.locator("input[type='hidden'][name='attributes.tenantId']");
+    const hiddenInput = page.locator(
+      "input[type='hidden'][name='attributes.tenantId']",
+    );
     await expect(hiddenInput).toBeAttached();
     await expect(hiddenInput).toHaveValue("acme-corp");
 
@@ -122,7 +139,10 @@ test.describe("Personal info (user profile enabled)", () => {
     await page.getByTestId("save").click();
     await assertLastAlert(page, "Your account has been updated.");
 
-    const updated = await adminClient.users.findOne({ id: users[0].id!, realm: testBed.realm });
+    const updated = await adminClient.users.findOne({
+      id: users[0].id!,
+      realm: testBed.realm,
+    });
     expect(updated?.attributes?.["tenantId"]?.[0]).toBe("acme-corp");
   });
 

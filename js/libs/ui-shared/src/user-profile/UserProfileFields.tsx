@@ -170,11 +170,12 @@ export const UserProfileFields = ({
         label={t("jumpToSection")}
         sections={groupsWithAttributes
           .filter((group) => group.attributes.length > 0)
-          .filter((group) =>
-            isAdminContext ||
-            group.attributes.some(
-              (attribute) => determineInputType(attribute) !== "hidden",
-            ),
+          .filter(
+            (group) =>
+              isAdminContext ||
+              group.attributes.some(
+                (attribute) => determineInputType(attribute) !== "hidden",
+              ),
           )
           .map(({ group, attributes }) => ({
             title: label(t, group.displayHeader, group.name) || t("general"),
