@@ -20,12 +20,15 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationJwt;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -51,6 +54,7 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUT
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -193,5 +197,99 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
+    }
+
+    @Test
+    public void testClientAttestationPoPReplayRejected() {
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var kw = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, kw);
+        KeyWrapper ecKey = wallet.getECKeyPair(ctx);
+        String tokenEndpoint = oauth.getEndpoints().getToken();
+
+        String authCode1 = authorize(ctx);
+        AccessTokenResponse first = wallet.accessTokenRequest(ctx, authCode1)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+        assertNull(first.getErrorDescription(), "First token request should succeed: " + first.getErrorDescription());
+        assertNotNull(first.getAccessToken());
+
+        String authCode2 = authorize(ctx);
+        AccessTokenResponse replay = wallet.accessTokenRequest(ctx, authCode2)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+        assertEquals(OAuthErrorException.INVALID_CLIENT_ATTESTATION, replay.getError());
+        assertTrue(replay.getErrorDescription().contains("already been used"),
+                "Expected PoP replay rejection, was: " + replay.getErrorDescription());
+    }
+
+    @Test
+    public void testClientAttestationPoPFreshJtiAccepted() {
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var kw = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
+        KeyWrapper ecKey = wallet.getECKeyPair(ctx);
+        String tokenEndpoint = oauth.getEndpoints().getToken();
+
+        String authCode1 = authorize(ctx);
+        AccessTokenResponse first = wallet.accessTokenRequest(ctx, authCode1)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, kw))
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+        assertNull(first.getErrorDescription(), "First token request should succeed: " + first.getErrorDescription());
+
+        String authCode2 = authorize(ctx);
+        AccessTokenResponse second = wallet.accessTokenRequest(ctx, authCode2)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, kw))
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+        assertNull(second.getErrorDescription(), "Token request with a fresh PoP jti should succeed: " + second.getErrorDescription());
+        assertNotNull(second.getAccessToken());
+    }
+
+    @Test
+    public void testClientAttestationPoPStaleIatRejected() {
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var kw = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
+        long staleIat = Time.currentTime() - AttestationBasedClientAuthenticator.DEFAULT_POP_LIFETIME_SECONDS
+                - AttestationBasedClientAuthenticator.DEFAULT_POP_CLOCK_SKEW_SECONDS - 30L;
+        String stalePoP = wallet.buildClientAttestationPoPJWT(ctx, kw, staleIat);
+        KeyWrapper ecKey = wallet.getECKeyPair(ctx);
+        String tokenEndpoint = oauth.getEndpoints().getToken();
+
+        String authCode = authorize(ctx);
+        AccessTokenResponse response = wallet.accessTokenRequest(ctx, authCode)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, stalePoP)
+                .dpopProof(wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null))
+                .send();
+        assertEquals(OAuthErrorException.INVALID_CLIENT_ATTESTATION, response.getError());
+        assertTrue(response.getErrorDescription().contains("not fresh enough"),
+                "Expected stale PoP rejection, was: " + response.getErrorDescription());
+    }
+
+    private String authorize(OID4VCTestContext ctx) {
+        // Ensure a fresh login form; an existing SSO session would skip the username field.
+        wallet.logout(ctx.getHolder());
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        assertNull(authResponse.getErrorDescription(), "Authorization error: " + authResponse.getErrorDescription());
+        assertNotNull(authResponse.getCode(), "No auth code");
+        return authResponse.getCode();
     }
 }

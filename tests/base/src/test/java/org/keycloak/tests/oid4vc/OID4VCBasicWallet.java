@@ -227,6 +227,10 @@ public class OID4VCBasicWallet {
     }
 
     public String buildClientAttestationPoPJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        return buildClientAttestationPoPJWT(ctx, walletKey, Time.currentTime());
+    }
+
+    public String buildClientAttestationPoPJWT(OID4VCTestContext ctx, KeyWrapper walletKey, long iat) {
         var issuer = getIssuerMetadata(ctx).getCredentialIssuer();
 
         // Build Client Attestation PoP JWT
@@ -235,15 +239,16 @@ public class OID4VCBasicWallet {
         ClientAttestationPoPJwt body = new ClientAttestationPoPJwt()
                 .audience(issuer)
                 .issuer(clientId)
-                .issuedNowWithTTL(300) // 5min
                 .randomId();
+        body.iat(iat);
+        body.nbf(iat);
+        body.exp(iat + 300);
 
-        String attestationPoPJwt = new JWSBuilder()
+        return new JWSBuilder()
                 .type(OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE)
                 .kid(walletKey.getKid())
                 .jsonContent(body)
                 .sign(new AsymmetricSignatureSignerContext(walletKey));
-        return attestationPoPJwt;
     }
 
     public Proofs generateAttestationProof(OID4VCTestContext ctx, KeyWrapper attestationKey) {
