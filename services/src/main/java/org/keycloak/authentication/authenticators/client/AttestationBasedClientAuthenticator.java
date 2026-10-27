@@ -30,8 +30,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import org.apache.commons.codec.binary.Hex;
-
 import org.keycloak.Config;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -71,6 +69,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.codec.binary.Hex;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
@@ -532,10 +531,13 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     private void rejectReplay(KeycloakSession session, ClientAttestationPoPJwt attestationPoPJwt) throws TokenVerificationException {
         SingleUseObjectProvider singleUseCache = session.singleUseObjects();
-        String hashKey = attestationPoPJwt.getId() + "\n" + attestationPoPJwt.getIssuer();
+        // Namespace + realm isolate ABCA PoP jtis from other single-use entries and other realms
+        String realmId = session.getContext().getRealm().getId();
+        String hashKey = "abca-pop\n" + realmId + "\n" + attestationPoPJwt.getId() + "\n" + attestationPoPJwt.getIssuer();
         String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", hashKey.getBytes(StandardCharsets.UTF_8)));
+        // +1 covers the inclusive freshness boundary where JPA treats expire <= now as expired
         int lifespan = Math.max(1, (int) (attestationPoPJwt.getIat() + DEFAULT_POP_LIFETIME_SECONDS
-                + DEFAULT_POP_CLOCK_SKEW_SECONDS - Time.currentTime()));
+                + DEFAULT_POP_CLOCK_SKEW_SECONDS - Time.currentTime()) + 1);
         if (!singleUseCache.putIfAbsent(hashString, lifespan)) {
             throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP has already been used");
         }
