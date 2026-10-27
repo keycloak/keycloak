@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -993,13 +994,24 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         GroupRepresentation flatGroup = assertSingleGroup(flat, targetGroup.getId(), briefRepresentation);
         assertThat(flatGroup.getSubGroups(), empty());
 
+        String targetPath = "/" + parent.getName() + "/" + targetGroup.getName();
+        if (canViewParent) {
+            assertGroup(adminRealm.getGroupByPath(targetPath), targetGroup.getId(), false);
+        } else {
+            // the path cannot be resolved through a parent the caller cannot view
+            Assertions.assertThrows(NotFoundException.class, () -> adminRealm.getGroupByPath(targetPath));
+        }
+
         List<GroupRepresentation> memberGroups = adminRealm.users().get(member.getId()).groups(null, null, briefRepresentation);
         assertSingleGroup(memberGroups, targetGroup.getId(), briefRepresentation);
     }
 
     private static GroupRepresentation assertSingleGroup(List<GroupRepresentation> groups, String groupId, boolean briefRepresentation) {
         assertThat(groups, hasSize(1));
-        GroupRepresentation group = groups.get(0);
+        return assertGroup(groups.get(0), groupId, briefRepresentation);
+    }
+
+    private static GroupRepresentation assertGroup(GroupRepresentation group, String groupId, boolean briefRepresentation) {
         assertThat(group.getId(), is(groupId));
         if (briefRepresentation) {
             assertThat(group.getRealmRoles(), nullValue());
