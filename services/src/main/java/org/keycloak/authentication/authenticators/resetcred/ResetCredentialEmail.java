@@ -45,6 +45,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -122,7 +123,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
           .toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
         try {
-            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).setAuthenticationSession(authenticationSession).sendPasswordReset(link, expirationInMinutes);
+            context.getSession().getProvider(EmailTemplateProvider.class)
+                    .setAttribute(Constants.CLIENT_ID, authenticationSession.getClient().getClientId())
+                    .setRealm(context.getRealm())
+                    .setUser(user)
+                    .setAuthenticationSession(authenticationSession)
+                    .sendPasswordReset(link, expirationInMinutes);
 
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
