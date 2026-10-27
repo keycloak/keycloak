@@ -145,15 +145,13 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
     }
 
     public boolean failure(String error, String errorDescription, int statusCode) {
-        logger.warnf("JWT client authentication failed for client '%s': %s",
-                sanitizeForLog(getClientIdForLog()), sanitizeForLog(errorDescription));
+        logFailure(errorDescription);
         Response challengeResponse = ClientAuthUtil.errorResponse(statusCode, error, errorDescription);
         return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 
     protected boolean failure(AuthenticationFlowError error) {
-        logger.warnf("JWT client authentication failed for client '%s': %s",
-                sanitizeForLog(getClientIdForLog()), error);
+        logFailure(error.toString());
         return failure(error, null);
     }
 
@@ -162,17 +160,25 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return false;
     }
 
-    private String getClientIdForLog() {
-        ClientModel client = getClient();
-        // Only log the resolved client id (trusted, from the realm), never the raw JWT sub claim
-        return client != null ? client.getClientId() : "unknown";
+    /**
+     * Logs a client authentication failure, but only for genuine JWT attempts. In the default client
+     * authentication flow the JWT authenticators also run as alternatives for clients using other
+     * methods (e.g. client-x509), where their failures are ignored; logging those would be misleading.
+     * Control characters are neutralized to prevent log injection.
+     */
+    private void logFailure(String reason) {
+        if (clientAssertionState.getClientAssertionType() == null
+                && clientAssertionState.getClientAssertion() == null) {
+            return;
+        }
+        String clientId = getClient() != null ? getClient().getClientId() : "unknown";
+        logger.warnf("JWT client authentication failed for client '%s': %s", sanitize(clientId), sanitize(reason));
     }
 
-    private static String sanitizeForLog(String value) {
+    private static String sanitize(String value) {
         if (value == null) {
             return "unknown";
         }
-        // Neutralize CR/LF and other control characters to prevent log injection
         String sanitized = value.replaceAll("\\p{Cntrl}", "_");
         return sanitized.length() > 200 ? sanitized.substring(0, 200) + "..." : sanitized;
     }
