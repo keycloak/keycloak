@@ -89,6 +89,14 @@ With fine-grained admin permissions v2, the listing and the count are restricted
 With the deprecated fine-grained admin permissions v1, a caller can be allowed to view some resources but not others, so `totalResults` counts the resources matching the query, before the per-resource view check is applied, and should be treated as an upper bound; a page can also be shorter than the requested `count`, or even empty, while later pages still contain resources the caller is allowed to see, so neither a short page nor an empty page means that no further resources exist, and clients should keep incrementing `startIndex` by `count` until `startIndex` exceeds `totalResults`.
 Without any fine-grained admin permissions, the per-resource view check evaluates the same way for every resource of a given type, so access is all-or-nothing: a client holding only a query role and no realm-wide view role gets a `totalResults` of `0`, consistently across every page, rather than the unfiltered database count.
 
+=== Group lookup by path filters role mappings by visibility
+// https://github.com/keycloak/keycloak/issues/54356
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/group-by-path/\{path}` now omits the role mappings that the caller is not allowed to view or to map to users, as the `groups/\{id}` endpoint already does.
+Previously, any caller allowed to view the group received all of its role mappings in `realmRoles` and `clientRoles`.
+For example, an administrator with only the `view-users` role no longer receives them, while an administrator with the `manage-users` role still does.
+If an integration reads group role mappings through this endpoint, make sure its account is allowed to view the roles, for example through the `view-realm` and `view-clients` roles or the corresponding fine-grained permissions.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
