@@ -14,6 +14,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
@@ -82,6 +83,23 @@ export const KerberosSettingsRequired = ({
             required: t("validateRealm"),
           }}
         />
+        <FormGroup
+          label={t("allowedKerberosRealms")}
+          labelIcon={
+            <HelpItem
+              helpText={t("allowedKerberosRealmsHelp")}
+              fieldLabelId="allowedKerberosRealms"
+            />
+          }
+          fieldId="kc-allowed-kerberos-realms"
+        >
+          <MultiLineInput
+            id="kc-allowed-kerberos-realms"
+            name="config.allowedKerberosRealms"
+            aria-label={t("allowedKerberosRealms")}
+            addButtonLabel="addAllowedKerberosRealm"
+          />
+        </FormGroup>
         <TextControl
           name="config.serverPrincipal.0"
           label={t("serverPrincipal")}

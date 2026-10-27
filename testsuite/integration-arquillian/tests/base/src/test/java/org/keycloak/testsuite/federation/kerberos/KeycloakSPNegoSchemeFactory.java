@@ -21,6 +21,7 @@ import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
 
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 
 import org.apache.http.auth.AuthScheme;
@@ -87,7 +88,13 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
         @Override
         protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer, Credentials credentials) throws GSSException {
-            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
+            // Emulates a Kerberos client of any realm, so the allowed realms check of the server must not apply
+            KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig) {
+                @Override
+                public String getKerberosPrincipal(String username) {
+                    return username.contains("@") ? new KerberosPrincipal(username).toString() : username + "@" + kerberosConfig.getKerberosRealm();
+                }
+            };
 
             try {
                 Subject clientSubject = authenticator.authenticateSubject(username, password);
