@@ -29,8 +29,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 
-import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
-
 public class RecoveryAuthnCodesFormAuthenticator implements Authenticator, CredentialValidator<RecoveryAuthnCodesCredentialProvider> {
 
     public static final String GENERATED_RECOVERY_AUTHN_CODES_NOTE = "RecoveryAuthnCodes.generatedRecoveryAuthnCodes";
@@ -122,9 +120,21 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator, Crede
         }
         authnFlowContext.getEvent().user(authenticatedUser);
         authnFlowContext.getEvent().error(bruteForceError);
-        challengeResponse = createLoginForm(authnFlowContext, false, Messages.INVALID_USER, FIELD_USERNAME);
+        challengeResponse = createLoginForm(authnFlowContext, false, disabledByBruteForceError(bruteForceError),
+                disabledByBruteForceFieldError());
         authnFlowContext.forceChallenge(challengeResponse);
         return true;
+    }
+
+    protected String disabledByBruteForceError(String error) {
+        if (Errors.USER_TEMPORARILY_DISABLED.equals(error)) {
+            return Messages.ACCOUNT_TEMPORARILY_DISABLED_RECOVERY;
+        }
+        return Messages.ACCOUNT_PERMANENTLY_DISABLED_RECOVERY;
+    }
+
+    protected String disabledByBruteForceFieldError() {
+        return RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW;
     }
 
     protected String getDisabledByBruteForceEventError(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {
