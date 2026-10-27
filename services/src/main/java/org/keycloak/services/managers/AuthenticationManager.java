@@ -1107,6 +1107,10 @@ public class AuthenticationManager {
         }
 
         if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
+            // No login session is issued here, but still clear brute-force failures (e.g. a credential
+            // reset lifts a temporary lockout); gated by the authentication-category check in logSuccess.
+            logSuccess(session, authSession);
+
             LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.ACCOUNT_UPDATED_TITLE)
                     .setSuccess(Messages.ACCOUNT_UPDATED);
