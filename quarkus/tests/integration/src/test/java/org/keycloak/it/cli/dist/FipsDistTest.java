@@ -118,6 +118,20 @@ public class FipsDistTest {
             cliResult.assertStarted();
         });
     }
+    
+    @Test
+    void testUnencryptedPkcs12TrustStoreInNonStrictMode(KeycloakRunner runner) {
+        runOnFipsEnabledDistribution(runner, () -> {
+            String truststoreName = "keycloak-truststore.p12";
+            RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+            rawDist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", truststoreName));
+
+            Path truststorePath = rawDist.getDistPath().resolve("conf").resolve(truststoreName).toAbsolutePath();
+
+            CLIResult cliResult = runner.run("--verbose", "start", "--fips-mode=non-strict", "--truststore-paths=" + truststorePath);
+            cliResult.assertStarted();
+        });
+    }
 
     @Test
     void testUnsupportedHttpsPkcs12KeyStoreInStrictMode(KeycloakRunner runner) {

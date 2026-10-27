@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -36,6 +37,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -277,6 +279,17 @@ public class TruststoreBuilder {
         try {
             return KeystoreUtil.loadKeyStore(path, password, type, provider);
         } catch (Exception e) {
+            // passwordless pkcs12 is not supported by all providers (e.g. BCFIPS non-strict mode);
+            // try SUN if available - it may not be present on OS-level FIPS JVMs
+            // this will also allow the cacerts to be loaded without a password
+            if (StringUtil.isNullOrEmpty(password) && StringUtil.isNullOrEmpty(provider)
+                    && PKCS12.equalsIgnoreCase(type) && Security.getProvider("SUN") != null) {
+                try {
+                    return KeystoreUtil.loadKeyStore(path, password, type, "SUN");
+                } catch (Exception e1) {
+                    // didn't work either - just let the original exception happen
+                }
+            }
             throw new RuntimeException(
                     "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
         }
