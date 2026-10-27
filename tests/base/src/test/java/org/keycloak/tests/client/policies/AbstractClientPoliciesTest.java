@@ -43,6 +43,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 
 /**
@@ -50,6 +51,15 @@ import org.junit.jupiter.api.Assertions;
  * @author rmartinc
  */
 public class AbstractClientPoliciesTest {
+
+    protected static final Logger logger = Logger.getLogger(AbstractClientPoliciesTest.class);
+
+    protected static final String REALM_NAME = "test";
+    protected static final String TEST_CLIENT = "test-app";
+    protected static final String TEST_CLIENT_SECRET = "password";
+
+    protected static final String TEST_USER_NAME = "test-user@localhost";
+    protected static final String TEST_USER_PASSWORD = "password";
 
     protected String generateSuffixedName(String name) {
         return name + "-" + UUID.randomUUID().toString().subSequence(0, 7);
