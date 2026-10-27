@@ -38,6 +38,10 @@ public class Endpoints {
         return asString(OIDCLoginProtocolService.tokenUrl(getBase()));
     }
 
+    public String getClientAttestationChallenge() {
+        return asString(OIDCLoginProtocolService.clientAttestationChallengeUrl(getBase()));
+    }
+
     public String getIntrospection() {
         return asString(OIDCLoginProtocolService.tokenIntrospectionUrl(getBase()));
     }
