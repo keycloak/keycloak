@@ -124,7 +124,7 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
@@ -440,7 +440,7 @@ jobs:
       - name: Build Keycloak Docker image
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
       - name: Arrange kustomize test installation for own namespace
         run: |
