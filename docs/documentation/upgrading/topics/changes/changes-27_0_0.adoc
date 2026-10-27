@@ -232,6 +232,14 @@ The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}
 After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
 Callers allowed only to map roles to client scopes can still see those roles, and roles in the effective scope appear under `granted` rather than `not-granted`.
 
+=== Group lookup by path filters role mappings by visibility
+// https://github.com/keycloak/keycloak/issues/54356
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/group-by-path/\{path}` now omits the role mappings that the caller is not allowed to view or to map to users, as the `groups/\{id}` endpoint and the group listings already do.
+Previously, any caller allowed to view the group received all of its role mappings in `realmRoles` and `clientRoles`.
+For example, an administrator with only the `view-users` role no longer receives them, while an administrator with the `manage-users` role still does.
+If an integration reads group role mappings through this endpoint, make sure its account is allowed to view the roles, for example through the `view-realm` and `view-clients` roles or the corresponding fine-grained permissions.
+
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790
 
