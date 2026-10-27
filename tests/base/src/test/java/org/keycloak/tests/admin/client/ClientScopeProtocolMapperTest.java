@@ -162,6 +162,29 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    public void testUpdateSamlMapperWithoutName() {
+        ProtocolMapperRepresentation rep = makeSamlMapper("saml-scope-name-preserved");
+
+        String createdId = ApiUtil.getCreatedId(samlMappersRsc.createMapper(rep));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE,
+                AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId),
+                rep, ResourceType.PROTOCOL_MAPPER);
+
+        rep.setId(createdId);
+        rep.setName(null);
+        rep.getConfig().put("role", "account.manage-account");
+
+        samlMappersRsc.update(createdId, rep);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId),
+                rep, ResourceType.PROTOCOL_MAPPER);
+
+        ProtocolMapperRepresentation updated = samlMappersRsc.getMapperById(createdId);
+        Assertions.assertEquals("saml-scope-name-preserved", updated.getName());
+        Assertions.assertEquals("account.manage-account", updated.getConfig().get("role"));
+    }
+
+    @Test
     @DatabaseTest
     public void testUpdateOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper2");

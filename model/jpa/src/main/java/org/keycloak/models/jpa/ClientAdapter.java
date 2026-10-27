@@ -458,20 +458,24 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
-        if (entity == null) {
-            throw new ModelException("mapping with id " + mapping.getId() + " does not exist");
-        }
-        ProtocolMapperModel existing =
-        getProtocolMapperByName(entity.getProtocol(), mapping.getName());
+    ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
+    if (entity == null) {
+        throw new ModelException("mapping with id " + mapping.getId() + " does not exist");
+    }
 
-    if (existing != null && !existing.getId().equals(mapping.getId())) {
-        throw new ModelDuplicateException(
-            "Protocol mapper name must be unique per protocol");
-}
+    if (mapping.getName() != null) {
+        ProtocolMapperModel existing =
+                getProtocolMapperByName(entity.getProtocol(), mapping.getName());
+
+        if (existing != null && !existing.getId().equals(mapping.getId())) {
+            throw new ModelDuplicateException(
+                    "Protocol mapper name must be unique per protocol");
+        }
 
         entity.setName(mapping.getName());
-        entity.setProtocolMapper(mapping.getProtocolMapper());
+    }
+
+    entity.setProtocolMapper(mapping.getProtocolMapper());
         if (entity.getConfig() == null) {
             entity.setConfig(mapping.getConfig());
         } else {
