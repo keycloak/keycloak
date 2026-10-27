@@ -138,7 +138,7 @@ public class OrganizationMemberResource {
                     "After accepting the invitation the user is redirected to the selected client's home URL; for the account client the " +
                     "organization redirect URL is used instead when configured.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict"),
@@ -160,7 +160,7 @@ public class OrganizationMemberResource {
                     "After accepting the invitation the user is redirected to the selected client's home URL; for the account client the " +
                     "organization redirect URL is used instead when configured.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
