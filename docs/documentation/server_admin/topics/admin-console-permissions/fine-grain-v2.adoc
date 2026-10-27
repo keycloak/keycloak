@@ -150,7 +150,10 @@ set of management operations:
 
 | *view*                    | Defines if a realm administrator can view clients. This scope should be set whenever you want
                               to make clients available from queries.
+                              When granted on a specific client instance, the administrator can also view the client scopes currently assigned to that client.
 | *manage*                  | Defines if a realm administrator can manage clients.
+                              When granted on a specific client instance, the administrator can assign any existing realm client scope to that client, remove assigned scopes, and change their type (default ↔ optional).
+                              This does not grant permission to edit shared client scope definitions. Grant `view` as well to manage assignments through the Admin Console.
 | *map-roles*               | Defines if a realm administrator can assign any role defined by a client to a user.
 | *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client as a composite to
                               another role.

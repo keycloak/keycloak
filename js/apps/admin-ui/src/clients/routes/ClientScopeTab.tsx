@@ -18,7 +18,7 @@ export const ClientScopesRoute: AppRouteObject = {
   element: <ClientDetails />,
   breadcrumb: (t) => t("clientSettings"),
   handle: {
-    access: "view-clients",
+    access: "query-clients",
   },
 };
 
