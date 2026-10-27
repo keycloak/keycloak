@@ -98,7 +98,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "If OFF, then the executor rejects a URL that the server sends a request to itself, namely the Client ID URL and the " +
                         "jwks_uri, sector_identifier_uri, request_uris, backchannel_logout_uri and backchannel_client_notification_endpoint " +
                         "properties of Client Metadata, whose host resolves to a " +
-                        "loopback, private, link-local, unique local or multicast address. Such URLs are rejected even if their host " +
+                        "loopback, private, link-local, unique local, multicast or other special-use address. Such URLs are rejected even if their host " +
                         "matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts only " +
                         "reachable from the server. It can be ON only for development environment. It must be OFF in production environment.",
                 ProviderConfigProperty.BOOLEAN_TYPE,
