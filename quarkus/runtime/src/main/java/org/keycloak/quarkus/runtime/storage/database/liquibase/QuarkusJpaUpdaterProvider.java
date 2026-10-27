@@ -290,7 +290,11 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     protected Status validateChangeSet(KeycloakLiquibase liquibase, String changelog) throws LiquibaseException {
         final Status result;
-        recordWhetherMasterChangelogTablePreExisted(liquibase.getDatabase());
+        if (snapshotChangelogTable(liquibase.getDatabase()) == null) {
+            // Parsing the changelog creates the changelog table, and validation runs without the database lock:
+            // nodes starting concurrently on an empty database would collide. Without the table nothing has run yet.
+            return Status.EMPTY;
+        }
         List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
 
         if (!changeSets.isEmpty()) {
@@ -321,12 +325,13 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class);
     }
 
-    private void recordWhetherMasterChangelogTablePreExisted(Database database) throws LiquibaseException {
+    private Table snapshotChangelogTable(Database database) throws LiquibaseException {
+        Table table = SnapshotGeneratorFactory.getInstance()
+                .getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
         if (masterChangelogTablePreExisted == null && isMasterChangelogTable(database)) {
-            Table table = SnapshotGeneratorFactory.getInstance()
-                    .getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
             masterChangelogTablePreExisted = table != null;
         }
+        return table;
     }
 
     private static boolean isMasterChangelogTable(Database database) {
