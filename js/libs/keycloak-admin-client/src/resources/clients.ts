@@ -214,6 +214,15 @@ export class Clients extends Resource<{ realm?: string }> {
   /**
    * Client Scopes
    */
+  public listAvailableClientScopes = this.makeRequest<
+    { id: string },
+    ClientScopeRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/available-client-scopes",
+    urlParamKeys: ["id"],
+  });
+
   public listDefaultClientScopes = this.makeRequest<
     { id: string },
     ClientScopeRepresentation[]
