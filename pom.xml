@@ -78,6 +78,7 @@
         <bouncycastle.bcfips.version>2.1.3</bouncycastle.bcfips.version>
         <bouncycastle.bctls-fips.version>2.1.25</bouncycastle.bctls-fips.version>
         <bouncycastle.bcutilfips.version>2.1.8</bouncycastle.bcutilfips.version>
+        <brisbane.version>d50c2f1</brisbane.version>
 
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.4.240</h2.version>
@@ -293,6 +294,13 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <issueManagement>
         <system>JIRA</system>
         <url>https://github.com/keycloak/keycloak/issues</url>
@@ -446,6 +454,11 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcutil-fips</artifactId>
                 <version>${bouncycastle.bcutilfips.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.slaskawi</groupId>
+                <artifactId>brisbane</artifactId>
+                <version>${brisbane.version}</version>
             </dependency>
 
             <dependency>
@@ -1214,6 +1227,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-crypto-elytron</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-crypto-brisbane</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
