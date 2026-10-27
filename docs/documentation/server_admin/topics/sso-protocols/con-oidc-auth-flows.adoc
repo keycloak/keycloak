@@ -101,6 +101,17 @@ This is used by clients running on internet-connected devices that have limited 
 . The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to {project_name} verification URI (/realms/realm_name/device) outside {project_name} - for example in a proxy.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
+To protect the verification endpoint against brute-force attacks on user codes, {project_name} limits the number of failed verification attempts per source IP address. The maximum number of failed attempts is set by *OAuth 2.0 Device Max Failed Verification Attempts* in the *Tokens* tab of *Realm settings* (defaulting to 20), which corresponds to the `oauth2DeviceMaxFailedVerificationAttempts` field of the realm representation. If a source IP exceeds this threshold, subsequent verification attempts from that IP address are rejected until the rate-limit window (matching the realm device code lifespan) expires. Setting the value to `0` disables the limit.
+
+.OAuth 2.0 Device Max Failed Verification Attempts in the Tokens tab
+image:images/device-max-failed-verification-attempts.png[OAuth 2.0 Device Max Failed Verification Attempts setting in the Tokens tab of Realm settings]
+
+Only an unrecognized user code counts against the limit. Submitting a code that {project_name} recognizes but rejects, because it expired, was already used, or was denied, is not counted, so ordinary mistakes do not consume a budget that every user behind the same source address shares.
+
+The counters are held per node rather than shared across the cluster, so in a clustered deployment the effective number of attempts is the configured maximum multiplied by the number of nodes. The limit is also only as trustworthy as the source address: deploy {project_name} behind a reverse proxy that overwrites `X-Forwarded-For`, otherwise a caller can vary the header to evade the limit or to block another address.
+
+The number of realm and source address pairs tracked at once is capped by the `userCodeFailureCacheSize` option of the `device` realm resource provider, defaulting to 100000. Raise it only if a single node is expected to see more distinct source addresses than that within one device code lifespan.
+
 [[_client_initiated_backchannel_authentication_grant]]
 ===== Client initiated backchannel authentication grant
 

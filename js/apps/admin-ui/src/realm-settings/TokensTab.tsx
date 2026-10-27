@@ -226,6 +226,43 @@ export const RealmSettingsTokensTab = ({
                 />
               </FormGroup>
               <FormGroup
+                label={t("oAuthDeviceMaxFailedVerificationAttempts")}
+                fieldId="oAuthDeviceMaxFailedVerificationAttempts"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("oAuthDeviceMaxFailedVerificationAttemptsHelp")}
+                    fieldLabelId="oAuthDeviceMaxFailedVerificationAttempts"
+                  />
+                }
+              >
+                <Controller
+                  name="oauth2DeviceMaxFailedVerificationAttempts"
+                  defaultValue={0}
+                  control={control}
+                  render={({ field }) => (
+                    <NumberInput
+                      id="oAuthDeviceMaxFailedVerificationAttempts"
+                      data-testid="oAuthDeviceMaxFailedVerificationAttempts"
+                      value={field.value}
+                      min={0}
+                      onPlus={() => field.onChange(Number(field.value) + 1)}
+                      onMinus={() =>
+                        field.onChange(
+                          Number(field.value) > 0 ? Number(field.value) - 1 : 0,
+                        )
+                      }
+                      onChange={(event) => {
+                        const newValue = Number(event.currentTarget.value);
+                        field.onChange(!isNaN(newValue) ? newValue : 0);
+                      }}
+                      placeholder={t(
+                        "oAuthDeviceMaxFailedVerificationAttempts",
+                      )}
+                    />
+                  )}
+                />
+              </FormGroup>
+              <FormGroup
                 label={t("shortVerificationUri")}
                 fieldId="shortVerificationUri"
                 labelIcon={
