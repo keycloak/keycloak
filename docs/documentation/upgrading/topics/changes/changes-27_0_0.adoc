@@ -205,6 +205,15 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== Kerberos password authentication accepts only allowed realms
+// https://github.com/keycloak/keycloak/issues/54271
+
+Username and password authentication through the Kerberos and LDAP user storage providers now accepts only the configured Kerberos realm and the realms listed in the new Allowed Kerberos realms option of the provider.
+A login with any other realm fails as for an unknown user.
+If users from a realm with a cross-realm trust log in with a username and password, add that realm to Allowed Kerberos realms after the upgrade.
+For the LDAP provider the realm comes from the Kerberos principal attribute of the user, so list every realm found there, for example the child domains of an Active Directory forest.
+SPNEGO authentication is not affected.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

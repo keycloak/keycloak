@@ -25,6 +25,8 @@ const firstKerberosName = `${kerberosName}-1`;
 const firstKerberosRealm = `${kerberosRealm}-1`;
 const firstKerberosPrincipal = `${kerberosPrincipal}-1`;
 const firstKerberosKeytab = `${kerberosKeytab}-1`;
+const firstAllowedRealm = "KC2.COM";
+const secondAllowedRealm = "KC3.COM";
 
 const secondKerberosName = `${kerberosName}-2`;
 const secondKerberosRealm = `${kerberosRealm}-2`;
@@ -67,10 +69,17 @@ test.describe.serial("User Fed Kerberos tests", () => {
         kerberosRealm: firstKerberosRealm,
         serverPrincipal: firstKerberosPrincipal,
         keyTab: firstKerberosKeytab,
+        allowedKerberosRealms: firstAllowedRealm,
       },
     });
     await clickSave(page, provider);
     await assertNotificationMessage(page, createdSuccessMessage);
+
+    await goToUserFederation(page);
+    await clickUserFederationCard(page, "new-kerberos");
+    await expect(page.getByTestId("config.allowedKerberosRealms0")).toHaveValue(
+      firstAllowedRealm,
+    );
   });
 
   test.describe.serial("Edit Kerberos provider", () => {
@@ -130,6 +139,28 @@ test.describe.serial("User Fed Kerberos tests", () => {
         page.getByTestId("allow-password-authentication"),
       ).toBeChecked();
       await expect(page.getByTestId("update-first-login")).toBeChecked();
+    });
+
+    test("Should save several allowed Kerberos realms", async ({ page }) => {
+      await clickUserFederationCard(page, firstKerberosName);
+      await page
+        .getByTestId("config.allowedKerberosRealms0")
+        .fill(firstAllowedRealm);
+      await page.getByTestId("config.allowedKerberosRealms-addValue").click();
+      await page
+        .getByTestId("config.allowedKerberosRealms1")
+        .fill(secondAllowedRealm);
+      await clickSave(page, provider);
+      await assertNotificationMessage(page, savedSuccessMessage);
+
+      await goToUserFederation(page);
+      await clickUserFederationCard(page, firstKerberosName);
+      await expect(
+        page.getByTestId("config.allowedKerberosRealms0"),
+      ).toHaveValue(firstAllowedRealm);
+      await expect(
+        page.getByTestId("config.allowedKerberosRealms1"),
+      ).toHaveValue(secondAllowedRealm);
     });
 
     test("Should set cache policy to evict_daily", async ({ page }) => {
