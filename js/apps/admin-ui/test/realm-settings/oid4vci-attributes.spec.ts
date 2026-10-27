@@ -361,6 +361,16 @@ test("should save Deflate Compression setting", async ({ page }) => {
   );
   await requestEncryptionSwitch.click({ force: true });
 
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  let realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+
   const deflateSwitch = page.getByTestId(
     "attributes.oid4vci.request.zip.algorithms",
   );
@@ -369,19 +379,109 @@ test("should save Deflate Compression setting", async ({ page }) => {
   await page.getByTestId("tokens-tab-save").click();
   await assertNotificationMessage(page, "Realm successfully updated");
 
-  let realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "true",
-  );
+  realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
 
   await deflateSwitch.click({ force: true });
   await page.getByTestId("tokens-tab-save").click();
   await assertNotificationMessage(page, "Realm successfully updated");
 
   realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "false",
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+});
+
+test("should disable saved Deflate Compression value", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "DEF",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  const deflateSwitch = page.getByTestId(
+    "attributes.oid4vci.request.zip.algorithms",
   );
+  await expect(deflateSwitch).toBeChecked();
+
+  await deflateSwitch.click({ force: true });
+  await expect(deflateSwitch).not.toBeChecked();
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+});
+
+test("should normalize legacy enabled Deflate Compression value on save", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "true",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  await expect(
+    page.getByTestId("attributes.oid4vci.request.zip.algorithms"),
+  ).toBeChecked();
+
+  await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
+});
+
+test("should remove legacy disabled Deflate Compression value on save", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "false",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  await expect(
+    page.getByTestId("attributes.oid4vci.request.zip.algorithms"),
+  ).not.toBeChecked();
+
+  await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
 });
 
 test("should save issuer info setting", async ({ page }) => {
