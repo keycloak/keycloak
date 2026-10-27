@@ -33,6 +33,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -197,8 +198,10 @@ public class ProtocolMapperUtils {
         return session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapper.getProtocolMapper()) != null;
     }
 
-    public static boolean isBrokerCredentialNote(String noteName) {
+    /** Internal credentials and serialized user state must not be exposed by generic session note mappers. */
+    public static boolean isRestrictedUserSessionNote(String noteName) {
         if (noteName == null) return false;
+        if (Constants.SESSION_NOTE_LIGHTWEIGHT_USER.equals(noteName)) return true;
         String upper = noteName.toUpperCase(Locale.ROOT);
         return BROKER_CREDENTIAL_NOTES.stream()
                 .anyMatch(n -> upper.equals(n) || upper.startsWith(n + ":"));

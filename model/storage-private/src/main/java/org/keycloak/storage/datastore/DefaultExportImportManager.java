@@ -493,7 +493,8 @@ public class DefaultExportImportManager implements ExportImportManager {
             try {
                 ProtocolMapperValidationUtil.validateProtocolMappers(session, newRealm, clientScope);
             } catch (ProtocolMapperConfigException ex) {
-                throw new ModelValidationException("Invalid client scope " + clientScope.getName() + ": " + ex.getMessage());
+                logger.warnf("Invalid protocol mapper configuration in client scope '%s': %s", clientScope.getName(), ex.getMessage());
+                throw new ModelValidationException(ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE);
             }
         }
 

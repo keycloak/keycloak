@@ -110,14 +110,14 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, noteValue);
     }
 
-    /** @return the configured session note, or {@code null} if unconfigured or referencing a blocked broker
-     * credential note (filtered during issuance to handle legacy or imported mappers).
+    /** @return the configured session note, or {@code null} if unconfigured or referencing a restricted internal
+     * session note (filtered during issuance to handle legacy or imported mappers).
      */
     private static String resolveNoteName(ProtocolMapperModel mappingModel, ClientSessionContext clientSessionCtx) {
         String noteName = mappingModel.getConfig() == null ? null
                 : mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
-        if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
-            logger.warnf("Protocol mapper '%s' on client '%s' maps the broker credential session note '%s'. The claim is omitted, remove the mapper.",
+        if (ProtocolMapperUtils.isRestrictedUserSessionNote(noteName)) {
+            logger.warnf("Protocol mapper '%s' on client '%s' maps the restricted internal session note '%s'. The claim is omitted, remove the mapper.",
                     mappingModel.getName(), clientIdOf(clientSessionCtx), noteName);
             return null;
         }
@@ -134,10 +134,9 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
     public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
         String noteName = mapperModel.getConfig() == null ? null
                 : mapperModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
-        if (ProtocolMapperUtils.isBrokerCredentialNote(noteName)) {
+        if (ProtocolMapperUtils.isRestrictedUserSessionNote(noteName)) {
             throw new ProtocolMapperConfigException(
-                    "Session note '" + noteName + "' is a Keycloak-internal broker credential and cannot be mapped",
-                    "protocolMapperBrokerCredentialNote");
+                    "Session note '" + noteName + "' is reserved for internal use and cannot be mapped");
         }
     }
 

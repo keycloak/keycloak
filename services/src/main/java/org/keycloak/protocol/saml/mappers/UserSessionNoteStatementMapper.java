@@ -86,8 +86,8 @@ public class UserSessionNoteStatementMapper extends AbstractSAMLProtocolMapper i
     @Override
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         String note = mappingModel.getConfig() == null ? null : mappingModel.getConfig().get(NOTE_CONFIG_KEY);
-        if (ProtocolMapperUtils.isBrokerCredentialNote(note)) {
-            logger.warnf("Protocol mapper '%s' on client '%s' maps the broker credential session note '%s'. The attribute is omitted, remove the mapper.",
+        if (ProtocolMapperUtils.isRestrictedUserSessionNote(note)) {
+            logger.warnf("Protocol mapper '%s' on client '%s' maps the restricted internal session note '%s'. The attribute is omitted, remove the mapper.",
                     mappingModel.getName(), clientSession.getClient().getClientId(), note);
             return;
         }
@@ -100,10 +100,9 @@ public class UserSessionNoteStatementMapper extends AbstractSAMLProtocolMapper i
     @Override
     public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
         String note = mapperModel.getConfig() == null ? null : mapperModel.getConfig().get(NOTE_CONFIG_KEY);
-        if (ProtocolMapperUtils.isBrokerCredentialNote(note)) {
+        if (ProtocolMapperUtils.isRestrictedUserSessionNote(note)) {
             throw new ProtocolMapperConfigException(
-                    "Session note '" + note + "' is a Keycloak-internal broker credential and cannot be mapped",
-                    "protocolMapperBrokerCredentialNote");
+                    "Session note '" + note + "' is reserved for internal use and cannot be mapped");
         }
     }
 }

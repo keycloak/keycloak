@@ -33,6 +33,8 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
  */
 public class ProtocolMapperValidationUtil {
 
+    public static final String INVALID_CONFIG_MESSAGE = "Invalid protocol mapper configuration";
+
     private ProtocolMapperValidationUtil() {
         // utility class
     }

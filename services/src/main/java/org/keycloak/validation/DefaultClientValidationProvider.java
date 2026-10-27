@@ -189,9 +189,9 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
                     try {
                         ProtocolMapperValidationUtil.validateProtocolMapper(session, realm, client, mapperModel);
                     } catch (ProtocolMapperConfigException e) {
-                        context.addError("protocolMappers",
-                                "Protocol mapper '" + mapperModel.getName() + "': " + e.getMessage(),
-                                e.getMessageKey(), e.getParameters());
+                        logger.warnf("Invalid configuration for protocol mapper '%s' on client '%s': %s",
+                                mapperModel.getName(), client.getClientId(), e.getMessage());
+                        context.addError("protocolMappers", ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE);
                     }
                 });
     }
