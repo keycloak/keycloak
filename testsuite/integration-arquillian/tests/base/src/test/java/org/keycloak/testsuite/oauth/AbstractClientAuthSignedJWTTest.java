@@ -622,26 +622,30 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         return doClientCredentialsGrantRequest(jwt);
     }
 
-    protected void assertError(AccessTokenResponse response, String clientId, String responseError, String eventError) {
+    protected void assertError(AccessTokenResponse response, String clientId, String responseError, String eventError, String detail) {
         assertEquals(400, response.getStatusCode());
-        assertMessageError(response,clientId,responseError,eventError);
+        assertMessageError(response,clientId,responseError,eventError, detail);
     }
 
-    protected void assertError(AccessTokenResponse response, int erroCode, String clientId, String responseError, String eventError) {
-        assertEquals(erroCode, response.getStatusCode());
-        assertMessageError(response, clientId, responseError, eventError);
+    protected void assertError(AccessTokenResponse response, int errorCode, String clientId, String responseError, String eventError, String detail) {
+        assertEquals(errorCode, response.getStatusCode());
+        assertMessageError(response, clientId, responseError, eventError, detail);
     }
 
-    protected void assertMessageError(AccessTokenResponse response, String clientId, String responseError, String eventError) {
+    protected void assertMessageError(AccessTokenResponse response, String clientId, String responseError, String eventError, String detail) {
         assertEquals(responseError, response.getError());
 
-        events.expectClientLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectClientLogin()
                 .client(clientId)
                 .session((String) null)
-                .clearDetails()
                 .error(eventError)
-                .user((String) null)
-                .assertEvent();
+                .user((String) null);
+        if (detail == null) {
+            expectedEvent.removeDetail(Details.AUTHENTICATION_ERROR_DETAIL);
+        } else {
+            expectedEvent.detail(Details.AUTHENTICATION_ERROR_DETAIL, detail);
+        }
+        expectedEvent.assertEvent();
     }
 
     protected void assertSuccess(AccessTokenResponse response, String clientId, String userId, String userName) {
