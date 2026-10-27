@@ -1,14 +1,25 @@
 ====
 *Global tags*
 
-`cluster=<name>`:: The cluster name.
-If metrics from multiple clusters are being collected, this tag helps identify where they belong to.
+`cluster=<name>`:: The JGroups channel name, which defaults to `ISPN`.
+This is not the Kubernetes cluster name.
 
 `node=<node>`:: The name of the node reporting the metric.
 By default, this is a random name generated on each start.
 To assign a stable name, set `+--cache-embedded-node-name+` as described in <@links.server id="caching" anchor="cluster-identification"/>.
 The {project_name} Operator sets this to the pod name automatically.
 ====
+
+ifndef::external_infinispan[]
+When your monitoring system uses `cluster` to identify the Kubernetes cluster, enable
+`+--spi-cache-embedded--default--metrics-rename-cluster-label=true+` to expose the JGroups channel name as `jgroups_cluster` instead.
+This leaves `cluster` available for a label supplied by the monitoring system, such as a Prometheus external label.
+The option only affects `vendor_jgroups_` metrics emitted by {project_name}; other metrics and the channel name itself are unchanged.
+
+The default is `false` to preserve existing queries.
+Before enabling the option, update any queries, dashboard variables, alert rules, or relabeling rules that use `cluster` for the JGroups channel name to use `jgroups_cluster` instead.
+This option does not configure the Kubernetes cluster label; configure that label in your monitoring system.
+endif::[]
 
 [WARNING]
 ====

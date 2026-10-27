@@ -124,6 +124,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         var builder = ProviderConfigurationBuilder.create();
         Util.copyFromOption(builder, CONFIG, "file", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_CONFIG_FILE, false);
         Util.copyFromOption(builder, HISTOGRAMS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED, false);
+        builder.property()
+                .name("metricsRenameClusterLabel")
+                .label("Rename JGroups cluster metric label")
+                .helpText("Renames the cluster label of JGroups metrics to jgroups_cluster so monitoring systems can supply their own cluster label.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(false)
+                .add();
         Stream.concat(Arrays.stream(LOCAL_MAX_COUNT_CACHES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
         Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
