@@ -19,6 +19,7 @@ import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
+import { RefreshTokenRevocation } from "./RefreshTokenRevocation";
 import { TokenLifespan } from "./TokenLifespan";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
@@ -189,6 +190,7 @@ export const AdvancedSettings = ({
               units={["minute", "day", "hour"]}
             />
           )}
+          <RefreshTokenRevocation />
           <DefaultSwitchControl
             name={convertAttributeNameToForm<FormFields>(
               "attributes.tls.client.certificate.bound.access.tokens",
