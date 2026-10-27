@@ -1173,10 +1173,13 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(roleNames(manageUsers.groups().group(groupUuid).roles().clientLevel(clientUuid).listEffective()), Matchers.hasItem(clientRoleName));
 
         // the group representation follows the same rule
-        GroupRepresentation groupRep = manageUsers.groups().group(groupUuid).toRepresentation();
-        assertThat(groupRep.getRealmRoles(), Matchers.hasItem(roleName));
-        assertThat(groupRep.getClientRoles(), Matchers.hasKey("role-mapping-client"));
-        assertThat(groupRep.getClientRoles().get("role-mapping-client"), Matchers.hasItem(clientRoleName));
+        for (GroupRepresentation groupRep : List.of(
+                manageUsers.groups().group(groupUuid).toRepresentation(),
+                manageUsers.getGroupByPath("/role-mapping-group"))) {
+            assertThat(groupRep.getRealmRoles(), Matchers.hasItem(roleName));
+            assertThat(groupRep.getClientRoles(), Matchers.hasKey("role-mapping-client"));
+            assertThat(groupRep.getClientRoles().get("role-mapping-client"), Matchers.hasItem(clientRoleName));
+        }
 
         RealmResource viewUsers = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME);
 
@@ -1188,11 +1191,14 @@ public class PermissionsTest extends AbstractPermissionsTest {
         assertThat(viewUsers.users().get(userUuid).roles().clientLevel(clientUuid).listEffective(), Matchers.empty());
         assertThat(viewUsers.groups().group(groupUuid).roles().clientLevel(clientUuid).listAll(), Matchers.empty());
         assertThat(viewUsers.groups().group(groupUuid).roles().clientLevel(clientUuid).listEffective(), Matchers.empty());
-        GroupRepresentation viewUsersGroupRep = viewUsers.groups().group(groupUuid).toRepresentation();
-        assertThat(viewUsersGroupRep.getRealmRoles() == null ? List.<String>of() : viewUsersGroupRep.getRealmRoles(),
-                Matchers.not(Matchers.hasItem(roleName)));
-        assertThat(viewUsersGroupRep.getClientRoles() == null ? Map.<String, List<String>>of() : viewUsersGroupRep.getClientRoles(),
-                Matchers.not(Matchers.hasKey("role-mapping-client")));
+        for (GroupRepresentation viewUsersGroupRep : List.of(
+                viewUsers.groups().group(groupUuid).toRepresentation(),
+                viewUsers.getGroupByPath("/role-mapping-group"))) {
+            assertThat(viewUsersGroupRep.getRealmRoles() == null ? List.<String>of() : viewUsersGroupRep.getRealmRoles(),
+                    Matchers.not(Matchers.hasItem(roleName)));
+            assertThat(viewUsersGroupRep.getClientRoles() == null ? Map.<String, List<String>>of() : viewUsersGroupRep.getClientRoles(),
+                    Matchers.not(Matchers.hasKey("role-mapping-client")));
+        }
 
         // being able to view (and map) the role does not grant management of the role itself
         String roleId = createdRole.getId();
