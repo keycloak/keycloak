@@ -217,10 +217,10 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 .label("Force login after reset")
                 .helpText(
                         """
-                        If this property is true, the user needs to login again after the reset credentials.
-                        If this property is false, the user will be automatically logged in after the succesful
+                        If this property is true (default), the user needs to login again after the reset credentials.
+                        If this property is false, the user will be automatically logged in after the successful
                         reset credentials when the same authentication session is used.
-                        If this property is only-federated (default), only federated users will be forced to login again,
+                        If this property is only-federated, only federated users will be forced to login again,
                         users stored in the internal database will be logged in if using the same authentication session.
                         """
                 )

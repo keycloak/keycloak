@@ -290,6 +290,17 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Reset credentials flow forces re-authentication by default
+// https://github.com/keycloak/keycloak/issues/12759
+
+The reset credentials flow (*forgot password* feature) now forces all users to log in again after a successful credential reset.
+Previously, the `force-login` (*Force login after reset*) option of the `reset-credential-email` (*Send Reset Email*) authenticator defaulted to `only-federated`, which forced re-authentication only for federated users and kept users stored in {project_name}'s internal database logged in when the same authentication session (same browser) was used.
+The default value of this option is now `true`, so the authenticator terminates the authentication session and requires a new login after the reset, regardless of where the user is stored.
+This change follows the secure-by-default policy.
+
+To restore the previous behavior, click the *Send Reset Email* settings icon in the reset credentials flow, define an *Alias*, and set *Force login after reset* to `false` to keep the user logged in when the same browser is used, or to `only-federated` to force re-authentication only for federated users.
+For more information, see link:{adminguide_link}#enabling-forgot-password[Enable forgot password].
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
