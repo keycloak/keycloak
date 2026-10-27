@@ -76,6 +76,15 @@ After upgrading, logins through a SAML identity provider, or through an applicat
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
 
+=== SAML broker IdP-initiated logins enforce a recipient bound to the target client
+// https://github.com/keycloak/keycloak/issues/54342
+
+When processing a SAML assertion received from an identity provider through identity brokering, {project_name} now always validates the Bearer `SubjectConfirmationData` `Recipient` against the broker endpoint expected for that specific login -- the per-client IdP-initiated endpoint for IdP-initiated logins, or the generic broker endpoint for SP-initiated logins -- regardless of whether the outer SAML response `Destination` is present.
+
+Previously, when the identity provider's response omitted the (optional, and not necessarily signed) `Destination` attribute, the `Recipient` attribute was not validated at all for broker logins. This allowed an assertion that an identity provider legitimately issued for one IdP-initiated client to be replayed, unmodified, against a different IdP-initiated client configured on the same broker, bypassing client-specific login policy.
+
+After upgrading, a Bearer `SubjectConfirmationData` whose `Recipient` is missing or does not match the expected broker endpoint is rejected, even when the response's `Destination` is absent or matches. If you operate an identity provider that issues assertions without a `Recipient`, or with a `Recipient` that does not point at the expected {project_name} broker endpoint, update it to send a spec-compliant Bearer `SubjectConfirmationData`.
+
 === SAML logins with an empty principal are rejected
 // https://github.com/keycloak/keycloak/issues/53816
 
