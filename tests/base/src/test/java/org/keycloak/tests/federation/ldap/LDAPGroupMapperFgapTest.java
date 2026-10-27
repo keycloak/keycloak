@@ -169,6 +169,28 @@ public class LDAPGroupMapperFgapTest {
     }
 
     @Test
+    public void testAdminRolesInheritedFromLdapGroup() {
+        String groupPath = configureGroups(false, LDAPGroupMapperMode.READ_ONLY, "");
+        String groupId = managedRealm.admin().getGroupByPath(groupPath).getId();
+        String managementId = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        // Admin roles granted only through the LDAP group, so resolving them requires resolving LDAP membership.
+        // view-realm is needed to list realm roles of other users.
+        managedRealm.admin().groups().group(groupId).roles().clientLevel(managementId).add(List.of(
+                managedRealm.admin().clients().get(managementId).roles().get(AdminRoles.VIEW_USERS).toRepresentation(),
+                managedRealm.admin().clients().get(managementId).roles().get(AdminRoles.VIEW_REALM).toRepresentation()));
+        String userId = managedRealm.admin().users().searchByUsername("johnkeycloak", true).get(0).getId();
+
+        try (Keycloak delegatedAdmin = createDelegatedAdmin()) {
+            // Clear group lookups so the admin's membership is resolved from the database during the request.
+            managedRealm.admin().clearRealmCache();
+            assertEquals(1, delegatedAdmin.realm(managedRealm.getName()).users().search("johnkeycloak", true).size());
+            assertTrue(delegatedAdmin.realm(managedRealm.getName()).users().get(userId).roles().realmLevel().listEffective()
+                    .stream().anyMatch(role -> "ldap-group-role".equals(role.getName())));
+            assertEquals(1, delegatedAdmin.realm(managedRealm.getName()).users().get(userId).groups().size());
+        }
+    }
+
+    @Test
     public void testHardcodedGroup() throws Exception {
         String parentId = createGroupHierarchy("hardcoded-parent", "hardcoded-child");
         ComponentRepresentation mapper = new ComponentRepresentation();

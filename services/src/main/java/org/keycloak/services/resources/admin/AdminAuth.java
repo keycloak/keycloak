@@ -17,7 +17,11 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.util.Optional;
+
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -28,10 +32,17 @@ import org.keycloak.representations.AccessToken;
  */
 public class AdminAuth {
 
+    private static final String ADMIN_AUTH_KEY = "AdminRoot.adminAuth";
+
     private final RealmModel realm;
     private final AccessToken token;
     private final UserModel user;
     private final ClientModel client;
+
+    public AdminAuth(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user, ClientModel client) {
+        this(realm, token, AdminPermissionsSchema.setAdminUser(session, user), client);
+        session.setAttribute(ADMIN_AUTH_KEY, this);
+    }
 
     public AdminAuth(RealmModel realm, AccessToken token, UserModel user, ClientModel client) {
         this.token = token;
@@ -39,6 +50,10 @@ public class AdminAuth {
 
         this.user = user;
         this.client = client;
+    }
+
+    public static Optional<AdminAuth> getRealmAdminAuth(KeycloakSession session) {
+        return Optional.ofNullable(session.getAttribute(ADMIN_AUTH_KEY, AdminAuth.class));
     }
 
     public RealmModel getRealm() {

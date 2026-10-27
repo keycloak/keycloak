@@ -225,20 +225,6 @@ The new *OneTimeUse maximum age* setting of the SAML identity provider defaults 
 Assertions with a `OneTimeUse` condition that are older than this are rejected.
 Increase the setting if users need more time to complete a login with such an assertion.
 
-=== Fine-grained admin permission query filtering
-// https://github.com/keycloak/keycloak/issues/54054
-
-Automatic fine-grained admin permission query filters are now enabled only after authentication to the Admin or SCIM API.
-Ordinary user operations, such as login and token issuance, and background jobs do not enable these filters.
-This fixes LDAP group resolution incorrectly treating existing groups as missing for users with limited administrative permissions.
-Explicit permission checks are unchanged.
-
-Extensions that need filtered model queries outside these APIs can use `AdminPermissionsSchema.runWithAuthorizationFilters`,
-with the target realm set in the session context and the admin loaded in that session.
-Background jobs must opt in within their own session; the filtering context is not propagated to new sessions.
-Filtering ends when the callback returns, so streams and other lazy results must be consumed inside the callback.
-The wrapper does not replace authentication or explicit permission checks. No realm configuration changes are required.
-
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 

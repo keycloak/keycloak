@@ -254,24 +254,25 @@ public class UserStorageProviderResource {
 
         ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getProviderId(), direction);
 
-        SynchronizationResult syncResult;
-        if ("fedToKeycloak".equals(direction)) {
-            try {
-                syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> mapper.syncDataFromFederationProviderToKeycloak(realm));
-            } catch(Exception e) {
-                String errorMsg = getErrorCode(e);
-                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+        SynchronizationResult syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            if ("fedToKeycloak".equals(direction)) {
+                try {
+                    return mapper.syncDataFromFederationProviderToKeycloak(realm);
+                } catch(Exception e) {
+                    String errorMsg = getErrorCode(e);
+                    throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+                }
+            } else if ("keycloakToFed".equals(direction)) {
+                try {
+                    return mapper.syncDataFromKeycloakToFederationProvider(realm);
+                } catch(Exception e) {
+                    String errorMsg = getErrorCode(e);
+                    throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+                }
+            } else {
+                throw new BadRequestException("Unknown direction: " + direction);
             }
-        } else if ("keycloakToFed".equals(direction)) {
-            try {
-                syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> mapper.syncDataFromKeycloakToFederationProvider(realm));
-            } catch(Exception e) {
-                String errorMsg = getErrorCode(e);
-                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
-            }
-        } else {
-            throw new BadRequestException("Unknown direction: " + direction);
-        }
+        });
 
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", direction);
