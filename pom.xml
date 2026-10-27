@@ -128,6 +128,7 @@
         <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <kerby.version>2.1.2</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
+        <jsoup.version>1.23.1</jsoup.version>
         <freemarker.version>2.3.35</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
@@ -463,6 +464,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${org.yaml.snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
 
             <!--JAKARTA-->
