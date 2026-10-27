@@ -96,7 +96,7 @@ public final class MavenProjectUtil {
                             providerJar.addClass(fullyQualifiedClassName);
                         } else {
                             File resourceFile = p.toFile();
-                            providerJar.addAsResource(resourceFile, relativeFilePath);
+                            providerJar.addAsResource(resourceFile, relativeFilePath.replace(File.separatorChar, '/'));
                         }
                     });
         } catch (IOException e) {
