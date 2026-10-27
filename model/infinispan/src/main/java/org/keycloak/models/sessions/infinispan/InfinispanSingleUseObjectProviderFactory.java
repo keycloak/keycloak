@@ -145,7 +145,8 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     @Override
     public void close() {
         closed = true;
-        if (persistRevokedTokens) {
+        // The cache is not assigned when initialization failed before postInit(), and the cleanup must not mask that failure.
+        if (persistRevokedTokens && singleUseObjectCache != null) {
             singleUseObjectCache.getCacheManager().removeListener(viewChangeListener);
         }
     }
@@ -194,9 +195,9 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     }
 
     private void loadRevokedTokens(RevokedTokenPersisterProvider provider) {
-        long currentTime = Time.currentTimeSeconds();
         provider.getAllRevokedTokens().forEach(revokedToken -> {
-            long lifespanSeconds = revokedToken.expiry() - currentTime;
+            // The scan can run for a long time, so the time is taken per record to skip tokens that expired meanwhile.
+            long lifespanSeconds = revokedToken.expiry() - Time.currentTimeSeconds();
             if (lifespanSeconds > 0) {
                 String key = revokedToken.tokenId() + SingleUseObjectProvider.REVOKED_KEY;
                 SingleUseObjectValueEntity value = new SingleUseObjectValueEntity(Collections.emptyMap());
