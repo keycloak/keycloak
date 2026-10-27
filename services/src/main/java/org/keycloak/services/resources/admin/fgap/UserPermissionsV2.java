@@ -123,14 +123,21 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canImpersonate(UserModel user, ClientModel requester) {
+        boolean hasImpersonationPermission;
+
         if (root.hasOneAdminRole(AdminRoles.IMPERSONATION)) {
-            return true;
+            hasImpersonationPermission = true;
+        } else {
+            DefaultEvaluationContext context = requester == null ? null :
+                    new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of(CLIENT_ID_ATTRIBUTE, List.of(requester.getClientId())), session);
+            hasImpersonationPermission = eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.IMPERSONATE);
         }
 
-        DefaultEvaluationContext context = requester == null ? null :
-                new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of(CLIENT_ID_ATTRIBUTE, List.of(requester.getClientId())), session);
+        if (hasImpersonationPermission && hasHigherPrivilegesThanAdmin(user)) {
+            return false;
+        }
 
-        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.IMPERSONATE);
+        return hasImpersonationPermission;
     }
 
     @Override

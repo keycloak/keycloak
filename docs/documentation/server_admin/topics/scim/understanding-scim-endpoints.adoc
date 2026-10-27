@@ -9,7 +9,7 @@ The `application/json` content type is also accepted for requests.
 
 == Available endpoints
 
-The following table summarizes all available SCIM endpoints:
+The following table summarizes all available and supported SCIM endpoints.
 
 [cols="2,1,3",options="header"]
 |===
@@ -50,6 +50,10 @@ The following table summarizes all available SCIM endpoints:
 | `/Schemas`
 | GET
 | List all SCIM schemas supported by the server, including extensions.
+
+| `/Schemas/{id}`
+| GET
+| Retrieve a specific schema by its ID (URN).
 |===
 
 == HTTP methods

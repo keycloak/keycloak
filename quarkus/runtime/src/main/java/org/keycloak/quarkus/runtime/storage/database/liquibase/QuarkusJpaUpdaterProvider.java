@@ -56,6 +56,7 @@ import liquibase.snapshot.SnapshotControl;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.AddColumnStatement;
+import liquibase.statement.core.CreateDatabaseChangeLogTableStatement;
 import liquibase.statement.core.SetNullableStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Column;
@@ -68,11 +69,15 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(QuarkusJpaUpdaterProvider.class);
 
     public static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
+    private static final String MASTER_CHANGELOG_TABLE = "DATABASECHANGELOG";
     private static final String DEPLOYMENT_ID_COLUMN = "DEPLOYMENT_ID";
     public static final String VERIFY_AND_RUN_MASTER_CHANGELOG = "VERIFY_AND_RUN_MASTER_CHANGELOG";
 
     private final KeycloakSession session;
     private Map<String, List<ChangeSet>> changeSets = new HashMap<>();
+    // Did the master changelog table already exist when this server started, before validation created it?
+    // Only the master table is relevant: Liquibase still writes the DDL of custom provider changelog tables itself.
+    private Boolean masterChangelogTablePreExisted;
 
     public QuarkusJpaUpdaterProvider(KeycloakSession session) {
         this.session = session;
@@ -139,6 +144,11 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         String changelog = liquibase.getChangeLogFile();
         Database database = liquibase.getDatabase();
         Table changelogTable = SnapshotGeneratorFactory.getInstance().getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
+        // Validation is not always run before an update, and nothing has touched the changelog table yet at this
+        // point, so record its state here as well.
+        if (masterChangelogTablePreExisted == null && isMasterChangelogTable(database)) {
+            masterChangelogTablePreExisted = changelogTable != null;
+        }
 
         if (changelogTable != null) {
             boolean hasDeploymentIdColumn = changelogTable.getColumn(DEPLOYMENT_ID_COLUMN) != null;
@@ -213,10 +223,22 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         loggingExecutor.comment("* Keycloak database creation script - apply this script to empty DB *");
         loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
-        // DatabaseChangeLogTable is automatically added to the script by Liquibase
+        // Liquibase adds the changelog table DDL to the script itself, but only while the table does not exist yet.
+        // Since Liquibase 4.33 parsing a changelog initializes the change log history service (DatabaseChangeLog
+        // creates the table on the live connection), so by the time the export is written the table is already
+        // there and Liquibase no longer emits it - leaving a script that inserts into a table it never creates,
+        // even though its header offers it as a creation script for an empty database. Emit the statement here
+        // instead, but only when the table was absent before this server started: an administrator may have
+        // pre-created it so that a user without DDL rights could produce the script at all, and in that case the
+        // target database already has the table and the DDL would fail the script with "already exists".
         // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
+        if (isMasterChangelogTable(database) && Boolean.FALSE.equals(masterChangelogTablePreExisted)) {
+            // Same comment Liquibase emits when it writes this statement itself
+            loggingExecutor.comment("Create Database Change Log Table");
+            loggingExecutor.execute(new CreateDatabaseChangeLogTableStatement());
+        }
 
         // For MySQL, add primary key to DATABASECHANGELOG table (handled by MySQLCustomChangeLogHistoryService at runtime)
         ChangeLogHistoryService changeLogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
@@ -268,6 +290,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     protected Status validateChangeSet(KeycloakLiquibase liquibase, String changelog) throws LiquibaseException {
         final Status result;
+        recordWhetherMasterChangelogTablePreExisted(liquibase.getDatabase());
         List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
 
         if (!changeSets.isEmpty()) {
@@ -296,6 +319,18 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private ChangeLogHistoryServiceFactory getChangeLogHistoryService() {
         return Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class);
+    }
+
+    private void recordWhetherMasterChangelogTablePreExisted(Database database) throws LiquibaseException {
+        if (masterChangelogTablePreExisted == null && isMasterChangelogTable(database)) {
+            Table table = SnapshotGeneratorFactory.getInstance()
+                    .getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
+            masterChangelogTablePreExisted = table != null;
+        }
+    }
+
+    private static boolean isMasterChangelogTable(Database database) {
+        return MASTER_CHANGELOG_TABLE.equalsIgnoreCase(database.getDatabaseChangeLogTableName());
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {

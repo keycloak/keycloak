@@ -164,6 +164,7 @@ You can also import and export a realm using the Admin Console. This functionali
 different from the other CLI options described in previous sections because the Admin Console requires the cluster to be online.
 The Admin Console also offers only the capability to _partially_  export a realm. In this case, the current realm settings, along with some resources like clients,
 roles, and groups, can be exported. The users for that realm _cannot_ be exported using this method.
+Organizations are exported without their members.
 
 NOTE: When using the Admin Console export, the realm and the selected resources are always exported to a file
 named `realm-export.json`. Also, all sensitive values like passwords and client secrets will be masked with `+*+` symbols.
@@ -201,5 +202,7 @@ Overwrite:: Replace the existing resources with the ones being imported.
 NOTE: The Admin Console partial import can also import files created by the CLI `export` command. In other words, full exports created
 by the CLI can be imported by using the Admin Console. If the file contains users, those users will also be available for importing into the
 current realm.
+
+NOTE: The Admin Console partial import does not import organizations.
 
 </@tmpl.guide>

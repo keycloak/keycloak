@@ -33,6 +33,7 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
   useLoginProviders,
@@ -51,6 +52,20 @@ const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 const VC_EXPIRY_DEFAULT_SECONDS = 31536000; // 1 year (matches VC_EXPIRY_IN_SECONDS_DEFAULT)
 const VC_REFRESH_INTERVAL_DEFAULT_SECONDS = 604800; // 7 days (matches VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT)
+const VC_FORMAT_OPTIONS = [
+  {
+    key: VC_FORMAT_SD_JWT,
+    value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
+  },
+  {
+    key: VC_FORMAT_JWT_VC,
+    value: `JWT VC (${VC_FORMAT_JWT_VC})`,
+  },
+  {
+    key: VC_FORMAT_MSO_MDOC,
+    value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
+  },
+] as const;
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
@@ -83,7 +98,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t, i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const { control, handleSubmit, setValue, formState } = form;
+  const { control, handleSubmit, setValue, trigger, formState } = form;
   const { isDirty, isValid } = formState;
   const { realm, realmRepresentation } = useRealm();
 
@@ -184,20 +199,30 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isParameterizedScopeWithFeatureDisabled =
     !isParameterizedScopesEnabled &&
     clientScope?.attributes?.["is.parameterized.scope"] === "true";
-  const scopeTypeOptions = isParameterized
-    ? allClientScopeTypes.filter((key) => key !== "default")
-    : allClientScopeTypes;
+  const { hasAccess } = useAccess();
+  const canManageRealm = hasAccess("manage-realm");
+  const scopeTypeOptions = allClientScopeTypes.filter((key) => {
+    if (isParameterized && key === "default") return false;
+    if (!canManageRealm && !clientScope) return key === "none";
+    return true;
+  });
 
   const selectedProtocol = useWatch({
     control,
     name: "protocol",
   });
+  const vcFormatFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.format",
+    );
+  const cryptoBindingMethodsFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.cryptographic_binding_methods_supported",
+    );
 
   const selectedFormat = useWatch({
     control,
-    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.vc.format",
-    ),
+    name: vcFormatFieldName,
     defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
   const selectedTokenJwsType = useWatch({
@@ -219,6 +244,28 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     selectedFormat === VC_FORMAT_MSO_MDOC
       ? ALLOWED_CRYPTO_BINDING_METHODS_MDOC
       : ALLOWED_CRYPTO_BINDING_METHODS_JSON;
+  const allowedCryptoBindingMethodsText =
+    allowedCryptoBindingMethods.join(", ");
+  const credentialBuilderProviders = useMemo(
+    () => serverInfo.providers?.["credentialBuilder"]?.providers ?? {},
+    [serverInfo.providers],
+  );
+  const vcFormatOptions = useMemo(() => {
+    const availableProviderFormats = Object.keys(credentialBuilderProviders);
+    const fallbackFormats = [
+      VC_FORMAT_SD_JWT,
+      VC_FORMAT_JWT_VC,
+      ...(isMdocEnabled ? [VC_FORMAT_MSO_MDOC] : []),
+    ];
+    const availableFormats =
+      availableProviderFormats.length > 0
+        ? availableProviderFormats
+        : fallbackFormats;
+
+    return VC_FORMAT_OPTIONS.filter((option) =>
+      availableFormats.includes(option.key),
+    );
+  }, [credentialBuilderProviders, isMdocEnabled]);
   const isNotSaml = selectedProtocol != "saml";
 
   const computeRefreshIntervalDefault = () => {
@@ -274,6 +321,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       clientScope?.attributes?.["vc.key_attestations_required"] ?? "false",
   });
 
+  useEffect(() => {
+    if (bindingRequired === "true") {
+      void trigger(cryptoBindingMethodsFieldName);
+    }
+  }, [bindingRequired, cryptoBindingMethodsFieldName, selectedFormat, trigger]);
+
   const isSigningKeySelected = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -291,6 +344,20 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
+
+  // When switching to OID4VCI on a new-scope form, force "Include in token scope" to ON.
+  // The field defaults to "false" for other protocols and RHF retains that value across
+  // protocol changes (shouldUnregister is false), so we must set it explicitly.
+  useEffect(() => {
+    if (!clientScope) {
+      setValue(
+        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+          "attributes.include.in.token.scope",
+        ),
+        isOid4vcProtocol ? "true" : "false",
+      );
+    }
+  }, [isOid4vcProtocol, clientScope, setValue]);
 
   useEffect(() => {
     if (isParameterizedScopeWithFeatureDisabled) {
@@ -354,12 +421,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     }
   }, [parameterType]);
 
-  /* Form-level validation handles correctness; here we only prune known optional
+  /* Form-level validation handles correctness; here we only normalize known optional
        OID4VC fields when empty. If new attributes are added, extend
        OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
   const onSubmit = (values: ClientScopeDefaultOptionalType) => {
     const isOid4vc = values.protocol === OID4VC_PROTOCOL;
-    const cleaned = isOid4vc ? removeEmptyOid4vcAttributes(values) : values;
+    const cleaned = isOid4vc
+      ? removeEmptyOid4vcAttributes(values, clientScope !== undefined)
+      : values;
     save(cleaned);
   };
 
@@ -473,6 +542,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name="type"
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
+          isDisabled={!canManageRealm && !!clientScope}
           controller={{ defaultValue: allClientScopeTypes[0] }}
           options={scopeTypeOptions.map((key) => ({
             key,
@@ -531,6 +601,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.include.in.token.scope",
           )}
+          defaultValue={isOid4vcProtocol ? "true" : "false"}
           label={t("includeInTokenScope")}
           labelIcon={t("includeInTokenScopeHelp")}
           stringify
@@ -650,30 +721,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             />
             <SelectControl
               id="kc-vc-format"
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.format",
-              )}
+              name={vcFormatFieldName}
               label={t("supportedFormats")}
               labelIcon={t("supportedFormatsHelp")}
               controller={{ defaultValue: VC_FORMAT_SD_JWT }}
-              options={[
-                {
-                  key: VC_FORMAT_SD_JWT,
-                  value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
-                },
-                {
-                  key: VC_FORMAT_JWT_VC,
-                  value: `JWT VC (${VC_FORMAT_JWT_VC})`,
-                },
-                ...(isMdocEnabled
-                  ? [
-                      {
-                        key: VC_FORMAT_MSO_MDOC,
-                        value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
-                      },
-                    ]
-                  : []),
-              ]}
+              options={vcFormatOptions}
             />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -764,9 +816,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             {bindingRequired === "true" && (
               <>
                 <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.cryptographic_binding_methods_supported",
-                  )}
+                  name={cryptoBindingMethodsFieldName}
                   label={t("cryptographicBindingMethodsSupported")}
                   labelIcon={t("cryptographicBindingMethodsSupportedHelp")}
                   rules={{
@@ -790,6 +840,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                           "cryptographicBindingMethodsSupportedInvalid",
                           {
                             invalid: invalid.join(","),
+                            allowed: allowedCryptoBindingMethodsText,
                           },
                         );
                       }

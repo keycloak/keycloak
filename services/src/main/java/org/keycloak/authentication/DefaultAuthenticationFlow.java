@@ -31,8 +31,11 @@ import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -262,6 +265,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
+
+        if (flow.isTopLevel()) {
+            registerForcedLevelOfAuthenticationCheck();
+        }
         String selector = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
         if (selector != null) {
             String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
@@ -319,13 +326,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     if (response != null) {
                         return response;
                     }
-                    if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
-                        return onFlowExecutionsSuccessful();
-                    }
                 } catch (AuthenticationFlowException afe) {
                     //consuming the error is not good here from an administrative point of view, but the user, since he has alternatives, should be able to go to another alternative and continue
                     afeList.add(afe);
                     setExecutionStatus(alternative, AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                }
+                // outside the try block, so that errors from top flow callbacks are not consumed as errors of the alternative
+                if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
+                    return onFlowExecutionsSuccessful();
                 }
             }
         } else {
@@ -455,7 +463,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 //move to next
                 return null;
             }
-            model = finalSelectionOptions.get(0).getAuthenticationExecution();
+            model = resolveSelectedExecution(finalSelectionOptions);
             factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
@@ -525,6 +533,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         return AuthenticationSelectionResolver.createAuthenticationSelectionList(processor, model);
     }
 
+    private AuthenticationExecutionModel resolveSelectedExecution(List<AuthenticationSelectionOption> selectionOptions) {
+        String currentExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return selectionOptions.stream()
+                .filter(option -> Objects.equals(option.getAuthExecId(), currentExecutionId))
+                .map(AuthenticationSelectionOption::getAuthenticationExecution)
+                .findFirst()
+                .orElseGet(() -> selectionOptions.get(0).getAuthenticationExecution());
+    }
 
     public Response processResult(AuthenticationProcessor.Result result, boolean isAction) {
         AuthenticationExecutionModel execution = result.getExecution();
@@ -545,7 +561,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 throw new AuthenticationFlowException(result.getError(), result.getEventDetails(), result.getUserErrorMessage());
             case FORK:
                 logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
-                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
                 throw new ForkFlowException(result.getSuccessMessage(), result.getErrorMessage());
             case FORCE_CHALLENGE:
             case CHALLENGE:
@@ -612,11 +627,29 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
+    /**
+     * The forced level is checked by the callback of the "Condition - Level of Authentication" authenticator, which is otherwise
+     * registered only once a level condition is evaluated. Register it up-front, so the check runs even when the flow has no level
+     * condition or skips all of them, for example because the user has no credential for the requested level.
+     * While a first broker login is in progress, the authentication continues in the post broker login flow, which can still reach
+     * the requested level and registers the check on its own, so the intermediate flows do not register it.
+     */
+    private void registerForcedLevelOfAuthenticationCheck() {
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        if (authSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null) {
+            return;
+        }
+        if (new AcrStore(processor.getSession(), authSession).isLevelOfAuthenticationForced()) {
+            AuthenticatorUtil.setAuthCallbacksFactoryIds(authSession, ConditionalLoaAuthenticatorFactory.PROVIDER_ID);
+        }
+    }
+
     // This is triggered when current flow is successful due the fact that it's executions passed.
     // It is opportunity to do some last "generic" checks before considering whole authentication as successful
     private Response onFlowExecutionsSuccessful() {
         if (flow.isTopLevel()) {
             logger.debugf("Authentication successful of the top flow '%s'", flow.getAlias());
+            new AcrStore(processor.getSession(), processor.getAuthenticationSession()).setAuthFlowLevelAuthenticatedToCurrentRequest(flow);
             executeTopFlowSuccessCallbacks();
         }
 

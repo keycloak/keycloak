@@ -71,7 +71,7 @@ public class AuthenticationManagementResource extends RoleMappingResource {
 
         return realm.getAuthenticationFlowsStream()
                 .filter(flow -> flow.isTopLevel() && !Objects.equals(flow.getAlias(), DefaultAuthenticationFlows.SAML_ECP_FLOW))
-                .map(flow -> AuthenticationMapper.convertToModel(super.session, flow, realm))
+                .map(flow -> AuthenticationMapper.convertToModel(super.session, flow, realm, auth))
                 .collect(Collectors.toList());
 
     }
@@ -107,11 +107,13 @@ public class AuthenticationManagementResource extends RoleMappingResource {
                             c -> c.getAuthenticationFlowBindingOverrides().get("browser") != null && c.getAuthenticationFlowBindingOverrides()
                                     .get("browser").equals(flow.getId()) || c.getAuthenticationFlowBindingOverrides()
                                     .get("direct_grant") != null && c.getAuthenticationFlowBindingOverrides().get("direct_grant").equals(flow.getId()))
+                    .filter(auth.clients()::canView)
                     .map(c -> new UsedByReference(c.getId(), c.getClientId())).filter(ref -> ref.getLabel().contains(search))
                     .skip(first).limit(max).collect(Collectors.toList());
         }
 
         if ("idp".equals(type)) {
+            auth.realm().requireViewIdentityProviders();
             return session.identityProviders().getByFlow(flow.getId(), search, first, max)
                     .map(alias -> new UsedByReference(null, alias)).collect(Collectors.toList());
         }

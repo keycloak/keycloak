@@ -63,15 +63,14 @@ export class Groups extends Resource<{ realm?: string }> {
    * Single user
    */
 
-  public findOne = this.makeRequest<
-    { id: string },
-    GroupRepresentation | undefined
-  >({
-    method: "GET",
-    path: "/{id}",
-    urlParamKeys: ["id"],
-    catchNotFound: true,
-  });
+  public findOne = this.makeRequest<{ id: string }, GroupRepresentation | null>(
+    {
+      method: "GET",
+      path: "/{id}",
+      urlParamKeys: ["id"],
+      catchNotFound: true,
+    },
+  );
 
   public update = this.makeUpdateRequest<
     { id: string },
@@ -131,7 +130,6 @@ export class Groups extends Resource<{ realm?: string }> {
       path: "/{parentId}/children",
       urlParamKeys: ["parentId"],
       queryParamKeys: ["search", "first", "max", "briefRepresentation"],
-      catchNotFound: true,
     },
   );
 
@@ -146,7 +144,6 @@ export class Groups extends Resource<{ realm?: string }> {
     method: "GET",
     path: "/{id}/members",
     urlParamKeys: ["id"],
-    catchNotFound: true,
   });
 
   /**

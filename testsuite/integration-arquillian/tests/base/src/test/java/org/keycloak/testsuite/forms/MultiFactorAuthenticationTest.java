@@ -24,6 +24,7 @@ import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -166,6 +167,50 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
             BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
+        }
+    }
+
+    // Issue https://github.com/keycloak/keycloak/issues/41394
+    @Test
+    public void testRefreshAndLocaleChangeKeepSelectedAlternativeSubflow() {
+        final String newFlowAlias = "browser - alternative subflows";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addSubFlowExecution("username and password flow", AuthenticationFlow.BASIC_FLOW,
+                                AuthenticationExecutionModel.Requirement.ALTERNATIVE, subFlow -> subFlow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                                UsernamePasswordFormFactory.PROVIDER_ID)
+                        )
+                        .addSubFlowExecution("username flow", AuthenticationFlow.BASIC_FLOW,
+                                AuthenticationExecutionModel.Requirement.ALTERNATIVE, subFlow -> subFlow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                                UsernameFormFactory.PROVIDER_ID)
+                        )
+                )
+                .defineAsBrowserFlow()
+        );
+
+        try {
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.clickTryAnotherWayLink();
+
+            selectAuthenticatorPage.assertCurrent();
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.USERNAMEPASSWORD, SelectAuthenticatorPage.USERNAME),
+                    selectAuthenticatorPage.getAvailableLoginMethods());
+            selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.USERNAME);
+            loginUsernameOnlyPage.assertCurrent();
+
+            driver.navigate().refresh();
+            loginUsernameOnlyPage.assertCurrent();
+
+            loginUsernameOnlyPage.openLanguage("Deutsch");
+            loginUsernameOnlyPage.assertCurrent();
+        } finally {
+            BrowserFlowTest.revertFlows(managedRealm.admin(), newFlowAlias);
         }
     }
 

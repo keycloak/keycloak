@@ -13,6 +13,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.attribute.Attribute.ComplexAttributeOptions;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
@@ -38,8 +39,7 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
         List<Attribute<ClientModel, OIDCClientRepresentation>> subAttrs =
                 Attribute.<ClientModel, OIDCClientRepresentation>complex("auth", OIDCClientRepresentation.Auth.class)
                         .modelAttributeResolver(a -> "") // TODO: a dummy mapping allows the more complex mapping logic from ClientResourceTypeProvider to be used
-                        // TODO: withAttribute forces the use of the lower function because the Attribute is marked as !caseExact and !storedLowerCase
-                        .withAttribute("method",
+                        .withAttribute("method", ComplexAttributeOptions.defaults().caseExact(),
                                 (model, name, value) -> model.setClientAuthenticatorType(value))
                         .build();
         // build() returns only sub-attributes when withAttribute() is used; the single entry is auth.method

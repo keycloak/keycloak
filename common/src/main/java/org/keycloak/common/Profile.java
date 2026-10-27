@@ -71,7 +71,7 @@ public class Profile {
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.PREVIEW, 2, Feature.ADMIN_API),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
@@ -87,11 +87,11 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.EXPERIMENTAL),
+        PARAMETERIZED_SCOPES("Parameterized OAuth 2.0 client scopes", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.PREVIEW, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
@@ -130,9 +130,12 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
+        LOGIN_FAILURES_V1("In-memory login failures", Type.DEPRECATED, 1, FeatureUpdatePolicy.SHUTDOWN),
+        LOGIN_FAILURES_V2("Persistent login failures", Type.DEFAULT, 2, FeatureUpdatePolicy.SHUTDOWN),
 
-        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.PREVIEW, FeatureUpdatePolicy.SHUTDOWN),
+        MULTI_SITE("Multi-site support", Type.DEPRECATED, 1, FeatureUpdatePolicy.SHUTDOWN),
+
+        STATELESS("Stateless (stores authentication sessions, action tokens and login failure data in the database, allowing multiple clusters to be connected with just the database)", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN, Feature.LOGIN_FAILURES_V2),
 
         CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
 
@@ -142,7 +145,7 @@ public class Profile {
 
         PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.PREVIEW),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_MDOC("Support for OID4VC `mso_mdoc` credential type.", Type.EXPERIMENTAL), // Dependent on either VCI or VP, does nothing if neither is active
@@ -177,7 +180,10 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
+        HTTP_CLIENT("Apache-based outbound HTTP client", Type.DEFAULT, 1),
+        HTTP_CLIENT_V2("Vert.x-based outbound HTTP client", Type.EXPERIMENTAL, 2),
+
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
@@ -197,7 +203,7 @@ public class Profile {
         @Deprecated
         TWITTER_BROKER("Twitter Identity Broker", Type.DEFAULT, 1, true, null, null),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.PREVIEW),
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.DEFAULT),
 
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 

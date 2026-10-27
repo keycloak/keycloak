@@ -29,6 +29,7 @@ import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -154,15 +155,19 @@ public class OrganizationMemberResource {
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Invites an existing user to the organization, using the specified user id")
+    @Operation(summary = "Invites an existing user to the organization, using the specified user id",
+            description = "The client_id query parameter is optional. If no client_id is provided, the account client is used. " +
+                    "After accepting the invitation the user is redirected to the selected client's home URL; for the account client the " +
+                    "organization redirect URL is used instead when configured.")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
-    public Response inviteExistingUser(@FormParam("id") String id) {
-        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id);
+    public Response inviteExistingUser(@FormParam("id") String id,
+                                       @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id, clientId);
     }
 
     /**
@@ -236,6 +241,52 @@ public class OrganizationMemberResource {
         return toRepresentation(member, false);
     }
 
+    @Path("{member-id}/membership-type")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Updates the membership type of the member with the specified id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response updateMembershipType(@PathParam("member-id") String memberId, MembershipType membershipType) {
+        auth.orgs().requireManage(organization);
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+        if (membershipType == null) {
+            throw ErrorResponse.error("membershipType cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getMember(memberId);
+        auth.users().requireManage(member);
+
+        MembershipType currentType = provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED;
+        if (membershipType.equals(currentType)) {
+            return Response.noContent().build();
+        }
+
+        try {
+            if (provider.updateMembershipType(organization, member, membershipType)) {
+                adminEvent.operation(OperationType.UPDATE)
+                        .representation(toRepresentation(member, false))
+                        .resourcePath(session.getContext().getUri())
+                        .detail(UserModel.USERNAME, member.getUsername())
+                        .detail(UserModel.EMAIL, member.getEmail())
+                        .detail(MembershipType.NAME, membershipType.name())
+                        .success();
+                return Response.noContent().build();
+            }
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
+        }
+
+        throw ErrorResponse.error("Not a member of the organization", Status.NOT_FOUND);
+    }
+
     @Path("{member-id}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
@@ -273,7 +324,7 @@ public class OrganizationMemberResource {
      * Precondition: when reached via the per-org path, the caller must have passed through
      * {@link OrganizationsResource#get(String)} which enforces {@code auth.orgs().requireView(organization)}.
      * When reached via the collection-level path ({@code /organizations/members/{id}/organizations}),
-     * the caller passes through {@link OrganizationsResource#getOrganizations(String)} which enforces
+     * the caller passes through {@link OrganizationsResource#getOrganizations(String, boolean)} which enforces
      * {@code auth.orgs().requireQuery()}. This method additionally requires
      * {@code auth.users().requireView(member)} and filters returned organizations by
      * {@code auth.orgs().canView(org)}.

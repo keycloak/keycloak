@@ -26,6 +26,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import static java.util.Arrays.asList;
 
@@ -101,6 +102,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             CERTIFICATE_POLICY_MODE_ALL,
             CERTIFICATE_POLICY_MODE_ANY
     };
+
+    private boolean legacyCriticalBehavior;
 
     protected static final List<ProviderConfigProperty> configProperties;
     static {
@@ -182,7 +185,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         cRLRelativePath.setDefaultValue("crl.pem");
         cRLRelativePath.setLabel("CRL Path");
         cRLRelativePath.setHelpText("Applied just if CRL checking is ON and CRL Distribution point is OFF. It contains the URL (typically 'http' or 'ldap') " +
-                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. Paths are assumed to be relative to $jboss.server.config.dir. " +
+                "where the CRL is available. Alternatively it can contain the path to a CRL file that contains a list of revoked certificates. File paths are relative to the 'conf' directory of the server, and paths that resolve outside that directory are rejected. " +
                 "Multiple CRLs can be included, however it can affect performance as the certificate will be checked against all listed CRLs."
         );
 
@@ -308,6 +311,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
 
     @Override
     public void init(Config.Scope config) {
+        this.legacyCriticalBehavior = config.getBoolean("legacyCriticalBehavior", Boolean.FALSE);
     }
 
     @Override
@@ -318,4 +322,19 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     public void close() {
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("legacyCriticalBehavior")
+                .type("boolean")
+                .helpText("Boolean to enable legacy critical behavior in the Key Usage and Extended Key Usage validations. This option is deprecated.")
+                .defaultValue("false")
+                .add()
+                .build();
+    }
+
+    public boolean isLegacyCriticalBehavior() {
+        return legacyCriticalBehavior;
+    }
 }

@@ -33,6 +33,10 @@ jobs:
     needs:
       - build
     timeout-minutes: 45
+    strategy:
+      matrix:
+        suite: [Oid4VpTestSuite, Oid4VciHaipTestSuite, Oid4VciNonHaipTestSuite]
+      fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -40,8 +44,5 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
-
       - name: Run conformance tests
-        run: ./mvnw package -f tests/conformance/pom.xml
+        run: ./mvnw package -f tests/conformance/pom.xml -Dtest=${{ matrix.suite }}

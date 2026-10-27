@@ -2,12 +2,20 @@ package org.keycloak.tests.oauth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -22,6 +30,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -45,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -71,6 +82,9 @@ public class RefreshTokenRevokeTest {
 
     @InjectUser(config = TestRealmUserConfig.class)
     protected ManagedUser user;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void before() {
@@ -607,6 +621,78 @@ public class RefreshTokenRevokeTest {
 
         );
         testRefreshTokenConcurrentReuse(3);
+    }
+
+    @Test
+    public void revokeRefreshTokenTwiceWithRefreshTokensRevoked() {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        // the revoked token is no longer usable
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode());
+
+        // second revocation acquires the same lock id again, which only succeeds if the first one released it
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        events.clear();
+    }
+
+    @Test
+    public void revokeRefreshTokenWaitsForRefreshSerializationLock() throws Exception {
+        realm.updateWithCleanup(r -> r.revokeRefreshToken(true));
+
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+
+        // the lock id the refresh path computes for this token family
+        String lockId = runOnServer.fetchString(session -> {
+            try {
+                RefreshToken token = new JWSInput(refreshToken).readJsonContent(RefreshToken.class);
+                return "refreshLock:" + token.getSessionId() + ":" + new TokenManager().getReuseIdKey(token);
+            } catch (JWSInputException e) {
+                throw new RuntimeException("Failed to parse refresh token", e);
+            }
+        });
+
+        // hold that lock, as a concurrent refresh of the same family would
+        runOnServer.run(session -> assertTrue(session.singleUseObjects().putIfAbsent(lockId, 60)));
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        boolean lockReleased = false;
+        try {
+            Future<Integer> revocation = executor.submit(() -> oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+            // revocation cannot proceed while the lock is held, so it is inside the same serialized region
+            assertThrows(TimeoutException.class, () -> revocation.get(2, TimeUnit.SECONDS),
+                    "Revocation completed while the refresh serialization lock was held");
+
+            runOnServer.run(session -> session.singleUseObjects().remove(lockId));
+            lockReleased = true;
+
+            assertEquals(200, revocation.get(30, TimeUnit.SECONDS));
+        } finally {
+            if (!lockReleased) {
+                // an assertion failed before the lock was released, so drop it rather than wait out its lifespan
+                runOnServer.run(session -> session.singleUseObjects().remove(lockId));
+            }
+            executor.shutdownNow();
+        }
+
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode());
+
+        events.clear();
     }
 
     private void testRefreshTokenConcurrentReuse(int expectedSuccessfulRefreshes) {

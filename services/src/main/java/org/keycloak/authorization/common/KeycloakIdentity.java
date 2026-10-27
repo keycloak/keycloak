@@ -32,7 +32,6 @@ import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Tokens;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -305,7 +304,7 @@ public class KeycloakIdentity implements Identity {
 
         boolean hasRole = user.hasRole(role);
 
-        if (AdminRoles.isAdminRole(role) && !hasRole) {
+        if (!hasRole) {
             return false;
         }
 
@@ -353,7 +352,7 @@ public class KeycloakIdentity implements Identity {
 
         boolean hasRole = user.hasRole(role);
 
-        if (AdminRoles.isAdminRole(role) && !hasRole) {
+        if (!hasRole) {
             return false;
         }
 

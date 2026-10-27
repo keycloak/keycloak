@@ -20,7 +20,6 @@ import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -699,7 +698,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         updateAccountInformationPage.updateAccountInformation( "attributeRequiredAndSelectedByScopeMustBeSet", "attributeRequiredAndSelectedByScopeMustBeSet@email", "FirstAA", "LastAA", "DepartmentAA");
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet");
+        UserRepresentation user = UserProfileUtil.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet").orElseThrow();
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals("DepartmentAA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
@@ -729,7 +728,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         Assertions.assertTrue(updateAccountInformationPage.isDepartmentPresent());
         updateAccountInformationPage.updateAccountInformation( "attributeNotRequiredAndSelectedByScopeCanBeIgnored", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "FirstAA", "LastAA");
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeNotRequiredAndSelectedByScopeCanBeIgnored");
+        UserRepresentation user = UserProfileUtil.getUserByUsername(managedRealm.admin(),"attributeNotRequiredAndSelectedByScopeCanBeIgnored").orElseThrow();
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertThat(StringUtils.isEmpty(user.firstAttribute(ATTRIBUTE_DEPARTMENT)), is(true));
@@ -759,7 +758,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         Assertions.assertTrue(updateAccountInformationPage.isDepartmentPresent());
         updateAccountInformationPage.updateAccountInformation( "attributeNotRequiredAndSelectedByScopeCanBeSet", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "FirstAA", "LastAA","Department AA");
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeNotRequiredAndSelectedByScopeCanBeSet");
+        UserRepresentation user = UserProfileUtil.getUserByUsername(managedRealm.admin(),"attributeNotRequiredAndSelectedByScopeCanBeSet").orElseThrow();
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals("Department AA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
@@ -790,7 +789,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         assertFalse(updateAccountInformationPage.isDepartmentPresent());
         updateAccountInformationPage.updateAccountInformation( "attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingRegistration", "attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingRegistration@email", "FirstAA", "LastAA");
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingRegistration");
+        UserRepresentation user = UserProfileUtil.getUserByUsername(managedRealm.admin(),"attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingRegistration").orElseThrow();
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals(null, user.firstAttribute(ATTRIBUTE_DEPARTMENT));
@@ -960,6 +959,15 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         waitForPage(driver, "sign in to", true);
         loginPage.login("dup-user-email", bc.getUserPassword());
         idpConfirmLinkPage.assertCurrent();
+    }
+
+    @Test
+    public void testLinkAccountAndVerifyEmailUsingDifferentBrowserDuplicateEmailWithoutBrokerUserId() {
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.getConfig().put(TestKeycloakOidcIdentityProviderFactory.OMIT_BROKER_USER_ID, Boolean.TRUE.toString());
+        identityProviderResource.update(idpRep);
+
+        testLinkAccountAndVerifyEmailUsingDifferentBrowserDuplicateEmail();
     }
 
     public void addDepartmentScopeIntoRealm() {

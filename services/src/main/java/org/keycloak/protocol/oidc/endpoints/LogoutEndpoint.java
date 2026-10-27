@@ -91,6 +91,7 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -177,7 +178,7 @@ public class LogoutEndpoint {
         boolean forcedConfirmation = false;
         ClientModel client = clientId == null ? null : realm.getClientByClientId(clientId);
         if (clientId != null && client == null) {
-            logger.warnf("Client '%s' not found.", clientId);
+            logger.warnf("Client '%s' not found.", StringUtil.removeControlCharacters(clientId));
             forcedConfirmation = true;
         }
 
@@ -209,7 +210,7 @@ public class LogoutEndpoint {
                     String errorMessage = "Parameter client_id is different than the client for which ID Token was issued.";
                     event.detail(Details.REASON, errorMessage);
                     event.error(Errors.INVALID_TOKEN);
-                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, clientId, idToken.getIssuedFor());
+                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, StringUtil.removeControlCharacters(clientId), idToken.getIssuedFor());
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
                 } else {
                     confirmationNeeded = false;

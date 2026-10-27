@@ -68,6 +68,14 @@ export async function assertEmailPageWithTokenAuth(page: Page) {
   await expect(getAuthTokenClientSecret(page)).toHaveValue("**********");
 }
 
+export async function assertTestConnectionHint(page: Page, email: string) {
+  await expect(
+    page.getByText(
+      `When testing the connection an e-mail will be sent to the current user (${email}).`,
+    ),
+  ).toBeVisible();
+}
+
 function getFrom(page: Page) {
   return page.getByTestId("smtpServer.from");
 }

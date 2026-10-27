@@ -4,6 +4,7 @@ public class OAuthIdentityProviderConfigBuilder {
 
     private Mode mode = Mode.DEFAULT;
     private boolean jwkUse = true;
+    private String issuer;
 
     public OAuthIdentityProviderConfigBuilder spiffe() {
         mode = Mode.SPIFFE;
@@ -20,11 +21,16 @@ public class OAuthIdentityProviderConfigBuilder {
         return this;
     }
 
-    public OAuthIdentityProviderConfiguration build() {
-        return new OAuthIdentityProviderConfiguration(mode, jwkUse);
+    public OAuthIdentityProviderConfigBuilder issuer(String issuer) {
+        this.issuer = issuer;
+        return this;
     }
 
-    public record OAuthIdentityProviderConfiguration(Mode mode, boolean jwkUse) {
+    public OAuthIdentityProviderConfiguration build() {
+        return new OAuthIdentityProviderConfiguration(mode, jwkUse, issuer);
+    }
+
+    public record OAuthIdentityProviderConfiguration(Mode mode, boolean jwkUse, String issuer) {
     }
 
     public enum Mode {

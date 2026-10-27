@@ -183,6 +183,41 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     }
 
     @Test
+    public void shouldRejectNonHttpsJwksUri() throws JsonProcessingException {
+        String issuerUri = "https://issuer.example.com";
+
+        // Metadata delegates key resolution to a cleartext-http JWKS URI
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.put("jwks_uri", "http://issuer.example.com/api/vci/jwks");
+
+        genericTestShouldFail(
+                exampleIssuerSignedJwt(),
+                mockHttpDataFetcherWithMetadata(issuerUri, metadata),
+                "HTTPS URI required to retrieve issuer JWKS",
+                null
+        );
+    }
+
+    @Test
+    public void shouldAcceptJwksUriWithUppercaseHttpsScheme() throws Exception {
+        String issuerUri = "https://issuer.example.com";
+
+        // URI schemes are case-insensitive, so an uppercase HTTPS scheme is still secure
+        ObjectNode metadata = SdJwtUtils.mapper.createObjectNode();
+        metadata.put("issuer", issuerUri);
+        metadata.put("jwks_uri", "HTTPS://issuer.example.com/api/vci/jwks");
+
+        TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
+                issuerUri, mockHttpDataFetcherWithMetadata(issuerUri, metadata));
+
+        List<SignatureVerifierContext> keys = trustedIssuer
+                .resolveIssuerVerifyingKeys(exampleIssuerSignedJwt());
+
+        assertEquals(3, keys.size());
+    }
+
+    @Test
     public void shouldFailOnUnexpectedIssuerExposed() throws JsonProcessingException {
         String issuerUri = "https://issuer.example.com";
 

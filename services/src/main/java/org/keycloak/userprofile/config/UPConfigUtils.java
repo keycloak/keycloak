@@ -146,6 +146,43 @@ public class UPConfigUtils {
     }
 
     private static List<String> validateScimAttributeMappings(UPConfig config) {
+        List<String> errors = new ArrayList<>();
+
+        errors.addAll(validateOneToOneScimAttributeMappings(config));
+        errors.addAll(validateComplexScimAttributeMappings(config));
+
+        return errors;
+    }
+
+    private static List<String> validateOneToOneScimAttributeMappings(UPConfig config) {
+        Map<String, String> attributeNamesByScimAttribute = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            Map<String, Object> annotations = attribute.getAnnotations();
+
+            if (annotations == null) {
+                continue;
+            }
+
+            Object scimValue = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+
+            if (!(scimValue instanceof String scimName) || isBlank(scimName)) {
+                continue;
+            }
+
+            String existingAttributeName = attributeNamesByScimAttribute.putIfAbsent(scimName, attribute.getName());
+
+            if (existingAttributeName != null) {
+                errors.add("Duplicate SCIM attribute mapping '" + scimName + "' configured for attributes '"
+                        + existingAttributeName + "' and '" + attribute.getName() + "'");
+            }
+        }
+
+        return errors;
+    }
+
+    private static List<String> validateComplexScimAttributeMappings(UPConfig config) {
         Map<String, List<ScimSubAttributeMapping>> mappingsByParent = new HashMap<>();
 
         for (UPAttribute attribute : config.getAttributes()) {

@@ -2,6 +2,7 @@ package org.keycloak.protocol.oidc.scope;
 
 import jakarta.annotation.Nonnull;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,7 +41,8 @@ public class ClientDelegationScopeType extends DelegationScopeType {
     }
 
     @Override
-    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter,
+            AuthenticatedClientSessionModel clientSession) throws InvalidScopeParameterException {
         UserModel serviceAccountUser = resolveUser(scope, parameter);
         RealmModel realm = scope.getRealm();
         AdminPermissionEvaluator evaluator = AdminPermissions.evaluator(session, realm, realm, serviceAccountUser);
@@ -49,6 +51,7 @@ public class ClientDelegationScopeType extends DelegationScopeType {
             throw new InvalidScopeParameterException(String.format("Client '%s' is not allowed to delegate as user '%s' in realm '%s'",
                     parameter, currentUser.getUsername(), realm.getName()));
         }
+        verifyPinnedIdentity(clientSession, parameter, serviceAccountUser.getId());
     }
 
     @Override

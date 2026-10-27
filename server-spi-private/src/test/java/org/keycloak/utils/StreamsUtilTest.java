@@ -103,6 +103,98 @@ public class StreamsUtilTest {
     }
 
     @Test
+    public void testClosingStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("Stream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingStreamClosesOnExceptionDuringToList() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3)
+                    .map(i -> { if (i == 2) throw new RuntimeException("fail"); return i; })
+                    .onClose(() -> closed.set(true)))
+                    .toList();
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            // expected
+        }
+        Assert.assertTrue("Stream should be closed even when toList throws", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToInt(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("IntStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingLongStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToLong(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("LongStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingDoubleStreamClosesOnExceptionDuringTerminalOperation() {
+        AtomicBoolean closed = new AtomicBoolean();
+        try {
+            StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                    .mapToDouble(i -> i)
+                    .forEach(i -> { throw new RuntimeException("fail"); });
+            Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("fail", e.getMessage());
+        }
+        Assert.assertTrue("DoubleStream should be closed even when terminal operation throws", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamAsLongStreamPreservesClose() {
+        AtomicBoolean closed = new AtomicBoolean();
+        long sum = StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                .mapToInt(i -> i)
+                .asLongStream()
+                .sum();
+        Assert.assertEquals(6L, sum);
+        Assert.assertTrue("Stream should be closed after asLongStream() terminal operation", closed.get());
+    }
+
+    @Test
+    public void testClosingIntStreamAsDoubleStreamPreservesClose() {
+        AtomicBoolean closed = new AtomicBoolean();
+        double sum = StreamsUtil.closing(Stream.of(1, 2, 3).onClose(() -> closed.set(true)))
+                .mapToInt(i -> i)
+                .asDoubleStream()
+                .sum();
+        Assert.assertEquals(6.0, sum, 0.001);
+        Assert.assertTrue("Stream should be closed after asDoubleStream() terminal operation", closed.get());
+    }
+
+    @Test
     public void testSortedInsideOfFlatMapShouldRespectTerminalOperation() {
         AtomicInteger numberOfFetchedElements = new AtomicInteger();
 

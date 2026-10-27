@@ -41,7 +41,6 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupPathChangeEvent;
@@ -107,14 +106,7 @@ public class GroupResource {
         this.auth.groups().requireView(group);
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
-
-        if (rep.getClientRoles() != null) {
-            rep.getClientRoles().keySet().removeIf(clientId -> {
-                ClientModel client = realm.getClientByClientId(clientId);
-                return client == null || !auth.clients().canView(client);
-            });
-        }
-
+        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
         rep.setAccess(auth.groups().getAccess(group));
 
         return GroupUtils.populateSubGroupCount(group, rep);
@@ -136,6 +128,10 @@ public class GroupResource {
     })
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
+
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
 
         String groupName = rep.getName();
 
@@ -207,6 +203,9 @@ public class GroupResource {
         return paginatedStream(stream, first, max)
             .map(g -> {
                 GroupRepresentation rep = GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation);
+                if (!briefRepresentation) {
+                    GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+                }
 
                 if (subGroupsCount) {
                     return GroupUtils.populateSubGroupCount(g, rep);
@@ -238,6 +237,10 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         String groupName = rep.getName();
         if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
@@ -252,6 +255,9 @@ public class GroupResource {
                     throw new NotFoundException("Could not find child by id");
                 }
                 auth.groups().requireManage(child);
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     realm.moveGroup(child, group);
                 }

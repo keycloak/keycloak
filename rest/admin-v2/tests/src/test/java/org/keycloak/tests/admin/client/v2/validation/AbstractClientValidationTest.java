@@ -909,7 +909,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             String responseBody = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME -> assertThat(responseBody, containsString("Invalid values for these fields: nameIdFormat"));
+                case HttpPatch.METHOD_NAME -> assertThat(responseBody, containsString("Invalid value for nameIdFormat"));
                 default -> assertThat(responseBody, containsString("Cannot parse the JSON"));
             }
         }
@@ -933,7 +933,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             String responseBody = EntityUtils.toString(response.getEntity());
             if (getHttpMethod().equals(HttpPatch.METHOD_NAME)) {
-                assertThat(responseBody, containsString("Invalid values for these fields: signatureAlgorithm"));
+                assertThat(responseBody, containsString("Invalid value for signatureAlgorithm"));
             } else {
                 assertThat(responseBody, containsString("Cannot parse the JSON"));
             }
@@ -1219,7 +1219,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             switch (getHttpMethod()){
                 case HttpPut.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("protocol cannot be changed for an existing client"));
                 case HttpPatch.METHOD_NAME -> assertThat(body, anyOf(
-                        CoreMatchers.containsString("Invalid values for these fields: protocol"),
+                        CoreMatchers.containsString("Invalid value for protocol"),
                         CoreMatchers.containsString("protocol cannot be changed for an existing client")));
             }
         }
@@ -1240,10 +1240,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             switch (getHttpMethod()){
                 case HttpPut.METHOD_NAME -> assertThat(body, anyOf(
                         CoreMatchers.containsString("Cannot parse the JSON"),
-                        CoreMatchers.containsString("Invalid values for these fields: enabled"),
+                        CoreMatchers.containsString("Invalid value for enabled"),
                         CoreMatchers.containsString("unsupported client protocol"),
                         CoreMatchers.containsString("Mapper not found")));
-                case HttpPatch.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("Invalid values for these fields: enabled"));
+                case HttpPatch.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("Invalid value for enabled"));
             }
         }
     }

@@ -55,7 +55,7 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public void submit() {
-        driver.waiting().waitForPageReload(() -> submitButton.click());
+        submitButton.click();
     }
 
     public void clickSocial(String alias) {
@@ -94,6 +94,10 @@ public class LoginPage extends AbstractLoginPage {
 
     public void clickRegister() {
         registerLink.click();
+    }
+
+    public boolean isRegisterLinkPresent() {
+        return !driver.driver().findElements(By.linkText("Register")).isEmpty();
     }
 
     public void resetPassword() {

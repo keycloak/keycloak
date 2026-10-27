@@ -110,13 +110,17 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
             }, (int iteration, Throwable e) -> {
 
+                safeRollbackConnection();
                 if (e instanceof LockRetryException && iteration < (DEFAULT_MAX_ATTEMPTS - 1)) {
                     // Indicates we should try to acquire lock again in different transaction
-                    safeRollbackConnection();
                     restart();
                 } else {
-                    safeRollbackConnection();
                     safeCloseConnection();
+                    // Fail fast with the original exception, as retrying would only hit a null lockService
+                    if (e instanceof RuntimeException re) {
+                        throw re;
+                    }
+                    throw (Error) e;
                 }
 
             }, DEFAULT_MAX_ATTEMPTS, 10);

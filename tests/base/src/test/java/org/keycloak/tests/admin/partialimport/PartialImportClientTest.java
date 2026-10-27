@@ -188,7 +188,7 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
         Assertions.assertEquals(1, doImport().getOverwritten());
 
         ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0);
-        Assertions.assertDoesNotThrow(() -> managedRealm.admin().clients().get(client.getId()).getServiceAccountUser());
+        Assertions.assertNotNull(managedRealm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId());
     }
 
     @Test

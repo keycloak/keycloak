@@ -12,12 +12,17 @@ import {
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import {
+  OID4VCI_MDOC_SERVER_FEATURE,
   OID4VCI_PROTOCOL,
   skipIfOID4VCIFeatureDisabled,
+  skipIfOID4VCIMdocFeatureDisabled,
 } from "../utils/oid4vci.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
-type Oid4vciFormat = "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)";
+type Oid4vciFormat =
+  | "SD-JWT VC (dc+sd-jwt)"
+  | "JWT VC (jwt_vc_json)"
+  | "ISO mDoc (mso_mdoc)";
 const OID4VCI_OPTION_VISIBLE_TIMEOUT_MS = 5_000;
 
 async function getVisibleOID4VCIProtocolOption(page: Page) {
@@ -393,7 +398,34 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     ).toBeVisible();
   });
 
-  test("should only show supported format options (dc+sd-jwt and jwt_vc)", async ({
+  test("should only show supported non-mdoc format options when mdoc is disabled", async ({
+    page,
+  }) => {
+    // eslint-disable-next-line playwright/no-skipped-test -- This test covers the server-side provider-gated branch.
+    test.skip(
+      await adminClient.isFeatureEnabled(OID4VCI_MDOC_SERVER_FEATURE),
+      "mDoc feature is enabled.",
+    );
+
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(page, testBed);
+
+    await page.locator("#kc-vc-format").click();
+
+    await expect(
+      page.getByRole("option", { name: "SD-JWT VC (dc+sd-jwt)" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "JWT VC (jwt_vc_json)" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "ISO mDoc (mso_mdoc)" }),
+    ).toHaveCount(0);
+  });
+
+  test("should only show supported format options (dc+sd-jwt and jwt_vc_json)", async ({
     page,
   }) => {
     await using testBed = await createTestBed({
@@ -524,6 +556,41 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.locator("#kc-vc-format")).toContainText(
       "SD-JWT VC (dc+sd-jwt)",
     );
+  });
+
+  test("should clear previously set optional OID4VCI fields on edit", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    const testClientScopeName = `oid4vci-clear-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(testClientScopeName);
+    await page
+      .getByTestId(OID4VCI_FIELDS.ISSUER_DID)
+      .fill(TEST_VALUES.ISSUER_DID);
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+    await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue(
+      TEST_VALUES.ISSUER_DID,
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.ISSUER_DID).fill("");
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope updated")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+    await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
   });
 
   test("should omit optional OID4VCI fields when left blank", async ({
@@ -874,6 +941,58 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.getByText("Unsupported binding method(s)")).toBeVisible();
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+  });
+
+  test("should configure mdoc format and cose_key binding when mdoc feature is enabled", async ({
+    page,
+  }) => {
+    await skipIfOID4VCIMdocFeatureDisabled();
+
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(`oid4vci-mdoc-${Date.now()}`);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
+
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText(
+        "Unsupported binding method(s): cose_key. Allowed values: jwk",
+      ),
+    ).toBeVisible();
+
+    await selectVCFormat(page, "ISO mDoc (mso_mdoc)");
+    await expect(page.getByText("Unsupported binding method(s)")).toHaveCount(
+      0,
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText(
+        "Unsupported binding method(s): jwk. Allowed values: cose_key",
+      ),
+    ).toBeVisible();
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
 
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();

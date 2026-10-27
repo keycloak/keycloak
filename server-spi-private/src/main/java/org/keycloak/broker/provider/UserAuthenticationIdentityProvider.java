@@ -3,6 +3,7 @@ package org.keycloak.broker.provider;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -58,15 +59,34 @@ public interface UserAuthenticationIdentityProvider<C extends IdentityProviderMo
          * Called when error happened on the IDP side.
          * Assumption is that authenticationSession is set in the {@link org.keycloak.models.KeycloakContext} when this method is called
          *
+         * @param idpConfig identity provider config
+         * @param eventError error code from {@link Errors} to use in the event
+         * @param message user-facing error message
          * @return see description
          */
-        Response error(IdentityProviderModel idpConfig, String message);
+        Response error(IdentityProviderModel idpConfig, String eventError, String message);
+
+        /**
+         * @deprecated Use {@link #error(IdentityProviderModel, String, String)} instead.
+         */
+        @Deprecated(forRemoval = true, since = "27.0")
+        default Response error(IdentityProviderModel idpConfig, String message) {
+            return error(idpConfig, Errors.IDENTITY_PROVIDER_LOGIN_FAILURE, message);
+        }
     }
 
     void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context);
     void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context);
     void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
     void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
+
+    /**
+     * Applies the provider's email synchronization and verification policy before an authentication
+     * execution relies on the user's email. Does not import the user or run identity provider mappers.
+     * Providers that synchronize email should apply the same policy here as in {@link #updateBrokeredUser}.
+     */
+    default void updateBrokeredEmail(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+    }
 
     /**
      * JAXRS callback endpoint for when the remote IDP wants to callback to keycloak.

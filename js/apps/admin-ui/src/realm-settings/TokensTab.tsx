@@ -7,6 +7,7 @@ import {
   useAlerts,
   SelectControl,
   NumberControl,
+  TextAreaControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -37,6 +38,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { beerify, sortProviders } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { DEFLATE_COMPRESSION } from "./constants";
 
 import "./realm-settings-section.css";
 
@@ -745,15 +747,43 @@ export const RealmSettingsTokensTab = ({
             data-testid="require-response-encryption-switch"
           />
           {requestEncryptionRequired === "true" && (
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm(
-                "attributes.oid4vci.request.zip.algorithms",
-              )}
+            <FormGroup
+              hasNoPaddingTop
               label={t("enableDeflateCompression")}
-              labelIcon={t("enableDeflateCompressionHelp")}
-              data-testid="deflate-compression-switch"
-              stringify
-            />
+              fieldId="kc-deflate-compression"
+              labelIcon={
+                <HelpItem
+                  helpText={t("enableDeflateCompressionHelp")}
+                  fieldLabelId="enableDeflateCompression"
+                />
+              }
+            >
+              <Controller
+                name={convertAttributeNameToForm(
+                  "attributes.oid4vci.request.zip.algorithms",
+                )}
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="kc-deflate-compression"
+                    data-testid="attributes.oid4vci.request.zip.algorithms"
+                    aria-label={t("enableDeflateCompression")}
+                    label={t("on")}
+                    labelOff={t("off")}
+                    isChecked={
+                      field.value === "true" ||
+                      String(field.value)
+                        .split(",")
+                        .map((alg) => alg.trim())
+                        .includes(DEFLATE_COMPRESSION)
+                    }
+                    onChange={(_event, checked) =>
+                      field.onChange(checked ? DEFLATE_COMPRESSION : "")
+                    }
+                  />
+                )}
+              />
+            </FormGroup>
           )}
           <NumberControl
             name={convertAttributeNameToForm(
@@ -767,6 +797,47 @@ export const RealmSettingsTokensTab = ({
               rules: { min: 2 },
             }}
             data-testid="batch-issuance-size"
+          />
+          <TextAreaControl
+            name={convertAttributeNameToForm("attributes.oid4vci.issuer_info")}
+            label={t("issuerInfo")}
+            labelIcon={t("issuerInfoHelp")}
+            rules={{
+              validate: (value: string) => {
+                if (!value) {
+                  return true;
+                }
+                try {
+                  const parsed: unknown = JSON.parse(value);
+                  const isIssuerInfoElement = (element: unknown) => {
+                    if (
+                      typeof element !== "object" ||
+                      element === null ||
+                      Array.isArray(element)
+                    ) {
+                      return false;
+                    }
+                    if (!("format" in element) || !("data" in element)) {
+                      return false;
+                    }
+                    const { format, data } = element;
+                    return (
+                      typeof format === "string" &&
+                      format.trim().length > 0 &&
+                      data !== null
+                    );
+                  };
+                  return (
+                    (Array.isArray(parsed) &&
+                      parsed.every(isIssuerInfoElement)) ||
+                    t("issuerInfoInvalid")
+                  );
+                } catch {
+                  return t("issuerInfoInvalid");
+                }
+              },
+            }}
+            rows={6}
           />
 
           <Text

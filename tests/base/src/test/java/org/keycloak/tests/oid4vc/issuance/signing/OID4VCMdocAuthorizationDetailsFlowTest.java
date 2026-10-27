@@ -20,15 +20,24 @@ import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCMdocTestBase;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import static org.keycloak.tests.oid4vc.OID4VCMdocTestBase.assertMdocCredentialStructure;
 
 @KeycloakIntegrationTest(config = OID4VCMdocTestBase.VCTestServerWithMdocEnabled.class)
 public class OID4VCMdocAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
 
     @Override
+    @BeforeEach
+    protected void beforeEachBase() {
+        super.beforeEachBase();
+        ensureMdocCompliantSigningConfiguration();
+    }
+
+    @Override
     protected CredentialScopeRepresentation getCredentialScope() {
         ensureEcSigningKeyProvider("mdoc-auth-details-issuer-key", "P-256", "ES256", 200);
-        return mdocTypeCredentialScope;
+        return requireExistingCredentialScope(mdocTypeCredentialScopeName);
     }
 
     @Override

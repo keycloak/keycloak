@@ -53,7 +53,7 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         ensureEcSigningKeyProvider("mdoc-mapper-issuer-key", "P-256", "ES256", 200);
 
         ProtocolMapperRepresentation mapper =
-                ProtocolMapperUtils.getUserAttributeMapper("address.street", "address_street_address", "org.iso.18013.5.1");
+                ProtocolMapperUtils.getUserAttributeMapper("address.street", "address_street_address", "org.example.credential");
         mapper.getConfig().put(CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true");
         CredentialScopeRepresentation scope = createCustomMdocCredentialScope("mdoc-mapper-scope", "mdoc-mapper-config", List.of(mapper));
 
@@ -65,7 +65,7 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         List<List<String>> actualPaths = supportedConfig.getCredentialMetadata().getClaims().stream()
                 .map(Claim::getPath)
                 .toList();
-        assertTrue(actualPaths.stream().anyMatch(List.of("org.iso.18013.5.1", "address", "street")::equals),
+        assertTrue(actualPaths.stream().anyMatch(List.of("org.example.credential", "address", "street")::equals),
                 "Expected nested mDoc path in " + actualPaths);
 
         OID4VCTestContext ctx = new OID4VCTestContext(client, scope);
@@ -96,7 +96,7 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         Object credential = credentialResponse.getCredentialResponse().getCredentials().get(0).getCredential();
         String encodedIssuerSigned = assertInstanceOf(String.class, credential);
         Map<String, Object> nameSpaces = getMdocNamespaces(encodedIssuerSigned);
-        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.iso.18013.5.1"));
+        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.example.credential"));
         Map<?, ?> addressClaim = assertInstanceOf(Map.class, namespaceClaims.get("address"));
         assertEquals("221B Baker Street", addressClaim.get("street"));
     }
@@ -106,27 +106,27 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         ensureEcSigningKeyProvider("mdoc-vc-level-mapper-issuer-key", "P-256", "ES256", 200);
 
         ProtocolMapperRepresentation nameMapper =
-                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1");
+                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential");
         nameMapper.getConfig().put(CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true");
 
         ProtocolMapperRepresentation issuedAtMapper =
                 ProtocolMapperUtils.getIssuedAtTimeMapper("iat", null, "COMPUTE");
         issuedAtMapper.setConfig(new HashMap<>(issuedAtMapper.getConfig()));
         issuedAtMapper.getConfig().put(CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true");
-        issuedAtMapper.getConfig().put(OID4VCMapper.MDOC_NAMESPACE, "org.iso.18013.5.1");
+        issuedAtMapper.getConfig().put(OID4VCMapper.MDOC_NAMESPACE, "org.example.credential");
 
         ProtocolMapperRepresentation contextMapper = ProtocolMapperUtils.getProtocolMapper(
                 "context-mapper", "oid4vc-context-mapper", new HashMap<>(Map.of(
                         OID4VCContextMapper.TYPE_KEY, "https://www.w3.org/2018/credentials/v1",
                         CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true",
-                        OID4VCMapper.MDOC_NAMESPACE, "org.iso.18013.5.1"
+                        OID4VCMapper.MDOC_NAMESPACE, "org.example.credential"
                 )));
 
         ProtocolMapperRepresentation typeMapper = ProtocolMapperUtils.getProtocolMapper(
                 "type-mapper", "oid4vc-vc-type-mapper", new HashMap<>(Map.of(
                         OID4VCTypeMapper.TYPE_KEY, "VerifiableCredential",
                         CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true",
-                        OID4VCMapper.MDOC_NAMESPACE, "org.iso.18013.5.1"
+                        OID4VCMapper.MDOC_NAMESPACE, "org.example.credential"
                 )));
 
         CredentialScopeRepresentation scope = createCustomMdocCredentialScope(
@@ -142,8 +142,8 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         List<List<String>> claimPaths = supportedConfig.getCredentialMetadata().getClaims().stream()
                 .map(Claim::getPath)
                 .toList();
-        assertTrue(claimPaths.contains(List.of("org.iso.18013.5.1", "given_name")));
-        assertFalse(claimPaths.contains(List.of("org.iso.18013.5.1", "iat")));
+        assertTrue(claimPaths.contains(List.of("org.example.credential", "given_name")));
+        assertFalse(claimPaths.contains(List.of("org.example.credential", "iat")));
         assertFalse(claimPaths.contains(List.of("context")));
         assertFalse(claimPaths.contains(List.of("type")));
 
@@ -175,9 +175,9 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
         Object credential = credentialResponse.getCredentialResponse().getCredentials().get(0).getCredential();
         String encodedIssuerSigned = assertInstanceOf(String.class, credential);
         Map<String, Object> nameSpaces = getMdocNamespaces(encodedIssuerSigned);
-        assertTrue(nameSpaces.containsKey("org.iso.18013.5.1"));
+        assertTrue(nameSpaces.containsKey("org.example.credential"));
         assertFalse(nameSpaces.containsKey("iat"), "VC-level iat mapper must not become an mDoc namespace");
-        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.iso.18013.5.1"));
+        Map<?, ?> namespaceClaims = assertInstanceOf(Map.class, nameSpaces.get("org.example.credential"));
         assertFalse(namespaceClaims.containsKey("iat"));
         assertFalse(namespaceClaims.containsKey("context"));
         assertFalse(namespaceClaims.containsKey("type"));
@@ -187,8 +187,8 @@ public class OID4VCMdocMapperTest extends OID4VCMdocTestBase {
     public void testSameElementIdentifierInDistinctNamespacesKeepsSeparateValues() {
         ensureEcSigningKeyProvider("mdoc-namespace-collision-issuer-key", "P-256", "ES256", 200);
 
-        String namespaceA = "org.iso.18013.5.1";
-        String namespaceB = "org.iso.18013.5.1.aamva";
+        String namespaceA = "org.example.credential";
+        String namespaceB = "org.example.credential.other";
 
         // Two mappers emit the same mDoc element identifier into different namespaces from distinct user attributes.
         ProtocolMapperRepresentation givenNameInA =

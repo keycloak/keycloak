@@ -1086,29 +1086,6 @@ public class StreamService {
     }
 
     /**
-     * Reads the receiver client's {@code ssf.signatureAlgorithm} attribute,
-     * validates it against {@link SsfSignatureAlgorithms#ALLOWED}, and
-     * copies it onto the given {@link StreamConfig} so the dispatcher can
-     * pick it up at delivery time. Rejects the stream create/update with
-     * {@link SsfException} when the attribute is set to a value the
-     * transmitter does not support, giving the receiver a clean 400
-     * instead of a silent drop later during SET signing.
-     *
-     * <p>A {@code null} or blank attribute is intentionally allowed — it
-     * means "use the transmitter-wide default", which the dispatcher
-     * resolves via {@link SsfSignatureAlgorithms#resolveForStream}.
-     */
-    /**
-     * For POLL streams, derives the transmitter-owned poll endpoint URL
-     * from the realm issuer, the receiver's OAuth {@code clientId} and
-     * the freshly-assigned {@code stream_id}, and writes it into
-     * {@link StreamDeliveryConfig#setEndpointUrl}. Per SSF §6.1.2 the
-     * poll endpoint URL is "specified by the Transmitter" — anything the
-     * receiver provided on input is overwritten here. No-op for PUSH
-     * streams where the receiver-supplied URL is the actual delivery
-     * target.
-     */
-    /**
      * Returns the delivery-method URI currently stored on the given
      * stream, or {@code null} if unset. Exposed as a helper because
      * {@code updateStream} and {@code replaceStream} both need to
@@ -1225,6 +1202,16 @@ public class StreamService {
     public static final String DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED =
             "event_type_no_longer_requested";
 
+    /**
+     * For POLL streams, derives the transmitter-owned poll endpoint URL
+     * from the realm issuer, the receiver's OAuth {@code clientId} and
+     * the freshly-assigned {@code stream_id}, and writes it into
+     * {@link StreamDeliveryConfig#setEndpointUrl}. Per SSF §6.1.2 the
+     * poll endpoint URL is "specified by the Transmitter" — anything the
+     * receiver provided on input is overwritten here. No-op for PUSH
+     * streams where the receiver-supplied URL is the actual delivery
+     * target.
+     */
     protected void finalizePollEndpointUrlIfApplicable(StreamConfig streamConfig, ClientModel receiverClient) {
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
         if (delivery == null || delivery.getMethod() == null) {
@@ -1242,6 +1229,19 @@ public class StreamService {
         delivery.setEndpointUrl(pollUrl);
     }
 
+    /**
+     * Reads the receiver client's {@code ssf.signatureAlgorithm} attribute,
+     * validates it against {@link SsfSignatureAlgorithms#ALLOWED}, and
+     * copies it onto the given {@link StreamConfig} so the dispatcher can
+     * pick it up at delivery time. Rejects the stream create/update with
+     * {@link SsfException} when the attribute is set to a value the
+     * transmitter does not support, giving the receiver a clean 400
+     * instead of a silent drop later during SET signing.
+     *
+     * <p>A {@code null} or blank attribute is intentionally allowed — it
+     * means "use the transmitter-wide default", which the dispatcher
+     * resolves via {@link SsfSignatureAlgorithms#resolveForStream}.
+     */
     protected void applySignatureAlgorithmFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
         String signatureAlgorithm = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_SIGNATURE_ALGORITHM_KEY);
         if (signatureAlgorithm == null || signatureAlgorithm.isBlank()) {
@@ -1346,12 +1346,6 @@ public class StreamService {
     }
 
     /**
-     * Updates the status of a stream.
-     *
-     * @param newStreamStatus The updated stream status
-     * @return The updated stream status, or null if not found
-     */
-    /**
      * Admin-initiated status update: same flow as
      * {@link #updateStreamStatus(StreamStatus)} but explicitly
      * associated with a receiver client that the admin selected from
@@ -1373,6 +1367,12 @@ public class StreamService {
         }
     }
 
+    /**
+     * Updates the status of a stream.
+     *
+     * @param newStreamStatus The updated stream status
+     * @return The updated stream status, or null if not found
+     */
     public StreamStatus updateStreamStatus(StreamStatus newStreamStatus) {
 
         if (newStreamStatus == null) {

@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
@@ -76,6 +76,10 @@ test.describe.serial("Realm settings client profiles tab tests", () => {
     test.beforeEach(async ({ page }) => {
       await searchClientProfile(page, editedProfileName);
       await clickTableRowItem(page, editedProfileName);
+      // Wait for the details page, otherwise the action dropdown of the realm settings page might be used
+      await expect(page.getByTestId("view-header")).toHaveText(
+        editedProfileName,
+      );
     });
 
     test("Should add executor to client profile", async ({ page }) => {

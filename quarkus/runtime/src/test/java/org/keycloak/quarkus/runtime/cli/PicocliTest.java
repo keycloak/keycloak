@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -33,6 +34,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
@@ -770,6 +772,49 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getOutString().contains(Picocli.PROVIDER_TIMESTAMP_WARNING));
     }
+    
+    @Test
+    public void testStartNotOptimizedProviderUnchanged() {
+        Path conf = Paths.get("src/test/resources/");
+        Path tmp = Paths.get("target/home-trunc-ts");
+        Environment.setHomeDir(tmp);
+        try {
+            FileUtils.copyDirectory(conf.toFile(), tmp.toFile());
+            
+            Path path = tmp.resolve("providers/some.jar");
+            
+            // make sure the last modified time has millis
+            if (Files.getLastModifiedTime(path).toMillis() % 1000 == 0) {
+                Files.setLastModifiedTime(path, FileTime.fromMillis(Files.getLastModifiedTime(path).toMillis() + 1));
+            }
+            
+            var nonRunningPicocli = build("build", "--db=dev-file");
+            var buildProps = (Map)nonRunningPicocli.getBuildProps();
+            
+            // after the build truncate - like docker or a zip
+            Files.setLastModifiedTime(path, FileTime.fromMillis(Files.getLastModifiedTime(path).toMillis() / 1000 * 1000));
+            
+Environment.setHomeDir(tmp);
+            nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false", "--db=dev-file");
+            
+            // start with no other changes should be fine
+            assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+            assertFalse(nonRunningPicocli.getOutString().contains(Picocli.PROVIDER_TIMESTAMP_WARNING));
+
+            // start with non-optimized, now a rebuild is required
+            onAfter();
+            buildProps.remove(Configuration.KC_OPTIMIZED);
+            Environment.setHomeDir(tmp);
+            addPersistedConfigValues(buildProps);
+            Environment.setRebuildCheck(true);
+            nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false", "--db=dev-file");
+            assertEquals(nonRunningPicocli.getErrString(), AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Environment.setHomeDir(conf);
+        }
+    }
 
     @Test
     public void buildOptionChangedWithOptimized() {
@@ -1252,12 +1297,12 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "false");
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features-disabled=http-optimized-serializers");
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=http-optimized-serializers");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "false");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
     }
 
     @Test

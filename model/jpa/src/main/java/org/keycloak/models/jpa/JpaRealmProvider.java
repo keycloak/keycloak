@@ -221,6 +221,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // Remove groups before organizations to avoid FK constraint violations
         session.groups().preRemove(adapter);
 
+        em.createNamedQuery("deleteOrgIdpByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationDomainsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationsByRealm")
@@ -586,6 +588,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
+        }
+
+        // Enforce the group hierarchy invariant: a group can never be moved under itself or one of its descendants
+        if (toParent != null && KeycloakModelUtils.isDescendantOfOrSelf(toParent, group)) {
+            throw new ModelValidationException("Cannot move group '" + group.getName() + "' under itself or its descendants");
         }
 
         GroupModel previousParent = group.getParent();

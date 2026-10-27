@@ -95,6 +95,10 @@ public class KeycloakServerConfigBuilder {
         return this.externalInfinispan;
     }
 
+    public KeycloakServerConfigBuilder cacheEmbeddedClusterName(String clusterName) {
+        return option("cache-embedded-cluster-name", clusterName);
+    }
+
     public KeycloakServerConfigBuilder shutdownDelay(String shutdownDelay) {
         this.shutdownDelay = shutdownDelay;
         return this;

@@ -110,6 +110,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -1779,12 +1780,25 @@ public class DefaultExportImportManager implements ExportImportManager {
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
                 OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
                 OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
-                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
-                    provider.addIdentityProvider(orgModel, idp);
+                    boolean autoMembership = true;
+                    MembershipType membershipType = MembershipType.UNMANAGED;
+                    List<OrganizationIdentityProviderLinkRepresentation> links = identityProvider.getOrganizationLinks();
+                    if (links != null && !links.isEmpty()) {
+                        OrganizationIdentityProviderLinkRepresentation linkRep = links.get(0);
+                        if (linkRep.getAutoMembership() != null) {
+                            autoMembership = linkRep.getAutoMembership();
+                        }
+                        if (linkRep.getMembershipType() != null) {
+                            membershipType = MembershipType.valueOf(linkRep.getMembershipType());
+                        }
+                    }
+                    provider.addIdentityProvider(orgModel, idp, autoMembership, membershipType);
                 }
+
+                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
                     importOrganizationGroup(provider, orgModel, newRealm, groupRep, null);

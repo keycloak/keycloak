@@ -9,3 +9,6 @@ image:images/policy/create-client-scope.png[alt="Example of required client scop
 To specify a client scope as required, select the `Required` checkbox for the client scope you want to configure as required.
 
 Required client scopes can be useful when your policy defines multiple client scopes but only a subset of them are mandatory.
+
+If a required client scope is deleted, a warning is logged and the policy and any enclosing aggregated policies deny access, regardless of positive or negative logic.
+Remove or replace the missing scope reference in the policy to resume normal evaluation.

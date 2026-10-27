@@ -875,6 +875,10 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         Set<String> allowedUsers = Set.of("user1", "user2");
         createPermission(adminPermissionsClient, allowedUsers, usersType, Set.of(VIEW), policy);
 
+        // make the session client visible so this test checks user view filtering
+        String sessionClientUuid = realm.admin().clients().findByClientId(Constants.ADMIN_CLI_CLIENT_ID).get(0).getId();
+        createPermission(adminPermissionsClient, sessionClientUuid, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
         // assign view-realm role to myadmin so that the user can access the sessions endpoint
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(clientUuid).add(List.of(viewRealmRole));
         realm.cleanup().add(r -> r.users().get(myadmin.getId()).roles().clientLevel(clientUuid).remove(List.of(viewRealmRole)));
@@ -1210,6 +1214,59 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
                 not(hasItems(userInGrandchild.getId())));
         assertThat(realmAdminClient.realm(realm.getName()).users()
                 .count(null, null, null, userInGrandchild.getUsername()), is(0));
+    }
+
+    @Test
+    public void testAllowGrandchildRestoresAccessUnderParentDeny() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Allow My Admin Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation parentGroup = createGroup("parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation grandchildGroup = new GroupRepresentation();
+        grandchildGroup.setName("grandchild-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(childGroup.getId()).subGroup(grandchildGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            grandchildGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        UserRepresentation userInChild = realm.admin().users().search("user-7").get(0);
+        realm.admin().users().get(userInChild.getId()).joinGroup(childGroup.getId());
+        UserRepresentation userInGrandchild = realm.admin().users().search("user-8").get(0);
+        realm.admin().users().get(userInGrandchild.getId()).joinGroup(grandchildGroup.getId());
+
+        // deny the whole subtree at the parent, then restore only the deepest descendant with a separate allow
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(
+                Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, parentGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyMyAdmin);
+        createPermission(adminPermissionsClient, grandchildGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), allowMyAdmin);
+
+        // direct auth: grandchild has its own explicit allow — its direct members are accessible again
+        UserRepresentation fetched = realmAdminClient.realm(realm.getName())
+                .users().get(userInGrandchild.getId()).toRepresentation();
+        assertThat(fetched.getUsername(), is(userInGrandchild.getUsername()));
+
+        // direct auth: the intermediate child has no allow, so the parent deny still cascades to it
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(userInChild.getId()).toRepresentation());
+
+        // search consistent with direct auth
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(userInGrandchild.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                hasItems(userInGrandchild.getId()));
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(userInChild.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(userInChild.getId())));
     }
 
     @Test

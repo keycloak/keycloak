@@ -182,8 +182,27 @@ This is useful if you want to always apply the audience for all the authenticati
 
 NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the _Audience_ mapper added it.
 
+[[_audience_disabled_clients]]
+== Disabled clients and the audience
+
+A client that is disabled or removed is never added to the `aud` claim of a token:
+
+* The client roles of a disabled or removed client are never added to the token, not even by the _Hardcoded Role_ and _Role Name_ protocol mappers.
+Because such roles are not present, the _Audience Resolve_ protocol mapper does not resolve the disabled or removed client as an audience.
+Note that this also means that those roles are not present in the `resource_access` claim of the token.
+
+* The _Audience_ protocol mapper does not add the audience when *Included Client Audience* refers to a client that is disabled or that no longer exists. The *Included Custom Audience* option is not affected,
+as its value is an arbitrary string, which is not necessarily related to any client.
+
+Disabling a client is applied to the tokens issued from that moment on, including the tokens issued by the refresh token grant and by the link:{securing_apps_token_exchange_link}[Token exchange].
+Access tokens that were already issued while the client was still enabled remain valid until they expire.
+
 == Token introspection audience validation
 
 The OAuth2 token introspection endpoint validates that the authenticated client is present in the token's audience (`aud`) claim before allowing introspection. This prevents clients from introspecting tokens that were not intended for them.
 
 If you need to disable this validation during migration, you can enable a backwards compatibility option in *OpenID Connect Compatibility Modes* by enabling *Allow token introspection without audience check* on the client that performs the introspection. See link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] for the server-wide option.
+
+The audience rule described above applies to access tokens only. Refresh tokens and offline tokens are never issued to an audience of clients - their `aud` claim is the realm itself - so they are not subject to the audience check. Instead, a refresh or offline token can be introspected only by the client it was issued for, which is the client in its `azp` claim. Any other client receives an inactive (`"active": false`) response, even if an _Audience_ mapper adds that client to the audience of the access tokens of the issuing client. The *Allow token introspection without audience check* compatibility option does not relax this rule, because refresh tokens are not meant to be shared between clients.
+
+{project_name} detects refresh and offline tokens from the token itself, so this behavior applies whether you send `token_type_hint=refresh_token`, send `token_type_hint=access_token`, or omit the hint entirely.

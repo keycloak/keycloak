@@ -81,6 +81,10 @@ public class Claim {
                 return Optional.empty();
             }
 
+            if (!mapper.passesMappingGuards()) {
+                return Optional.empty();
+            }
+
             List<String> attributePath = mapper.getMetadataAttributePath();
             if (attributePath == null || attributePath.isEmpty()) {
                 return Optional.empty();

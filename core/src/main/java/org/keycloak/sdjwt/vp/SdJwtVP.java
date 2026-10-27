@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 import static org.keycloak.OID4VCConstants.SD_HASH;
 
@@ -273,9 +275,16 @@ public class SdJwtVP {
             List<String> digests = getClaims().entrySet().stream()
                     .filter(entry -> {
                         ArrayNode node = entry.getValue();
-                        if (node.size() >= 2) {
+                        if (node.size() == 3) {
+                            // Whole-claim disclosure [salt, name, value]: match by claim name.
                             String claimName = node.get(1).asText();
-                            return (claimsToDisclose.contains(claimName));
+                            return claimsToDisclose.contains(claimName);
+                        } else if (node.size() == 2) {
+                            // Array-element disclosure [salt, value]: match by the
+                            // containing array claim name from the issuer payload.
+                            String containingClaimName = findContainingArrayClaimName(entry.getKey());
+                            return containingClaimName != null
+                                    && claimsToDisclose.contains(containingClaimName);
                         }
                         return false;
                     })
@@ -285,6 +294,34 @@ public class SdJwtVP {
 
             return present(digests, false, keyBindingClaims, holdSignatureSignerContext);
         }
+    }
+
+    /**
+     * Finds the top-level array claim name in the issuer payload whose visible array
+     * contains the given disclosure digest. Returns {@code null} if the digest is not
+     * anchored in any top-level array.
+     * <p>
+     * An undisclosed array element is anchored by an object placeholder
+     * {@code {"...":"<digest>"}} (see {@link org.keycloak.sdjwt.UndisclosedArrayElement}),
+     * so the digest must be looked up inside each element rather than compared to the
+     * element itself.
+     */
+    private String findContainingArrayClaimName(String disclosureDigest) {
+        ObjectNode payload = issuerSignedJWT.getPayload();
+        Iterator<Entry<String, JsonNode>> fields = payload.fields();
+        while (fields.hasNext()) {
+            Entry<String, JsonNode> field = fields.next();
+            JsonNode value = field.getValue();
+            if (value != null && value.isArray()) {
+                for (JsonNode element : value) {
+                    if (element.isObject() && element.has(CLAIM_NAME_SD_UNDISCLOSED_ARRAY)
+                            && disclosureDigest.equals(element.get(CLAIM_NAME_SD_UNDISCLOSED_ARRAY).asText())) {
+                        return field.getKey();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

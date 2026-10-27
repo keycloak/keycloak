@@ -46,7 +46,6 @@ import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.h2.Driver;
-import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Assert;
@@ -295,14 +294,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDatabaseDefaults() {
         ConfigArgsConfigSource.setCliArgs("--db=dev-file");
         SmallRyeConfig config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
         assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
 
@@ -358,7 +357,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testDefaultDbPortGetApplied() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-host=myhost", "--db-url-database=kcdb", "--db-url-port=1234", "--db-url-properties=?foo=bar");
         SmallRyeConfig config = createConfig();
-        assertEquals("org.hibernate.dialect.SQLServerDialect",
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
                 config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:sqlserver://myhost:1234;databaseName=kcdb?foo=bar", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
@@ -380,12 +379,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.setProperty("kc.db-url-path", "test-dir");
         System.setProperty("kc.transaction-xa-enabled", "true");
         SmallRyeConfig config = createConfigFromCliArguments("--db=dev-file");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
         config = createConfigFromCliArguments("");
-        assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
+        assertEquals("org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir/data/h2/keycloakdb;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
@@ -416,6 +415,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
+
+        // PostgreSQL: logServerErrorDetail should be set for AWS JDBC Wrapper
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("false", config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
+
+        // logServerErrorDetail: unknown custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
 
         // MSSQL: sendStringParametersAsUnicode should be set to false by default
         config = createConfigFromCliArguments("--db=mssql");
@@ -717,6 +724,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(config.getConfigValue("quarkus.http.limits.max-header-size").getValue(),
                 config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
         assertEquals("65535", config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
+    }
+
+    @Test
+    public void testSemicolonQueryParamDelimiterDisabledByDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("false",
+                config.getConfigValue("quarkus.http.use-semicolon-as-query-param-delimiter").getValue());
     }
 
     @Test
@@ -1037,7 +1052,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?connectTimeout=5");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
+        // AWS JDBC Wrapper -> connectTimeout still set (wrapper passes through to underlying PG driver)
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+
+        // unknown custom JDBC driver -> connectTimeout disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-connect-timeout=30s");

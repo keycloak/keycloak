@@ -9,20 +9,32 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.keycloak.cluster.infinispan.InfinispanClusterProvider;
+import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 
 import org.hamcrest.CoreMatchers;
+import org.infinispan.Cache;
+import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.logging.Log;
 import org.jgroups.protocols.PingData;
 import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
@@ -74,11 +86,17 @@ public class JdbcPing2Test {
     public void testClusterHealth() {
         var ping = new ControlledJdbcPing();
         var clusterHealth = new JdbcPingClusterHealthImpl();
-        clusterHealth.init(ping, new WithinThreadExecutor());
         var addresses = IntStream.range(0, 2)
                 .mapToObj(operand -> new UUID(0, operand))
                 .sorted()
                 .toArray(Address[]::new);
+
+        // Set up initial healthy state before init, so the synchronous check in init() passes
+        ping.setView(addresses[0]);
+        ping.setPingData(List.of(addresses[0]));
+        assertFalse(clusterHealth.isHealthy());
+        clusterHealth.init(ping, new WithinThreadExecutor());
+        assertTrue(clusterHealth.isHealthy());
 
         // test exception
         ping.setException(new RuntimeException("Induced"));
@@ -91,7 +109,7 @@ public class JdbcPing2Test {
         ping.setException(null);
 
         // test empty table / no coordinator
-        ping.setView(addresses[0]);
+        ping.setPingData(List.of());
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, ping.healthStatus());
         clusterHealth.triggerClusterHealthCheck();
         assertFalse(clusterHealth.isHealthy());
@@ -231,6 +249,168 @@ public class JdbcPing2Test {
     @SuppressWarnings("resource")
     protected static JChannel createChannel(String name) throws Exception {
         return new JChannel(JdbcPing2Test.PROTOCOL_STACK).name(name);
+    }
+
+    @Test
+    public void testRunHealthCheck() {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+
+        // Seed the view so runHealthCheck doesn't bail out early.
+        ping.setView(new org.jgroups.util.UUID(0, 0));
+
+        // Initial state is HEALTHY — no log on first call.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, capturingLog.errors.get());
+        assertEquals(0, capturingLog.infos.get());
+
+        // ERROR transition: one warning logged immediately (ERROR is a warn-level event, not an error).
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Stays ERROR: no additional log on the next cycle.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.warns.get());
+
+        // Recovery to HEALTHY: one info logged.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+
+        // Stays HEALTHY: no further log.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, capturingLog.infos.get());
+    }
+
+    @Test
+    public void testOnHealthRestoredCallback() {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+        var callbackCount = new AtomicInteger();
+
+        ping.setView(new UUID(0, 0));
+        ping.setOnHealthRestored(callbackCount::incrementAndGet);
+
+        // Initial HEALTHY — no callback (no transition)
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, callbackCount.get());
+
+        // Transition to ERROR — no callback
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(0, callbackCount.get());
+
+        // Recovery to HEALTHY — callback fires
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, callbackCount.get());
+
+        // Stay HEALTHY — no callback
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(1, callbackCount.get());
+
+        // UNHEALTHY then recovery — callback fires again
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY);
+        ping.runHealthCheck(capturingLog);
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(2, callbackCount.get());
+    }
+
+    @Test
+    public void testCachesClearedOnHealthRecovery() throws Exception {
+        var ping = new ControlledJdbcPing();
+        var capturingLog = new CapturingLog();
+
+        DefaultCacheManager cacheManager = new DefaultCacheManager();
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME,
+                    new ConfigurationBuilder().build());
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME,
+                    new ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL).build());
+
+            Cache<String, Object> workCache = cacheManager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+            Cache<String, String> realmCache = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
+
+            var cp = new InfinispanClusterProvider(0, new NodeInfo("test-node", null, "test-cluster"), workCache, executor);
+            workCache.addListener(cp.new CacheEntryListener());
+            cp.registerListener(InfinispanClusterProviderFactory.CLEAR_ALL_LOCAL_CACHES_EVENT, event ->
+                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                            .filter(cacheManager::cacheExists)
+                            .map(name -> cacheManager.<String, Object>getCache(name))
+                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                            .forEach(Cache::clear)
+            );
+
+            realmCache.put("test-realm", "test-data");
+            assertEquals(1, realmCache.size());
+
+            ping.setOnHealthRestored(() ->
+                    cp.notify(InfinispanClusterProviderFactory.CLEAR_ALL_LOCAL_CACHES_EVENT,
+                            ClearCacheEvent.getInstance(), false));
+
+            ping.setView(new UUID(0, 0));
+
+            // Disconnect: transition to ERROR
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should not be cleared during disconnect", 1, realmCache.size());
+
+            // Reconnect: transition to HEALTHY — event broadcast clears caches on all nodes
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should be cleared after health recovery", 0, realmCache.size());
+
+            // Populate again, stay HEALTHY — cache should NOT be cleared
+            realmCache.put("new-key", "new-value");
+            ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+            ping.runHealthCheck(capturingLog);
+            assertEquals("Cache should not be cleared when health is stable", 1, realmCache.size());
+        } finally {
+            executor.shutdownNow();
+            cacheManager.stop();
+        }
+    }
+
+    /** Minimal {@link Log} that counts error and info calls; everything else is a no-op. */
+    static class CapturingLog implements Log {
+        final AtomicInteger errors = new AtomicInteger();
+        final AtomicInteger warns  = new AtomicInteger();
+        final AtomicInteger infos  = new AtomicInteger();
+
+        @Override public void error(String msg, Object... args) { errors.incrementAndGet(); }
+        @Override public void error(String msg) { errors.incrementAndGet(); }
+        @Override public void error(String msg, Throwable t) { errors.incrementAndGet(); }
+        @Override public void info(String msg, Object... args) { infos.incrementAndGet(); }
+        @Override public void info(String msg) { infos.incrementAndGet(); }
+        @Override public void warn(String msg, Object... args) { warns.incrementAndGet(); }
+        @Override public void warn(String msg) { warns.incrementAndGet(); }
+        @Override public void warn(String msg, Throwable t) { warns.incrementAndGet(); }
+        @Override public void debug(String msg, Object... args) {}
+        @Override public void debug(String msg) {}
+        @Override public void debug(String msg, Throwable t) {}
+        @Override public void trace(Object msg) {}
+        @Override public void trace(String msg) {}
+        @Override public void trace(String msg, Object... args) {}
+        @Override public void trace(String msg, Throwable t) {}
+        @Override public void fatal(String msg) {}
+        @Override public void fatal(String msg, Object... args) {}
+        @Override public void fatal(String msg, Throwable t) {}
+        @Override public void setLevel(String level) {}
+        @Override public String getLevel() { return "info"; }
+        @Override public boolean isFatalEnabled() { return false; }
+        @Override public boolean isErrorEnabled() { return true; }
+        @Override public boolean isWarnEnabled()  { return true; }
+        @Override public boolean isInfoEnabled()  { return true; }
+        @Override public boolean isDebugEnabled() { return false; }
+        @Override public boolean isTraceEnabled() { return false; }
     }
 
     protected record Connector(CountDownLatch latch, JChannel ch) implements Runnable {

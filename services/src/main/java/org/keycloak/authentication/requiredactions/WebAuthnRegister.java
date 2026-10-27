@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
@@ -157,6 +159,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         Challenge challenge = new DefaultChallenge();
         String challengeValue = Base64Url.encode(challenge.getValue());
         context.getAuthenticationSession().setAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE, challengeValue);
+        int challengeLifespan = context.getRealm().getAccessCodeLifespanUserAction();
+        session.singleUseObjects().put(WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challengeValue, challengeLifespan, Map.of());
 
         // construct parameters for calling WebAuthn API navigator.credential.create()
 
@@ -281,6 +285,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         final String challengeNote = context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
         if (challengeNote != null) {
             context.getAuthenticationSession().removeAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+            // Atomically consume the challenge to prevent duplicate credentials from concurrent requests across cluster nodes
+            if (session.singleUseObjects().remove(WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challengeNote) == null) {
+                logger.debug("WebAuthn registration challenge has already been consumed by another request.");
+                setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, "Registration ceremony has already been completed", originalEventType);
+                return;
+            }
         }
         Challenge challenge = new DefaultChallenge(challengeNote);
         ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge);
@@ -328,7 +338,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
             WebAuthnCredentialModel newCredentialModel = webAuthnCredProvider.getCredentialModelFromCredentialInput(credential, label);
 
-            webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
+            CredentialModel createdCredential = webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
 
             String aaguid = newCredentialModel.getWebAuthnCredentialData().getAaguid();
             logger.debugv("WebAuthn credential registration success for user {0}. credentialType = {1}, publicKeyCredentialId = {2}, publicKeyCredentialLabel = {3}, publicKeyCredentialAAGUID = {4}",
@@ -340,6 +350,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, label)
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid);
             context.getEvent().clone().event(originalEventType).success();
+            // the deprecated event is emitted first, so that it keeps carrying the same details as before
+            if (createdCredential != null) {
+                context.getEvent().detail(Details.CREDENTIAL_ID, createdCredential.getId());
+            }
             context.success();
         } catch (WebAuthnPolicyException wpe) {
             logger.debug("WebAuthn policy violation during registration.", wpe);

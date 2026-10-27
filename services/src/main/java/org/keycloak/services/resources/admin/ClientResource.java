@@ -18,8 +18,11 @@ package org.keycloak.services.resources.admin;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -58,7 +61,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -73,15 +75,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -125,6 +128,8 @@ public class ClientResource {
     protected final KeycloakSession session;
 
     protected final ClientConnection clientConnection;
+
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
 
     public ClientResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -218,6 +223,10 @@ public class ClientResource {
 
         representation.setAccess(auth.clients().getAccess(client));
 
+        if (client.isServiceAccountsEnabled()) {
+            ModelToRepresentation.setServiceAccountUserId(session, client, representation);
+        }
+
         return representation;
     }
 
@@ -254,7 +263,8 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri());
+        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri(),
+                auth.clients().canManage(client));
     }
 
     /**
@@ -515,26 +525,6 @@ public class ClientResource {
     }
 
     /**
-     * Get a user dedicated to the service account
-     *
-     * @return
-     */
-    @Path("service-account-user")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get a user dedicated to the service account")
-    public UserRepresentation getServiceAccountUser() {
-        auth.clients().requireView(client);
-
-        UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
-                .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
-
-        return ModelToRepresentation.toRepresentation(session, realm, user);
-    }
-
-    /**
      * Push the client's revocation policy to its admin URL
      *
      * If the client has an admin URL, push revocation policy to it.
@@ -598,7 +588,7 @@ public class ClientResource {
                         .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
                         .filter(userSession -> auth.users().canView(userSession.getUser())),
                 computeFirstResult(firstResult), computeMaxResults(maxResults))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -664,15 +654,24 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Register a cluster node with the client Manually register cluster node to this client - usually it’s not needed to call this directly as adapter should handle by sending registration request to Keycloak")
     @APIResponse(responseCode = "204", description = "No Content")
+    @APIResponse(responseCode = "400", description = "Bad Request - node hostname is missing, contains reserved characters, or is rejected by client policy")
     public void registerNode(Map<String, String> formParams) {
         auth.clients().requireConfigure(client);
 
         String node = formParams.get("node");
-        if (node == null) {
-            throw new BadRequestException("Node not found in params");
+        if (node == null || node.isBlank()) {
+            throw new BadRequestException("Node hostname is missing or blank");
         }
 
         ReservedCharValidator.validate(node);
+
+        try {
+            session.clientPolicy().triggerOnEvent(
+                    new ClientNodeRegistrationContext(client, List.of(node),
+                            ClientPolicyEvent.REGISTER_NODE));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());
@@ -861,6 +860,28 @@ public class ClientResource {
         if ((rep.isBearerOnly() != null && rep.isBearerOnly()) || (rep.isPublicClient() != null && rep.isPublicClient())) {
             rep.setAuthorizationServicesEnabled(false);
         }
+        
+        try {
+            if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
+                // Only validate hostnames that are not already stored in the model.
+                Set<String> existingNodes = Optional.ofNullable(client.getRegisteredNodes())
+                        .map(Map::keySet)
+                        .orElse(Set.of());
+                List<String> newNodes = rep.getRegisteredNodes().keySet().stream()
+                        .filter(h -> !existingNodes.contains(h))
+                        .toList();
+                if (!newNodes.isEmpty()) {
+                    session.clientPolicy().triggerOnEvent(
+                            new ClientNodeRegistrationContext(client, newNodes,
+                                    ClientPolicyEvent.REGISTER_NODE));
+                }
+            }
+        } catch (ClientPolicyException e) {
+            throw new ErrorResponseException(
+                    e.getError(),
+                    e.getErrorDetail(),
+                    Response.Status.BAD_REQUEST);
+        }
 
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
@@ -914,7 +935,7 @@ public class ClientResource {
      * @return a reference to the constructed representation.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
 
         // Update lastSessionRefresh with the timestamp from clientSession
         var clientSession = userSession.getAuthenticatedClientSessionByClient(client.getClientId());
@@ -922,6 +943,13 @@ public class ClientResource {
             rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         }
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
     }
 
     private static ClientScopeRepresentation toRepresentation(ClientScopeModel clientScopeModel) {

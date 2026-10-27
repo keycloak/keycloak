@@ -8,14 +8,14 @@ summary="Use OpenID Connect with {project_name} to secure applications and servi
 
 <#include "partials/oidc/available-endpoints.adoc" />
 
-include::partials/oidc/supported-grant-types.adoc[]
+<#include "partials/oidc/supported-grant-types.adoc" />
 
-include::partials/oidc/oidc-errors.adoc[]
+<#include "partials/oidc/oidc-errors.adoc" />
 
-include::partials/oidc/fapi-support.adoc[]
+<#include "partials/oidc/fapi-support.adoc" />
 
-include::partials/oidc/oauth21-support.adoc[]
+<#include "partials/oidc/oauth21-support.adoc" />
 
-include::partials/oidc/recommendations.adoc[]
+<#include "partials/oidc/recommendations.adoc" />
 
 </@tmpl.guide>

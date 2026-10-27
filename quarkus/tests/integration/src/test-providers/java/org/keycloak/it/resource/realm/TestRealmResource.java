@@ -77,6 +77,17 @@ public class TestRealmResource implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
+    @Path("query-params")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response queryParams() throws IOException {
+        var uriInfo = session.getContext().getUri();
+        String result = JsonSerialization.writeValueAsString(Map.of(
+                "decoded", uriInfo.getQueryParameters(true),
+                "raw", uriInfo.getQueryParameters(false)));
+        return Response.ok(result, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
     @Path("slow")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

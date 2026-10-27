@@ -19,7 +19,7 @@ import { type AccountEnvironment } from "..";
 import { usePromise } from "../utils/usePromise";
 import { Header } from "./Header";
 import { MenuItem, PageNav } from "./PageNav";
-import { routes } from "../routes";
+import { ContentRoute, routes } from "../routes";
 
 function mapRoutes(
   context: KeycloakContext<AccountEnvironment>,
@@ -33,6 +33,13 @@ function mapRoutes(
 
       // Do not add route disabled via feature flags
       if (item.isVisible && !context.environment.features[item.isVisible]) {
+        return null;
+      }
+
+      // Custom content is rendered by ContentRoute. Adding an exact route for
+      // every custom item here would shadow the generic content/:componentId
+      // route with an element that cannot be resolved from the built-in routes.
+      if (item.modulePath) {
         return null;
       }
 
@@ -60,8 +67,19 @@ function CatchAllRedirect() {
 }
 
 export const Root = () => {
+  const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
+  const { subscribeActionUpdate } = context;
+  const { addAlert } = useAlerts();
   const [content, setContent] = useState<RouteObject[]>();
+
+  useEffect(() => {
+    return subscribeActionUpdate((update) => {
+      if (update.status === "success" && update.action === "UPDATE_PASSWORD") {
+        addAlert(t("accountPasswordUpdatedMessage"));
+      }
+    });
+  }, [subscribeActionUpdate, addAlert, t]);
 
   usePromise(
     (signal) => fetchContentJson({ signal, context }),
@@ -81,6 +99,7 @@ export const Root = () => {
           errorElement: <ErrorPage />,
           children: [
             ...mapRoutes(context, content),
+            ContentRoute,
             { path: "*", element: <CatchAllRedirect /> },
           ],
         },

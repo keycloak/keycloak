@@ -3,7 +3,10 @@ package org.keycloak.ssf.transmitter.support;
 import java.time.Duration;
 import java.util.Map;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.Config;
+import org.keycloak.events.Details;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -28,7 +31,7 @@ public class SsfUtil {
 
         String frontendUrl = realm.getAttribute("frontendUrl");
         if (frontendUrl != null && !frontendUrl.isBlank())  {
-            return frontendUrl;
+            return appendRealmPath(frontendUrl, realm.getName());
         }
 
         String hostnameUrl = System.getenv().get("KC_HOSTNAME_URL");
@@ -55,10 +58,7 @@ public class SsfUtil {
     }
 
     private static String appendRealmPath(String baseUrl, String realmName) {
-        if (!baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
-        return baseUrl + "realms/" + realmName;
+        return UriBuilder.fromUri(baseUrl).path("realms").path("{realm}").build(realmName).toString();
     }
 
     /**
@@ -137,6 +137,27 @@ public class SsfUtil {
     }
 
     private static final String ADMIN_EVENT_USERS_PREFIX = "users/";
+
+    /**
+     * Resolves the user an admin event is about. Prefers the explicit
+     * {@link Details#USER_ID} detail — the only source for events whose
+     * resource path does not name the user, such as
+     * {@code DELETE sessions/{sessionId}} — and falls back to parsing a
+     * {@code users/{id}/...} resource path.
+     */
+    public static String userIdFromAdminEvent(AdminEvent adminEvent) {
+        if (adminEvent == null) {
+            return null;
+        }
+        Map<String, String> details = adminEvent.getDetails();
+        if (details != null) {
+            String userId = details.get(Details.USER_ID);
+            if (userId != null && !userId.isEmpty()) {
+                return userId;
+            }
+        }
+        return userIdFromAdminEventPath(adminEvent);
+    }
 
     public static String userIdFromAdminEventPath(AdminEvent adminEvent) {
         if (adminEvent == null) {

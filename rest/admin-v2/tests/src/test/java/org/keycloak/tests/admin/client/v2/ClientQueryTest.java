@@ -279,6 +279,10 @@ public class ClientQueryTest extends AbstractClientApiV2Test {
                 c instanceof OIDCClientRepresentation oidc
                         && oidc.getAuth() != null
                         && "client-secret".equals(oidc.getAuth().getMethod())));
+        
+        // make sure it is case-sensitive
+        clients = queryClients("auth.method eq \"Client-Secret\"");
+        assertThat(clients, empty());
     }
 
     @Test

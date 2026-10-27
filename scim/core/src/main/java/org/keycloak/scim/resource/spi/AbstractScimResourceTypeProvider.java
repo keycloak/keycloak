@@ -62,6 +62,10 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new ForbiddenException();
         }
 
+        applyPatch(existing, model, operations);
+    }
+
+    protected void applyPatch(R existing, M model, List<PatchOperation> operations) {
         for (PatchOperation operation : operations) {
             String op = operation.getOp();
 

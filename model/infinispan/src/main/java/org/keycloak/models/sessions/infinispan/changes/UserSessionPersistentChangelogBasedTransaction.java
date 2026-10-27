@@ -52,6 +52,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
             if (cache != null) {
                 wrappedEntity = cache.get(key);
+                if (wrappedEntity != null && wrappedEntity.isTombstoneMarker()) {
+                    // A tombstone marker is a short-lived leftover of a concurrent removal (see
+                    // SessionResurrectionGuardListener); it must never be treated as real session data.
+                    wrappedEntity = null;
+                }
             }
 
             if (wrappedEntity == null) {

@@ -20,6 +20,7 @@ package org.keycloak.jose;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -247,13 +248,28 @@ public abstract class JWETest {
     }
 
     @Test
+    public void testRSA1_5_CekUnwrapFailureIsIndistinguishableFromAeadFailure() throws Exception {
+        testCekUnwrapFailureIsIndistinguishableFromAeadFailure(JWEConstants.RSA1_5);
+    }
+
+    @Test
     public void testRSAOAEP_A128GCM() throws Exception {
         testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
     }
 
     @Test
+    public void testRSAOAEP_CekUnwrapFailureIsIndistinguishableFromAeadFailure() throws Exception {
+        testCekUnwrapFailureIsIndistinguishableFromAeadFailure(JWEConstants.RSA_OAEP);
+    }
+
+    @Test
     public void testRSAOAEP256_A128GCM() throws Exception {
         testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA_OAEP_256, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testRSAOAEP256_CekUnwrapFailureIsIndistinguishableFromAeadFailure() throws Exception {
+        testCekUnwrapFailureIsIndistinguishableFromAeadFailure(JWEConstants.RSA_OAEP_256);
     }
 
     @Test
@@ -338,6 +354,49 @@ public abstract class JWETest {
         System.out.println("Decoded content length: " + decodedContent.length());
 
         Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+    private void testCekUnwrapFailureIsIndistinguishableFromAeadFailure(String algorithm) throws Exception {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        JWEAlgorithmProvider algorithmProvider = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, algorithm);
+        JWEEncryptionProvider encryptionProvider = new AesGcmJWEEncryptionProvider(JWEConstants.A128GCM);
+        String validJwe = encodeJwe(keyPair, algorithm, algorithmProvider, encryptionProvider);
+
+        String invalidCekJwe = withInvalidEncryptedCek(validJwe);
+        String[] parts = validJwe.split("\\.");
+        byte[] ciphertext = Base64Url.decode(parts[3]);
+        ciphertext[0] ^= 1;
+        parts[3] = Base64Url.encode(ciphertext);
+        String invalidCiphertextJwe = String.join(".", parts);
+
+        Throwable invalidCekCause = decodeFailure(invalidCekJwe, keyPair, algorithmProvider, encryptionProvider);
+        Throwable invalidCiphertextCause = decodeFailure(invalidCiphertextJwe, keyPair, algorithmProvider, encryptionProvider);
+
+        Assert.assertEquals(AEADBadTagException.class, invalidCekCause.getClass());
+        Assert.assertEquals(invalidCiphertextCause.getClass(), invalidCekCause.getClass());
+    }
+
+    private String encodeJwe(KeyPair keyPair, String algorithm, JWEAlgorithmProvider algorithmProvider,
+            JWEEncryptionProvider encryptionProvider) throws JWEException {
+        JWE jwe = new JWE()
+                .header(new JWEHeader(algorithm, JWEConstants.A128GCM, null))
+                .content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
+        jwe.getKeyStorage().setEncryptionKey(keyPair.getPublic());
+        return jwe.encodeJwe(algorithmProvider, encryptionProvider);
+    }
+
+    private String withInvalidEncryptedCek(String compactJwe) {
+        String[] parts = compactJwe.split("\\.");
+        parts[1] = Base64Url.encode(new byte[Base64Url.decode(parts[1]).length]);
+        return String.join(".", parts);
+    }
+
+    private Throwable decodeFailure(String compactJwe, KeyPair keyPair, JWEAlgorithmProvider algorithmProvider,
+            JWEEncryptionProvider encryptionProvider) {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage().setDecryptionKey(keyPair.getPrivate());
+        return Assert.assertThrows(JWEException.class,
+                () -> jwe.verifyAndDecodeJwe(compactJwe, algorithmProvider, encryptionProvider)).getCause();
     }
 
 }

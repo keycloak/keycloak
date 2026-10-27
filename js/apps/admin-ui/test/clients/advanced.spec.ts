@@ -4,6 +4,7 @@ import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
+import { OID4VCI_SERVER_FEATURE } from "../utils/oid4vci.ts";
 import { createDefaultTrustProvider } from "../identity-providers/main.ts";
 import {
   assertAccessTokenSignatureAlgorithm,
@@ -33,7 +34,7 @@ import {
   revertAuthFlowOverride,
   saveOid4vci,
   revertOid4vci,
-  assertOid4vciEnabled,
+  assertOid4vciSection,
   switchOid4vciEnabled,
   selectOid4vciAttesterTrustIdps,
   getOid4vciAttesterTrustIdpsValues,
@@ -176,23 +177,11 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
     test("should handle OID4VC section visibility based on feature flag", async ({
       page,
     }) => {
-      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+      const featureEnabled = await adminClient.isFeatureEnabled(
+        OID4VCI_SERVER_FEATURE,
+      );
 
-      const isVisible = await toggleSwitch.isVisible();
-
-      if (isVisible) {
-        await toggleSwitch.scrollIntoViewIfNeeded();
-        await assertOid4vciEnabled(page, false);
-        await switchOid4vciEnabled(page, true);
-        await saveOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-        await switchOid4vciEnabled(page, false);
-        await assertOid4vciEnabled(page, false);
-        await revertOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-      } else {
-        await expect(toggleSwitch).toBeHidden();
-      }
+      await assertOid4vciSection(page, featureEnabled);
     });
 
     test("should hide OID4VC section when verifiable credentials are disabled for the realm", async ({

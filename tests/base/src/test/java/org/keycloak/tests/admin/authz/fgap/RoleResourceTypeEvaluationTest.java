@@ -688,6 +688,83 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
                 clientMappings.containsKey("secret-client"), equalTo(false));
     }
 
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/52399
+     *
+     * An admin granted VIEW on a specific user (but without view-realm) must not see realm-level
+     * role mappings on /role-mappings/realm or /role-mappings/realm/composite, consistently with the
+     * combined /role-mappings endpoint.
+     */
+    @Test
+    public void testRealmRoleMappingsFilterHiddenRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        RoleRepresentation realmRole = new RoleRepresentation();
+        realmRole.setName("SECRET_REALM_ROLE");
+        realm.admin().roles().create(realmRole);
+        realmRole = realm.admin().roles().get("SECRET_REALM_ROLE").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("SECRET_REALM_ROLE").remove());
+
+        UserRepresentation targetUser = createUser("targetUserRoleFilter");
+        realm.admin().users().get(targetUser.getId()).roles().realmLevel().add(List.of(realmRole));
+
+        // Create a client role on a visible client and assign it too (gives the narrow
+        // admin something to see, so the user lookup itself is not forbidden)
+        ClientRepresentation visibleClient = new ClientRepresentation();
+        visibleClient.setClientId("visible-client-realm-test");
+        try (Response response = realm.admin().clients().create(visibleClient)) {
+            visibleClient.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.clients().get(visibleClient.getId()).remove());
+        }
+        RoleRepresentation clientRole = new RoleRepresentation();
+        clientRole.setName("VISIBLE_CLIENT_ROLE");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(clientRole);
+        clientRole = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_CLIENT_ROLE").toRepresentation();
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(visibleClient.getId()).add(List.of(clientRole));
+
+        // myadmin can view the target user and the visible client, but has no view-realm
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,
+                "Only My Admin Policy (realm role filter)", myadmin.getId());
+        createPermission(adminPermissionsClient, targetUser.getId(),
+                AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, visibleClient.getId(),
+                AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        // without view-realm the realm role must be hidden by all three endpoints
+        assertThat(listRealmRoleMappings(targetUser.getId()), not(hasItem("SECRET_REALM_ROLE")));
+        assertThat(listEffectiveRealmRoleMappings(targetUser.getId()), not(hasItem("SECRET_REALM_ROLE")));
+        assertThat(listAllRealmRoleMappings(targetUser.getId()), not(hasItem("SECRET_REALM_ROLE")));
+
+        // grant view-realm so that the realm role becomes visible
+        String realmMgmtClientId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmMgmtClientId).roles()
+                .get(AdminRoles.VIEW_REALM).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).add(List.of(viewRealmRole));
+        realm.cleanup().add(r -> r.users().get(myadmin.getId()).roles().clientLevel(realmMgmtClientId).remove(List.of(viewRealmRole)));
+        realmAdminClient.tokenManager().grantToken();
+
+        assertThat(listRealmRoleMappings(targetUser.getId()), hasItem("SECRET_REALM_ROLE"));
+        assertThat(listEffectiveRealmRoleMappings(targetUser.getId()), hasItem("SECRET_REALM_ROLE"));
+        assertThat(listAllRealmRoleMappings(targetUser.getId()), hasItem("SECRET_REALM_ROLE"));
+    }
+
+    private Set<String> listRealmRoleMappings(String userId) {
+        return realmAdminClient.realm(realm.getName()).users().get(userId).roles().realmLevel().listAll()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
+    private Set<String> listEffectiveRealmRoleMappings(String userId) {
+        return realmAdminClient.realm(realm.getName()).users().get(userId).roles().realmLevel().listEffective()
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
+    private Set<String> listAllRealmRoleMappings(String userId) {
+        MappingsRepresentation mappings = realmAdminClient.realm(realm.getName()).users().get(userId).roles().getAll();
+        return mappings.getRealmMappings() == null
+                ? Set.of()
+                : mappings.getRealmMappings().stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
     private String getUiExtEndpoint(Client httpClient, String baseUrl, String realmName, String subPath, BearerAuthFilter bearerAuth) {
         WebTarget target = httpClient.target(baseUrl)
                 .path("admin").path("realms").path(realmName)

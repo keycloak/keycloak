@@ -44,7 +44,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
     })();
   }, [realm, i18n, adminClient]);
   useFetch(
-    () => adminClient.realms.findOne({ realm }),
+    async () => (await adminClient.realms.findOne({ realm })) ?? undefined,
     setRealmRepresentation,
     [realm, key],
   );

@@ -59,7 +59,6 @@ public class OID4VCMdocIssuerEndpointPreAuthTest extends OID4VCMdocTestBase {
     @Test
     public void testCredentialIssuancePreAuth() {
         String token = oauth.openid(false)
-                .scope(mdocScope.getName())
                 .doPasswordGrantRequest("john", TEST_PASSWORD)
                 .getAccessToken();
         assertNotNull(token);

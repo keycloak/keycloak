@@ -1,2 +1,4 @@
 org.keycloak.tests.providers.rest.ErrorTestingRealmResourceProviderFactory
 org.keycloak.tests.providers.rest.CookieTestingRealmResourceProviderFactory
+org.keycloak.tests.providers.broker.oidc.MissingUseJwksRealmResourceProviderFactory
+org.keycloak.tests.providers.broker.oidc.UnsupportedKeyJwksRealmResourceProviderFactory

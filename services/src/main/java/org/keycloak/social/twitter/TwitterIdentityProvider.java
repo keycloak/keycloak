@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -45,6 +46,7 @@ import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -98,16 +100,24 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     private static String base64EncodeRequestToken(RequestToken requestToken) throws IOException {
-      try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
-              ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
-          oos.writeObject(requestToken);
-          oos.close();
+      try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+          // Nested try-with-resources: inner block must close before baos.toString(),
+          // because Base64.wrap() only writes padding bytes ('=') on close().
+          try (OutputStream base64Stream = Base64.getEncoder().wrap(baos);
+               ObjectOutputStream oos = new ObjectOutputStream(base64Stream)) {
+              oos.writeObject(requestToken);
+          }
           return baos.toString(StandardCharsets.US_ASCII);
       }
     }
 
     protected static RequestToken base64DecodeRequestToken(String serialized) throws IOException, ClassNotFoundException {
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getMimeDecoder().decode(serialized)))) {
+            DelegatingSerializationFilter.builder()
+                    .addAllowedClass(RequestToken.class)
+                    .addAllowedClass(String.class)
+                    .addAllowedPattern("twitter4j.OAuthToken")
+                    .setFilter(in);
             return (RequestToken) in.readObject();
         }
     }

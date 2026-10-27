@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
@@ -126,6 +127,18 @@ public interface KeycloakSession extends AutoCloseable {
     void setAttribute(String name, Object value);
 
     Map<String, Object> getAttributes();
+
+    /**
+     * Returns whether this session is currently in read-only mode.
+     */
+    boolean isReadOnly();
+
+    /**
+     * Executes the given supplier in read-only mode. The read-only flag is set before invoking the
+     * supplier and restored after the supplier returns. If the supplier returns a Stream, the flag
+     * remains active until the stream is closed, making it safe for lazily consumed streams.
+     */
+    <T> T runAsReadOnly(Supplier<T> supplier);
 
     /**
      * Invalidates intermediate states of the given objects, both immediately and at the end of this session.

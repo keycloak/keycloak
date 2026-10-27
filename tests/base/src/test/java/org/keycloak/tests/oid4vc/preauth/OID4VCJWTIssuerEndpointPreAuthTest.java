@@ -63,7 +63,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
 
     @Test
     public void testCredentialIssuancePreAuth() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+        String token = getBearerToken(oauth, client);
 
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
@@ -154,7 +154,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
     @Test
     public void testPreAuthorizedCodeValidAfterOfferConsumed() {
 
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+        String token = getBearerToken(oauth, client);
         final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
                 .get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
@@ -208,7 +208,7 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
 
     @Test
     public void testCredentialOfferRequestWithTamperedNonceSecretIsRejected() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+        String token = getBearerToken(oauth, client);
         final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
                 .get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
