@@ -253,7 +253,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
 
     protected String buildWalletUrl(String clientId, URI requestUri) {
         String scheme = getConfig().getWalletScheme();
-        if (!scheme.endsWith("://")) {
+        if (!scheme.contains("://")) {
             scheme = scheme + "://";
         }
         return scheme + "?" + OAuth2Constants.CLIENT_ID + "=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
