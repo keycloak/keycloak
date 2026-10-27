@@ -47,46 +47,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>copy-patternfly-v3</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v3</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>node_modules/patternfly/dist</directory>
-                                    <includes>
-                                        <include>css/patternfly.min.css</include>
-                                        <include>css/patternfly-additions.min.css</include>
-                                        <include>fonts/**</include>
-                                        <include>img/**</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-patternfly-v4</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v4</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>node_modules/@patternfly/patternfly</directory>
-                                    <includes>
-                                        <include>patternfly.min.css</include>
-                                        <include>assets/**</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>copy-patternfly-v5</id>
                         <phase>generate-resources</phase>
                         <goals>

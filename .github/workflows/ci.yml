@@ -367,35 +367,6 @@ jobs:
         with:
           job-name: Java Distribution IT
 
-  login-v1-tests:
-    name: Login Theme v1 tests
-    needs: build
-    timeout-minutes: 100
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh login`
-          echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
-
-      - name: Run new base tests
-        run: |
-          ./mvnw package -f tests/pom.xml -Dtest=LoginV1TestSuite
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: Login Theme v1 tests
-
   volatile-sessions-tests:
     name: Volatile Sessions IT
     needs: [build, conditional]
