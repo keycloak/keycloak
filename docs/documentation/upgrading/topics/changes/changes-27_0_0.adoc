@@ -177,6 +177,7 @@ PatternFly 3 and PatternFly 4 vendor resources that only served that theme are a
 Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v2` on upgrade.
 Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v2` or `base` instead.
 The `--features=login:v1` and `--features-disabled=login:v1` options are no longer valid.
+The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v2` login theme.
 
 === CIBA requires client authentication (CVE-2026-109082)
 // https://github.com/keycloak/keycloak/issues/53937

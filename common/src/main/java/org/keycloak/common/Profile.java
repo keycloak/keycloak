@@ -356,7 +356,10 @@ public class Profile {
     }
 
     private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey(), Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
+            new HashSet<>(Arrays.asList(
+                    Feature.HOSTNAME_V2.getUnversionedKey(),
+                    Feature.LOGIN_V2.getUnversionedKey(),
+                    Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
 
     private static final Logger logger = Logger.getLogger(Profile.class);
 

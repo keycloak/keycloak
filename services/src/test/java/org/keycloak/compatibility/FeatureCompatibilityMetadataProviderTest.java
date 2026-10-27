@@ -109,14 +109,16 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
 
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
 
-        // Simulate metadata from a previous Keycloak version that still had login:v1
-        Map<String, String> oldVersionMeta = Map.of(
+        Profile.configure(new FeatureResolver(v2, true));
+        assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+
+        // Start from complete current metadata and only rewrite login to an older version so the
+        // assertion isolates the ROLLING_NO_UPGRADE version transition.
+        Map<String, String> oldVersionMeta = new HashMap<>(provider.metadata());
+        oldVersionMeta.put(
                 v2.getUnversionedKey(),
                 "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"ROLLING_NO_UPGRADE\"}"
         );
-
-        Profile.configure(new FeatureResolver(v2, true));
-        assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(oldVersionMeta));
     }
 
