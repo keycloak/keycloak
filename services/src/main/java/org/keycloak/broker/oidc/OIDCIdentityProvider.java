@@ -98,6 +98,7 @@ import org.keycloak.util.Strings;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
@@ -229,9 +230,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
         BrokeredIdentityContext context = super.validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
 
-        if (context != null && (OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType) ||
-                (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt()))) {
+        boolean jwtToken = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType) ||
+                (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt());
 
+        if (context != null && !jwtToken && getConfig().isFilteredByClaims()) {
+            // opaque token: the only claims available are the ones returned by the user info endpoint
+            JsonNode userInfo = (JsonNode) context.getContextData().get(AbstractJsonUserAttributeMapper.CONTEXT_JSON_NODE);
+            filterByClaimsForExchange(event, JsonSerialization.mapper.convertValue(userInfo, new TypeReference<>() {}));
+        }
+
+        if (context != null && jwtToken) {
             JsonWebToken parsedToken;
             try {
                 parsedToken = validateToken(subjectToken, true);
@@ -241,6 +249,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 event.error(Errors.INVALID_TOKEN);
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
             }
+
+            filterByClaimsForExchange(event, parsedToken.getOtherClaims());
 
             boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
 
@@ -255,6 +265,21 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         return context;
+    }
+
+    /**
+     * Applies the Filtered by claims restriction to the subject token of an external-to-internal token
+     * exchange. This path is only used by the legacy token exchange V1, so it can be removed together with it.
+     */
+    private void filterByClaimsForExchange(EventBuilder event, Map<String, Object> claims) {
+        try {
+            filterByClaims(claims);
+        } catch (IdentityBrokerException e) {
+            logger.debug("Subject token rejected by the claim filter", e);
+            event.detail(Details.REASON, "token claims do not match the configured claim filter");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
     }
 
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
@@ -342,31 +367,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
             }
 
-            if (getConfig().isFilteredByClaims()) {
-                String filterName = getConfig().getClaimFilterName();
-                String filterValue = getConfig().getClaimFilterValue();
-
-                logger.tracef("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
-                if (idToken.getOtherClaims().containsKey(filterName)) {
-                    Object claimObject = idToken.getOtherClaims().get(filterName);
-                    List<String> claimValues = new ArrayList<>();
-                    if (claimObject instanceof List) {
-                        ((List<?>)claimObject).forEach(v->claimValues.add(Objects.toString(v)));
-                    } else {
-                        claimValues.add(Objects.toString(claimObject));
-                    }
-                    logger.tracef("Found claim %s with values %s", filterName, claimValues);
-                    if (!claimValues.stream().anyMatch(v->v.matches(filterValue))) {
-                        logger.warnf("Claim %s has values \"%s\" that does not match the expected filter \"%s\"", filterName, claimValues, filterValue);
-                        throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName)).
-                            withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
-                    }
-                } else {
-                    logger.debugf("Claim %s was not found", filterName);
-                    throw new IdentityBrokerException(String.format("Claim %s not found", filterName)).
-                        withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
-                }
-            }
+            filterByClaims(idToken.getOtherClaims());
 
             if (!getConfig().isDisableNonce()) {
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
@@ -386,6 +387,43 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw e;
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
+        }
+    }
+
+    /**
+     * Applies the <em>Filtered by claims</em> login restriction configured in the provider to the claims received
+     * from the identity provider.
+     *
+     * @param claims the claims received from the identity provider
+     * @throws IdentityBrokerException if the claims do not match the configured filter
+     */
+    protected void filterByClaims(Map<String, Object> claims) throws IdentityBrokerException {
+        if (!getConfig().isFilteredByClaims()) {
+            return;
+        }
+
+        String filterName = getConfig().getClaimFilterName();
+        String filterValue = getConfig().getClaimFilterValue();
+
+        logger.tracef("Filtering user %s by %s=%s", claims.get(getusernameClaimNameForIdToken()), filterName, filterValue);
+        if (claims.containsKey(filterName)) {
+            Object claimObject = claims.get(filterName);
+            List<String> claimValues = new ArrayList<>();
+            if (claimObject instanceof List) {
+                ((List<?>)claimObject).forEach(v->claimValues.add(Objects.toString(v)));
+            } else {
+                claimValues.add(Objects.toString(claimObject));
+            }
+            logger.tracef("Found claim %s with values %s", filterName, claimValues);
+            if (!claimValues.stream().anyMatch(v->v.matches(filterValue))) {
+                logger.warnf("Claim %s has values \"%s\" that does not match the expected filter \"%s\"", filterName, claimValues, filterValue);
+                throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName)).
+                    withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
+            }
+        } else {
+            logger.debugf("Claim %s was not found", filterName);
+            throw new IdentityBrokerException(String.format("Claim %s not found", filterName)).
+                withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
         }
     }
 
@@ -916,6 +954,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
 
             }
+            filterByClaimsForExchange(event, parsedToken.getOtherClaims());
             if (idTokenType) {
                 context.getContextData().put(VALIDATED_ID_TOKEN, parsedToken);
             } else {
@@ -1098,6 +1137,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!verifySignature(context.getJws())) {
             throw new IdentityBrokerException("Invalid signature");
         }
+
+        // the login restrictions configured in the provider are enforced in this flow too
+        filterByClaims(context.getJWT().getOtherClaims());
 
         BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
         String username = (String) context.getJWT().getOtherClaims().get(IDToken.PREFERRED_USERNAME);
