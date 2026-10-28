@@ -33,7 +33,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -402,8 +401,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     }
 
     private static String getPreAuthCodeSingleObjectKey(String credentialsOfferId) {
-        String hash = HashUtils.sha256UrlEncodedHash(credentialsOfferId, StandardCharsets.UTF_8);
         String fqcn = PreAuthorizedCodeGrantType.class.getName().toLowerCase();
-        return fqcn + "." + hash;
+        return fqcn + "." + credentialsOfferId;
     }
 }
