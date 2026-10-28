@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,6 +57,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
 import static org.keycloak.services.managers.AuthenticationManager.PASSWORD_VALIDATED;
 import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class AuthenticatorUtil {
 
@@ -64,9 +66,24 @@ public class AuthenticatorUtil {
     // It is used for identification of note included in authentication session for storing callback provider factories
     public static String CALLBACKS_FACTORY_IDS_NOTE = "callbacksFactoryProviderIds";
 
+    public static boolean isSSOAuthentication(AuthenticationSessionModel authSession) throws AuthenticationFlowException {
+        String ssoAuthUserId = authSession.getAuthNote(SSO_AUTH);
 
-    public static boolean isSSOAuthentication(AuthenticationSessionModel authSession) {
-        return "true".equals(authSession.getAuthNote(SSO_AUTH));
+        if (isBlank(ssoAuthUserId)) {
+            // no-reauthentication in progress
+            return false;
+        }
+
+        String authenticatedUserId = Optional.ofNullable(authSession.getAuthenticatedUser()).map(UserModel::getId).orElse(null);
+
+        if (ssoAuthUserId.equals(authenticatedUserId)) {
+            // user re-authenticating
+            return true;
+        }
+
+        // fail-hard to prevent user from being able to re-authenticate as a different user in the same authentication session
+        // giving a chance to the authentication flow to handle the illegal state
+        throw new AuthenticationFlowException("Authentication session bound with different user during re-authentication", AuthenticationFlowError.USER_CONFLICT);
     }
 
     public static boolean isForcedReauthentication(AuthenticationSessionModel authSession) {
@@ -88,7 +105,7 @@ public class AuthenticatorUtil {
      * @param authFactoryId authentication factory ID which should be added to the authentication session note
      */
     public static void setAuthCallbacksFactoryIds(AuthenticationSessionModel authSession, String authFactoryId) {
-        if (authSession == null || StringUtil.isBlank(authFactoryId)) return;
+        if (authSession == null || isBlank(authFactoryId)) return;
 
         final String callbacksFactories = authSession.getAuthNote(CALLBACKS_FACTORY_IDS_NOTE);
 
