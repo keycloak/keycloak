@@ -769,6 +769,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.getConfig().put("clientSecret", "test-secret");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+        idp.getConfig().put("validateSignature", "false");
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
@@ -878,6 +879,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.getConfig().put("clientSecret", "test-secret");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+        idp.getConfig().put("validateSignature", "false");
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
@@ -951,6 +953,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.getConfig().put("clientSecret", "test-secret");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+        idp.getConfig().put("validateSignature", "false");
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {
@@ -1024,6 +1027,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.getConfig().put("clientSecret", "test-secret");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
+        idp.getConfig().put("validateSignature", "false");
 
         runAs(realmName, "admin-cli", attackerName, attackerClient -> {
             try (Response response = attackerClient.realm(realmName).identityProviders().create(idp)) {

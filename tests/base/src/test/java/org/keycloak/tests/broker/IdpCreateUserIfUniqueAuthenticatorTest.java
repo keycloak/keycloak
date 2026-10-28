@@ -172,7 +172,8 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
                     "userInfoUrl",       providerBase + "/protocol/openid-connect/userinfo",
                     "jwksUrl",           providerBase + "/protocol/openid-connect/certs",
                     "defaultScope",      "openid email profile",
-                    IdentityProviderModel.SYNC_MODE, "IMPORT"
+                    IdentityProviderModel.SYNC_MODE, "IMPORT",
+                    "validateSignature", "false"
             ));
             return realm.identityProviders(idp);
         }

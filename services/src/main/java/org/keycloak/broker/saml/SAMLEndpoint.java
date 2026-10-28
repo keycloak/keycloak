@@ -620,7 +620,7 @@ public class SAMLEndpoint {
 
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
                 final boolean assertionSignatureNotExistsWhenRequired = config.isWantAssertionsSigned() && !signed;
-                final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
+                final boolean signatureNotValid = signed && (config.isValidateSignature() || config.isWantAssertionsSigned()) && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
                 final boolean hasNoSignatureWhenRequired = !signed && config.isValidateSignature() && !isMessageFullySigned(holder);
 
                 if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
