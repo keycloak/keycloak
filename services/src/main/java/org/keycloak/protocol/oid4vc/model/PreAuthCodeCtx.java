@@ -52,7 +52,6 @@ public class PreAuthCodeCtx implements Cloneable {
         List<OID4VCAuthorizationDetail> details = offerState.getAuthorizationDetails();
         this.authorizationDetails = details == null ? null : details.stream()
                 .map(OID4VCAuthorizationDetail::clone)
-                .peek(d -> d.setCredentialsOfferId(null))
                 .toList();
     }
 
