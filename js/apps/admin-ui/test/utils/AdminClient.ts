@@ -11,7 +11,6 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
-import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
 import {
   ADMIN_PASSWORD,
   ADMIN_USER,
@@ -25,17 +24,35 @@ class AdminClient {
     realmName: DEFAULT_REALM,
   });
 
+  #signedInAsAdmin = false;
+  #pendingLogin?: Promise<void>;
+
+  // Signs in once with the password grant, then relies on the client to refresh the access token.
+  // A new sign-in happens only if the refresh fails, to avoid creating a session for every call.
   #login() {
-    return this.#client.auth({
+    this.#pendingLogin ??= this.#ensureAdminToken().finally(() => {
+      this.#pendingLogin = undefined;
+    });
+    return this.#pendingLogin;
+  }
+
+  async #ensureAdminToken() {
+    if (this.#signedInAsAdmin) {
+      try {
+        await this.#client.getAccessToken();
+        return;
+      } catch {
+        // The refresh token expired or was rejected, sign in again.
+      }
+    }
+
+    await this.#client.auth({
       username: ADMIN_USER,
       password: ADMIN_PASSWORD,
       grantType: "password",
       clientId: "admin-cli",
     });
-  }
-
-  async auth(credentials: Credentials) {
-    return this.#client.auth(credentials);
+    this.#signedInAsAdmin = true;
   }
 
   async createRealm(realm: string, payload?: RealmRepresentation) {
@@ -96,16 +113,19 @@ class AdminClient {
     return await this.#client.groups.create({ name: groupName, realm });
   }
 
-  async createSubGroups(groups: string[]) {
+  async createSubGroups(
+    groups: string[],
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     let parentGroup = undefined;
     const createdGroups = [];
     for (const group of groups) {
       if (!parentGroup) {
-        parentGroup = await this.#client.groups.create({ name: group });
+        parentGroup = await this.#client.groups.create({ name: group, realm });
       } else {
         parentGroup = await this.#client.groups.createChildGroup(
-          { id: parentGroup.id },
+          { id: parentGroup.id, realm },
           { name: group },
         );
       }
@@ -153,9 +173,13 @@ class AdminClient {
     );
   }
 
-  async addUserToGroup(userId: string, groupId: string) {
+  async addUserToGroup(
+    userId: string,
+    groupId: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
-    await this.#client.users.addToGroup({ id: userId, groupId });
+    await this.#client.users.addToGroup({ id: userId, groupId, realm });
   }
 
   async addClientRoleToUser(
@@ -463,10 +487,14 @@ class AdminClient {
     );
   }
 
-  async deleteIdentityProvider(idpAlias: string) {
+  async deleteIdentityProvider(
+    idpAlias: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     await this.#client.identityProviders.del({
       alias: idpAlias,
+      realm,
     });
   }
 
@@ -494,15 +522,15 @@ class AdminClient {
     });
   }
 
-  async removeAllLocalizationTexts() {
+  async removeAllLocalizationTexts(realm: string = this.#client.realmName) {
     await this.#login();
     const localesWithTexts = await this.#client.realms.getRealmSpecificLocales({
-      realm: this.#client.realmName,
+      realm,
     });
     await Promise.all(
       localesWithTexts.map((locale) =>
         this.#client.realms.deleteRealmLocalizationTexts({
-          realm: this.#client.realmName,
+          realm,
           selectedLocale: locale,
         }),
       ),
