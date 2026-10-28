@@ -435,6 +435,18 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 - `misc/schema-generator-maven-plugin/pom.xml` originally excluded `snakeyaml` from `liquibase-core`, since only XML changelogs are read. That exclusion had to be removed: Liquibase discovers its changelog parsers with a `ServiceLoader`, and linking `YamlChangeLogParser` fails with `NoClassDefFoundError: org/yaml/snakeyaml/constructor/BaseConstructor` while the XML parser is being set up, even though no YAML file is ever parsed. The server runtime provides SnakeYAML, which is why this was not visible there.
 - Follow-up: SnakeYAML should be removable from the plugin again. Possible approaches: ship a `META-INF/services/liquibase.parser.ChangeLogParser` in the plugin that lists only `XMLChangeLogSAXParser` (needs checking that Liquibase does not also pick up the services file inside `liquibase-core`), or register only the XML parser programmatically in `SchemaGenerator` before parsing. Verify with `SchemaGeneratorTest` and a `model/jpa` build; the benefit is a smaller plugin classpath, so this is low priority.
 
+### 8.8 Exclude Liquibase XML Changelog Files from the JPA Model JAR
+- `model/jpa/src/main/resources/META-INF/jpa-changelog-*.xml` and `jpa-changelog-master.xml` are the build-time source of truth consumed by `keycloak-schema-generator-maven-plugin` to generate `META-INF/schema/migration-manifest.json`.
+- At runtime, Keycloak operates purely via `JdbcJpaUpdaterProvider` using `migration-manifest.json` and does not parse or load the XML changelog files.
+- By default, Maven resources packaging bundles all `src/main/resources/` files into `keycloak-model-jpa.jar`.
+- Follow-up: Configure `model/jpa/pom.xml` (e.g. via `maven-jar-plugin` `<excludes>` or resource filtering) to exclude `META-INF/jpa-changelog-*.xml` from the packaged JAR, reducing artifact size and avoiding confusion over runtime migration sources.
+
+### 8.9 Schema Qualification in Exported Scripts for Complex Schema Names
+
+`NativeSqlHelper.qualified()` only embeds a schema prefix when the schema name is a plain SQL identifier (matches `[A-Za-z_][A-Za-z0-9_]*`).  When a complex schema name is used (e.g. `my-schema`), the schema is applied via `Connection.setSchema()` at runtime so that unqualified table names resolve to it; but the exported script carries no such directive.  If the consumer of the exported script runs it with a different default schema, the application tables are created in the wrong schema.
+
+- Follow-up: Before writing the first statement in `export()`, emit a dialect-specific schema-selection statement when the configured schema is complex (i.e. would not be embedded by `qualified()`).  Candidates: `USE <schema>` (MySQL, MariaDB, MSSQL), `SET search_path TO "<schema>"` (PostgreSQL), `ALTER SESSION SET CURRENT_SCHEMA = "<schema>"` (Oracle).  This ensures the exported script is self-contained regardless of the session's default schema.
+
 ---
 
 ## 9. Adding a New Database Type

@@ -42,7 +42,8 @@ public class JpaUpdate4_0_0_DefaultClientScopesTask implements JpaMigrationTask 
     @Override
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection))) {
+        SqlDialect dialect = SqlDialect.of(connection);
+        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
             return List.of();
         }
 
@@ -62,7 +63,7 @@ public class JpaUpdate4_0_0_DefaultClientScopesTask implements JpaMigrationTask 
                         + " (CLIENT_ID, SCOPE_ID, DEFAULT_SCOPE) VALUES ("
                         + NativeSqlHelper.sqlLiteral(clientId.trim()) + ", "
                         + NativeSqlHelper.sqlLiteral(templateId.trim()) + ", "
-                        + NativeSqlHelper.sqlLiteral(true) + ")");
+                        + NativeSqlHelper.trueLiteral(dialect) + ")");
             }
         }
         return stmts;

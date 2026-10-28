@@ -174,6 +174,14 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
     public void export(Connection connection, String defaultSchema, File file) {
         logger.debug("Starting database export (manual migration mode)");
         try (FileWriter writer = new FileWriter(file)) {
+            // Oracle SQL*Plus treats '&' in quoted strings as substitution variables.
+            // Disable that behaviour up-front so that any stored values containing '&'
+            // (e.g. URIs with query parameters) are not corrupted when the script is applied.
+            if (SqlDialect.of(connection) == SqlDialect.ORACLE) {
+                writer.write("SET DEFINE OFF");
+                writer.write(System.lineSeparator());
+                writer.write(System.lineSeparator());
+            }
             runMasterChangelog(connection, writer, defaultSchema);
             runCustomProviderChangelogs(connection, writer, defaultSchema);
         } catch (IOException | SQLException e) {

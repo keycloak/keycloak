@@ -44,7 +44,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.JsonUtils;
 
-import org.apache.commons.collections4.ListUtils;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
@@ -267,7 +266,10 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
             return Collections.emptyList();
         }
 
-        return ListUtils.union(getAttributePrefix(), attributePath);
+        ArrayList<String> result = new ArrayList<>(getAttributePrefix().size() + attributePath.size());
+        result.addAll(getAttributePrefix());
+        result.addAll(attributePath);
+        return result;
     }
 
     /**

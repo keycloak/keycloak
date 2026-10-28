@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
 import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
+import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -45,6 +46,7 @@ public class AuthzResourceUseMoreURIsTask implements JpaMigrationTask {
         String urisTable = NativeSqlHelper.qualified("RESOURCE_URIS", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
+        SqlDialect dialect = SqlDialect.of(connection);
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT ID, URI FROM " + resourceTable + " WHERE URI IS NOT NULL");
              ResultSet rs = ps.executeQuery()) {
@@ -52,8 +54,8 @@ public class AuthzResourceUseMoreURIsTask implements JpaMigrationTask {
                 String resourceId = rs.getString(1);
                 String uri = rs.getString(2);
                 stmts.add("INSERT INTO " + urisTable + " (RESOURCE_ID, VALUE) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(resourceId) + ", "
-                        + NativeSqlHelper.sqlLiteral(uri) + ")");
+                        + NativeSqlHelper.sqlLiteral(resourceId, dialect) + ", "
+                        + NativeSqlHelper.sqlLiteral(uri, dialect) + ")");
             }
         }
         return stmts;

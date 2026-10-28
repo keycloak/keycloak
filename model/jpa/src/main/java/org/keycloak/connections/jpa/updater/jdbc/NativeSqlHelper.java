@@ -84,6 +84,28 @@ public final class NativeSqlHelper {
         return "'" + s.replace("'", "''") + "'";
     }
 
+    /**
+     * Serializes a string value to a SQL literal using dialect-aware escaping.
+     *
+     * <p>MySQL and MariaDB treat backslash as an escape character by default, so backslashes must be
+     * doubled in addition to single quotes. All other dialects only need single quotes doubled.
+     *
+     * <p><strong>Note:</strong> this is intended for generating migration SQL that is either executed
+     * directly or written to an export file.  Do not use it for user-supplied values in production
+     * query paths — use parameterized statements there.
+     */
+    public static String sqlLiteral(String value, SqlDialect dialect) {
+        if (value == null) {
+            return "NULL";
+        }
+        if (dialect == SqlDialect.MYSQL || dialect == SqlDialect.MARIADB) {
+            // Escape backslashes first, then single quotes, so that the backslash
+            // escape sequences introduced by quote-escaping are not re-processed.
+            return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'";
+        }
+        return "'" + value.replace("'", "''") + "'";
+    }
+
     // -------------------------------------------------------------------------
     // isApplicable() — REALM row check
     // -------------------------------------------------------------------------
@@ -124,7 +146,10 @@ public final class NativeSqlHelper {
         if (dialect == SqlDialect.MSSQL) {
             return "SELECT TOP 1 1 FROM " + qualifiedTable;
         }
-        // ANSI SQL:2008 — works on PostgreSQL, MySQL, MariaDB, Oracle 12c+, H2
+        if (dialect == SqlDialect.MYSQL || dialect == SqlDialect.MARIADB) {
+            return "SELECT 1 FROM " + qualifiedTable + " LIMIT 1";
+        }
+        // ANSI SQL:2008 — works on PostgreSQL, Oracle 12c+, H2
         return "SELECT 1 FROM " + qualifiedTable + " FETCH FIRST 1 ROWS ONLY";
     }
 

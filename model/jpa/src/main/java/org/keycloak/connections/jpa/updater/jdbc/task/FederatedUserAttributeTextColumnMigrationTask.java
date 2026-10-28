@@ -68,8 +68,8 @@ public class FederatedUserAttributeTextColumnMigrationTask implements JpaMigrati
                             + " SET VALUE = NULL"
                             + ", LONG_VALUE_HASH = 0x" + HexFormat.of().formatHex(hash)
                             + ", LONG_VALUE_HASH_LOWER_CASE = 0x" + HexFormat.of().formatHex(hashLower)
-                            + ", LONG_VALUE = " + NativeSqlHelper.sqlLiteral(value)
-                            + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id));
+                            + ", LONG_VALUE = " + NativeSqlHelper.sqlLiteral(value, dialect)
+                            + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
                 }
             }
         }
