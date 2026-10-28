@@ -121,6 +121,34 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         assertFailure("Multiple audiences not allowed", response, events.poll());
     }
 
+    @Test
+    public void testFilteredByClaims() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FILTERED_BY_CLAIMS, Boolean.TRUE.toString());
+            rep.getConfig().put(IdentityProviderModel.CLAIM_FILTER_NAME, "hd");
+            rep.getConfig().put(IdentityProviderModel.CLAIM_FILTER_VALUE, "allowed.example");
+        });
+
+        // the claim value excluded by the filter is rejected
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+        token.setOtherClaims("hd", "other.example");
+        String jwt = getIdentityProvider().encodeToken(token);
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Unmatched claim value for hd.", response, events.poll());
+
+        // the assertion without the filtered claim is rejected
+        jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Claim hd not found", response, events.poll());
+
+        // the claim value allowed by the filter is accepted
+        token = createDefaultAuthorizationGrantToken();
+        token.setOtherClaims("hd", "allowed.example");
+        jwt = getIdentityProvider().encodeToken(token);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+    }
+
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
