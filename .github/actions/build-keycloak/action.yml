@@ -37,8 +37,11 @@ runs:
       name: Build Keycloak
       shell: bash
       run: |
-        # Ensure this plugin is built first to avoid warnings in the build
-        ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
+        # Ensure these plugins are built first to avoid warnings in the build.
+        # spotbugs-logging-plugin must be installed before the main build so that
+        # the spotbugs-maven-plugin can load it as a custom detector during -Pdistribution.
+        ./mvnw install -Pdistribution -am \
+          -pl distribution/maven-plugins/licenses-processor,distribution/maven-plugins/spotbugs-logging-plugin
         # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests.
         # "dependency:resolve-plugins" pre-downloads declared plugin runtime dependencies so test jobs
         # don't need to fetch them from Maven Central (avoiding transient 403 rate-limit failures).

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+  Human-readable descriptions for SpotBugs bug patterns reported by
+  LoggingFormatStringDetector.
+-->
+<MessageCollection xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:noNamespaceSchemaLocation="messagecollection.xsd">
+
+    <Plugin>
+        <ShortDescription>Keycloak Logging Format String Checker</ShortDescription>
+        <Details>Detects mismatched format strings in JBoss Logging calls (debugf/infof/warnf/errorf and debugv/infov/warnv/errorv family).</Details>
+    </Plugin>
+
+    <!-- ================================================================== -->
+    <!-- LOGGING_FORMAT_ARG_COUNT_MISMATCH                                  -->
+    <!-- ================================================================== -->
+    <BugPattern type="LOGGING_FORMAT_ARG_COUNT_MISMATCH">
+        <ShortDescription>Logging format string placeholder count does not match argument count</ShortDescription>
+        <LongDescription>
+            The number of placeholders in the format string does not match the number of
+            arguments supplied to the logging call.
+
+            If there are more placeholders than arguments, a MissingFormatArgumentException
+            will be thrown at runtime (for printf-style *f methods) or the placeholder will
+            be rendered literally (for MessageFormat-style *v methods).
+
+            If there are fewer placeholders than arguments, the extra arguments are silently
+            discarded, which hides information that was intended to appear in the log output.
+        </LongDescription>
+        <Details>
+&lt;p&gt;The number of placeholders in the format string does not match the number of arguments
+supplied to the logging call.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Too few placeholders&lt;/b&gt; (more args than placeholders): extra arguments are silently
+dropped — information is lost from the log entry.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Too many placeholders&lt;/b&gt; (fewer args than placeholders): a
+{@code MissingFormatArgumentException} is thrown at runtime for printf-style calls, or the
+placeholder is rendered literally for MessageFormat-style calls.&lt;/p&gt;
+&lt;p&gt;Example of broken code:&lt;/p&gt;
+&lt;pre&gt;
+// Two %s placeholders but only one argument — will throw at runtime
+logger.debugf("Loading realm %s from provider %s", realmName);
+&lt;/pre&gt;
+&lt;p&gt;Corrected code:&lt;/p&gt;
+&lt;pre&gt;
+logger.debugf("Loading realm %s from provider %s", realmName, providerName);
+&lt;/pre&gt;
+        </Details>
+    </BugPattern>
+
+    <!-- ================================================================== -->
+    <!-- LOGGING_FORMAT_WRONG_SYNTAX                                         -->
+    <!-- ================================================================== -->
+    <BugPattern type="LOGGING_FORMAT_WRONG_SYNTAX">
+        <ShortDescription>Wrong placeholder syntax for the logging method variant used</ShortDescription>
+        <LongDescription>
+            The format string uses the wrong placeholder syntax for the logging method called.
+
+            The *f family (debugf, infof, warnf, errorf, tracef, fatalf) uses printf-style
+            placeholders: %s, %d, %f, etc.
+
+            The *v family (debugv, infov, warnv, errorv, tracev, fatalv) uses MessageFormat-style
+            placeholders: {0}, {1}, {2}, etc.
+
+            Using %s in a *v call will cause the placeholder to appear literally in the output.
+            Using {0} in a *f call will cause the placeholder to appear literally in the output.
+        </LongDescription>
+        <Details>
+&lt;p&gt;The format string uses a placeholder syntax that does not match the logging method variant.&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;{@code *f} methods ({@code debugf}, {@code infof}, {@code warnf}, {@code errorf},
+      {@code tracef}, {@code fatalf}) use &lt;b&gt;printf-style&lt;/b&gt; placeholders: {@code %s}, {@code %d}, …&lt;/li&gt;
+  &lt;li&gt;{@code *v} methods ({@code debugv}, {@code infov}, {@code warnv}, {@code errorv},
+      {@code tracev}, {@code fatalv}) use &lt;b&gt;MessageFormat-style&lt;/b&gt; placeholders: {@code {0}}, {@code {1}}, …&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Example of broken code:&lt;/p&gt;
+&lt;pre&gt;
+// debugv expects {0} style, but %s is used — placeholder appears literally
+logger.debugv("Token expiry: %s", expiryTime);
+&lt;/pre&gt;
+&lt;p&gt;Corrected code — either switch to the right method:&lt;/p&gt;
+&lt;pre&gt;
+logger.debugf("Token expiry: %s", expiryTime);
+// or switch to the right placeholder style:
+logger.debugv("Token expiry: {0}", expiryTime);
+&lt;/pre&gt;
+        </Details>
+    </BugPattern>
+
+    <!-- ================================================================== -->
+    <!-- Detector description (shown in the SpotBugs GUI preferences)       -->
+    <!-- ================================================================== -->
+    <Detector class="org.keycloak.spotbugs.LoggingFormatStringDetector">
+        <Details>
+Detects mismatches between JBoss Logging format string placeholders and the
+number or style of arguments supplied. Covers the *f (printf-style) and *v
+(MessageFormat-style) method families on org.jboss.logging.Logger.
+        </Details>
+    </Detector>
+
+</MessageCollection>
