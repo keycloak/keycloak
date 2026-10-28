@@ -75,6 +75,22 @@ jobs:
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
 
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: account-ui
+          title: Account UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: account-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/account-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
@@ -136,6 +152,22 @@ jobs:
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
         working-directory: js
+
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: admin-ui
+          title: Admin UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: admin-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

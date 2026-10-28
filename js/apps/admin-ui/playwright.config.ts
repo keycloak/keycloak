@@ -12,7 +12,14 @@ export default defineConfig({
   // this should be addressed and 'workers' should be returned to the default value.
   workers: 1,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? [["github"], ["html"]] : "list",
+  reporter: process.env.CI
+    ? [
+        ["github"],
+        ["list"],
+        ["html"],
+        ["json", { outputFile: "playwright-results.json" }],
+      ]
+    : "list",
 
   use: {
     trace: "retain-on-failure",

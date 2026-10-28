@@ -1,0 +1,37 @@
+name: Playwright summary
+description: Adds the duration and the slowest tests of a Playwright JSON report to the job summary.
+
+inputs:
+  workspace-dir:
+    description: Directory of the app that contains playwright-results.json, relative to js/apps
+    required: true
+  title:
+    description: Heading of the summary section
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Summarize Playwright results
+      shell: bash
+      env:
+        REPORT: js/apps/${{ inputs.workspace-dir }}/playwright-results.json
+        TITLE: ${{ inputs.title }}
+      run: |
+        if [ ! -f "$REPORT" ]; then
+          echo "No Playwright results found at $REPORT"
+          exit 0
+        fi
+        {
+          echo "### $TITLE"
+          echo
+          jq -r '.stats | "Duration: \((.duration / 1000 | floor))s, expected: \(.expected), unexpected: \(.unexpected), flaky: \(.flaky), skipped: \(.skipped)"' "$REPORT"
+          echo
+          echo "Slowest tests:"
+          echo
+          echo "| Duration | Test |"
+          echo "|---|---|"
+          jq -r '[.. | objects | select(has("specs")) | .specs[] | {title: (.file + " › " + .title), duration: ([.tests[].results[].duration] | add // 0)}]
+            | sort_by(-.duration) | .[:20][]
+            | "| \((.duration / 1000 * 10 | round) / 10)s | \(.title) |"' "$REPORT"
+        } >> "$GITHUB_STEP_SUMMARY"
