@@ -166,7 +166,7 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
     protected OID4VCTestContext issueCredential(String holder) {
         OID4VCTestContext ctx = new OID4VCTestContext(client, sdJwtTypeCredentialScope);
         if (holder != null) {
-            ctx.setHolder(holder);
+            ctx.withHolder(holder);
         }
         wallet.fetchCredentialByScope(ctx, ctx.getScope());
         assertNotNull(ctx.getCredentialResponse().getCredentials().get(0).getCredential(),
