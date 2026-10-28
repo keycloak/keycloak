@@ -112,6 +112,7 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -165,12 +166,17 @@ public class SamlService extends AuthorizationEndpointBase {
     private final DestinationValidator destinationValidator;
     private final long maxInflatingSize;
     protected final long maxSoapMessageRequestSize;
+    private final boolean enableSaml11;
 
-    public SamlService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize) {
+    public SamlService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator,
+                       long maxSoapMessageRequestSize, boolean enableSaml11) {
         super(session, event);
         this.destinationValidator = destinationValidator;
         this.maxInflatingSize = maxInflatingSize;
         this.maxSoapMessageRequestSize = maxSoapMessageRequestSize;
+        this.enableSaml11 = enableSaml11;
+        if (this.enableSaml11)
+            SAMLParser.getInstance().enableSaml11Parsers();
     }
 
     public abstract class BindingProtocol {
@@ -1170,7 +1176,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize, enableSaml11);
 
         return bindingService.authenticate(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
     }
