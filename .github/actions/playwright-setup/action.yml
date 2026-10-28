@@ -5,6 +5,9 @@ inputs:
   workspace:
     description: PNPM workspace filter to run Playwright from
     required: true
+  browser:
+    description: Playwright browser to install, so that only its binaries and system dependencies are fetched
+    required: true
 
 runs:
   using: composite
@@ -23,16 +26,16 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright-version.outputs.distro }}-playwright-${{ steps.playwright-version.outputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright-version.outputs.distro }}-playwright-${{ inputs.browser }}-${{ steps.playwright-version.outputs.version }}
 
     - name: Install Playwright browsers
       if: steps.cache-browsers.outputs.cache-hit != 'true'
       shell: bash
       working-directory: js
-      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install --with-deps
+      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install --with-deps ${{ inputs.browser }}
 
     - name: Install Playwright system dependencies
       if: steps.cache-browsers.outputs.cache-hit == 'true'
       shell: bash
       working-directory: js
-      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install-deps
+      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install-deps ${{ inputs.browser }}
