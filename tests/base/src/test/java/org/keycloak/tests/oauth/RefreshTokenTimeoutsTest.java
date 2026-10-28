@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
@@ -22,7 +21,6 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
@@ -148,45 +146,31 @@ public class RefreshTokenTimeoutsTest {
 
         assertNotEquals(last, next);
 
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        int lastAccessTokenLifespan = realmRep.getAccessTokenLifespan();
-        int originalIdle = realmRep.getSsoSessionIdleTimeout();
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(100000));
 
-        try {
-            realmRep.setAccessTokenLifespan(100000);
-            realm.admin().update(realmRep);
+        timeOffSet.set(4);
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
 
-            timeOffSet.set(4);
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        next = getLastSessionRefresh(sessionId);
 
-            next = getLastSessionRefresh(sessionId);
+        // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
+        assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
 
-            // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
-            assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
+        realm.updateWithCleanup(r -> r.ssoSessionIdleTimeout(1));
 
-            realmRep.setSsoSessionIdleTimeout(1);
-            realm.admin().update(realmRep);
+        events.clear();
+        // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        timeOffSet.set(6 + (isPersistentSessionsFeatureEnabled() ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
 
-            events.clear();
-            // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
-            timeOffSet.set(6 + (isPersistentSessionsFeatureEnabled() ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        // test idle timeout
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
 
-            // test idle timeout
-            assertEquals(400, tokenResponse.getStatusCode());
-            assertNull(tokenResponse.getAccessToken());
-            assertNull(tokenResponse.getRefreshToken());
-
-            EventAssertion.assertError(events.poll())
-                    .type(EventType.REFRESH_TOKEN_ERROR)
-                    .error(Errors.INVALID_TOKEN);
-
-        } finally {
-            realmRep.setSsoSessionIdleTimeout(originalIdle);
-            realmRep.setAccessTokenLifespan(lastAccessTokenLifespan);
-            realm.admin().update(realmRep);
-            events.clear();
-        }
+        EventAssertion.assertError(events.poll())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .error(Errors.INVALID_TOKEN);
 
     }
 
@@ -434,10 +418,9 @@ public class RefreshTokenTimeoutsTest {
 
         events.poll();
 
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        rep.setSsoSessionMaxLifespan(3600);
-        rep.setClientSessionMaxLifespan(3600);
-        realm.admin().update(rep);
+        realm.updateWithCleanup(r -> r
+                .ssoSessionMaxLifespan(3600)
+                .clientSessionMaxLifespan(3600));
 
         timeOffSet.set(3700);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
@@ -445,7 +428,6 @@ public class RefreshTokenTimeoutsTest {
         assertNull(tokenResponse.getAccessToken());
         assertNull(tokenResponse.getRefreshToken());
         expectRefreshEventError();
-        //events.assertRefreshTokenErrorAndMaybeSessionExpired(sessionId, loginEvent.getUserId(), loginEvent.getClientId());
         assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
     }
 
@@ -474,9 +456,7 @@ public class RefreshTokenTimeoutsTest {
 
         events.poll();
 
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        rep.setClientSessionMaxLifespan(3600);
-        realm.admin().update(rep);
+        realm.updateWithCleanup(r -> r.clientSessionMaxLifespan(3600));
 
         timeOffSet.set(3700);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
@@ -535,9 +515,7 @@ public class RefreshTokenTimeoutsTest {
 
         events.poll();
 
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        rep.setClientSessionMaxLifespan(3600);
-        realm.admin().update(rep);
+        realm.updateWithCleanup(r -> r.clientSessionMaxLifespan(3600));
 
         timeOffSet.set(4200);
         oauth.openLoginForm();
@@ -603,67 +581,51 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void refreshTokenClientSessionMaxLifespan() {
-        RealmResource realm = this.realm.admin();
-        RealmRepresentation rep = realm.toRepresentation();
-        Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+        this.realm.updateWithCleanup(r -> r.ssoSessionMaxLifespan(1000));
+        this.realm.updateClientWithCleanup("test-app", c -> c.attribute(CLIENT_SESSION_MAX_LIFESPAN, "500"));
 
-        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
+        oauth.doLogin("test-user@localhost", "password");
 
-        try {
-            rep.setSsoSessionMaxLifespan(1000);
-            realm.update(rep);
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN);
 
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "500");
-            testAppClient.update(clientRepresentation);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
-            oauth.doLogin("test-user@localhost", "password");
+        events.poll();
 
-            EventRepresentation loginEvent = events.poll();
-            EventAssertion.assertSuccess(loginEvent)
-                    .type(EventType.LOGIN);
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 500, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        timeOffSet.set(100);
 
-            events.poll();
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400, "Invalid RefreshExpiresIn");
 
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 500, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
+        timeOffSet.set(600);
 
-            timeOffSet.set(100);
+        oauth.openLoginForm();
+        code = oauth.parseLoginResponse().getCode();
 
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400, "Invalid RefreshExpiresIn");
+        tokenResponse = oauth.doAccessTokenRequest(code);
+        assertEquals(200, tokenResponse.getStatusCode());
+        assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
 
-            timeOffSet.set(600);
+        timeOffSet.set(700);
 
-            oauth.openLoginForm();
-            code = oauth.parseLoginResponse().getCode();
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertEquals(200, tokenResponse.getStatusCode());
+        assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 300, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
 
-            tokenResponse = oauth.doAccessTokenRequest(code);
-            assertEquals(200, tokenResponse.getStatusCode());
-            assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
+        timeOffSet.set(1100);
 
-            timeOffSet.set(700);
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
 
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(200, tokenResponse.getStatusCode());
-            assertTrue(0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 300, "Invalid RefreshExpiresIn" + tokenResponse.getRefreshExpiresIn());
-
-            timeOffSet.set(1100);
-
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-            assertEquals(400, tokenResponse.getStatusCode());
-            assertNull(tokenResponse.getAccessToken());
-            assertNull(tokenResponse.getRefreshToken());
-
-            expectRefreshEventError();
-        } finally {
-            rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, null);
-            testAppClient.update(clientRepresentation);
-        }
+        expectRefreshEventError();
     }
 
     /**
@@ -676,10 +638,6 @@ public class RefreshTokenTimeoutsTest {
     public void refreshTokenClientSessionIdleTimeoutTwoClientsWithReloadingFromDatabase() {
         Assumptions.assumeTrue(isPersistentSessionsFeatureEnabled(), "Skip as persistent_user_sessions feature is disabled");
 
-        RealmResource realm = this.realm.admin();
-
-        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
-
         // Duplicate the primary client to have two clients to test with
         ClientRepresentation clientRepresentation2 = testAppClient.toRepresentation();
         clientRepresentation2.setClientId("test-app2");
@@ -687,162 +645,125 @@ public class RefreshTokenTimeoutsTest {
         clientRepresentation2.setId(null);
         clientRepresentation2.setProtocolMappers(null);
         String clientUUID;
-        try (Response resp = realm.clients().create(clientRepresentation2)) {
+        try (Response resp = this.realm.admin().clients().create(clientRepresentation2)) {
             clientUUID = ApiUtil.getCreatedId(resp);
         }
+        final String createdClientUUID = clientUUID;
+        this.realm.cleanup().add(r -> r.clients().get(createdClientUUID).remove());
 
         String origClientId = oauth.getClientId();
         String origClientSecret = oauth.config().getClientSecret();
 
-        try {
-            oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
-            EventRepresentation loginEvent = events.poll();
-            EventAssertion.assertSuccess(loginEvent)
-                    .type(EventType.LOGIN);
-            String sessionId = loginEvent.getSessionId();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN);
+        String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
-            // Reduce the idle time so that the originally issued refresh token is valid, but it will be considered invalid due to the client configuration
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "500");
-            testAppClient.update(clientRepresentation);
+        // Reduce the idle time so that the originally issued refresh token is valid, but it will be considered invalid due to the client configuration
+        this.realm.updateClientWithCleanup("test-app", c -> c.attribute(CLIENT_SESSION_IDLE_TIMEOUT, "500"));
 
-            oauth.client("test-app2", origClientSecret);
+        oauth.client("test-app2", origClientSecret);
 
-            // We are already logged in due to the token
-            oauth.openLoginForm();
+        // We are already logged in due to the token
+        oauth.openLoginForm();
 
-            String code2 = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2);
+        String code2 = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2);
 
-            assertThat(sessionId, Matchers.equalTo(tokenResponse2.getSessionState()));
+        assertThat(sessionId, Matchers.equalTo(tokenResponse2.getSessionState()));
 
-            timeOffSet.set(100);
+        timeOffSet.set(100);
 
-            tokenResponse2 = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken());
-            assertEquals(200, tokenResponse2.getStatusCode());
-            assertTrue(0 < tokenResponse2.getRefreshExpiresIn() && tokenResponse2.getRefreshExpiresIn() <= 500, "Invalid RefreshExpiresIn: " + tokenResponse2.getRefreshExpiresIn());
+        tokenResponse2 = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken());
+        assertEquals(200, tokenResponse2.getStatusCode());
+        assertTrue(0 < tokenResponse2.getRefreshExpiresIn() && tokenResponse2.getRefreshExpiresIn() <= 500, "Invalid RefreshExpiresIn: " + tokenResponse2.getRefreshExpiresIn());
 
-            // Clear all entries from the cache to enforce re-loading the data from the database
-            runOnServer.run(session -> {
-                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                if (connections != null) {
-                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME, false);
-                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME, false);
-                    if (sessionCache != null) {
-                        sessionCache.clear();
-                    }
-                    if (clientSessionCache != null) {
-                        clientSessionCache.clear();
-                    }
+        // Clear all entries from the cache to enforce re-loading the data from the database
+        runOnServer.run(session -> {
+            InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+            if (connections != null) {
+                Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME, false);
+                Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME, false);
+                if (sessionCache != null) {
+                    sessionCache.clear();
                 }
-            });
+                if (clientSessionCache != null) {
+                    clientSessionCache.clear();
+                }
+            }
+        });
 
-            timeOffSet.set(550);
-            oauth.client(origClientId, origClientSecret);
-            events.poll();
+        timeOffSet.set(550);
+        oauth.client(origClientId, origClientSecret);
+        events.poll();
 
-            // The client session of the first client should have expired by now
-            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+        // The client session of the first client should have expired by now
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
 
-            assertEquals(400, tokenResponse.getStatusCode());
-            assertNull(tokenResponse.getAccessToken());
-            assertNull(tokenResponse.getRefreshToken());
-            expectRefreshEventError();
-        } finally {
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
-            testAppClient.update(clientRepresentation);
-            Response ignored = realm.clients().delete(clientUUID);
-            ignored.close();
-        }
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
+        expectRefreshEventError();
     }
 
 
     @Test
     public void testClientSessionMaxLifespan() {
-        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
+        int ssoSessionMaxLifespan = this.realm.admin().toRepresentation().getSsoSessionIdleTimeout() - 100;
 
-        RealmResource realm = this.realm.admin();
-        RealmRepresentation rep = realm.toRepresentation();
-        Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
-        int ssoSessionMaxLifespan = rep.getSsoSessionIdleTimeout() - 100;
-        Integer originalClientSessionMaxLifespan = rep.getClientSessionMaxLifespan();
+        this.realm.updateWithCleanup(r -> r.ssoSessionMaxLifespan(ssoSessionMaxLifespan));
 
-        try {
-            rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
-            realm.update(rep);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan);
 
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan);
+        this.realm.updateWithCleanup(r -> r.clientSessionMaxLifespan(ssoSessionMaxLifespan - 100));
 
-            rep.setClientSessionMaxLifespan(ssoSessionMaxLifespan - 100);
-            realm.update(rep);
+        String refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 100);
 
-            String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 100);
+        this.realm.updateClientWithCleanup("test-app", c -> c.attribute(CLIENT_SESSION_MAX_LIFESPAN,
+                Integer.toString(ssoSessionMaxLifespan - 200)));
 
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN,
-                    Integer.toString(ssoSessionMaxLifespan - 200));
-            testAppClient.update(clientRepresentation);
-
-            refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 200);
-        } finally {
-            rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
-            rep.setClientSessionMaxLifespan(originalClientSessionMaxLifespan);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "");
-            testAppClient.update(clientRepresentation);
-        }
+        refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 200);
     }
 
     @Test
     public void testClientSessionIdleTimeout() {
-        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
+        int ssoSessionIdleTimeout = this.realm.admin().toRepresentation().getSsoSessionIdleTimeout();
 
-        RealmResource realm = this.realm.admin();
-        RealmRepresentation rep = realm.toRepresentation();
-        int ssoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
-        Integer originalClientSessionIdleTimeout = rep.getClientSessionIdleTimeout();
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout);
 
-        try {
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout);
+        this.realm.updateWithCleanup(r -> r.clientSessionIdleTimeout(ssoSessionIdleTimeout - 100));
 
-            rep.setClientSessionIdleTimeout(ssoSessionIdleTimeout - 100);
-            realm.update(rep);
+        String refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 100);
 
-            String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 100);
+        this.realm.updateClientWithCleanup("test-app", c -> c.attribute(CLIENT_SESSION_IDLE_TIMEOUT,
+                Integer.toString(ssoSessionIdleTimeout - 200)));
 
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT,
-                    Integer.toString(ssoSessionIdleTimeout - 200));
-            testAppClient.update(clientRepresentation);
-
-            refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 200);
-        } finally {
-            rep.setClientSessionIdleTimeout(originalClientSessionIdleTimeout);
-            realm.update(rep);
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
-            testAppClient.update(clientRepresentation);
-        }
+        refreshToken = response.getRefreshToken();
+        response = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 200);
     }
 
     @Test // KEYCLOAK-17323
@@ -851,30 +772,22 @@ public class RefreshTokenTimeoutsTest {
                 .ssoSessionIdleTimeout(2592000) // 30 Days
                 .ssoSessionMaxLifespan(86313600) // 999 Days
         );
+        realm.updateClientWithCleanup("test-app", c -> c
+                .attribute(CLIENT_SESSION_IDLE_TIMEOUT, "60")   // 1 minute
+                .attribute(CLIENT_SESSION_MAX_LIFESPAN, "65")); // 1 minute 5 seconds
 
-        ClientRepresentation clientRepresentation = testAppClient.toRepresentation();
-        clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "60"); // 1 minute
-        clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "65"); // 1 minute 5 seconds
-        testAppClient.update(clientRepresentation);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+        Assert.assertExpiration(response.getExpiresIn(), 65);
 
-        try {
-            oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-            assertEquals(200, response.getStatusCode());
-            Assert.assertExpiration(response.getExpiresIn(), 65);
+        timeOffSet.set(70);
 
-            timeOffSet.set(70);
-
-            oauth.openLoginForm();
-            code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
-            Assert.assertExpiration(response2.getExpiresIn(), 65);
-        } finally {
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "");
-            testAppClient.update(clientRepresentation);
-        }
+        oauth.openLoginForm();
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
+        Assert.assertExpiration(response2.getExpiresIn(), 65);
     }
 
 
