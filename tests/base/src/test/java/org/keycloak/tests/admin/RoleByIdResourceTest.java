@@ -145,7 +145,11 @@ public class RoleByIdResourceTest {
     public void deleteRole() {
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));
         resource.deleteRole(roleIds.get(roleNameA));
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleByIdResourcePath(roleIds.get(roleNameA)), ResourceType.REALM_ROLE);
+
+        RoleRepresentation expectedRep = new RoleRepresentation();
+        expectedRep.setId(roleIds.get(roleNameA));
+        expectedRep.setName(roleNameA);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleByIdResourcePath(roleIds.get(roleNameA)), expectedRep, ResourceType.REALM_ROLE);
 
         try {
             resource.getRole(roleIds.get(roleNameA));
