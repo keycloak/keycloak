@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.VCFormat;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGraphQLClaimMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
@@ -114,7 +115,27 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         assertMapperIsFunctional("type-mapper", mapper, "type");
     }
 
+    @Test
+    public void testGraphQLClaimMapper() {
+        // The query's 'booking' field has a nested selection set, so the response is an Object: its field
+        // ('flightNumber') is spread into its own top-level claim — statically known from the query's
+        // selection set at Response Path, without querying the endpoint — not nested under Claim Name
+        // ('ticket', which is unused for Object responses; see #53956).
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtils.getGraphQLClaimMapper(
+                "ticket", "http://example.com/graphql",
+                "query($id: String!) { booking(passengerId: $id) { flightNumber } }",
+                "id=user:username", "booking");
+        mapper.setConfig(new HashMap<>(mapper.getConfig()));
+        mapper.getConfig().put(CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true");
+        assertMapperIsFunctional("graphql-claim-mapper", mapper, "flightNumber");
+    }
+
     // ---- Empty-config tests (verifies mappers with missing required config are silently ignored) ----
+
+    @Test
+    public void testGraphQLClaimMapperEmptyConfig() {
+        assertMapperIsIgnored(OID4VCGraphQLClaimMapper.MAPPER_ID, "graphql-empty-mapper");
+    }
 
     @Test
     public void testSubjectIdMapperEmptyConfig() {
