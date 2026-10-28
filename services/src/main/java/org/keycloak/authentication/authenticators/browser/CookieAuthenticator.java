@@ -93,7 +93,7 @@ public class CookieAuthenticator implements Authenticator {
                 } else {
                     // Cookie only authentication
                     acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
-                    authSession.setAuthNote(AuthenticationManager.SSO_AUTH, "true");
+                    authSession.setAuthNote(AuthenticationManager.SSO_AUTH, authResult.user().getId());
                     context.attachUserSession(authResult.session());
 
                     if (isOrganizationContext(context)) {
