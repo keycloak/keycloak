@@ -714,6 +714,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
         // OIDC Dynamic Client Registration (optional): sector_identifier_uri, request_uris, fetched by the
         // authorization server after the registration
+        // OIDC Front-Channel Logout (optional): frontchannel_logout_uri
+        // OIDC Back-Channel Logout (optional): backchannel_logout_uri, posted to by the authorization server
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -733,6 +735,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         for (String requestUri : convertContentFilledList(clientOIDC.getRequestUris())) {
             verifyFetchedUriProperty(requestUri, "request_uris", trustedDomains);
         }
+
+        verifyUriPropertyIfPresent(clientOIDC.getFrontChannelLogoutUri(), "frontchannel_logout_uri", trustedDomains);
+        verifyFetchedUriProperty(clientOIDC.getBackchannelLogoutUri(), "backchannel_logout_uri", trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
@@ -863,7 +868,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // An authorization server MAY impose restrictions or relationships
         // between the redirect_uris and the client_id or client_uri properties
 
-        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri
+        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri,
+        // sector_identifier_uri, request_uris, frontchannel_logout_uri, backchannel_logout_uri
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -875,7 +881,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
+            List<String> l = Stream.concat(
+                            Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
+                                    clientOIDC.getSectorIdentifierUri(), clientOIDC.getFrontChannelLogoutUri(), clientOIDC.getBackchannelLogoutUri()),
+                            convertContentFilledList(clientOIDC.getRequestUris()).stream())
                     .filter(Objects::nonNull).toList();
             try {
                 for (String s : l) {

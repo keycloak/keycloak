@@ -1096,6 +1096,14 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
         cimd.getRepresentation().setRequestUris(null);
+
+        cimd.getRepresentation().setFrontChannelLogoutUri("https://frontchannel.example.org/logout");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setFrontChannelLogoutUri(null);
+
+        cimd.getRepresentation().setBackchannelLogoutUri("https://backchannel.example.org/logout");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setBackchannelLogoutUri(null);
     }
 
     @Test
@@ -1126,6 +1134,25 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), PairwiseSubMapperHelper.getSectorIdentifierUri(pairwiseMappers.get(0)));
 
         // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorInitiateLoginUriNotPersisted() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        setCimdPublicClient();
+        String initiateLoginUri = "https://initiate.example.org/login";
+        cimd.getRepresentation().setInitiateLoginUri(initiateLoginUri);
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(JsonSerialization.writeValueAsString(clientRepresentation),
+                Matchers.not(Matchers.containsString(initiateLoginUri)));
+
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
@@ -1328,6 +1355,25 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        cimd.getRepresentation().setClientUri("http://localhost:8500");
+        cimd.getRepresentation().setTosUri("https://localhost:8500/tos");
+
+        cimd.getRepresentation().setSectorIdentifierUri("https://www.example.com/sector");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setSectorIdentifierUri(null);
+
+        cimd.getRepresentation().setRequestUris(List.of("https://www.example.com/request"));
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setRequestUris(null);
+
+        cimd.getRepresentation().setFrontChannelLogoutUri("https://www.example.com/logout");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setFrontChannelLogoutUri(null);
+
+        cimd.getRepresentation().setBackchannelLogoutUri("https://www.example.com/logout");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setBackchannelLogoutUri(null);
     }
 
     @Test
