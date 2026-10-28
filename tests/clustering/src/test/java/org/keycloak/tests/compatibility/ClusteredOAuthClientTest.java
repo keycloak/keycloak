@@ -24,7 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = CompatibilityServerConfig.class)
 public class ClusteredOAuthClientTest {
 
     @InjectUser(config = OAuthUserConfig.class)
