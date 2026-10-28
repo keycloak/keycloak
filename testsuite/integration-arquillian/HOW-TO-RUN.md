@@ -190,7 +190,7 @@ For the available versions of old keycloak server, you can take a look to [this 
 
 ### DB migration test with manual mode
 
-Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, Liquibase won't automatically perform DB update, but it
+Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, the schema is not updated automatically, but it
 just exports the needed SQL into the script. This SQL script then needs to be manually executed against the DB.
 Then there is another startup of the new Keycloak server against the DB, which already has SQL changes applied and
 the same test as in `auto` mode (MigrationTest) is executed to test that data are correct.

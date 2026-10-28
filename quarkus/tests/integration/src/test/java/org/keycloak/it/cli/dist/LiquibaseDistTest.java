@@ -21,12 +21,12 @@ public class LiquibaseDistTest {
         // force a full db initialization
         RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
-        var result = runner.run("start-dev", "--log-level=org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService:trace");
+        var result = runner.run("start-dev", "--log-level=org.keycloak.connections.jpa.lock.JdbcDBLockProvider:trace");
         result.assertMessage("Initialize Database Lock Table, current locks []");
         result.assertMessage("Initialized record in the database lock table");
 
-        // the code block in the CustomLockService should not be executed for the second time
-        result = runner.run("start-dev", "--log-level=org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService:trace");
+        // the code block in the JdbcDBLockProvider should not be executed for the second time
+        result = runner.run("start-dev", "--log-level=org.keycloak.connections.jpa.lock.JdbcDBLockProvider:trace");
         result.assertNoMessage("Initialize Database Lock Table, current locks");
         result.assertNoMessage("Initialized record in the database lock table");
     }

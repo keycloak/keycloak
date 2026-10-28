@@ -68,10 +68,6 @@
             <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
@@ -132,6 +128,22 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-schema-generator-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate-schema</goal>
+                        </goals>
+                        <configuration>
+                            <changelogFile>META-INF/jpa-changelog-master.xml</changelogFile>
+                            <outputDirectory>${project.build.outputDirectory}/META-INF/schema</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>

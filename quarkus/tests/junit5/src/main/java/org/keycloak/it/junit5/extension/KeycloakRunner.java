@@ -42,7 +42,7 @@ public class KeycloakRunner {
     private DistributionTest config;
     private KeycloakDistribution delegate;
     private StopServer.Mode stopServer;
-    // MySQL Liquibase migrations can exceed 2 minutes on slow CI runners
+    // MySQL schema migrations can exceed 2 minutes on slow CI runners
     private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 300L));
 
     public KeycloakRunner(DistributionTest config,

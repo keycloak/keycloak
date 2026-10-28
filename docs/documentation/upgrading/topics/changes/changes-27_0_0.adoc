@@ -307,10 +307,38 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Liquibase is no longer used to migrate the database schema
+
+{project_name} no longer includes Liquibase. The database schema is now migrated by a native JDBC engine that executes
+SQL scripts generated at build time. The `DATABASECHANGELOG` and `DATABASECHANGELOGLOCK` tables keep their format, so
+existing databases are upgraded in place and the `manual` migration strategy continues to produce a runnable SQL file.
+
+The following configuration changes apply:
+
+* The `connections-liquibase` provider no longer exists. Set the index creation threshold with
+`--spi-connections-jpa-updater--jdbc--index-creation-threshold` instead of `--spi-connections-liquibase--quarkus--index-creation-threshold`.
+* The `liquibase` logger category no longer exists. Use the `org.keycloak.connections.jpa.updater.jdbc` category to see the log output of database migrations.
+* `liquibase-core` is no longer on the server classpath. Custom extensions must not rely on it being provided by {project_name}.
+
+Custom `JpaEntityProvider` implementations must provide a `MigrationManifest` using `getMigrationManifest()`.
+A Liquibase changelog returned by the deprecated `getChangelogLocation()` method is no longer executed.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== `JpaEntityProvider.getChangelogLocation()` is deprecated
+
+The `getChangelogLocation()` method on `JpaEntityProvider`, which returned the path to a Liquibase XML changelog
+for custom JPA entity providers, is deprecated, no longer has any effect, and will be removed in a future release.
+
+Implement `getMigrationManifest()` instead.  The method returns a `MigrationManifest` that contains the SQL for each
+supported database dialect directly, without requiring a Liquibase XML file on the classpath.
+Each change-set in the manifest is tracked independently in a dedicated history table (`DATABASECHANGELOG_<factoryId>`)
+and executed by the same native JDBC engine that drives the {project_name} core schema.
+
+See the server development guide for an example implementation.
 
 === Organization Redirect URL
 

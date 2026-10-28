@@ -59,9 +59,9 @@ import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT;
+import static org.keycloak.connections.jpa.updater.jdbc.JdbcJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
