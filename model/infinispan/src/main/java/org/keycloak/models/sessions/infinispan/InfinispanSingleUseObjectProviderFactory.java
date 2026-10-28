@@ -209,7 +209,9 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     }
 
     private void requestReload() {
-        if (!closed) {
+        // Every member observes the view change, so skip submitting a task on nodes that would not scan anyway.
+        // The coordinator is checked again when the task runs, as it can change in between.
+        if (!closed && singleUseObjectCache.getCacheManager().isCoordinator()) {
             // Keycloak's executor provider owns this shared pool. Offloading avoids blocking the Infinispan notification
             // thread without retaining a thread owned by this provider between the rare cluster membership changes.
             reloadExecutor.execute(this::reloadRevokedTokens);
@@ -247,6 +249,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     @Listener
     public class ViewChangeListener {
 
+        // On a merge, Infinispan notifies only @Merged listeners and not @ViewChanged, so both are needed.
         @Merged
         @ViewChanged
         public void viewChanged(ViewChangedEvent event) {

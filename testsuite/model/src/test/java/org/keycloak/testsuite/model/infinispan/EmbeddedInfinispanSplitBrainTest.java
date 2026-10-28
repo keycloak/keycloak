@@ -160,7 +160,7 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
          // The reload runs asynchronously after the merge view is installed.
          await("Persisted revocation was not restored after the view merge")
                .atMost(Duration.ofSeconds(30))
-               .pollInterval(Duration.ofMillis(10))
+               .pollInterval(Duration.ofMillis(100))
                // the session factory is bound to the thread running inIndependentFactories
                .pollInSameThread()
                .until(() -> {
