@@ -43,6 +43,7 @@ public class VCIssuanceContext {
     private SupportedCredentialConfiguration credentialConfig;
     private CredentialRequest credentialRequest;
     private AuthenticationManager.AuthResult authResult;
+    private String claimsRef;
 
     private List<JWK> attestedKeys;
 
@@ -51,6 +52,19 @@ public class VCIssuanceContext {
 
     public CredentialBody getCredentialBody() {
         return credentialBody;
+    }
+
+    /**
+     * Returns the offer's opaque reference to external claim data, or {@code null} when no reference is available.
+     * This reference is not automatically included in the issued credential.
+     */
+    public String getClaimsRef() {
+        return claimsRef;
+    }
+
+    public VCIssuanceContext setClaimsRef(String claimsRef) {
+        this.claimsRef = claimsRef;
+        return this;
     }
 
     public VCIssuanceContext setCredentialBody(CredentialBody credentialBody) {

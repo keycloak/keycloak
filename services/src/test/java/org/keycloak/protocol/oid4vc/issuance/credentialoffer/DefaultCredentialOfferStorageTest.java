@@ -13,11 +13,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -102,6 +104,22 @@ public class DefaultCredentialOfferStorageTest {
         assertNotNull("Should retrieve offer state by nonce", retrieved);
         assertEquals(testOfferId, retrieved.getCredentialsOfferId());
         assertEquals(testOfferState.getNonce(), retrieved.getNonce());
+    }
+
+    @Test
+    public void shouldPreserveClaimsReferenceInStoredOffer() {
+        testOfferState.setClaimsRef("booking/42?case=one & two");
+        storage.putOfferState(testOfferState);
+
+        assertEquals(testOfferState.getClaimsRef(), storage.getOfferStateById(testOfferId).getClaimsRef());
+        assertEquals(testOfferState.getClaimsRef(), storage.getOfferStateByNonce(testOfferState.getNonce()).getClaimsRef());
+        assertFalse(JsonSerialization.valueAsString(testOfferState.getCredentialsOffer()).contains("claimsRef"));
+    }
+
+    @Test
+    public void shouldPreserveOffersWithoutClaimsReference() {
+        storage.putOfferState(testOfferState);
+        assertNull(storage.getOfferStateById(testOfferId).getClaimsRef());
     }
 
     @Test

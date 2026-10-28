@@ -43,6 +43,7 @@ public class CredentialOfferState {
     private Long originatingUserPasswordCredentialCreatedDate;
     private String nonce;
     private String txCode;
+    private String claimsRef;
     private Long createdAt;
     private long expiresAt;
     private List<OID4VCAuthorizationDetail> authDetails;
@@ -138,6 +139,17 @@ public class CredentialOfferState {
 
     public String getTxCode() {
         return txCode;
+    }
+
+    /**
+     * An opaque reference to external claim data, scoped to this offer.
+     */
+    public String getClaimsRef() {
+        return claimsRef;
+    }
+
+    public void setClaimsRef(String claimsRef) {
+        this.claimsRef = claimsRef;
     }
 
     public Long getCreatedAt() {
