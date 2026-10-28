@@ -43,6 +43,10 @@ runs:
           ~/.m2/wrapper/dists
           !~/.m2/repository/org/keycloak
         key: mvn-and-wrapper-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+        # Fall back to an older cache (for example from the previous week) to avoid a cold start.
+        # This must not be added to the writing step above, as it would then grow the cache every week.
+        restore-keys: |
+          mvn-and-wrapper-${{ runner.os }}-mvn-
 
     - id: node-cache
       name: Node cache

@@ -3,9 +3,6 @@ name: Stability - Clustering
 on:
   workflow_dispatch:
 
-env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-
 defaults:
   run:
     shell: bash
