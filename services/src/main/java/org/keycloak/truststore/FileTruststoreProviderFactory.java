@@ -86,6 +86,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         HostnameVerificationPolicy verificationPolicy = null;
         KeyStore truststore = null;
         boolean system = false;
+        String providerName = null;
         if (storepath == null) {
             storepath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (storepath == null) {
@@ -95,6 +96,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 }
                 storepath = defaultTrustStore.getAbsolutePath();
                 system = true;
+            } else {
+                providerName = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY);
             }
             // should there be an exception if pass / type are configured for the spi-truststore
             pass = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, system ? "changeit" : null);
@@ -102,7 +105,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         }
         String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
         try {
-            truststore = KeystoreUtil.loadKeyStore(storepath, pass, type);
+            truststore = KeystoreUtil.loadKeyStore(storepath, pass, type, providerName);
         } catch (Exception e) {
             // in fips mode the default truststore type can be pkcs12, but the cacerts file will still be jks
             if (system && !"jks".equalsIgnoreCase(type)) {
