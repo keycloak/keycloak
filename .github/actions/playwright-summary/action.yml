@@ -30,8 +30,9 @@ runs:
           echo "Slowest tests:"
           echo
           echo "| Duration | Test |"
-          echo "|---|---|"
+          echo "|---:|---|"
           jq -r '[.. | objects | select(has("specs")) | .specs[] | {title: (.file + " › " + .title), duration: ([.tests[].results[].duration] | add // 0)}]
             | sort_by(-.duration) | .[:20][]
-            | "| \((.duration / 1000 * 10 | round) / 10)s | \(.title) |"' "$REPORT"
+            | (.duration / 100 | round) as $tenths
+            | "| \($tenths / 10 | floor).\($tenths % 10)s | \(.title) |"' "$REPORT"
         } >> "$GITHUB_STEP_SUMMARY"
