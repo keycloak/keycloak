@@ -24,6 +24,18 @@ class AdminClient {
     realmName: DEFAULT_REALM,
   });
 
+  // Authenticates and refreshes tokens against master only, as the resource client switches realms temporarily.
+  readonly #authClient = new KeycloakAdminClient({
+    baseUrl: SERVER_URL,
+    realmName: DEFAULT_REALM,
+  });
+
+  constructor() {
+    this.#client.registerTokenProvider({
+      getAccessToken: () => this.#authClient.getAccessToken(),
+    });
+  }
+
   #signedInAsAdmin = false;
   #pendingLogin?: Promise<void>;
 
@@ -39,14 +51,14 @@ class AdminClient {
   async #ensureAdminToken() {
     if (this.#signedInAsAdmin) {
       try {
-        await this.#client.getAccessToken();
+        await this.#authClient.getAccessToken();
         return;
       } catch {
         // The refresh token expired or was rejected, sign in again.
       }
     }
 
-    await this.#client.auth({
+    await this.#authClient.auth({
       username: ADMIN_USER,
       password: ADMIN_PASSWORD,
       grantType: "password",
