@@ -46,6 +46,7 @@ public class SAMLAttributeQueryParserTest {
     @Before
     public void initParser() {
         this.parser = new SAMLParser();
+        this.parser.enableSaml11Parsers();
     }
 
     @Test(expected = ParsingException.class)
