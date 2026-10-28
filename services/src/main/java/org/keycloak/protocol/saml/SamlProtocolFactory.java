@@ -62,10 +62,11 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     private DestinationValidator destinationValidator;
     private long maxInflatingSize;
     private long maxSoapMessageRequestSize;
+    private boolean enableSaml11 = false;
 
     @Override
     public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
-        return new SamlService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize);
+        return new SamlService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize, enableSaml11);
     }
 
     @Override
@@ -110,6 +111,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
         this.maxInflatingSize = config.getLong("maxInflatingSize", DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
         this.maxSoapMessageRequestSize = config.getLong("maxSoapMessageRequestSize", SamlProtocol.DEFAULT_MAX_SOAP_MESSAGE_REQUEST_SIZE);
+        this.enableSaml11 = config.getBoolean("enableSaml11", Boolean.FALSE).booleanValue();
+
     }
 
     @Override
@@ -232,6 +235,12 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 .type("long")
                 .helpText("The maximum size of SOAP message in bytes for the SOAP binding")
                 .defaultValue(SamlProtocol.DEFAULT_MAX_SOAP_MESSAGE_REQUEST_SIZE)
+                .add()
+                .property()
+                .name("enableSaml11")
+                .type("boolean")
+                .helpText("Enable handling of SAML 1.1 requests")
+                .defaultValue(Boolean.FALSE)
                 .add()
                 .build();
     }

@@ -138,7 +138,8 @@ public class SAMLParserTest {
 
     @Before
     public void initParser() {
-        this.parser = SAMLParser.getInstance();
+        parser = SAMLParser.getInstance();
+        parser.enableSaml11Parsers();
     }
 
     private <T> T assertParsed(String fileName, Class<T> expectedType) throws IOException, ParsingException, ConfigurationException, ProcessingException {
@@ -765,6 +766,24 @@ public class SAMLParserTest {
     @Test(expected = ParsingException.class)
     public void testSaml11AssertionsNotWellFormed() throws Exception {
         try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-assertion-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(timeout = 1000)
+    public void testSaml11WrongKeyInfo() throws Exception {
+        String exMessage = "";
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-wrong-keyinfo.xml")) {
+            parser.parse(st);
+        } catch (RuntimeException e) {
+            exMessage = e.getMessage();
+        }
+        assertThat(exMessage, containsString("tag:KeyName"));
+    }
+
+    @Test
+    public void testSaml11AuthorityBinding() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-authoritybinding.xml")) {
             parser.parse(st);
         }
     }

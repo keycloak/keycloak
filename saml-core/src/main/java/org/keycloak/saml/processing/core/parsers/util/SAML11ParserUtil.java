@@ -147,6 +147,7 @@ public class SAML11ParserUtil {
                 StaxParserUtil.validate(StaxParserUtil.getNextEndElement(xmlEventReader),
                         JBossSAMLConstants.SUBJECT_LOCALITY.get());
             } else if (SAML11Constants.AUTHORITY_BINDING.equals(tag)) {
+                startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 Attribute authorityKindAttr = startElement.getAttributeByName(new QName(SAML11Constants.AUTHORITY_KIND));
                 if (authorityKindAttr == null)
                     throw logger.parserRequiredAttribute("AuthorityKind");
@@ -165,9 +166,11 @@ public class SAML11ParserUtil {
 
                 SAML11AuthorityBindingType authorityBinding = new SAML11AuthorityBindingType(authorityKind, location, binding);
                 authStat.add(authorityBinding);
-            } else
-                throw logger.parserUnknownTag("", startElement.getLocation());
-
+                StaxParserUtil.validate(StaxParserUtil.getNextEndElement(xmlEventReader),
+                        SAML11Constants.AUTHORITY_BINDING);
+            } else {
+                throw logger.parserUnknownTag(tag, startElement.getLocation());
+            }
         }
 
         return authStat;
@@ -207,7 +210,6 @@ public class SAML11ParserUtil {
                     String method = StaxParserUtil.getElementText(xmlEventReader);
                     subjectConfirmationType.addConfirmationMethod(URI.create(method));
                 } else if (startTag.equals(JBossSAMLConstants.SUBJECT_CONFIRMATION_DATA.get())) {
-                    startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                     SubjectConfirmationDataType subjectConfirmationData = parseSubjectConfirmationData(xmlEventReader);
                     subjectConfirmationType.setSubjectConfirmationData(subjectConfirmationData);
                 } else if (startTag.equals(JBossSAMLConstants.KEY_INFO.get())) {
@@ -589,6 +591,8 @@ public class SAML11ParserUtil {
                 StaxParserUtil.validate(endElement, WSTrustConstants.XMLDSig.KEYVALUE);
 
                 keyInfo.addContent(keyValue);
+            } else {
+                throw logger.parserUnknownTag(tag, startElement.getLocation());
             }
         }
         return keyInfo;

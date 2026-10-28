@@ -61,8 +61,8 @@ public class SamlEcpProfileService extends SamlService {
 
     public static final String AUTHN_REQUEST_CANNOT_BE_PROCESSED = "Authentication request cannot be processed.";
 
-    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize) {
-        super(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize);
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize, boolean enableSaml11Parsers) {
+        super(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize,  enableSaml11Parsers);
     }
 
     public Response authenticate(InputStream inputStream) {
