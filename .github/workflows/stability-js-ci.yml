@@ -197,8 +197,8 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Delete artifacts (excluding Playwright reports and server logs)
+      - name: Delete artifacts (excluding Playwright reports, results and server logs)
         run: |
           gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
-          | jq '.artifacts[] | select(.name | test("playwright-report|server-log") | not) | .id' \
+          | jq '.artifacts[] | select(.name | test("playwright-report|server-log|playwright-results") | not) | .id' \
           | xargs -I {} gh api -X DELETE /repos/${{ github.repository }}/actions/artifacts/{}
