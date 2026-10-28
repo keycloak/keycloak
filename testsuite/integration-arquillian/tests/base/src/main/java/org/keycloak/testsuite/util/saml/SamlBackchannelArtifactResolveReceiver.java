@@ -43,6 +43,7 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
     private final PublicKey publicKey;
     private final PrivateKey privateKey;
     private String inResponseTo;
+    private String destination;
 
     public SamlBackchannelArtifactResolveReceiver(int port, ClientRepresentation samlClient, String publicKeyStr, String privateKeyStr) {
         this.samlClient = samlClient;
@@ -81,6 +82,14 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
         this.inResponseTo = inResponseTo;
     }
 
+    /**
+     * Sets the Destination of the login Response, which is also used as the Recipient of the
+     * assertion's Bearer SubjectConfirmationData (i.e. the SP endpoint that receives the response).
+     */
+    public void setDestination(String destination) {
+        this.destination = destination;
+    }
+
     @Override
     public void close() throws Exception {
         server.stop(0);
@@ -107,6 +116,7 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
                         .issuer(samlClient.getClientId())
                         .requestIssuer(artifactResolve.getIssuer().getValue())
                         .requestID(inResponseTo)
+                        .destination(destination)
                         .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "idp-user")
                         .assertionExpiration(60)
                         .subjectExpiration(60)
