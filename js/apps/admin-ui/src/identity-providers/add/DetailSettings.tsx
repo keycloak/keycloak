@@ -309,6 +309,10 @@ export default function DetailSettings() {
       if (transformedConfig.wantAssertionsSigned === undefined) {
         transformedConfig.wantAssertionsSigned = "true";
       }
+    } else if (p.providerId?.includes("oidc")) {
+      if (transformedConfig.validateSignature === undefined) {
+        transformedConfig.validateSignature = "true";
+      }
     }
     return { ...p, config: transformedConfig };
   };

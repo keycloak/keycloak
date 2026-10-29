@@ -3,8 +3,10 @@ package org.keycloak.tests.cli.admin;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -58,7 +60,13 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
         }
 
         // If the sync mode is not present on creating the idp, it will never be stored automatically. However, the model will always report behaviour as "LEGACY", so no errors should occur.
-        Assertions.assertNull(realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig().get(IdentityProviderModel.SYNC_MODE));
+        Map<String, String> config = realmResource.identityProviders().get("idpAlias").toRepresentation().getConfig();
+        Assertions.assertNull(config.get(IdentityProviderModel.SYNC_MODE));
+
+        // The JSON also omits the signature settings. They must stay absent after creation (no value is
+        // written on the server side), so the secure defaults applied by the config getters are used.
+        Assertions.assertFalse(config.containsKey(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertFalse(config.containsKey(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
     }
 
     @Test
