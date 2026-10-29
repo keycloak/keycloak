@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -109,6 +110,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -930,6 +932,18 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getSmtpServer() != null) {
 
             Map<String, String> config = new HashMap<>(rep.getSmtpServer());
+            Map<String, String> existingConfig = realm.getSmtpConfig() != null ? realm.getSmtpConfig() : Map.of();
+
+            boolean destinationUnchanged =
+                    Objects.equals(config.getOrDefault("host", ""), existingConfig.getOrDefault("host", ""))
+                            && Objects.equals(config.getOrDefault("port", "25"), existingConfig.getOrDefault("port", "25"))
+                            && Objects.equals(config.getOrDefault("ssl", "false"), existingConfig.getOrDefault("ssl", "false"))
+                            && Objects.equals(config.getOrDefault("starttls", "false"), existingConfig.getOrDefault("starttls", "false"))
+                            && Objects.equals(config.getOrDefault("from", ""), existingConfig.getOrDefault("from", ""))
+                            && Objects.equals(config.getOrDefault("user", ""), existingConfig.getOrDefault("user", ""))
+                            && Objects.equals(config.getOrDefault("authTokenUrl", ""), existingConfig.getOrDefault("authTokenUrl", ""))
+                            && Objects.equals(config.getOrDefault("authTokenClientId", ""), existingConfig.getOrDefault("authTokenClientId", ""))
+                            && Objects.equals(config.getOrDefault("authTokenScope", ""), existingConfig.getOrDefault("authTokenScope", ""));
 
             if (!Boolean.parseBoolean(config.get("auth"))) {
                 config.remove("authTokenUrl");
@@ -941,8 +955,12 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authType");
             } else if (config.get("authType") == null || "basic".equals(config.get("authType"))) {
                 if (ComponentRepresentation.SECRET_VALUE.equals(config.get("password"))) {
-                    String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
-                    config.put("password", passwordValue);
+                    if (destinationUnchanged) {
+                        config.put("password", existingConfig.get("password"));
+                    } else {
+                        // Destination changed — reject the masked value; require explicit credential
+                        config.remove("password");
+                    }
                 }
                 config.remove("authTokenUrl");
                 config.remove("authTokenScope");
@@ -950,8 +968,11 @@ public class DefaultExportImportManager implements ExportImportManager {
                 config.remove("authTokenClientSecret");
             } else if ("token".equals(config.get("authType"))) {
                 if (ComponentRepresentation.SECRET_VALUE.equals(config.get("authTokenClientSecret"))) {
-                    String authTokenClientSecretValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("authTokenClientSecret") : null;
-                    config.put("authTokenClientSecret", authTokenClientSecretValue);
+                    if (destinationUnchanged) {
+                        config.put("authTokenClientSecret", existingConfig.get("authTokenClientSecret"));
+                    } else {
+                        config.remove("authTokenClientSecret");
+                    }
                 }
                 config.remove("password");
             }
@@ -1759,12 +1780,25 @@ public class DefaultExportImportManager implements ExportImportManager {
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
                 OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
                 OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
-                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
-                    provider.addIdentityProvider(orgModel, idp);
+                    boolean autoMembership = true;
+                    MembershipType membershipType = MembershipType.UNMANAGED;
+                    List<OrganizationIdentityProviderLinkRepresentation> links = identityProvider.getOrganizationLinks();
+                    if (links != null && !links.isEmpty()) {
+                        OrganizationIdentityProviderLinkRepresentation linkRep = links.get(0);
+                        if (linkRep.getAutoMembership() != null) {
+                            autoMembership = linkRep.getAutoMembership();
+                        }
+                        if (linkRep.getMembershipType() != null) {
+                            membershipType = MembershipType.valueOf(linkRep.getMembershipType());
+                        }
+                    }
+                    provider.addIdentityProvider(orgModel, idp, autoMembership, membershipType);
                 }
+
+                RepresentationToModel.toModel(orgRep, orgModel);
 
                 for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
                     importOrganizationGroup(provider, orgModel, newRealm, groupRep, null);

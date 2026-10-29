@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -63,17 +64,24 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         return Optional.empty();
     }
 
-    static boolean requiresReAugmentation() {
+    boolean requiresReAugmentation() {
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet
         }
-        var current = Picocli.getNonPersistedBuildTimeOptions();
-
         // everything but the optimized value must match
-        String key = Configuration.KC_OPTIMIZED;
-        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
-        return !rawPersistedProperties.equals(current);
+        AtomicBoolean changed = new AtomicBoolean();
+        picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
+            if (key.equals(Configuration.KC_OPTIMIZED)) {
+                return;
+            }
+            if (key.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX) && oldValue != null && newValue != null
+                    && !Picocli.timestampChanged(oldValue, newValue) && Configuration.isOptimized()) {
+                return;
+            }
+            changed.set(true);
+        });
+        return changed.get();
     }
 
     private void runReAugmentation() {

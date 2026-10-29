@@ -69,7 +69,7 @@
                     <exclusions>
                         <exclusion>
                             <groupId>org.keycloak</groupId>
-                            <artifactId>keycloak-admin-client-tests</artifactId>
+                            <artifactId>keycloak-admin-client-internal</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>
@@ -81,13 +81,13 @@
                     <exclusions>
                         <exclusion>
                             <groupId>org.keycloak</groupId>
-                            <artifactId>keycloak-admin-client-tests</artifactId>
+                            <artifactId>keycloak-admin-client-internal</artifactId>
                         </exclusion>
                     </exclusions>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client-jackson3</artifactId>
+                    <artifactId>keycloak-admin-client-jackson3-internal</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

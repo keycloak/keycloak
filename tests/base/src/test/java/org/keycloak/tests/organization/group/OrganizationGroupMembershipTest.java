@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -570,5 +571,28 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         } catch (jakarta.ws.rs.NotFoundException expected) {
             // expected - memberB is not a member of orgA
         }
+    }
+
+    @Test
+    public void testRemoveMemberFailsForNonMembers() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create a group
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-group");
+        String groupId;
+        try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        // Attempt to remove user from group they're not in - should throw BadRequest
+        String finalGroupId = groupId;
+        assertThrows(jakarta.ws.rs.BadRequestException.class,
+            () -> orgResource.groups().group(finalGroupId).removeMember(member.getId()),
+            "removeMember should fail when user is not a member of the group"
+        );
     }
 }

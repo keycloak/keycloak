@@ -48,6 +48,9 @@ public class SMTPUtil {
         }
 
         final EmailSenderProvider sender = session.getProvider(EmailSenderProvider.class);
+        if (sender == null) {
+            throw new EmailException("Email sender provider is disabled or not configured");
+        }
         sender.validate(config);
     }
 

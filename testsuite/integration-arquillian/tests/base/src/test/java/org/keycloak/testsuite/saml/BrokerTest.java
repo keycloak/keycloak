@@ -42,6 +42,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
@@ -120,6 +121,8 @@ public class BrokerTest extends AbstractSamlTest {
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
               .sessionIndex("idp:" + UUID.randomUUID())
+              // not the email format, which would set the email of brokered users
+              .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "idp-user")
               .buildModel();
 
             AttributeStatementType attrStatement = new AttributeStatementType();
@@ -437,6 +440,11 @@ public class BrokerTest extends AbstractSamlTest {
                   SubjectType.STSubType subType = new SubjectType.STSubType();
                   subType.addBaseID(nameId);
                   subject.setSubType(subType);
+                  // keep the Bearer SubjectConfirmation(Data) that createAuthnResponse() already set up (Recipient,
+                  // InResponseTo, NotOnOrAfter); only the NameID is replaced to mint a new user each call
+                  for (SubjectConfirmationType confirmation : a.getSubject().getConfirmation()) {
+                      subject.addConfirmation(confirmation);
+                  }
                   a.setSubject(subject);
 
                   ConditionsType conditions = a.getConditions();
@@ -460,6 +468,8 @@ public class BrokerTest extends AbstractSamlTest {
                 8082,
                 realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
         )) {
+
+            samlBackchannelArtifactResolveReceiver.setDestination(getSamlBrokerUrl(REALM_NAME).toString());
 
             IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");
             rep.getConfig().put(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlBackchannelArtifactResolveReceiver.getUrl());

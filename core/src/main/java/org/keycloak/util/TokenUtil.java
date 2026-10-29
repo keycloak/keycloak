@@ -32,6 +32,7 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.json.KeycloakJsonMapper;
 import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -273,18 +274,27 @@ public class TokenUtil {
         }
 
         if (token.getOtherClaims().containsKey(RESOURCE_ACCESS)) {
-            token.setResourceAccess(new HashMap<>(token.getResourceAccess())); // Re-create as hashMap as it might be unmodifiable map
-
             if (token.getOtherClaims().get(RESOURCE_ACCESS) instanceof Map) {
+                Map<String, AccessToken.Access> mergedResourceAccess = null;
                 for (Map.Entry<String, Object> entry : ((Map<String, Object>) token.getOtherClaims().get(RESOURCE_ACCESS)).entrySet()) {
                     String clientId = entry.getKey();
                     AccessToken.Access otherClaimsClientAccess = convertToAccess(entry.getValue(), RESOURCE_ACCESS + "." + clientId);
-                    AccessToken.Access mergedAccess = mergeAccess(token.getResourceAccess(clientId), otherClaimsClientAccess);
-                    if (mergedAccess != null) {
-                        token.getResourceAccess().put(clientId, mergedAccess);
+                    if (otherClaimsClientAccess != null) {
+                        if (mergedResourceAccess == null) {
+                            // Re-create as hashMap as it might be unmodifiable map
+                            mergedResourceAccess = new HashMap<>(token.getResourceAccess());
+                        }
+                        AccessToken.Access mergedAccess = mergeAccess(token.getResourceAccess(clientId), otherClaimsClientAccess);
+                        mergedResourceAccess.put(clientId, mergedAccess);
                     }
                 }
-                token.getOtherClaims().remove(RESOURCE_ACCESS);
+                // Only consume the raw claim when at least one entry could be converted. If nothing
+                // was converted (e.g. a JSON string injected via a user attribute protocol mapper),
+                // keep the original claim so the token retains its content instead of an empty {}.
+                if (mergedResourceAccess != null) {
+                    token.setResourceAccess(mergedResourceAccess);
+                    token.getOtherClaims().remove(RESOURCE_ACCESS);
+                }
             } else {
                 logger.warnf("Claim resource_access in the incorrect format in the access token of user %s. Ignoring", token.getPreferredUsername());
             }
@@ -292,8 +302,9 @@ public class TokenUtil {
     }
 
     private static AccessToken.Access convertToAccess(Object accessClaim, String claimName) {
+        KeycloakJsonMapper jsonMapper = KeycloakJsonMapperFactory.mapper();
         try {
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(accessClaim), AccessToken.Access.class);
+            return jsonMapper.readValue(jsonMapper.writeValueAsString(accessClaim), AccessToken.Access.class);
         } catch (IOException ioe) {
             logger.warnf( "Failed to convert roles from claim %s. Ignoring", claimName);
             return null;

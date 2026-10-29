@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form.ts";
+import { selectMultiItem, switchOff, switchOn } from "../utils/form.ts";
 
 export async function goToLocalizationTab(page: Page) {
   await page.getByTestId("rs-localization-tab").click();
@@ -26,8 +26,7 @@ export async function switchInternationalization(
 }
 
 export async function selectLocale(page: Page, locale: string) {
-  await selectItem(page, "#supportedLocales", locale);
-  await page.keyboard.press("Escape");
+  await selectMultiItem(page, "#supportedLocales", locale);
 }
 
 export async function clicksSaveLocalization(page: Page) {

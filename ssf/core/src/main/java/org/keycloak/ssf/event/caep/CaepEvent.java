@@ -3,6 +3,7 @@ package org.keycloak.ssf.event.caep;
 import java.util.Map;
 
 import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.InitiatingEntityAware;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
@@ -15,7 +16,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  *
  * See: https://openid.net/specs/openid-caep-1_0-final.html
  */
-public abstract class CaepEvent extends SsfEvent {
+public abstract class CaepEvent extends SsfEvent implements InitiatingEntityAware {
 
     /**
      * See: https://openid.net/specs/openid-caep-1_0-final.html#section-3
@@ -66,6 +67,19 @@ public abstract class CaepEvent extends SsfEvent {
         super(type);
     }
 
+    @Override
+    public Map<String, Object> createAdminDetails() {
+        Map<String, Object> adminRep = super.createAdminDetails();
+        if (eventTimestamp != null) {
+            adminRep.put("event_timestamp", eventTimestamp);
+        }
+        if (initiatingEntity != null) {
+            adminRep.put("initiating_entity", initiatingEntity);
+        }
+        // excluding reasonAdmin and reasonUser to avoid exposing PII here
+        return adminRep;
+    }
+
     public SubjectId getSubjectId() {
         return subjectId;
     }
@@ -82,10 +96,12 @@ public abstract class CaepEvent extends SsfEvent {
         this.eventTimestamp = eventTimestamp;
     }
 
+    @Override
     public InitiatingEntity getInitiatingEntity() {
         return initiatingEntity;
     }
 
+    @Override
     public void setInitiatingEntity(InitiatingEntity initiatingEntity) {
         this.initiatingEntity = initiatingEntity;
     }

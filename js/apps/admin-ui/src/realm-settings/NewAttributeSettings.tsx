@@ -291,7 +291,7 @@ export default function NewAttributeSettings() {
           addError(t("errorSavingTranslations"), error);
         }
       }
-      navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
+      void navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
 
       addAlert(t("createAttributeSuccess"), AlertVariant.success);
     } catch (error) {

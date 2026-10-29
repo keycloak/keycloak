@@ -7,11 +7,13 @@ import java.util.Optional;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
-import org.keycloak.broker.provider.X509TrustMaterial;
+import org.keycloak.common.VerificationException;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
@@ -60,15 +62,16 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
         }
 
         String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
-        List<X509TrustMaterial> trustMaterials = new TrustMaterialResolver()
-                .resolveX509Trust(session, trustIdpsConfig, createTrustMaterialRequest(null, header, payload))
-                .toList();
-
-        JWK trustedKey = AttestationX509CertificateValidator.validate(x5c, algorithm, trustMaterials);
-        if (trustedKey == null) {
-            logger.debug("No X.509 trust material found in configured trusted attester identity providers");
+        try {
+            JWK trustedKey = new TrustMaterialResolver().validateX509Chain(session, trustIdpsConfig,
+                    createTrustMaterialRequest(null, header, payload), x5c, algorithm);
+            if (trustedKey == null) {
+                logger.debug("No X.509 trust material found in configured trusted attester identity providers");
+            }
+            return trustedKey;
+        } catch (VerificationException e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, e.getMessage(), e);
         }
-        return trustedKey;
     }
 
     private String getTrustIdentityProviderAliases() {

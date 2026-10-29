@@ -29,7 +29,10 @@ export default function AddKubernetesConnect() {
   const id = "kubernetes";
 
   const form = useForm<DiscoveryIdentityProvider>({
-    defaultValues: { alias: id, config: { allowCreate: "true" } },
+    defaultValues: {
+      alias: id,
+      config: { allowCreate: "true" },
+    },
     mode: "onChange",
   });
   const { handleSubmit } = form;
@@ -45,7 +48,7 @@ export default function AddKubernetesConnect() {
         providerId: id,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toIdentityProvider({
           realm,
           providerId: id,

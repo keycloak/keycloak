@@ -16,7 +16,22 @@ runs:
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
+
+    - name: Configure Maven for CI
+      shell: bash
+      run: |
+        # -B: batch mode, -nsu: don't check for snapshot updates
+        args="-B -nsu"
+        # HTTP transport settings for Maven Resolver 1.9.x (Maven 3.9.x); Maven 4 uses aether.transport.http.* instead.
+        # Drop pooled connections after 25 seconds (default: 300), as GitHub runners kept reusing connections that were already closed (https://github.com/keycloak/keycloak/pull/22946).
+        args="$args -Daether.connector.http.connectionMaxTtl=25"
+        # Retry failed downloads up to 5 times (default: 3), as Maven Central occasionally fails a single artifact with a transient error.
+        args="$args -Daether.connector.http.retryHandler.count=5"
+        # By default only 429 and 503 are retried with a back-off; add 502 (Bad Gateway) and 504 (Gateway Timeout).
+        # See https://github.com/apache/maven-resolver/issues/2151 for a request to make this configurable and to cover more status codes.
+        args="$args -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
+        echo "MAVEN_ARGS=$args" >> "$GITHUB_ENV"

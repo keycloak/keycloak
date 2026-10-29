@@ -194,4 +194,9 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
         return this;
     }
 
+    public ClientBuilder registrationAccessToken(String registrationAccessToken) {
+        rep.setRegistrationAccessToken(registrationAccessToken);
+        return this;
+    }
+
 }

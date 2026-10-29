@@ -83,8 +83,10 @@ public class RunOnServerClient {
         String result = runOnServer(encoded);
         if (result != null && !result.isEmpty() && result.trim().startsWith("EXCEPTION:")) {
             Throwable t = SerializationUtil.decodeException(result);
-            if (t instanceof AssertionError) {
-                throw (AssertionError) t;
+            if (t instanceof Error er) {
+                throw er;
+            } else if (t instanceof RuntimeException re) {
+                throw re;
             } else {
                 throw new RunOnServerException(t);
             }
@@ -105,8 +107,10 @@ public class RunOnServerClient {
         String result = runOnServer(encoded);
         if (result != null && !result.isEmpty() && result.trim().startsWith("EXCEPTION:")) {
             Throwable t = SerializationUtil.decodeException(result);
-            if (t instanceof AssertionError) {
-                throw (AssertionError) t;
+            if (t instanceof AssertionError ae) {
+                throw ae;
+            } else if (t instanceof RuntimeException re) {
+                throw re;
             } else {
                 throw new RunOnServerException(t);
             }

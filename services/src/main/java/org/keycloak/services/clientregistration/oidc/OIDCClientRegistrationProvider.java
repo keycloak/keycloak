@@ -18,8 +18,8 @@ package org.keycloak.services.clientregistration.oidc;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -138,10 +138,23 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
 
+            // Preserve existing default client scopes before calling update().
+            // updateClientScopes (called inside update()) removes scopes not present in the
+            // representation, so existing defaults must be merged into the representation
+            // before reconciliation. This prevents default scopes from being silently demoted
+            // when an OIDC update sets scope (optionalClientScopes) but omits defaultClientScopes.
+            // The client lookup is safe here because we only read defaults; auth enforcement
+            // happens inside update() via auth.requireUpdate(), which throws 401 if unauthenticated.
+            // The pre-existing 404 for non-existent clients is intentionally not thrown here,
+            // to allow auth.requireUpdate() to run first and return the correct 401 error.
             if (clientOIDC.getScope() != null) {
-                ClientModel oldClient = session.getContext().getRealm().getClientById(clientOIDC.getClientId());
-                Collection<String> defaultClientScopes = oldClient.getClientScopes(true).keySet();
-                client.setDefaultClientScopes(new ArrayList<>(defaultClientScopes));
+                ClientModel oldClient = session.getContext().getRealm().getClientByClientId(clientId);
+                if (oldClient != null) {
+                    Set<String> existingDefaults = oldClient.getClientScopes(true).keySet();
+                    if (!existingDefaults.isEmpty() && client.getDefaultClientScopes() == null) {
+                        client.setDefaultClientScopes(new ArrayList<>(existingDefaults));
+                    }
+                }
             }
 
             OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);

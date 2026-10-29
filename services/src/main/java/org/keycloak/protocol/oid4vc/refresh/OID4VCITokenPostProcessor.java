@@ -9,6 +9,8 @@ import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 
+import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+
 public class OID4VCITokenPostProcessor implements TokenPostProcessor {
 
     private final KeycloakSession session;
@@ -22,13 +24,18 @@ public class OID4VCITokenPostProcessor implements TokenPostProcessor {
         AccessToken accessToken = context.accessToken();
         RefreshToken refreshToken = context.refreshToken();
 
-        if (refreshToken == null || !OID4VCIRefreshTokenProviderFactory.PROVIDER_ID.equals(refreshToken.getProvider())) {
+        boolean isOID4VCIRequested = context.clientSessionCtx().getClientScopesStream()
+                .anyMatch(it -> OID4VC_PROTOCOL.equals(it.getProtocol()));
+
+        if (!isOID4VCIRequested) {
             return;
         }
 
         if (shouldUseTransientSession(accessToken)) {
             // No reference to the sessionId should be within refresh-token or access-token.
-            refreshToken.setSessionId(null);
+            if (refreshToken != null) {
+                refreshToken.setSessionId(null);
+            }
             accessToken.setSessionId(null);
         }
 

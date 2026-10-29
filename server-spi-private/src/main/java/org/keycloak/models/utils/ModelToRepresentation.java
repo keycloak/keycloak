@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,6 +77,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.ProtocolMapperModel;
@@ -93,6 +95,7 @@ import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
@@ -113,6 +116,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -838,6 +842,18 @@ public class ModelToRepresentation {
     }
 
     public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
+        return toRepresentation(session, client -> true);
+    }
+
+    /**
+     * Converts the specified {@link UserSessionModel} into a {@link UserSessionRepresentation}, listing only the clients
+     * accepted by {@code clientFilter}.
+     *
+     * @param session the model to be converted.
+     * @param clientFilter decides which of the session's clients are included in the representation.
+     * @return a reference to the constructed representation.
+     */
+    public static UserSessionRepresentation toRepresentation(UserSessionModel session, Predicate<ClientModel> clientFilter) {
         UserSessionRepresentation rep = new UserSessionRepresentation();
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
@@ -848,7 +864,9 @@ public class ModelToRepresentation {
         rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
-            rep.getClients().put(client.getId(), client.getClientId());
+            if (clientFilter.test(client)) {
+                rep.getClients().put(client.getId(), client.getClientId());
+            }
         }
         rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;
@@ -987,8 +1005,7 @@ public class ModelToRepresentation {
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
-        Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
-        providerRep.setConfig(config);
+        providerRep.setConfig(new HashMap<>(identityProviderModel.getConfig()));
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
@@ -1010,7 +1027,24 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            Set<String> orgIds = identityProviderModel.getOrganizationIds();
+            if (orgIds != null && !orgIds.isEmpty()) {
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                providerRep.setOrganizationLinks(orgIds.stream()
+                        .map(orgId -> {
+                            OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(orgId);
+                            OrganizationModel org = orgProvider.getById(orgId);
+                            if (org != null) {
+                                OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(org, identityProviderModel);
+                                if (link != null) {
+                                    linkRep.setAutoMembership(link.isAutoMembership());
+                                    linkRep.setMembershipType(link.getMembershipType().name());
+                                }
+                            }
+                            return linkRep;
+                        })
+                        .collect(Collectors.toList()));
+            }
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
@@ -1516,8 +1550,8 @@ public class ModelToRepresentation {
         rep.setEnabled(model.isEnabled());
         rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());
-        model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
-                .forEach(rep::addDomain);
+        rep.setDomains(model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
+                .collect(Collectors.toSet()));
         return rep;
     }
 
@@ -1525,6 +1559,8 @@ public class ModelToRepresentation {
         OrganizationDomainRepresentation representation = new OrganizationDomainRepresentation();
         representation.setName(model.getName());
         representation.setVerified(model.isVerified());
+        representation.setIdentityProviderAlias(model.getIdentityProviderAlias());
+        representation.setAutoRedirect(model.isAutoRedirect());
         return representation;
     }
 
@@ -1550,6 +1586,13 @@ public class ModelToRepresentation {
             }
         }
         return toRepresentation(model, credentialType);
+    }
+
+    public static void setServiceAccountUserId(KeycloakSession session, ClientModel client, ClientRepresentation rep) {
+        UserModel serviceAccount = session.users().getServiceAccount(client);
+        if (serviceAccount != null) {
+            rep.setServiceAccountUserId(serviceAccount.getId());
+        }
     }
 
 }

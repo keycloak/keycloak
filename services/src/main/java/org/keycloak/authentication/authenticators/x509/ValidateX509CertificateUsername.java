@@ -45,6 +45,10 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
 
     private final static Logger logger = Logger.getLogger(ValidateX509CertificateUsername.class);
 
+    public ValidateX509CertificateUsername(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void authenticate(AuthenticationFlowContext context) {
 
@@ -71,14 +75,20 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        if (config.getCASubjectDN().isEmpty()) {
+            logger.warnf("[ValidateX509CertificateUsername:authenticate] Option '%s' is empty, this configuration is deprecated, please configure it for the authenticator in realm '%s'",
+                    CERTIFICATE_CA_SUBJECT_DN, context.getRealm().getName());
+        }
+
         // Validate X509 client certificate
         try {
             CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
             CertificateValidator validator = builder.build(certs);
             validator.validateTrust()
+                    .validateCASubjectDN()
                     .validateTimestamps()
-                    .validateKeyUsage()
-                    .validateExtendedKeyUsage()
+                    .validateKeyUsage(isLegacyCriticalBehavior())
+                    .validateExtendedKeyUsage(isLegacyCriticalBehavior())
                     .validatePolicy()
                     .checkRevocationStatus();
         } catch(Exception e) {

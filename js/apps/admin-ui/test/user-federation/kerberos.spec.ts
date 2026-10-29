@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { selectItem, switchOff, switchToggle } from "../utils/form.ts";
+import { clickSwitch, selectItem, switchToggle } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -194,7 +194,7 @@ test.describe.serial("User Fed Kerberos tests", () => {
 
     test("Should disable an existing Kerberos provider", async ({ page }) => {
       await clickUserFederationCard(page, firstKerberosName);
-      await switchOff(page, "#Kerberos-switch");
+      await clickSwitch(page, "#Kerberos-switch");
       await confirmModal(page);
 
       await assertNotificationMessage(page, savedSuccessMessage);

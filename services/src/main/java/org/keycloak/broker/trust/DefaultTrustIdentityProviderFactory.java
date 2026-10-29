@@ -57,6 +57,7 @@ public class DefaultTrustIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) || Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA);
+        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) || Profile.isFeatureEnabled(Profile.Feature.OID4VC_VP)
+                || Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA);
     }
 }

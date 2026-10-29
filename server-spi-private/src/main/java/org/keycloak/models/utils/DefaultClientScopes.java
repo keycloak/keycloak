@@ -40,7 +40,7 @@ public class DefaultClientScopes {
     public static void createDefaultClientScopes(KeycloakSession session, RealmModel realm, boolean addScopesToExistingClients) {
         session.getKeycloakSessionFactory().getProviderFactoriesStream(LoginProtocol.class)
                 .map(LoginProtocolFactory.class::cast)
-                .forEach(lpf -> lpf.createDefaultClientScopes(realm, addScopesToExistingClients));
+                .forEach(lpf -> lpf.createDefaultClientScopes(session, realm, addScopesToExistingClients));
     }
 
 

@@ -101,7 +101,7 @@ public final class Database {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
-                "org.hibernate.dialect.H2Dialect",
+                "org.keycloak.connections.jpa.dialect.KeycloakH2Dialect",
                 new TriFunction<>() {
                     @Override
                     public String apply(Function<Option<?>, String> getter, String namedProperty, String alias) {
@@ -202,7 +202,7 @@ public final class Database {
         MSSQL("mssql",
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
                 "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-                "org.hibernate.dialect.SQLServerDialect",
+                "org.keycloak.connections.jpa.dialect.KeycloakSQLServerDialect",
                 // default URL looks like this: "jdbc:sqlserver://${kc.db-url-host:localhost}:${kc.db-url-port:1433};databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}"
                 (getter, namedProperty, alias) -> "jdbc:sqlserver://%s:%s;databaseName=%s%s".formatted(
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
@@ -215,7 +215,7 @@ public final class Database {
         ORACLE("oracle",
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
-                "org.hibernate.dialect.OracleDialect",
+                "org.keycloak.connections.jpa.dialect.KeycloakOracleDialect",
                 // default URL looks like this: "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}${kc.db-url-properties:}"
                 (getter, namedProperty, alias) -> "jdbc:oracle:thin:%s//%s:%s/%s%s".formatted(
                         DatabaseOptions.DatabaseTlsMode.fromCliValue(getProperty(DatabaseOptions.DB_TLS_MODE, getter,

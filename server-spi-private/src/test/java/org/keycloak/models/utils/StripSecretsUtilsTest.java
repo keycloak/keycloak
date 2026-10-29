@@ -23,11 +23,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.Constants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -187,7 +190,15 @@ public class StripSecretsUtilsTest {
 
         rep.setSmtpServer(new HashMap<>());
         rep.getSmtpServer().put("password", "secret");
+        rep.getSmtpServer().put("authTokenClientSecret", "tokenSecret");
         rep.getSmtpServer().put("user", "smtpUser");
+        rep.getSmtpServer().put("host", "mail.example.org");
+        rep.getSmtpServer().put("port", "587");
+        rep.getSmtpServer().put("ssl", "true");
+        rep.getSmtpServer().put("starttls", "false");
+        rep.getSmtpServer().put("from", "keycloak@example.org");
+        rep.getSmtpServer().put("replyTo", "noreply@example.org");
+        rep.getSmtpServer().put("envelopeFrom", "bounce@example.org");
 
         ClientRepresentation client = new ClientRepresentation();
         client.setId("clientId");
@@ -244,9 +255,17 @@ public class StripSecretsUtilsTest {
 
         assertEquals("Master", rep.getRealm());
         assertEquals("realmId", rep.getId());
-        assertEquals(2, rep.getSmtpServer().size());
+        assertEquals(10, rep.getSmtpServer().size());
         assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSmtpServer().get("password"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSmtpServer().get("authTokenClientSecret"));
         assertEquals("smtpUser", rep.getSmtpServer().get("user"));
+        assertEquals("mail.example.org", rep.getSmtpServer().get("host"));
+        assertEquals("587", rep.getSmtpServer().get("port"));
+        assertEquals("true", rep.getSmtpServer().get("ssl"));
+        assertEquals("false", rep.getSmtpServer().get("starttls"));
+        assertEquals("keycloak@example.org", rep.getSmtpServer().get("from"));
+        assertEquals("noreply@example.org", rep.getSmtpServer().get("replyTo"));
+        assertEquals("bounce@example.org", rep.getSmtpServer().get("envelopeFrom"));
 
         assertEquals(1, rep.getClients().size());
         assertEquals("clientId", rep.getClients().get(0).getId());
@@ -281,6 +300,52 @@ public class StripSecretsUtilsTest {
         assertEquals(2, componentExportConfig.get("nonSecret").size());
         assertEquals("nonSecret1", componentExportConfig.get("nonSecret").get(0));
         assertEquals("nonSecret2", componentExportConfig.get("nonSecret").get(1));
+    }
+
+    @Test
+    public void stripCertificate() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("MIIJQgIBADANBgkq...");
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+        rep.setKid("7Nv-DdLhRJ2mF4qK");
+        rep.setJwks("{\"keys\":[{\"kty\":\"RSA\",\"d\":\"secret\"}]}");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getPrivateKey());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+        assertEquals("7Nv-DdLhRJ2mF4qK", rep.getKid());
+    }
+
+    @Test
+    public void stripCertificateNullFields() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertNull(rep.getPrivateKey());
+        assertNull(rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+    }
+
+    @Test
+    public void stripCertificateVaultValues() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("${vault.client-private-key}");
+        rep.setJwks("${vault.client-jwks}");
+        rep.setPublicKey("MIIBIjANBgkq...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals("${vault.client-private-key}", rep.getPrivateKey());
+        assertEquals("${vault.client-jwks}", rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
     }
 
     @Test
@@ -346,6 +411,34 @@ public class StripSecretsUtilsTest {
         StripSecretsUtils.stripAuthenticatorConfig(Set.of("site.key"), rep);
 
         assertNull(rep.getConfig());
+    }
+
+    @Test
+    public void stripAuthenticatorConfigCommonPropertiesNotMasked() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        rep.setConfig(new HashMap<>(Map.of(
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", "raw-secret-value")));
+
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty("secret.key", "Secret", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals(Map.of(
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", ComponentRepresentation.SECRET_VALUE), rep.getConfig());
+    }
+
+    @Test
+    public void collectNonSecretAuthenticatorPropertyNamesSecretTakesPrecedence() {
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "Reference", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        assertEquals(Set.of(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE), nonSecretNames);
     }
 
 }

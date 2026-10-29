@@ -112,6 +112,17 @@ public abstract class SsfEvent {
     }
 
     /**
+     * Creates and returns a representation of the administrative details for an event.
+     * This representation is structured as a map with string keys and object values.
+     *
+     * @return a map containing the administrative representation
+     */
+    public Map<String, Object> createAdminDetails() {
+        Map<String, Object> adminRep = new LinkedHashMap<>();
+        return adminRep;
+    }
+
+    /**
      * Verify that this event instance carries the fields the SSF /
      * CAEP / RISC spec marks as REQUIRED. Called by the synthetic-emit
      * pipeline after Jackson has materialised the event from the

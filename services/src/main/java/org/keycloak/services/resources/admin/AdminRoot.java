@@ -17,7 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
-import java.util.Locale;
+import java.util.Optional;
 import java.util.Properties;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -52,6 +52,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
@@ -67,6 +68,8 @@ import org.jboss.logging.Logger;
 @Provider
 @Path("/admin")
 public class AdminRoot {
+    private static final String ADMIN_AUTH_KEY = "AdminRoot.adminAuth";
+
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
     protected TokenManager tokenManager;
@@ -178,6 +181,9 @@ public class AdminRoot {
         return new AdminConsole(session);
     }
 
+    public static Optional<AdminAuth> getRealmAdminAuth(KeycloakSession session) {
+        return Optional.ofNullable(session.getAttribute(ADMIN_AUTH_KEY, AdminAuth.class));
+    }
 
     public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
         HttpHeaders headers = session.getContext().getRequestHeaders();
@@ -212,7 +218,9 @@ public class AdminRoot {
 
         session.getContext().setBearerToken(authResult.token());
 
-        return new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
+        AdminAuth result = new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
+        session.setAttribute(ADMIN_AUTH_KEY, result);
+        return result;
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
@@ -308,8 +316,7 @@ public class AdminRoot {
     public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang) {
         try {
             Theme theme = getTheme(session, realm);
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return theme.getMessages(locale);
+            return theme.getMessages(LocaleUtil.resolveSupportedLocale(realm, theme, lang));
         } catch (IOException e) {
             logger.error("Failed to load messages from theme", e);
             return new Properties();
@@ -328,8 +335,7 @@ public class AdminRoot {
     private static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String bundle) {
         try {
             Theme theme = getTheme(session, realm);
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return theme.getMessages(bundle, locale);
+            return theme.getMessages(bundle, LocaleUtil.resolveSupportedLocale(realm, theme, lang));
         } catch (IOException e) {
             logger.error("Failed to load messages from theme", e);
             return new Properties();

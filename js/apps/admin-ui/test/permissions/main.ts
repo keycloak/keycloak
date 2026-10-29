@@ -2,7 +2,7 @@ import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { Page } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 import { confirmModal } from "../utils/modal.ts";
-import { clickRowKebabItem } from "../utils/table.ts";
+import { assertRowExists, clickRowKebabItem } from "../utils/table.ts";
 
 type PermissionForm = PolicyRepresentation & {
   enforcementMode?: "allResources" | "specificResources";
@@ -52,6 +52,43 @@ export async function removeGroup(page: Page, groupName: string) {
     .click();
 }
 
+export async function pickOrganization(page: Page, organizationName: string) {
+  await page.getByTestId("select-organization-button").click();
+  await page
+    .getByRole("row", { name: organizationName })
+    .getByRole("checkbox")
+    .click();
+  await page.getByTestId("add").click();
+}
+
+export async function removeOrganization(page: Page, organizationName: string) {
+  await page
+    .getByRole("row", { name: organizationName })
+    .getByRole("button")
+    .click();
+}
+
+export async function pickRole(
+  page: Page,
+  type: "roles" | "client",
+  rowName: string,
+) {
+  await page.getByTestId("add-role-mapping-button").click();
+  await page.getByTestId(`${type}-role`).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("row", { name: rowName })
+    .getByRole("checkbox")
+    .click();
+  await page.getByTestId("assign").click();
+}
+
+export async function removeRole(page: Page, roleName: string) {
+  await page
+    .getByRole("button", { name: `Remove role ${roleName}`, exact: true })
+    .click();
+}
+
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("select-createNewPolicy-button").click();
 }
@@ -76,4 +113,5 @@ export { selectClient } from "../utils/form.ts";
 export async function deletePermission(page: Page, name: string) {
   await clickRowKebabItem(page, name, "Delete");
   await confirmModal(page);
+  await assertRowExists(page, name, false);
 }

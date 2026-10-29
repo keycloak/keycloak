@@ -1,29 +1,22 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import {
-  FormSubmitButton,
-  SelectControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
+import { FormSubmitButton, HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
   Form,
+  FormGroup,
   Modal,
   ModalVariant,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
-import {
-  convertAttributeNameToForm,
-  convertFormValuesToObject,
-  convertToFormValues,
-} from "../util";
 import { IdentityProviderSelect } from "./IdentityProviderSelect";
-import { OrganizationFormType } from "./OrganizationForm";
 
 type LinkIdentityProviderModalProps = {
   orgId: string;
@@ -33,11 +26,8 @@ type LinkIdentityProviderModalProps = {
 
 type LinkRepresentation = {
   alias: string[] | string;
-  hideOnLogin: boolean;
-  config: {
-    "kc.org.domain": string;
-    "kc.org.excluded.domains": string;
-  };
+  autoMembership: boolean;
+  membershipType: string;
 };
 
 export const LinkIdentityProviderModal = ({
@@ -50,49 +40,55 @@ export const LinkIdentityProviderModal = ({
   const { addAlert, addError } = useAlerts();
 
   const form = useForm<LinkRepresentation>({ mode: "onChange" });
-  const { handleSubmit, formState, setValue } = form;
-  const { getValues } = useFormContext<OrganizationFormType>();
+  const { handleSubmit, formState, setValue, control } = form;
 
-  useEffect(
-    () =>
-      convertToFormValues(
-        {
-          ...identityProvider,
-          alias: [identityProvider?.alias],
-          hideOnLogin: identityProvider?.hideOnLogin,
-        },
-        setValue,
-      ),
-    [],
-  );
+  const autoMembership = useWatch({ control, name: "autoMembership" });
+  const [managedClaimed, setManagedClaimed] = useState(false);
+
+  const hasManagedByOtherOrg = (idp: IdentityProviderRepresentation) =>
+    idp.organizationLinks?.some(
+      (l) => l.organizationId !== orgId && l.membershipType === "MANAGED",
+    ) ?? false;
+
+  useEffect(() => {
+    if (!autoMembership || managedClaimed) {
+      setValue("membershipType", "UNMANAGED");
+    }
+  }, [autoMembership, managedClaimed]);
+
+  useEffect(() => {
+    if (identityProvider) {
+      setValue("alias", [identityProvider.alias!]);
+      setManagedClaimed(hasManagedByOtherOrg(identityProvider));
+      const link = identityProvider.organizationLinks?.find(
+        (l) => l.organizationId === orgId,
+      );
+      if (link) {
+        setValue("autoMembership", link.autoMembership ?? true);
+        setValue("membershipType", link.membershipType ?? "UNMANAGED");
+      }
+    }
+  }, []);
 
   const submitForm = async (data: LinkRepresentation) => {
     try {
-      const foundIdentityProvider = await adminClient.identityProviders.findOne(
-        {
-          alias: data.alias[0],
-        },
-      );
-      if (!foundIdentityProvider) {
-        throw new Error(t("notFound"));
-      }
-      const { config } = convertFormValuesToObject(data);
-      foundIdentityProvider.config = {
-        ...foundIdentityProvider.config,
-        ...config,
-      };
-      foundIdentityProvider.hideOnLogin = data.hideOnLogin;
-      await adminClient.identityProviders.update(
-        { alias: data.alias[0] },
-        foundIdentityProvider,
-      );
+      const alias = Array.isArray(data.alias) ? data.alias[0] : data.alias;
 
       if (!identityProvider) {
         await adminClient.organizations.linkIdp({
           orgId,
-          alias: data.alias[0],
+          alias,
         });
       }
+
+      await adminClient.organizations.updateIdentityProviderLink(
+        { orgId, alias },
+        {
+          autoMembership: data.autoMembership,
+          membershipType: data.membershipType,
+        },
+      );
+
       addAlert(
         t(!identityProvider ? "linkSuccessful" : "linkUpdatedSuccessful"),
       );
@@ -132,61 +128,63 @@ export const LinkIdentityProviderModal = ({
     >
       <FormProvider {...form}>
         <Form id="form" onSubmit={handleSubmit(submitForm)}>
-          <IdentityProviderSelect
-            name="alias"
-            label={t("identityProvider")}
-            defaultValue={[]}
-            isRequired
-            isDisabled={!!identityProvider}
-          />
-          <SelectControl
-            name={convertAttributeNameToForm("config.kc.org.domain")}
-            label={t("domain")}
-            controller={{ defaultValue: "" }}
-            options={[
-              { key: "", value: t("none") },
-              { key: "ANY", value: t("any") },
-              ...(getValues("domains")
-                ? getValues("domains")!.map((d) => ({ key: d, value: d }))
-                : []),
-            ]}
-            menuAppendTo="parent"
-          />
-          <TextControl
-            label={t("excludedDomains")}
-            name={convertAttributeNameToForm("config.kc.org.excluded.domains")}
-            labelIcon={t("excludedDomainsHelp")}
-          />
+          {identityProvider ? (
+            <FormGroup label={t("identityProvider")} fieldId="identityProvider">
+              {identityProvider.alias}
+            </FormGroup>
+          ) : (
+            <IdentityProviderSelect
+              name="alias"
+              label={t("identityProvider")}
+              helpText={t("linkIdentityProviderHelp")}
+              defaultValue={[]}
+              isRequired
+              orgId={orgId}
+              onIdpSelected={(idp) =>
+                setManagedClaimed(hasManagedByOtherOrg(idp))
+              }
+            />
+          )}
           <DefaultSwitchControl
-            name="hideOnLogin"
-            label={t("hideOnLoginPage")}
-            labelIcon={t("hideOnLoginPageHelp")}
+            name="autoMembership"
+            label={t("autoMembership")}
+            labelIcon={t("autoMembershipHelp")}
             defaultValue={true}
           />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.login.hide-when-org-unknown",
-            )}
-            label={t("hideOnLoginWhenOrgNotResolved")}
-            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
-            stringify
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.login.show-when-linked-elsewhere",
-            )}
-            label={t("showOnLoginForUnlinkedMembers")}
-            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
-            stringify
-          />
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm(
-              "config.kc.org.broker.redirect.mode.email-matches",
-            )}
-            label={t("redirectWhenEmailMatches")}
-            labelIcon={t("redirectWhenEmailMatchesHelp")}
-            stringify
-          />
+          <FormGroup
+            label={t("membershipType")}
+            labelIcon={
+              <HelpItem
+                helpText={t("membershipTypeHelp")}
+                fieldLabelId="membershipType"
+              />
+            }
+            fieldId="membershipType"
+          >
+            <Controller
+              name="membershipType"
+              defaultValue="UNMANAGED"
+              control={control}
+              render={({ field }) => (
+                <ToggleGroup aria-label={t("membershipType")}>
+                  <ToggleGroupItem
+                    text={t("UNMANAGED")}
+                    buttonId="unmanaged"
+                    isSelected={field.value === "UNMANAGED"}
+                    onChange={() => field.onChange("UNMANAGED")}
+                  />
+                  {autoMembership && !managedClaimed && (
+                    <ToggleGroupItem
+                      text={t("MANAGED")}
+                      buttonId="managed"
+                      isSelected={field.value === "MANAGED"}
+                      onChange={() => field.onChange("MANAGED")}
+                    />
+                  )}
+                </ToggleGroup>
+              )}
+            />
+          </FormGroup>
         </Form>
       </FormProvider>
     </Modal>

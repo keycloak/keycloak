@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { login } from "../utils/login.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 
-const addSamlProviderUrl =
-  "http://localhost:8080/admin/master/console/#/master/identity-providers/saml/add";
+const addSamlProviderUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/saml/add`;
 
 test("should enable SAML signature switches by default", async ({ page }) => {
   await login(page);

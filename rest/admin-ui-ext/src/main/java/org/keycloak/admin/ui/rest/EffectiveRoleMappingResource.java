@@ -199,7 +199,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         return addSubRoles(roles, new HashSet<>());
     }
     private Stream<RoleModel> addSubRoles(Stream<RoleModel> roles, HashSet<RoleModel> visited) {
-        List<RoleModel> roleList = roles.collect(Collectors.toList());
+        List<RoleModel> roleList = roles.filter(s -> auth.roles().canView(s)).collect(Collectors.toList());
         visited.addAll(roleList);
         return Stream.concat(roleList.stream(), roleList.stream().flatMap(r -> addSubRoles(r.getCompositesStream().filter(s -> !visited.contains(s)), visited)));
     }

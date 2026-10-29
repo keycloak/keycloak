@@ -17,21 +17,22 @@
 
 package org.keycloak.tests.conformance;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.keycloak.testframework.conformance.OpenIdConformanceServer;
+import org.keycloak.testframework.conformance.annotations.InjectOpenIdConformanceServer;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleResult;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
+import org.keycloak.testframework.conformance.runner.ModuleRun;
 import org.keycloak.testframework.https.CertificatesConfig;
 import org.keycloak.testframework.https.CertificatesConfigBuilder;
 import org.keycloak.testframework.https.InjectCertificates;
 import org.keycloak.testframework.https.ManagedCertificates;
-import org.keycloak.tests.conformance.containers.InjectConformanceSuite;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
-import org.keycloak.tests.conformance.runner.BrowserInteraction;
-import org.keycloak.tests.conformance.runner.ConformanceModuleResult;
-import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
-import org.keycloak.tests.conformance.runner.ConformanceResult;
-import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
@@ -52,8 +53,8 @@ public abstract class AbstractConformanceTest {
     @InjectCertificates(config = TlsCertificates.class)
     protected ManagedCertificates certificates;
 
-    @InjectConformanceSuite
-    protected OpenIdConformanceSuite suite;
+    @InjectOpenIdConformanceServer
+    protected OpenIdConformanceServer server;
 
     protected abstract Stream<ConformanceModuleVariant> moduleVariants();
 
@@ -71,15 +72,30 @@ public abstract class AbstractConformanceTest {
             String name, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
         ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, name, Map.of(),
                 expectedResult, browserInteraction);
-        return OpenIdConformanceSuite.instance().client()
+        return OpenIdConformanceServer.instance().client()
                 .discoverModuleVariants(plan, planVariant, name, suiteConfig(template))
                 .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
                         expectedResult, browserInteraction));
     }
 
     /**
-     * Drives the system under test once the module waits for it, e.g. delivers an OID4VP verifier
-     * request.
+     * Discovers all variant combinations of every named module from a single created plan. The modules share the
+     * same browser interaction and expected result, so a single test class can host a group of related modules.
+     */
+    protected Stream<ConformanceModuleVariant> discoverModuleVariants(String plan, Map<String, String> planVariant,
+            List<String> names, ConformanceResult expectedResult, BrowserInteraction browserInteraction) {
+        ConformanceModuleVariant template = new ConformanceModuleVariant(plan, planVariant, names.get(0), Map.of(),
+                expectedResult, browserInteraction);
+        Map<String, List<Map<String, String>>> discovered = OpenIdConformanceServer.instance().client()
+                .discoverModuleVariants(plan, planVariant, names, suiteConfig(template));
+        return names.stream().flatMap(name -> discovered.get(name).stream()
+                .map(moduleVariant -> new ConformanceModuleVariant(plan, planVariant, name, moduleVariant,
+                        expectedResult, browserInteraction)));
+    }
+
+    /**
+     * Drives the system under test once the module waits for it, for example delivers an OID4VP verifier request or
+     * the credential offer the issuer initiated modules wait for.
      */
     protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
         return null;
@@ -88,7 +104,7 @@ public abstract class AbstractConformanceTest {
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
-        ConformanceModuleResult result = suite.client()
+        ConformanceModuleResult result = server.client()
                 .run(moduleVariant, suiteConfig(moduleVariant), interaction(moduleVariant));
         if (!result.finishedWith(moduleVariant.expectedResult())) {
             LOGGER.errorf("Full logs of failed conformance module %s:%n%s", result.module(), result.logs().toPrettyString());

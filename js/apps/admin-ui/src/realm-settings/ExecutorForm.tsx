@@ -126,7 +126,7 @@ export default function ExecutorForm() {
         AlertVariant.success,
       );
 
-      navigate(toClientProfile({ realm, profileName }));
+      void navigate(toClientProfile({ realm, profileName }));
     } catch (error) {
       addError(editMode ? "updateExecutorError" : "addExecutorError", error);
     }

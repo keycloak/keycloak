@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -45,6 +47,7 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.util.Time;
@@ -95,15 +98,15 @@ public class LDAPOperationManager {
         this.requestTimer = requestTimer;
     }
 
-    private void recordLdapRequest(String operation, boolean success, long startTimeNanos) {
+    private void recordLdapRequest(String operation, boolean success, long startTimeNanos, String error) {
         if (requestTimer == null) {
             logger.debugf("LDAP request timer is null, skipping metric recording for operation: %s", operation);
             return;
         }
         long durationNanos = System.nanoTime() - startTimeNanos;
-        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, duration: %d ns",
-                operation, success ? "success" : "error", durationNanos);
-        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error")
+        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, error: %s, duration: %d ns",
+                operation, success ? "success" : "error", error, durationNanos);
+        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error", "error", error != null ? error : "")
                 .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
@@ -190,6 +193,10 @@ public class LDAPOperationManager {
                     return null;
                 }
 
+                @Override
+                public String operationType() {
+                    return "remove";
+                }
 
                 @Override
                 public String toString() {
@@ -247,6 +254,10 @@ public class LDAPOperationManager {
                     throw new ModelException("Could not rename entry from DN [" + oldDn + "] to new DN [" + newDn + "]. All fallbacks failed");
                 }
 
+                @Override
+                public String operationType() {
+                    return "rename";
+                }
 
                 @Override
                 public String toString() {
@@ -293,6 +304,10 @@ public class LDAPOperationManager {
                     return result;
                 }
 
+                @Override
+                public String operationType() {
+                    return "search";
+                }
 
                 @Override
                 public String toString() {
@@ -367,6 +382,10 @@ public class LDAPOperationManager {
                     }
                 }
 
+                @Override
+                public String operationType() {
+                    return "searchPaginated";
+                }
 
                 @Override
                 public String toString() {
@@ -400,6 +419,10 @@ public class LDAPOperationManager {
     }
 
     public Condition getFilterById(String id) {
+        return getFilterById(id, true);
+    }
+
+    public Condition getFilterById(String id, boolean applyCustomUserFilter) {
         LDAPQueryConditionsBuilder builder = new LDAPQueryConditionsBuilder();
         Condition conditionId;
 
@@ -413,7 +436,7 @@ public class LDAPOperationManager {
             conditionId = builder.equal(getUuidAttributeName(), id);
         }
 
-        if (config.getCustomUserSearchFilter() != null) {
+        if (applyCustomUserFilter && config.getCustomUserSearchFilter() != null) {
             return builder.andCondition(new Condition[]{conditionId, builder.addCustomLDAPFilter(config.getCustomUserSearchFilter())});
         } else {
             return conditionId;
@@ -421,7 +444,11 @@ public class LDAPOperationManager {
     }
 
     public SearchResult lookupById(final LdapName baseDN, final String id, final Collection<String> returningAttributes) {
-        final String filter = getFilterById(id).toFilter();
+        return lookupById(baseDN, id, returningAttributes, true);
+    }
+
+    public SearchResult lookupById(final LdapName baseDN, final String id, final Collection<String> returningAttributes, final boolean applyCustomUserFilter) {
+        final String filter = getFilterById(id, applyCustomUserFilter).toFilter();
 
         try {
             final SearchControls cons = getSearchControls(returningAttributes, this.config.getSearchScope());
@@ -445,6 +472,10 @@ public class LDAPOperationManager {
                     return null;
                 }
 
+                @Override
+                public String operationType() {
+                    return "lookupById";
+                }
 
                 @Override
                 public String toString() {
@@ -513,12 +544,15 @@ public class LDAPOperationManager {
 
         LdapContext authCtx = null;
         StartTlsResponse tlsResponse = null;
+        AtomicReference<SSLSocket> tlsSocket = new AtomicReference<>();
+        AtomicReference<Socket> tlsTransport = new AtomicReference<>();
 
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
 
         long startTimeNanos = System.nanoTime();
         boolean success = false;
+        String errorName = null;
 
         try {
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
@@ -541,7 +575,7 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory, tlsSocket, tlsTransport);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -576,36 +610,40 @@ public class LDAPOperationManager {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
+            errorName = ae.getClass().getSimpleName();
             tracing.error(ae);
             throw ae;
         } catch(RuntimeException re){
             if (logger.isDebugEnabled()) {
                 logger.debugf(re, "LDAP Connection TimeOut for DN [%s]", dn);
             }
+            errorName = re.getClass().getSimpleName();
             tracing.error(re);
             throw re;
         } catch (Exception e) {
             logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
+            errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
-            recordLdapRequest("authenticate", success, startTimeNanos);
-            if (tlsResponse != null) {
+            recordLdapRequest("authenticate", success, startTimeNanos, errorName);
+            try {
+                if (tlsResponse != null) {
+                    LDAPStartTlsClose.close(tlsResponse, tlsSocket.get(), tlsTransport.get());
+                }
+            } finally {
                 try {
-                    tlsResponse.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    if (authCtx != null) {
+                        try {
+                            authCtx.close();
+                        } catch (NamingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } finally {
+                    tracing.endSpan();
                 }
             }
-
-            if (authCtx != null) {
-                try {
-                    authCtx.close();
-                } catch (NamingException e) {
-                    e.printStackTrace();
-                }
-            }
-            tracing.endSpan();
         }
     }
 
@@ -639,6 +677,11 @@ public class LDAPOperationManager {
             public Void execute(LdapContext context) throws NamingException {
                 context.modifyAttributes(dn, mods);
                 return null;
+            }
+
+            @Override
+            public String operationType() {
+                return "modify";
             }
 
             @Override
@@ -700,6 +743,10 @@ public class LDAPOperationManager {
                     }
                 }
 
+                @Override
+                public String operationType() {
+                    return "create";
+                }
 
                 @Override
                 public String toString() {
@@ -759,9 +806,24 @@ public class LDAPOperationManager {
 
     public void passwordModifyExtended(LdapName dn, String password, LDAPOperationDecorator decorator) {
         try {
-            execute(context -> {
-                PasswordModifyRequest modifyRequest = new PasswordModifyRequest(dn.toString(), null, password);
-                return context.extendedOperation(modifyRequest);
+            execute(new LdapOperation<>() {
+                @Override
+                public Object execute(LdapContext context) throws NamingException {
+                    PasswordModifyRequest modifyRequest = new PasswordModifyRequest(dn.toString(), null, password);
+                    return context.extendedOperation(modifyRequest);
+                }
+
+                @Override
+                public String operationType() {
+                    return "passwordModify";
+                }
+
+                @Override
+                public String toString() {
+                    return new StringBuilder("LdapOperation: passwordModify\n")
+                            .append(" dn: ").append(dn)
+                            .toString();
+                }
             }, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not execute the password modify extended operation for DN [" + dn + "]", e);
@@ -791,6 +853,7 @@ public class LDAPOperationManager {
 
         long startTimeNanos = System.nanoTime();
         boolean success = false;
+        String errorName = null;
 
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
@@ -808,11 +871,12 @@ public class LDAPOperationManager {
             R execute = operation.execute(context);
             success = true;
             return execute;
-        } catch (NamingException e) {
+        } catch (NamingException | RuntimeException e) {
+            errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;
         } finally {
-            recordLdapRequest("execute", success, startTimeNanos);
+            recordLdapRequest(operation.operationType(), success, startTimeNanos, errorName);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
@@ -828,6 +892,10 @@ public class LDAPOperationManager {
 
     public interface LdapOperation<R> {
         R execute(LdapContext context) throws NamingException;
+
+        default String operationType() {
+            return "unknown";
+        }
     }
 
     private Set<String> getReturningAttributes(final Collection<String> returningAttributes) {

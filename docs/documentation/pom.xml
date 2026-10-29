@@ -125,8 +125,10 @@
                                         <includes>
                                             <include>images/**/*.png</include>
                                             <include>images/**/*.svg</include>
+                                            <include>images/**/*.webp</include>
                                             <include>${imagesDir}/**/*.png</include>
                                             <include>${imagesDir}/**/*.svg</include>
+                                            <include>${imagesDir}/**/*.webp</include>
                                         </includes>
                                     </resource>
                                 </resources>

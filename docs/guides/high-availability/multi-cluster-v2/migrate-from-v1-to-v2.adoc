@@ -5,8 +5,7 @@
 title="Migrating from multi-cluster v1 to v2"
 summary="Migrate an existing multi-cluster v1 deployment to v2 (stateless mode)."
 tileVisible="false"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+>
 
 This {section} describes how to migrate an existing <@links.ha id="multi-cluster-introduction" /> deployment to <@links.ha id="multi-cluster-v2-introduction" />.
 
@@ -81,6 +80,11 @@ See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section}
 * Network latency between database nodes that meets the requirements.
 +
 include::../partials/network-latency.adoc[]
++
+Additionally, the commit latency on the database must be low.
+With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
+A commit latency of less than 5 ms is suggested, and below 10 ms is required.
+See the <@links.ha id="multi-cluster-v2-introduction" anchor="multi-cluster-v2-infrastructure-requirements" /> for the full set of requirements.
 
 == Impact on volatile data
 
@@ -93,7 +97,7 @@ Users who are mid-login need to restart their login flow.
 
 Login failure counters::
 Brute-force detection counters are reset.
-Any ongoing lockouts are cleared.
+Any ongoing temporary lockouts are cleared.
 
 OAuth authorization codes::
 OAuth authorization codes that were stored in {jdgserver_name} are lost.
@@ -146,7 +150,7 @@ See <@links.operator id="customizing-keycloak" /> for details.
 [source,yaml]
 ----
   additionalOptions:
-    - name: spi-cache-embedded--default--cluster-name
+    - name: cache-embedded-cluster-name
       value: CLUSTER1 # <1>
 ----
 <1> Use a distinct name for each site (for example, `CLUSTER1` and `CLUSTER2`). No two sites may share the same name.

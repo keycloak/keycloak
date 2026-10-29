@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -103,9 +104,14 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
-                for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                Map<String, String> state = new HashMap<>(output.getState());
+                String spnegoResponseToken = state.remove(KerberosConstants.RESPONSE_TOKEN);
+                if (spnegoResponseToken != null && !spnegoResponseToken.isEmpty()) {
+                    String negotiateHeader = KerberosConstants.NEGOTIATE + " " + spnegoResponseToken;
+                    // The authenticator does not own the final flow response, so attach the final GSS token before the flow continues.
+                    context.getSession().getContext().getHttpResponse().setHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
                 }
+                state.forEach(context.getAuthenticationSession()::setUserSessionNote);
             }
             context.success(UserCredentialModel.KERBEROS);
         } else if (output.getAuthStatus() == CredentialValidationOutput.Status.CONTINUE) {

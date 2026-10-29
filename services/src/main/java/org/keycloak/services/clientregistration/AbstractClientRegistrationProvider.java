@@ -31,6 +31,10 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -44,12 +48,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
@@ -89,6 +96,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
+
+            if (client.getRegisteredNodes() != null && !client.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(null,
+                                List.copyOf(client.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+
+            // Service accounts and authorization services are
+            // allowed during registration via grant types; escalation risk is guarded on client update.
+            stripPrivilegedAttributes(client);
+
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
@@ -102,6 +121,13 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
+                    }
+                }
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
@@ -138,6 +164,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        } catch (ClientTypeException cte) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, cte.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -149,6 +177,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         if (!(Boolean.TRUE.equals(rep.isBearerOnly()) || Boolean.TRUE.equals(rep.isPublicClient()))) {
             rep.setSecret(client.getSecret());
+        }
+
+        if (auth.isViewOnly()) {
+            StripSecretsUtils.stripClient(rep);
         }
 
         if (auth.isRegistrationAccessToken()) {
@@ -190,7 +222,32 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
         }
 
+        stripPrivilegedAttributes(rep);
+        if (auth.isRegistrationAccessToken()
+                && rep.isServiceAccountsEnabled() != null
+                && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
+            throw new ErrorResponseException(
+                    ErrorCodes.INVALID_CLIENT_METADATA,
+                    "Service accounts cannot be enabled or disabled via registration access token",
+                    Response.Status.BAD_REQUEST
+            );
+        }
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+
+        try {
+            if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(client,
+                                List.copyOf(rep.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+        } catch (ClientPolicyException e) {
+            throw new ErrorResponseException(
+                    e.getError(),
+                    e.getErrorDetail(),
+                    Response.Status.BAD_REQUEST);
+        }
+
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);
@@ -341,5 +398,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
         allowedOrigins.addAll(ClientRegistrationPolicyManager.getAllowedOrigins(session, auth.resolveRegistrationAuth()));
         return allowedOrigins;
+    }
+
+    /**
+     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     *
+     * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
+     * without throwing an error.
+     */
+    private void stripPrivilegedAttributes(ClientRepresentation rep) {
+        if (auth.isBearerToken()) {
+            return; // Admin callers retain full write access
+        }
+        if (rep.getAttributes() == null || rep.getAttributes().isEmpty()) {
+            return;
+        }
+        rep.getAttributes().entrySet()
+                .removeIf(e -> e.getKey().startsWith("ssf."));
     }
 }

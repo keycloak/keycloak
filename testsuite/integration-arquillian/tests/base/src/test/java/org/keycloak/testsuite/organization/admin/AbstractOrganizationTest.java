@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -28,8 +30,6 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -51,7 +51,9 @@ import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.TestCleanup;
 
 import org.hamcrest.Matchers;
@@ -97,6 +99,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
 
+    @Page
+    protected VerifyEmailPage verifyEmailPage;
+
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
     @Override
@@ -107,7 +112,6 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getClients().addAll(bc.createConsumerClients());
-        testRealm.setSmtpServer(null);
         testRealm.setOrganizationsEnabled(Boolean.TRUE);
         super.configureTestRealm(testRealm);
     }
@@ -150,14 +154,23 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            // set the idp domain to the first domain used to create the org.
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = testRealm.organizations().get(id).toRepresentation();
+            String brokerAlias = broker.getAlias();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(brokerAlias);
+                        d.setAutoRedirect(true);
+                    });
+            testRealm.organizations().get(id).update(org).close();
+        }
+
         org = testRealm.organizations().get(id).toRepresentation();
         testCleanup.addCleanup(() -> testRealm.organizations().get(id).delete().close());
 
@@ -251,14 +264,28 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             updateAccountInformationPage.updateAccountInformation(username, email, "Firstname", "Lastname");
         }
 
-        if (redirectToApp) {
-            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-        }
-
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
         if (!users.isEmpty()) {
             assertThat(users, Matchers.hasSize(1));
             getCleanup(bc.consumerRealmName()).addUserId(users.get(0).getId());
+        }
+
+        if (redirectToApp) {
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                verifyEmail();
+            }
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        }
+    }
+
+    protected void verifyEmail() {
+        verifyEmailPage.assertCurrent();
+        MimeMessage message = mail.getLastReceivedMessage();
+        assertNotNull(message, "Verification email should have been sent");
+        try {
+            driver.navigate().to(MailUtils.getPasswordResetEmailLink(message));
+        } catch (IOException e) {
+            throw new AssertionError("Could not read verification email", e);
         }
     }
 

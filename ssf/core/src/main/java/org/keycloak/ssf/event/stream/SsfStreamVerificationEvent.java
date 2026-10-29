@@ -29,6 +29,15 @@ public class SsfStreamVerificationEvent extends SsfStreamEvent {
     }
 
     @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        if (state != null) {
+            adminRepresentation.put("state", state);
+        }
+        return adminRepresentation;
+    }
+
+    @Override
     protected void appendFields(Map<String, Object> fields) {
         super.appendFields(fields);
         fields.put("state", state);

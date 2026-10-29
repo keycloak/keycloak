@@ -54,4 +54,6 @@ At the moment, workflows support event functions for the following realm resourc
 | `user-group-membership-removed` | User is removed from a group. | The group name or path
 | `client-created` | Client is added to the realm. | None
 | `client-authenticated` | Client authenticates to the realm. | None
+| `user-disabled-by-temporary-lockout` | User was temporarily disabled by brute force protection. | None
+| `user-disabled-by-permanent-lockout` | User was permanently disabled by brute force protection. | None
 |===

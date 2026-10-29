@@ -6,6 +6,13 @@ public enum SubjectManagementResult {
     FORMAT_UNSUPPORTED,
     SUBJECT_NOT_FOUND,
     /**
+     * The receiver is not permitted to add or remove this subject,
+     * either because an administrator explicitly excluded (ignored) it
+     * or, for an add, because its {@link ReceiverSubjectAddPolicy} does
+     * not cover the subject.
+     */
+    SUBJECT_NOT_PERMITTED,
+    /**
      * The resolved subject is backed by a read-only user store
      * (e.g. an LDAP federation with edit mode {@code READ_ONLY}, or
      * with import disabled) so the {@code ssf.notify.<clientId>}

@@ -123,6 +123,12 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testExpressionWithUnrecognizedCharacters() {
+        assertThat(createWorkflow("!has-role(tester)", false), nullValue());
+        assertThat(createWorkflow("!(has-role(tester) or has-role(admin))", false), nullValue());
+    }
+
+    @Test
     public void testExpressionLengthLimit() {
         // an expression exceeding the max length should be rejected
         String expression = "has-role(" + "a".repeat(MAX_EXPRESSION_LENGTH) + ")";

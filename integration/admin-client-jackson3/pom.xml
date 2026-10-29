@@ -9,14 +9,16 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-admin-client-jackson3</artifactId>
+    <artifactId>keycloak-admin-client-jackson3-internal</artifactId>
     <name>Keycloak Admin REST Client (Jackson 3)</name>
-    <description>Jackson 3 provider for the Keycloak Admin REST Client. Use this instead of org.keycloak:keycloak-admin-client when your application uses Jackson 3</description>
+    <description>Jackson 3 provider for the Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository. It is NOT supposed to be used by the 3rd party applications.
+        For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client-jackson3` module.
+    </description>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
-        <version.tools.jackson>3.1.5</version.tools.jackson>
-        <version.resteasy.jackson.provider>1.0.0.Beta1</version.resteasy.jackson.provider>
+        <version.tools.jackson>3.1.7</version.tools.jackson>
+        <version.resteasy.jackson.provider>1.0.0.Final</version.resteasy.jackson.provider>
     </properties>
 
     <dependencies>

@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
@@ -88,6 +90,12 @@ import com.webauthn4j.verifier.attestation.statement.tpm.TPMAttestationStatement
 import com.webauthn4j.verifier.attestation.statement.u2f.FIDOU2FAttestationStatementVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessVerifier;
+import com.webauthn4j.verifier.exception.BadChallengeException;
+import com.webauthn4j.verifier.exception.BadOriginException;
+import com.webauthn4j.verifier.exception.BadRpIdException;
+import com.webauthn4j.verifier.exception.BadSignatureException;
+import com.webauthn4j.verifier.exception.UserNotPresentException;
+import com.webauthn4j.verifier.exception.UserNotVerifiedException;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
@@ -96,6 +104,11 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_GET;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID_STATE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_CHALLENGE;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_ORIGIN;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_RPID;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_SIGNATURE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DUPLICATED_DEVICE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTER_VERIFICATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
@@ -103,6 +116,8 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATIO
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_UNSUPPORTED_BROWSER;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_PRESENT;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_VERIFIED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_REGISTER_TITLE;
 
 /**
@@ -144,6 +159,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         Challenge challenge = new DefaultChallenge();
         String challengeValue = Base64Url.encode(challenge.getValue());
         context.getAuthenticationSession().setAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE, challengeValue);
+        int challengeLifespan = context.getRealm().getAccessCodeLifespanUserAction();
+        session.singleUseObjects().put(WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challengeValue, challengeLifespan, Map.of());
 
         // construct parameters for calling WebAuthn API navigator.credential.create()
 
@@ -268,6 +285,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         final String challengeNote = context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
         if (challengeNote != null) {
             context.getAuthenticationSession().removeAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
+            // Atomically consume the challenge to prevent duplicate credentials from concurrent requests across cluster nodes
+            if (session.singleUseObjects().remove(WebAuthnConstants.AUTH_CHALLENGE_NOTE + ":" + challengeNote) == null) {
+                logger.debug("WebAuthn registration challenge has already been consumed by another request.");
+                setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, "Registration ceremony has already been completed", originalEventType);
+                return;
+            }
         }
         Challenge challenge = new DefaultChallenge(challengeNote);
         ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge);
@@ -315,7 +338,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
             WebAuthnCredentialModel newCredentialModel = webAuthnCredProvider.getCredentialModelFromCredentialInput(credential, label);
 
-            webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
+            CredentialModel createdCredential = webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
 
             String aaguid = newCredentialModel.getWebAuthnCredentialData().getAaguid();
             logger.debugv("WebAuthn credential registration success for user {0}. credentialType = {1}, publicKeyCredentialId = {2}, publicKeyCredentialLabel = {3}, publicKeyCredentialAAGUID = {4}",
@@ -327,13 +350,18 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, label)
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid);
             context.getEvent().clone().event(originalEventType).success();
+            // the deprecated event is emitted first, so that it keeps carrying the same details as before
+            if (createdCredential != null) {
+                context.getEvent().detail(Details.CREDENTIAL_ID, createdCredential.getId());
+            }
             context.success();
         } catch (WebAuthnPolicyException wpe) {
             logger.debug("WebAuthn policy violation during registration.", wpe);
             setErrorResponse(context, wpe.getMessageKey(), wpe.getMessage(), originalEventType, wpe.getParameters());
         } catch (WebAuthnException wae) {
             logger.debug("WebAuthn registration failed.", wae);
-            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage(), originalEventType);
+            String errorCase = getWebAuthnErrorMessageKey(wae, true);
+            setErrorResponse(context, errorCase, wae.getMessage(), originalEventType);
         } catch (ModelDuplicateException e) {
             setErrorResponse(context, WEBAUTHN_ERROR_DUPLICATED_DEVICE, e.getMessage(), originalEventType);
         } catch (Exception e) {
@@ -486,6 +514,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         case WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID:
         case WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED:
         case WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH:
+        case WEBAUTHN_ERROR_USER_NOT_PRESENT:
+        case WEBAUTHN_ERROR_USER_NOT_VERIFIED:
+        case WEBAUTHN_ERROR_BAD_ORIGIN:
+        case WEBAUTHN_ERROR_BAD_RPID:
+        case WEBAUTHN_ERROR_BAD_CHALLENGE:
+        case WEBAUTHN_ERROR_BAD_SIGNATURE:
             EventBuilder registrationEvent = context.getEvent()
                     .detail(REG_ERR_LABEL, errorCase)
                     .detail(REG_ERR_DETAIL_LABEL, errorMessage);
@@ -538,6 +572,26 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             return WEBAUTHN_ERROR_API_SECURITY;
         }
         return isRegistration ? WEBAUTHN_ERROR_REGISTRATION: WEBAUTHN_ERROR_API_GET;
+    }
+
+    /**
+     * Maps server side webauthn4j verifier exceptions to localizable Keycloak message keys
+     */
+    public static String getWebAuthnErrorMessageKey(WebAuthnException exception, boolean isRegistration) {
+        if (exception instanceof UserNotPresentException) {
+            return WEBAUTHN_ERROR_USER_NOT_PRESENT;
+        } else if (exception instanceof UserNotVerifiedException) {
+            return WEBAUTHN_ERROR_USER_NOT_VERIFIED;
+        } else if (exception instanceof BadOriginException) {
+            return WEBAUTHN_ERROR_BAD_ORIGIN;
+        } else if (exception instanceof BadRpIdException) {
+            return WEBAUTHN_ERROR_BAD_RPID;
+        } else if (exception instanceof BadChallengeException) {
+            return WEBAUTHN_ERROR_BAD_CHALLENGE;
+        } else if (exception instanceof BadSignatureException) {
+            return WEBAUTHN_ERROR_BAD_SIGNATURE;
+        }
+        return isRegistration ? WEBAUTHN_ERROR_REGISTRATION : WEBAUTHN_ERROR_AUTH_VERIFICATION;
     }
 
     private boolean isFormDataRequest(HttpRequest request) {

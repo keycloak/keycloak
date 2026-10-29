@@ -103,7 +103,13 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
         if (role == null) {
             LOG.warnf("Unable to find role '%s' for mapper '%s' on realm '%s'.", roleName, mapperModel.getName(),
                     realm.getName());
+            return null;
         }
+
+        if (!isAdminRoleGrantAllowed(session, realm, role, mapperModel)) {
+            return null;
+        }
+
         return role;
     }
 }

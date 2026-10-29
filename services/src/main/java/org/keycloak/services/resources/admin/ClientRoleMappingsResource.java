@@ -108,7 +108,7 @@ public class ClientRoleMappingsResource {
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
-        return user.getClientRoleMappingsStream(client).map(ModelToRepresentation::toBriefRepresentation);
+        return user.getClientRoleMappingsStream(client).filter(auth.roles()::canView).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -138,6 +138,7 @@ public class ClientRoleMappingsResource {
         // role, which recursively expands composites without memoization.
         return RoleUtils.getDeepRoleMappings(user).stream()
                 .filter(r -> r.isClientRole() && r.getContainerId().equals(client.getId()))
+                .filter(auth.roles()::canView)
                 .map(toBriefRepresentation);
     }
 

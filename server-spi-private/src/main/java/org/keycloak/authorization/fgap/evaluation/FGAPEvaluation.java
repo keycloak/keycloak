@@ -87,11 +87,13 @@ class FGAPEvaluation implements Evaluation {
         boolean isPermissionDeniedForSpecificResource = isForSpecificResource(deniedPolicy);
 
         if (isPermissionDeniedForSpecificResource && deniedScopes.contains(deniedScope)) {
-            // scope denied for an specific resource
-            return true;
+            // scope denied for a specific resource of the same resource type
+            if (resourceType.equals(deniedPolicy.getResourceType())) {
+                return true;
+            }
         }
 
-        if (isForResourceType(deniedPolicy, resourceType)) {
+        if (isForResourceType(deniedPolicy, resourceType) && deniedScopes.contains(deniedScope)) {
             // checks if the scope was not granted by a permission that maps to all resources
             return !isGranted(permission.getResource(), deniedScope);
         }

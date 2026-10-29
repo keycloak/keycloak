@@ -73,6 +73,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StorageUnavailableException;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
@@ -987,6 +988,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
                         return CredentialValidationOutput.fallback();
                     } else {
+                        String responseToken = spnegoAuthenticator.getResponseToken();
+                        if (responseToken != null) {
+                            state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                        }
+
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
                             state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
@@ -1186,6 +1192,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
                         try {
                             ldapObjects = query.getResultList();
+                        } catch (StorageUnavailableException sue) {
+                            logger.errorf(sue, "Failed to query LDAP %s", query);
+                            /*
+                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
+                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
+                             * See KEYCLOAK-19036
+                             */
+                            query.getPaginationContext().setCookie(null);
+                            return Stream.empty();
                         } catch (ModelException mde) {
                             if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
                                 logger.errorf(mde, "Failed to query LDAP %s", query);

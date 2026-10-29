@@ -262,4 +262,28 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
 
         return attributes;
     }
+
+    @Override
+    public boolean isFullScopeAllowed() {
+        return TypedClientSimpleAttribute.FULL_SCOPE_ALLOWED
+                .getClientAttribute(clientType, super::isFullScopeAllowed, Boolean.class);
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean fullScopeAllowed) {
+        TypedClientSimpleAttribute.FULL_SCOPE_ALLOWED
+                .setClientAttribute(clientType, fullScopeAllowed, super::setFullScopeAllowed, Boolean.class);
+    }
+
+    @Override
+    public int getNodeReRegistrationTimeout() {
+        return TypedClientSimpleAttribute.NODE_RE_REGISTRATION_TIMEOUT
+                .getClientAttribute(clientType, super::getNodeReRegistrationTimeout, Integer.class);
+    }
+
+    @Override
+    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout) {
+        TypedClientSimpleAttribute.NODE_RE_REGISTRATION_TIMEOUT
+                .setClientAttribute(clientType, nodeReRegistrationTimeout, super::setNodeReRegistrationTimeout, Integer.class);
+    }
 }

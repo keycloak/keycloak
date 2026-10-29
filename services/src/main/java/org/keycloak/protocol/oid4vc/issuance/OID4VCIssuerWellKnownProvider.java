@@ -17,10 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
+import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +36,9 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.CryptoUtils;
@@ -51,7 +58,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
@@ -65,6 +71,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.wellknown.WellKnownProvider;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
@@ -93,6 +100,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static final String VC_KEY = "vc";
     public static final String ATTR_RESPONSE_ENCRYPTION_REQUIRED = "oid4vci.response.encryption.required";
     public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
+    public static final String ISSUER_INFO_ATTR = "oid4vci.issuer_info";
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
@@ -146,6 +154,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(responseEnc)
                 .setCredentialRequestEncryption(requestEnc)
+                .setIssuerInfo(getIssuerInfo(context.getRealm()))
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
     }
 
@@ -172,6 +181,31 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     private CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(KeycloakSession session) {
         return getBatchCredentialIssuance(session.getContext().getRealm());
+    }
+
+    /**
+     * Returns the parsed issuer_info elements from the realm attribute, or null if not configured or invalid.
+     */
+    public static List<CredentialIssuer.IssuerInfo> getIssuerInfo(RealmModel realm) {
+        String rawValue = realm.getAttribute(ISSUER_INFO_ATTR);
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        try {
+            List<CredentialIssuer.IssuerInfo> issuerInfo = JsonSerialization.readValue(rawValue,
+                    new TypeReference<List<CredentialIssuer.IssuerInfo>>() {
+                    });
+            if (issuerInfo == null || issuerInfo.stream().anyMatch(info -> info == null
+                    || info.getFormat() == null || info.getFormat().isBlank()
+                    || info.getData() == null || info.getData().isNull())) {
+                LOGGER.warnf("Invalid %s realm attribute. Skipping issuer_info.", ISSUER_INFO_ATTR);
+                return null;
+            }
+            return issuerInfo;
+        } catch (IOException e) {
+            LOGGER.warnf(e, "Failed to parse %s from realm attributes. Skipping issuer_info.", ISSUER_INFO_ATTR);
+            return null;
+        }
     }
 
     /**
@@ -309,7 +343,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     private void addCertificateHeaders(JWSBuilder jwsBuilder, KeyWrapper keyWrapper, RealmModel realm) {
         if (keyWrapper.getCertificateChain() != null && !keyWrapper.getCertificateChain().isEmpty()) {
-            jwsBuilder.x5c(keyWrapper.getCertificateChain());
+            List<X509Certificate> certificateChain = new ArrayList<>(keyWrapper.getCertificateChain());
+            try {
+                while (certificateChain.size() > 1
+                        && CertificateUtils.isSelfSigned(certificateChain.get(certificateChain.size() - 1))) {
+                    certificateChain.remove(certificateChain.size() - 1);
+                }
+            } catch (GeneralSecurityException e) {
+                LOGGER.warnf(e, "Failed to determine whether the trailing certificate is a self-signed trust anchor for realm '%s'. Using the configured certificate chain.", realm.getName());
+                certificateChain = keyWrapper.getCertificateChain();
+            }
+            jwsBuilder.x5c(certificateChain);
         } else if (keyWrapper.getCertificate() != null) {
             jwsBuilder.x5c(List.of(keyWrapper.getCertificate()));
         } else {
@@ -450,6 +494,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 keycloakSession.clientScopes()
                         .getClientScopesByProtocol(realm, OID4VCIConstants.OID4VC_PROTOCOL)
                         .map(CredentialScopeModel::new)
+                        .filter(credentialScope -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC)
+                                || !VCFormat.MSO_MDOC.equals(credentialScope.getFormat()))
                         .map(credentialScope -> {
                             SupportedCredentialConfiguration config = SupportedCredentialConfiguration.parse(keycloakSession,
                                     credentialScope,
@@ -473,14 +519,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         }
 
         // Find the CredentialBuilder for this format using the factory pattern
-        CredentialBuilder credentialBuilder = keycloakSession.getKeycloakSessionFactory()
-                .getProviderFactoriesStream(CredentialBuilder.class)
-                .map(factory -> (CredentialBuilderFactory) factory)
-                .filter(factory -> format.equals(factory.getSupportedFormat()))
-                .findFirst()
-                .map(factory -> factory.create(keycloakSession, null))
-                .orElse(null);
-
+        CredentialBuilder credentialBuilder = keycloakSession.getProvider(CredentialBuilder.class, format);
         if (credentialBuilder == null) {
             LOGGER.debugf("No CredentialBuilder found for format: %s", format);
             return;

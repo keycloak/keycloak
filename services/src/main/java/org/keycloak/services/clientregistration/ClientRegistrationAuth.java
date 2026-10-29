@@ -141,7 +141,7 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    private boolean isBearerToken() {
+    boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
@@ -151,6 +151,12 @@ public class ClientRegistrationAuth {
 
     public boolean isRegistrationAccessToken() {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
+    }
+
+    public boolean isViewOnly() {
+        return isBearerToken()
+                && hasRole(AdminRoles.VIEW_CLIENTS)
+                && !hasRole(AdminRoles.MANAGE_CLIENTS);
     }
 
     public RegistrationAuth requireCreate(ClientRegistrationContext context) {
@@ -330,6 +336,7 @@ public class ClientRegistrationAuth {
             }
         } else if (isRegistrationAccessToken()) {
             if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 return getRegistrationAuth();
             }
         }

@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export async function goToUserProfileTab(page: Page) {
   await page.getByTestId("rs-user-profile-tab").click();
@@ -50,4 +50,24 @@ export async function switchOffIfOn(page: Page, selector: string) {
   if (await page.isChecked(selector)) {
     await page.locator(selector).click({ force: true });
   }
+}
+
+export async function clickCreateUser(page: Page) {
+  const emptyAction = page.getByTestId("no-users-found-empty-action");
+  const addUser = page.getByTestId("add-user");
+  // The table briefly shows its empty state before the spinner appears, so don't decide on a single look.
+  await emptyAction.or(addUser).first().click({ timeout: 15_000 });
+}
+
+export async function fillEmailAndOptionalUsername(
+  page: Page,
+  email: string,
+  username: string,
+) {
+  await page.getByTestId("email").fill(email);
+  const usernameField = page.getByTestId("username");
+  await expect(
+    usernameField,
+    `Expected username field to be hidden when "Email as username" is enabled (fallback username: "${username}")`,
+  ).toBeHidden();
 }

@@ -17,8 +17,11 @@
 package org.keycloak.authorization.policy.provider.group;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -45,6 +48,7 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.DENY;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.GRANT;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.SKIP;
@@ -75,7 +79,8 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
             groupsClaim = new Entry(policy.getGroupsClaim(), userGroups);
         }
 
-        Outcome outcome = isGranted(realm, null, policy, groupsClaim);
+        KeycloakSession session = authorizationProvider.getKeycloakSession();
+        Outcome outcome = isGranted(session, realm, null, policy, groupsClaim);
 
         if (GRANT.equals(outcome)) {
             evaluation.grant();
@@ -84,8 +89,10 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         logger.debugf("Groups policy %s evaluated to %s with identity groups %s", policy.getName(), evaluation.getEffect(), groupsClaim);
     }
 
-    private Outcome isGranted(RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim) {
+    private Outcome isGranted(KeycloakSession session, RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim) {
         boolean skipped = false;
+        // The realm cache does not cache misses, so resolve each distinct claim only once per evaluation.
+        Map<String, Optional<GroupModel>> topLevelGroupByClaim = new HashMap<>();
 
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
             GroupModel allowedGroup = realm.getGroupById(definition.getId());
@@ -102,21 +109,25 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
             String allowedGroupPath = buildGroupPath(allowedGroup);
 
             for (int i = 0; i < groupsClaim.size(); i++) {
-                String group = groupsClaim.asString(i);
+                String groupPath = groupsClaim.asString(i);
+                GroupModel group = topLevelGroupByClaim.computeIfAbsent(groupPath, claim -> Optional.ofNullable(
+                        runWithoutAuthorization(session, () -> session.groups().getGroupByName(realm, null, claim)))).orElse(null);
 
-                if (group.indexOf('/') != -1) {
-                    if (group.equals(allowedGroupPath)) {
+                if (group != null) {
+                    if (group.getId().equals(allowedGroup.getId())) {
                         return GRANT;
                     }
-
-                    if (definition.isExtendChildren() && group.startsWith(allowedGroupPath + "/")) {
-                        return GRANT;
-                    }
+                    continue;
                 }
 
-                // in case the group from the claim does not represent a path, we just check an exact name match
-                if (group.equals(allowedGroup.getName())) {
-                    return GRANT;
+                if (groupPath.indexOf('/') != -1) {
+                    if (groupPath.equals(allowedGroupPath)) {
+                        return GRANT;
+                    }
+
+                    if (definition.isExtendChildren() && groupPath.startsWith(allowedGroupPath + "/")) {
+                        return GRANT;
+                    }
                 }
             }
         }
@@ -164,7 +175,7 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
         List<String> userGroups = subject.getGroupsStream().map(ModelToRepresentation::buildGroupPath)
                 .collect(Collectors.toList());
-        return isGranted(realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
+        return isGranted(session, realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
     }
 
     @Override

@@ -19,9 +19,11 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.BackchannelLogoutResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
 
@@ -48,6 +50,27 @@ class MalformedContentTypeTest {
                 "text/[html]",
                 ""
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedContentTypes")
+    void userInfoEndpoint(String contentType) {
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        UserInfoResponse response = oauth.userInfoRequest(tokenResponse.getAccessToken())
+                .header("Content-Type", contentType)
+                .send();
+        assertOAuthInvalidRequest(response);
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedContentTypes")
+    void tokenIntrospection(String contentType) {
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        IntrospectionResponse response = oauth.introspectionRequest(tokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
+                .header("Content-Type", contentType)
+                .send();
+        assertOAuthInvalidRequest(response);
     }
 
     @ParameterizedTest

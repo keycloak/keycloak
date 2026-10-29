@@ -16,7 +16,8 @@ variables `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` are set in the environment.
 - `cluster_name`: Unique name of the instance cluster within the region. Defaults to `keycloak_{{ cluster_identifier }}`.
 - `cluster_identifier`: Identifier to distingish multiple clusters within the region. Defaults to `${USER}`.
 - `cluster_size`: Number of EC2 instances to be created.
-- `ami_name`: Name of the AMI image to be used for spawning instances.
+- `ami_owner`: AWS account ID of the AMI owner. Defaults to Red Hat (`309956199498`).
+- `ami_name_pattern`: Wildcard pattern for the AMI name lookup. The role picks the latest available AMI matching the pattern. Defaults to `RHEL-9.6*_HVM*-x86_64-*-Hourly2-GP3`.
 - `instance_type`: [AWS instance type](https://aws.amazon.com/ec2/instance-types/).
 - `instance_volume_size`: Size of instance storage device.
 - `instance_device`: Path to Linux storage device.

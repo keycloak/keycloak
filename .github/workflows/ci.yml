@@ -6,11 +6,11 @@ on:
       - main
       - dependabot/**
       - copilot/**
+      - tmp/**
   pull_request:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
   KC_TEST_GITHUB_SLOW_METHOD: "10"
@@ -323,7 +323,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [17, 21]
+        version: [17, 21, 27]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -425,6 +425,30 @@ jobs:
         with:
           job-name: Volatile Sessions IT
 
+  http-client-v2-tests:
+    name: HTTP Client v2 IT
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-quarkus == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run HTTP Client v2 tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=HttpClientV2TestSuite
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: HTTP Client v2 IT
+
   external-infinispan-tests:
     name: External Infinispan IT
     needs: [build, conditional]
@@ -433,7 +457,7 @@ jobs:
     timeout-minutes: 150
     strategy:
       matrix:
-        variant: [clusterless, multi-site]
+        variant: [multi-site]
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -444,7 +468,7 @@ jobs:
 
       - name: Run base tests without cache
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh stateless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
@@ -475,7 +499,7 @@ jobs:
 
       - name: Run base tests without caches
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh stateless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=stateless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
@@ -686,7 +710,7 @@ jobs:
       - id: azure-init
         name: Initialize Azure environment
         run: |
-          AZURE_REGION=westeurope
+          AZURE_REGION=uksouth
           echo "AZURE Region: ${AZURE_REGION}"
 
           AZURE_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"
@@ -712,7 +736,7 @@ jobs:
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Login to Azure
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -847,7 +871,7 @@ jobs:
     name: Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 85
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
@@ -1076,18 +1100,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - id: weekly-cache-key
-        name: Key for weekly rotation of cache
-        shell: bash
-        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
-
-      - id: cache-maven-repository
-        name: ipa-data cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/ipa-data.tar
-          key: ${{ steps.weekly-cache-key.outputs.key }}
-
       - name: Run tests
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
@@ -1194,11 +1206,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        suite: [Base1TestSuite, Base2TestSuite, Base3TestSuite]
+        suite: [Base1TestSuite, Base2TestSuite, Base3TestSuite, Base4TestSuite]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -1302,7 +1314,7 @@ jobs:
       - conditional
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - id: integration-test-setup
         name: Integration test setup
@@ -1401,6 +1413,7 @@ jobs:
       - jdk-integration-tests
       - store-integration-tests
       - volatile-sessions-tests
+      - http-client-v2-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests

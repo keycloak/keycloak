@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelValidationException;
-import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +19,7 @@ import static java.util.Optional.ofNullable;
  * the representation of a resource type and to validate and map the attributes from the schema from a {@link ResourceTypeRepresentation}, usually an
  * object from the RESTful layer, to a {@link Model} and vice versa.
  */
-public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentation> {
+public interface ModelSchema<M extends Model, R> {
 
     /**
      * The id of the schema. It is used to identify the schema and to associate it with a resource type.

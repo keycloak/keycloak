@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.util.Map;
 
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -177,9 +178,8 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "https-management-trust-store-type", "PKCS12"
         ));
         assertExternalConfig(Map.of(
-                "quarkus.management.ssl.certificate.trust-store-file", "truststore.p12",
-                "quarkus.management.ssl.certificate.trust-store-password", "trust-password",
-                "quarkus.management.ssl.certificate.trust-store-file-type", "PKCS12"
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.p12.path", "truststore.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.p12.password", "trust-password"
         ));
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(true);
@@ -202,9 +202,8 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "https-management-trust-store-type", "JKS"
         ));
         assertExternalConfig(Map.of(
-                "quarkus.management.ssl.certificate.trust-store-file", "management-truststore.p12",
-                "quarkus.management.ssl.certificate.trust-store-password", "management-trust-password",
-                "quarkus.management.ssl.certificate.trust-store-file-type", "JKS"
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.jks.path", "management-truststore.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.jks.password", "management-trust-password"
         ));
         assertManagementEnabled(true);
     }
@@ -372,6 +371,276 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         assertManagementEnabled(true);
     }
 
+    @Test
+    public void managementTlsConfigNameInheritedFromHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem"
+        ));
+        initConfig();
+        assertExternalConfig("quarkus.management.tls-configuration-name", "keycloak-management-server");
+    }
+
+    @Test
+    public void managementTlsConfigNameWithOwnCerts() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/mgmt-cert.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/mgmt-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig("quarkus.management.tls-configuration-name", "keycloak-management-server");
+        assertManagementHttpsEnabled(true);
+    }
+
+    @Test
+    public void managementTlsConfigNameDisabledForHttpScheme() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTP_MANAGEMENT_SCHEME", "http"
+        ));
+        initConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Build());
+        assertExternalConfigNull("quarkus.management.tls-configuration-name");
+    }
+
+    @Test
+    public void managementPemCertKeyInheritedFromHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/http-cert.pem",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/http-key.pem"
+        ));
+    }
+
+    @Test
+    public void managementPemCertKeyOverride() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/mgmt-cert.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/mgmt-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/mgmt-cert.pem",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/mgmt-key.pem"
+        ));
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert", "/http-cert.pem",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.key", "/http-key.pem"
+        ));
+    }
+
+    @Test
+    public void managementPemKeyFilePasswordInheritedFromHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE_PASSWORD", "http-secret"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "http-secret",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.password", "http-secret"
+        ));
+    }
+
+    @Test
+    public void managementPemKeyFilePasswordOverride() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE_PASSWORD", "http-secret",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE_PASSWORD", "mgmt-secret"
+        ));
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "http-secret");
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.password", "mgmt-secret");
+    }
+
+    @Test
+    public void managementKeystoreDispatchInheritedPkcs12() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path", "server.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.password", "pass"
+        ));
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.jks.path");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void managementKeystoreDispatchOwnJks() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "http-pass",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.jks",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_PASSWORD", "mgmt-pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path", "server.p12",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.password", "http-pass",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.jks.path", "mgmt.jks",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.jks.password", "mgmt-pass"
+        ));
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
+    }
+
+    @Test
+    public void managementTrustStoreDispatchInherited() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_TRUST_STORE_FILE", "trust.p12",
+                "KC_HTTPS_TRUST_STORE_PASSWORD", "trust-pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.p12.path", "trust.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.p12.password", "trust-pass"
+        ));
+    }
+
+    @Test
+    public void managementCipherSuitesAndProtocolsInherited() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CIPHER_SUITES", "TLS_AES_256_GCM_SHA384",
+                "KC_HTTPS_PROTOCOLS", "TLSv1.3"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "cipher-suites", "TLS_AES_256_GCM_SHA384",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "protocols", "TLSv1.3",
+                HttpPropertyMappers.TLS_PREFIX + "cipher-suites", "TLS_AES_256_GCM_SHA384",
+                HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3"
+        ));
+    }
+
+    @Test
+    public void managementKeystoreTypeFilterOnlyOther() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_TYPE", "PKCS12"
+        ));
+        initConfig();
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.type");
+
+        putEnvVars(Map.of(
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_TYPE", "BCFKS",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.bcfks",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_PASSWORD", "pass"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.type", "BCFKS");
+    }
+
+    @Test
+    public void managementFipsKeystoreTypeMappedToOther() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_FIPS_MODE", "strict",
+                "KC_HTTPS_KEY_STORE_FILE", "server.bcfks",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "pass",
+                "KC_HTTPS_TRUST_STORE_FILE", "trust.bcfks"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.type", "BCFKS",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.type", "BCFKS",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", "BCFKS",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type", "BCFKS"
+        ));
+    }
+
+    @Test
+    public void managementDefaultProtocolsPreserved() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3,TLSv1.2",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "protocols", "TLSv1.3,TLSv1.2"
+        ));
+    }
+
+    @Test
+    public void managementPemPasswordNotSetWhenNotSpecified() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem"
+        ));
+        initConfig();
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.password");
+    }
+
+    @Test
+    public void managementTrustStoreOverrideNoCrossContamination() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "http-pass",
+                "KC_HTTPS_TRUST_STORE_FILE", "http-trust.p12",
+                "KC_HTTPS_TRUST_STORE_PASSWORD", "http-trust-pass",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE", "mgmt-trust.jks",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD", "mgmt-trust-pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.path", "http-trust.p12",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.password", "http-trust-pass",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.jks.path", "mgmt-trust.jks",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.jks.password", "mgmt-trust-pass"
+        ));
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.p12.path");
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path", "server.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.password", "http-pass"
+        ));
+    }
+
+    @Test
+    public void managementReloadPeriodOverride() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CERTIFICATES_RELOAD_PERIOD", "2h",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD", "30m"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert", "/cert.pem",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.key", "/key.pem",
+                HttpPropertyMappers.TLS_PREFIX + "reload-period", "2h",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/cert.pem",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/key.pem",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period", "30m"
+        ));
+    }
+
     private void makeInterfaceOccupied() {
         putEnvVar("KC_HEALTH_ENABLED", "true");
     }
@@ -401,5 +670,108 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(false);
+    }
+
+    @Test
+    public void managementInheritsPemFromHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/http-cert.pem");
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/http-key.pem");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
+    }
+
+    @Test
+    public void managementInheritsKeystoreFromHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "pass"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path", "server.p12");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert");
+    }
+
+    @Test
+    public void explicitManagementKeystoreOverridesInheritedHttpPem() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.p12",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_PASSWORD", "mgmt-pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path", "mgmt.p12",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.password", "mgmt-pass"
+        ));
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert");
+    }
+
+    @Test
+    public void explicitManagementPemOverridesInheritedHttpKeystore() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "pass",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/mgmt-cert.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/mgmt-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/mgmt-cert.pem");
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/mgmt-key.pem");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
+    }
+
+    @Test
+    public void managementInheritsPemWhenHttpHasBothPemAndKeystore() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem",
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "pass"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/http-cert.pem");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
+    }
+
+    @Test
+    public void explicitManagementPemOverridesInheritedHttpPem() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/http-cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/http-key.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_FILE", "/mgmt-cert.pem",
+                "KC_HTTPS_MANAGEMENT_CERTIFICATE_KEY_FILE", "/mgmt-key.pem"
+        ));
+        initConfig();
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/mgmt-cert.pem");
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.key", "/mgmt-key.pem");
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
+    }
+
+    @Test
+    public void explicitManagementKeystoreOverridesInheritedHttpKeystore() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_KEY_STORE_FILE", "server.p12",
+                "KC_HTTPS_KEY_STORE_PASSWORD", "http-pass",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_FILE", "mgmt.jks",
+                "KC_HTTPS_MANAGEMENT_KEY_STORE_PASSWORD", "mgmt-pass"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.jks.path", "mgmt.jks",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.jks.password", "mgmt-pass"
+        ));
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.p12.path");
     }
 }

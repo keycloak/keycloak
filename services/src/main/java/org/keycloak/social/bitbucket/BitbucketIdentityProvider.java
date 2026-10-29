@@ -75,25 +75,20 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 	@Override
 	protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
 		event.detail("validation_method", "user info");
-		SimpleHttpResponse response = null;
-		int status = 0;
+		JsonNode profile;
 		try {
 			String userInfoUrl = getProfileEndpointForValidation(event);
-			response = buildUserInfoRequest(subjectToken, userInfoUrl).asResponse();
-			status = response.getStatus();
+			try (SimpleHttpResponse response = buildUserInfoRequest(subjectToken, userInfoUrl).asResponse()) {
+				if (response.getStatus() != 200) {
+					logger.debug("Failed to invoke user info status: " + response.getStatus());
+					event.detail(Details.REASON, "user info call failure");
+					event.error(Errors.INVALID_TOKEN);
+					throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+				}
+				profile = response.asJson();
+			}
 		} catch (IOException e) {
 			logger.debug("Failed to invoke user info for external exchange", e);
-		}
-		if (status != 200) {
-			logger.debug("Failed to invoke user info status: " + status);
-			event.detail(Details.REASON, "user info call failure");
-			event.error(Errors.INVALID_TOKEN);
-			throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
-		}
-		JsonNode profile = null;
-		try {
-			profile = response.asJson();
-		} catch (IOException e) {
 			event.detail(Details.REASON, "user info call failure");
 			event.error(Errors.INVALID_TOKEN);
 			throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);

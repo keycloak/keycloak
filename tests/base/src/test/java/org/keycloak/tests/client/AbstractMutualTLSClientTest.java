@@ -99,8 +99,8 @@ public abstract class AbstractMutualTLSClientTest {
     @Test
     public void testFailedClientInvocationWithProperCertificateAndIncorrectCASubjectDN() throws Exception {
         //when
-        changeCASubjectDN(ISSUER_SUBJECT_DN_CLIENT_ID, "EMAILADDRESS=contact@other.org,CN=Keycloak CA,OU=Keycloak,O=Red Hat,L=Boston,ST=MA,C=US");
-        AccessTokenResponse token = loginAndGetAccessTokenResponse(ISSUER_SUBJECT_DN_CLIENT_ID, this::newCloseableHttpClient);
+        changeCASubjectDN(EXACT_SUBJECT_DN_CLIENT_ID, "EMAILADDRESS=contact@other.org,CN=Keycloak CA,OU=Keycloak,O=Red Hat,L=Boston,ST=MA,C=US");
+        AccessTokenResponse token = loginAndGetAccessTokenResponse(EXACT_SUBJECT_DN_CLIENT_ID, this::newCloseableHttpClient);
 
         //then
         assertTokenNotObtained(token);

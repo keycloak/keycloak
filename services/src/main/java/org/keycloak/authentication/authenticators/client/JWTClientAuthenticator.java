@@ -200,8 +200,18 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of();
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean supportsClientAssertion() {
+        return true;
     }
 
     @Override

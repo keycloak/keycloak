@@ -45,10 +45,12 @@ import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.ClusteringConfiguration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.ExpirationConfiguration;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.HashConfigurationBuilder;
+import org.infinispan.configuration.cache.LockingConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
@@ -313,7 +315,7 @@ public final class CacheConfigurator {
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
                     builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
             ) {
-                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 to avoid data loss.", name);
+                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 for cache %s to avoid data loss.", name);
                 builder.clustering().hash().numOwners(1);
             }
             configureSessionExpirationReaper(builder);
@@ -346,6 +348,28 @@ public final class CacheConfigurator {
             if (owners < 2) {
                 logger.infof("Setting num_owners=2 (configured value is %s) for cache '%s' to prevent data loss.", owners, name);
                 hashConfig.numOwners(2);
+            }
+        }
+    }
+
+    /**
+     * Validates that lock-timeout &lt; remote-timeout for distributed synchronous caches.
+     * <p>
+     * The remote-timeout is the outer timeout for the entire remote RPC, which includes lock acquisition
+     * on the remote node. If lock-timeout &ge; remote-timeout, the remote call times out before lock
+     * acquisition can complete, causing spurious {@code TimeoutException}s.
+     */
+    public static void ensureTimeoutOrdering(ConfigurationBuilderHolder holder) {
+        for (var entry : holder.getNamedConfigurationBuilders().entrySet()) {
+            var builder = entry.getValue();
+            if (!builder.clustering().cacheMode().isDistributed() || !builder.clustering().cacheMode().isSynchronous()) {
+                continue;
+            }
+            long remoteTimeout = builder.clustering().attributes().attribute(ClusteringConfiguration.REMOTE_TIMEOUT).get().longValue();
+            long lockTimeout = builder.locking().attributes().attribute(LockingConfiguration.LOCK_ACQUISITION_TIMEOUT).get().longValue();
+            if (lockTimeout >= remoteTimeout) {
+                logger.errorf("Cache '%s': lock-timeout (%d ms) must be less than remote-timeout (%d ms). "
+                        + "Current values will cause spurious remote timeouts during lock acquisition.", entry.getKey(), lockTimeout, remoteTimeout);
             }
         }
     }
@@ -424,7 +448,7 @@ public final class CacheConfigurator {
         Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
                 .forEach(name -> builder.property()
                         .name(CacheConfigurator.lifespanConfigKey(name))
-                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, meaning they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
                         .label("lifespan")
                         .type(ProviderConfigProperty.STRING_TYPE)
                         .add());
@@ -575,7 +599,14 @@ public final class CacheConfigurator {
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
                 if (clustered) {
-                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                    // lock-timeout (3s) < remote-timeout (5s) < lock entry expiry (15s) < retry budget (30s) in AbstractRefreshTokenProvider.
+                    // Infinispan defaults (15s remote, 10s lock) are too high for a setup like Keycloak.
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC)
+                            // 5s remote-timeout is 10x the worst-case G1GC pause for in-memory caches.
+                            .remoteTimeout(5, TimeUnit.SECONDS);
+                    builder.locking()
+                            // 3s lock-timeout is the inner timeout; must be less than remote-timeout.
+                            .lockAcquisitionTimeout(3, TimeUnit.SECONDS);
                 }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;

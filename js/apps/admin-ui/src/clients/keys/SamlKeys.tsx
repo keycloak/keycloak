@@ -220,19 +220,26 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const generate = async (attr: KeyTypes) => {
     const index = KEYS.indexOf(attr);
     try {
-      const info = [...(keyInfo || [])];
-      info[index] = await adminClient.clients.generateKey({
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      const generatedKey = await adminClient.clients.generateKey({
         id: clientId,
         attr,
       });
 
-      setKeyInfo(info);
       saveAs(
-        new Blob([info[index].privateKey!], {
+        new Blob([generatedKey.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+
+      const serverInfo = await adminClient.clients.getKeyInfo({
+        id: clientId,
+        attr,
+      });
+      const info = [...(keyInfo || [])];
+      info[index] = serverInfo;
+      setKeyInfo(info);
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {

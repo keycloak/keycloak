@@ -210,13 +210,17 @@ public class OrganizationGroupsResource {
         // builds hierarchy mainly for admin UI
         if (populateHierarchy) {
             String internalGroupId = organizationProvider.getOrganizationGroup(organization).getId();
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId);
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId)
+                    .peek(rep -> GroupUtils.filterRolesInRepresentation(rep, realm, session, auth));
         }
 
         return groups.map(group -> {
             GroupRepresentation rep = briefRepresentation ?
                     ModelToRepresentation.groupToBriefRepresentation(group) :
                     ModelToRepresentation.toRepresentation(group, true);
+            if (!briefRepresentation) {
+                GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            }
             if (subGroupsCount) {
                 rep.setSubGroupCount(group.getSubGroupsCount());
             }
@@ -237,6 +241,7 @@ public class OrganizationGroupsResource {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public GroupRepresentation getGroupByPath(@PathParam("path") String path,
+                                              @Parameter(description = "Whether to return a brief representation (default: true)") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                               @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         auth.orgs().requireView(organization);
 
@@ -244,7 +249,12 @@ public class OrganizationGroupsResource {
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
         }
-        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(found);
+        GroupRepresentation rep = briefRepresentation ?
+                ModelToRepresentation.groupToBriefRepresentation(found) :
+                ModelToRepresentation.toRepresentation(found, true);
+        if (!briefRepresentation) {
+            GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+        }
         if (subGroupsCount) {
             rep.setSubGroupCount(found.getSubGroupsCount());
         }

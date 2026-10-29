@@ -61,7 +61,7 @@ public class SPNEGOAuthenticator {
 
     public void authenticate() {
         if (log.isTraceEnabled()) {
-            log.trace("SPNEGO Login with token: " + spnegoToken);
+            log.trace("SPNEGO Login with token length: " + (spnegoToken != null ? spnegoToken.length() : 0));
         }
 
         try {
@@ -101,11 +101,11 @@ public class SPNEGOAuthenticator {
 
         try {
             if (log.isTraceEnabled()) {
-                log.trace("Serializing credential " + delegationCredential);
+                log.trace("Serializing delegation credential");
             }
             return KerberosSerializationUtils.serializeCredential(kerberosTicket, delegationCredential);
         } catch (KerberosSerializationUtils.KerberosSerializationException kse) {
-            log.warn("Couldn't serialize credential: " + delegationCredential, kse);
+            log.warn("Couldn't serialize delegation credential", kse);
             return null;
         }
     }
@@ -166,7 +166,10 @@ public class SPNEGOAuthenticator {
 
         byte[] inputToken = Base64.getMimeDecoder().decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
-        responseToken = Base64.getEncoder().encodeToString(respToken);
+        if (respToken != null && respToken.length > 0) {
+            // MIME Base64 can insert CRLF and must not be used for a value sent in an HTTP header.
+            responseToken = Base64.getEncoder().encodeToString(respToken);
+        }
 
         return gssContext;
     }
@@ -174,7 +177,7 @@ public class SPNEGOAuthenticator {
 
     protected void logAuthDetails(GSSContext gssContext) throws GSSException {
         if (log.isDebugEnabled()) {
-            String message = new StringBuilder("SPNEGO Security context accepted with token: " + responseToken)
+            String message = new StringBuilder("SPNEGO Security context accepted with token length: " + (responseToken != null ? responseToken.length() : 0))
                     .append(", established: ").append(gssContext.isEstablished())
                     .append(", credDelegState: ").append(gssContext.getCredDelegState())
                     .append(", mutualAuthState: ").append(gssContext.getMutualAuthState())

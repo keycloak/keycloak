@@ -9,6 +9,18 @@ includedOptions="truststore-*">
 
 {project_name} often needs to make requests to the applications and services that it secures. {project_name} manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
 
+== Vert.x HTTP client (Experimental)
+
+A Vert.x-based HTTP client is available as an experimental feature. It replaces the Apache HTTP Client with Vert.x/Netty for all outgoing connections.
+
+To enable it:
+
+<@kc.start parameters="--features=http-client:v2"/>
+
+When enabled, all outgoing HTTP traffic, including identity provider federation, token exchange, backchannel logout, OCSP/CRL validation and SAML artifact resolution, uses the Vert.x HTTP client. All existing configuration options documented below (`socket-timeout-millis`, `max-pooled-per-route`, `proxy-mappings`, `NO_PROXY`, etc.) work the same way with both clients.
+
+When the Vert.x client is enabled, `getHttpClient()` returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes.
+
 == Configuring trusted certificates for TLS connections
 
 See <@links.server id="keycloak-truststore"/> for how

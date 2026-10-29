@@ -368,16 +368,9 @@ public class InstallationTest {
             }
         }
 
-        Assertions.assertNotNull(clientPrivateKey);
-        Assertions.assertNotNull(clientCert);
-        assertRfc7468PrivateKey(clientPrivateKey);
+        Assertions.assertNull(clientPrivateKey, "private key should not be included in export");
+        Assertions.assertNotNull(clientCert, "certificate should be included in export");
         assertRfc7468Cert(clientCert);
-    }
-
-    private void assertRfc7468PrivateKey(String result) {
-        Assertions.assertTrue(result.startsWith("-----BEGIN PRIVATE KEY-----"));
-        Assertions.assertTrue(result.endsWith("-----END PRIVATE KEY-----"));
-        result.lines().forEach(line -> Assertions.assertTrue(line.length() <= 64));
     }
 
     private void assertRfc7468Cert(String result) {

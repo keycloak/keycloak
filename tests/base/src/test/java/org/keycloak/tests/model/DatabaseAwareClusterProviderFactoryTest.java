@@ -22,6 +22,7 @@ import org.keycloak.cluster.infinispan.DatabaseAwareClusterProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -54,7 +55,9 @@ public class DatabaseAwareClusterProviderFactoryTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.STATELESS);
+            return config.features(Profile.Feature.STATELESS)
+                    .cache(CacheType.ISPN)
+                    .cacheEmbeddedClusterName("C1");
         }
     }
 }

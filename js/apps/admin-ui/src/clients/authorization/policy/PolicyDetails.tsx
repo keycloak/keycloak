@@ -86,7 +86,7 @@ export default function PolicyDetails() {
             id: permissionClientId ?? id,
             type: policyType!,
             policyId,
-          }) as PolicyRepresentation | undefined,
+          }),
           adminClient.clients.getAssociatedPolicies({
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
             id: permissionClientId ?? id,
@@ -151,7 +151,7 @@ export default function PolicyDetails() {
           policy,
         );
 
-        navigate(
+        void navigate(
           navigateTo({
             realm: realm!,
             id: clientId!,
@@ -181,7 +181,7 @@ export default function PolicyDetails() {
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           isAdminPermissionsClient
             ? toPermissionsConfigurationTabs({
                 realm: realm!,
