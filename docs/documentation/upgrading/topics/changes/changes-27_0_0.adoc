@@ -307,6 +307,42 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Clock skew detection between cluster nodes
+// https://github.com/keycloak/keycloak/issues/54284
+
+{project_name} now detects when cluster nodes have clocks that are significantly out of sync.
+Each node periodically publishes its current timestamp to the cluster, and other nodes compare these timestamps with their local clocks.
+When a remote node's clock is ahead by more than 100 milliseconds, a warning is logged.
+The detection focuses on nodes that are ahead, as this is the security-critical case that can lead to premature token expiry, missed cache invalidations, and incorrect replay window detection.
+
+Clock skew detection is enabled by default.
+Each node publishes a timestamp sample every 60 seconds.
+The 100 millisecond threshold is fixed and cannot be changed.
+
+After upgrading, warnings like the following may appear in server logs if cluster nodes are not properly synchronized:
+
+[source]
+----
+WARN  [org.keycloak.cluster.infinispan.InfinispanClusterProvider] (timer-thread) Clock skew detected: node 'keycloak-2' is ahead by 150 ms (threshold: 100 ms). This node's time may be behind. Ensure NTP is properly configured on all cluster nodes.
+----
+
+These warnings indicate a real infrastructure problem.
+Ensure all cluster nodes are synchronized with a reliable NTP server.
+
+The detection can be disabled through the `spi-cluster-infinispan-clock-skew-detection-enabled` option, but this is not recommended as it removes an important operational safety check:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-cluster-infinispan-clock-skew-detection-enabled=false
+----
+
+The sample interval can be adjusted if needed:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-cluster-infinispan-clock-skew-sample-interval-seconds=30
+----
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

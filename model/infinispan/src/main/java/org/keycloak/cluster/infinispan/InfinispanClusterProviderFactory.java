@@ -152,12 +152,12 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     @Override
     public void init(Config.Scope config) {
         clockSkewDetectionEnabled = config.getBoolean("clockSkewDetectionEnabled", true);
-        clockSkewThresholdMillis = config.getLong("clockSkewThresholdMillis", DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS);
+
+        // Threshold is fixed at 100ms per issue #54284 (non-configurable)
+        clockSkewThresholdMillis = DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS;
+
         clockSkewSampleIntervalSeconds = config.getLong("clockSkewSampleIntervalSeconds", DEFAULT_CLOCK_SKEW_SAMPLE_INTERVAL_SECONDS);
 
-        if (clockSkewThresholdMillis < 0) {
-            throw new IllegalArgumentException("clockSkewThresholdMillis must be non-negative, got: " + clockSkewThresholdMillis);
-        }
         if (clockSkewSampleIntervalSeconds <= 0) {
             throw new IllegalArgumentException("clockSkewSampleIntervalSeconds must be positive, got: " + clockSkewSampleIntervalSeconds);
         }
@@ -165,11 +165,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         if (clockSkewDetectionEnabled) {
             logger.debugf("Clock skew detection enabled: threshold=%d ms, sample interval=%d seconds",
                     clockSkewThresholdMillis, clockSkewSampleIntervalSeconds);
-            if (clockSkewThresholdMillis == 0) {
-                logger.warnf("Clock skew threshold is 0 ms - will warn on ANY detected skew");
-            }
         } else {
-            logger.debug("Clock skew detection disabled");
+            logger.warnf("Clock skew detection has been DISABLED. This removes an important operational safety check.");
         }
     }
 
@@ -219,14 +216,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                 .property()
                     .name("clockSkewDetectionEnabled")
                     .type("boolean")
-                    .helpText("Enable clock skew detection between cluster nodes. When enabled, nodes periodically publish timestamps and warn if other nodes' clocks are significantly ahead.")
+                    .helpText("Enable clock skew detection between cluster nodes. When enabled, nodes periodically publish timestamps and warn if other nodes' clocks are significantly ahead. The threshold is fixed at 100ms.")
                     .defaultValue("true")
-                    .add()
-                .property()
-                    .name("clockSkewThresholdMillis")
-                    .type("long")
-                    .helpText("Threshold in milliseconds for clock skew warnings. If another node's clock is ahead by more than this value, a warning will be logged.")
-                    .defaultValue(String.valueOf(DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS))
                     .add()
                 .property()
                     .name("clockSkewSampleIntervalSeconds")
