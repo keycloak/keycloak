@@ -162,9 +162,13 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 SERVER_STATUS=""
-# run the java process in the background using the current stdin
-eval "'$JAVA' $JAVA_RUN_OPTS <&0 &"
+# duplicate stdin to fd 3 so background job receives original stdin in dash/ksh93
+exec 3<&0
+# run the java process in the background using fd 3, and close fd 3 in the child
+eval "'$JAVA' $JAVA_RUN_OPTS <&3 3<&- &"
 PID=$!
+# close fd 3 in the parent shell
+exec 3<&-
 # trap the signals that should be forwarded to the java process
 trap 'SERVER_STATUS=143; kill -TERM "$PID" 2>/dev/null; wait "$PID" 2>/dev/null' TERM INT
 # await the exit status
