@@ -120,8 +120,8 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @WithEnvVars({"QUARKUS_TRANSACTION_MANAGER_UNSAFE_MULTIPLE_LAST_RESOURCES", "ALLOW"})
     @Launch({ "start" })
     @Order(10)
-    void nonXADatasourceStart(CLIResult cliResult) {
-        cliResult.assertStarted();
+    void removedUnsafeModeCannotBypassXAValidation(CLIResult cliResult) {
+        cliResult.assertError("Multiple datasources are configured but more than 1 (user-store3, <default>) is using non-XA transactions.");
     }
 
     public static class EnableAdditionalConsoleHandler implements Consumer<RawKeycloakDistribution> {
