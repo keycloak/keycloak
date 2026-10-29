@@ -241,7 +241,7 @@ With this configuration, when an MCP client sends an authorization request with 
 
 ===== Requiring PKCE for clients registered by Client ID Metadata Documents
 
-The `client-id-uri` condition only matches the `PRE_AUTHORIZATION_REQUEST` event, which {project_name} triggers at the start of every authorization request, before it looks up the client. Executors added to `cimd-profile` therefore only run for that event, and executors that act on other events never run from it. For example, `pkce-enforcer` in `cimd-profile` has no effect, so authorization codes are issued without PKCE.
+The `client-id-uri` condition only matches the `PRE_AUTHORIZATION_REQUEST` event, which {project_name} triggers at the start of every authorization request, before it looks up the client. Executors added to `cimd-profile` therefore only run for that event, and executors that act on other events never run from it. For example, `pkce-enforcer` in `cimd-profile` has no effect, so authorization requests without PKCE are accepted.
 
 To require PKCE with the `S256` method, add `pkce-enforcer` to a separate policy that matches the registration of the client:
 
@@ -255,7 +255,7 @@ To require PKCE with the `S256` method, add `pkce-enforcer` to a separate policy
 
 When {project_name} creates a client from a Client ID Metadata Document, it does so without an access token, so this policy matches and sets the client's PKCE method to `S256`. Authorization requests from that client without a `code_challenge` parameter, or with the `plain` method, are then rejected. The policy also applies to clients registered through anonymous Dynamic Client Registration.
 
-NOTE: This policy does not retroactively configure existing clients. To require PKCE immediately for previously registered CIMD clients, also set their PKCE method to `S256` explicitly. Cached metadata, including refreshes returning `304 Not Modified`, does not trigger the executor.
+NOTE: Existing CIMD clients are configured the next time their metadata is re-fetched with `200 OK` after the cache expires. Until then, including `304 Not Modified` refreshes, set their PKCE method to `S256` explicitly.
 
 ===== Client ID URL validation
 
