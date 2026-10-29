@@ -411,6 +411,36 @@ public class LoginPageTest {
         switchLanguageToGermanAndBack(realmLocalizationMessageValueEn, realmLocalizationMessageValueDe, loginPage);
     }
 
+    @Test
+    public void realmDisplayNamePlaceholderInTitleResolvedFromRealmLocalizationTexts() {
+        RealmRepresentation rep = realm.admin().toRepresentation();
+        String originalDisplayName = rep.getDisplayName();
+        realm.cleanup().add(r -> {
+            RealmRepresentation cleanupRep = r.toRepresentation();
+            // DefaultExportImportManager.updateRealm ignores a null display name, so an
+            // originally unset one can only be restored as an empty string, which makes
+            // RealmBean fall back to the realm name.
+            cleanupRep.setDisplayName(originalDisplayName == null ? "" : originalDisplayName);
+            r.update(cleanupRep);
+        });
+
+        saveLocalizationText(Locale.ENGLISH.toLanguageTag(), "myRealmDisplayNameKey", "My browser tab title");
+        rep.setDisplayName("${myRealmDisplayNameKey}");
+        realm.admin().update(rep);
+
+        driver.cookies().deleteAll();
+        oauth.openLoginForm();
+        assertEquals("Sign in to My browser tab title", driver.driver().getTitle());
+
+        // a display name without placeholders is rendered as is
+        rep.setDisplayName("Test Realm");
+        realm.admin().update(rep);
+
+        driver.cookies().deleteAll();
+        oauth.openLoginForm();
+        assertEquals("Sign in to Test Realm", driver.driver().getTitle());
+    }
+
     // KEYCLOAK-18590
     @Test
     public void realmLocalizationMessagesAreNotCachedWithinTheTheme() {
