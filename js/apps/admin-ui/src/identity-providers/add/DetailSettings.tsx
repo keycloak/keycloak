@@ -302,13 +302,14 @@ export default function DetailSettings() {
       Object.entries(p.config).map(([key, value]) => [beerify(key), value]),
     );
 
-    if (p.providerId?.includes("saml")) {
-      if (transformedConfig.validateSignature === undefined) {
-        transformedConfig.validateSignature = "true";
-      }
-      if (transformedConfig.wantAssertionsSigned === undefined) {
-        transformedConfig.wantAssertionsSigned = "true";
-      }
+    if (transformedConfig.validateSignature === undefined) {
+      transformedConfig.validateSignature = "true";
+    }
+    if (
+      p.providerId?.includes("saml") &&
+      transformedConfig.wantAssertionsSigned === undefined
+    ) {
+      transformedConfig.wantAssertionsSigned = "true";
     }
     return { ...p, config: transformedConfig };
   };
