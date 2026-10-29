@@ -163,6 +163,8 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
  * @author Alexander Schwartz
  */
 public class DefaultExportImportManager implements ExportImportManager {
+    private static final int CLIENT_IMPORT_BATCH_SIZE = 100;
+
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
 
@@ -418,7 +420,14 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         Map<String, ClientModel> createdClients = new HashMap<>();
         if (rep.getClients() != null) {
-            createdClients = createClients(session, version, rep, newRealm, mappedFlows);
+            List<ClientRepresentation> clients = rep.getClients();
+            for (int fromIndex = 0; fromIndex < clients.size(); fromIndex += CLIENT_IMPORT_BATCH_SIZE) {
+                int toIndex = Math.min(fromIndex + CLIENT_IMPORT_BATCH_SIZE, clients.size());
+                List<ClientRepresentation> batch = clients.subList(fromIndex, toIndex);
+                EntityManagers.runInBatch(session, () -> {
+                    createClients(session, version, batch, newRealm, mappedFlows);
+                }, true);
+            }
         }
 
         importRoles(rep.getRoles(), newRealm);
@@ -591,10 +600,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
     }
 
-    private static Map<String, ClientModel> createClients(KeycloakSession session, ModelVersion version, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
+    private static Map<String, ClientModel> createClients(KeycloakSession session, ModelVersion version, List<ClientRepresentation> clients, RealmModel realm, Map<String, String> mappedFlows) {
         Map<String, ClientModel> appMap = new HashMap<>();
         final boolean samlEncryptionAttributes = version != null && version.lessThan(new ModelVersion(26, 4, 0));
-        for (ClientRepresentation resourceRep : rep.getClients()) {
+        for (ClientRepresentation resourceRep : clients) {
             if (Profile.isFeatureEnabled(Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
                 if (realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getClientId().equals(resourceRep.getClientId())) {
                     continue; // admin-permission-client is already imported at this point
