@@ -146,7 +146,7 @@ public class ChangeSetRunner {
             case RUN, SKIP_EXPORT -> {
                 execType = "EXECUTED";
                 if (sink.isExportMode()) {
-                    sink.comment("Changeset " + cs.getId() + " by " + cs.getAuthor() + " in " + cs.getChangeLogFile());
+                    sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor());
                 }
                 executeSteps(cs, sink);
             }
@@ -154,7 +154,8 @@ public class ChangeSetRunner {
                 execType = "MARK_RAN";
                 logger.debugf("Marking change-set %s as ran (precondition not met)", cs.getId());
                 if (sink.isExportMode()) {
-                    sink.comment("Changeset " + cs.getId() + " skipped (precondition not met — MARK_RAN)");
+                    sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor()
+                            + " skipped (precondition not met — MARK_RAN)");
                 }
             }
             case HALT -> throw new RuntimeException(

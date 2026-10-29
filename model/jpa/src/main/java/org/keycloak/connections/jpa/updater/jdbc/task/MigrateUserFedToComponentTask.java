@@ -57,7 +57,7 @@ public class MigrateUserFedToComponentTask implements JpaMigrationTask {
                 .forEach(providerId -> {
                     try {
                         AbstractUserFedToComponentHelper.convertFedProviderToComponent(
-                                connection, defaultSchema, providerId, null, stmts);
+                                connection, defaultSchema, providerId, null, stmts, dialect);
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }

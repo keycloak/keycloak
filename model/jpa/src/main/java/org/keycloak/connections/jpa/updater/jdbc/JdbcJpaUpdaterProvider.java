@@ -322,6 +322,7 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
                         script.comment("*********************************************************************");
                         script.comment("* Keycloak database creation script - apply this script to empty DB *");
                         script.comment("*********************************************************************");
+                        script.comment("Change Log: META-INF/jpa-changelog-master.xml");
                         script.comment("");
                         script.comment("Create Database Change Log Table");
                         script.execute(HistoryTableManager.createTableSql(sqlDialect, defaultSchema, historyTable),

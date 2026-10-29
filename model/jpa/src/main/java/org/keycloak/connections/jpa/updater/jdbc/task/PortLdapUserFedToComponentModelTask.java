@@ -50,7 +50,8 @@ public class PortLdapUserFedToComponentModelTask implements JpaMigrationTask {
                 connection, defaultSchema,
                 LDAPConstants.LDAP_PROVIDER,
                 "org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
-                stmts);
+                stmts,
+                dialect);
         return stmts;
     }
 }
