@@ -60,9 +60,11 @@ kc.operator.keycloak.image-pull-policy
 Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
 Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
 Another CNI implementation may work too.
+Set the container runtime to `docker`, as the image build below uses the Minikube Docker daemon.
+Since minikube v1.39.0 the default runtime is `containerd`, where the build fails.
 
 ```bash
-minikube start --addons ingress --cni cilium --cpus=max
+minikube start --addons ingress --cni cilium --cpus=max --container-runtime=docker
 ```
 
 Enable the Minikube Docker daemon:
@@ -71,7 +73,7 @@ Enable the Minikube Docker daemon:
 eval $(minikube -p minikube docker-env)
 ```
 
-Compile the project and generate the Docker image with JIB:
+Compile the project and build the Docker image:
 
 ```bash
 mvn clean package -Dquarkus.kubernetes.image-pull-policy=IfNotPresent -Dquarkus.container-image.build=true
