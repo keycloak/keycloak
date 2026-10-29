@@ -44,6 +44,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- OracleConflictTest builds a Hibernate SessionFactory outside Quarkus. -->
+        <dependency>
+            <groupId>org.hibernate.accessor</groupId>
+            <artifactId>hibernate-accessor-bytebuddy</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-core</artifactId>
