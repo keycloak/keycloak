@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import javax.naming.NamingException;
 import javax.naming.spi.NamingManager;
@@ -273,6 +274,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         LDAPConfig cfg = new LDAPConfig(config.getConfig());
+		Matcher usernamePlaceholder = LDAPUtils.matchVariableInString(cfg.getUsernameLdapAttribute());
+		if (usernamePlaceholder.find() && usernamePlaceholder.find()) {
+			throw new ComponentValidationException("LDAP username templates support only one attribute placeholder with optional static prefix and suffix.");
+		}
+
         UserStorageProviderModel userStorageModel = new UserStorageProviderModel(config);
         String customFilter = cfg.getCustomUserSearchFilter();
         LDAPUtils.validateCustomLdapFilter(customFilter);
@@ -343,6 +349,41 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             // This prevents credentials from being silently sent to a different server.
             validateBindCredentialOnUrlChange(session, realm, config, cfg);
         }
+
+		String rdnAttribute = cfg.getRdnLdapAttribute();
+
+		if (rdnAttribute == null
+			|| rdnAttribute.trim().isEmpty()
+			|| LDAPUtils.matchVariableInString(rdnAttribute).find()) {
+			throw new ComponentValidationException(
+				"RDN LDAP attribute must be a real LDAP attribute name, "
+					+ "for example uid or cn. "
+					+ "When using a username template, configure it explicitly.");
+		}
+
+		if (cfg.getEditMode() != UserStorageProvider.EditMode.READ_ONLY) {
+			boolean usernameHasTemplate = LDAPUtils.matchVariableInString(
+				cfg.getUsernameLdapAttribute()).find();
+
+			boolean mapperHasTemplate = realm.getComponentsStream(
+					config.getId(),
+					LDAPStorageMapper.class.getName())
+				.filter(mapper -> UserAttributeLDAPStorageMapperFactory.PROVIDER_ID
+					.equals(mapper.getProviderId()))
+				.anyMatch(mapper -> {
+					String mapping = mapper.getConfig().getFirst(
+						UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
+
+					return mapping != null
+						&& LDAPUtils.matchVariableInString(mapping).find();
+				});
+
+			if (usernameHasTemplate || mapperHasTemplate) {
+				throw new ComponentValidationException(
+					"LDAP attribute templates are supported only "
+						+ "for providers with edit mode READ_ONLY.");
+			}
+		}
     }
 
     @SuppressWarnings("unchecked")
