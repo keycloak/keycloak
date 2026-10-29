@@ -72,7 +72,7 @@ test.describe.serial("Events tests", () => {
     let page: Page;
     test.beforeAll(async ({ browser }) => {
       page = await browser.newPage();
-      await login(page);
+      await login(page, { freshSession: true });
       await goToRealm(page, realmName);
       await goToEvents(page);
       await goToEventsConfig(page);

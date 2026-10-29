@@ -211,6 +211,8 @@ test.describe("Authentication flow details", () => {
     await selectActionToggleItem(page, "Bind flow");
     await fillBindFlowModal(page, "Direct grant flow");
     await clickSaveButton(page);
+    // Wait for the save to finish, otherwise the realm is deleted while the request is in flight.
+    await assertNotificationMessage(page, "Flow successfully updated");
   });
 
   test("drags and drops execution", async ({ page }) => {

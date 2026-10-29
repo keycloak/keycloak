@@ -3,7 +3,6 @@ import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import {
   addAuthConstraints,
@@ -14,15 +13,18 @@ import {
 } from "./main.ts";
 import { editSAMLSettings } from "./saml.ts";
 
+const realmName = `idp-saml-${uuid()}`;
+
+test.beforeAll(() => adminClient.createRealm(realmName));
+
+test.afterAll(() => adminClient.deleteRealm(realmName));
+
 test.describe.serial("SAML identity provider test", () => {
   const samlProviderName = "saml";
   const samlDisplayName = "saml";
 
-  test.afterAll(() => adminClient.deleteIdentityProvider(samlProviderName));
-
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToIdentityProviders(page);
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
   });
 
   test("should create a SAML provider using entity descriptor", async ({
@@ -43,13 +45,16 @@ test.describe.serial("SAML identity provider test", () => {
   const alias = `edit-oidc-${uuid()}`;
 
   test.beforeEach(async ({ page }) => {
-    await adminClient.createIdentityProvider(samlProviderName, alias);
-    await login(page);
-    await goToIdentityProviders(page);
+    await adminClient.createIdentityProvider(
+      samlProviderName,
+      alias,
+      realmName,
+    );
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
     await clickTableRowItem(page, samlProviderName);
   });
 
-  test.afterEach(() => adminClient.deleteIdentityProvider(alias));
+  test.afterEach(() => adminClient.deleteIdentityProvider(alias, realmName));
 
   test("should add auth constraints to existing SAML provider", async ({
     page,

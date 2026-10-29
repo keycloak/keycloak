@@ -160,7 +160,7 @@ test.describe.serial("Clients test", () => {
       }),
     );
 
-    test.afterAll(() => adminClient.deleteClient("identical"));
+    test.afterAll(() => adminClient.deleteClient("identical", realmName));
 
     test("Import client", async ({ page }) => {
       await page.getByTestId("importClient").click();
