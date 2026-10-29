@@ -18,13 +18,19 @@
 package org.keycloak.saml.processing.core.parsers.saml;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.saml.SAML2LogoutRequestBuilder;
+import org.keycloak.saml.common.util.DocumentUtil;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -68,6 +74,27 @@ public class SAMLSloRequestParserTest {
             Element el = (Element) resp.getExtensions().getAny().get(0);
             assertThat(el.getLocalName(), is("Asynchronous"));
             assertThat(el.getNamespaceURI(), is("urn:oasis:names:tc:SAML:2.0:protocol:ext:async-slo"));
+        }
+    }
+
+    @Test
+    public void testLogoutRequestWithNotOnOrAfter() throws Exception {
+        SAML2LogoutRequestBuilder builder = new SAML2LogoutRequestBuilder()
+                .destination("https://sp/logout")
+                .issuer("https://idp/")
+                .userPrincipal("user1", null)
+                .sessionIndex("session-1")
+                .assertionExpiration(60);
+
+        Document doc = builder.buildDocument();
+        String xml = DocumentUtil.asString(doc);
+        assertThat(xml, CoreMatchers.containsString("NotOnOrAfter="));
+
+        try (ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+            Object parsedObject = parser.parse(is);
+            assertThat(parsedObject, instanceOf(LogoutRequestType.class));
+            LogoutRequestType req = (LogoutRequestType) parsedObject;
+            assertThat(req.getNotOnOrAfter(), not(nullValue()));
         }
     }
 }
