@@ -343,4 +343,4 @@ The default `jdbc-ping` stack is now the only built-in stack. It uses TCP for tr
 If your deployment is using one of these deprecated stacks via the `--cache-stack` option, you must migrate to `jdbc-ping` or configure a custom transport stack in the cache configuration file.
 For most deployments, simply removing the `--cache-stack` option will use the default `jdbc-ping` stack, which is recommended for production use.
 
-For information about configuring custom transport stacks, refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks].
+For information about configuring custom transport stacks, refer to the https://infinispan.org/docs/stable/titles/embedding/embedding.html#cluster-transport[Infinispan documentation].
