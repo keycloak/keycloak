@@ -303,6 +303,8 @@ export default function DetailSettings() {
     );
 
     if (p.providerId?.includes("saml")) {
+      // Header (outside the Controller) reads these to show Reload/Import keys,
+      // and the server treats an absent value as true.
       if (transformedConfig.validateSignature === undefined) {
         transformedConfig.validateSignature = "true";
       }

@@ -37,6 +37,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -227,6 +228,28 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         Assertions.assertEquals("false", config.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
         Assertions.assertEquals("true", config.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
         Assertions.assertFalse(config.containsKey(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
+    }
+
+    @Test
+    public void testCreateSamlProviderWithoutSignatureSettingsDefaultsToEnabled() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("saml-no-sig-settings", "saml");
+        newIdentityProvider.getConfig().remove(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE);
+        newIdentityProvider.getConfig().remove(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+        newIdentityProvider.getConfig().put(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://idp.example/sso");
+
+        String id = create(newIdentityProvider);
+        managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
+
+        IdentityProviderRepresentation fetched = managedRealm.admin().identityProviders().get("saml-no-sig-settings").toRepresentation();
+        Assertions.assertNotNull(fetched);
+        Assertions.assertNull(fetched.getConfig().get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertNull(fetched.getConfig().get(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
+
+        IdentityProviderModel model = new IdentityProviderModel();
+        model.setConfig(fetched.getConfig());
+        SAMLIdentityProviderConfig samlConfig = new SAMLIdentityProviderConfig(model);
+        Assertions.assertTrue(samlConfig.isValidateSignature());
+        Assertions.assertTrue(samlConfig.isWantAssertionsSigned());
     }
 
     private void assertImportConfigFails(String path, String body) {

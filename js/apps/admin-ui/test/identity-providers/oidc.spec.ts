@@ -45,7 +45,10 @@ test.describe.serial("OIDC identity provider test", () => {
       "Identity provider successfully created",
     );
 
-    const provider = await adminClient.getIdentityProvider(oidcProviderName);
+    const provider = await adminClient.getIdentityProvider(
+      oidcProviderName,
+      realmName,
+    );
     expect(provider?.config?.validateSignature).toBe("true");
 
     await assertAuthorizationUrl(page);
