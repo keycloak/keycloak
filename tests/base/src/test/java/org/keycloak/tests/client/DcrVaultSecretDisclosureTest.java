@@ -7,6 +7,7 @@ import java.util.Map;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -102,5 +103,18 @@ public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest
         } else {
             assertEquals(VAULT_EXPRESSION, config.getCredentials().get("secret"));
         }
+    }
+
+    @Test
+  public void testDcrUpdateRejectsVaultExpressionInRotatedSecretAttribute() {
+        reg.auth(Auth.token(client.getRegistrationAccessToken()));
+
+        ClientRepresentation updateRep = new ClientRepresentation();
+        updateRep.setClientId(client.getClientId());
+        updateRep.setAttributes(Map.of(ClientSecretConstants.CLIENT_ROTATED_SECRET, VAULT_EXPRESSION));
+
+        ClientRegistrationException ex = assertThrows(ClientRegistrationException.class, () -> reg.update(updateRep));
+        assertInstanceOf(HttpErrorException.class, ex.getCause());
+        assertEquals(400, ((HttpErrorException) ex.getCause()).getStatusLine().getStatusCode());
     }
 }
