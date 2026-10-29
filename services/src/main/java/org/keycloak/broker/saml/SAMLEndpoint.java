@@ -611,8 +611,12 @@ public class SAMLEndpoint {
 
                 // Validate InResponseTo attribute: must match the generated request ID
                 String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
+                // The expected Recipient is derived locally from the client the login is actually targeting,
+                // rather than from the (optional, and not necessarily signed) Response Destination, so that
+                // an assertion issued for one broker client cannot be replayed against another.
+                String expectedRecipient = getExpectedDestination(config.getAlias(), clientId);
                 if (!validateInResponseToAttribute(responseType, expectedRequestId)
-                        || !validateSubjectConfirmationData(responseType, expectedRequestId)) {
+                        || !validateSubjectConfirmationData(responseType, expectedRequestId, expectedRecipient)) {
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
@@ -1172,7 +1176,7 @@ public class SAMLEndpoint {
         return true;
     }
 
-    private boolean validateSubjectConfirmationData(ResponseType responseType, String expectedRequestId) {
+    private boolean validateSubjectConfirmationData(ResponseType responseType, String expectedRequestId, String expectedRecipient) {
         // Assertion > Subject > Confirmation (Bearer) > SubjectConfirmationData is mandatory and must always be
         // validated. Multiple Bearer confirmations are alternatives per the SAML 2.0 spec, so the assertion is
         // valid if any one of them passes validation.
@@ -1189,21 +1193,19 @@ public class SAMLEndpoint {
                         .collect(Collectors.toList());
 
         if (bearerConfirmations.isEmpty()) {
-            return isSubjectConfirmationDataValid(assertion, null, responseType, expectedRequestId);
+            return isSubjectConfirmationDataValid(assertion, null, expectedRequestId, expectedRecipient);
         }
 
         return bearerConfirmations.stream().anyMatch(subjectConfirmationElement ->
-                isSubjectConfirmationDataValid(assertion, subjectConfirmationElement.getSubjectConfirmationData(), responseType, expectedRequestId));
+                isSubjectConfirmationDataValid(assertion, subjectConfirmationElement.getSubjectConfirmationData(), expectedRequestId, expectedRecipient));
     }
 
     private boolean isSubjectConfirmationDataValid(AssertionType assertion, SubjectConfirmationDataType subjectConfirmationDataElement,
-            ResponseType responseType, String expectedRequestId) {
+            String expectedRequestId, String expectedRecipient) {
         SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
                 .inResponseTo(expectedRequestId)
-                .clockSkewInMillis(1000 * config.getAllowedClockSkew());
-        if (responseType.getDestination() != null) {
-            scdvb.allowedRecipient(responseType.getDestination());
-        }
+                .clockSkewInMillis(1000 * config.getAllowedClockSkew())
+                .allowedRecipient(expectedRecipient);
 
         return scdvb.build().isValid();
     }

@@ -329,6 +329,12 @@ jobs:
           name: keycloak-dist
           path: quarkus/container
 
+      - name: Wait for Minikube registry
+        run: |
+          # minikube start can return before the registry addon accepts connections on port 5000
+          kubectl -n kube-system wait --for=condition=ready pod -l kubernetes.io/minikube-addons=registry --timeout=120s
+          timeout 120 bash -c 'until curl -sf "http://$(minikube ip):5000/v2/" > /dev/null; do sleep 2; done'
+
       - name: Arrange OLM test installation
         working-directory: operator
         run: |
