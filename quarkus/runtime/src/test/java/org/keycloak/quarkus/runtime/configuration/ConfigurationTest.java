@@ -18,9 +18,12 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
@@ -58,9 +61,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class ConfigurationTest extends AbstractConfigurationTest {
+
+    @Test
+    public void testTypedSpiConversion() {
+        putEnvVar("KC_SPI_CONVERSION__COUNT", "42");
+        putEnvVar("KC_SPI_CONVERSION__ACTIVE", "true");
+        Config.Scope scope = initConfig("conversion");
+        assertEquals(Integer.valueOf(42), scope.getInt("count"));
+        assertTrue(scope.getBoolean("active"));
+    }
+
+    @Test
+    public void testMissingTypedSpiValuesUseDefaults() {
+        Config.Scope scope = initConfig("conversion");
+        assertNull(scope.getInt("missing"));
+        assertEquals(Integer.valueOf(17), scope.getInt("missing", 17));
+        assertFalse(scope.getBoolean("missing", false));
+    }
+
+    @Test
+    public void testInvalidTypedSpiValues() {
+        putEnvVar("KC_SPI_CONVERSION__COUNT", "not-a-number");
+        Config.Scope scope = initConfig("conversion");
+        assertThrows(IllegalArgumentException.class, () -> scope.getInt("count"));
+    }
 
     @Test
     public void testCamelCase() {
@@ -100,10 +128,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testKeycloakConfPlaceholder() {
-        assertEquals("info", createConfig().getRawValue("kc.log-level"));
+        assertEquals("info", createConfig().getConfigValue("kc.log-level").getValue());
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
-        assertEquals("debug", createConfig().getRawValue("kc.log-level"));
+        assertEquals("debug", createConfig().getConfigValue("kc.log-level").getValue());
         SmallRyeConfig config = ConfigBuilderCustomizer.addInterceptors(ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).addDiscoveredSources()).build();
         assertNull(Expressions.withoutExpansion(() -> config.getConfigValue("kc.log-level")).getValue());
     }
@@ -1114,10 +1142,66 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testNonRawPropertiesUnaffected() {
-        // Standard KC_ env var with $$ should still be subject to expression evaluation (collapsing $$ to $)
+        putEnvVar("KC_EXPRESSION_TEST", "dollar");
+        putEnvVar("KC_DB_PASSWORD", "has${kc.expression-test}");
+        SmallRyeConfig config = createConfig();
+        assertEquals("hasdollar", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testNonRawEnvVarPreservesDoubleDollar() {
         putEnvVar("KC_DB_PASSWORD", "has$$dollar");
         SmallRyeConfig config = createConfig();
-        assertEquals("has$dollar", config.getConfigValue("kc.db-password").getValue());
+        assertEquals("has$$dollar", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testNonRawEnvVarProcessesBackslashesThroughoutExpressionValue() {
+        putEnvVar("KC_EXPRESSION_TEST", "logs");
+        putEnvVar("KC_DB_PASSWORD", "C:\\data\\folder");
+        assertEquals("C:\\data\\folder", createConfig().getConfigValue("kc.db-password").getValue());
+
+        putEnvVar("KC_DB_PASSWORD", "${kc.expression-test}:C:\\data\\folder");
+        assertEquals("logs:C:data\folder", createConfig().getConfigValue("kc.db-password").getValue());
+
+        putEnvVar("KC_DB_PASSWORD", "C:\\\\data\\\\${kc.expression-test}\\\\folder");
+        assertEquals("C:\\data\\logs\\folder", createConfig().getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testCliProcessesBackslashesThroughoutExpressionValue() {
+        putEnvVar("KC_EXPRESSION_TEST", "logs");
+        var config = createConfigFromCliArguments("--db-password=C:\\\\data\\\\${kc.expression-test}\\\\folder");
+        assertEquals("C:\\data\\logs\\folder", config.getConfigValue("kc.db-password").getValue());
+
+        config = createConfigFromCliArguments("--db-password=${kc.expression-test}:C:\\data\\folder");
+        assertEquals("logs:C:data\folder", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testFileAndExpressionBackslashEscaping() throws IOException {
+        var file = Files.createTempFile("keycloak-expression-", ".conf");
+        try {
+            // Four backslashes in the file become two after properties parsing, then one after expression expansion.
+            Files.writeString(file, "db-password=C:" + "\\".repeat(4) + "data" + "\\".repeat(4)
+                    + "${kc.directory}\ndirectory=logs\n");
+            var sources = new KeycloakPropertiesConfigSource.InFileSystem()
+                    .getConfigSources(getClass().getClassLoader(), file);
+            var config = new SmallRyeConfigBuilder().addDefaultInterceptors()
+                    .withSources(sources).build();
+            assertEquals("C:\\data\\logs", config.getConfigValue("kc.db-password").getValue());
+        } finally {
+            Files.delete(file);
+        }
+    }
+
+    @Test
+    public void testRawEnvVarPreservesBackslashesWithExpressions() {
+        for (String value : List.of("\\${vault.secret}", "${vault.secret}\\", "path\\to\\${vault.secret}\\$value", "$${vault.secret}")) {
+            putEnvVar("KCRAW_DB_PASSWORD", value);
+            SmallRyeConfig config = createConfig();
+            assertEquals(value, config.getConfigValue("kc.db-password").getValue());
+        }
     }
 
     @Test

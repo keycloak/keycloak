@@ -159,11 +159,14 @@ You can also store Quarkus properties in a Java KeyStore.
 
 {project_name} depends upon Quarkus and MicroProfile for processing configuration values. Be aware that value expressions are supported. For example, `$\{some_key}` evaluates to the value of `some_key`.
 
-To disable expression evaluation, the `\` character functions as an escape character. In particular, it must be used to escape the usage of `$` characters when they appear to define an expression or are repeated. For example, if you want the configuration value `my$$password`, use `my\$\$password` instead.  Note that the `\` character requires additional escaping or quoting when using most unix shells, or when it appears in properties files.
-For example, bash single quotes preserve the single backslash `--db-password='my\$\$password'`. Also, with bash double quotes, you need an additional backslash `--db-password="my\\$\\$password"`. Similarly in a properties file, backslash characters must also be escaped: `kc.db-password=my\\$\\$password`
+To disable expression evaluation, use `\` to escape the `$` that opens an expression. Dollar signs that do not open an expression, including `$$`, are preserved without additional escaping. Backslashes may require additional escaping or quoting according to the shell or configuration-source format. For environment values that must be preserved literally, use the `KCRAW_` prefix described below.
+
+If a value contains an expression, backslash escapes are processed throughout the entire value, including text before and after the expression. This applies to configuration files, ordinary `KC_` environment variables, and command-line arguments. Double each backslash that must remain literal at the expression-processing layer; otherwise, a backslash can be removed, introduce a control character such as a tab, or escape the expression opener. For example, the value reaching this layer must be `C:\\data\\$\{directory}` to produce `C:\data\logs` when `directory` is `logs`.
+
+This expression processing is separate from shell quoting and file-format escaping, which happen first and may require another layer of escaping. A value without an expression does not need backslash doubling for expression processing, but source-format escaping still applies. Prefer forward slashes in paths where possible, or `KCRAW_` environment variables when the whole value must remain literal rather than expand expressions.
 
 .Windows-specific considerations
-When specifying Windows file paths in configuration values, backslashes must also be escaped. For example, if you want to specify the path `C:\path\to\file`, you should write it as `C:\\path\\to\\file`. Alternatively, you can use forward slashes which don't need escaping: `C:/path/to/file`.
+In Java properties files such as `quarkus.properties`, the file format itself requires backslashes to be escaped: a literal path `C:\path\to\file` is written as `C:\\path\\to\\file`. If the value also contains an expression, account for both layers: `C:\\\\data\\\\$\{directory}` in that file reaches expression processing as `C:\\data\\$\{directory}`. Do not assume that escaping for a properties file is the same as quoting an environment value or a command-line argument. Alternatively, use forward slashes: `C:/path/to/file`.
 
 When using PowerShell and your values contain special characters like commas, use single quotes around double quotes:
 
@@ -179,28 +182,28 @@ When manual escaping is not feasible (like when a password is injected by a secr
 [[kcraw-prefix]]
 === Preserving literal values with the KCRAW_ prefix
 
-When setting configuration values, {project_name} (via SmallRye Config) evaluates expressions such as `$\{some_key}` and collapses `$$` to `$`. This means passwords or secrets containing `$` characters may be silently modified. While the `\` escaping described above works for values you control directly, it is not always practical - for example, when a secrets manager or orchestration tool injects the value and you cannot add escape characters.
+When setting configuration values, {project_name} (via SmallRye Config) evaluates expressions such as `$\{some_key}`. This means passwords or secrets containing expression-like text may be modified. While the `\` escaping described above works for values you control directly, it is not always practical - for example, when a secrets manager or orchestration tool injects the value and you cannot add escape characters.
 
-In these cases, use the `KCRAW_` prefix instead of `KC_` for any environment variable whose value must be preserved exactly as written. {project_name} automatically escapes `$` characters in `KCRAW_` values so that expression evaluation preserves the original value.
+In these cases, use the `KCRAW_` prefix instead of `KC_` for any environment variable whose value must be preserved exactly as written. {project_name} automatically protects backslashes and expression openers in `KCRAW_` values so that expression evaluation preserves the original environment value.
 
 .Example: Setting a database password containing special characters
 [source, bash]
 ----
-# Standard prefix — the value will be modified by expression evaluation:
-export KC_DB_PASSWORD='my$$pa$\{vault}word'
-# Result: "$$" is collapsed to "$" and "$\{vault}" is evaluated as an
-# expression, producing "my$paword" or an error
+export PASSWORD_PART='demo'
 
-# Raw prefix — the value is preserved exactly as written:
-export KCRAW_DB_PASSWORD='my$$pa$\{vault}word'
-# Result: the password is used as-is: my$$pa$\{vault}word
+# With the standard prefix, Keycloak expands the expression to produce my$$pademoword.
+export KC_DB_PASSWORD='my$$pa${r"${PASSWORD_PART}"}word'
+
+# With the raw prefix, Keycloak uses the literal value my$$pa${r"${PASSWORD_PART}"}word.
+unset KC_DB_PASSWORD
+export KCRAW_DB_PASSWORD='my$$pa${r"${PASSWORD_PART}"}word'
 ----
 
 [NOTE]
 ====
 * The `KCRAW_` prefix applies only to environment variables, where shell quoting rules make escaping of `$` unreliable. Other configuration sources are subject to their own format escaping mechanisms and their values are still treated as expressions.
 * You cannot set both `KC_<KEY>` and `KCRAW_<KEY>` for the same configuration key. If both are present, {project_name} will fail to start and report a configuration error.
-* Apart from escaping `$` characters, `KCRAW_` variables behave identically to their `KC_` counterparts: the same key mapping and priority rules apply.
+* Apart from preserving literal values, `KCRAW_` variables behave identically to their `KC_` counterparts: the same key mapping and priority rules apply.
 ====
 
 === Formats for environment variable keys with special characters
