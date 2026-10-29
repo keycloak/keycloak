@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
@@ -69,8 +68,6 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private final ExecutorService localExecutor;
 
     private final long clockSkewThresholdMillis;
-    private final AtomicLong lastClockSkewWarningTime = new AtomicLong(0);
-    private static final long CLOCK_SKEW_WARNING_INTERVAL_MILLIS = 60_000;
     private static final long DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS = 100;
 
     /**
@@ -288,16 +285,9 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
         // Only warn if the remote node is ahead by more than the threshold
         if (skew > clockSkewThresholdMillis) {
-            // Rate-limit warnings to avoid flooding logs (thread-safe with compareAndSet)
-            long now = Time.currentTimeMillis();
-            long lastWarning = lastClockSkewWarningTime.get();
-            if (now - lastWarning > CLOCK_SKEW_WARNING_INTERVAL_MILLIS) {
-                if (lastClockSkewWarningTime.compareAndSet(lastWarning, now)) {
-                    logger.warnf("Clock skew detected: node '%s' is ahead by %d ms (threshold: %d ms). " +
-                                    "This node's time may be behind. Ensure NTP is properly configured on all cluster nodes.",
-                            sample.nodeName(), skew, clockSkewThresholdMillis);
-                }
-            }
+            logger.warnf("Clock skew detected: node '%s' is ahead by %d ms (threshold: %d ms). " +
+                            "This node's time may be behind. Ensure NTP is properly configured on all cluster nodes.",
+                    sample.nodeName(), skew, clockSkewThresholdMillis);
         }
     }
 
