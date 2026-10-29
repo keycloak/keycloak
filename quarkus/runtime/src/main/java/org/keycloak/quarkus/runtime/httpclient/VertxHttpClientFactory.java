@@ -24,6 +24,7 @@ import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.PoolOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -113,7 +114,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 if (webClient == null) {
                     Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
                     WebClientOptions options = buildOptions(session);
-                    httpClient = vertx.createHttpClient(options);
+                    httpClient = vertx.createHttpClient(options, buildPoolOptions());
                     webClient = WebClient.wrap(httpClient, options);
                     logger.info("Vert.x HTTP client initialized (HTTP_CLIENT_V2)");
                 }
@@ -123,8 +124,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     private WebClientOptions buildOptions(KeycloakSession session) {
         WebClientOptions options = new WebClientOptions();
-
-        options.setMaxPoolSize(config.getInt("max-pooled-per-route", 64));
 
         long connectTimeout = config.getLong("establish-connection-timeout-millis", -1L);
         if (connectTimeout > 0) {
@@ -149,6 +148,10 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         configureProxy();
 
         return options;
+    }
+
+    private PoolOptions buildPoolOptions() {
+        return new PoolOptions().setHttp1MaxSize(config.getInt("max-pooled-per-route", 64));
     }
 
     private void configureTls(KeycloakSession session, WebClientOptions options) {
