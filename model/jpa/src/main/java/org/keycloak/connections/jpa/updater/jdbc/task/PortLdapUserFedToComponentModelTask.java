@@ -39,9 +39,10 @@ public class PortLdapUserFedToComponentModelTask implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection))) {
+        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
             return List.of();
         }
         List<String> stmts = new ArrayList<>();

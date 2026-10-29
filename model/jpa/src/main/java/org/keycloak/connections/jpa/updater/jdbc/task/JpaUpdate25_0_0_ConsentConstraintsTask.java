@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
 import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
+import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -37,7 +38,8 @@ public class JpaUpdate25_0_0_ConsentConstraintsTask implements JpaMigrationTask 
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         String scopeTable = NativeSqlHelper.qualified("USER_CONSENT_CLIENT_SCOPE", defaultSchema);
         String consentTable = NativeSqlHelper.qualified("USER_CONSENT", defaultSchema);

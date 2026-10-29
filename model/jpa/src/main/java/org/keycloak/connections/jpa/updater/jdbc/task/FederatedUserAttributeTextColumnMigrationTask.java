@@ -45,9 +45,9 @@ public class FederatedUserAttributeTextColumnMigrationTask implements JpaMigrati
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         if (dialect != SqlDialect.MYSQL && dialect != SqlDialect.MARIADB) {
             return List.of();
         }

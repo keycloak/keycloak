@@ -202,11 +202,11 @@ public class ChangeSetRunner {
         }
         List<String> stmts;
         try {
-            if (!task.isApplicable(connection, schema)) {
+            if (!task.isApplicable(connection, schema, dialect)) {
                 logger.debugf("%s: no update applicable for this task (change-set '%s')", task.getTaskId(), changeSetId);
                 return;
             }
-            stmts = task.generateStatements(session, connection, schema);
+            stmts = task.generateStatements(session, connection, schema, dialect);
         } catch (SQLException e) {
             throw e;
         } catch (Exception e) {

@@ -38,9 +38,9 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealmTask implements JpaMigrati
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         String cs = NativeSqlHelper.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
         String us = NativeSqlHelper.qualified("OFFLINE_USER_SESSION", defaultSchema);
 

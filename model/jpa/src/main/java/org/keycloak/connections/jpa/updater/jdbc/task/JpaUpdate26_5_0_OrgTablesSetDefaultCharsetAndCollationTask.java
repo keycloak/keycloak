@@ -41,14 +41,14 @@ public class JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollationTask implemen
 
     /** Must also run during initial database creation, when the REALM table is still empty. */
     @Override
-    public boolean isApplicable(Connection connection, String defaultSchema) {
+    public boolean isApplicable(Connection connection, String defaultSchema, SqlDialect dialect) {
         return true;
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         if (dialect != SqlDialect.MYSQL && dialect != SqlDialect.MARIADB) {
             return List.of();
         }

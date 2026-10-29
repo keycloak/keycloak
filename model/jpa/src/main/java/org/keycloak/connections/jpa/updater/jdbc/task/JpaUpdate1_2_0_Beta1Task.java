@@ -49,17 +49,18 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection))) {
+        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
             return List.of();
         }
         List<String> stmts = new ArrayList<>();
-        convertSocialToIdFedRealms(connection, defaultSchema, stmts);
+        convertSocialToIdFedRealms(connection, dialect, defaultSchema, stmts);
         convertSocialToIdFedUsers(connection, defaultSchema, stmts);
         addAccessCodeLoginTimeout(defaultSchema, stmts);
-        addNewAdminRoles(connection, defaultSchema, stmts);
-        addDefaultProtocolMappers(session, connection, defaultSchema, stmts);
+        addNewAdminRoles(connection, dialect, defaultSchema, stmts);
+        addDefaultProtocolMappers(session, connection, dialect, defaultSchema, stmts);
         return stmts;
     }
 
@@ -67,7 +68,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     // Social → Identity Providers
     // -------------------------------------------------------------------------
 
-    private void convertSocialToIdFedRealms(Connection conn, String schema, List<String> stmts)
+    private void convertSocialToIdFedRealms(Connection conn, SqlDialect dialect, String schema, List<String> stmts)
             throws SQLException {
         String realmSocialConfigTable = NativeSqlHelper.qualified("REALM_SOCIAL_CONFIG", schema);
         String realmTable = NativeSqlHelper.qualified("REALM", schema);
@@ -106,12 +107,12 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                             + " (INTERNAL_ID, ENABLED, PROVIDER_ALIAS, PROVIDER_ID, UPDATE_PROFILE_FIRST_LOGIN,"
                             + " STORE_TOKEN, AUTHENTICATE_BY_DEFAULT, REALM_ID) VALUES ("
                             + NativeSqlHelper.sqlLiteral(internalId) + ", "
-                            + NativeSqlHelper.sqlLiteral(true) + ", "
+                            + NativeSqlHelper.sqlLiteral(true, dialect) + ", "
                             + NativeSqlHelper.sqlLiteral(socialProviderId) + ", "
                             + NativeSqlHelper.sqlLiteral(socialProviderId) + ", "
-                            + NativeSqlHelper.sqlLiteral(updateProfileOnSocialLogin) + ", "
-                            + NativeSqlHelper.sqlLiteral(false) + ", "
-                            + NativeSqlHelper.sqlLiteral(false) + ", "
+                            + NativeSqlHelper.sqlLiteral(updateProfileOnSocialLogin, dialect) + ", "
+                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
+                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
                             + NativeSqlHelper.sqlLiteral(realmId) + ")");
                     stmts.add("INSERT INTO " + idpConfigTable
                             + " (IDENTITY_PROVIDER_ID, NAME, VALUE) VALUES ("
@@ -165,12 +166,12 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     // Admin roles
     // -------------------------------------------------------------------------
 
-    private void addNewAdminRoles(Connection conn, String schema, List<String> stmts) throws SQLException {
-        addNewMasterAdminRoles(conn, schema, stmts);
-        addNewRealmAdminRoles(conn, schema, stmts);
+    private void addNewAdminRoles(Connection conn, SqlDialect dialect, String schema, List<String> stmts) throws SQLException {
+        addNewMasterAdminRoles(conn, dialect, schema, stmts);
+        addNewRealmAdminRoles(conn, dialect, schema, stmts);
     }
 
-    private void addNewMasterAdminRoles(Connection conn, String schema, List<String> stmts) throws SQLException {
+    private void addNewMasterAdminRoles(Connection conn, SqlDialect dialect, String schema, List<String> stmts) throws SQLException {
         String adminRoleId = getAdminRoleId(conn, schema);
         String masterRealmId = Config.getAdminRealm();
         String realmTable = NativeSqlHelper.qualified("REALM", schema);
@@ -189,9 +190,9 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                     try (ResultSet rs2 = ps2.executeQuery()) {
                         if (rs2.next()) {
                             String masterAdminAppId = rs2.getString("ID");
-                            addAdminRole(schema, stmts, AdminRoles.VIEW_IDENTITY_PROVIDERS,
+                            addAdminRole(schema, stmts, dialect, AdminRoles.VIEW_IDENTITY_PROVIDERS,
                                     masterRealmId, masterAdminAppId, adminRoleId);
-                            addAdminRole(schema, stmts, AdminRoles.MANAGE_IDENTITY_PROVIDERS,
+                            addAdminRole(schema, stmts, dialect, AdminRoles.MANAGE_IDENTITY_PROVIDERS,
                                     masterRealmId, masterAdminAppId, adminRoleId);
                         }
                     }
@@ -213,7 +214,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
         throw new IllegalStateException("Couldn't find ID of 'admin' role in 'master' realm");
     }
 
-    private void addNewRealmAdminRoles(Connection conn, String schema, List<String> stmts) throws SQLException {
+    private void addNewRealmAdminRoles(Connection conn, SqlDialect dialect, String schema, List<String> stmts) throws SQLException {
         String clientTable = NativeSqlHelper.qualified("CLIENT", schema);
         String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", schema);
 
@@ -228,14 +229,14 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                     String realmAdminAppId = rs.getString(1);
                     String realmId = rs.getString(2);
                     String adminRoleId = rs.getString(3);
-                    addAdminRole(schema, stmts, AdminRoles.VIEW_IDENTITY_PROVIDERS, realmId, realmAdminAppId, adminRoleId);
-                    addAdminRole(schema, stmts, AdminRoles.MANAGE_IDENTITY_PROVIDERS, realmId, realmAdminAppId, adminRoleId);
+                    addAdminRole(schema, stmts, dialect, AdminRoles.VIEW_IDENTITY_PROVIDERS, realmId, realmAdminAppId, adminRoleId);
+                    addAdminRole(schema, stmts, dialect, AdminRoles.MANAGE_IDENTITY_PROVIDERS, realmId, realmAdminAppId, adminRoleId);
                 }
             }
         }
     }
 
-    private void addAdminRole(String schema, List<String> stmts, String roleName,
+    private void addAdminRole(String schema, List<String> stmts, SqlDialect dialect, String roleName,
             String realmId, String applicationId, String realmAdminAppRoleId) {
         String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", schema);
         String compositeRoleTable = NativeSqlHelper.qualified("COMPOSITE_ROLE", schema);
@@ -245,7 +246,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                 + " (ID, APP_REALM_CONSTRAINT, APPLICATION_ROLE, NAME, REALM_ID, APPLICATION) VALUES ("
                 + NativeSqlHelper.sqlLiteral(newRoleId) + ", "
                 + NativeSqlHelper.sqlLiteral(applicationId) + ", "
-                + NativeSqlHelper.sqlLiteral(true) + ", "
+                + NativeSqlHelper.sqlLiteral(true, dialect) + ", "
                 + NativeSqlHelper.sqlLiteral(roleName) + ", "
                 + NativeSqlHelper.sqlLiteral(realmId) + ", "
                 + NativeSqlHelper.sqlLiteral(applicationId) + ")");
@@ -260,7 +261,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     // Protocol mappers from claims mask
     // -------------------------------------------------------------------------
 
-    private void addDefaultProtocolMappers(KeycloakSession session, Connection conn, String schema,
+    private void addDefaultProtocolMappers(KeycloakSession session, Connection conn, SqlDialect dialect, String schema,
             List<String> stmts) throws SQLException {
         String clientTable = NativeSqlHelper.qualified("CLIENT", schema);
         String protocolMapperTable = NativeSqlHelper.qualified("PROTOCOL_MAPPER", schema);
@@ -283,7 +284,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                             + NativeSqlHelper.sqlLiteral(mapperId) + ", "
                             + NativeSqlHelper.sqlLiteral(mapper.getProtocol()) + ", "
                             + NativeSqlHelper.sqlLiteral(mapper.getName()) + ", "
-                            + NativeSqlHelper.sqlLiteral(false) + ", "
+                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
                             + NativeSqlHelper.sqlLiteral(mapper.getProtocolMapper()) + ", "
                             + NativeSqlHelper.sqlLiteral(clientId) + ")");
 

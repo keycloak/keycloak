@@ -174,19 +174,60 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
     public void export(Connection connection, String defaultSchema, File file) {
         logger.debug("Starting database export (manual migration mode)");
         try (FileWriter writer = new FileWriter(file)) {
+            SqlDialect dialect = SqlDialect.of(connection);
+
             // Oracle SQL*Plus treats '&' in quoted strings as substitution variables.
             // Disable that behaviour up-front so that any stored values containing '&'
             // (e.g. URIs with query parameters) are not corrupted when the script is applied.
-            if (SqlDialect.of(connection) == SqlDialect.ORACLE) {
+            if (dialect == SqlDialect.ORACLE) {
                 writer.write("SET DEFINE OFF");
                 writer.write(System.lineSeparator());
                 writer.write(System.lineSeparator());
             }
+
+            // The manifest DDL contains unqualified table names (schema qualification is applied
+            // at runtime via Connection.setSchema()). Emit a dialect-specific schema-selection
+            // statement so that the script is self-contained when --db-schema is configured.
+            String schemaSetSql = schemaSetStatement(dialect, defaultSchema);
+            if (schemaSetSql != null) {
+                writer.write(schemaSetSql);
+                writer.write(System.lineSeparator());
+                writer.write(System.lineSeparator());
+            }
+
             runMasterChangelog(connection, writer, defaultSchema);
             runCustomProviderChangelogs(connection, writer, defaultSchema);
         } catch (IOException | SQLException e) {
             throw new RuntimeException("Failed to export database migration script", e);
         }
+    }
+
+    /**
+     * Returns a dialect-specific SQL statement that selects {@code schema} as the default schema
+     * for subsequent statements in an exported script, or {@code null} when no such statement is
+     * needed (schema is blank, or the dialect has no single-statement equivalent).
+     *
+     * <p>This ensures that unqualified table names in the manifest DDL resolve to the correct schema
+     * when the exported script is applied outside Keycloak.
+     */
+    static String schemaSetStatement(SqlDialect dialect, String schema) {
+        if (schema == null || schema.isBlank()) {
+            return null;
+        }
+        // Only safe to embed when the schema is a plain identifier (no quoting needed).
+        if (!NativeSqlHelper.SIMPLE_IDENTIFIER.matcher(schema).matches()) {
+            return null;
+        }
+        return switch (dialect) {
+            case POSTGRESQL -> "SET search_path TO " + schema;
+            case MYSQL, MARIADB -> "USE " + schema;
+            case ORACLE -> "ALTER SESSION SET CURRENT_SCHEMA = " + schema;
+            case H2 -> "SET SCHEMA " + schema;
+            // MSSQL has no session-level schema switch; tables in the manifest are already
+            // qualified via NativeSqlHelper.qualified() for the history inserts, and full
+            // schema qualification of all application DDL is not yet supported.
+            default -> null;
+        };
     }
 
     // -------------------------------------------------------------------------

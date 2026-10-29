@@ -44,9 +44,10 @@ public class JpaUpdate13_0_0_MigrateDefaultRolesTask implements JpaMigrationTask
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection))) {
+        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
             return List.of();
         }
 
@@ -78,7 +79,7 @@ public class JpaUpdate13_0_0_MigrateDefaultRolesTask implements JpaMigrationTask
                     + " (ID, CLIENT_REALM_CONSTRAINT, CLIENT_ROLE, DESCRIPTION, NAME, REALM_ID, REALM) VALUES ("
                     + NativeSqlHelper.sqlLiteral(roleId) + ", "
                     + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                    + NativeSqlHelper.sqlLiteral(false) + ", "
+                    + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
                     + NativeSqlHelper.sqlLiteral("${role_" + roleName + "}") + ", "
                     + NativeSqlHelper.sqlLiteral(roleName) + ", "
                     + NativeSqlHelper.sqlLiteral(realmId) + ", "

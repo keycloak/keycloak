@@ -180,18 +180,18 @@ public class JpaMigrationTaskRegistryTest {
     @Test
     public void testTaskIsApplicableDefaultsToRealmRowCheck() throws Exception {
         JpaMigrationTask task = JpaMigrationTaskRegistry.get("RemoveDuplicateOfflineSessions");
-        Assert.assertFalse(task.isApplicable(connection, null));
+        Assert.assertFalse(task.isApplicable(connection, null, SqlDialect.H2));
         try (Statement st = connection.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS REALM (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
             st.execute("INSERT INTO REALM VALUES ('realm-1')");
         }
-        Assert.assertTrue(task.isApplicable(connection, null));
+        Assert.assertTrue(task.isApplicable(connection, null, SqlDialect.H2));
     }
 
     @Test
     public void testOrgCharsetTaskAlwaysApplicable() throws Exception {
         JpaMigrationTask task = JpaMigrationTaskRegistry.get("JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation");
-        Assert.assertTrue(task.isApplicable(connection, null));
+        Assert.assertTrue(task.isApplicable(connection, null, SqlDialect.H2));
     }
 
     // -------------------------------------------------------------------------

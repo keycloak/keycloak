@@ -41,9 +41,9 @@ public class AddRealmCodeSecretTask implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
         List<String> stmts = new ArrayList<>();
 

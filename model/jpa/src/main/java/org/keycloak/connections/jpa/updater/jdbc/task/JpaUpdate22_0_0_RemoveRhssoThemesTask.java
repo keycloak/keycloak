@@ -38,9 +38,9 @@ public class JpaUpdate22_0_0_RemoveRhssoThemesTask implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
         String clientAttributesTable = NativeSqlHelper.qualified("CLIENT_ATTRIBUTES", defaultSchema);
         List<String> stmts = new ArrayList<>();

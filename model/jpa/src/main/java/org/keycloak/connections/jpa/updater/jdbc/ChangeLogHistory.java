@@ -90,15 +90,16 @@ public class ChangeLogHistory {
      */
     static boolean namedTableExists(Connection connection, String schema, String tableName) throws SQLException {
         String effectiveSchema = effectiveSchema(connection, schema);
-        try (ResultSet rs = connection.getMetaData().getTables(null, effectiveSchema, tableName, null)) {
-            if (rs.next()) {
-                return true;
+        // Metadata lookups are case sensitive; unquoted identifiers are folded by the database
+        // (lower case on PostgreSQL, upper case on Oracle/H2), so try the name as given and both cases.
+        for (String name : new String[] { tableName, tableName.toLowerCase(Locale.ROOT), tableName.toUpperCase(Locale.ROOT) }) {
+            try (ResultSet rs = connection.getMetaData().getTables(null, effectiveSchema, name, null)) {
+                if (rs.next()) {
+                    return true;
+                }
             }
         }
-        // Some drivers (e.g. H2) do not filter by schema when the catalog arg is null; try upper-cased table name
-        try (ResultSet rs = connection.getMetaData().getTables(null, effectiveSchema, tableName.toUpperCase(Locale.ROOT), null)) {
-            return rs.next();
-        }
+        return false;
     }
 
     /**
@@ -112,7 +113,13 @@ public class ChangeLogHistory {
                 return false;
             }
         }
-        // Try upper-cased variants
+        // Try lower-cased (PostgreSQL) and upper-cased variants
+        try (ResultSet rs = connection.getMetaData().getColumns(null, effectiveSchema,
+                CHANGELOG_TABLE.toLowerCase(Locale.ROOT), DEPLOYMENT_ID_COLUMN.toLowerCase(Locale.ROOT))) {
+            if (rs.next()) {
+                return false;
+            }
+        }
         try (ResultSet rs = connection.getMetaData().getColumns(null, effectiveSchema,
                 CHANGELOG_TABLE.toUpperCase(Locale.ROOT), DEPLOYMENT_ID_COLUMN.toUpperCase(Locale.ROOT))) {
             return !rs.next();

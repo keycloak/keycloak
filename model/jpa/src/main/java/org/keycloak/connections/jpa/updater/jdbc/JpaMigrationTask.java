@@ -55,8 +55,8 @@ public interface JpaMigrationTask {
      * This keeps tasks from querying tables that do not exist yet (export mode on an empty database) and
      * from migrating data that is not there (initial database creation).
      */
-    default boolean isApplicable(Connection connection, String defaultSchema) throws SQLException {
-        return NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection));
+    default boolean isApplicable(Connection connection, String defaultSchema, SqlDialect dialect) throws SQLException {
+        return NativeSqlHelper.isApplicable(connection, defaultSchema, dialect);
     }
 
     /**
@@ -66,9 +66,11 @@ public interface JpaMigrationTask {
      * @param session        live Keycloak session (may be used for model queries)
      * @param connection     live JDBC connection (read-only queries only)
      * @param defaultSchema  the configured default schema, or {@code null}
+     * @param dialect        the SQL dialect of {@code connection}
      * @return ordered list of SQL statements to apply; may be empty but never {@code null}
      * @throws SQLException  on database errors during inspection
      */
-    List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException;
 }

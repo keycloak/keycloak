@@ -40,13 +40,13 @@ public class AuthzResourceUseMoreURIsTask implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         String resourceTable = NativeSqlHelper.qualified("RESOURCE_SERVER_RESOURCE", defaultSchema);
         String urisTable = NativeSqlHelper.qualified("RESOURCE_URIS", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
-        SqlDialect dialect = SqlDialect.of(connection);
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT ID, URI FROM " + resourceTable + " WHERE URI IS NOT NULL");
              ResultSet rs = ps.executeQuery()) {

@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
 import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
+import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -44,7 +45,8 @@ public class RemoveDuplicateOfflineSessionsTask implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         String tableName = NativeSqlHelper.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
         Set<String> idsToDelete = new HashSet<>();

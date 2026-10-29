@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
 import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
+import org.keycloak.enums.SqlDialect;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 
@@ -43,7 +44,8 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelTimeTask implements Jp
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         String tableName = NativeSqlHelper.qualified("MIGRATION_MODEL", defaultSchema);
         Map<String, ModelVersion> itemsToDelete = new HashMap<>();

@@ -44,16 +44,17 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         List<String> stmts = new ArrayList<>();
-        populateOrgIdentityProvider(connection, defaultSchema, stmts);
-        populateDomainIdpRouting(connection, defaultSchema, stmts);
+        populateOrgIdentityProvider(connection, dialect, defaultSchema, stmts);
+        populateDomainIdpRouting(connection, dialect, defaultSchema, stmts);
         cleanupIdpConfig(defaultSchema, stmts);
         return stmts;
     }
 
-    private void populateOrgIdentityProvider(Connection conn, String schema, List<String> stmts)
+    private void populateOrgIdentityProvider(Connection conn, SqlDialect dialect, String schema, List<String> stmts)
             throws SQLException {
         String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", schema);
         String orgIdpTable = NativeSqlHelper.qualified("ORG_IDENTITY_PROVIDER", schema);
@@ -69,12 +70,12 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
                         + " (ORGANIZATION_ID, IDENTITY_PROVIDER_ID, AUTO_MEMBERSHIP, MEMBERSHIP_TYPE) VALUES ("
                         + NativeSqlHelper.sqlLiteral(orgId) + ", "
                         + NativeSqlHelper.sqlLiteral(idpInternalId) + ", "
-                        + NativeSqlHelper.trueLiteral(SqlDialect.of(conn)) + ", 'MANAGED')");
+                        + NativeSqlHelper.trueLiteral(dialect) + ", 'MANAGED')");
             }
         }
     }
 
-    private void populateDomainIdpRouting(Connection conn, String schema, List<String> stmts)
+    private void populateDomainIdpRouting(Connection conn, SqlDialect dialect, String schema, List<String> stmts)
             throws SQLException {
         String ipcTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER_CONFIG", schema);
         String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", schema);
@@ -103,7 +104,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
                                 String domainId = domRs.getString(1);
                                 stmts.add("UPDATE " + orgDomainTable
                                         + " SET IDP_ID = " + NativeSqlHelper.sqlLiteral(idpInternalId)
-                                        + ", AUTO_REDIRECT = " + NativeSqlHelper.sqlLiteral(autoRedirect)
+                                        + ", AUTO_REDIRECT = " + NativeSqlHelper.sqlLiteral(autoRedirect, dialect)
                                         + " WHERE ID = " + NativeSqlHelper.sqlLiteral(domainId));
                             }
                         }
@@ -111,7 +112,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
                 } else {
                     // ANY — set IDP_ID for all org domains not excluded
                     Set<String> excludedDomains = getExcludedDomains(conn, schema, idpInternalId);
-                    setIdpForOrgDomains(conn, schema, idpInternalId, excludedDomains, autoRedirect, stmts);
+                    setIdpForOrgDomains(conn, dialect, schema, idpInternalId, excludedDomains, autoRedirect, stmts);
                 }
             }
         }
@@ -160,7 +161,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
         return false;
     }
 
-    private void setIdpForOrgDomains(Connection conn, String schema, String idpInternalId,
+    private void setIdpForOrgDomains(Connection conn, SqlDialect dialect, String schema, String idpInternalId,
             Set<String> excludedDomains, boolean autoRedirect, List<String> stmts) throws SQLException {
         String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", schema);
         String orgDomainTable = NativeSqlHelper.qualified("ORG_DOMAIN", schema);
@@ -188,7 +189,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
                                 if (!excludedDomains.contains(domainName)) {
                                     stmts.add("UPDATE " + orgDomainTable
                                             + " SET IDP_ID = " + NativeSqlHelper.sqlLiteral(idpInternalId)
-                                            + ", AUTO_REDIRECT = " + NativeSqlHelper.sqlLiteral(autoRedirect)
+                                            + ", AUTO_REDIRECT = " + NativeSqlHelper.sqlLiteral(autoRedirect, dialect)
                                             + " WHERE ID = " + NativeSqlHelper.sqlLiteral(domainId));
                                 }
                             }
@@ -206,10 +207,10 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTask implements JpaMigrati
                                     + " (ID, NAME, VERIFIED, REALM_ID, ORG_ID, AUTO_REDIRECT) VALUES ("
                                     + NativeSqlHelper.sqlLiteral(domainId) + ", "
                                     + NativeSqlHelper.sqlLiteral(excludedPattern) + ", "
-                                    + NativeSqlHelper.sqlLiteral(false) + ", "
+                                    + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
                                     + NativeSqlHelper.sqlLiteral(realmId) + ", "
                                     + NativeSqlHelper.sqlLiteral(orgId) + ", "
-                                    + NativeSqlHelper.sqlLiteral(false) + ")");
+                                    + NativeSqlHelper.sqlLiteral(false, dialect) + ")");
                             insertedDomains.add(excludedPattern);
                         }
                     }

@@ -38,9 +38,9 @@ public class JpaUpdate26_0_0_OrganizationGroupTypeTask implements JpaMigrationTa
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        SqlDialect dialect = SqlDialect.of(connection);
         String groupTable = NativeSqlHelper.qualified("KEYCLOAK_GROUP", defaultSchema);
         String orgTable = NativeSqlHelper.qualified("ORG", defaultSchema);
 

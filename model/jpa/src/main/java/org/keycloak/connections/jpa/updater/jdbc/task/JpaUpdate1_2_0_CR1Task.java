@@ -41,12 +41,12 @@ public class JpaUpdate1_2_0_CR1Task implements JpaMigrationTask {
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, SqlDialect.of(connection))) {
+        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
             return List.of();
         }
-        SqlDialect dialect = SqlDialect.of(connection);
         String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
         String realmClientTable = NativeSqlHelper.qualified("REALM_CLIENT", defaultSchema);
         String trueValue = NativeSqlHelper.trueLiteral(dialect);

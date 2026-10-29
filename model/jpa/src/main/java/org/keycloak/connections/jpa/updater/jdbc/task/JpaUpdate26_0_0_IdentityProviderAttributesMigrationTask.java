@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
 import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
+import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -41,7 +42,8 @@ public class JpaUpdate26_0_0_IdentityProviderAttributesMigrationTask implements 
     }
 
     @Override
-    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema)
+    public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
+            SqlDialect dialect)
             throws SQLException {
         String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", defaultSchema);
         String idpConfigTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER_CONFIG", defaultSchema);
@@ -72,7 +74,7 @@ public class JpaUpdate26_0_0_IdentityProviderAttributesMigrationTask implements 
                 String id = rs.getString(1);
                 boolean value = Boolean.parseBoolean(rs.getString(2));
                 stmts.add("UPDATE " + idpTable
-                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(value)
+                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(value, dialect)
                         + " WHERE INTERNAL_ID = " + NativeSqlHelper.sqlLiteral(id));
             }
         }
@@ -89,7 +91,7 @@ public class JpaUpdate26_0_0_IdentityProviderAttributesMigrationTask implements 
                 boolean orgBrokerPublic = Boolean.parseBoolean(rs.getString(2));
                 // hide_on_login is the inverse of kc.org.broker.public
                 stmts.add("UPDATE " + idpTable
-                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(!orgBrokerPublic)
+                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(!orgBrokerPublic, dialect)
                         + " WHERE INTERNAL_ID = " + NativeSqlHelper.sqlLiteral(id));
             }
         }

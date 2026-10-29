@@ -447,6 +447,33 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 
 - Follow-up: Before writing the first statement in `export()`, emit a dialect-specific schema-selection statement when the configured schema is complex (i.e. would not be embedded by `qualified()`).  Candidates: `USE <schema>` (MySQL, MariaDB, MSSQL), `SET search_path TO "<schema>"` (PostgreSQL), `ALTER SESSION SET CURRENT_SCHEMA = "<schema>"` (Oracle).  This ensures the exported script is self-contained regardless of the session's default schema.
 
+### 8.10 Reduce the Size and Memory Footprint of `migration-manifest.json`
+
+**Current state** (measured on `model/jpa/target/classes/META-INF/schema/migration-manifest.json`):
+- 237 change-sets, about 1.26 MB pretty-printed, about 1.16 MB minified, about 82 KB gzipped. The `keycloak-model-jpa` JAR is about 1.1 MB in total.
+- SQL statements are about 131-139 KB per dialect (mssql about 180 KB), about 850 KB across the six dialects. `expectedIndexes` is about 20 KB per dialect. The rest is per-change-set metadata.
+- `MigrationManifestLoader` parses the whole file once and keeps it in a static field for the life of the process. The parsed object graph is a few MB at most, and every dialect's SQL is retained even though only one dialect is ever used.
+
+**Assessment:** this is not a problem today, and no change is required. Growth is slow (roughly 5 KB per new change-set across all dialects), so it would take years to become a concern. The options below are ordered from cheapest to most invasive; none has been implemented. Before doing any of them, measure parse time and retained heap (for example a heap histogram after startup) so the benefit can be shown.
+
+1. **Drop pretty-printing.** Remove `SerializationFeature.INDENT_OUTPUT` in `SchemaGenerator`. This saves about 100 KB (8%) on disk with no runtime change. The file is a build artifact, and `docs/updating-database-schema.md` should point reviewers at the pretty-printed form via `jq` if needed.
+2. **Drop fields not read at runtime.**
+   - `generatedAt` is not read by the engine.
+   - `comments` is not read by `ChangeSetRunner` or `ChangeLogHistory`. Confirm with a usage search before removing it.
+   - Keep `description`: it is written to the `DESCRIPTION` column of the history table (`ChangeSetRunner.emitHistoryInsert`).
+   - Keep `checkSum`, `liquibaseVersion`, `order`, `id`, `author` and `changeLogFile`; they are all written to or matched against `DATABASECHANGELOG`.
+3. **Prune dialect-exclusive change-sets at build time** (see 8.2). For example the `db2-jpa-changelog-*` change-sets carry `dbms=db2` and can never run on a supported `SqlDialect`. Pruning their per-dialect entries, or the change-sets entirely when no supported dialect can run them, removes dead data. Be careful: they must still be recorded in history if a Liquibase-created database already contains them, so check this against Section 6.2 before dropping whole change-sets.
+4. **Only retain the active dialect's data.** After `MigrationManifestLoader.load()` parses the file, discard the SQL and `expectedIndexes` entries of the other dialects (for example in a `forDialect(SqlDialect)` view that copies only the needed lists), then release the full object. This saves about 5/6 of the SQL and index data in the retained heap, without changing the file format or the build plugin. Manual (`export`) mode may need other dialects, so apply the pruning only on the `update` and `validate` paths, and keep the full manifest available for `export`.
+5. **Deduplicate repeated statements across dialects.** Many statements are identical for all dialects (simple `ALTER TABLE ... ADD COLUMN`, `CREATE INDEX`). The plugin could emit a single shared `statements` list when all dialects agree, and a per-dialect map only when they differ. This shrinks both the file and the heap, but changes the `ChangeSetStep` schema, so the manifest `version` must be bumped and the loader must keep reading version 1.
+6. **Split the manifest per dialect.** One shared file (change-set metadata, ordering, preconditions, checksums) plus one file per dialect (`migration-manifest-<dialect>.json`) holding the SQL and expected indexes. The loader would read the shared file and only the active dialect's file. Compared with option 4 this also avoids parsing the unused dialects, but costs more:
+   - `SchemaGenerator` and `GenerateSchemaMojo` produce multiple files, and `ManifestDriftChecker` and the baseline from 8.6 must handle them.
+   - The shared file and each dialect file must stay consistent (keyed by `id`/`author`/`changeLogFile`, not just `order`), and a loader check should fail fast on a mismatch.
+   - Extension authors using the plugin (8.1) get a new layout to document, and a custom or unknown dialect (`SqlDialect.OTHER`) needs defined behaviour.
+   - Only consider this if option 4 and the cheaper options are not enough, or if the parse time of the full file proves significant at startup.
+7. **Streaming or lazy parsing.** Parse the change-set list eagerly but deserialize each step's SQL only when the change-set is pending. This only helps if most change-sets are already applied (the normal case after the first start), but it needs a custom Jackson deserializer or a two-pass read, so it is the most complex option. Prefer option 4 or 6 if this is ever needed.
+
+**Suggested order if work is ever taken on:** 1 and 2 (trivial, low risk) first, then 3 together with 8.2, then 4. Treat 5 to 7 as a manifest format change that needs a version bump and a migration of the tests in `SchemaGeneratorTest` and the `model/jpa` migration tests.
+
 ---
 
 ## 9. Adding a New Database Type

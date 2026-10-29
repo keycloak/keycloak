@@ -166,6 +166,13 @@ public final class NativeSqlHelper {
     }
 
     /**
+     * Returns the dialect-appropriate SQL literal for the given boolean value.
+     */
+    public static String sqlLiteral(boolean value, SqlDialect dialect) {
+        return value ? trueLiteral(dialect) : falseLiteral(dialect);
+    }
+
+    /**
      * Returns the SQL literal for {@code false} on the given dialect.
      * Oracle and MSSQL use {@code 0}; all others use {@code FALSE}.
      */
