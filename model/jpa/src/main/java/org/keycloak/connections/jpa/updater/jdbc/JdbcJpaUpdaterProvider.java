@@ -337,7 +337,7 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
             return;
         }
         try {
-            connection.setSchema(schema);
+            connection.setSchema(ChangeLogHistory.effectiveSchema(connection, schema));
         } catch (SQLException e) {
             logger.warnf("Could not set connection schema to '%s': %s", schema, e.getMessage());
         }

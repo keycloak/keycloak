@@ -204,11 +204,27 @@ public class ChangeLogHistory {
         return NativeSqlHelper.qualified(table, schema);
     }
 
+    /**
+     * Resolves the schema to use for JDBC calls such as {@link Connection#setSchema(String)} and
+     * {@link java.sql.DatabaseMetaData} lookups, which are case sensitive. A plain configured schema is referenced
+     * unquoted everywhere else (e.g. by Hibernate and in qualified SQL), so the database folds its case; apply the
+     * same folding here so that the same schema is selected.
+     */
     static String effectiveSchema(Connection connection, String schema) throws SQLException {
-        if (schema != null && !schema.isBlank()) {
+        if (schema == null || schema.isBlank()) {
+            return connection.getSchema();
+        }
+        if (!NativeSqlHelper.SIMPLE_IDENTIFIER.matcher(schema).matches()) {
             return schema;
         }
-        return connection.getSchema();
+        java.sql.DatabaseMetaData meta = connection.getMetaData();
+        if (meta.storesUpperCaseIdentifiers()) {
+            return schema.toUpperCase(Locale.ROOT);
+        }
+        if (meta.storesLowerCaseIdentifiers()) {
+            return schema.toLowerCase(Locale.ROOT);
+        }
+        return schema;
     }
 
     private static boolean isExcludedByDbms(ChangeSetDescriptor cs, SqlDialect dialect) {

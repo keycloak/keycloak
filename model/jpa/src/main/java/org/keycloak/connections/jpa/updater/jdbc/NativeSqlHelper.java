@@ -34,7 +34,7 @@ public final class NativeSqlHelper {
     // Table name qualification
     // -------------------------------------------------------------------------
 
-    private static final Pattern SIMPLE_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+    static final Pattern SIMPLE_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     /**
      * Returns {@code schema.table} when a schema with a plain identifier name is configured, otherwise just
