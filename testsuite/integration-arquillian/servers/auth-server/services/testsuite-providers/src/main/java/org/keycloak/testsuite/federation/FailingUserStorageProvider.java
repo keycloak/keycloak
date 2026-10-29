@@ -24,6 +24,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserCountMethodsProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
@@ -35,6 +36,7 @@ import org.keycloak.storage.user.UserQueryMethodsProvider;
 public class FailingUserStorageProvider implements UserStorageProvider, UserQueryMethodsProvider, UserCountMethodsProvider {
     
     public static final String FAIL_ON_SEARCH = "failOnSearch";
+    public static final String FAIL_ON_SEARCH_AFTER_FIRST = "failOnSearchAfterFirst";
     public static final String FAIL_ON_COUNT = "failOnCount";
     
     private final ComponentModel model;
@@ -53,6 +55,16 @@ public class FailingUserStorageProvider implements UserStorageProvider, UserQuer
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
         if (Boolean.parseBoolean(model.getConfig().getFirst(FAIL_ON_SEARCH))) {
             throw new RuntimeException("Simulated user search failure - LDAP connection timeout");
+        }
+        if (Boolean.parseBoolean(model.getConfig().getFirst(FAIL_ON_SEARCH_AFTER_FIRST))) {
+            // Simulates an external user store that returns the first page(s) of results and then
+            // fails while the returned stream is consumed, e.g. an LDAP server that stops
+            // responding between the pages of a paginated search
+            return Stream.concat(
+                    Stream.of(new TestUser("lazy-fail-user1"), new TestUser("lazy-fail-user2")),
+                    Stream.<UserModel>generate(() -> {
+                        throw new RuntimeException("Simulated failure while streaming user search results - LDAP connection timeout between pages");
+                    }));
         }
         // Return empty stream if not configured to fail
         return Stream.empty();
@@ -80,5 +92,25 @@ public class FailingUserStorageProvider implements UserStorageProvider, UserQuer
             throw new RuntimeException("Simulated user count failure - LDAP connection timeout");
         }
         return 0;
+    }
+
+    /**
+     * Minimal in-memory user, so that the users of the first page(s) are indistinguishable from
+     * users of any other provider while the search result is consumed. Everything except the
+     * username is not supported.
+     */
+    static class TestUser extends UserModelDelegate {
+
+        private final String username;
+
+        TestUser(String username) {
+            super(null);
+            this.username = username;
+        }
+
+        @Override
+        public String getUsername() {
+            return username;
+        }
     }
 }
