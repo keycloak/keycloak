@@ -362,9 +362,7 @@ test("should save Deflate Compression setting", async ({ page }) => {
   await requestEncryptionSwitch.click({ force: true });
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   let realmData = await adminClient.getRealm(testBed.realm);
   expect(
@@ -414,9 +412,7 @@ test("should disable saved Deflate Compression value", async ({ page }) => {
   await expect(deflateSwitch).not.toBeChecked();
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(
@@ -445,9 +441,7 @@ test("should normalize legacy enabled Deflate Compression value on save", async 
 
   await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
@@ -474,9 +468,7 @@ test("should remove legacy disabled Deflate Compression value on save", async ({
 
   await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(

@@ -199,7 +199,7 @@ export async function clickCancelButton(page: Page) {
 }
 
 type SwitchClickResult = {
-  strategy: "direct-click" | "label-force-click" | "force-click";
+  strategy: "label-click" | "direct-click" | "force-click";
   failures: string[];
 };
 
@@ -214,6 +214,20 @@ async function clickSwitchElement(
     ? switchElement.page().locator(`label[for="${switchId}"]`).first()
     : undefined;
 
+  // The toggle span covers the input of a PatternFly switch, so a direct click on the input
+  // is retried until its timeout; clicking the label is what a user does.
+  if (label && (await label.count()) > 0) {
+    try {
+      await label.click({ timeout: 3_000 });
+      return { strategy: "label-click", failures };
+    } catch (error) {
+      if (isPageClosedError(error)) {
+        throw error;
+      }
+      failures.push(`label-click failed: ${toErrorMessage(error)}`);
+    }
+  }
+
   try {
     await switchElement.click({ timeout: 3_000 });
     return { strategy: "direct-click", failures };
@@ -222,18 +236,6 @@ async function clickSwitchElement(
       throw error;
     }
     failures.push(`direct-click failed: ${toErrorMessage(error)}`);
-  }
-
-  if (label && (await label.count()) > 0) {
-    try {
-      await label.click({ force: true, timeout: 3_000 });
-      return { strategy: "label-force-click", failures };
-    } catch (error) {
-      if (isPageClosedError(error)) {
-        throw error;
-      }
-      failures.push(`label-force-click failed: ${toErrorMessage(error)}`);
-    }
   }
 
   try {
