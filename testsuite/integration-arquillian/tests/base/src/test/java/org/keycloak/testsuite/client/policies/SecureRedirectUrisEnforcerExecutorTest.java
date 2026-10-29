@@ -789,6 +789,88 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
 
         oauth.doLogout(tokenResponse.getRefreshToken());
     }
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_parAuthorizationRequestWithInvalidRedirectUri() throws Exception {
+        String redirectUri = "http://oauth.redirect/some";
+    
+        // Create the client before enabling the policy.
+        // The redirect URI is registered, so Keycloak's standard redirect_uri
+        // validation should pass.
+        List<String> registerResult =
+            testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                    List.of(redirectUri)
+                );
+
+        String clientId = registerResult.get(0);
+
+        // Register profile.
+        // HTTP redirect URIs are not allowed by the executor policy.
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+            (new ClientPoliciesUtil.ClientProfileBuilder())
+                    .createProfile(PROFILE_NAME, "Secure Redirect URIs Profile")
+                    .addExecutor(
+                            SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                            createSecureRedirectUrisEnforcerExecutorConfig(it -> {
+                                it.setAllowHttpScheme(false);
+                            })
+                    )
+                    .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Register policy.
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+            (new ClientPoliciesUtil.ClientPolicyBuilder())
+                    .createPolicy(
+                            POLICY_NAME,
+                            "Secure Redirect URIs Policy",
+                            Boolean.TRUE
+                    )
+                    .addCondition(
+                            AnyClientConditionFactory.PROVIDER_ID,
+                            createAnyClientConditionConfig()
+                    )
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Pushed Authorization Request.
+        //
+        // The PAR request should succeed because the executor validates the
+        // resolved redirect URI later during AUTHORIZATION_REQUEST.
+        oauth.client(clientId, "secret");
+        oauth.redirectUri(redirectUri);
+
+        ParResponse parResponse = oauth.doPushedAuthorizationRequest();
+
+        assertEquals(201, parResponse.getStatusCode());
+        Assertions.assertNotNull(parResponse.getRequestUri());
+
+        // Authorization Request containing client_id and request_uri,
+        // but not redirect_uri, scope, or response_type.
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+
+        oauth.loginForm()
+            .requestUri(parResponse.getRequestUri())
+            .open();
+
+        // The redirect URI stored in the PAR must be resolved and rejected by
+        // secure-redirect-uris-enforcer during AUTHORIZATION_REQUEST.
+        EventAssertion.assertError(events.poll())
+            .type(EventType.LOGIN_ERROR)
+            .error(Errors.INVALID_REQUEST)
+            .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+            .details(Details.RESPONSE_TYPE, "code")
+            .details(Details.REDIRECT_URI, redirectUri)
+            .details(
+                    Details.CLIENT_POLICY_ERROR,
+                    OAuthErrorException.INVALID_REQUEST
+                );
+    }
+
 
     private void testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List<String> redirectUrisList) {
         try {
