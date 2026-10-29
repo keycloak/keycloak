@@ -304,7 +304,8 @@ public class TruststoreReloadTest {
                 KeyStore keyStore = KeystoreUtil.loadKeyStore(
                         System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY),
                         System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY),
-                        System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY));
+                        System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY),
+                        System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY));
                 for (Enumeration<String> aliases = keyStore.aliases(); aliases.hasMoreElements();) {
                     Certificate certificate = keyStore.getCertificate(aliases.nextElement());
                     if (certificate instanceof X509Certificate x509Certificate

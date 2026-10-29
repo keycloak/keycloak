@@ -110,8 +110,8 @@ public class FIPS1402KeystoreTypesTest {
         Properties originalProperties = (Properties) System.getProperties().clone();
         try {
             // when
-            TruststoreBuilder.setSystemTruststore(new String[] { bundle.getAbsolutePath() }, false,
-                    temporaryFolder.getRoot().getAbsolutePath());
+            TruststoreBuilder.setAndGetSystemTruststore(new String[] { bundle.getAbsolutePath() }, false,
+                    temporaryFolder.getRoot().getAbsolutePath(), null);
             factory.init(new Config.SystemPropertiesScope("keycloak.truststore.file."));
             KeyStore truststore = factory.create(null).getTruststore();
 

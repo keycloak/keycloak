@@ -278,6 +278,7 @@ public class TruststoreBuilder {
                 System.setProperty(originalTruststoreKey, defaultTrustStore.getAbsolutePath());
                 System.setProperty(originalTruststoreTypeKey, type);
                 System.setProperty(originalTruststorePasswordKey, password);
+                System.clearProperty(originalTruststoreProviderKey);
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);

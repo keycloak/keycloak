@@ -14,6 +14,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.infinispan",
         "org.keycloak.tests.keys",
         "org.keycloak.tests.transactions",
+        "org.keycloak.tests.truststore",
         "org.keycloak.tests.user",
         "org.keycloak.tests.url",
         "org.keycloak.tests.vault",
