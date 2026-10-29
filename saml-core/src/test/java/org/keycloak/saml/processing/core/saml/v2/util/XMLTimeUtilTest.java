@@ -62,6 +62,6 @@ public class XMLTimeUtilTest {
     @Test
     public void testParseAsDurationInvalid() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> XMLTimeUtil.parseAsDuration("ten minutes"));
-        assertTrue(e.getMessage().startsWith("Cache duration could not be created using 'ten minutes'"));
+        assertTrue(e.getMessage().startsWith("Cache duration could not be created"));
     }
 }

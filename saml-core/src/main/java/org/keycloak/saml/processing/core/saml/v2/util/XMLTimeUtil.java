@@ -193,7 +193,7 @@ public class XMLTimeUtil {
                 return factory.newDuration(Long.parseLong(timeValue));
             }
         } catch (Exception e) {
-            throw logger.samlMetaDataFailedToCreateCacheDuration(timeValue);
+            throw logger.samlMetaDataFailedToCreateCacheDuration();
         }
     }
 
