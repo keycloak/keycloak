@@ -174,6 +174,11 @@ public class KeycloakUriInfo implements UriInfo {
     }
 
     @Override
+    public String getMatchedResourceTemplate() {
+        return delegate.getMatchedResourceTemplate();
+    }
+
+    @Override
     public List<Object> getMatchedResources() {
         return delegate.getMatchedResources();
     }
