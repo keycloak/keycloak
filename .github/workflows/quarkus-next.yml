@@ -68,7 +68,7 @@ jobs:
           path: |
             ~/.m2/repository/io/quarkus
             ~/.m2/repository/io/quarkiverse/operatorsdk
-          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}-qosdk-pom-version
           enableCrossOsArchive: true
 
       - name: Build Quarkus snapshot
@@ -83,9 +83,11 @@ jobs:
         if: steps.quarkus-cache.outputs.cache-hit != 'true'
         run: |
           cd quarkus-operator-sdk
+          ./mvnw -N -B versions:set-property \
+            -Dproperty=quarkus.version \
+            -DnewVersion=${{ steps.quarkus-version.outputs.version }}
           ./mvnw -B -e --no-transfer-progress \
-            clean install -DskipTests -DskipITs -DskipDocs \
-            -Dquarkus.version=${{ steps.quarkus-version.outputs.version }}
+            clean install -DskipTests -DskipITs -DskipDocs
 
       - name: Extract QOSDK version
         id: qosdk-version
