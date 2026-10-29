@@ -222,10 +222,12 @@ public class TruststoreBuilder {
         String password = null;
         String provider = null;
         File defaultTrustStore = null;
+        boolean isJreTruststore = false;
         if (trustStorePath == null) {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (trustStorePath == null) {
                 defaultTrustStore = getJRETruststore();
+                isJreTruststore = true;
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
@@ -254,7 +256,7 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadStore(path, type, password, provider));
+            mergeTrustStore(truststore, path, loadJreTruststore(path, type, password, provider, isJreTruststore));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
@@ -271,6 +273,29 @@ public class TruststoreBuilder {
         return new File(securityDirectory, "cacerts");
     }
 
+    /**
+     * Load a truststore, with extra fallbacks for the JRE cacerts file.
+     * cacerts uses "changeit" as a conventional default password, and may be JKS on older JDKs.
+     * When isJreTruststore is true, password and provider are always null.
+     */
+    private static KeyStore loadJreTruststore(String path, String type, String password, String provider, boolean isJreTruststore) {
+        try {
+            return loadStore(path, type, password, provider);
+        } catch (Exception e) {
+            if (isJreTruststore) {
+                // cacerts conventionally uses "changeit" as its password; try that before giving up
+                try {
+                    return loadStore(path, KeyStore.getDefaultType(), "changeit", null);
+                } catch (Exception e1) {
+                    LOGGER.debugf("Could not load jre truststore %s with default password", path, e1);
+                    // didn't work either - just let the original exception happen
+                }
+            }
+            throw new RuntimeException(
+                    "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
+        }
+    }
+
     static KeyStore loadStore(String path, String type, String password) {
         return loadStore(path, type, password, null);
     }
@@ -281,12 +306,12 @@ public class TruststoreBuilder {
         } catch (Exception e) {
             // passwordless pkcs12 is not supported by all providers (e.g. BCFIPS non-strict mode);
             // try SUN if available - it may not be present on OS-level FIPS JVMs
-            // this will also allow the cacerts to be loaded without a password
             if (StringUtil.isNullOrEmpty(password) && StringUtil.isNullOrEmpty(provider)
                     && PKCS12.equalsIgnoreCase(type) && Security.getProvider("SUN") != null) {
                 try {
                     return KeystoreUtil.loadKeyStore(path, password, type, "SUN");
                 } catch (Exception e1) {
+                    LOGGER.debugf("Could not load passwordless %s with SUN provider", path, e1);
                     // didn't work either - just let the original exception happen
                 }
             }
