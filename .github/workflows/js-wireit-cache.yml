@@ -29,6 +29,6 @@ jobs:
 
       - uses: ./.github/actions/pnpm-setup
 
-      - name: Build Keycloak Admin Client
-        run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+      - name: Build all JS modules
+        run: pnpm build
         working-directory: js

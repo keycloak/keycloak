@@ -6,6 +6,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.client.SessionTest;
 import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
+import org.keycloak.tests.cli.admin.KcAdmSessionTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
@@ -32,6 +33,7 @@ import org.junit.platform.suite.api.Suite;
         KcSamlUserSessionLimitsBrokerTest.class,
         SessionTimeoutValidationTest.class,
         LastSessionRefreshUnitTest.class,
+        KcAdmSessionTest.class,
 })
 public class VolatileSessionsTestSuite {
 

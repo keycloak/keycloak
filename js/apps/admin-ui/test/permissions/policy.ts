@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { selectClient, selectItem } from "../utils/form.ts";
+import { selectClient, selectItem, selectMultiItem } from "../utils/form.ts";
 
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("no-policies-empty-action").click();
@@ -33,7 +33,7 @@ export async function fillPolicyForm(
       continue;
     }
     if (key === "user") {
-      await selectItem(
+      await selectMultiItem(
         page,
         page.getByRole("combobox", { name: "Type to filter" }),
         value,

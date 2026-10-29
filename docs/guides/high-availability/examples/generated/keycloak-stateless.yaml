@@ -123,7 +123,7 @@ spec:
       value: "1000"
     # end::keycloak-stateless-queue-size[]
     # tag::keycloak-stateless[]
-    - name: spi-cache-embedded--default--cluster-name
+    - name: cache-embedded-cluster-name
       value: <CLUSTER_NAME_HERE> # <5>
     - name: log-console-output
       value: json

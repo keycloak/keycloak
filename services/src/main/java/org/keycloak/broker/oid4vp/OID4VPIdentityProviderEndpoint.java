@@ -39,8 +39,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.OID4VCConstants;
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider.AuthenticationCallback;
 import org.keycloak.common.VerificationException;
@@ -199,10 +197,10 @@ public class OID4VPIdentityProviderEndpoint {
                     "Authentication session not found", Errors.INVALID_REQUEST);
         }
 
-        BrokeredIdentityContext context;
+        String claimsJson;
         try {
             SdJwtVpVerificationResult result = verifyPresentation(vpToken, requestContext.nonce());
-            context = toBrokeredContext(result, authSession);
+            claimsJson = JsonSerialization.writeValueAsString(result.getClaims());
         } catch (Exception e) {
             logger.warnf("OID4VP presentation rejected: %s", e.getMessage());
             return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.ACCESS_DENIED, e.getMessage(),
@@ -216,13 +214,15 @@ public class OID4VPIdentityProviderEndpoint {
                     "Unknown or expired state", Errors.INVALID_REQUEST);
         }
 
-        // The wallet cannot finish the browser login, so hand the verified identity to the browser.
-        // Stash it in the authentication session and add the deferred marker with a fresh response_code.
-        // The state may have leaked through the request_uri. The browser gets the response_code
-        // only from this direct_post response (OID4VP session fixation defense).
+        // The wallet cannot finish the browser login. Stash the verified claims for complete-auth,
+        // where the browser turns them into the brokered identity, and mark the login as deferred
+        // under a fresh response_code. Deliberately only the claims and not a serialized identity
+        // context: deserializing and later reserializing a context restores stale user property
+        // entries over whatever the identity provider mappers set in between. The state may have
+        // leaked through the request_uri, so only this direct_post response reveals the
+        // response_code (OID4VP session fixation defense).
         String responseCode = UUID.randomUUID().toString();
-        SerializedBrokeredIdentityContext.serialize(context)
-                .saveToAuthenticationSession(authSession, OID4VPIdentityProvider.IDENTITY_NOTE);
+        authSession.setAuthNote(OID4VPIdentityProvider.VERIFIED_CLAIMS_NOTE, claimsJson);
         session.singleUseObjects().put(
                 OID4VPIdentityProvider.DEFERRED_PREFIX + state,
                 realm.getAccessCodeLifespanLogin(),
@@ -312,19 +312,22 @@ public class OID4VPIdentityProviderEndpoint {
             return loginErrorPage(authSession, Messages.SESSION_NOT_ACTIVE);
         }
 
-        SerializedBrokeredIdentityContext serialized = SerializedBrokeredIdentityContext.readFromAuthenticationSession(
-                authSession, OID4VPIdentityProvider.IDENTITY_NOTE);
-        if (serialized == null) {
+        String claimsJson = authSession.getAuthNote(OID4VPIdentityProvider.VERIFIED_CLAIMS_NOTE);
+        if (claimsJson == null) {
             return loginErrorPage(authSession, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
         }
-        authSession.removeAuthNote(OID4VPIdentityProvider.IDENTITY_NOTE);
+        authSession.removeAuthNote(OID4VPIdentityProvider.VERIFIED_CLAIMS_NOTE);
 
         session.getContext().setAuthenticationSession(authSession);
         session.getContext().setClient(authSession.getClient());
 
-        BrokeredIdentityContext context = serialized.deserialize(session, authSession);
-        context.setAuthenticationSession(authSession);
-
+        BrokeredIdentityContext context;
+        try {
+            context = toBrokeredContext(JsonSerialization.readValue(claimsJson, JsonNode.class), authSession);
+        } catch (IllegalStateException | IOException e) {
+            logger.warnf("OID4VP login not completed: %s", e.getMessage());
+            return loginErrorPage(authSession, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
         return callback.authenticated(context);
     }
 
@@ -452,7 +455,10 @@ public class OID4VPIdentityProviderEndpoint {
                 .build();
 
         // TODO bind the presentation to the requested credential type and claims, so that not any
-        // credential from a trusted issuer satisfies the login.
+        // credential from a trusted issuer satisfies the login. Planned for the DCQL generation
+        // task: derive PresentationRequirements from the configured identity provider mappers
+        // (required or optional per mapper) and enforce them here. The principal check in
+        // requirePrincipalClaim then becomes just another required claim.
         PresentationRequirements noAdditionalRequirements = disclosedPayload -> {
         };
         TrustedSdJwtIssuer trustedIssuer = provider.trustedIssuerResolver().resolve(sdJwtVP.getIssuerSignedJWT());
@@ -496,8 +502,8 @@ public class OID4VPIdentityProviderEndpoint {
         return presentation.textValue();
     }
 
-    protected BrokeredIdentityContext toBrokeredContext(SdJwtVpVerificationResult result, AuthenticationSessionModel authSession) {
-        JsonNode claims = result.getClaims();
+    // The principal claim becomes the brokered subject. Rejects presentations without a usable value.
+    protected String requirePrincipalClaim(JsonNode claims) {
         JsonNode principal = claims.get(provider.getConfig().getPrincipalAttribute());
         if (principal == null || principal.isNull() || !principal.isValueNode()
                 || StringUtil.isBlank(principal.asText())) {
@@ -505,7 +511,11 @@ public class OID4VPIdentityProviderEndpoint {
                     "Credential does not contain a usable value for the configured principal attribute '"
                             + provider.getConfig().getPrincipalAttribute() + "'");
         }
-        String subject = principal.asText();
+        return principal.asText();
+    }
+
+    protected BrokeredIdentityContext toBrokeredContext(JsonNode claims, AuthenticationSessionModel authSession) {
+        String subject = requirePrincipalClaim(claims);
 
         BrokeredIdentityContext context = new BrokeredIdentityContext(subject, provider.getConfig());
         context.setIdp(provider);
@@ -519,8 +529,8 @@ public class OID4VPIdentityProviderEndpoint {
             context.setEmail(email.asText());
         }
 
-        // Expose disclosed claims so identity provider attribute mappers can consume them.
-        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(context, claims, provider.getConfig().getAlias());
+        // Expose disclosed claims so the OID4VP identity provider mappers can consume them.
+        context.getContextData().put(OID4VPIdentityProvider.CREDENTIAL_CLAIMS, claims);
         return context;
     }
 

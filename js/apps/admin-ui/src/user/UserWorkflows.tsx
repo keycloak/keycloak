@@ -120,9 +120,10 @@ export const UserWorkflows = ({ user }: UserWorkflowProps) => {
   const { t } = useTranslation();
 
   const workflowsLoader = async () => {
-    return adminClient.workflows.scheduled({
+    const workflows = await adminClient.workflows.scheduled({
       userId: user!,
     });
+    return workflows ?? [];
   };
 
   const nextStepRenderer = (workflow: WorkflowRepresentation) => {

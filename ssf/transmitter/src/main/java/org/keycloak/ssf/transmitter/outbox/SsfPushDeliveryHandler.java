@@ -174,10 +174,10 @@ public class SsfPushDeliveryHandler implements OutboxDeliveryHandler {
      * </ul>
      *
      * <p>The body / exception message is truncated at
-     * {@link #LAST_ERROR_DETAIL_MAX} so the column ({@code VARCHAR(2048)})
-     * comfortably absorbs the prefix + url + detail. The store's own
-     * {@code truncateError} provides a final hard cap as defense in
-     * depth.
+     * {@link #LAST_ERROR_DETAIL_MAX} characters to keep the stored error
+     * short. The column ({@code VARCHAR(2048)}) can be measured in bytes,
+     * so a non-ASCII detail may still be too long; the store's own
+     * {@code truncateError} applies the final cap in UTF-8 bytes.
      */
     protected String formatLastError(PushDeliveryOutcome push) {
         if (push.status() != null) {
@@ -207,7 +207,12 @@ public class SsfPushDeliveryHandler implements OutboxDeliveryHandler {
         if (detail.length() <= LAST_ERROR_DETAIL_MAX) {
             return detail;
         }
-        return detail.substring(0, LAST_ERROR_DETAIL_MAX) + "...";
+        int end = LAST_ERROR_DETAIL_MAX;
+        // do not split a surrogate pair
+        if (Character.isHighSurrogate(detail.charAt(end - 1))) {
+            end--;
+        }
+        return detail.substring(0, end) + "...";
     }
 
     protected static String nullToEmpty(String s) {

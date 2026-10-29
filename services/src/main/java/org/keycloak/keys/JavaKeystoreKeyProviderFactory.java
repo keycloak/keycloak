@@ -139,11 +139,12 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
                 .checkSingle(KEY_ALIAS_PROPERTY, true)
                 .checkSingle(KEY_PASSWORD_PROPERTY, true);
 
+        Path realmDir = keystoresPath.resolve(realm.getName()).normalize();
         Path keystorePath = Paths.get(model.get(KEYSTORE_KEY)).normalize();
         if (!keystorePath.isAbsolute()) {
-            keystorePath = this.keystoresPath.resolve(realm.getName()).resolve(keystorePath);
+            keystorePath = realmDir.resolve(keystorePath).normalize();
         }
-        if (!keystorePath.startsWith(keystoresPath.resolve(realm.getName()))) {
+        if (!keystorePath.startsWith(realmDir)) {
             throw new ComponentValidationException(String.format(
                     "Keystore file '%s' is not under the realm directory '%s'", keystorePath, keystoresPath.resolve(realm.getName())));
         }

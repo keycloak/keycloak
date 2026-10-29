@@ -14,14 +14,16 @@ public class HttpServerUtil {
     public static void sendResponse(HttpExchange exchange, int statusCode, Map<String, List<String>> headers, byte[] bodyBytes) {
 
         try {
-            long length = bodyBytes != null ? bodyBytes.length : 0;
-            exchange.sendResponseHeaders(statusCode, length);
+            long length = bodyBytes != null ? bodyBytes.length : -1;
+            // Before sendResponseHeaders, which transmits the header block: anything added to the
+            // response headers afterwards never reaches the client.
             if (headers != null) {
                 Headers responseHeaders = exchange.getResponseHeaders();
                 for (var entry : headers.entrySet()) {
                     responseHeaders.put(entry.getKey(), entry.getValue());
                 }
             }
+            exchange.sendResponseHeaders(statusCode, length);
 
             if (bodyBytes != null) {
                 try (var os = exchange.getResponseBody()) {

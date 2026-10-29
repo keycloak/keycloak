@@ -26,9 +26,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -65,10 +63,10 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrganizationOnRegularLogin() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("myorg", "myorg.com").getId());
-        IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
+        OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        orgRep.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgRep);
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("tom")
                 .email("tom@myorg.com")
@@ -92,10 +90,10 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrganizationOnIdentityFirstLogin() {
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("myorg", "myorg.com").getId());
-        IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
+        OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        orgRep.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgRep);
 
         // organization available to identity-first login page
         oauth.realm(bc.consumerRealmName());
@@ -104,7 +102,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
         Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -166,9 +164,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
     public void testOrganizationAttributes() {
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
         OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
-        IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
+        orgRep.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgRep);
 
         // organization available to identity-first login page
         oauth.realm(bc.consumerRealmName());
@@ -180,7 +177,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         for (Entry<String, List<String>> attribute : orgRep.getAttributes().entrySet()) {
             assertThat(driver.getPageSource(), Matchers.containsString("The " + attribute.getKey() + " is " + String.join(", ", attribute.getValue())));
         }
-        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -201,9 +198,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
         OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
-        IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
+        orgRep.getDomains().forEach(d -> d.setAutoRedirect(false));
+        organization.update(orgRep);
         organization.members().addMember(user.getId()).close();
 
         // organization available to identity-first login page

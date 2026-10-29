@@ -111,11 +111,23 @@ public class JpaClusterEventStoreProvider {
     }
 
     public void deleteEventsOlderThan(long timestampMillis) {
-        int deleted = getEntityManager().createNamedQuery("clusterEvent.deleteOlderThan")
+        EntityManager em = getEntityManager();
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> summary = em.createQuery(
+                        "SELECT e.targetCluster, e.senderCluster, COUNT(e) FROM ClusterEventEntity e WHERE e.createdAt < :timestamp GROUP BY e.targetCluster, e.senderCluster")
                 .setParameter("timestamp", timestampMillis)
-                .executeUpdate();
-        if (deleted > 0) {
-            logger.debugf("Cleaned up %d stale cluster event(s)", deleted);
+                .getResultList();
+
+        for (Object[] row : summary) {
+            logger.warnf("Discarding %d unconsumed cluster event(s) from cluster '%s' targeted at cluster '%s'",
+                    row[2], row[1], row[0]);
+        }
+
+        if (!summary.isEmpty()) {
+            em.createNamedQuery("clusterEvent.deleteOlderThan")
+                    .setParameter("timestamp", timestampMillis)
+                    .executeUpdate();
         }
     }
 

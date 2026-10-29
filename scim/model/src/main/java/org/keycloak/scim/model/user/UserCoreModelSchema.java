@@ -18,9 +18,11 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.user.Email;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.Name;
@@ -29,6 +31,8 @@ import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 public final class UserCoreModelSchema extends AbstractUserModelSchema {
+
+    private final List<MembershipChange> membershipChanges = new ArrayList<>();
 
     public UserCoreModelSchema(KeycloakSession session) {
         super(session, Scim.getCoreSchema(User.class));
@@ -57,7 +61,6 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
 
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
                 .required()
-                .notCaseExact()
                 .storedLowerCase()
                 .serverUnique()
                 .modelAttributeResolver(this::createModelAttributeResolver)
@@ -65,7 +68,6 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("emails", Email.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .notCaseExact()
                 .storedLowerCase()
                 .globalUnique()
                 .multivalued()
@@ -108,6 +110,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("externalId")
+                .caseExact()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
@@ -181,12 +184,18 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                         }
 
                         checkGroupMembershipPermission(session.getContext().getPermissions(), group);
-                        model.joinGroup(group);
+                        if (!RoleUtils.isDirectMember(model.getGroupsStream(), group)) {
+                            model.joinGroup(group);
+                            membershipChanges.add(new MembershipChange(group, model, true));
+                        }
                     }
 
                     for (GroupModel group : remove) {
                         checkGroupMembershipPermission(session.getContext().getPermissions(), group);
-                        model.leaveGroup(group);
+                        if (RoleUtils.isDirectMember(model.getGroupsStream(), group)) {
+                            model.leaveGroup(group);
+                            membershipChanges.add(new MembershipChange(group, model, false));
+                        }
                     }
                 }, (BiConsumer<User, Collection<GroupModel>>) (user, groups) -> {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
@@ -214,7 +223,10 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                         }
 
                         checkGroupMembershipPermission(session.getContext().getPermissions(), group);
-                        model.leaveGroup(group);
+                        if (RoleUtils.isDirectMember(model.getGroupsStream(), group)) {
+                            model.leaveGroup(group);
+                            membershipChanges.add(new MembershipChange(group, model, false));
+                        }
                     }
                 })
                 .withModelAdder((TriConsumer<UserModel, String, Set<GroupMembership>>) (model, name, values) -> {
@@ -230,7 +242,10 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                         }
 
                         checkGroupMembershipPermission(session.getContext().getPermissions(), group);
-                        model.joinGroup(group);
+                        if (!RoleUtils.isDirectMember(model.getGroupsStream(), group)) {
+                            model.joinGroup(group);
+                            membershipChanges.add(new MembershipChange(group, model, true));
+                        }
                     }
                 })
                 .build());
@@ -248,6 +263,14 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     public void populate(User resource, UserModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
         super.populate(resource, model, requestedAttributes, excludedAttributes);
         setTimestamps(resource, model);
+    }
+
+    List<MembershipChange> getMembershipChanges() {
+        return membershipChanges;
+    }
+
+    void clearMembershipChanges() {
+        membershipChanges.clear();
     }
 
     private static void checkUserMembershipPermission(Permissions permissions, UserModel user) {

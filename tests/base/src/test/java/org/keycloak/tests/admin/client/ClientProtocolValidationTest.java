@@ -21,10 +21,16 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
@@ -43,6 +49,9 @@ public class ClientProtocolValidationTest {
 
     @InjectRealm
     ManagedRealm realm;
+
+    @InjectClient(config = UpdatableOidcClient.class)
+    ManagedClient client;
 
     @Test
     public void testCreateClientWithValidProtocol() {
@@ -121,71 +130,35 @@ public class ClientProtocolValidationTest {
 
     @Test
     public void testUpdateClientWithInvalidProtocol() {
-        // Create a valid client first
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId("test-update-protocol");
-        clientRep.setProtocol("openid-connect");
-
-        String clientId = ApiUtil.getCreatedId(realm.admin().clients().create(clientRep));
-        assertNotNull(clientId);
-
         // Try to update with invalid protocol
-        ClientRepresentation toUpdate = realm.admin().clients().get(clientId).toRepresentation();
-        toUpdate.setProtocol("invalid-protocol-abc");
-
-        BadRequestException exception = assertThrows(BadRequestException.class, () -> realm.admin().clients().get(clientId).update(toUpdate));
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> client.updateWithCleanup(c -> c.protocol("invalid-protocol-abc")));
         assertThat(exception.getResponse().readEntity(String.class), containsString("Invalid protocol"));
-
-        // Cleanup
-        realm.admin().clients().get(clientId).remove();
     }
 
     @Test
     public void testUpdateClientWithOid4vcProtocol() {
-        // Create a valid client first
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId("test-update-oid4vc");
-        clientRep.setProtocol("openid-connect");
-
-        String clientId = ApiUtil.getCreatedId(realm.admin().clients().create(clientRep));
-        assertNotNull(clientId);
-
         // Try to update with oid4vc protocol
-        ClientRepresentation toUpdate = realm.admin().clients().get(clientId).toRepresentation();
-        toUpdate.setProtocol("oid4vc");
-
-        BadRequestException exception = assertThrows(BadRequestException.class, () -> realm.admin().clients().get(clientId).update(toUpdate));
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> client.updateWithCleanup(c -> c.protocol("oid4vc")));
         assertThat(exception.getResponse().readEntity(String.class), containsString("cannot be used as a client protocol"));
-        realm.admin().clients().get(clientId).remove();
     }
 
     @Test
     public void testUpdateClientWithValidProtocol() {
-        // Create an OIDC client
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId("test-update-valid");
-        clientRep.setProtocol("openid-connect");
-
-        String clientId = ApiUtil.getCreatedId(realm.admin().clients().create(clientRep));
-        assertNotNull(clientId);
-
-        // Update to SAML protocol - should work
-        ClientRepresentation toUpdate = realm.admin().clients().get(clientId).toRepresentation();
-        toUpdate.setProtocol("saml");
-
-        realm.admin().clients().get(clientId).update(toUpdate);
-
-        // Verify the protocol was updated
-        ClientRepresentation updated = realm.admin().clients().get(clientId).toRepresentation();
-        assertEquals("saml", updated.getProtocol());
-        // Cleanup
-        realm.admin().clients().get(clientId).remove();
+        client.updateWithCleanup(c -> c.protocol(SamlProtocol.LOGIN_PROTOCOL));
+        assertEquals(SamlProtocol.LOGIN_PROTOCOL, client.admin().toRepresentation().getProtocol());
     }
 
     public static class OID4VCServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI);
+        }
+    }
+
+    public static class UpdatableOidcClient implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-update-valid").protocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         }
     }
 }

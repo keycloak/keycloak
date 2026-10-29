@@ -14,6 +14,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -97,6 +98,14 @@ public class WorkflowResource {
                     .success();
         } catch (ModelException me) {
             throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
+        } catch (ComponentValidationException cve) {
+            // updateWorkflow() re-creates the workflow (no scheduled steps) or calls
+            // updateConfig(), both of which run WorkflowStepProviderFactory.validateConfiguration()
+            // via realm.addComponentModel()/updateComponent() - report invalid step
+            // configuration as a client error instead of leaking a 500.
+            throw ErrorResponse.error(
+                    ErrorResponse.resolveMessage(session, locale, cve.getMessage(), cve.getParameters()),
+                    Response.Status.BAD_REQUEST);
         }
     }
 

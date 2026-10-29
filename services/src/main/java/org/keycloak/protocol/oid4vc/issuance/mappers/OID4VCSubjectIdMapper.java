@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +37,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
@@ -92,12 +95,11 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         UserModel userModel = userSessionModel.getUser();
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
+        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
+        String propertyName = getClaimName(userAttributeName);
+        if (propertyName == null) {
             return;
         }
-        String propertyName = attributePath.get(attributePath.size() - 1);
-        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);
         if (UserModel.ID.equals(userAttributeName)) {
             userIdConsumer.accept(userModel.getId());
@@ -107,6 +109,29 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
                     .findFirst()
                     .ifPresent(userIdConsumer);
         }
+    }
+
+    // the configured user attribute serves as fallback claim name to stay compatible with mappers that were
+    // created without an explicit claim name
+    @Override
+    protected String resolveClaimName(ProtocolMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        if (config == null) {
+            return null;
+        }
+
+        return Optional.ofNullable(config.get(CLAIM_NAME))
+                .orElse(config.get(OID4VCMapper.USER_ATTRIBUTE_KEY));
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return getMetadataAttributePath(resolveClaimName(mapperModel));
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(resolveClaimName(mapperModel));
     }
 
     @Override
@@ -122,6 +147,13 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public ProtocolMapper create(KeycloakSession session) {
         return new OID4VCSubjectIdMapper();
+    }
+
+    // The subject-id mapper is the trusted writer of the 'sub' claim (via its 'id' alias). It must be allowed to
+    // target 'sub'/'id', but remains blocked from all other reserved claims (e.g. exp, iat, jti).
+    @Override
+    protected Set<String> getAllowedReservedClaims() {
+        return Set.of(CLAIM_NAME_SUB);
     }
 
     @Override

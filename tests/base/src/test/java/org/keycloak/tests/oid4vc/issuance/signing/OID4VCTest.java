@@ -1,5 +1,6 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -8,9 +9,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.tests.oid4vc.OID4VCIssuerEndpointTest;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * New-testsuite local utility base for SD-JWT signing/builder tests.
@@ -41,5 +46,18 @@ public abstract class OID4VCTest extends OID4VCIssuerEndpointTest {
                 .ifPresent(credential::setIssuanceDate);
         credential.setCredentialSubject(getCredentialSubject(claims));
         return credential;
+    }
+
+    /**
+     * Decodes a base64url-encoded SD-JWT disclosure into a JSON array node.
+     * Disclosures are either {@code [salt, value]} (array element) or
+     * {@code [salt, key, value]} (whole claim).
+     */
+    protected static JsonNode decodeDisclosure(String disclosure) {
+        try {
+            return JsonSerialization.mapper.readTree(Base64Url.decode(disclosure));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

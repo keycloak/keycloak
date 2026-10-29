@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.oid4vc.preauth;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -42,8 +44,8 @@ public class OID4VCJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthoriz
     }
 
     @Override
-    protected String getExpectedClaimPath() {
-        return "given_name";
+    protected List<Object> getExpectedClaimPath() {
+        return List.of("credentialSubject", "given_name");
     }
 
     @Override

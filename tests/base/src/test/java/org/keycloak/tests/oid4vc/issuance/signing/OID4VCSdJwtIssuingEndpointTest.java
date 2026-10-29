@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.core.Response;
-
 import org.keycloak.TokenVerifier;
 import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
@@ -17,7 +15,6 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -28,7 +25,6 @@ import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.Claims;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
@@ -41,8 +37,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
-import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -71,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Endpoint test with sd-jwt specific config.
@@ -85,10 +78,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @AfterEach
     public void logout() {
         AccountHelper.logout(testRealm.admin(), "john");
+        oauth.scope(null);
     }
 
     @Test
-    public void testRequestTestCredential() {
+    public void testRequestTestCredential() throws VerificationException {
         String scopeName = sdJwtTypeCredentialScope.getName();
         String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
@@ -104,15 +98,21 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         String cNonce = getCNonce();
 
-        final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
+        Proofs proof = new Proofs()
+                .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce)));
 
-        runOnServer.run(session -> {
-            Proofs proof = new Proofs()
-                    .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(getCredentialIssuer(session), cNonce)));
-            ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                    ClientScopeRepresentation.class);
-            testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-        });
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode(),
+                "The credential request should be answered successfully.");
+        assertNotNull(response.getCredentialResponse(), "A credential should be responded.");
+
+        new TestCredentialResponseHandler(sdJwtTypeCredentialVct)
+                .handleCredentialResponse(response.getCredentialResponse(), sdJwtTypeCredentialScope);
     }
 
     @Test
@@ -132,22 +132,26 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
-        final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
+        Proofs proof = new Proofs()
+                .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce)));
 
-        runOnServer.run(session -> {
-            Proofs proof = new Proofs()
-                    .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(getCredentialIssuer(session), cNonce)));
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
 
-            ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                    ClientScopeRepresentation.class);
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode(),
+                "The credential request should be answered successfully.");
+        assertNotNull(response.getCredentialResponse(), "A credential should be responded.");
 
-            SdJwtVP sdJwtVP = testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-            assertNotNull(sdJwtVP.getCnfClaim(), "A cnf claim must be attached to the credential");
-        });
+        SdJwtVP sdJwtVP = SdJwtVP.of(
+                response.getCredentialResponse().getCredentials().get(0).getCredential().toString());
+        assertNotNull(sdJwtVP.getCnfClaim(), "A cnf claim must be attached to the credential");
     }
 
     @Test
-    public void testRequestTestCredentialWithInvalidKeybinding() throws Throwable {
+    public void testRequestTestCredentialWithInvalidKeybinding() {
         String cNonce = getCNonce();
         String scopeName = sdJwtTypeCredentialScope.getName();
         String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
@@ -163,188 +167,164 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
-        final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
+        Proofs proof = new Proofs()
+                .setJwt(List.of(generateInvalidJwtProof(credentialIssuer.getCredentialIssuer(), cNonce)));
 
-        try {
-            withCausePropagation(() -> runOnServer.run(session -> {
-                Proofs proof = new Proofs()
-                        .setJwt(List.of(generateInvalidJwtProof(getCredentialIssuer(session), cNonce)));
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
 
-                ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                        ClientScopeRepresentation.class);
-
-                testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-            }));
-            fail("Should have thrown an exception");
-        } catch (ErrorResponseException ex) {
-            String message = ex.getErrorDescription();
-            assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
-            assertTrue(message.contains("Could not verify signature of provided proof"), "Unexpected: " + message);
-        }
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode(),
+                "The credential request should be rejected.");
+        assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
+        assertTrue(response.getErrorDescription().contains("Could not verify signature of provided proof"),
+                "Unexpected: " + response.getErrorDescription());
     }
 
     @Test
-    public void testProofOfPossessionWithMissingAudience() throws Throwable {
-        try {
-            String scopeName = sdJwtTypeCredentialScope.getName();
-            String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-            CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-            authDetail.setType(OPENID_CREDENTIAL);
-            authDetail.setCredentialConfigurationId(credConfigId);
-            authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+    public void testProofOfPossessionWithMissingAudience() {
+        String scopeName = sdJwtTypeCredentialScope.getName();
+        String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
 
-            String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-            AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
-            String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-            String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
-            final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
+        // Build a CNonce with null audience (missing 'aud') via server-side call
+        String badCNonce = runOnServer.fetchString(session -> {
+            CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+            final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+            return cNonceHandler.buildCNonce(null,
+                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
+        });
 
-            withCausePropagation(() -> runOnServer.run(session -> {
-                CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
-                final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
-                String cNonce = cNonceHandler.buildCNonce(null,
+        Proofs proof = new Proofs()
+                .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(credentialIssuer.getCredentialIssuer(), badCNonce)));
+
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode(),
+                "The credential request should be rejected.");
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), response.getError());
+        assertTrue(response.getErrorDescription().contains("c_nonce: expected 'aud'"),
+                "Unexpected: " + response.getErrorDescription());
+    }
+
+    @Test
+    public void testProofOfPossessionWithIllegalSourceEndpoint() {
+        String scopeName = sdJwtTypeCredentialScope.getName();
+        String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
+        // Build a CNonce with the credential endpoint as aud but no SOURCE_ENDPOINT metadata (illegal source)
+        String badCNonce = runOnServer.fetchString(session -> {
+            CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+            final String credentialsEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+            return cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
+        });
+
+        Proofs proof = new Proofs()
+                .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(credentialIssuer.getCredentialIssuer(), badCNonce)));
+
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode(),
+                "The credential request should be rejected.");
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), response.getError());
+        assertTrue(response.getErrorDescription().contains("c_nonce: expected 'source_endpoint'"),
+                "Unexpected: " + response.getErrorDescription());
+    }
+
+    @Test
+    public void testProofOfPossessionWithExpiredState() {
+        String scopeName = sdJwtTypeCredentialScope.getName();
+        String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
+        // Build an already-expired CNonce by temporarily setting lifetime=-1 server-side
+        String expiredCNonce = runOnServer.fetchString(session -> {
+            CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+            final String credentialsEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
+            final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
+            try {
+                session.getContext().getRealm().setAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, -1);
+                return cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
                         Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
-                Proofs proof = new Proofs().setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(getCredentialIssuer(session), cNonce)));
+            } finally {
+                session.getContext().getRealm().removeAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS);
+            }
+        });
 
-                ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                        ClientScopeRepresentation.class);
-                testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-            }));
-            fail("Should have thrown an exception");
-        } catch (ErrorResponseException ex) {
-            String message = ex.getErrorDescription();
-            assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
-            assertTrue(message.contains("c_nonce: expected 'aud'"), "Unexpected: " + message);
-        }
-    }
+        Proofs proof = new Proofs()
+                .setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(credentialIssuer.getCredentialIssuer(), expiredCNonce)));
 
-    @Test
-    public void testProofOfPossessionWithIllegalSourceEndpoint() throws Throwable {
-        try {
-            String scopeName = sdJwtTypeCredentialScope.getName();
-            String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-            CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-            authDetail.setType(OPENID_CREDENTIAL);
-            authDetail.setCredentialConfigurationId(credConfigId);
-            authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+        Oid4vcCredentialResponse response = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(token)
+                .send();
 
-            String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-            AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
-            String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-            String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-
-            final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
-
-            withCausePropagation(() -> runOnServer.run(session -> {
-                CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
-                final String credentialsEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-                String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
-                Proofs proof = new Proofs().setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(getCredentialIssuer(session), cNonce)));
-
-                ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                        ClientScopeRepresentation.class);
-                testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-            }));
-            fail("Should have thrown an exception");
-        } catch (ErrorResponseException ex) {
-            String message = ex.getErrorDescription();
-            assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
-            assertTrue(message.contains("c_nonce: expected 'source_endpoint'"), "Unexpected: " + message);
-        }
-    }
-
-    @Test
-    public void testProofOfPossessionWithExpiredState() throws Throwable {
-        try {
-            String scopeName = sdJwtTypeCredentialScope.getName();
-            String credConfigId = sdJwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-            CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-            authDetail.setType(OPENID_CREDENTIAL);
-            authDetail.setCredentialConfigurationId(credConfigId);
-            authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
-
-            String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-            AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
-            String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-            String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-
-            final String clientScopeString = toJsonString(sdJwtTypeCredentialScope);
-
-            withCausePropagation(() -> runOnServer.run(session -> {
-                CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
-                final String credentialsEndpoint = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-                final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
-                try {
-                    session.getContext().getRealm().setAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, -1);
-                    String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
-                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
-                    Proofs proof = new Proofs().setJwt(List.of(OID4VCProofTestUtils.generateJwtProof(getCredentialIssuer(session), cNonce)));
-
-                    ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                            ClientScopeRepresentation.class);
-                    testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
-                } finally {
-                    session.getContext().getRealm().removeAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS);
-                }
-            }));
-            fail("Should have thrown an exception");
-        } catch (ErrorResponseException ex) {
-            String message = ex.getErrorDescription();
-            assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
-            assertTrue(message.matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"),
-                    String.format("Message '%s' should match regular expression", message));
-        }
-    }
-
-    protected static String getCredentialIssuer(KeycloakSession session) {
-        return OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-    }
-
-    private static SdJwtVP testRequestTestCredential(KeycloakSession session, ClientScopeRepresentation clientScope,
-                                                     String token, Proofs proof, String credentialIdentifier)
-            throws VerificationException, IOException {
-
-        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-        authenticator.setTokenString(token);
-        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-
-        CredentialRequest credentialRequest = new CredentialRequest()
-                .setCredentialIdentifier(credentialIdentifier)
-                .setProofs(proof);
-
-        String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-        Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
-        assertEquals(HttpStatus.SC_OK,
-                credentialResponse.getStatus(),
-                "The credential request should be answered successfully.");
-        assertNotNull(credentialResponse.getEntity(), "A credential should be responded.");
-        CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(),
-                CredentialResponse.class);
-        new TestCredentialResponseHandler(sdJwtTypeCredentialVct).handleCredentialResponse(credentialResponseVO,
-                clientScope);
-
-        return SdJwtVP.of(credentialResponseVO.getCredentials().get(0).getCredential().toString());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode(),
+                "The credential request should be rejected.");
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), response.getError());
+        assertTrue(response.getErrorDescription().matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"),
+                String.format("Message '%s' should match regular expression", response.getErrorDescription()));
     }
 
     @Test
     public void testCredentialIssuance() throws Exception {
         ClientScopeRepresentation clientScope = sdJwtTypeCredentialScope;
-        String token = getBearerToken(oauth, client, clientScope.getName());
+
+        // create-credential-offer requires a regular (non-OID4VCI-scoped) token.
+        // OID4VCI tokens are restricted to the credential endpoint only.
+        String offerToken = oauth.openid(false)
+                .scope(null)
+                .doPasswordGrantRequest("john", TEST_PASSWORD)
+                .getAccessToken();
 
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialOfferURI credOfferUri = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .targetUser("john")
-                .bearerToken(token)
+                .bearerToken(offerToken)
                 .send()
                 .getCredentialOfferURI();
 
@@ -556,25 +536,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         assertNotNull(response.getNonce());
 
         return response.getNonce();
-    }
-
-    private static String toJsonString(Object object) {
-        if (object == null) {
-            return null;
-        }
-        try {
-            return JsonSerialization.writeValueAsString(object);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static <T> T fromJsonString(String representation, Class<T> clazz) {
-        try {
-            return JsonSerialization.readValue(representation, clazz);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static String generateInvalidJwtProof(String aud, String nonce) {

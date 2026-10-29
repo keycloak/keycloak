@@ -89,6 +89,11 @@ public class HttpOptions {
             .description("The file path to a private key in PEM format.")
             .build();
 
+    public static final Option<String> HTTPS_CERTIFICATE_KEY_FILE_PASSWORD = new OptionBuilder<>("https-certificate-key-file-password", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The password to decrypt an encrypted private key in PEM format (encrypted PKCS#8).")
+            .build();
+
     public static final Option<File> HTTPS_KEY_STORE_FILE = new OptionBuilder<>("https-key-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The key store which holds the certificate information instead of specifying separate files.")

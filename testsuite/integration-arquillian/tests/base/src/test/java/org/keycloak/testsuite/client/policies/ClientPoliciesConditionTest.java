@@ -27,11 +27,12 @@ import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -44,6 +45,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -61,7 +63,6 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -97,8 +98,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
+
+    private static final String DUPLICATED_GROUP_PARENT_NAME = "duplicate-source-groups-parent";
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -259,6 +261,40 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testClientUpdateSourceHostsConditionWildcardDomain() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Wildcard Domain Profile")
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                                createSecureClientAuthenticatorExecutorConfig(List.of(JWTClientAuthenticator.PROVIDER_ID), null)
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // the request comes from localhost, and "*.localhost" matches the domain
+        updateWildcardDomainPolicy("localhost");
+        ClientPolicyException e = Assertions.assertThrows(ClientPolicyException.class,
+                () -> createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> clientRep.setSecret("secret")));
+        assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getMessage());
+
+        // "*.host" only matches "host" and its subdomains, not any host name ending with it like localhost
+        updateWildcardDomainPolicy("host");
+        createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> clientRep.setSecret("secret"));
+    }
+
+    private void updateWildcardDomainPolicy(String domain) throws Exception {
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Wildcard Domain Policy", Boolean.TRUE)
+                        .addCondition(ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,
+                                createClientUpdateSourceHostsConditionConfig(List.of("*." + domain)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    @Test
     public void testClientUpdateSourceGroupsCondition() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -296,6 +332,71 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
             });
         } catch (Exception e) {
             fail();
+        }
+    }
+
+    @Test
+    public void testClientUpdateSourceGroupsConditionMatchesFullGroupPath() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Andre Profil")
+                        .addExecutor(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID,
+                                createSecureClientAuthenticatorExecutorConfig(
+                                        List.of(JWTClientAuthenticator.PROVIDER_ID),
+                                        null)
+                        )
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // make manage-clients a member of the subgroup /duplicate-source-groups-parent/topGroup, whose name
+        // duplicates the one of the top level group /topGroup the create-clients user belongs to
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName(DUPLICATED_GROUP_PARENT_NAME);
+        String parentGroupId = CreatedResponseUtil.getCreatedId(realm.groups().add(parentGroup));
+        testContext.getOrCreateCleanup(REALM_NAME).addGroupId(parentGroupId);
+        GroupRepresentation duplicatedGroup = new GroupRepresentation();
+        duplicatedGroup.setName("topGroup");
+        String duplicatedGroupId = CreatedResponseUtil.getCreatedId(realm.groups().group(parentGroupId).subGroup(duplicatedGroup));
+        String userId = realm.users().search("manage-clients", true).get(0).getId();
+        realm.users().get(userId).joinGroup(duplicatedGroupId);
+
+        // a simple name only matches the top level group, the subgroup with the duplicated name is not matched
+        updateClientUpdateSourceGroupsPolicy("topGroup");
+        authCreateClients();
+        assertClientRegistrationFails();
+        authManageClients();
+        createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+        });
+
+        // the subgroup is matched when it is configured by its full path
+        updateClientUpdateSourceGroupsPolicy("/" + DUPLICATED_GROUP_PARENT_NAME + "/topGroup");
+        authManageClients();
+        assertClientRegistrationFails();
+        authCreateClients();
+        createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+        });
+    }
+
+    private void updateClientUpdateSourceGroupsPolicy(String group) throws Exception {
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Andre Politik", Boolean.TRUE)
+                        .addCondition(ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,
+                                createClientUpdateSourceGroupsConditionConfig(List.of(group)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    private void assertClientRegistrationFails() throws Exception {
+        try {
+            createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            });
+            fail();
+        } catch (ClientRegistrationException e) {
+            assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
         }
     }
 

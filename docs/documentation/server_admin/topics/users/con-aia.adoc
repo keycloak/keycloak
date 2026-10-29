@@ -74,6 +74,8 @@ displays the confirmation screen where the user can confirm agreement to delete 
 NOTE: The <<_account-service,{project_name} Account Console>> typically uses the `Delete Credential` action when deleting a 2nd-factor credential.  You can check the Account Console for examples if you want
 to use this action directly from your own applications. However, relying on the Account Console is best instead of managing credentials from your own applications.
 
+Similarly, the `verifiable_credential_offer` action is a parameterized AIA used to trigger verifiable credential issuance. The parameter is a Base64Url-encoded JSON object containing the credential configuration ID and optional fields. For example: `kc_action=verifiable_credential_offer:eyJjcmVkZW50aWFsQ29uZmlndXJhdGlvbklkIjoibWVtYmVyc2hpcC1jcmVkZW50aWFsIn0`. This action is available when the `OID4VC_VCI` feature is enabled. See <<_oid4vci_credential_offer_aia,Credential Offer via Application Initiated Action>> for full details.
+
 [id="con-aia-available-actions_{context}"]
 == Available actions
 

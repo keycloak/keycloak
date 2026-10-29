@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -119,6 +120,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -144,16 +146,12 @@ import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
-import static java.util.Optional.ofNullable;
-
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
-    public static final String OIDC = "openid-connect";
-
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
         session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, userImport);
@@ -411,7 +409,12 @@ public class RepresentationToModel {
 
         if (resourceRep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
-                client.registerNode(entry.getKey(), entry.getValue());
+                // Replace entry.getKey() with a normalised form:
+                String nodeKey = entry.getKey();
+                if (nodeKey.startsWith("[") && nodeKey.endsWith("]")) {
+                    nodeKey = nodeKey.substring(1, nodeKey.length() - 1);
+                }
+                client.registerNode(nodeKey, entry.getValue());
             }
         }
 
@@ -491,7 +494,11 @@ public class RepresentationToModel {
 
         if (rep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
-                resource.registerNode(entry.getKey(), entry.getValue());
+                String nodeKey = entry.getKey();
+                if (nodeKey.startsWith("[") && nodeKey.endsWith("]")) {
+                    nodeKey = nodeKey.substring(1, nodeKey.length() - 1);
+                }
+                resource.registerNode(nodeKey, entry.getValue());
             }
         }
 
@@ -532,6 +539,7 @@ public class RepresentationToModel {
      * @param isNew  Whether the client is new or not (needed because some getters cannot return null).
      */
     private static void updateClientProperties(ClientModel client, ClientRepresentation rep, boolean isNew) {
+        boolean existingBearerOnly = !isNew && client.isBearerOnly() && !client.isPublicClient();
         List<Supplier<ClientTypeException>> clientPropertyUpdates = new LinkedList<Supplier<ClientTypeException>>() {{
             /**
              * Values from the ClientRepresentation take precedence.
@@ -557,12 +565,26 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setFrontchannelLogout, rep::isFrontchannelLogout, client::isFrontchannelLogout));
             add(updatePropertyAction(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
             // Fields with defaults if not initially provided
-            add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
+            add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> DEFAULT_PROTOCOL));
             add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistrationTimeout(client, isNew)));
             add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
-            add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
+            if (rep.isFullScopeAllowed() != null) {
+                add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed));
+            } else {
+                add(() -> {
+                    Boolean fullScopeDefault = defaultFullScopeAllowed(client, isNew);
+                    if (fullScopeDefault != null) {
+                        try {
+                            client.setFullScopeAllowed(fullScopeDefault);
+                        } catch (ClientTypeException e) {
+                            logger.debugf("Default fullScopeAllowed conflicts with client type constraint for client '%s' — preserving typed value", client.getClientId());
+                        }
+                    }
+                    return null;
+                });
+            }
             // Client Secret
-            add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
+            add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep, existingBearerOnly)));
             // Redirect uris / Web origins
             add(updatePropertyAction(client::setRedirectUris, () -> filterEmptyValues(rep.getRedirectUris()), client::getRedirectUris));
             add(updatePropertyAction(client::setWebOrigins, () -> filterEmptyValues(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
@@ -571,6 +593,10 @@ public class RepresentationToModel {
         // Extended client attributes
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                // realm_client is computed when a client is converted to a representation, it must not be stored
+                if (Constants.REALM_CLIENT.equals(entry.getKey())) {
+                    continue;
+                }
                 clientPropertyUpdates.add(
                     updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
             }
@@ -606,7 +632,7 @@ public class RepresentationToModel {
         return client.getNodeReRegistrationTimeout();
     }
 
-    private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
+    private static String determineNewSecret(ClientModel client, ClientRepresentation rep, boolean existingBearerOnly) {
         if (client.isPublicClient()) {
             // Clear out the secret with null
             return null;
@@ -617,6 +643,10 @@ public class RepresentationToModel {
         String newSecret = rep.getSecret();
 
         if (newSecret == null && currentSecret == null) {
+            // Metadata updates must not introduce credentials for an existing bearer-only client.
+            if (existingBearerOnly && client.isBearerOnly()) {
+                return null;
+            }
             return KeycloakModelUtils.generateSecret(client);
         } else if (newSecret != null) {
             return newSecret;
@@ -838,6 +868,9 @@ public class RepresentationToModel {
                     continue;
                 }
                 if (cred.getValue() != null && !cred.getValue().isEmpty()) {
+                    if (cred.getType() != null && !CredentialRepresentation.PASSWORD.equals(cred.getType())) {
+                        throw new ModelException("Credential type must be '" + CredentialRepresentation.PASSWORD + "' when value is provided, but was '" + cred.getType() + "'");
+                    }
                     RealmModel origRealm = session.getContext().getRealm();
                     try {
                         session.getContext().setRealm(realm);
@@ -974,7 +1007,7 @@ public class RepresentationToModel {
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
-        identityProviderModel.setOrganizationId(representation.getOrganizationId());
+        identityProviderModel.setOrganizationIds(extractOrganizationIds(representation));
 
         // Merge config from the identity provider model in case the provider sets some default config
         Map<String, String> repConfig = removeEmptyString(representation.getConfig());
@@ -1868,29 +1901,47 @@ public class RepresentationToModel {
 
         IdentityProviderModel existing = Optional.ofNullable(session.identityProviders().getByAlias(representation.getAlias()))
                         .orElse(session.identityProviders().getById(representation.getInternalId()));
-        String repOrgId = representation.getOrganizationId() != null ? representation.getOrganizationId() :
-                representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        String orgId = existing != null ? existing.getOrganizationId() : repOrgId;
 
-        if (orgId != null) {
-            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = provider.getById(orgId);
+        // backwards compat: legacy imports may carry a single org ID in config
+        String legacyOrgId = representation.getConfig() != null
+                ? representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE) : null;
 
-            if (org == null || (repOrgId != null && provider.getById(repOrgId) == null)) {
-                throw new IllegalArgumentException("Organization associated with broker does not exist");
-            }
-
-            String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-
-            if (StringUtil.isBlank(domain)) {
-                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-            } else if (!ANY_DOMAIN.equals(domain) && org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
-                throw new IllegalArgumentException("Domain does not match any domain from the organization");
-            }
-
-            // make sure the link to an organization does not change
-            representation.setOrganizationId(orgId);
+        Set<String> repOrgIds = extractOrganizationIds(representation);
+        if ((repOrgIds == null || repOrgIds.isEmpty()) && legacyOrgId != null) {
+            repOrgIds = Set.of(legacyOrgId);
         }
+
+        Set<String> orgIds = existing != null ? existing.getOrganizationIds() : repOrgIds;
+
+        if (orgIds != null && !orgIds.isEmpty()) {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+
+            for (String id : orgIds) {
+                if (provider.getById(id) == null) {
+                    throw new IllegalArgumentException("Organization associated with broker does not exist");
+                }
+            }
+
+            // strip old domain config entries that are no longer used
+            if (representation.getConfig() != null) {
+                representation.getConfig().remove(MigrationUtils.ORGANIZATION_DOMAIN_ATTRIBUTE);
+                representation.getConfig().remove(MigrationUtils.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE);
+            }
+            representation.getConfig().remove(MigrationUtils.ORGANIZATION_REDIRECT_MODE_ATTRIBUTE);
+
+            representation.setOrganizationLinks(orgIds.stream()
+                    .map(OrganizationIdentityProviderLinkRepresentation::new)
+                    .collect(Collectors.toList()));
+        }
+    }
+
+    private static Set<String> extractOrganizationIds(IdentityProviderRepresentation representation) {
+        List<OrganizationIdentityProviderLinkRepresentation> links = representation.getOrganizationLinks();
+        if (links == null || links.isEmpty()) return null;
+        return links.stream()
+                .map(OrganizationIdentityProviderLinkRepresentation::getOrganizationId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {
@@ -1904,16 +1955,18 @@ public class RepresentationToModel {
         model.setRedirectUrl(rep.getRedirectUrl());
         model.setDescription(rep.getDescription());
         model.setAttributes(rep.getAttributes());
-        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
-                .filter(Objects::nonNull)
-                .map(RepresentationToModel::toModel)
-                .collect(Collectors.toSet()));
+        if (rep.getDomains() != null) {
+            model.setDomains(rep.getDomains().stream()
+                    .filter(Objects::nonNull)
+                    .map(RepresentationToModel::toModel)
+                    .collect(Collectors.toSet()));
+        }
 
         return model;
     }
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
-        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified(), domainRepresentation.getIdentityProviderAlias(), domainRepresentation.isAutoRedirect());
     }
 
     public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation, String verifiableCredentialId) {

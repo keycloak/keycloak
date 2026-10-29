@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -29,6 +30,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 
 import io.micrometer.core.instrument.Counter;
@@ -46,6 +48,7 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
 
+    private final KeycloakSession session;
     private final boolean withIdp;
     private final boolean withRealm;
     private final boolean withClientId;
@@ -56,6 +59,7 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     private final Meter.MeterProvider<Counter> meterProvider;
 
     public MicrometerUserEventMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events, Meter.MeterProvider<Counter> meterProvider) {
+        this.session = session;
         this.withIdp = withIdp;
         this.withRealm = withRealm;
         this.withClientId = withClientId;
@@ -104,11 +108,33 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     }
 
     private String getIdentityProvider(Event event) {
-        String identityProvider = null;
         if (event.getDetails() != null) {
-            identityProvider = event.getDetails().get(Details.IDENTITY_PROVIDER);
+            String identityProvider = event.getDetails().get(Details.IDENTITY_PROVIDER);
+            if (identityProvider == null || getError(event) == null) {
+                return identityProvider;
+            }
+            // When there is an error, the provider alias is user input and might not exist.
+            // Validate it to avoid a metrics cardinality explosion.
+            var realmSetInContext = session.getContext().getRealm();
+            boolean resetContextNeeded = false;
+            if (realmSetInContext == null || !Objects.equals(realmSetInContext.getId(), event.getRealmId())) {
+                session.getContext().setRealm(session.realms().getRealm(event.getRealmId()));
+                resetContextNeeded = true;
+            }
+            try {
+                if (session.getContext().getRealm() != null) {
+                    IdentityProviderModel byAlias = session.identityProviders().getByAlias(identityProvider);
+                    if (byAlias != null) {
+                        return identityProvider;
+                    }
+                }
+            } finally {
+                if (resetContextNeeded) {
+                    session.getContext().setRealm(realmSetInContext);
+                }
+            }
         }
-        return identityProvider;
+        return null;
     }
 
 

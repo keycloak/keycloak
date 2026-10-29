@@ -117,7 +117,7 @@ public class PropertiesBasedRoleMapper implements RoleMappingsProvider {
                     this.roleMappings.load(is);
                     logger.debugf("Successfully loaded role mappings from %s", path);
                 } catch (Exception e) {
-                    logger.debugv(e, "Unable to load role mappings from %s", path);
+                    logger.debugv(e, "Unable to load role mappings from {0}", path);
                 }
             } else {
                 throw new RuntimeException("Unable to load role mappings from " + path + ": file does not exist in filesystem");
@@ -131,7 +131,7 @@ public class PropertiesBasedRoleMapper implements RoleMappingsProvider {
                     this.roleMappings.load(is);
                     logger.debugf("Resource loader successfully loaded role mappings from %s", path);
                 } catch (Exception e) {
-                    logger.debugv(e, "Resource loader unable to load role mappings from %s", path);
+                    logger.debugv(e, "Resource loader unable to load role mappings from {0}", path);
                 }
             } else {
                 throw new RuntimeException("Unable to load role mappings from " + path + ": file does not exist in the resource");

@@ -106,8 +106,24 @@ the target user currently belongs to.
 
 [NOTE]
 ====
-This feature does not support enforcing access to federated resource, however, this limitation is being considered
-for future improvement.
+This feature does not support enforcing access to federated resources.
+Partial evaluation decorates database queries, so a resource must be represented in {project_name}'s own
+database for the filtering to take it into account. Users from external storage providers (such as LDAP)
+with import disabled are never represented in the database and are therefore never visible in search
+results when access is controlled through fine-grained permissions.
+
+Enabling user import on the federation provider is not enough on its own. Group membership has to be
+imported as well. If a group's LDAP mapper is configured with mode `LDAP_ONLY` or `READ_ONLY`, the
+membership itself is kept only in LDAP and is never written to the database, even for imported users. As
+a result, a federated user can still be invisible in a search that is scoped by group-based permissions,
+even though the user record itself was imported. Set the group's LDAP mapper mode to `IMPORT` so that
+memberships are persisted locally and can be taken into account by partial evaluation. The mapper must
+already be in `IMPORT` mode when the user is first created locally (for example, on first login), since
+switching an existing mapper to `IMPORT` later, or running a group sync, does not backfill memberships for
+users already imported.
+
+To include federated users in search results regardless of their import or group mapper configuration,
+grant the administrator the `view-users` role instead of relying on fine-grained permissions.
 ====
 
 ===== Groups Resource Type
@@ -125,7 +141,7 @@ set of management operations:
 | *view-members*            | Defines if a realm administrator can view group members.
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
-| *manage-members*          | Defines if a realm administrator can manage group members. Together with `manage-membership`, also allows creating new users as members of the group.
+| *manage-members*          | Defines if a realm administrator can manage group members. Together with `manage-membership` and `view` on the group, also allows creating new users as members of the group.
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *impersonate-members*     | Defines if a realm administrator can impersonate group members.
@@ -135,6 +151,11 @@ set of management operations:
 | *manage-membership-of-members* | Defines if a realm administrator can grant or deny `manage-group-membership` for members of a group.
 |===
 
+[NOTE]
+====
+To create a new user directly as a member of a group, the delegated administrator needs `manage-members`, `manage-membership`, and `view` scopes on the target group. The `view` scope is required because the group must be resolvable from queries during user creation.
+====
+
 ====== Group hierarchy and permission inheritance
 
 The `view-members`, `manage-members`, and `impersonate-members` scopes cascade through the group hierarchy. When you grant or deny one of these scopes on a group, the permission applies to all descendant groups unless a more specific permission exists on a descendant.
@@ -143,7 +164,17 @@ The `view-members`, `manage-members`, and `impersonate-members` scopes cascade t
 
 *Allow carve-outs:* You can override a parent deny by granting an explicit allow for the same scope on a specific child group. The allow applies only to direct members of that child group. It does not cascade further to the child's own descendants. Members of deeper descendant groups remain denied unless they also have an explicit allow.
 
-A direct `view` permission on a specific user does not override a group membership deny. Group membership denies take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for the member scope (such as `view-members`) on the specific group the user belongs to.
+A direct `view` permission on a specific user does not override a group membership deny that uses a member scope. Denies on the member scopes (`view-members`, `manage-members`, and `impersonate-members`)
+take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for a member scope (such as `view-members`)
+on the specific group the user belongs to.
+
+Only the member scopes protect a group's members. A group permission that denies only a `view` or `manage` scope,
+does not block a user-level operation on a member of that group. In that case the user remains accessible through the
+corresponding user-level permission, and the group the administrator cannot access is simply filtered out from the user's
+group memberships.
+For example, an administrator with `view` on all users can still view a user who also belongs to a group they cannot access.
+Only the groups the administrator is allowed to see are returned for that user.
+Denying `view-members` (or `manage-members`) on that group is what protects its members and denies access to the user.
 
 For example, given a hierarchy `Department > Team A > Subteam X`:
 
@@ -175,7 +206,10 @@ set of management operations:
 
 | *view*                    | Defines if a realm administrator can view clients. This scope should be set whenever you want
                               to make clients available from queries.
+                              When granted on a specific client instance, the administrator can also view the client scopes currently assigned to that client.
 | *manage*                  | Defines if a realm administrator can manage clients.
+                              When granted on a specific client instance, the administrator can assign any existing realm client scope to that client, remove assigned scopes, and change their type (default ↔ optional).
+                              This does not grant permission to edit shared client scope definitions. Grant `view` as well to manage assignments through the Admin Console.
 | *map-roles*               | Defines if a realm administrator can assign any role defined by a client to a user.
 | *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client as a composite to
                               another role.
@@ -200,6 +234,9 @@ The *Roles* realm resource type represents the roles in a realm. You can manage 
 
 The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily. The administrator must also
 have user role mapping permissions on the user.
+
+An administrator granted the *map-role* operation on a role can also view that role, including its attributes and composites,
+so that it can be selected when assigning roles to users and groups. There is no separate *view* operation for roles.
 
 If there is a client resource type permission for the *map-roles*, *map-roles-composite*, or *map-roles-client-scope* scopes,
 it will take precedence over any role resource type permission if the role is a client role.
@@ -795,3 +832,28 @@ When filtering resources, the partial evaluation mechanism will eventually rely 
 to filter the results. Depending on your database, you might have limitations on the number of parameters for the `IN` clause.
 That is the case for old versions of the Oracle database, which has a hard limit to 1000 parameters. To avoid such problems,
 keep in mind the considerations above about the number of permissions that grants or deny access to a single realm administrator.
+
+===== Tuning the IN clause bind parameter threshold
+
+Some JDBC drivers impose limits on the number of bind parameters in a single prepared statement.
+For example, the PostgreSQL JDBC driver (pgjdbc) enforces a hard limit of 65,535 parameters defined by the wire protocol.
+When the cumulative number of bind parameters across all `IN` clauses in a query reaches a configured threshold,
+{project_name} renders subsequent resource IDs as SQL literals instead of bind parameters.
+The threshold is configurable and defaults to `32,000`.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authorization--authorization--jpa-in-parameters-limit-threshold=2000
+----
+
+Lower the value if your database has a stricter per-statement bind parameter limit.
+
+This fallback should be treated as a safety net for edge cases, not a normal operating mode.
+If you are consistently hitting this threshold, revisit your permission model to reduce the number of
+individually granted or denied resources per realm administrator.
+
+NOTE: This setting addresses per-statement bind parameter limits only.
+Oracle's `ORA-01795` limit of 1,000 expressions per `IN` list applies to both bind parameters and literal values,
+so this threshold does not help with Oracle.
+For Oracle deployments, reduce the number of individually granted or denied resources per realm administrator
+as described above.

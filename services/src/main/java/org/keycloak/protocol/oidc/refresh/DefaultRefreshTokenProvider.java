@@ -58,9 +58,7 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
         userSession.setLastSessionRefresh(refreshToken.getIat().intValue());
         if (initialRefreshTokenCtx.offlineTokenRequested()) {
             refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-            if (userSession.getRealm().isOfflineSessionMaxLifespanEnabled()) {
-                refreshToken.exp(getExpiration(clientSessionCtx, userSession,true));
-            }
+            refreshToken.exp(getExpiration(clientSessionCtx, userSession, true));
             responseBuilder.createOrUpdateOfflineSession();
         } else {
             refreshToken.exp(getExpiration(clientSessionCtx, userSession, false));
@@ -155,6 +153,11 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
                 TimeUnit.SECONDS.toMillis(userSession.getStarted()),
                 realm, client);
         expiration = lifespan > 0? Math.min(expiration, lifespan) : expiration;
+        long userSessionIdle = SessionExpirationUtils.calculateUserSessionIdleTimestamp(
+                offline, userSession.isRememberMe(),
+                TimeUnit.SECONDS.toMillis(userSession.getLastSessionRefresh()),
+                realm);
+        expiration = Math.min(expiration, userSessionIdle);
 
         return TimeUnit.MILLISECONDS.toSeconds(expiration);
     }

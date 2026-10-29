@@ -35,8 +35,10 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
@@ -46,11 +48,15 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import org.jboss.logging.Logger;
+
 /**
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
 public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenHandler<IdpVerifyAccountLinkActionToken> {
+
+    private static final Logger logger = Logger.getLogger(IdpVerifyAccountLinkActionTokenHandler.class);
 
     public IdpVerifyAccountLinkActionTokenHandler() {
         super(
@@ -60,6 +66,18 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
           EventType.IDENTITY_PROVIDER_LINK_ACCOUNT,
           Errors.INVALID_TOKEN
         );
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        // Revoke any outstanding cross-browser account-link proof whenever a federated identity is removed.
+        // Every removal path (Account console, Admin API, broker unlink step) funnels through
+        // UserProvider#removeFederatedIdentity, which fires this event synchronously within the transaction.
+        factory.register(event -> {
+            if (event instanceof FederatedIdentityModel.FederatedIdentityRemovedEvent removed) {
+                clearUserVerified(removed.getKeycloakSession(), removed.getUser(), removed.getFederatedIdentity());
+            }
+        });
     }
 
     @Override
@@ -126,6 +144,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
+                authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_CROSS_BROWSER, Boolean.TRUE.toString());
             }
 
             setUserVerifiedSingleObject(token, realm, session, user);
@@ -144,19 +163,44 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
     }
 
     private void setUserVerifiedSingleObject(IdpVerifyAccountLinkActionToken token, RealmModel realm, KeycloakSession session, UserModel user) {
+        String externalId = token.getExternalId();
+        if (externalId == null || externalId.isBlank()) {
+            logger.warnf("Not storing email verification proof for user '%s' and identity provider '%s' because the external id is missing.",
+                    user.getId(), token.getIdentityProviderAlias());
+            return;
+        }
         int singleObjectLifespan = realm.getActionTokenGeneratedByUserLifespan();
         String userId = user.getId();
         String idpAlias = token.getIdentityProviderAlias();
-        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, token.getExternalId()), singleObjectLifespan, Map.of());
+        session.singleUseObjects().put(getUserVerifiedSingleObjectKey(userId, idpAlias, externalId), singleObjectLifespan, Map.of());
     }
 
-    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String externalId, Runnable runnable) {
+    /**
+     * If a cross-browser account-link proof exists for this federated identity, remove it. Proofs are
+     * keyed by the persisted federated user id ({@link FederatedIdentityModel#getUserId()}).
+     */
+    private static void clearUserVerified(KeycloakSession session, UserModel user, String idpAlias, String federatedUserId) {
+        if (session == null || user == null || idpAlias == null || federatedUserId == null) {
+            return;
+        }
+        session.singleUseObjects().remove(getUserVerifiedSingleObjectKey(user.getId(), idpAlias, federatedUserId));
+    }
+
+    /**
+     * Atomically consume the cross-browser account-link proof and run {@code runnable} only if this
+     * caller won the consume. Returns {@code false} if no proof was present (already consumed or never created).
+     */
+    public static boolean runIfUserVerified(KeycloakSession session, UserModel user, IdentityProviderModel broker, String federatedUserId, Runnable runnable) {
         if (user == null) {
             return false;
         }
 
+        if (federatedUserId == null || federatedUserId.isBlank()) {
+            return false;
+        }
+
         SingleUseObjectProvider singleObjects = session.singleUseObjects();
-        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), externalId);
+        String singleObjectKey = getUserVerifiedSingleObjectKey(user.getId(), broker.getAlias(), federatedUserId);
         boolean isUserVerified = singleObjects.remove(singleObjectKey) != null;
 
         if (isUserVerified) {
@@ -166,7 +210,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    private static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+    static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
         return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
     }
 
@@ -177,5 +221,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
                 .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                 .createInfoPage();
+    }
+
+    private void clearUserVerified(KeycloakSession session, UserModel user, FederatedIdentityModel link) {
+        if (link == null) {
+            return;
+        }
+        clearUserVerified(session, user, link.getIdentityProvider(), link.getUserId());
     }
 }

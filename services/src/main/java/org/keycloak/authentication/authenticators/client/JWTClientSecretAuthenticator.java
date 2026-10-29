@@ -171,6 +171,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of("/secret-jwt/secret");
+    }
+
+    @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             Set<String> results = new HashSet<>();
@@ -183,6 +188,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public boolean supportsSecret() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsClientAssertion() {
         return true;
     }
 

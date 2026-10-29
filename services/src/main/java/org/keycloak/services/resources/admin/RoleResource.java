@@ -140,15 +140,17 @@ public abstract class RoleResource {
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
-    protected Stream<RoleRepresentation> getRealmRoleComposites(RoleModel role) {
+    protected Stream<RoleRepresentation> getRealmRoleComposites(AdminPermissionEvaluator auth, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> composite.getContainer() instanceof RealmModel)
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected Stream<RoleRepresentation> getClientRoleComposites(ClientModel app, RoleModel role) {
+    protected Stream<RoleRepresentation> getClientRoleComposites(AdminPermissionEvaluator auth, ClientModel app, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> Objects.equals(composite.getContainer(), app))
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 

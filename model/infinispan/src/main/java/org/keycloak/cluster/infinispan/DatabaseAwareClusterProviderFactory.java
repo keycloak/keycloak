@@ -33,10 +33,13 @@ import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
@@ -48,7 +51,7 @@ import org.jboss.logging.Logger;
  *
  * @author Alexander Schwartz
  */
-public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProviderFactory {
+public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProviderFactory implements ProviderEventListener {
 
     protected static final Logger logger = Logger.getLogger(DatabaseAwareClusterProviderFactory.class);
 
@@ -58,6 +61,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     private Duration pollInterval;
     private Duration awaitTimeout;
+    private KeycloakSessionFactory factory;
 
     public DatabaseAwareClusterProviderFactory() {
     }
@@ -98,6 +102,8 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.factory = factory;
+        super.postInit(factory);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
             NodeInfo nodeInfo = ispnConnections.getNodeInfo();
@@ -114,6 +120,8 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
             logger.infof("Scheduled cluster event poller with interval %s for cluster '%s'",
                     pollInterval, nodeInfo.clusterName());
         });
+
+        factory.register(this);
     }
 
     @Override
@@ -143,4 +151,16 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
                 Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof ClusterHealthRestored) {
+            localExecutor.execute(() -> {
+                logger.info("Broadcasting cache clear to all cluster nodes after health recovery");
+                KeycloakModelUtils.runJobInTransaction(factory, session -> {
+                    ClusterProvider cp = session.getProvider(ClusterProvider.class);
+                    cp.notify(CLEAR_ALL_LOCAL_CACHES_EVENT, ClearCacheEvent.getInstance(), false);
+                });
+            });
+        }
+    }
 }

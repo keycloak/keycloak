@@ -5,16 +5,14 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.AuthenticationScheme;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
-import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 
 import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
@@ -66,7 +64,7 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
     }
 
     @Override
-    public Stream<ServiceProviderConfig> getAll(SearchRequest searchRequest) {
+    public Stream<ServiceProviderConfig> getAll(SearchOptions searchOptions) {
         if (hasDiscoveryEndpointPermission(session)) {
             return Stream.of(getSingleton());
         }
@@ -83,8 +81,4 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
         return ServiceProviderConfig.SCHEMA;
     }
 
-    @Override
-    public <M extends Model> List<ModelSchema<M, ServiceProviderConfig>> getSchemas() {
-        return List.of();
-    }
 }

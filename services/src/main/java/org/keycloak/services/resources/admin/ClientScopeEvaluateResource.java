@@ -238,7 +238,7 @@ public class ClientScopeEvaluateResource {
 
         UserModel user = getUserModel(userId);
 
-        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam);
+        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
         return sessionAware(OIDCLoginProtocol.LOGIN_PROTOCOL, user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients, authSession) ->
         {

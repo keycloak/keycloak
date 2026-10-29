@@ -45,9 +45,18 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
             .property()
                 .name(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS)
                 .label("Trusted Issuer JWKS")
-                .helpText("Inline JWK Set of trusted credential issuer keys used to verify the credential signature.")
+                .helpText("Inline JWK Set of trusted credential issuer keys used to verify the credential signature. "
+                        + "Ignored when trust material identity providers are configured.")
                 .type(ProviderConfigProperty.TEXT_TYPE)
-                .required(true)
+                .add()
+            .property()
+                .name(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS)
+                .label("Trust Material Identity Providers")
+                .helpText("Comma separated aliases of trust material identity providers supplying the trusted "
+                        + "credential issuer keys and X.509 trust anchors. Takes precedence over the inline "
+                        + "trusted issuer JWKS. If any of the providers exposes X.509 trust anchors, presented "
+                        + "credentials must carry an x5c certificate chain that validates against them.")
+                .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
             .property()
                 .name(OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE)

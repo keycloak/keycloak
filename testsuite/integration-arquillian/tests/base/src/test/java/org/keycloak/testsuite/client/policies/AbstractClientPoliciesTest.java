@@ -563,6 +563,20 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return new AccessTokenResponse(response);
     }
 
+    protected AccessTokenResponse doAccessTokenRequestWithClientSecretAndAssertion(String code, String clientId, String clientSecret, String clientAssertion) throws Exception {
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, clientAssertion));
+
+        CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        return new AccessTokenResponse(response);
+    }
+
     protected AccessTokenResponse doRefreshTokenRequestWithSignedJWT(String refreshToken, String signedJwt) throws Exception {
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));

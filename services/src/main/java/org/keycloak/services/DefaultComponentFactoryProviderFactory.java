@@ -98,7 +98,7 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         // Apply the expensive operation before putting it into the cache
         final ComponentModel cm;
         if (modelGetter == null) {
-            LOG.debugf("Getting component configuration for component (%s, %s) from realm configuration", clazz, realmId, componentId);
+            LOG.debugf("Getting component configuration %s for component (%s, %s) from realm configuration", clazz, realmId, componentId);
             cm = KeycloakModelUtils.getComponentModel(factory, realmId, componentId);
         } else {
             LOG.debugf("Getting component configuration for component (%s, %s) via provided method", realmId, componentId);

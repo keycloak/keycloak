@@ -32,7 +32,8 @@ export default function Page() {
   }
 
   useFetch(
-    async () => adminClient.components.findOne({ id: id! }),
+    async () =>
+      (await adminClient.components.findOne({ id: id! })) ?? undefined,
     setPageData,
     [id],
   );
@@ -48,7 +49,7 @@ export default function Page() {
           id: id!,
         });
         addAlert(t("itemDeletedSuccess"));
-        navigate(toPage({ realm, providerId: providerId! }));
+        void navigate(toPage({ realm, providerId: providerId! }));
       } catch (error) {
         addError("itemSaveError", error);
       }

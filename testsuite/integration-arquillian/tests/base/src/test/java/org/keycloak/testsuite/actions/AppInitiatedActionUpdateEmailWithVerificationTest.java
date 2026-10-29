@@ -147,7 +147,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		driver.navigate().to(confirmationLink);
 
 		errorPage.assertCurrent();
-		assertEquals("Email already exists.", errorPage.getError());
+		assertEquals("This email is already associated with an existing account.", errorPage.getError());
 	}
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {

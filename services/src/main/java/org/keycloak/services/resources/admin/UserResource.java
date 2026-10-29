@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,6 +119,7 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.StringUtil;
 
@@ -164,6 +166,8 @@ public class UserResource {
 
     protected final HttpHeaders headers;
 
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
+
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
@@ -196,6 +200,7 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
@@ -229,6 +234,10 @@ public class UserResource {
             }
             profile.update(rep.getAttributes() != null);
             updateUserFromRep(profile, user, rep, session, true);
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -236,6 +245,14 @@ public class UserResource {
                 session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
             }
 
+            if (rep.isEnabled() != null && rep.isEnabled() != wasEnabled) {
+                // Capture the enabled-state transition as admin event details — the
+                // representation only ever carries the new state, so without this a
+                // listener can't tell "account disabled" apart from any other profile
+                // update (see SSF RiscAccountDisabled / RiscAccountEnabled).
+                adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
+                        .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
@@ -447,7 +464,9 @@ public class UserResource {
     })
     public Stream<UserSessionRepresentation> getSessions() {
         auth.users().requireView(user);
-        return session.sessions().getUserSessionsStream(realm, user).map(ModelToRepresentation::toRepresentation);
+        return session.sessions().getUserSessionsStream(realm, user)
+                .filter(this::hasVisibleClientOrNone)
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -470,8 +489,11 @@ public class UserResource {
         auth.users().requireView(user);
         ClientModel client = realm.getClientById(clientUuid);
         if (client == null) {
-            throw new NotFoundException("Client not found");
+            // we do this to make sure somebody can't phish ids
+            if (auth.clients().canList()) throw new NotFoundException("Client not found");
+            else throw new ForbiddenException();
         }
+        auth.clients().requireView(client);
         return new UserSessionManager(session).findOfflineSessionsStream(realm, user)
                 .map(session -> toUserSessionRepresentation(session, clientUuid))
                 .filter(Objects::nonNull);
@@ -578,10 +600,13 @@ public class UserResource {
     public Stream<Map<String, Object>> getConsents() {
         auth.users().requireView(user);
 
-        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user).stream()
+                .filter(this::canViewClient)
+                .collect(Collectors.toSet());
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
         List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
+                .filter(ucm -> canViewClient(ucm.getClient()))
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());
@@ -748,11 +773,17 @@ public class UserResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void disableCredentialType(List<String> credentialTypes) {
-        auth.users().requireManage(user);
-        if (credentialTypes == null) return;
+        if (credentialTypes == null || credentialTypes.isEmpty()) {
+            auth.users().requireManage(user);
+            return;
+        }
         for (String type : credentialTypes) {
+            if (type == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(type)) {
+                auth.users().requireResetPassword(user);
+            } else {
+                auth.users().requireManage(user);
+            }
             user.credentialManager().disableCredentialType(type);
-
         }
     }
 
@@ -885,6 +916,11 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
+        }
+
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
                 .detail(Details.CREDENTIAL_ID, credentialId)
@@ -962,6 +998,10 @@ public class UserResource {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
+        }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
         }
         user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
@@ -1143,7 +1183,15 @@ public class UserResource {
                                                        @QueryParam("max") Integer maxResults,
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
-        return user.getGroupsStream(search, firstResult, maxResults).filter(auth.groups()::canView).map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
+        return user.getGroupsStream(search, firstResult, maxResults)
+                .filter(auth.groups()::canView)
+                .map(g -> {
+                    GroupRepresentation rep = ModelToRepresentation.toRepresentation(g, !briefRepresentation);
+                    if (!briefRepresentation) {
+                        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+                    }
+                    return rep;
+                });
     }
 
     @GET
@@ -1234,6 +1282,7 @@ public class UserResource {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
@@ -1276,14 +1325,30 @@ public class UserResource {
      * client.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, final String clientUuid) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
-        // Update lastSessionRefresh with the timestamp from clientSession
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
         if (clientSession == null) {
             return null;
         }
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
+        // Update lastSessionRefresh with the timestamp from clientSession
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
+    }
+
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
+    }
+
+    /**
+     * A session used only by clients the caller cannot view would reveal that the user uses a hidden client, so it is
+     * left out. A session without any clients, e.g. after its clients were removed, reveals nothing and stays listed.
+     */
+    private boolean hasVisibleClientOrNone(UserSessionModel userSession) {
+        Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+        return clientSessions.isEmpty() || clientSessions.stream().anyMatch(cs -> canViewClient(cs.getClient()));
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {

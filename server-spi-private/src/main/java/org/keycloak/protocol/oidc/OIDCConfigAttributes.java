@@ -111,6 +111,8 @@ public final class OIDCConfigAttributes {
 
     public static final String ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow.userinfo.with.lightweight.access.token";
 
+    public static final String ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow.oidc.params.in.redirect.uris";
+
     private OIDCConfigAttributes() {
     }
 

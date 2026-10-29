@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.cluster.infinispan.DatabaseAwareClusterProviderFactory;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -135,5 +137,6 @@ public class Infinispan extends KeycloakModelParameters {
 
     public Infinispan() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
+        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.LOGIN_FAILURES_V1), "enabled");
     }
 }

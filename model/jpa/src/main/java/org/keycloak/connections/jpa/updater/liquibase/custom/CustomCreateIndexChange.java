@@ -31,6 +31,7 @@ import liquibase.change.DatabaseChange;
 import liquibase.change.core.CreateIndexChange;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
+import liquibase.database.DatabaseList;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.UnexpectedLiquibaseException;
@@ -150,7 +151,9 @@ public class CustomCreateIndexChange extends CreateIndexChange {
             this.isUnique(), getAssociatedWith(), getColumns().toArray(new AddColumnConfig[0]))
                 .setTablespace(getTablespace()).setClustered(getClustered());
 
-        loggingExecutor.execute(sqlStatement);
+        loggingExecutor.execute(sqlStatement, getChangeSet().getSqlVisitors().stream()
+            .filter(v -> DatabaseList.definitionMatches(v.getApplicableDbms(), database, true))
+            .toList());
 
         return writer.toString();
     }

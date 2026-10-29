@@ -38,8 +38,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -134,10 +132,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     "Code expiration is outside the configured credential offer lifespan", Response.Status.BAD_REQUEST);
         }
 
-        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
-
         validateOriginatingSession(offerState, offerStorage);
 
+        // Validate tx_code BEFORE marking the pre-authorized code as used.
+        // This prevents an attacker who only has the QR code (but not the PIN)
+        // from permanently invalidating the credential offer by submitting a wrong tx_code.
         String expTxCode = offerState.getTxCode();
         if (expTxCode != null) {
             if (Strings.isEmpty(txCode)) {
@@ -146,12 +145,15 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                         "Missing TxCode", Response.Status.BAD_REQUEST);
             }
             // Prevent timing attacks - execution time does not depend on where the first difference occurs
-            if (!MessageDigest.isEqual(expTxCode.getBytes(), txCode.getBytes())) {
+            if (!MessageDigest.isEqual(expTxCode.getBytes(StandardCharsets.UTF_8), txCode.getBytes(StandardCharsets.UTF_8))) {
                 event.error(Errors.INVALID_TX_CODE);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                         "Invalid TxCode", Response.Status.BAD_REQUEST);
             }
         }
+
+        // Mark the pre-authorized code as used only after all validations pass
+        markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
 
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
@@ -288,28 +290,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public Set<String> getTokenParameterNames() {
         return Collections.emptySet();
-    }
-
-    /**
-     * Restrict pre-authorized tokens to the VC credential endpoint.
-     */
-    @Override
-    public boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
-        // Check if the request path ends with the credential endpoint path
-        boolean isCredentialEndpoint = Optional.ofNullable(session.getContext().getUri())
-                .map(KeycloakUriInfo::getPath)
-                .map(path -> path.endsWith("/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH))
-                .orElse(false);
-
-        if (!isCredentialEndpoint) {
-            return false;
-        }
-
-        // Check if token has exactly one audience and it matches the credential endpoint
-        // Being strict about audience prevents potential security issues with multi-audience tokens
-        String expectedAudience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
-        String[] audiences = token.getAudience();
-        return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
     }
 
     /**

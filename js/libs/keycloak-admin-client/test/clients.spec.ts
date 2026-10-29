@@ -257,13 +257,12 @@ describe("Clients", () => {
       expect(typeof installationProvider).to.be.equal("string");
     });
 
-    it("get service account user", async () => {
-      const serviceAccountUser =
-        await kcAdminClient.clients.getServiceAccountUser({
-          id: currentClient.id!,
-        });
+    it("get service account user id", async () => {
+      const client = await kcAdminClient.clients.findOne({
+        id: currentClient.id!,
+      });
 
-      expect(serviceAccountUser).to.be.ok;
+      expect(client?.serviceAccountUserId).to.be.ok;
     });
   });
 
@@ -968,12 +967,14 @@ describe("Clients", () => {
 
       expect(certificate).to.be.ok;
       expect(certificate.certificate).to.be.ok;
+      expect(certificate.privateKey).to.be.ok;
 
       const info = await kcAdminClient.clients.getKeyInfo({
         id: currentClient.id!,
         attr,
       });
-      expect(info).to.be.eql(certificate);
+      expect(info.privateKey).to.be.undefined;
+      expect(info.certificate).to.be.eql(certificate.certificate);
     });
 
     it("download key", async () => {

@@ -34,7 +34,9 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.broker.provider.TrustMaterialSdJwtIssuerResolver;
+import org.keycloak.broker.provider.X509TrustMaterial;
 import org.keycloak.broker.trust.TrustKeyUtil;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -86,10 +88,13 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     // object and the presentation.
     public static final String CONTEXT_PREFIX = "oid4vp.context.";
     // The deferred object is written once the presentation is verified and read when the browser
-    // returns to complete-auth. It marks that a verified identity, serialized under IDENTITY_NOTE in
-    // the authentication session, is waiting to finish the broker login.
+    // returns to complete-auth. It marks that verified credential claims, stored under
+    // VERIFIED_CLAIMS_NOTE in the authentication session, are waiting to finish the broker login.
     public static final String DEFERRED_PREFIX = "oid4vp.deferred.";
-    public static final String IDENTITY_NOTE = "OID4VP_IDENTITY";
+    public static final String VERIFIED_CLAIMS_NOTE = "OID4VP_VERIFIED_CLAIMS";
+    // Key in BrokeredIdentityContext#getContextData() holding the disclosed claims of the verified
+    // credential presentation, consumed by the OID4VP identity provider mappers.
+    public static final String CREDENTIAL_CLAIMS = "OID4VP_CREDENTIAL_CLAIMS";
     public static final String KEY_ROOT_SESSION_ID = "rootSessionId";
     public static final String KEY_TAB_ID = "tabId";
     public static final String KEY_STATE = "state";
@@ -150,9 +155,12 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         return new OID4VPIdentityProviderEndpoint(session, realm, this, callback, event);
     }
 
-    // TODO support delegating to an external trust material identity provider by alias.
     @Override
     public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        String trustMaterialIdps = getConfig().getTrustMaterialIdps();
+        if (StringUtil.isNotBlank(trustMaterialIdps)) {
+            return new TrustMaterialResolver().resolveKeys(session, trustMaterialIdps, request);
+        }
         String jwksJson = getConfig().getTrustedIssuerJwks();
         if (StringUtil.isBlank(jwksJson)) {
             return Stream.empty();
@@ -166,8 +174,14 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         }
     }
 
-    // How trusted issuer keys are resolved for a presented credential. The default pins the inline
-    // trusted issuer JWKS through this provider's own trust material.
+    @Override
+    public Stream<X509TrustMaterial> resolveX509Trust(TrustMaterialRequest request) {
+        return new TrustMaterialResolver().resolveX509Trust(session, getConfig().getTrustMaterialIdps(), request);
+    }
+
+    // How trusted issuer material is resolved for a presented credential. The provider acts as its
+    // own trust material, either delegating to the configured trust material identity providers or
+    // serving the inline trusted issuer JWKS.
     // TODO add a trust list backed resolver (e.g. ETSI), selected from configuration.
     protected TrustedSdJwtIssuerResolver trustedIssuerResolver() {
         return new TrustMaterialSdJwtIssuerResolver(this);

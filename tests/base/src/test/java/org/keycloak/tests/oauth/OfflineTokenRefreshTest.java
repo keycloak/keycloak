@@ -14,6 +14,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -426,7 +427,8 @@ public class OfflineTokenRefreshTest {
         oauth.scope(null);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(200, response.getStatusCode());
-        Assertions.assertEquals(0, response.getRefreshExpiresIn());
+        Assertions.assertTrue(response.getRefreshExpiresIn() > 0 && response.getRefreshExpiresIn() <= Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT,
+                "refresh_expires_in should reflect offline session idle timeout");
         EventRepresentation refreshEvent = events.poll();
         EventAssertion.assertSuccess(refreshEvent)
                 .type(EventType.REFRESH_TOKEN)

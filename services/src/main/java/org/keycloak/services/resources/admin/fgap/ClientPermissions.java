@@ -371,7 +371,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             @Override
             public Map<String, Collection<String>> getBaseAttributes() {
                 Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                attributes.put(CLIENT_ID_ATTRIBUTE, Arrays.asList(authorizedClient.getClientId()));
                 return attributes;
             }
 
@@ -719,6 +719,10 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     protected boolean isInternal(ClientModel client) {
         if (client == null) {
             return false;
+        }
+
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, client.getId())) {
+            return true;
         }
 
         if (realm.getName().equals(Config.getAdminRealm())) {

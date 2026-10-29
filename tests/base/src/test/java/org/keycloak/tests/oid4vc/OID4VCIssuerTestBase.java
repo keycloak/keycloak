@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
@@ -57,6 +59,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
@@ -75,6 +78,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
@@ -112,6 +116,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -125,6 +130,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.MODERATE;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
@@ -160,6 +166,7 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String jwtTypeNaturalPersonScopeName = "oid4vc_natural_person_jwt";
     public static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person_sd";
+    public static final String mdocTypeNaturalPersonScopeName = "oid4vc_natural_person_mdoc";
 
     public static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
     public static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
@@ -171,6 +178,10 @@ public abstract class OID4VCIssuerTestBase {
     public static final String keyAttestationCredentialConfigurationIdName = "key-attestation-credential-config-id";
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
+
+    public static final String mdocTypeCredentialScopeName = "mdoc-credential";
+    public static final String mdocTypeCredentialConfigurationIdName = "mdoc-credential-config-id";
+    public static final String mdocTypeCredentialDocType = "org.example.credential.mdoc";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     public static final List<String> TEST_TYPES = List.of("VerifiableCredential");
@@ -226,6 +237,7 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtNaturalPersonCredentialScope;
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
+    protected CredentialScopeRepresentation mdocNaturalPersonCredentialScope;
 
     protected ClientRepresentation client;
     protected ClientRepresentation abcaClient;
@@ -249,6 +261,32 @@ public abstract class OID4VCIssuerTestBase {
             });
         });
 
+        // Mdoc scopes cannot be part of the initial realm representation because strict validation rejects them when
+        // the mdoc feature is disabled. Create and assign them only for test classes that explicitly enable mdoc.
+        boolean isMdocEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC), Boolean.class);
+        if (isMdocEnabled) {
+            CredentialScopeRepresentation mdoc = createBaseMdocCredentialScope(realmResource);
+            CredentialScopeRepresentation mdocNaturalPerson = requireExistingCredentialScope(mdocTypeNaturalPersonScopeName);
+            for (String clientId : List.of(OID4VCI_CLIENT_ID, OID4VCI_ABCA_CLIENT_ID, OID4VCI_PUBLIC_CLIENT_ID)) {
+                ClientRepresentation clientRep = realmResource.clients().findByClientId(clientId).get(0);
+                for (CredentialScopeRepresentation scope : List.of(mdoc, mdocNaturalPerson)) {
+                    realmResource.clients().get(clientRep.getId()).addOptionalClientScope(scope.getId());
+                }
+            }
+            for (String username : List.of("john", "alice")) {
+                var credentialsResource = realmResource.users().get(requireExistingUser(username).getId()).verifiableCredentials();
+                for (String scopeName : List.of(mdocTypeCredentialScopeName, mdocTypeNaturalPersonScopeName)) {
+                    boolean alreadyPresent = credentialsResource.getCredentials().stream()
+                            .anyMatch(cred -> scopeName.equals(cred.getCredentialScopeName()));
+                    if (!alreadyPresent) {
+                        UserVerifiableCredentialRepresentation cred = new UserVerifiableCredentialRepresentation();
+                        cred.setCredentialScopeName(scopeName);
+                        credentialsResource.createCredential(cred);
+                    }
+                }
+            }
+        }
+
         AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
 
         boolean isRestCredentialEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER), Boolean.class);
@@ -262,7 +300,7 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     @BeforeEach
-    void beforeEachBase() {
+    protected void beforeEachBase() {
 
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
@@ -274,6 +312,8 @@ public abstract class OID4VCIssuerTestBase {
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         jwtNaturalPersonCredentialScope = requireExistingCredentialScope(jwtTypeNaturalPersonScopeName);
         sdJwtNaturalPersonCredentialScope = requireExistingCredentialScope(sdJwtTypeNaturalPersonScopeName);
+        // created automatically by the server, so it exists only when the mdoc feature is enabled
+        mdocNaturalPersonCredentialScope = getCredentialScope(mdocTypeNaturalPersonScopeName);
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents();
@@ -421,20 +461,20 @@ public abstract class OID4VCIssuerTestBase {
         return component;
     }
 
+    protected void ensureEcSigningKeyProvider(String keyName, String ellipticCurve, String algorithm, int priority) {
+        boolean alreadyPresent = testRealm.admin().components().query(null, KeyProvider.class.getName()).stream()
+                .anyMatch(component -> keyName.equals(component.getName()));
+        if (!alreadyPresent) {
+            testRealm.admin().components().add(getEcKeyProvider(keyName, ellipticCurve, algorithm, priority)).close();
+        }
+    }
+
     protected String getBearerToken(OAuthClient oauthClient) {
         return getBearerToken(oauthClient, null);
     }
 
     protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client) {
-        return getBearerToken(oauthClient, client, null);
-    }
-
-    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scope) {
-        return getBearerToken(oauthClient, client, "john", scope);
-    }
-
-    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
-        return getBearerTokenCodeFlow(oauthClient, client, username, scope).getAccessToken();
+        return getBearerTokenCodeFlow(oauthClient, client, "john", null).getAccessToken();
     }
 
     protected AccessTokenResponse getBearerTokenCodeFlow(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
@@ -567,6 +607,37 @@ public abstract class OID4VCIssuerTestBase {
         clientPoliciesResource.updatePolicies(policies);
     }
 
+    /**
+     * Persistently add an ES256 signing key with a CA issued certificate, as mdoc issuance rejects
+     * the self signed certificates of generated realm keys.
+     */
+    protected void ensureMdocCompliantSigningConfiguration() {
+        final String providerName = "mdoc-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(providerName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("java-keystore");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
+                "keystoreType", List.of("PKCS12"),
+                "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
+                "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
+                "algorithm", List.of(Algorithm.ES256),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "priority", List.of("300"),
+                "enabled", List.of("true"),
+                "active", List.of("true")
+        )));
+        components.add(component).close();
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private ComponentRepresentation createRsaKeyProviderComponent(KeyWrapper keyWrapper, String name, int priority) {
@@ -631,12 +702,54 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    private static ComponentRepresentation getEcKeyProvider(String keyName, String ellipticCurve, String algorithm, int priority) {
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(keyName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("ecdsa-generated");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "active", List.of("true"),
+                "priority", List.of(String.valueOf(priority)),
+                "enabled", List.of("true"),
+                "algorithm", List.of(algorithm),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "ecdsaEllipticCurveKey", List.of(ellipticCurve),
+                "ecGenerateCertificate", List.of("true")
+        )));
+        return component;
+    }
+
     private void enableVerifiableCredentialEvents() {
         RealmEventsConfigRepresentation realmEventsConfig = testRealm.admin().getRealmEventsConfig();
         List<String> enabledEventTypes = realmEventsConfig.getEnabledEventTypes();
         if (!enabledEventTypes.contains(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name())) {
             enabledEventTypes.add(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name());
             testRealm.admin().updateRealmEventsConfig(realmEventsConfig);
+        }
+    }
+
+    private CredentialScopeRepresentation createBaseMdocCredentialScope(RealmResource realmResource) {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(mdocTypeCredentialScopeName)
+                .setIncludeInTokenScope(true)
+                .setExpiryInSeconds(CREDENTIALS_EXPIRATION_IN_SECONDS)
+                .setCredentialConfigurationId(mdocTypeCredentialConfigurationIdName)
+                .setCredentialIdentifier(mdocTypeCredentialScopeName)
+                .setFormat(VCFormat.MSO_MDOC)
+                .setVct(mdocTypeCredentialDocType)
+                .setSigningAlg("ES256")
+                .setBindingRequired(true)
+                .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
+        scope.setProtocolMappers(List.of(
+                ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.example.credential"),
+                ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
+        ));
+        scope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+
+        try (Response response = realmResource.clientScopes().create(scope)) {
+            String scopeId = ApiUtil.getCreatedId(response);
+            return new CredentialScopeRepresentation(realmResource.clientScopes().get(scopeId).toRepresentation());
         }
     }
 
@@ -1168,6 +1281,14 @@ public abstract class OID4VCIssuerTestBase {
             return protocolMapperRepresentation;
         }
 
+        static ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName, String mdocNamespace) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = getSubjectIdMapper(subjectProperty, attributeName);
+            Map<String, String> config = new HashMap<>(protocolMapperRepresentation.getConfig());
+            config.put(OID4VCMapper.MDOC_NAMESPACE, mdocNamespace);
+            protocolMapperRepresentation.setConfig(config);
+            return protocolMapperRepresentation;
+        }
+
         static ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName) {
             ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
             protocolMapperRepresentation.setName(attributeName + "-mapper");
@@ -1179,6 +1300,14 @@ public abstract class OID4VCIssuerTestBase {
                             "claim.name", subjectProperty,
                             "userAttribute", attributeName)
             );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getUserAttributeMapper(String subjectProperty, String attributeName, String mdocNamespace) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = getUserAttributeMapper(subjectProperty, attributeName);
+            Map<String, String> config = new HashMap<>(protocolMapperRepresentation.getConfig());
+            config.put(OID4VCMapper.MDOC_NAMESPACE, mdocNamespace);
+            protocolMapperRepresentation.setConfig(config);
             return protocolMapperRepresentation;
         }
 

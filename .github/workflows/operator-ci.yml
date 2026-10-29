@@ -6,11 +6,11 @@ on:
       - main
       - dependabot/**
       - copilot/**
+      - tmp/**
   pull_request:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.38.0
   KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
@@ -69,6 +69,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
@@ -94,12 +97,15 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -117,7 +123,7 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
@@ -141,10 +147,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -157,19 +170,19 @@ jobs:
         run: ./mvnw -B -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
 
       - name: helm lint
-        run: helm lint operator/target/helm/kubernetes/keycloak-operator
+        run: helm lint operator/target/helm/kubernetes/keycloak-operator-helm
 
       - name: helm template — default
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator)
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm)
           # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
           # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
-          crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
+          crds=$(grep -cE '^kind: "?CustomResourceDefinition"?$' <<<"$out" || true)
           if [ "$crds" -ne 4 ]; then echo "expected 4 CRDs, got $crds"; exit 1; fi
-          echo "$out" | grep -qE '^kind: Deployment$'
+          grep -qE '^kind: Deployment$' <<<"$out"
           # Cluster-wide install binds the controllers via ClusterRoleBinding.
-          echo "$out" | grep -qE '^kind: ClusterRoleBinding$'
+          grep -qE '^kind: ClusterRoleBinding$' <<<"$out"
           # No resource should be rendered twice (kind+name+namespace must be unique).
           dupes=$(echo "$out" | awk '
             /^kind:/{k=$2} /^  name:/{n=$2} /^  namespace:/{ns=$2}
@@ -180,21 +193,23 @@ jobs:
       - name: helm template — crds.enabled=false
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator --set crds.enabled=false)
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm --set crds.enabled=false)
           # CRDs are excluded; everything else still renders.
-          if echo "$out" | grep -qE '^kind: "?CustomResourceDefinition"?$'; then
+          if grep -qE '^kind: "?CustomResourceDefinition"?$' <<<"$out"; then
             echo "expected no CRDs with crds.enabled=false"; exit 1
           fi
-          echo "$out" | grep -cE '^kind: Deployment$' | grep -q '^1$'
+          deployments=$(grep -cE '^kind: Deployment$' <<<"$out" || true)
+          if [ "$deployments" -ne 1 ]; then echo "expected 1 Deployment, got $deployments"; exit 1; fi
 
       - name: helm template — resource overrides
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator \
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --set-string operator.resources.limits.cpu=1500m \
             --set-string operator.resources.limits.memory=1Gi)
-          echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
-          echo "$out" | grep -A4 'resources:' | grep -q 'memory: 1Gi'
+          resources=$(grep -A4 'resources:' <<<"$out")
+          grep -q 'cpu: 1500m' <<<"$resources"
+          grep -q 'memory: 1Gi' <<<"$resources"
 
   test-helm-install:
     name: Helm chart install on Kubernetes
@@ -202,10 +217,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -213,7 +235,7 @@ jobs:
           version: v3.14.4
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -241,7 +263,7 @@ jobs:
         run: |
           set -euo pipefail
           kubectl create namespace keycloak-operator
-          helm install kc-op operator/target/helm/kubernetes/keycloak-operator \
+          helm install kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --namespace keycloak-operator \
             --set operator.image=keycloak/keycloak-operator:ci \
             --wait --timeout 5m
@@ -272,12 +294,15 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -286,15 +311,12 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@37eb3cfb20ac2df6f0511ffa71cd917e4d49cabf # v3.1
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this
           opm: 4.16.4
           oc: 4
-
-      - name: Install Yq
-        run: sudo snap install yq
 
       - name: Install OLM
         working-directory: operator
@@ -306,6 +328,12 @@ jobs:
         with:
           name: keycloak-dist
           path: quarkus/container
+
+      - name: Wait for Minikube registry
+        run: |
+          # minikube start can return before the registry addon accepts connections on port 5000
+          kubectl -n kube-system wait --for=condition=ready pod -l kubernetes.io/minikube-addons=registry --timeout=120s
+          timeout 120 bash -c 'until curl -sf "http://$(minikube ip):5000/v2/" > /dev/null; do sleep 2; done'
 
       - name: Arrange OLM test installation
         working-directory: operator
@@ -383,12 +411,15 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Maven cache
+        uses: ./.github/actions/maven-cache
+
       - name: Restore Quarkus snapshot cache
         if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
         uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b65276017fdec6f1e6498129fb740e34e260dc55 # v2.18.0
+        uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -397,7 +428,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@37eb3cfb20ac2df6f0511ffa71cd917e4d49cabf # v3.1
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this
@@ -414,7 +445,7 @@ jobs:
       - name: Build Keycloak Docker image
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
       - name: Arrange kustomize test installation for own namespace
         run: |

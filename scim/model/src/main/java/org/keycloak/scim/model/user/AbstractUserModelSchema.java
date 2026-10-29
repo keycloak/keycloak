@@ -85,7 +85,21 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         if (UserModel.CREATED_TIMESTAMP.equals(name)) {
             return model.getCreatedTimestamp();
         }
-        return getUserAttributes(model).getFirst(name);
+        Attributes attributes = getUserAttributes(model);
+        if (shouldReturnMultivaluedValues(attributes.getMetadata(name), getAttributeMapperByModelAttribute(name))) {
+            return model.getAttributes().get(name);
+        }
+        return model.getFirstAttribute(name);
+    }
+
+    /**
+     * Returns whether a multivalued user-profile attribute should be read as a collection when
+     * populating SCIM. This is gated on the target SCIM mapper, not only user-profile cardinality:
+     * a multivalued user-profile attribute mapped to a single-valued core SCIM field must still
+     * return a single value.
+     */
+    protected boolean shouldReturnMultivaluedValues(AttributeMetadata metadata, Attribute<UserModel, User> scimAttribute) {
+        return metadata != null && metadata.isMultivalued() && scimAttribute != null && scimAttribute.isMultivalued();
     }
 
     private Map<String, Object> getAttributeAnnotations(String name) {

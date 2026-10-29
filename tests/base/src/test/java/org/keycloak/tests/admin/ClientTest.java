@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -51,7 +52,9 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -83,6 +86,8 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
@@ -103,6 +108,7 @@ import static java.util.Arrays.asList;
 import static org.keycloak.models.Constants.OIDC_PROTOCOL;
 import static org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.models.Constants.defaultClients;
+import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -146,6 +152,9 @@ public class ClientTest {
     @InjectAdminEvents(realmRef = "default")
     AdminEvents adminEvents;
 
+    @InjectRunOnServer(realmRef = "default")
+    RunOnServerClient runOnServer;
+
     @Test
     public void getClients() {
         Assert.assertNames(managedRealm.admin().clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "test-app", Constants.ADMIN_CLI_CLIENT_ID);
@@ -156,6 +165,28 @@ public class ClientTest {
         assertTrue(managedRealm.admin().clients().findAll().stream().filter(client -> client.getAttributes().get(Constants.REALM_CLIENT).equals("true"))
                 .map(ClientRepresentation::getClientId)
                 .allMatch(clientId -> clientId.equals(Constants.REALM_MANAGEMENT_CLIENT_ID) || clientId.equals(Constants.BROKER_SERVICE_CLIENT_ID) || clientId.endsWith("-realm")));
+    }
+
+    @Test
+    public void realmClientAttributeIsNotPersistedOnUpdate() {
+        ClientRepresentation client = createClient();
+        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
+
+        ClientRepresentation stored = clientResource.toRepresentation();
+        assertThat(stored.getAttributes(), Matchers.hasEntry(Constants.REALM_CLIENT, "false"));
+
+        // write the representation straight back, changing nothing
+        clientResource.update(stored);
+        adminEvents.poll();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName("default");
+            ClientModel clientModel = realm.getClientByClientId("my-app");
+            Assertions.assertFalse(clientModel.getAttributes().containsKey(Constants.REALM_CLIENT));
+        });
+
+        // the attribute is still computed for every read
+        assertThat(clientResource.toRepresentation().getAttributes(), Matchers.hasEntry(Constants.REALM_CLIENT, "false"));
     }
 
     private ClientRepresentation createClient() {
@@ -226,6 +257,125 @@ public class ClientTest {
         assertNotNull(client);
         assertNotNull(client.toRepresentation().getSecret());
         Assert.assertNames(managedRealm.admin().clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", TEST_CLIENT_ID, "test-app", Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    @Test
+    public void updateBuiltInBrokerPreservesMissingSecret() {
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), Constants.BROKER_SERVICE_CLIENT_ID);
+        ClientRepresentation original = client.toRepresentation();
+        assertTrue(original.isBearerOnly());
+        assertNull(original.getSecret());
+        String originalName = original.getName();
+        String originalDescription = original.getDescription();
+
+        try {
+            ClientRepresentation update = new ClientRepresentation();
+            update.setName("Updated broker");
+            update.setDescription("Updated broker description");
+            client.update(update);
+
+            ClientRepresentation stored = client.toRepresentation();
+            assertEquals(update.getName(), stored.getName());
+            assertEquals(update.getDescription(), stored.getDescription());
+            assertEquals(original.isBearerOnly(), stored.isBearerOnly());
+            assertEquals(original.isStandardFlowEnabled(), stored.isStandardFlowEnabled());
+            assertNull(stored.getSecret());
+            assertNull(client.getSecret().getValue());
+        } finally {
+            runOnServer.run(session -> {
+                ClientModel broker = session.getContext().getRealm().getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
+                broker.setName(originalName);
+                broker.setDescription(originalDescription);
+                broker.setSecret(null);
+            });
+        }
+    }
+
+    @Test
+    public void updateBearerOnlyClientPreservesAndReplacesSecret() {
+        String id = createClientNonPublic(rep -> rep.setBearerOnly(true)).getId();
+        ClientResource client = managedRealm.admin().clients().get(id);
+        String originalSecret = client.getSecret().getValue();
+        assertNotNull(originalSecret);
+
+        ClientRepresentation update = new ClientRepresentation();
+        update.setDescription("Updated description");
+        client.update(update);
+        assertEquals(originalSecret, client.getSecret().getValue());
+
+        String replacement = UUID.randomUUID().toString();
+        update.setSecret(replacement);
+        client.update(update);
+        assertEquals(replacement, client.getSecret().getValue());
+
+        update.setSecret(null);
+        update.setDescription("Another description");
+        client.update(update);
+        assertEquals(replacement, client.getSecret().getValue());
+    }
+
+    @Test
+    public void updateSecretlessBearerOnlyClientToConfidentialGeneratesSecret() {
+        String id = createClientNonPublic(rep -> rep.setBearerOnly(true)).getId();
+        clearClientSecret();
+        ClientResource client = managedRealm.admin().clients().get(id);
+        assertNull(client.getSecret().getValue());
+
+        ClientRepresentation update = new ClientRepresentation();
+        update.setBearerOnly(false);
+        update.setStandardFlowEnabled(false);
+        client.update(update);
+
+        assertFalse(client.toRepresentation().isBearerOnly());
+        assertNotNull(client.getSecret().getValue());
+    }
+
+    @Test
+    public void updatePublicClientToBearerOnlyGeneratesSecret() {
+        String id = createClient().getId();
+        ClientResource client = managedRealm.admin().clients().get(id);
+        assertNull(client.getSecret().getValue());
+
+        ClientRepresentation update = new ClientRepresentation();
+        update.setPublicClient(false);
+        update.setBearerOnly(true);
+        client.update(update);
+
+        assertTrue(client.toRepresentation().isBearerOnly());
+        assertNotNull(client.getSecret().getValue());
+    }
+
+    @Test
+    public void updateBearerOnlyClientToPublicClearsSecret() {
+        String id = createClientNonPublic(rep -> rep.setBearerOnly(true)).getId();
+        ClientResource client = managedRealm.admin().clients().get(id);
+        assertNotNull(client.getSecret().getValue());
+
+        ClientRepresentation update = new ClientRepresentation();
+        update.setBearerOnly(false);
+        update.setPublicClient(true);
+        client.update(update);
+
+        assertTrue(client.toRepresentation().isPublicClient());
+        assertNull(client.getSecret().getValue());
+    }
+
+    @Test
+    public void updateConfidentialClientWithoutSecretStillGeneratesSecret() {
+        String id = createClientNonPublic(rep -> {}).getId();
+        clearClientSecret();
+        ClientResource client = managedRealm.admin().clients().get(id);
+        assertNull(client.getSecret().getValue());
+
+        ClientRepresentation update = new ClientRepresentation();
+        update.setDescription("Updated confidential description");
+        client.update(update);
+
+        assertNotNull(client.getSecret().getValue());
+    }
+
+    private void clearClientSecret() {
+        runOnServer.run(session -> session.getContext().getRealm().getClientByClientId(TEST_CLIENT_ID).setSecret(null));
     }
 
     @Test
@@ -814,10 +964,26 @@ public class ClientTest {
         Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccountsEnabled(true).build());
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
-        UserRepresentation userRep = managedRealm.admin().clients().get(id).getServiceAccountUser();
+        String saUserId = managedRealm.admin().clients().get(id).toRepresentation().getServiceAccountUserId();
+        UserRepresentation userRep = managedRealm.admin().users().get(saUserId).toRepresentation();
         MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalTo(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
+    }
+
+    // GH issue 51241
+    @Test
+    public void updateClientMaskedPrivateKeys() {
+        ClientRepresentation client = createClient();
+
+        ClientResource clientRes = managedRealm.admin().clients().get(client.getId());
+        client = clientRes.toRepresentation();
+        client.getAttributes().put("jwt.credential.private.key", "example-private-key");
+        clientRes.update(client);
+
+        // The "jwt.credential.private.key" is present in the event, but masked
+        client.getAttributes().put("jwt.credential.private.key", SECRET_VALUE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), client, ResourceType.CLIENT);
     }
 
     @Test

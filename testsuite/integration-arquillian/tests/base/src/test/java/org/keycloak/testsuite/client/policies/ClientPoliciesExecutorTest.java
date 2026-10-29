@@ -42,7 +42,6 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -79,6 +78,7 @@ import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
@@ -94,7 +94,6 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -149,7 +148,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
     @Page
@@ -1432,6 +1430,52 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testSecureClientUrisExecutorAllowHttpOnLocalhost() throws Exception {
+        String loopbackRedirectUri = "http://localhost:8080/callback";
+        String localhostPrefixedRedirectUri = "http://localhost.attacker.example.com/callback";
+        String clientId = generateSuffixedName(CLIENT_NAME);
+
+        // the client is registered before the policy, so that only the authorization request is enforced
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                clientRep.setRedirectUris(Arrays.asList(loopbackRedirectUri, localhostPrefixedRedirectUri)));
+
+        // register profiles
+        SecureClientUrisExecutor.Configuration executorConfig = new SecureClientUrisExecutor.Configuration();
+        executorConfig.setAllowHttpOnLocalhost(true);
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "secure-profile-http")
+                        .addExecutor(SecureClientUrisExecutorFactory.PROVIDER_ID, executorConfig)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "secure-policy-http", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId);
+
+        // a real loopback address over HTTP is accepted
+        oauth.redirectUri(loopbackRedirectUri);
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // the localhost exception must not be granted to a host which starts with "localhost"
+        oauth.redirectUri(localhostPrefixedRedirectUri);
+        oauth.openLoginForm();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid redirect_uri")
+                .clientId(clientId);
+    }
+
+    @Test
     public void testSecureSigningAlgorithmForSignedJwtEnforceExecutorWithSecureAlg() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -1580,6 +1624,53 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("not allowed signature algorithm.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testSecureSigningAlgorithmForSignedJwtEnforceExecutorNotBypassedWithForgedAssertion() throws Exception {
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili")
+                        .addExecutor(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID, createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        String roleAlphaName = "sample-client-role-alpha";
+        String roleZetaName = "sample-client-role-zeta";
+        String roleCommonName = "sample-client-role-common";
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(roleAlphaName, roleZetaName)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // client authenticating with client_secret, not signed JWT
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleAlphaName).build());
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
+
+        oauth.client(clientId, clientSecret);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String code = oauth.parseLoginResponse().getCode();
+
+        // forged assertion signed with an unregistered key, using a FAPI-allowed alg header
+        KeyPair attackerKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        String forgedJwt = createSignedRequestToken(clientId, attackerKeyPair.getPrivate(), attackerKeyPair.getPublic(), Algorithm.PS256);
+
+        AccessTokenResponse response = doAccessTokenRequestWithClientSecretAndAssertion(code, clientId, clientSecret, forgedJwt);
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("client assertion is required.", response.getErrorDescription());
     }
 
     @Test

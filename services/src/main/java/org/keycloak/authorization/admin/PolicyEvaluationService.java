@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -115,6 +116,7 @@ public class PolicyEvaluationService {
             responseCode = "200",
             content = @Content(schema = @Schema(implementation = PolicyEvaluationResponse.class))
         ),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response evaluate(PolicyEvaluationRequest evaluationRequest) {
@@ -325,6 +327,11 @@ public class PolicyEvaluationService {
             }
 
             if (userModel != null) {
+                try {
+                    this.auth.users().requireView(userModel);
+                } catch (ForbiddenException e) {
+                    throw new ForbiddenException("You have no access to this user");
+                }
                 String clientId = representation.getClientId();
 
                 if (clientId == null) {
@@ -333,6 +340,14 @@ public class PolicyEvaluationService {
 
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
+
+                    if (clientModel != null && !clientId.equals(resourceServer.getClientId())) {
+                        try {
+                            this.auth.clients().requireView(clientModel);
+                        } catch (ForbiddenException e) {
+                            throw new ForbiddenException("You have no access to this client");
+                        }
+                    }
 
                     AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm)
                             .createAuthenticationSession(clientModel);
@@ -358,6 +373,14 @@ public class PolicyEvaluationService {
 
             if (clientId != null) {
                 client = realm.getClientById(clientId);
+
+                if (client != null && !clientId.equals(resourceServer.getClientId())) {
+                    try {
+                        this.auth.clients().requireView(client);
+                    } catch (ForbiddenException e) {
+                        throw new ForbiddenException("You have no access to this client");
+                    }
+                }
             }
 
             if (client == null) {

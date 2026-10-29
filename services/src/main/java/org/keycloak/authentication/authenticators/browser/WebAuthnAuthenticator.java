@@ -60,16 +60,23 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
+import static org.keycloak.authentication.requiredactions.WebAuthnRegister.getWebAuthnErrorMessageKey;
 import static org.keycloak.authentication.requiredactions.WebAuthnRegister.mapBrowserApiErrorToMessageKey;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_GET;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID_STATE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_CHALLENGE;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_ORIGIN;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_RPID;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_SIGNATURE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DIFFERENT_USER;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_UNSUPPORTED_BROWSER;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_FOUND;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_PRESENT;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_VERIFIED;
 
 /**
  * Authenticator for WebAuthn authentication, which will be typically used when WebAuthn is used as second factor.
@@ -260,7 +267,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             result = user.credentialManager().isValid(cred);
         } catch (WebAuthnException wae) {
             logger.debug("WebAuthn authentication verification failed.", wae);
-            setErrorResponse(context, WEBAUTHN_ERROR_AUTH_VERIFICATION, wae.getMessage());
+            String errorCase = getWebAuthnErrorMessageKey(wae, false);
+            setErrorResponse(context, errorCase, wae.getMessage());
             return;
         }
         String encodedCredentialID = Base64Url.encode(credentialId);
@@ -349,6 +357,12 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.failure(AuthenticationFlowError.USER_CONFLICT, errorResponse);
             break;
         case WEBAUTHN_ERROR_AUTH_VERIFICATION:
+        case WEBAUTHN_ERROR_USER_NOT_PRESENT:
+        case WEBAUTHN_ERROR_USER_NOT_VERIFIED:
+        case WEBAUTHN_ERROR_BAD_ORIGIN:
+        case WEBAUTHN_ERROR_BAD_RPID:
+        case WEBAUTHN_ERROR_BAD_CHALLENGE:
+        case WEBAUTHN_ERROR_BAD_SIGNATURE:
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)

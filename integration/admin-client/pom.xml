@@ -26,9 +26,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-admin-client-tests</artifactId>
-    <name>Keycloak Admin REST Client for tests (Jackson 2)</name>
-    <description>Jackson 2 provider for the Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository for the testsuite. It is NOT supposed to be used by the 3rd party applications.
+    <artifactId>keycloak-admin-client-internal</artifactId>
+    <name>Keycloak Admin REST Client (Jackson 2)</name>
+    <description>Jackson 2 provider for the Keycloak Admin REST Client. This module is supposed to be used just in the Keycloak repository. It is NOT supposed to be used by the 3rd party applications.
         For the use by 3rd party applications, please use `org.keycloak:keycloak-admin-client` module.
     </description>
 

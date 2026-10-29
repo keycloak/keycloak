@@ -22,7 +22,7 @@ export default function DefaultTrustSettings() {
     const options = { shouldDirty: true };
 
     setValue("config.trustedCertificates", "", options);
-    setValue("config.attestationExtendedKeyUsages", "", options);
+    setValue("config.requiredExtendedKeyUsages", "", options);
   };
 
   return (
@@ -57,10 +57,9 @@ export default function DefaultTrustSettings() {
             rules={{ required: t("required") }}
           />
           <TextControl
-            name="config.attestationExtendedKeyUsages"
-            label={t("attestationExtendedKeyUsages")}
-            labelIcon={t("attestationExtendedKeyUsagesHelp")}
-            rules={{ required: t("required") }}
+            name="config.requiredExtendedKeyUsages"
+            label={t("requiredExtendedKeyUsages")}
+            labelIcon={t("requiredExtendedKeyUsagesHelp")}
           />
         </>
       ) : (

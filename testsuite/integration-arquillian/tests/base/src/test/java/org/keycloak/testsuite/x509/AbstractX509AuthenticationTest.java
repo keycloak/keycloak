@@ -472,9 +472,15 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setExtendedKeyUsage(extendedKeyUsage);
     }
 
-    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithRevalidateCert(boolean revalidateCertEnabled) {
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithRevalidateCert(boolean revalidateCertEnabled, String... caSubjectDN) {
         return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setCASubjectDN(caSubjectDN != null ? Arrays.asList(caSubjectDN) : null)
                 .setRevalidateCertificateEnabled(revalidateCertEnabled);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithRevalidateCert(String... caSubjectDN) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setCASubjectDN(caSubjectDN != null ? Arrays.asList(caSubjectDN) : null);
     }
 
     protected static X509AuthenticatorConfigModel createLoginSubjectCN2UsernameOrEmailConfig() {

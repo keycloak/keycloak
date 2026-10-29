@@ -18,6 +18,11 @@ public class ClientCredentialsGrantRequest extends AbstractHttpPostRequest<Clien
         return this;
     }
 
+    public ClientCredentialsGrantRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getToken();

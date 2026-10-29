@@ -26,7 +26,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
 
-import com.webauthn4j.anchor.KeyStoreTrustAnchorRepository;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.DefaultCertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.NullCertPathTrustworthinessVerifier;
@@ -37,16 +36,21 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, Environme
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
-        WebAuthnRegister webAuthnRegister = null;
+        return createProvider(session, buildTrustVerifier(session));
+    }
+
+    /**
+     * Builds a {@link CertPathTrustworthinessVerifier} backed by a {@link KeycloakTrustAnchorRepository}, which
+     * looks up trust anchors from the truststore on demand rather than scanning it up front - so building this
+     * verifier here, on every login, is cheap: the truststore itself is only actually read once an actual
+     * WebAuthn registration is being verified.
+     */
+    private static CertPathTrustworthinessVerifier buildTrustVerifier(KeycloakSession session) {
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-            webAuthnRegister = createProvider(session, new NullCertPathTrustworthinessVerifier());
-        } else {
-            KeyStoreTrustAnchorRepository keyStoreTrustAnchorRepository = new KeyStoreTrustAnchorRepository(truststoreProvider.getTruststore());
-            DefaultCertPathTrustworthinessVerifier trustVerifier = new DefaultCertPathTrustworthinessVerifier(keyStoreTrustAnchorRepository);
-            webAuthnRegister = createProvider(session, trustVerifier);
+            return new NullCertPathTrustworthinessVerifier();
         }
-        return webAuthnRegister;
+        return new DefaultCertPathTrustworthinessVerifier(new KeycloakTrustAnchorRepository(session));
     }
 
     protected WebAuthnRegister createProvider(KeycloakSession session, CertPathTrustworthinessVerifier trustVerifier) {

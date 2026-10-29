@@ -54,9 +54,11 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceOperations.Options;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.matcher.Matcher;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.logging.Log;
@@ -109,8 +111,20 @@ public class KeycloakController implements Reconciler<Keycloak> {
     @Override
     public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
         if (Boolean.valueOf(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSE_ANNOTATION))) {
-            return UpdateControl.noUpdate(); // do nothing while paused
+            if ("true".equals(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSED_ANNOTATION))) {
+                return UpdateControl.noUpdate(); // do nothing while paused
+            }
+            context.resourceOperations().updatePrimary(new KeycloakBuilder(kc).editMetadata()
+                    .addToAnnotations(Constants.KEYCLOAK_PAUSED_ANNOTATION, "true").endMetadata().build(),
+                    Options.filterWithOptimisticLocking((Matcher)null));
+            return UpdateControl.noUpdate();
+        } else if ("true".equals(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSED_ANNOTATION))) {
+            context.resourceOperations().updatePrimary(new KeycloakBuilder(kc).editMetadata()
+                    .removeFromAnnotations(Constants.KEYCLOAK_PAUSED_ANNOTATION).endMetadata().build(),
+                    Options.filterWithOptimisticLocking((Matcher)null));
+            return UpdateControl.<Keycloak>noUpdate().reschedule();
         }
+
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 

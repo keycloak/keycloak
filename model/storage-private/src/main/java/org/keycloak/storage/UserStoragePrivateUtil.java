@@ -50,4 +50,9 @@ public class UserStoragePrivateUtil {
             return new UserStorageSyncTask(provider, SyncMode.CHANGED).runWithResult(session);
         });
     }
+
+    public static void runScheduledSync(KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider, SyncMode mode) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory,
+                session -> new UserStorageSyncTask(provider, mode).run(session));
+    }
 }

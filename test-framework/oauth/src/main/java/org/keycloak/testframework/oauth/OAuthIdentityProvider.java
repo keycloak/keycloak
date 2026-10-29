@@ -37,11 +37,13 @@ public class OAuthIdentityProvider {
 
     private final OAuthIdentityProviderKeys keys;
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
+    private final String issuer;
 
     private int keysRequestCount = 0;
 
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
+        this.issuer = config.issuer();
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
@@ -87,6 +89,9 @@ public class OAuthIdentityProvider {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             OIDCConfigurationRepresentation oidcConfig = new OIDCConfigurationRepresentation();
+            if (issuer != null) {
+                oidcConfig.setIssuer(issuer);
+            }
             oidcConfig.setJwksUri("http://127.0.0.1:8500/idp/jwks");
             String oidcConfigString = JsonSerialization.writeValueAsString(oidcConfig);
 

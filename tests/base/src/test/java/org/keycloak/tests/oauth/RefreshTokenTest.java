@@ -41,8 +41,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -87,6 +90,8 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.DPoPGenerator;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -489,6 +494,10 @@ public class RefreshTokenTest {
     @Test
     public void refreshingTokenLoadsSessionIntoCache() {
         Assumptions.assumeTrue(isPersistentSessionsFeatureEnabled(adminClient), "Skip as persistent_user_sessions feature is disabled");
+        Assumptions.assumeTrue(runOnServer.fetch(session -> {
+            var factory = (InfinispanUserSessionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+            return factory.useCaches();
+        }, Boolean.class), "Skip as session caching is disabled");
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -744,6 +753,92 @@ public class RefreshTokenTest {
             oauth.scope(null);
             oauth.clientResource().removeOptionalClientScope(phoneScope.getId());
             oauth.clientResource().removeOptionalClientScope(addressScope.getId());
+        }
+    }
+
+    @Test
+    public void refreshTokenRetainsOpenidScopeWhenOmittedInRefreshRequest() {
+        try {
+            oauth.scope("openid profile");
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertScopes("openid email profile", tokenResponse.getScope());
+
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
+            assertNotNull(initialRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", initialRefreshToken.getScope());
+
+            timeOffSet.set(2);
+
+            oauth.scope("profile");
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
+
+            assertScopes("openid email profile", refreshResponse.getScope());
+
+            UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
+            assertEquals(200, userInfoResponse.getStatusCode());
+
+            RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+            assertNotNull(refreshedRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", refreshedRefreshToken.getScope());
+        } finally {
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshTokenRetainsOpenidScopeAfterClientSessionScopeNoteOverwritten() {
+        try {
+            AuthorizationEndpointResponse initialAuthResponse = oauth.loginForm()
+                    .scope("openid profile")
+                    .doLogin("test-user@localhost", "password");
+            assertNotNull(initialAuthResponse.getCode());
+
+            AccessTokenResponse initialTokenResponse = oauth.doAccessTokenRequest(initialAuthResponse.getCode());
+            assertEquals(200, initialTokenResponse.getStatusCode());
+            assertScopes("openid email profile", initialTokenResponse.getScope());
+
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialTokenResponse.getRefreshToken());
+            assertNotNull(initialRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", initialRefreshToken.getScope());
+
+            AuthorizationEndpointResponse laterAuthResponse = oauth.loginForm()
+                    .scope("profile")
+                    .doLoginWithCookie();
+            assertNotNull(laterAuthResponse.getCode());
+
+            AccessTokenResponse laterTokenResponse = oauth.doAccessTokenRequest(laterAuthResponse.getCode());
+            assertEquals(200, laterTokenResponse.getStatusCode());
+            assertScopes("email profile", laterTokenResponse.getScope());
+
+            timeOffSet.set(2);
+
+            oauth.scope("profile");
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(initialTokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
+            assertScopes("openid email profile", refreshResponse.getScope());
+
+            assertNotNull(refreshResponse.getIdToken());
+            IDToken refreshedIdToken = oauth.verifyToken(refreshResponse.getIdToken(), IDToken.class);
+            assertEquals(user.getId(), refreshedIdToken.getSubject());
+            assertNull(refreshedIdToken.getNonce());
+            assertNotNull(refreshedIdToken.getAccessTokenHash());
+            assertEquals(HashUtils.accessTokenHash(Algorithm.RS256, refreshResponse.getAccessToken()), refreshedIdToken.getAccessTokenHash());
+            assertNotEquals(HashUtils.accessTokenHash(Algorithm.RS256, initialTokenResponse.getAccessToken()), refreshedIdToken.getAccessTokenHash());
+
+            UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(refreshResponse.getAccessToken());
+            assertEquals(200, userInfoResponse.getStatusCode());
+
+            RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+            assertNotNull(refreshedRefreshToken);
+            assertScopes("openid basic email roles service_account web-origins acr profile", refreshedRefreshToken.getScope());
+        } finally {
+            oauth.scope(null);
         }
     }
 
@@ -1192,6 +1287,64 @@ public class RefreshTokenTest {
             }
 
         } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            oauth.clientResource().update(clientRep);
+        }
+    }
+
+    @Test
+    public void refreshTokenClientNotBeforeNotBypassedByOlderRealmNotBefore() {
+        // Obtain a refresh token
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .userId(user.getId())
+                .clientId("test-app")
+                .hasSessionId()
+                .type(EventType.LOGIN);
+
+        String sessionId = loginEvent.getSessionId();
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .sessionId(sessionId)
+                .clientId("test-app")
+                .type(EventType.CODE_TO_TOKEN);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            // Set realm notBefore to the past
+            realmRep.setNotBefore(currentTime - 200);
+            realm.admin().update(realmRep);
+
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, tokenResponse.getStatusCode(), "Token should be valid when only an older realm notBefore is set");
+
+            //set the client nbf
+            clientRep.setNotBefore(currentTime + 100);
+            oauth.clientResource().update(clientRep);
+
+            // The token was issued before clientNotBefore, must be rejected
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+
+        } finally {
+            realmRep.setNotBefore(originalRealmNotBefore);
+            realm.admin().update(realmRep);
+
             clientRep.setNotBefore(originalClientNotBefore);
             oauth.clientResource().update(clientRep);
         }

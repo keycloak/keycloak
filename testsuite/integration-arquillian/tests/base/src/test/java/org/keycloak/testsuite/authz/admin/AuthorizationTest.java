@@ -57,10 +57,10 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         enableAuthorizationServices(false);
         enableAuthorizationServices(true);
 
-        serviceAccount = clientResource.getServiceAccountUser();
-        Assertions.assertNotNull(serviceAccount);
+        String serviceAccountUserId = clientResource.toRepresentation().getServiceAccountUserId();
+        Assertions.assertNotNull(serviceAccountUserId);
         realm = realmsResouce().realm(getRealmId());
-        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
+        serviceAccountRoles = realm.users().get(serviceAccountUserId).roles().clientLevel(resourceServer.getId()).listEffective();
         Assertions.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
 
         RolePolicyRepresentation policy = new RolePolicyRepresentation();
@@ -85,9 +85,9 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         policies = clientResource.authorization().policies().policies();
         assertTrue(policies.isEmpty());
 
-        serviceAccount = clientResource.getServiceAccountUser();
-        Assertions.assertNotNull(serviceAccount);
-        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
+        serviceAccountUserId = clientResource.toRepresentation().getServiceAccountUserId();
+        Assertions.assertNotNull(serviceAccountUserId);
+        serviceAccountRoles = realm.users().get(serviceAccountUserId).roles().clientLevel(resourceServer.getId()).listEffective();
         Assertions.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
     }
 }

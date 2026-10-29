@@ -254,7 +254,7 @@ public class UserVerifiableCredentialResource {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+        boolean removed = session.users().removeIssuedVerifiableCredential(user.getId(), credentialId);
         if (!removed) {
             logger.warn(String.format("Issued verifiable credential with ID '%s' not found for user '%s' in realm '%s'.",
                     credentialId, user.getUsername(), realm.getName()));

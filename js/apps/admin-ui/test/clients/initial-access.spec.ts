@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, confirmModal } from "../utils/modal.ts";
-import { goToClients } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   clearAllFilters,
@@ -27,17 +27,19 @@ import {
 } from "./initial-access.ts";
 
 test.describe.serial("Client initial access tokens", () => {
+  const realmName = `initial-access-${uuid()}`;
   const tableName = "Initial access token";
   const placeHolder = "Search token";
   const countCellNumber = 3;
   const remainingCountCellNumber = 4;
 
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToClients(page);
-  });
+  test.beforeAll(() => adminClient.createRealm(realmName));
 
-  test.afterAll(async () => adminClient.deleteAllTokens());
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test.beforeEach(async ({ page }) => {
+    await login(page, { to: { pathname: `/${realmName}/clients` } });
+  });
 
   test("Initial access token can't be created with 0 days and count", async ({
     page,
@@ -75,13 +77,6 @@ test.describe.serial("Client initial access tokens", () => {
     await searchItem(page, placeHolder, "John Doe");
     await assertNoResults(page);
     await clearAllFilters(page);
-    await expect(
-      page
-        .getByRole("grid")
-        .and(page.getByLabel(tableName, { exact: true }))
-        .locator("tbody tr"),
-    ).not.toHaveCount(0);
-
     let data = (await getTableData(page, tableName))[0];
     expect(data[countCellNumber]).toBe("4");
     expect(data[remainingCountCellNumber]).toBe("4");

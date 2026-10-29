@@ -30,6 +30,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.util.JsonSerialization;
@@ -37,10 +38,9 @@ import org.keycloak.util.JsonSerialization;
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
-import com.apicatalog.jsonld.http.DefaultHttpClient;
 import com.apicatalog.jsonld.http.media.MediaType;
 import com.apicatalog.jsonld.json.JsonUtils;
-import com.apicatalog.jsonld.loader.HttpLoader;
+import com.apicatalog.jsonld.loader.DocumentLoader;
 import com.apicatalog.rdf.Rdf;
 import com.apicatalog.rdf.RdfDataset;
 import com.apicatalog.rdf.io.RdfWriter;
@@ -62,11 +62,18 @@ import io.setl.rdf.normalization.RdfNormalize;
 public class Ed255192018Suite implements LinkedDataCryptographicSuite {
 
     private final SignatureSignerContext signerContext;
+    private final DocumentLoader documentLoader;
 
     public static final String PROOF_TYPE = "Ed25519Signature2018";
 
-    public Ed255192018Suite(SignatureSignerContext signerContext) {
+    public Ed255192018Suite(KeycloakSession session, SignatureSignerContext signerContext) {
+        this(signerContext, JsonLdContextDocumentLoader.defaultInstance(session));
+    }
+
+    // Package-private constructor to inject a custom document loader, e.g. for tests.
+    Ed255192018Suite(SignatureSignerContext signerContext, DocumentLoader documentLoader) {
         this.signerContext = signerContext;
+        this.documentLoader = documentLoader;
     }
 
     @Override
@@ -84,7 +91,7 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
             var credentialDocument = JsonDocument.of(new StringReader(credentialString));
 
             var expandedDocument = JsonLd.expand(credentialDocument)
-                    .loader(new HttpLoader(DefaultHttpClient.defaultInstance()))
+                    .loader(documentLoader)
                     .get();
             Optional<JsonObject> documentObject = Optional.empty();
             if (JsonUtils.isArray(expandedDocument)) {
@@ -109,7 +116,8 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
         } catch (JsonProcessingException e) {
             throw new CredentialSignerException("Was not able to serialize the credential", e);
         } catch (JsonLdError e) {
-            throw new CredentialSignerException("Was not able to create a JsonLD Document from the serialized string.", e);
+            throw new CredentialSignerException(
+                    "Was not able to create a JsonLD Document from the serialized string: " + e.getMessage(), e);
         } catch (UnsupportedContentException | IOException | RdfWriterException e) {
             throw new CredentialSignerException("Was not able to canonicalize the json-ld.", e);
         }

@@ -75,4 +75,12 @@ public interface RefreshTokenProvider extends Provider {
     default void close() {
     }
 
+    /**
+     * Invoked by the revocation endpoint before any session state is read, to serialize this revocation against
+     * concurrent refreshes contending on the same rotation state. The default implementation is a no-op.
+     *
+     * @param refreshToken the decoded refresh token/offline token being revoked
+     */
+    default void lockForRevocation(RefreshToken refreshToken) {
+    }
 }

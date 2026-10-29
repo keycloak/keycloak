@@ -168,7 +168,7 @@ export default function PermissionConfigurationDetails() {
           newPermission,
         );
         setPermission(result);
-        navigate(
+        void navigate(
           toPermissionConfigurationDetails({
             realm,
             permissionClientId: permissionClientId,
@@ -202,7 +202,7 @@ export default function PermissionConfigurationDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toPermissionsConfigurationTabs({
             realm,
             permissionClientId,
