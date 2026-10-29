@@ -91,4 +91,6 @@ export async function navigateTo(
 export async function logout(page: Page, username = ADMIN_USER): Promise<void> {
   await page.getByRole("button", { name: username, exact: true }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
+  // Wait for the redirect to finish, otherwise it can override a navigation that the caller starts next
+  await page.getByRole("button", { name: "Sign In" }).waitFor();
 }
