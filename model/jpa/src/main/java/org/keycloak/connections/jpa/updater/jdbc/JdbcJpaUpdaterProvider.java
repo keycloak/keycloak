@@ -185,20 +185,50 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
                 writer.write(System.lineSeparator());
             }
 
-            // The manifest DDL contains unqualified table names (schema qualification is applied
-            // at runtime via Connection.setSchema()). Emit a dialect-specific schema-selection
-            // statement so that the script is self-contained when --db-schema is configured.
-            String schemaSetSql = schemaSetStatement(dialect, defaultSchema);
+            // When no explicit --db-schema is configured, fall back to the connection's current
+            // schema/catalog so the exported script is self-contained (schema-selected and
+            // table-qualified) regardless of where the DBA runs it.
+            String effectiveSchema = defaultSchema;
+            if (effectiveSchema == null || effectiveSchema.isBlank()) {
+                effectiveSchema = connectionSchema(connection, dialect);
+            }
+
+            // Emit a dialect-specific schema-selection statement so that unqualified DDL in the
+            // manifest resolves to the correct schema when the script is applied outside Keycloak.
+            String schemaSetSql = schemaSetStatement(dialect, effectiveSchema);
             if (schemaSetSql != null) {
                 writer.write(schemaSetSql);
                 writer.write(System.lineSeparator());
                 writer.write(System.lineSeparator());
             }
 
-            runMasterChangelog(connection, writer, defaultSchema);
-            runCustomProviderChangelogs(connection, writer, defaultSchema);
+            runMasterChangelog(connection, writer, effectiveSchema);
+            runCustomProviderChangelogs(connection, writer, effectiveSchema);
         } catch (IOException | SQLException e) {
             throw new RuntimeException("Failed to export database migration script", e);
+        }
+    }
+
+    /**
+     * Returns the connection's current schema name for use in an exported script when no explicit
+     * {@code --db-schema} is configured.
+     *
+     * <p>MySQL and MariaDB don't have a separate schema concept — the JDBC catalog (the database name
+     * in the JDBC URL, e.g. {@code keycloak}) serves as the schema qualifier. PostgreSQL uses the
+     * connection schema (e.g. {@code public}). Other dialects (H2, Oracle, MSSQL) are left
+     * unqualified: H2 is only used in dev mode, and Oracle/MSSQL always require explicit
+     * {@code --db-schema} configuration in production.
+     */
+    static String connectionSchema(Connection connection, SqlDialect dialect) {
+        try {
+            return switch (dialect) {
+                case MYSQL, MARIADB -> connection.getCatalog();
+                case POSTGRESQL -> connection.getSchema();
+                default -> null;
+            };
+        } catch (SQLException e) {
+            logger.warnf("Could not determine connection schema for export: %s", e.getMessage());
+            return null;
         }
     }
 
