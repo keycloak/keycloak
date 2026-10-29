@@ -341,6 +341,17 @@ public class TruststoreBuilder {
         }
     }
 
+    /**
+     * The default truststore that {@link #includeDefaultTruststore(KeyStore)} includes, without recording it.
+     */
+    public static File getDefaultTruststore() {
+        String trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig");
+        if (trustStorePath == null) {
+            trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
+        }
+        return trustStorePath == null ? getJRETruststore() : new File(trustStorePath);
+    }
+
     static File getJRETruststore() {
         // try jre locations - there doesn't seem to be a good default mechanism for this
         String securityDirectory = System.getProperty("java.home") + File.separator + "lib" + File.separator

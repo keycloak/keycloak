@@ -27,7 +27,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.TrustOptions;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.truststore.TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY;
+import static org.keycloak.truststore.TruststoreBuilder.getDefaultTruststore;
 import static org.keycloak.truststore.TruststoreBuilder.setAndGetSystemTruststore;
 
 public final class SystemTruststoreReload {
@@ -36,7 +36,8 @@ public final class SystemTruststoreReload {
     }
 
     public record SystemTruststoreSourceAndKeystore(String[] paths, boolean includeDefault, String dataDir,
-                                                    KeystoreUtil.TruststoreFormat preferredType, KeyStore systemTruststore) {
+                                                    KeystoreUtil.TruststoreFormat preferredType, KeyStore systemTruststore,
+                                                    String sourceFingerprint) {
     }
 
     record SystemTrustOptions(TrustManagerFactory trustManagerFactory) implements TrustOptions {
@@ -78,7 +79,16 @@ public final class SystemTruststoreReload {
     public SystemTruststoreReload(SystemTruststoreSourceAndKeystore r) {
         this.systemTruststoreSource = new SystemTruststoreSource(r.paths, r.includeDefault, r.dataDir, r.preferredType);
         this.systemTruststore = toTrustStoreAndTrustOptions(r.systemTruststore);
-        this.lastSourceFingerprint = computeSourceFingerprint(this.systemTruststoreSource);
+        this.lastSourceFingerprint = r.sourceFingerprint;
+    }
+
+    public static SystemTruststoreSourceAndKeystore loadSystemTruststore(String[] paths, boolean includeDefault, String dataDir,
+                                                                        KeystoreUtil.TruststoreFormat preferredType,
+                                                                        boolean reloadable) {
+        // fingerprint before merging, like a reload does, so a change during the merge is reloaded later
+        String sourceFingerprint = reloadable ? computeSourceFingerprint(paths, includeDefault) : null;
+        KeyStore keyStore = setAndGetSystemTruststore(paths, includeDefault, dataDir, preferredType);
+        return new SystemTruststoreSourceAndKeystore(paths, includeDefault, dataDir, preferredType, keyStore, sourceFingerprint);
     }
 
     // for testing purposes only, not intended for public use
@@ -90,7 +100,7 @@ public final class SystemTruststoreReload {
         return systemTruststore;
     }
 
-    private synchronized boolean reloadIfChanged() {
+    synchronized boolean reloadIfChanged() {
         if (systemTruststoreSource == null) {
             return false;
         }
@@ -135,7 +145,7 @@ public final class SystemTruststoreReload {
     }
 
     private boolean reloadSystemTruststoreIfChanged() {
-        String current = computeSourceFingerprint(systemTruststoreSource);
+        String current = computeSourceFingerprint(systemTruststoreSource.paths, systemTruststoreSource.includeDefault);
         if (current.equals(lastSourceFingerprint)) {
             LOGGER.debugf("System truststore sources unchanged (fingerprint %s); skipping re-merge",
                     fingerprintPrefix(current));
@@ -168,16 +178,13 @@ public final class SystemTruststoreReload {
     // Fingerprint the reload SOURCES (truststore-paths files, files inside directory sources, and the default
     // cacerts) by content, so an unchanged reload interval can be skipped. Never fingerprint the generated
     // output store: re-saving a PKCS12 produces new bytes each time and would self-trigger.
-    private static String computeSourceFingerprint(SystemTruststoreSource source) {
+    private static String computeSourceFingerprint(String[] paths, boolean includeDefault) {
         SortedMap<String, String> entries = new TreeMap<>();
-        for (String path : source.paths()) {
+        for (String path : paths) {
             addFingerprintEntries(new File(path), entries);
         }
-        if (source.includeDefault()) {
-            String defaultTrustStore = System.getProperty(SYSTEM_TRUSTSTORE_KEY + ".orig");
-            if (defaultTrustStore != null) {
-                addFingerprintEntries(new File(defaultTrustStore), entries);
-            }
+        if (includeDefault) {
+            addFingerprintEntries(getDefaultTruststore(), entries);
         }
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

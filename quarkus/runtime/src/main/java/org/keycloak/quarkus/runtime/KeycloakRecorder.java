@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.net.URI;
-import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -228,11 +227,9 @@ public class KeycloakRecorder {
         TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
 
         String[] truststoresArray = truststores.toArray(String[]::new);
-        KeyStore keyStore = TruststoreBuilder.setAndGetSystemTruststore(truststoresArray, true, dataDir.orElseThrow(), truststoreType);
-
-        return new RuntimeValue<>(
-                new SystemTruststoreSourceAndKeystore(truststoresArray, true, dataDir.orElseThrow(), truststoreType, keyStore)
-        );
+        boolean reloadable = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD).isPresent();
+        return new RuntimeValue<>(SystemTruststoreReload.loadSystemTruststore(truststoresArray, true, dataDir.orElseThrow(),
+                truststoreType, reloadable));
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
