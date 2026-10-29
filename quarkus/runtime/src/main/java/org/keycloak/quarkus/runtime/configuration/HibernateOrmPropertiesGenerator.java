@@ -51,7 +51,8 @@ import io.smallrye.config.ConfigMappings.ConfigClass;
  * {@link ConfigRoot} and {@link ConfigMapping} annotations, and lets SmallRye Config list the property names. The build time
  * root is in the deployment module of the extension, a {@code provided} dependency of this module without transitive
  * dependencies: it is neither packaged nor inherited by the server. Map keys such as
- * {@code quarkus.hibernate-orm.unsupported-properties."..."} and deprecated properties are excluded.
+ * {@code quarkus.hibernate-orm.unsupported-properties."..."} and deprecated properties are excluded. The README of the
+ * quarkus module lists what to check here after a Quarkus upgrade.
  */
 public final class HibernateOrmPropertiesGenerator {
 

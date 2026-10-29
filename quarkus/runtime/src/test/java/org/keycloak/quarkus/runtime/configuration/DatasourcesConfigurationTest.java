@@ -1212,6 +1212,20 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void multiTenancyOfConfiguredPersistenceUnit() {
+        putEnvVar("KC_DB_ORM_MULTITENANT_MY_STORE", "database");
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-my-store=mariadb", "--db-jpa-packages-my-store=org.example.entities",
+                "--db-kind-other-store=mariadb");
+        initConfig();
+
+        assertConfig("db-orm-multitenant-my-store", "database");
+        assertExternalConfig("quarkus.hibernate-orm.\"my-store\".multitenant", "database");
+        // the default persistence unit of Keycloak is not multi-tenant
+        assertExternalConfigNull("quarkus.hibernate-orm.multitenant");
+        assertExternalConfigNull("quarkus.hibernate-orm.\"other-store\".multitenant");
+    }
+
+    @Test
     public void hibernateOrmOptionsNotExposed() {
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-my-store=mariadb", "--db-jpa-packages-my-store=org.example.entities");
         initConfig();
@@ -1220,13 +1234,21 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         // break Keycloak
         for (String option : List.of("db-orm-packages", "db-orm-datasource", "db-orm-persistence-xml-ignore", "db-orm-mapping-files",
                 "db-orm-dialect", "db-orm-database-default-schema", "db-orm-log-queries-slower-than-ms",
-                "db-orm-enabled", "db-orm-active", "db-orm-jdbc-enabled", "db-orm-reactive-enabled", "db-orm-multitenant",
+                "db-orm-enabled", "db-orm-active", "db-orm-jdbc-enabled", "db-orm-reactive-enabled",
                 "db-orm-dev-ui-allow-hql", "db-orm-validate-in-dev-mode", "db-orm-sql-load-script", "db-orm-physical-naming-strategy",
                 "db-orm-implicit-naming-strategy", "db-orm-quote-identifiers-strategy", "db-orm-schema-management-strategy",
                 "db-orm-schema-management-create-schemas", "db-orm-schema-management-halt-on-error", "db-orm-schema-management-extra-physical-table-types")) {
             assertNull(option, PropertyMappers.getMapper(NS_KEYCLOAK_PREFIX + option));
             assertNull(option, PropertyMappers.getMapper(NS_KEYCLOAK_PREFIX + option + "-my-store"));
         }
+        // the multi-tenancy strategy exists for the persistence units of named datasources only
+        assertNull(PropertyMappers.getMapper("kc.db-orm-multitenant"));
+        PropertyMapper<?> multitenant = PropertyMappers.getMapper("kc.db-orm-multitenant-my-store");
+        assertEquals("quarkus.hibernate-orm.\"<datasource>\".multitenant", multitenant.getTo());
+        assertTrue(multitenant.isBuildTime());
+        assertFalse(multitenant.getOption().isCli());
+        assertEquals(List.of("none", "database", "schema", "discriminator"), multitenant.getExpectedValues());
+        assertTrue(multitenant.getOption().isCaseInsensitiveExpectedValues());
         // a property of the extension as a whole has no named datasource variant
         assertEquals("quarkus.hibernate-orm.metrics.enabled", PropertyMappers.getMapper("kc.db-orm-metrics-enabled").getTo());
         assertTrue(PropertyMappers.getMapper("kc.db-orm-metrics-enabled").isBuildTime());

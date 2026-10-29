@@ -187,7 +187,8 @@ public class DatabaseOptions {
      * {@code quarkus.hibernate-orm.}, with dots replaced by dashes. For example, {@code db-orm-query-query-plan-cache-max-size}
      * sets {@code quarkus.hibernate-orm.query.query-plan-cache-max-size}. The build time flag follows the property. The options
      * of a persistence unit property also exist with the {@code -<datasource>} suffix, for the unit that
-     * {@code db-jpa-packages-<datasource>} defines. The options cannot be set on the command line, see {@link Option#isCli()}.
+     * {@code db-jpa-packages-<datasource>} defines; a few, such as {@code db-orm-multitenant-<datasource>}, exist with the
+     * suffix only. The options cannot be set on the command line, see {@link Option#isCli()}.
      */
     public static final String DB_ORM_PREFIX = "db-orm-";
 

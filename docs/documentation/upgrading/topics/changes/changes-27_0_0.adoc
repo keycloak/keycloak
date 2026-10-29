@@ -307,6 +307,14 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Persistence units of additional datasources can be defined with options
+// https://github.com/keycloak/keycloak/issues/41465
+
+The persistence unit of an additional datasource can now be defined with the `db-jpa-packages-<datasource>` option instead of a `persistence.xml` file packaged with your provider.
+The options of the datasource, such as `db-kind-<datasource>` or `db-schema-<datasource>`, then configure the persistence unit as well, and its Hibernate ORM settings are available as `db-orm-*-<datasource>` options.
+Providers that ship a `persistence.xml` file continue to work without changes.
+For details, see the https://www.keycloak.org/server/db#persistence-unit-options[Defining the persistence unit with options] section of the Database guide.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

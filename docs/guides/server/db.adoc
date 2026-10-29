@@ -766,7 +766,8 @@ The properties and their descriptions are listed in the https://quarkus.io/guide
 The following properties have no `db-orm-` option:
 
 * Properties set by a dedicated option: `db-dialect`, `db-schema` and `db-log-slow-queries-threshold`.
-* Properties that {project_name} configures itself, such as `quarkus.hibernate-orm.packages`, and properties that {project_name} cannot work with, such as `quarkus.hibernate-orm.enabled`, `quarkus.hibernate-orm.multitenant` and `quarkus.hibernate-orm.schema-management.strategy`.
+* Properties that {project_name} configures itself, such as `quarkus.hibernate-orm.packages`, and properties that {project_name} cannot work with, such as `quarkus.hibernate-orm.enabled` and `quarkus.hibernate-orm.schema-management.strategy`.
+* `quarkus.hibernate-orm.multitenant` for the main persistence unit of {project_name}. The persistence unit of an additional datasource has the `db-orm-multitenant-<datasource>` option, see <<persistence-unit-multitenancy,Multi-tenancy>>.
 * Properties without a fixed name, such as `quarkus.hibernate-orm.unsupported-properties."<property>"`.
 * Deprecated properties.
 
@@ -889,6 +890,26 @@ A {project_name} option that is set takes precedence over the corresponding raw 
 WARNING: Quarkus reads the configuration of a persistence unit, or of a datasource, in one form only: either with the quoted name or with the unquoted name, whichever it encounters first.
 Combining the {project_name} options of a datasource, which use the quoted form, with raw properties in the unquoted form therefore silently ignores one of them.
 The unquoted form described in <<_backward_compatibility_for_the_quarkus_properties,Backward compatibility for the `quarkus.properties`>> is meant for a datasource, and its persistence unit, configured entirely with raw Quarkus properties.
+
+[[persistence-unit-multitenancy]]
+==== Multi-tenancy
+
+A persistence unit defined with options can be multi-tenant, as described in the https://quarkus.io/guides/hibernate-orm#multitenancy[multi-tenancy section of the Quarkus Hibernate ORM guide].
+The build time option `db-orm-multitenant-<datasource>` sets the strategy: `database`, `schema` or `discriminator`.
+Like the other `db-orm-` options, it is set through an environment variable or the configuration file, for example:
+
+[source,bash]
+----
+export KC_DB_ORM_MULTITENANT_USER_STORE=database
+----
+
+Your extension resolves the current tenant with a `TenantResolver` bean annotated with `@PersistenceUnitExtension("<datasource>")`, as described in the Quarkus guide.
+
+With the `database` strategy, the tenant identifiers are the names of additional datasources, which you configure like any other datasource, for example with `db-kind-tenant1` and `db-url-tenant1`.
+The datasource of the persistence unit itself only provides the database kind for the dialect: {project_name} does not connect to it, and you can disable it with `db-enabled-<datasource>=false`.
+With the `schema` strategy, the tenant identifiers are schemas of the datasource of the persistence unit.
+
+NOTE: The main persistence unit of {project_name} is not multi-tenant, and the option does not apply to persistence units defined in a `persistence.xml` file.
 
 === Configuration via environment variables
 If you do not want to configure the datasource via CLI or `keycloak.conf` properties, you can use the environment variables.

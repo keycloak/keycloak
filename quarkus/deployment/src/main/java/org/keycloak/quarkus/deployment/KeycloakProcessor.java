@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -164,6 +165,7 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalPersistenceUnitBuildIte
 import io.quarkus.hibernate.orm.deployment.xml.QuarkusMappingFileParser;
 import io.quarkus.hibernate.orm.runtime.PersistenceUnitUtil;
 import io.quarkus.hibernate.orm.runtime.boot.xml.RecordableXmlMapping;
+import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
@@ -464,20 +466,62 @@ class KeycloakProcessor {
     /**
      * Named persistence units defined through configuration are expected to be defined with
      * {@code db-jpa-packages-<datasource>}, which names the unit after its datasource: the Keycloak database options
-     * of a datasource (e.g. {@code db-dialect-<datasource>}) configure the persistence unit of that name.
+     * of a datasource (e.g. {@code db-dialect-<datasource>}) configure the persistence unit of that name. Their packages
+     * must not overlap with the packages of the default persistence unit: Quarkus assigns an entity to every persistence
+     * unit whose packages contain it, and the entities of Keycloak belong to the default persistence unit only.
      */
     static Optional<String> validateConfiguredPersistenceUnits(HibernateOrmConfig hibernateOrmConfig) {
+        Set<String> defaultUnitPackages = getPackages(hibernateOrmConfig.defaultPersistenceUnit());
         for (Map.Entry<String, HibernateOrmConfigPersistenceUnit> unit : new TreeMap<>(hibernateOrmConfig.namedPersistenceUnits()).entrySet()) {
             String unitName = unit.getKey();
+            String option = PropertyMappers.getWildcardPropertyMapper(DatabaseOptions.DB_JPA_PACKAGES).orElseThrow().getFrom(unitName);
             String datasource = unit.getValue().datasource().orElse(null);
             if (!unitName.equals(datasource)) {
                 return Optional.of(("The persistence unit '%s' must use the datasource '%s' of the same name, but %s. "
                         + "Define the persistence unit of a datasource with the '%s' option.")
-                        .formatted(unitName, unitName, datasource == null ? "no datasource is set" : "it uses the datasource '%s'".formatted(datasource),
-                                PropertyMappers.getWildcardPropertyMapper(DatabaseOptions.DB_JPA_PACKAGES).orElseThrow().getFrom(unitName)));
+                        .formatted(unitName, unitName, datasource == null ? "no datasource is set" : "it uses the datasource '%s'".formatted(datasource), option));
+            }
+            for (String pkg : getPackages(unit.getValue())) {
+                for (String defaultUnitPackage : defaultUnitPackages) {
+                    if (isSameOrSubPackage(pkg, defaultUnitPackage) || isSameOrSubPackage(defaultUnitPackage, pkg)) {
+                        return Optional.of(("The package '%s' of the persistence unit '%s' overlaps with the package '%s' of the default persistence unit, "
+                                + "whose entities belong to the default persistence unit only. Set the '%s' option to the packages of the entities of your extension.")
+                                .formatted(pkg, unitName, defaultUnitPackage, option));
+                    }
+                }
             }
         }
         return Optional.empty();
+    }
+
+    private static Set<String> getPackages(HibernateOrmConfigPersistenceUnit unit) {
+        Set<String> packages = new TreeSet<>();
+        if (unit != null) {
+            for (String pkg : unit.packages().orElse(Set.of())) {
+                // Quarkus accepts a trailing package delimiter
+                packages.add(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+            }
+        }
+        return packages;
+    }
+
+    private static boolean isSameOrSubPackage(String pkg, String parent) {
+        return pkg.equals(parent) || pkg.startsWith(parent + ".");
+    }
+
+    /**
+     * The multi-tenancy strategy of a persistence unit defined through configuration, see
+     * {@code quarkus.hibernate-orm."<unit>".multitenant}, which the {@code db-orm-multitenant-<datasource>} option sets.
+     */
+    static MultiTenancyStrategy getMultiTenancyStrategy(HibernateOrmConfigPersistenceUnit unit) {
+        // like HibernateOrmProcessor#getMultiTenancyStrategy, which fails the build for a value that is not a strategy
+        return unit.multitenant().map(strategy -> {
+            try {
+                return MultiTenancyStrategy.valueOf(strategy.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return MultiTenancyStrategy.NONE;
+            }
+        }).orElse(MultiTenancyStrategy.NONE);
     }
 
     /**
@@ -1112,13 +1156,18 @@ class KeycloakProcessor {
         for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
             registerNamedJpaConnectionProvider(pu.getPersistenceUnitName(), pu.getDataSourceName().orElse(pu.getPersistenceUnitName()), factories, preConfiguredProviders, spi);
         }
-        // persistence units defined through configuration are named after their datasource, see checkConfiguredPersistenceUnits
-        for (String unitName : hibernateOrmConfig.namedPersistenceUnits().keySet()) {
-            registerNamedJpaConnectionProvider(unitName, unitName, factories, preConfiguredProviders, spi);
+        // persistence units defined through configuration are named after their datasource, see validateConfiguredPersistenceUnits
+        for (Map.Entry<String, HibernateOrmConfigPersistenceUnit> unit : hibernateOrmConfig.namedPersistenceUnits().entrySet()) {
+            String unitName = unit.getKey();
+            NamedJpaConnectionProviderFactory factory = registerNamedJpaConnectionProvider(unitName, unitName, factories, preConfiguredProviders, spi);
+            // the tenants of a DATABASE multi-tenant unit are datasources of their own, resolved by the TenantResolver of
+            // the extension: Quarkus derives the dialect from the datasource of the unit but never connects to it, so the
+            // unit must work when that datasource is disabled (db-enabled-<datasource>=false)
+            factory.setDataSourceRequired(getMultiTenancyStrategy(unit.getValue()) != MultiTenancyStrategy.DATABASE);
         }
     }
 
-    private static void registerNamedJpaConnectionProvider(String unitName, String dataSourceName,
+    private static NamedJpaConnectionProviderFactory registerNamedJpaConnectionProvider(String unitName, String dataSourceName,
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
         NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
@@ -1126,6 +1175,7 @@ class KeycloakProcessor {
         factory.setDataSourceName(dataSourceName);
         factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
         preConfiguredProviders.put(unitName, factory);
+        return factory;
     }
 
     /**

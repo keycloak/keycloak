@@ -274,6 +274,26 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testMultiTenancyStrategyOfPersistenceUnitIsValidated() {
+        putEnvVar("KC_DB_ORM_MULTITENANT_MY_STORE", "bogus");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-jpa-packages-my-store=org.example");
+        assertError(nonRunningPicocli, "Invalid value for option 'KC_DB_ORM_MULTITENANT_MY_STORE': bogus. Expected values are (case insensitive): none, database, schema, discriminator");
+
+        // Quarkus reads the strategy case-insensitively, the value is passed as is
+        onAfter();
+        putEnvVar("KC_DB_ORM_MULTITENANT_MY_STORE", "Database");
+        nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-jpa-packages-my-store=org.example");
+        assertNoError(nonRunningPicocli);
+        assertEquals("Database", nonRunningPicocli.config.getConfigValue("quarkus.hibernate-orm.\"my-store\".multitenant").getValue());
+
+        // the option applies to the persistence unit that db-jpa-packages-<datasource> defines only
+        onAfter();
+        putEnvVar("KC_DB_ORM_MULTITENANT_MY_STORE", "database");
+        nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--db-kind-my-store=dev-mem");
+        assertError(nonRunningPicocli, "The option 'db-orm-multitenant-my-store' applies to the persistence unit that 'db-jpa-packages-my-store' defines, which is not set.");
+    }
+
+    @Test
     public void testRawHibernateOrmPropertyIsSecondClassToItsOption() {
         // the raw property of the default unit and of a unit defined with db-jpa-packages
         setSystemProperty("quarkus.hibernate-orm.log.sql", "true", () -> {

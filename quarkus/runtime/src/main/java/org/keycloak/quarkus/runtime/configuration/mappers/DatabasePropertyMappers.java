@@ -77,6 +77,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     private static final String QUARKUS_HIBERNATE_ORM_PREFIX = "quarkus.hibernate-orm.";
+    // the multi-tenancy strategy of a persistence unit, see HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY
+    private static final String MULTITENANT = "multitenant";
+    private static final List<String> MULTITENANT_STRATEGIES = List.of("none", "database", "schema", "discriminator");
     private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
@@ -291,9 +294,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         ));
         // properties of the extension as a whole have no named persistence unit variant
         List<PropertyMapper<?>> globalHibernateOrmMappers = new ArrayList<>();
-        addHibernateOrmMappers(persistenceUnitMappers, globalHibernateOrmMappers);
+        // properties of the persistence units that db-jpa-packages-<datasource> defines only, without a default unit option
+        List<PropertyMapper<?>> namedUnitHibernateOrmMappers = new ArrayList<>();
+        addHibernateOrmMappers(persistenceUnitMappers, namedUnitHibernateOrmMappers, globalHibernateOrmMappers);
 
-        List<PropertyMapper<?>> result = appendDatasourceMappers(allSourceMappers, persistenceUnitMappers, Map.of(
+        List<PropertyMapper<?>> result = appendDatasourceMappers(allSourceMappers, persistenceUnitMappers, namedUnitHibernateOrmMappers, Map.of(
                 // Inherit options from the DB mappers
                 DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DB_POOL_INITIAL_SIZE),
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
@@ -362,15 +367,33 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     /**
      * Hibernate ORM properties, or groups of them, without a {@code db-orm-*} option: properties that Keycloak configures
      * itself (the packages and the datasource of a persistence unit, the persistence.xml and orm.xml processing) and
-     * properties that Keycloak cannot work with (disabling Hibernate ORM or a persistence unit, multitenancy, schema
-     * management and naming strategies of the Liquibase managed schema, SQL scripts, dev mode settings).
+     * properties that Keycloak cannot work with (disabling Hibernate ORM or a persistence unit, schema management and
+     * naming strategies of the Liquibase managed schema, SQL scripts, dev mode settings).
      */
     static final Set<String> HIBERNATE_ORM_PROPERTIES_NOT_EXPOSED = Set.of("packages", "datasource", "persistence-xml.ignore", "mapping-files",
-            "enabled", "active", "jdbc.enabled", "reactive.enabled", "multitenant", "schema-management", "sql-load-script",
+            "enabled", "active", "jdbc.enabled", "reactive.enabled", "schema-management", "sql-load-script",
             "physical-naming-strategy", "implicit-naming-strategy", "quote-identifiers.strategy", "dev-ui.allow-hql", "validate-in-dev-mode");
 
+    /**
+     * Hibernate ORM properties of a persistence unit that have the {@code db-orm-*-<datasource>} option for the persistence
+     * units that {@code db-jpa-packages-<datasource>} defines only, and no {@code db-orm-*} option for the default persistence
+     * unit: the default persistence unit of Keycloak is not multi-tenant, a persistence unit of an extension may be.
+     */
+    static final Set<String> HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY = Set.of(MULTITENANT);
+
     private static boolean isHibernateOrmPropertyExposed(String suffix) {
-        return HIBERNATE_ORM_PROPERTIES_NOT_EXPOSED.stream().noneMatch(excluded -> suffix.equals(excluded) || suffix.startsWith(excluded + "."));
+        return matchesNone(suffix, HIBERNATE_ORM_PROPERTIES_NOT_EXPOSED);
+    }
+
+    private static boolean isHibernateOrmPropertyOfNamedUnitsOnly(String suffix) {
+        return !matchesNone(suffix, HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY);
+    }
+
+    /**
+     * @return whether the property suffix is none of the given properties, and belongs to none of the given groups
+     */
+    private static boolean matchesNone(String suffix, Set<String> properties) {
+        return properties.stream().noneMatch(property -> suffix.equals(property) || suffix.startsWith(property + "."));
     }
 
     /**
@@ -381,9 +404,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
      *
      * @param persistenceUnitMappers receives the mappers of persistence unit properties, which also get a
      *        {@code -<datasource>} variant
+     * @param namedUnitMappers receives the mappers of {@link #HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY}, whose options
+     *        exist in the {@code -<datasource>} variant only: the mappers themselves are not options
      * @param globalMappers receives the mappers of the other properties
      */
-    static void addHibernateOrmMappers(List<PropertyMapper<?>> persistenceUnitMappers, List<PropertyMapper<?>> globalMappers) {
+    static void addHibernateOrmMappers(List<PropertyMapper<?>> persistenceUnitMappers, List<PropertyMapper<?>> namedUnitMappers,
+            List<PropertyMapper<?>> globalMappers) {
         Set<String> mappedProperties = persistenceUnitMappers.stream().map(PropertyMapper::getTo).collect(Collectors.toSet());
         Map<String, HibernateOrmProperty> optionProperties = new HashMap<>();
         for (HibernateOrmProperty property : HibernateOrmProperties.getProperties().values()) {
@@ -396,19 +422,32 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 throw new IllegalStateException("The Hibernate ORM properties '%s' and '%s' would both be exposed as the option '%s'"
                         .formatted(other.name(), property.name(), key));
             }
-            (property.perUnit() ? persistenceUnitMappers : globalMappers).add(hibernateOrmMapper(key, property.type(), property));
+            PropertyMapper<?> mapper = hibernateOrmMapper(key, property.type(), property);
+            if (!property.perUnit()) {
+                globalMappers.add(mapper);
+            } else if (isHibernateOrmPropertyOfNamedUnitsOnly(property.suffix())) {
+                namedUnitMappers.add(mapper);
+            } else {
+                persistenceUnitMappers.add(mapper);
+            }
         }
     }
 
     private static <T> PropertyMapper<T> hibernateOrmMapper(String key, Class<T> type, HibernateOrmProperty property) {
-        Option<T> option = new OptionBuilder<>(key, type)
+        OptionBuilder<T> option = new OptionBuilder<>(key, type)
                 .category(OptionCategory.DATABASE)
                 .description("Sets the Quarkus Hibernate ORM property '%s'.".formatted(property.name()))
                 .buildTime(property.buildTime())
                 .cli(false)
-                .defaultValue(Optional.empty()) // no default, not even for a Boolean option
-                .build();
-        return fromOption(option)
+                .defaultValue(Optional.empty()); // no default, not even for a Boolean option
+        if (MULTITENANT.equals(property.suffix())) {
+            // Quarkus reads the strategy case-insensitively, see HibernateOrmProcessor#getMultiTenancyStrategy
+            option.description(("Sets the Quarkus Hibernate ORM property '%s': the multi-tenancy strategy of the persistence unit, "
+                    + "whose tenants a TenantResolver bean of the extension resolves.").formatted(property.name()))
+                    .expectedValues(MULTITENANT_STRATEGIES)
+                    .caseInsensitiveExpectedValues(true);
+        }
+        return fromOption(option.build())
                 .to(property.name())
                 .build();
     }
@@ -764,10 +803,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
          * @param persistenceUnitMappers the mappers of the Hibernate ORM configuration of the persistence unit: for a
          *        named datasource, they target the persistence unit that {@code db-jpa-packages-<datasource>} defines,
          *        see {@link #forConfiguredPersistenceUnit}
+         * @param namedUnitMappers like {@code persistenceUnitMappers}, but for named datasources only: the mappers
+         *        themselves are not added, their options do not exist for the default persistence unit
          */
         static List<PropertyMapper<?>> appendDatasourceMappers(List<PropertyMapper<?>> mappers, List<PropertyMapper<?>> persistenceUnitMappers,
-                Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
-            List<PropertyMapper<?>> allMappers = Stream.concat(mappers.stream(), persistenceUnitMappers.stream()).toList();
+                List<PropertyMapper<?>> namedUnitMappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
+            List<PropertyMapper<?>> allMappers = Stream.of(mappers, persistenceUnitMappers, namedUnitMappers).flatMap(List::stream).toList();
             List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(allMappers.size() * 2);
 
             Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
@@ -778,12 +819,13 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 datasourceMappers.add(createDatasourceMapper(parent, transformDatasourceTo(parent.getTo()), UnaryOperator.identity(),
                         cachedDatasourceOptions, transformDatasourceMappers));
             }
-            for (var parent : persistenceUnitMappers) {
+            for (var parent : Stream.concat(persistenceUnitMappers.stream(), namedUnitMappers.stream()).toList()) {
                 datasourceMappers.add(createDatasourceMapper(parent, transformPersistenceUnitTo(parent.getTo()), Datasources::forConfiguredPersistenceUnit,
                         cachedDatasourceOptions, transformDatasourceMappers));
             }
 
-            datasourceMappers.addAll(allMappers);
+            datasourceMappers.addAll(mappers);
+            datasourceMappers.addAll(persistenceUnitMappers);
 
             return datasourceMappers;
         }

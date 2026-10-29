@@ -17,6 +17,7 @@ import jakarta.persistence.MappedSuperclass;
 
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfigPersistenceUnit;
+import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
 import org.jboss.jandex.Index;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -205,15 +206,68 @@ public class PersistenceUnitAssignmentTest {
                 + "Define the persistence unit of a datasource with the 'kc.db-jpa-packages-my-store' option.", error.orElseThrow());
     }
 
+    @Test
+    public void configuredPersistenceUnitPackagesMustNotOverlapTheDefaultUnit() {
+        Map<String, Optional<String>> myStore = Map.of("my-store", Optional.of("my-store"));
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(
+                config(myStore, Map.of("my-store", Set.of("org.example.entities", "org.keycloakish")), KEYCLOAK_PACKAGES)).isEmpty());
+        // Quarkus accepts a trailing package delimiter
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(
+                config(myStore, Map.of("my-store", Set.of("org.example.")), Set.of("org.keycloak.models.jpa.entities."))).isEmpty());
+
+        String expected = "The package '%s' of the persistence unit 'my-store' overlaps with the package '%s' of the default persistence unit, "
+                + "whose entities belong to the default persistence unit only. Set the 'kc.db-jpa-packages-my-store' option to the packages of the entities of your extension.";
+        // the same package as, a sub-package of and a parent package of a package of the default unit
+        assertEquals(expected.formatted("org.keycloak.storage.jpa.entity", "org.keycloak.storage.jpa.entity"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.example", "org.keycloak.storage.jpa.entity")), KEYCLOAK_PACKAGES)).orElseThrow());
+        assertEquals(expected.formatted("org.keycloak.models.jpa.entities.custom", "org.keycloak.models.jpa.entities"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak.models.jpa.entities.custom")), KEYCLOAK_PACKAGES)).orElseThrow());
+        assertEquals(expected.formatted("org.keycloak", "org.keycloak.models.jpa.entities"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak")), Set.of("org.keycloak.models.jpa.entities"))).orElseThrow());
+    }
+
+    @Test
+    public void multiTenancyStrategyOfConfiguredPersistenceUnit() {
+        assertEquals(MultiTenancyStrategy.NONE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.empty())));
+        assertEquals(MultiTenancyStrategy.DATABASE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("database"))));
+        assertEquals(MultiTenancyStrategy.SCHEMA, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("SCHEMA"))));
+        assertEquals(MultiTenancyStrategy.DISCRIMINATOR, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("Discriminator"))));
+        // a value that is not a strategy is left to Quarkus, which fails the build
+        assertEquals(MultiTenancyStrategy.NONE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("bogus"))));
+    }
+
+    private static final Set<String> KEYCLOAK_PACKAGES = Set.of("org.keycloak.models.jpa.entities", "org.keycloak.storage.jpa.entity");
+
     private static HibernateOrmConfig config(Map<String, Optional<String>> namedUnits) {
+        Map<String, Set<String>> packages = new java.util.HashMap<>();
+        namedUnits.keySet().forEach(name -> packages.put(name, Set.of("org.example." + name)));
+        return config(namedUnits, packages, KEYCLOAK_PACKAGES);
+    }
+
+    /**
+     * @param namedUnits the datasource of each named unit
+     * @param packages the packages of each named unit
+     * @param defaultUnitPackages the packages of the default unit
+     */
+    private static HibernateOrmConfig config(Map<String, Optional<String>> namedUnits, Map<String, Set<String>> packages, Set<String> defaultUnitPackages) {
         HibernateOrmConfig config = mock(HibernateOrmConfig.class);
         Map<String, HibernateOrmConfigPersistenceUnit> units = new java.util.HashMap<>();
         namedUnits.forEach((name, datasource) -> {
             HibernateOrmConfigPersistenceUnit unit = mock(HibernateOrmConfigPersistenceUnit.class);
             when(unit.datasource()).thenReturn(datasource);
+            when(unit.packages()).thenReturn(Optional.ofNullable(packages.get(name)));
             units.put(name, unit);
         });
         when(config.namedPersistenceUnits()).thenReturn(units);
+        HibernateOrmConfigPersistenceUnit defaultUnit = mock(HibernateOrmConfigPersistenceUnit.class);
+        when(defaultUnit.packages()).thenReturn(Optional.of(defaultUnitPackages));
+        when(config.defaultPersistenceUnit()).thenReturn(defaultUnit);
         return config;
+    }
+
+    private static HibernateOrmConfigPersistenceUnit unit(Optional<String> multitenant) {
+        HibernateOrmConfigPersistenceUnit unit = mock(HibernateOrmConfigPersistenceUnit.class);
+        when(unit.multitenant()).thenReturn(multitenant);
+        return unit;
     }
 }

@@ -213,6 +213,13 @@ public class ConfigDefinedPersistenceUnitDistTest {
     }
 
     @Test
+    void persistenceUnitMustNotOverlapKeycloakPackages(KeycloakRunner runner) {
+        CLIResult result = runner.run("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-jpa-packages-my-store=com.acme.provider.configunit,org.keycloak.models.jpa");
+        result.assertError("The package 'org.keycloak.models.jpa' of the persistence unit 'my-store' overlaps with the package 'org.keycloak.models.jpa.entities' of the default persistence unit, "
+                + "whose entities belong to the default persistence unit only. Set the 'kc.db-jpa-packages-my-store' option to the packages of the entities of your extension.");
+    }
+
+    @Test
     void persistenceUnitMustBeNamedAfterDatasource(KeycloakRunner runner, RawDistRootPath dist) throws IOException {
         Path quarkusProperties = dist.getDistRootPath().resolve("conf").resolve("quarkus.properties");
         Files.writeString(quarkusProperties, "quarkus.hibernate-orm.\"other\".packages=com.acme.provider.configunit\n"

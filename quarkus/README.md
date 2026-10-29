@@ -335,6 +335,12 @@ and all tests will pass.
 However, it is expected breaking changes between Quarkus upgrades that break the integration code we have in both [deployment](deployment) and [runtime](runtime) modules. When this happens,
 you should understand what is breaking and upgrade the integration code accordingly.
 
+The `db-orm-*` options are generated from the Hibernate ORM extension itself when the [runtime](runtime) module is built, see `HibernateOrmPropertiesGenerator`. After a Quarkus upgrade, check:
+
+* The generator still finds the two config roots of the extension, `HibernateOrmConfig` in `quarkus-hibernate-orm-deployment` and `HibernateOrmRuntimeConfig` in `quarkus-hibernate-orm`. It reads them from `META-INF/quarkus-config-roots.list` and relies on their `@ConfigRoot` and `@ConfigMapping` annotations and on `ConfigMappings.getProperties` of SmallRye Config. A failure shows up as a build failure of the runtime module.
+* Properties that Quarkus added, renamed or removed. `HibernateOrmPropertiesTest` and `HibernateOrmPropertiesGeneratorTest` assert property names, and `DatabasePropertyMappers.HIBERNATE_ORM_PROPERTIES_NOT_EXPOSED` lists the properties Keycloak must not expose. Review the new properties for ones Keycloak cannot work with, and the renamed ones for a changed option name, which is a breaking change for users.
+* `KeycloakProcessor.JpaModelAssignment` mirrors how `HibernateOrmProcessor` assigns JPA model classes to persistence units. Compare it with the new version and run `CustomJpaEntityProviderDistTest`, `StandaloneOrmXmlDistTest`, `ConfigDefinedPersistenceUnitDistTest` and `ConfigDefinedMultiTenancyDistTest`.
+
 ## References
 
 * [Configuration Guide](https://www.keycloak.org/server/configuration)
