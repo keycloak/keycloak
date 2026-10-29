@@ -21,6 +21,7 @@ test.describe.serial("Realm settings events tab tests", () => {
   const realmName = `events-realm-settings-${crypto.randomUUID()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

@@ -4,9 +4,7 @@ import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type PermissionsConfigurationTabs =
-  | "permissions"
-  | "policies"
-  | "evaluation";
+  "permissions" | "policies" | "evaluation";
 
 export type PermissionsConfigurationTabsParams = {
   realm: string;

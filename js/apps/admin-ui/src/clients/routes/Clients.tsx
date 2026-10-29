@@ -4,9 +4,7 @@ import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientsTab =
-  | "list"
-  | "initial-access-token"
-  | "client-registration";
+  "list" | "initial-access-token" | "client-registration";
 
 export type ClientsParams = {
   realm: string;

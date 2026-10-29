@@ -31,6 +31,7 @@ test.describe.serial("Realm settings client profiles tab tests", () => {
   const realmName = `client-profiles-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
@@ -65,6 +66,7 @@ test.describe.serial("Realm settings client profiles tab tests", () => {
 
   test.describe.serial("Edit client profile", () => {
     const editedProfileName = "Edit";
+
     test.beforeAll(() =>
       adminClient.createClientProfile(
         editedProfileName,

@@ -22,6 +22,7 @@ test.describe.serial("Security defenses", () => {
   const realmName = `security-defenses-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

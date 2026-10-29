@@ -29,6 +29,7 @@ test.describe.serial("Client registration policies tab", () => {
   const realmName = `clients-details-realm-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
