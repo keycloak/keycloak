@@ -19,3 +19,12 @@ See the upgrading guide for details.
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+== OID4VP verifier infers the DCQL query from mappers (experimental)
+
+The OID4VP identity provider no longer requires a hand-written DCQL query.
+Configure the accepted credential types (`vct`) in the new *Default Credential Types* setting, and the query sent to the wallet is built from the claims that the identity provider mappers read, plus the principal attribute.
+
+A DCQL query can still be configured for requests that mappers cannot express, such as claim sets.
+It takes precedence over the inferred query and is now validated when the identity provider is saved.
+Only a single credential in the `dc+sd-jwt` format can be requested.

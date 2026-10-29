@@ -29,7 +29,6 @@ import org.keycloak.util.KeyWrapperUtil;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * The OID4VP signed authorization request object: the standard JWT claims from {@link JsonWebToken}
@@ -54,7 +53,7 @@ public class RequestObject extends JsonWebToken {
     @JsonProperty("state")
     private String state;
     @JsonProperty("dcql_query")
-    private JsonNode dcqlQuery;
+    private DcqlQuery dcqlQuery;
     @JsonProperty("client_metadata")
     private Object clientMetadata;
 
@@ -88,7 +87,7 @@ public class RequestObject extends JsonWebToken {
         return this;
     }
 
-    public RequestObject dcqlQuery(JsonNode dcqlQuery) {
+    public RequestObject dcqlQuery(DcqlQuery dcqlQuery) {
         this.dcqlQuery = dcqlQuery;
         return this;
     }

@@ -184,6 +184,7 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         idp.setEnabled(true);
         Map<String, String> effective = new HashMap<>(config);
         effective.putIfAbsent(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
+        effective.putIfAbsent(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, sdJwtTypeCredentialVct);
         idp.setConfig(effective);
         try (Response response = testRealm.admin().identityProviders().create(idp)) {
             assertEquals(201, response.getStatus(), "Failed to create OID4VP identity provider");
@@ -241,25 +242,6 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         try (Response response = managedClient.admin().getProtocolMappers().createMapper(mapper)) {
             assertEquals(201, response.getStatus(), "Failed to create the session note protocol mapper");
         }
-    }
-
-    protected static String dcqlQuery() {
-        return """
-                {
-                  "credentials": [
-                    {
-                      "id": "identity",
-                      "format": "dc+sd-jwt",
-                      "meta": { "vct_values": ["%s"] },
-                      "claims": [
-                        { "path": ["email"] },
-                        { "path": ["firstName"] },
-                        { "path": ["lastName"] },
-                        { "path": ["address"] }
-                      ]
-                    }
-                  ]
-                }""".formatted(sdJwtTypeCredentialVct);
     }
 
     protected void assertLoginContinued() {

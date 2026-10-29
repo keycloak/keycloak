@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OID4VCConstants;
@@ -39,6 +40,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
@@ -58,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -74,7 +77,6 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         super.configureTestRealm();
         createVerifierIdp(Map.of(
                 OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
-                OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
         createCompletionHolder("bob");
         createCompletionHolder("carol");
@@ -99,7 +101,131 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         assertEquals("vp_token", request.path("response_type").asText());
         assertEquals("direct_post", request.path("response_mode").asText());
         assertTrue(request.hasNonNull("nonce"));
-        assertEquals(JsonSerialization.readValue(dcqlQuery(), JsonNode.class), request.path("dcql_query"));
+    }
+
+    @Test
+    public void dcqlQueryIsInferredFromTheMappers() throws Exception {
+        String expected = """
+                {
+                  "credentials": [
+                    {
+                      "id": "credential",
+                      "format": "dc+sd-jwt",
+                      "meta": { "vct_values": ["%s"] },
+                      "claims": [
+                        { "path": ["address"] },
+                        { "path": ["vct"] },
+                        { "path": ["email"] },
+                        { "path": ["firstName"] },
+                        { "path": ["lastName"] },
+                        { "path": ["address", "locality"] }
+                      ]
+                    }
+                  ]
+                }""".formatted(sdJwtTypeCredentialVct);
+
+        assertEquals(JsonSerialization.readValue(expected, JsonNode.class), requestObject().path("dcql_query"));
+    }
+
+    @Test
+    public void configuredDcqlQueryReplacesTheInferredOne() throws Exception {
+        String configured = configuredDcqlQuery(sdJwtCredential("configured", """
+                , "claims": [{ "path": ["email"] }]"""));
+        testRealm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.getConfig().put(OID4VPIdentityProviderConfig.DCQL_QUERY, configured);
+            idp.getConfig().remove(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES);
+        });
+
+        assertEquals(JsonSerialization.readValue(configured, JsonNode.class), requestObject().path("dcql_query"));
+    }
+
+    @Test
+    public void everyDefaultCredentialTypeIsRequested() {
+        updateIdpConfig(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES,
+                sdJwtTypeCredentialVct + ", urn:eudi:pid:it:1,," + sdJwtTypeCredentialVct);
+
+        JsonNode vctValues = requestObject().path("dcql_query").path("credentials").path(0).path("meta")
+                .path("vct_values");
+        assertEquals(List.of(sdJwtTypeCredentialVct, "urn:eudi:pid:it:1"),
+                JsonSerialization.mapper.convertValue(vctValues, List.class));
+    }
+
+    @Test
+    public void principalAttributeIsRequestedWithoutAMapper() {
+        updatePrincipalAttribute("personal_administrative_number");
+
+        JsonNode claims = requestObject().path("dcql_query").path("credentials").path(0).path("claims");
+        assertEquals("personal_administrative_number", claims.path(claims.size() - 1).path("path").path(0).asText());
+    }
+
+    @Test
+    public void claimsOfMappersWithoutAttributeAreNotRequested() {
+        JsonNode inferred = requestObject().path("dcql_query");
+        testRealm.cleanup().add(r -> r.identityProviders().get(IDP_ALIAS).getMappers().stream()
+                .filter(mapper -> mapper.getName().startsWith("unmapped-"))
+                .forEach(mapper -> r.identityProviders().get(IDP_ALIAS).delete(mapper.getId())));
+        addIdpMapper("unmapped-attribute", USER_ATTRIBUTE_MAPPER_ID,
+                Map.of("claim", "phone_number", "user.attribute", " "));
+        addIdpMapper("unmapped-session-attribute", USER_SESSION_ATTRIBUTE_MAPPER_ID,
+                Map.of("claim", "birthdate", "attribute", " "));
+
+        assertEquals(inferred, requestObject().path("dcql_query"));
+    }
+
+    @Test
+    public void missingDefaultCredentialTypesAreRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, " ",
+                "Default credential types are required unless a DCQL query is configured");
+    }
+
+    @Test
+    public void dcqlQueryRequestingAClaimTwiceIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                configuredDcqlQuery(sdJwtCredential("configured", """
+                        , "claims": [{ "path": ["email"] }, { "path": ["email"] }]""")),
+                "The credential 'configured' requests the claim [email] twice");
+    }
+
+    @Test
+    public void dcqlQueryRequestingSeveralCredentialsIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                configuredDcqlQuery(sdJwtCredential("first", ""), sdJwtCredential("second", "")),
+                "Requesting more than one credential is not supported");
+    }
+
+    @Test
+    public void dcqlQueryWithNullCredentialIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY, configuredDcqlQuery("null"),
+                "The credentials must not contain null");
+    }
+
+    @Test
+    public void dcqlQueryWithNullClaimIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                configuredDcqlQuery(sdJwtCredential("configured", ", \"claims\": [null]")),
+                "The claims of the credential 'configured' must not contain null");
+    }
+
+    @Test
+    public void dcqlQueryWithNullCredentialSetOptionIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                "{ \"credentials\": [" + sdJwtCredential("configured", "")
+                        + "], \"credential_sets\": [{ \"options\": [[null]] }] }",
+                "The options of the credential_sets must not contain null");
+    }
+
+    @Test
+    public void dcqlQueryWithUnknownMemberIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                configuredDcqlQuery(sdJwtCredential("configured", ", \"unknown\": true")),
+                "The DCQL query member 'unknown' is not supported");
+    }
+
+    @Test
+    public void dcqlQueryRequestingMultiplePresentationsIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
+                configuredDcqlQuery(sdJwtCredential("configured", ", \"multiple\": true")),
+                "Requesting multiple presentations of the credential 'configured' is not supported");
     }
 
     @Test
@@ -410,5 +536,20 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
                 "Expected the login error page, was: " + driver.driver().getCurrentUrl());
         assertTrue(page.contains("Session not active"),
                 "Expected the session not active error, was: " + page);
+    }
+
+    private static String configuredDcqlQuery(String... credentials) {
+        return "{ \"credentials\": [" + String.join(", ", credentials) + "] }";
+    }
+
+    private static String sdJwtCredential(String id, String moreMembers) {
+        return """
+                { "id": "%s", "format": "dc+sd-jwt", "meta": { "vct_values": ["%s"] }%s }"""
+                .formatted(id, sdJwtTypeCredentialVct, moreMembers);
+    }
+
+    private void assertRejectedOnUpdate(String key, String value, String expectedError) {
+        BadRequestException e = assertThrows(BadRequestException.class, () -> updateIdpConfig(key, value));
+        assertEquals(expectedError, e.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
     }
 }
