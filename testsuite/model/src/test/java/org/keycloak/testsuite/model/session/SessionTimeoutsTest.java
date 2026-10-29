@@ -471,6 +471,22 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     return null;
                 });
             }, 10, 10);
+
+            if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+                // With persistent sessions and caching enabled the lookup above can already return the
+                // entry written by asyncCommit, so read the persisted session to assert the stored
+                // replacement, as the idle-timeout tests do.
+                Retry.executeWithBackoff(iteration -> {
+                    withRealm(realmId, (session, realm) -> {
+                        UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
+                        UserSessionModel persistedSession = provider.loadUserSession(realm, sessionId, offline);
+                        Assert.assertNotNull(persistedSession);
+                        Assert.assertTrue("expected a fresh persisted session start, but was: " + persistedSession.getStarted(),
+                                Math.abs(persistedSession.getStarted() - Time.currentTime()) <= 5);
+                        return null;
+                    });
+                }, 10, 10);
+            }
         } finally {
             setTimeOffset(0);
         }
