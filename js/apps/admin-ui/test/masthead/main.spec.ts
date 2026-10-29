@@ -17,7 +17,7 @@ import {
 
 test.describe.serial("Masthead tests", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await login(page, { freshSession: true });
   });
 
   test.describe.serial("Desktop view", () => {

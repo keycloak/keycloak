@@ -9,7 +9,14 @@ export default defineConfig({
   testDir: "./test",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? [["github"], ["html"]] : "list",
+  reporter: process.env.CI
+    ? [
+        ["github"],
+        ["list"],
+        ["html"],
+        ["json", { outputFile: "playwright-results.json" }],
+      ]
+    : "list",
 
   use: {
     trace: "retain-on-failure",

@@ -27,6 +27,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
     permissions:
@@ -34,6 +35,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -45,6 +48,7 @@ jobs:
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -60,12 +64,14 @@ jobs:
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
+          retention-days: 1
 
   admin-client:
     name: Admin Client
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       WORKSPACE: "@keycloak/keycloak-admin-client"
     steps:
@@ -84,6 +90,7 @@ jobs:
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       WORKSPACE: "@keycloak/keycloak-ui-shared"
     steps:
@@ -102,6 +109,7 @@ jobs:
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       WORKSPACE: "@keycloak/keycloak-account-ui"
     steps:
@@ -120,6 +128,7 @@ jobs:
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       WORKSPACE: keycloak-admin-ui
     steps:
@@ -143,6 +152,7 @@ jobs:
       - build-keycloak
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       WORKSPACE: "@keycloak/keycloak-account-ui"
     strategy:
@@ -173,28 +183,49 @@ jobs:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
+          browser: ${{ matrix.browser }}
+
+      - name: Wait for Keycloak server to start
+        run: curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8080
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
 
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: account-ui
+          title: Account UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: account-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/account-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
+        if: failure()
         with:
           name: account-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/account-ui/playwright-report
-          retention-days: 30
+          retention-days: 7
 
       - name: Upload server logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: account-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
+          retention-days: 7
 
   admin-ui-e2e:
     name: Admin UI E2E
@@ -203,6 +234,7 @@ jobs:
       - build-keycloak
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     env:
       WORKSPACE: "@keycloak/keycloak-admin-ui"
       RETRY_COUNT: 3
@@ -236,28 +268,49 @@ jobs:
           KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
           KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
+          browser: ${{ matrix.browser }}
+
+      - name: Wait for Keycloak server to start
+        run: curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8080
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
         working-directory: js
 
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: admin-ui
+          title: Admin UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: admin-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
+        if: failure()
         with:
           name: admin-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/admin-ui/playwright-report
-          retention-days: 30
+          retention-days: 7
 
       - name: Upload server logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: admin-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
+          retention-days: 7
 
   keycloak-admin-client:
     name: Keycloak Admin Client
@@ -266,6 +319,7 @@ jobs:
       - build-keycloak
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       WORKSPACE: "@keycloak/keycloak-admin-client"
       RETRY_COUNT: 3
@@ -309,8 +363,11 @@ jobs:
       - admin-ui-e2e
       - keycloak-admin-client
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}
