@@ -284,6 +284,7 @@ test.describe
 
 test.describe.serial("Accessibility tests for client authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
+
   test.beforeAll(() =>
     adminClient.createClient({
       protocol: "openid-connect",

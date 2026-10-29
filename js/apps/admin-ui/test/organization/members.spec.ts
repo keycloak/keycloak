@@ -28,6 +28,7 @@ test.describe.serial("Members", () => {
       enabled: true,
     });
   });
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

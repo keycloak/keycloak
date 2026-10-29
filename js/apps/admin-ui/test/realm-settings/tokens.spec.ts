@@ -19,6 +19,7 @@ test.describe.serial("Realm Settings - Tokens", () => {
   test.beforeAll(() =>
     adminClient.createRealm(realmName, { verifiableCredentialsEnabled: true }),
   );
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

@@ -58,6 +58,7 @@ test.describe.serial("Permissions section tests", () => {
       name: "view-profile",
     });
   });
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

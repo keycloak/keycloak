@@ -49,5 +49,5 @@ export async function assertAxeViolations(page: Page) {
   );
   if (violations.length !== 0) console.info(violations);
 
-  expect(violations.length, violations.map((v) => v.help).join("\n")).toBe(0);
+  expect(violations, violations.map((v) => v.help).join("\n")).toHaveLength(0);
 }
