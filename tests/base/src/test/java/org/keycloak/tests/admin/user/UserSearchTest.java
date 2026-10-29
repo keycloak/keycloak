@@ -381,6 +381,11 @@ public class UserSearchTest extends AbstractUserTest {
         List<UserRepresentation> bySearchAndEmail = managedRealm.admin().users().search("Stackbugcommon", null, null, "bob@stackbug.test", true, null, null, null);
         assertThat(bySearchAndEmail, hasSize(1));
         assertEquals("stackbob", bySearchAndEmail.get(0).getUsername());
+
+        // the count endpoint must apply the same filter composition so pagination totals match the results
+        assertEquals(2, managedRealm.admin().users().count("Stackbugcommon", null, null, null, true, null, null, null));
+        assertEquals(1, managedRealm.admin().users().count("Stackbugcommon", null, null, null, true, "stackalice", null, null));
+        assertEquals(1, managedRealm.admin().users().count("Stackbugcommon", null, null, "bob@stackbug.test", true, null, null, null));
     }
 
     @Test
