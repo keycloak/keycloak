@@ -71,6 +71,11 @@ Once the flow completes, an account is created and the user joins the organizati
 configured (e.g.: password, passwordless, kerberos) to the account, the user is not automatically redirected to the identity provider but asked to authenticate using their
 credentials.
 
+When forwarding a login hint to an OpenID Connect identity provider, organization login preserves the username or email
+entered by the user rather than replacing it with the account's stored email address. This applies to automatic redirects
+and identity provider links on the login page, including after organization selection. Enable login hint forwarding on the
+identity provider to forward this value.
+
 == How organization membership is determined during broker login
 
 When a user authenticates through an identity provider that is linked to one or more organizations, the system determines

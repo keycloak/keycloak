@@ -1,10 +1,12 @@
 import type { Page } from "@playwright/test";
-import { clickTableRowItem } from "./table.ts";
+import { clickTableRowItem, searchItem } from "./table.ts";
 
 export async function goToRealm(page: Page, realmName: string) {
   const currentRealm = await page.getByTestId("currentRealm").textContent();
   if (currentRealm !== realmName) {
     await goToRealms(page);
+    // The realm list is paginated, so parallel workers can push the realm off the first page.
+    await searchItem(page, "Search", realmName);
     await clickTableRowItem(page, realmName);
   }
 }

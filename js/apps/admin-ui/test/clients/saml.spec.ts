@@ -5,8 +5,8 @@ import { switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
-import { goToClients } from "../utils/sidebar.ts";
-import { clickTableRowItem, searchItem } from "../utils/table.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
   assertCertificates,
@@ -37,20 +37,24 @@ import {
 } from "./saml.ts";
 
 test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
+  const realmName = `saml-advanced-tab-${uuid()}`;
   const clientName = `saml-advanced-tab-${uuid()}`;
 
-  test.beforeAll(() =>
-    adminClient.createClient({
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createClient({
       protocol: "saml",
       clientId: clientName,
       publicClient: false,
-    }),
-  );
+      realm: realmName,
+    });
+  });
 
-  test.afterAll(() => adminClient.deleteClient(clientName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
     await clickTableRowItem(page, clientName);
     await goToAdvancedTab(page);
@@ -85,6 +89,7 @@ test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
 });
 
 test.describe.serial("Clients SAML tests", () => {
+  const realmName = `saml-settings-${uuid()}`;
   let clientId: string | undefined;
 
   const getClientId = () => {
@@ -94,16 +99,21 @@ test.describe.serial("Clients SAML tests", () => {
     return clientId;
   };
 
+  test.beforeAll(() => adminClient.createRealm(realmName));
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
     clientId = `saml-settings-${uuid()}`;
     await adminClient.createClient({
       protocol: "saml",
       clientId,
+      realm: realmName,
     });
 
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
-    await searchItem(page, "Search for client", getClientId());
     await clickTableRowItem(page, getClientId());
   });
 
@@ -111,7 +121,7 @@ test.describe.serial("Clients SAML tests", () => {
     const currentClientId = clientId;
     clientId = undefined;
     if (currentClientId) {
-      await adminClient.deleteClient(currentClientId);
+      await adminClient.deleteClient(currentClientId, realmName);
     }
   });
 

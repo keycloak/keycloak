@@ -4,7 +4,6 @@ import adminClient from "../utils/AdminClient.ts";
 import { switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import {
   addMapper,
@@ -23,16 +22,19 @@ import {
   setUrl,
 } from "./main.ts";
 
+const realmName = `idp-oidc-${uuid()}`;
+
+test.beforeAll(() => adminClient.createRealm(realmName));
+
+test.afterAll(() => adminClient.deleteRealm(realmName));
+
 test.describe.serial("OIDC identity provider test", () => {
   const oidcProviderName = "oidc";
   const secret = "123";
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToIdentityProviders(page);
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
   });
-
-  test.afterAll(() => adminClient.deleteIdentityProvider(oidcProviderName));
 
   test("should create an OIDC provider using discovery url", async ({
     page,
@@ -87,13 +89,16 @@ test.describe.serial("Edit OIDC Provider", () => {
   const alias = `edit-oidc-${uuid()}`;
 
   test.beforeEach(async ({ page }) => {
-    await adminClient.createIdentityProvider(oidcProviderName, alias);
-    await login(page);
-    await goToIdentityProviders(page);
+    await adminClient.createIdentityProvider(
+      oidcProviderName,
+      alias,
+      realmName,
+    );
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
     await clickTableRowItem(page, oidcProviderName);
   });
 
-  test.afterEach(() => adminClient.deleteIdentityProvider(alias));
+  test.afterEach(() => adminClient.deleteIdentityProvider(alias, realmName));
 
   test("should add OIDC mapper of type Attribute Importer", async ({
     page,

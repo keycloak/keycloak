@@ -361,8 +361,8 @@ importers:
         specifier: ^10.5.0
         version: 10.5.0
       '@kiota-community/kiota-gen':
-        specifier: ^1.0.2
-        version: 1.0.2
+        specifier: ^1.0.3
+        version: 1.0.3
       '@types/chai':
         specifier: ^5.2.2
         version: 5.2.2
@@ -1054,8 +1054,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@kiota-community/kiota-gen@1.0.2':
-    resolution: {integrity: sha512-Fx6Xcu1s4gRKgSppSi3XHuT1wgoxiT8xK3OW+ceiCySQ9YslmSoskguoFhQLaOFcLN4dFPHlpgxvdLfVK910mA==}
+  '@kiota-community/kiota-gen@1.0.3':
+    resolution: {integrity: sha512-sUSIHruU0OF3mhPk8gryB3Ts2owikKbpeW68rFd8EywbgTA9SRIU/p1FnFV1XnLAZ968xfwJlCWm2xxALW3Fsw==}
     hasBin: true
 
   '@kwsites/file-exists@1.1.1':
@@ -2072,6 +2072,10 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
+  agent-base@9.0.0:
+    resolution: {integrity: sha512-TQf59BsZnytt8GdJKLPfUZ54g/iaUL2OWDSFCCvMOhsHduDQxO8xC4PNeyIkVcA5KwL2phPSv0douC0fgWzmnA==}
+    engines: {node: '>= 20'}
+
   ajv-draft-04@1.0.0:
     resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
     peerDependencies:
@@ -3083,6 +3087,10 @@ packages:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
     engines: {node: '>= 14'}
 
+  https-proxy-agent@9.1.0:
+    resolution: {integrity: sha512-ag87y7cJJ9/3+GxFr8Oy4O5faDsGRGnBGsJj/YjOSsSx/5eadKLYTMPlzuR6obgoCDDm0abAAZitXXQkMOPSpA==}
+    engines: {node: '>= 20'}
+
   husky@9.1.7:
     resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
     engines: {node: '>=18'}
@@ -3837,6 +3845,15 @@ packages:
 
   property-information@7.1.0:
     resolution: {integrity: sha512-TwEZ+X+yCJmYfL7TPUOcvBZ4QfoT5YenQiJuX//0th53DE6w0xxLEtfK3iyryQFddXuvkIk51EEgrJQ0WJkOmQ==}
+
+  proxy-agent-negotiate@1.1.0:
+    resolution: {integrity: sha512-N8IBcM3UgCVzz2L2Lqv8DVntDnnC8/hiV4nEDUPkqq72TPUgYWjQc+bdZlBPZK9LzPAvOY//gAt0S0DApoOXWQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      kerberos: ^2.0.0
+    peerDependenciesMeta:
+      kerberos:
+        optional: true
 
   pump@2.0.1:
     resolution: {integrity: sha512-ruPMNRkN3MHP1cWJc9OWr+T/xDP0jhXYCLfJcBuX54hhfIBnaQmAUMfDcG4DM5UMWByBbJY69QSphm3jtDKIkA==}
@@ -5350,13 +5367,16 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@kiota-community/kiota-gen@1.0.2':
+  '@kiota-community/kiota-gen@1.0.3':
     dependencies:
       decompress: 4.2.1
       follow-redirects: 1.15.9
+      https-proxy-agent: 9.1.0
       shelljs: 0.8.5
     transitivePeerDependencies:
       - debug
+      - kerberos
+      - supports-color
 
   '@kwsites/file-exists@1.1.1':
     dependencies:
@@ -6395,6 +6415,8 @@ snapshots:
 
   agent-base@7.1.4: {}
 
+  agent-base@9.0.0: {}
+
   ajv-draft-04@1.0.0(ajv@8.18.0):
     optionalDependencies:
       ajv: 8.18.0
@@ -6575,7 +6597,7 @@ snapshots:
   bl@1.2.3:
     dependencies:
       readable-stream: 2.3.8
-      safe-buffer: 5.1.2
+      safe-buffer: 5.2.1
 
   bootstrap@3.4.1: {}
 
@@ -7549,6 +7571,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  https-proxy-agent@9.1.0:
+    dependencies:
+      agent-base: 9.0.0
+      debug: 4.4.3(supports-color@8.1.1)
+      proxy-agent-negotiate: 1.1.0
+    transitivePeerDependencies:
+      - kerberos
+      - supports-color
+
   husky@9.1.7: {}
 
   i18next-fetch-backend@7.0.0: {}
@@ -8294,6 +8325,8 @@ snapshots:
   property-information@6.5.0: {}
 
   property-information@7.1.0: {}
+
+  proxy-agent-negotiate@1.1.0: {}
 
   pump@2.0.1:
     dependencies:

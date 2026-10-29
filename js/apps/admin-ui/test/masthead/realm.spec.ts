@@ -10,7 +10,7 @@ import {
 } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealmSettings } from "../utils/sidebar.ts";
-import { assertRowExists } from "../utils/table.ts";
+import { assertRowExists, searchItem } from "../utils/table.ts";
 import {
   assertCurrentRealm,
   clickClearResourceFile,
@@ -107,7 +107,9 @@ test.describe.serial("Realm tests", () => {
     await assertNotificationMessage(page, "Realm created successfully");
 
     await goToRealmSection(page);
+    await searchItem(page, "Search", newRealmName);
     await assertRowExists(page, newRealmName);
+    await searchItem(page, "Search", editedRealmName);
     await assertRowExists(page, editedRealmName);
   });
 
