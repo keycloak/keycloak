@@ -2,6 +2,10 @@ package org.keycloak.testframework.tests;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.cert.Certificate;
+import java.util.Base64;
+import javax.net.ssl.HttpsURLConnection;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -48,6 +52,24 @@ public class TlsEnabledTest {
         Assertions.assertNull(managedCertificates.getServerTrustStorePath());
 
         Assertions.assertNotNull(managedCertificates.getClientSSLContext());
+    }
+
+    @Test
+    public void testServerCertificateSpkiSha256() throws Exception {
+        String spki = managedCertificates.getServerCertificateSpkiSha256();
+        Assertions.assertNotNull(spki);
+        Assertions.assertEquals(32, Base64.getDecoder().decode(spki).length);
+
+        HttpsURLConnection connection = (HttpsURLConnection) keycloakUrls.getBaseUrl().openConnection();
+        connection.setSSLSocketFactory(managedCertificates.getClientSSLContext().getSocketFactory());
+        try {
+            connection.connect();
+            Certificate presented = connection.getServerCertificates()[0];
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(presented.getPublicKey().getEncoded());
+            Assertions.assertEquals(Base64.getEncoder().encodeToString(hash), spki);
+        } finally {
+            connection.disconnect();
+        }
     }
 
     @Test
