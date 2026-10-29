@@ -188,6 +188,9 @@ jobs:
           workspace: ${{ env.WORKSPACE }}
           browser: ${{ matrix.browser }}
 
+      - name: Wait for Keycloak server to start
+        run: curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8080
+
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
@@ -269,6 +272,9 @@ jobs:
         with:
           workspace: ${{ env.WORKSPACE }}
           browser: ${{ matrix.browser }}
+
+      - name: Wait for Keycloak server to start
+        run: curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8080
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
