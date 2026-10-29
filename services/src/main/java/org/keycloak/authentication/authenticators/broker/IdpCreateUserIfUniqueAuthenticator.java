@@ -35,8 +35,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
@@ -97,6 +100,11 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             federatedUser = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             federatedUser.setUsername(username);
         } else if (duplication == null) {
+            // A user that does not exist yet can never be the user of a session that is still valid (eg. on prompt=login).
+            // AuthenticationProcessor.attachSession() rejects that mismatch too, but only after the new user was committed
+            // without its identity link, which locks them out. Reject before creating it instead.
+            rejectIfAnotherUserHoldsTheSession(context);
+
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
                     username, broker.getAlias());
 
@@ -159,6 +167,20 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             context.attempted();
         }
+    }
+
+    private void rejectIfAnotherUserHoldsTheSession(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+        RealmModel realm = context.getRealm();
+        // The authentication session shares its ID with the user session it was started on top of when the browser holds an SSO session.
+        UserSessionModel userSession = session.sessions().getUserSession(realm, context.getAuthenticationSession().getParentSession().getId());
+        if (userSession == null || userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+            return;
+        }
+
+        context.getEvent().detail(Details.EXISTING_USER, userSession.getUser().getId()).error(Errors.DIFFERENT_USER_AUTHENTICATED);
+        throw new ErrorPageException(session, context.getAuthenticationSession(), Response.Status.BAD_REQUEST,
+                Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
     }
 
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
