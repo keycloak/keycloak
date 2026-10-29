@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,6 +36,8 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
@@ -62,6 +65,12 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProviderFactory.class);
 
+    private static final long DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS = 100;
+    private static final long DEFAULT_CLOCK_SKEW_SAMPLE_INTERVAL_SECONDS = 60;
+    // TTL is 3x the interval to ensure samples don't expire before other nodes can read them,
+    // accounting for network delays, GC pauses, and cluster coordination time
+    private static final int SAMPLE_TTL_MULTIPLIER = 3;
+
     private volatile Cache<String, Object> workCache;
     private volatile ClusterProvider clusterProvider;
 
@@ -72,6 +81,9 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     });
 
     private ViewChangeListener workCacheListener;
+    protected long clockSkewThresholdMillis;
+    protected long clockSkewSampleIntervalSeconds;
+    protected boolean clockSkewDetectionEnabled;
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
@@ -92,7 +104,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             workCache.getCacheManager().addListener(workCacheListener);
 
             var clusterStartupTime = initClusterStartupTime(session);
-            var cp = new InfinispanClusterProvider(clusterStartupTime, ispnConnections.getNodeInfo(), workCache, localExecutor);
+            var cp = new InfinispanClusterProvider(clusterStartupTime, ispnConnections.getNodeInfo(), workCache, localExecutor, clockSkewThresholdMillis);
 
             // We need CacheEntryListener for communication within current DC
             workCache.addListener(cp.new CacheEntryListener());
@@ -139,10 +151,54 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public void init(Config.Scope config) {
+        clockSkewDetectionEnabled = config.getBoolean("clockSkewDetectionEnabled", true);
+        clockSkewThresholdMillis = config.getLong("clockSkewThresholdMillis", DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS);
+        clockSkewSampleIntervalSeconds = config.getLong("clockSkewSampleIntervalSeconds", DEFAULT_CLOCK_SKEW_SAMPLE_INTERVAL_SECONDS);
+
+        if (clockSkewThresholdMillis < 0) {
+            throw new IllegalArgumentException("clockSkewThresholdMillis must be non-negative, got: " + clockSkewThresholdMillis);
+        }
+        if (clockSkewSampleIntervalSeconds <= 0) {
+            throw new IllegalArgumentException("clockSkewSampleIntervalSeconds must be positive, got: " + clockSkewSampleIntervalSeconds);
+        }
+
+        if (clockSkewDetectionEnabled) {
+            logger.infof("Clock skew detection enabled: threshold=%d ms, sample interval=%d seconds",
+                    clockSkewThresholdMillis, clockSkewSampleIntervalSeconds);
+            if (clockSkewThresholdMillis == 0) {
+                logger.infof("Clock skew threshold is 0 ms - will warn on ANY detected skew");
+            }
+        } else {
+            logger.info("Clock skew detection disabled");
+        }
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (clockSkewDetectionEnabled) {
+            scheduleClockSkewDetection(factory);
+        }
+    }
+
+    protected void scheduleClockSkewDetection(KeycloakSessionFactory factory) {
+        try (KeycloakSession session = factory.create()) {
+            InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
+            String nodeName = ispnConnections.getNodeInfo().nodeName();
+
+            long sampleTtlSeconds = clockSkewSampleIntervalSeconds * SAMPLE_TTL_MULTIPLIER;
+
+            ClockSkewDetectionTask task = new ClockSkewDetectionTask(nodeName, sampleTtlSeconds);
+
+            logger.infof("Scheduling clock skew detection task for node '%s': interval=%d seconds, TTL=%d seconds",
+                    nodeName, clockSkewSampleIntervalSeconds, sampleTtlSeconds);
+
+            org.keycloak.timer.TimerProvider timer = session.getProvider(org.keycloak.timer.TimerProvider.class);
+            if (timer != null) {
+                timer.scheduleTask(task, clockSkewSampleIntervalSeconds * 1000);
+            } else {
+                logger.warnf("Clock skew detection is enabled but TimerProvider is not available. Detection will not run.");
+            }
+        }
     }
 
 
@@ -155,6 +211,30 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                 localExecutor.shutdown();
             }
         }
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                    .name("clockSkewDetectionEnabled")
+                    .type("boolean")
+                    .helpText("Enable clock skew detection between cluster nodes. When enabled, nodes periodically publish timestamps and warn if other nodes' clocks are significantly ahead.")
+                    .defaultValue("true")
+                    .add()
+                .property()
+                    .name("clockSkewThresholdMillis")
+                    .type("long")
+                    .helpText("Threshold in milliseconds for clock skew warnings. If another node's clock is ahead by more than this value, a warning will be logged.")
+                    .defaultValue(String.valueOf(DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS))
+                    .add()
+                .property()
+                    .name("clockSkewSampleIntervalSeconds")
+                    .type("long")
+                    .helpText("Interval in seconds between clock skew samples. Each node publishes its timestamp at this interval for other nodes to compare.")
+                    .defaultValue(String.valueOf(DEFAULT_CLOCK_SKEW_SAMPLE_INTERVAL_SECONDS))
+                    .add()
+                .build();
     }
 
     @Override
