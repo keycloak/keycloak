@@ -14,6 +14,21 @@ while for environment variables they are `_` separated and upper-case. For examp
 * Properties: `kc.test.myproperty`
 * Environment: `KC_TEST_MYPROPERTY`
 
+## Keycloak features
+
+Keycloak features can be enabled or disabled through configuration, using the same naming convention as the
+Keycloak CLI:
+
+* `KC_FEATURES=stateless,dpop` — enables the specified features (equivalent to `--features=stateless,dpop`)
+* `KC_FEATURES_DISABLED=passkeys` — disables the specified features (equivalent to `--features-disabled=passkeys`)
+* `KC_FEATURE_STATELESS=enabled` — enables a specific feature (equivalent to `--feature-stateless=enabled`)
+
+Per-feature toggles (`KC_FEATURE_<name>`) take precedence over `KC_FEATURES` / `KC_FEATURES_DISABLED`, matching
+the Keycloak CLI behavior.
+
+Features configured this way act as defaults. Per-test `KeycloakServerConfig` classes can add additional features
+on top of what is configured here.
+
 ## Best practices
 
 For a test module define default configuration in `src/test/resources/keycloak-test.properties`. This file should be
