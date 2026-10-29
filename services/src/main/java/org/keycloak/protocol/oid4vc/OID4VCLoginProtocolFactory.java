@@ -290,6 +290,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         validateOID4VCIRefreshInterval(clientScope);
         validateCredentialConfigurationId(session, clientScope);
         validateBindingConfiguration(session, clientScope);
+        validateProofKeyIndex(clientScope);
     }
 
     @Override
@@ -505,6 +506,44 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                                 allowedProofTypes),
                         Response.Status.BAD_REQUEST);
             }
+        }
+    }
+
+    /**
+     * Validates the optional proof key index, which requires the proof signing key to occupy a specific position
+     * in the 'attested_keys' array of the key attestation. Only '0' is supported, as required by ETSI TS 119 472-3
+     * and Regulation (EU) 2026/1731. The value must be rejected before it is persisted: an unsupported value would
+     * otherwise be detected only when the issuer metadata is built, which breaks credential discovery for the
+     * whole realm.
+     *
+     * @param clientScope the client scope representation to validate
+     * @throws ErrorResponseException if the value is not an integer or not '0'
+     */
+    private void validateProofKeyIndex(ClientScopeRepresentation clientScope) {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        String proofKeyIndex = clientScope.getAttributes().get(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX);
+        if (proofKeyIndex == null || proofKeyIndex.trim().isEmpty()) {
+            // Empty values are removed on persist, so they leave the option unset.
+            return;
+        }
+
+        final int index;
+        try {
+            index = Integer.parseInt(proofKeyIndex);
+        } catch (NumberFormatException ex) {
+            throw ErrorResponse.error(String.format(
+                    "%s must be an integer value, but was '%s'",
+                    CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, proofKeyIndex),
+                    Response.Status.BAD_REQUEST);
+        }
+        if (index != 0) {
+            throw ErrorResponse.error(String.format(
+                    "%s must be 0 (the proof key must be attested_keys[0] per ETSI TS 119 472-3), but was %d",
+                    CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, index),
+                    Response.Status.BAD_REQUEST);
         }
     }
 
