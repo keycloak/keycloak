@@ -10,7 +10,14 @@ export default defineConfig({
   // Tests within a file run in order, as many files share state in 'beforeAll'.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? [["github"], ["html"]] : "list",
+  reporter: process.env.CI
+    ? [
+        ["github"],
+        ["list"],
+        ["html"],
+        ["json", { outputFile: "playwright-results.json" }],
+      ]
+    : "list",
 
   use: {
     trace: "retain-on-failure",
