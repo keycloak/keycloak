@@ -117,25 +117,53 @@ public final class JpaMigrationTaskRegistry {
     private static void register(String simpleClassName, Supplier<JpaMigrationTask> factory) {
         String fqn = "org.keycloak.connections.jpa.updater.liquibase.custom." + simpleClassName;
         REGISTRY.put(fqn, factory);
-        // Also register by simple name for forward compatibility
-        REGISTRY.put(simpleClassName, factory);
     }
 
     /**
-     * Returns a fresh {@link JpaMigrationTask} instance for the given class name, or {@code null}
-     * if no native implementation has been registered yet.
+     * Returns a fresh {@link JpaMigrationTask} instance for the given class name.
+     * Looks up built-in historic tasks first, and falls back to dynamic class loading
+     * for custom tasks. Returns {@code null} if no task is found or if the class
+     * does not implement {@link JpaMigrationTask}.
      *
-     * @param className fully-qualified or simple class name from the manifest
+     * @param className fully-qualified class name from the manifest
      */
     public static JpaMigrationTask get(String className) {
         Supplier<JpaMigrationTask> factory = REGISTRY.get(className);
-        return factory != null ? factory.get() : null;
+        if (factory != null) {
+            return factory.get();
+        }
+        try {
+            ClassLoader cl = getClassLoader();
+            Class<?> clazz = Class.forName(className, true, cl);
+            if (JpaMigrationTask.class.isAssignableFrom(clazz)) {
+                return (JpaMigrationTask) clazz.getDeclaredConstructor().newInstance();
+            }
+        } catch (ClassNotFoundException e) {
+            // Not a class or not found
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to instantiate JpaMigrationTask '" + className + "': " + e.getMessage(), e);
+        }
+        return null;
     }
 
     /**
-     * Returns {@code true} if a native {@link JpaMigrationTask} is registered for the given class.
+     * Returns {@code true} if a {@link JpaMigrationTask} is registered or loadable for the given class.
      */
     public static boolean isRegistered(String className) {
-        return REGISTRY.containsKey(className);
+        if (REGISTRY.containsKey(className)) {
+            return true;
+        }
+        try {
+            ClassLoader cl = getClassLoader();
+            Class<?> clazz = Class.forName(className, false, cl);
+            return JpaMigrationTask.class.isAssignableFrom(clazz);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static ClassLoader getClassLoader() {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        return cl != null ? cl : JpaMigrationTaskRegistry.class.getClassLoader();
     }
 }

@@ -677,8 +677,8 @@ public class JdbcJpaUpdaterProviderValidateTest {
     @Test
     public void testHistoryInsertAndSelect() throws Exception {
         createChangelogTable();
-        HistoryTableManager.insertHistoryRow(connection, null, ChangeLogHistory.CHANGELOG_TABLE,
-                "my-id", "author", "file.xml", "9:abc123", "some desc", "EXECUTED", 1, "1234567890",
+        HistoryTableManager.insertHistoryRow(connection, SqlDialect.H2, null, ChangeLogHistory.CHANGELOG_TABLE,
+                "my-id", "author", "file.xml", "9:abc123", "some desc", null, "EXECUTED", 1, "1234567890",
                 HistoryTableManager.DEFAULT_LIQUIBASE_VERSION);
 
         Set<ChangeSetKey> loaded = ChangeLogHistory.loadExecuted(connection, null, ChangeLogHistory.CHANGELOG_TABLE);

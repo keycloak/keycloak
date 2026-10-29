@@ -269,17 +269,17 @@ public class ChangeSetRunner {
                 ? manifest.getLiquibaseVersion()
                 : HistoryTableManager.DEFAULT_LIQUIBASE_VERSION;
         String insertSql = HistoryTableManager.historyInsertSql(
-                schema, historyTableName,
+                dialect, schema, historyTableName,
                 cs.getId(), cs.getAuthor(), cs.getChangeLogFile(),
-                cs.getCheckSum(), cs.getDescription(),
+                cs.getCheckSum(), cs.getDescription(), cs.getComments(),
                 execType, order, deploymentId, liquibaseVersion);
 
         if (sink.isExportMode()) {
             sink.execute(insertSql, cs.getId());
         } else {
-            HistoryTableManager.insertHistoryRow(connection, schema, historyTableName,
+            HistoryTableManager.insertHistoryRow(connection, dialect, schema, historyTableName,
                     cs.getId(), cs.getAuthor(), cs.getChangeLogFile(),
-                    cs.getCheckSum(), cs.getDescription(),
+                    cs.getCheckSum(), cs.getDescription(), cs.getComments(),
                     execType, order, deploymentId, liquibaseVersion);
         }
     }

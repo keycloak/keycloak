@@ -370,10 +370,10 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 - `quarkus/tests/integration` and `testsuite/model` compile.
 
 **Phase 4 task classes** — ✅ **Done** (`model/jpa/.../updater/jdbc/task/`, 35 registered tasks plus `AbstractUserFedToComponentHelper`)
-- `JpaMigrationTaskRegistry` maps the 35 historic `org.keycloak.connections.jpa.updater.liquibase.custom.*` class names (and the simple names) to fresh `JpaMigrationTask` instances.
+- `JpaMigrationTaskRegistry` maps the 35 historic `org.keycloak.connections.jpa.updater.liquibase.custom.*` class names to fresh `JpaMigrationTask` instances, with dynamic class lookup fallback for custom tasks.
 - Tasks: `AddRealmCodeSecretTask`, `AuthzResourceUseMoreURIsTask`, `ExtractRealmKeysFromRealmTableTask`, `FederatedUserAttributeTextColumnMigrationTask`, `MigrateUserFedToComponentTask`, `PortLdapUserFedToComponentModelTask`, `RemoveDuplicateOfflineSessionsTask`, `JpaUpdateAuthz_3_4_0_CR1Task` and the `JpaUpdate<version>_*Task` classes for versions 1.2.0 (Beta1, CR1), 1.4.0, 1.9.0, 4.0.0, 4.7.0, 13.0.0, 14.0.0, 19.0.0, 21.0.2, 22.0.0, 22.0.5, 24.0.2, 25.0.0 (plain and MySQL), 26.0.0 (two), 26.2.6 (two), 26.4.0, 26.5.0, 26.6.0, 26.7.0 and 26.8.0 (four).
 - `ChangeSetRunner` looks up the task by `className`, checks `isApplicable()`, calls `generateStatements(session, connection, schema)` and sends each statement to the sink. An unknown class logs a warning and is skipped.
-- `JpaMigrationTaskRegistryTest` (18 tests) checks that every task the manifest references is registered, lookup by FQN and simple name, fresh instances, `NativeSqlHelper` contracts, the `isApplicable()` contract and end-to-end dispatch through the runner.
+- `JpaMigrationTaskRegistryTest` (19 tests) checks that every task the manifest references is registered, lookup by FQN and reflection fallback, fresh instances, `NativeSqlHelper` contracts, the `isApplicable()` contract and end-to-end dispatch through the runner.
 - The old `CustomKeycloakTask` classes and `ThreadLocalSessionContext` were deleted in Phase 7.
 
 ### 7.4 Resolved decisions
@@ -428,26 +428,28 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 - Verify the baseline against the current master changelog. Change-sets edited after the baseline release but before the next one would fail the build; decide whether that is the desired policy or whether the baseline should be refreshed on each release branch cut.
 - Check that the checksum is stable across Liquibase upgrades. A bump of `ChecksumVersion.latest()` changes every checksum, which would flag all change-sets as modified. Either pin the checksum version in `SchemaGenerator` or regenerate the baseline whenever Liquibase is upgraded, and document which.
 - Add the baseline refresh step to the release checklist, and add a Maven-level test (for example with the existing `test-changelog.xml`) that proves `GenerateSchemaMojo` fails against a modified baseline.
-- Optional: expose the same check for extension authors in the plugin documentation (Section 8.1), so custom providers using the plugin can protect their own released change-sets.
-- Optional, lower priority: log a (non-fatal) startup warning when a stored `MD5SUM` differs from the manifest, tolerating legacy `7:`/`8:` rows. This needs `ChangeLogHistory.loadExecuted` to also read `MD5SUM`.
 
-### 8.7 Remove SnakeYAML from the Schema Generator Plugin Classpath
+### 8.7 Quarkus Build-Time Discovery for `JpaMigrationTask`
+- `JpaMigrationTaskRegistry` uses historic FQN mappings for Keycloak built-in tasks and falls back to dynamic class loading via reflection (`Class.forName(...)`) for custom tasks defined by `JpaEntityProvider` extensions.
+- **Follow-up optimization:** Introduce a Quarkus-specific provider or build step in `KeycloakProcessor` to index and discover all `JpaMigrationTask` implementations at build time (via Jandex / `CombinedIndexBuildItem`). This allows registering tasks for reflection/native image or pre-populating task supplier mappings during build augmentation, avoiding runtime classloading and reflection in Quarkus and native image execution.
+
+### 8.8 Remove SnakeYAML from the Schema Generator Plugin Classpath
 - `misc/schema-generator-maven-plugin/pom.xml` originally excluded `snakeyaml` from `liquibase-core`, since only XML changelogs are read. That exclusion had to be removed: Liquibase discovers its changelog parsers with a `ServiceLoader`, and linking `YamlChangeLogParser` fails with `NoClassDefFoundError: org/yaml/snakeyaml/constructor/BaseConstructor` while the XML parser is being set up, even though no YAML file is ever parsed. The server runtime provides SnakeYAML, which is why this was not visible there.
 - Follow-up: SnakeYAML should be removable from the plugin again. Possible approaches: ship a `META-INF/services/liquibase.parser.ChangeLogParser` in the plugin that lists only `XMLChangeLogSAXParser` (needs checking that Liquibase does not also pick up the services file inside `liquibase-core`), or register only the XML parser programmatically in `SchemaGenerator` before parsing. Verify with `SchemaGeneratorTest` and a `model/jpa` build; the benefit is a smaller plugin classpath, so this is low priority.
 
-### 8.8 Exclude Liquibase XML Changelog Files from the JPA Model JAR
+### 8.9 Exclude Liquibase XML Changelog Files from the JPA Model JAR
 - `model/jpa/src/main/resources/META-INF/jpa-changelog-*.xml` and `jpa-changelog-master.xml` are the build-time source of truth consumed by `keycloak-schema-generator-maven-plugin` to generate `META-INF/schema/migration-manifest.json`.
 - At runtime, Keycloak operates purely via `JdbcJpaUpdaterProvider` using `migration-manifest.json` and does not parse or load the XML changelog files.
 - By default, Maven resources packaging bundles all `src/main/resources/` files into `keycloak-model-jpa.jar`.
 - Follow-up: Configure `model/jpa/pom.xml` (e.g. via `maven-jar-plugin` `<excludes>` or resource filtering) to exclude `META-INF/jpa-changelog-*.xml` from the packaged JAR, reducing artifact size and avoiding confusion over runtime migration sources.
 
-### 8.9 Schema Qualification in Exported Scripts for Complex Schema Names
+### 8.10 Schema Qualification in Exported Scripts for Complex Schema Names
 
 `NativeSqlHelper.qualified()` only embeds a schema prefix when the schema name is a plain SQL identifier (matches `[A-Za-z_][A-Za-z0-9_]*`).  When a complex schema name is used (e.g. `my-schema`), the schema is applied via `Connection.setSchema()` at runtime so that unqualified table names resolve to it; but the exported script carries no such directive.  If the consumer of the exported script runs it with a different default schema, the application tables are created in the wrong schema.
 
 - Follow-up: Before writing the first statement in `export()`, emit a dialect-specific schema-selection statement when the configured schema is complex (i.e. would not be embedded by `qualified()`).  Candidates: `USE <schema>` (MySQL, MariaDB, MSSQL), `SET search_path TO "<schema>"` (PostgreSQL), `ALTER SESSION SET CURRENT_SCHEMA = "<schema>"` (Oracle).  This ensures the exported script is self-contained regardless of the session's default schema.
 
-### 8.10 Reduce the Size and Memory Footprint of `migration-manifest.json`
+### 8.11 Reduce the Size and Memory Footprint of `migration-manifest.json`
 
 **Current state** (measured on `model/jpa/target/classes/META-INF/schema/migration-manifest.json`):
 - 237 change-sets, about 1.26 MB pretty-printed, about 1.16 MB minified, about 82 KB gzipped. The `keycloak-model-jpa` JAR is about 1.1 MB in total.
@@ -586,7 +588,7 @@ For CockroachDB, verify which type names are valid (CockroachDB is broadly Postg
 
 #### 9.4.2 MySQL / MariaDB primary-key special case
 
-For MySQL and MariaDB the `CREATE TABLE` has no primary key and `mysqlAddPrimaryKeySql()` adds it afterwards with `ALTER TABLE ... ADD CONSTRAINT PK_DATABASECHANGELOG PRIMARY KEY (ID, AUTHOR, FILENAME)`. This reproduces what the former `MySQLCustomChangeLogHistoryService` did (the source of that special case is not documented in the code). Other dialects create the table without a primary key. A new database that needs the same treatment must be added to the `MYSQL`/`MARIADB` checks in `JdbcJpaUpdaterProvider` (`runChangelog`, update and export branches).
+For MySQL and MariaDB the `CREATE TABLE` has no primary key and `mysqlAddPrimaryKeySql()` adds it afterwards with `ALTER TABLE ... ADD PRIMARY KEY (ID, AUTHOR, FILENAME)`. This reproduces what the former `MySQLCustomChangeLogHistoryService` did (the source of that special case is not documented in the code). Other dialects create the table without a primary key. A new database that needs the same treatment must be added to the `MYSQL`/`MARIADB` checks in `JdbcJpaUpdaterProvider` (`runChangelog`, update and export branches).
 
 #### 9.4.3 `setDeploymentIdNotNullSql()` — ALTER COLUMN syntax
 

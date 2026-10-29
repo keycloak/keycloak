@@ -87,18 +87,25 @@ public class JpaMigrationTaskRegistryTest {
                 "org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId");
         Assert.assertNotNull("Expected task for BackfillGroupOrgId", task);
         Assert.assertNotNull("Task must have a taskId", task.getTaskId());
+        Assert.assertTrue(JpaMigrationTaskRegistry.isRegistered(
+                "org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"));
     }
 
     @Test
-    public void testRegistryLookupBySimpleName() {
-        JpaMigrationTask task = JpaMigrationTaskRegistry.get("JpaUpdate26_8_0_BackfillGroupOrgId");
-        Assert.assertNotNull("Expected task for BackfillGroupOrgId by simple name", task);
+    public void testRegistryFallbackClassLookupByClassName() {
+        String className = "org.keycloak.connections.jpa.updater.jdbc.task.JpaUpdate26_8_0_BackfillGroupOrgIdTask";
+        JpaMigrationTask task = JpaMigrationTaskRegistry.get(className);
+        Assert.assertNotNull("Expected task instantiated via reflection fallback", task);
+        Assert.assertEquals("Backfill KEYCLOAK_GROUP.ORG_ID from ORG.GROUP_ID", task.getTaskId());
+        Assert.assertTrue(JpaMigrationTaskRegistry.isRegistered(className));
     }
 
     @Test
     public void testRegistryReturnsFreshInstance() {
-        JpaMigrationTask t1 = JpaMigrationTaskRegistry.get("JpaUpdate22_0_5_UpdateAccountTheme");
-        JpaMigrationTask t2 = JpaMigrationTaskRegistry.get("JpaUpdate22_0_5_UpdateAccountTheme");
+        JpaMigrationTask t1 = JpaMigrationTaskRegistry.get(
+                "org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate22_0_5_UpdateAccountTheme");
+        JpaMigrationTask t2 = JpaMigrationTaskRegistry.get(
+                "org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate22_0_5_UpdateAccountTheme");
         Assert.assertNotSame("Registry should return fresh instances", t1, t2);
     }
 
@@ -106,6 +113,12 @@ public class JpaMigrationTaskRegistryTest {
     public void testRegistryReturnNullForUnknown() {
         Assert.assertNull(JpaMigrationTaskRegistry.get("com.example.NonExistentTask"));
         Assert.assertFalse(JpaMigrationTaskRegistry.isRegistered("com.example.NonExistentTask"));
+    }
+
+    @Test
+    public void testRegistryReturnNullForNonTaskClass() {
+        Assert.assertNull(JpaMigrationTaskRegistry.get(String.class.getName()));
+        Assert.assertFalse(JpaMigrationTaskRegistry.isRegistered(String.class.getName()));
     }
 
     // -------------------------------------------------------------------------
@@ -179,7 +192,8 @@ public class JpaMigrationTaskRegistryTest {
 
     @Test
     public void testTaskIsApplicableDefaultsToRealmRowCheck() throws Exception {
-        JpaMigrationTask task = JpaMigrationTaskRegistry.get("RemoveDuplicateOfflineSessions");
+        JpaMigrationTask task = JpaMigrationTaskRegistry.get(
+                "org.keycloak.connections.jpa.updater.liquibase.custom.RemoveDuplicateOfflineSessions");
         Assert.assertFalse(task.isApplicable(connection, null, SqlDialect.H2));
         try (Statement st = connection.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS REALM (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
@@ -190,7 +204,8 @@ public class JpaMigrationTaskRegistryTest {
 
     @Test
     public void testOrgCharsetTaskAlwaysApplicable() throws Exception {
-        JpaMigrationTask task = JpaMigrationTaskRegistry.get("JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation");
+        JpaMigrationTask task = JpaMigrationTaskRegistry.get(
+                "org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollation");
         Assert.assertTrue(task.isApplicable(connection, null, SqlDialect.H2));
     }
 

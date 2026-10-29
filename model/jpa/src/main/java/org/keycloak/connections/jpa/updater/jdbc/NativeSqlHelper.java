@@ -85,10 +85,11 @@ public final class NativeSqlHelper {
     }
 
     /**
-     * Serializes a string value to a SQL literal using dialect-aware escaping.
+     * Serializes a string value to a SQL literal using dialect-aware escaping, matching Liquibase's
+     * {@code escapeStringForDatabase}.
      *
-     * <p>MySQL and MariaDB treat backslash as an escape character by default, so backslashes must be
-     * doubled in addition to single quotes. All other dialects only need single quotes doubled.
+     * <p>Single quotes are always doubled. MySQL and MariaDB treat backslash as an escape character by
+     * default, so backslashes are additionally doubled there.
      *
      * <p><strong>Note:</strong> this is intended for generating migration SQL that is either executed
      * directly or written to an export file.  Do not use it for user-supplied values in production
@@ -98,12 +99,11 @@ public final class NativeSqlHelper {
         if (value == null) {
             return "NULL";
         }
+        String escaped = value.replace("'", "''");
         if (dialect == SqlDialect.MYSQL || dialect == SqlDialect.MARIADB) {
-            // Escape backslashes first, then single quotes, so that the backslash
-            // escape sequences introduced by quote-escaping are not re-processed.
-            return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'";
+            escaped = escaped.replace("\\", "\\\\");
         }
-        return "'" + value.replace("'", "''") + "'";
+        return "'" + escaped + "'";
     }
 
     // -------------------------------------------------------------------------

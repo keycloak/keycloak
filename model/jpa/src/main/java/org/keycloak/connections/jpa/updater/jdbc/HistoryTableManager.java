@@ -58,80 +58,55 @@ public class HistoryTableManager {
      * The table name is schema-qualified when {@code schema} is non-null.
      */
     public static String createTableSql(SqlDialect dialect, String schema, String tableName) {
-        String qualifiedTable = ChangeLogHistory.qualifiedName(tableName, schema);
-        return switch (dialect) {
-            case ORACLE -> "CREATE TABLE " + qualifiedTable + " (" +
-                    "ID VARCHAR2(255) NOT NULL, " +
-                    "AUTHOR VARCHAR2(255) NOT NULL, " +
-                    "FILENAME VARCHAR2(255) NOT NULL, " +
-                    "DATEEXECUTED TIMESTAMP NOT NULL, " +
-                    "ORDEREXECUTED INTEGER NOT NULL, " +
-                    "EXECTYPE VARCHAR2(10) NOT NULL, " +
-                    "MD5SUM VARCHAR2(35), " +
-                    "DESCRIPTION VARCHAR2(255), " +
-                    "COMMENTS VARCHAR2(255), " +
-                    "TAG VARCHAR2(255), " +
-                    "LIQUIBASE VARCHAR2(20), " +
-                    "CONTEXTS VARCHAR2(255), " +
-                    "LABELS VARCHAR2(255), " +
-                    "DEPLOYMENT_ID VARCHAR2(10))";
-            case MSSQL -> "CREATE TABLE " + qualifiedTable + " (" +
-                    "ID nvarchar(255) NOT NULL, " +
-                    "AUTHOR nvarchar(255) NOT NULL, " +
-                    "FILENAME nvarchar(255) NOT NULL, " +
-                    "DATEEXECUTED datetime2(3) NOT NULL, " +
-                    "ORDEREXECUTED int NOT NULL, " +
-                    "EXECTYPE nvarchar(10) NOT NULL, " +
-                    "MD5SUM nvarchar(35), " +
-                    "DESCRIPTION nvarchar(255), " +
-                    "COMMENTS nvarchar(255), " +
-                    "TAG nvarchar(255), " +
-                    "LIQUIBASE nvarchar(20), " +
-                    "CONTEXTS nvarchar(255), " +
-                    "LABELS nvarchar(255), " +
-                    "DEPLOYMENT_ID nvarchar(10))";
-            case MYSQL, MARIADB -> "CREATE TABLE " + qualifiedTable + " (" +
-                    "ID varchar(255) NOT NULL, " +
-                    "AUTHOR varchar(255) NOT NULL, " +
-                    "FILENAME varchar(255) NOT NULL, " +
-                    "DATEEXECUTED datetime NOT NULL, " +
-                    "ORDEREXECUTED INT NOT NULL, " +
-                    "EXECTYPE varchar(10) NOT NULL, " +
-                    "MD5SUM varchar(35), " +
-                    "DESCRIPTION varchar(255), " +
-                    "COMMENTS varchar(255), " +
-                    "TAG varchar(255), " +
-                    "LIQUIBASE varchar(20), " +
-                    "CONTEXTS varchar(255), " +
-                    "LABELS varchar(255), " +
-                    "DEPLOYMENT_ID varchar(10))";
-            default -> // PostgreSQL, H2, OTHER
-                    "CREATE TABLE " + qualifiedTable + " (" +
-                    "ID VARCHAR(255) NOT NULL, " +
-                    "AUTHOR VARCHAR(255) NOT NULL, " +
-                    "FILENAME VARCHAR(255) NOT NULL, " +
-                    "DATEEXECUTED TIMESTAMP NOT NULL, " +
-                    "ORDEREXECUTED INT NOT NULL, " +
-                    "EXECTYPE VARCHAR(10) NOT NULL, " +
-                    "MD5SUM VARCHAR(35), " +
-                    "DESCRIPTION VARCHAR(255), " +
-                    "COMMENTS VARCHAR(255), " +
-                    "TAG VARCHAR(255), " +
-                    "LIQUIBASE VARCHAR(20), " +
-                    "CONTEXTS VARCHAR(255), " +
-                    "LABELS VARCHAR(255), " +
-                    "DEPLOYMENT_ID VARCHAR(10))";
+        String v255 = varchar(dialect, 255);
+        String v10 = varchar(dialect, 10);
+        String v35 = varchar(dialect, 35);
+        String v20 = varchar(dialect, 20);
+        String timestamp = switch (dialect) {
+            case MSSQL -> "datetime2(3)";
+            case MYSQL, MARIADB -> "datetime";
+            default -> "TIMESTAMP"; // Oracle, PostgreSQL, H2, OTHER
         };
+        String integer = switch (dialect) {
+            case ORACLE -> "INTEGER";
+            case MSSQL -> "int";
+            default -> "INT";
+        };
+        return "CREATE TABLE " + ChangeLogHistory.qualifiedName(tableName, schema) + " (" +
+                "ID " + v255 + " NOT NULL, " +
+                "AUTHOR " + v255 + " NOT NULL, " +
+                "FILENAME " + v255 + " NOT NULL, " +
+                "DATEEXECUTED " + timestamp + " NOT NULL, " +
+                "ORDEREXECUTED " + integer + " NOT NULL, " +
+                "EXECTYPE " + v10 + " NOT NULL, " +
+                "MD5SUM " + v35 + ", " +
+                "DESCRIPTION " + v255 + ", " +
+                "COMMENTS " + v255 + ", " +
+                "TAG " + v255 + ", " +
+                "LIQUIBASE " + v20 + ", " +
+                "CONTEXTS " + v255 + ", " +
+                "LABELS " + v255 + ", " +
+                "DEPLOYMENT_ID " + v10 + ")";
+    }
+
+    /** The dialect-specific variable length character type used by Liquibase. */
+    private static String varchar(SqlDialect dialect, int length) {
+        String type = switch (dialect) {
+            case ORACLE -> "VARCHAR2";
+            case MSSQL -> "nvarchar";
+            case MYSQL, MARIADB -> "varchar";
+            default -> "VARCHAR"; // PostgreSQL, H2, OTHER
+        };
+        return type + "(" + length + ")";
     }
 
     /**
-     * Returns the {@code ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY} statement needed by MySQL and
+     * Returns the {@code ALTER TABLE ... ADD PRIMARY KEY} statement needed by MySQL and
      * MariaDB (where Liquibase uses {@code MySQLCustomChangeLogHistoryService}).
      */
     public static String mysqlAddPrimaryKeySql(String schema, String tableName) {
         String qualifiedTable = ChangeLogHistory.qualifiedName(tableName, schema);
-        return "ALTER TABLE " + qualifiedTable +
-                " ADD CONSTRAINT PK_DATABASECHANGELOG PRIMARY KEY (ID, AUTHOR, FILENAME)";
+        return "ALTER TABLE " + qualifiedTable + " ADD PRIMARY KEY (ID, AUTHOR, FILENAME)";
     }
 
     // -------------------------------------------------------------------------
@@ -143,13 +118,7 @@ public class HistoryTableManager {
      */
     public static String addDeploymentIdColumnSql(SqlDialect dialect, String schema, String tableName) {
         String qualifiedTable = ChangeLogHistory.qualifiedName(tableName, schema);
-        String colType = switch (dialect) {
-            case ORACLE -> "VARCHAR2(10)";
-            case MSSQL -> "nvarchar(10)";
-            case MYSQL, MARIADB -> "varchar(10)";
-            default -> "VARCHAR(10)";
-        };
-        return "ALTER TABLE " + qualifiedTable + " ADD DEPLOYMENT_ID " + colType;
+        return "ALTER TABLE " + qualifiedTable + " ADD DEPLOYMENT_ID " + varchar(dialect, 10);
     }
 
     /** Returns the {@code UPDATE} statement that sets the given {@code deploymentId} on all existing rows. */
@@ -200,53 +169,83 @@ public class HistoryTableManager {
     // -------------------------------------------------------------------------
 
     /**
-     * Inserts a row into the history table recording execution of a change-set.
+     * Inserts a row into the history table recording execution of a change-set. The row has the same content
+     * as the one Liquibase's {@code MarkChangeSetRanGenerator} writes.
      *
      * @param execType     {@code "EXECUTED"} or {@code "MARK_RAN"}
      * @param orderExecuted the next {@code ORDEREXECUTED} value (caller must compute this)
      */
-    public static void insertHistoryRow(Connection connection, String schema, String tableName,
-            String id, String author, String filename, String md5sum, String description,
+    public static void insertHistoryRow(Connection connection, SqlDialect dialect, String schema, String tableName,
+            String id, String author, String filename, String md5sum, String description, String comments,
             String execType, int orderExecuted, String deploymentId, String liquibaseVersion) throws SQLException {
-        String qualifiedTable = ChangeLogHistory.qualifiedName(tableName, schema);
-        String sql = "INSERT INTO " + qualifiedTable +
-                " (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, EXECTYPE, LIQUIBASE, DEPLOYMENT_ID)" +
-                " VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO " + ChangeLogHistory.qualifiedName(tableName, schema) +
+                " (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, " + descriptionColumn(dialect) +
+                ", COMMENTS, EXECTYPE, CONTEXTS, LABELS, LIQUIBASE, DEPLOYMENT_ID)" +
+                " VALUES (?, ?, ?, " + currentDateTimeFunction(dialect) + ", ?, ?, ?, ?, ?, NULL, NULL, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, truncate(id, 255));
             ps.setString(2, truncate(author, 255));
             ps.setString(3, truncate(filename, 255));
             ps.setInt(4, orderExecuted);
             ps.setString(5, truncate(md5sum, 35));
-            ps.setString(6, truncate(description, 255));
-            ps.setString(7, execType);
-            ps.setString(8, truncate(liquibaseVersion, 20));
-            ps.setString(9, truncate(deploymentId, 10));
+            ps.setString(6, limitSize(description, 250));
+            ps.setString(7, limitSize(comments(comments), 250));
+            ps.setString(8, execType);
+            ps.setString(9, truncate(liquibaseVersion, 20));
+            ps.setString(10, truncate(deploymentId, 10));
             ps.executeUpdate();
         }
     }
 
     /**
-     * Formats the history INSERT as a SQL literal string for the export script.
+     * Formats the history INSERT as a SQL literal string for the export script, with the same column order
+     * and values as the statement Liquibase's {@code MarkChangeSetRanGenerator} generates.
      */
-    public static String historyInsertSql(String schema, String tableName,
-            String id, String author, String filename, String md5sum, String description,
+    public static String historyInsertSql(SqlDialect dialect, String schema, String tableName,
+            String id, String author, String filename, String md5sum, String description, String comments,
             String execType, int orderExecuted, String deploymentId, String liquibaseVersion) {
-        String qualifiedTable = ChangeLogHistory.qualifiedName(tableName, schema);
-        return "INSERT INTO " + qualifiedTable +
-                " (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, EXECTYPE, LIQUIBASE, DEPLOYMENT_ID)" +
+        return "INSERT INTO " + ChangeLogHistory.qualifiedName(tableName, schema) +
+                " (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, " + descriptionColumn(dialect) +
+                ", COMMENTS, EXECTYPE, CONTEXTS, LABELS, LIQUIBASE, DEPLOYMENT_ID)" +
                 " VALUES (" +
-                sqlStr(id, 255) + ", " +
-                sqlStr(author, 255) + ", " +
-                sqlStr(filename, 255) + ", " +
-                "CURRENT_TIMESTAMP, " +
+                sqlStr(dialect, id, 255) + ", " +
+                sqlStr(dialect, author, 255) + ", " +
+                sqlStr(dialect, filename, 255) + ", " +
+                currentDateTimeFunction(dialect) + ", " +
                 orderExecuted + ", " +
-                sqlStr(md5sum, 35) + ", " +
-                sqlStr(description, 255) + ", " +
-                sqlStr(execType, 10) + ", " +
-                sqlStr(liquibaseVersion, 20) + ", " +
-                sqlStr(deploymentId, 10) +
+                sqlStr(dialect, md5sum, 35) + ", " +
+                sqlStr(dialect, limitSize(description, 250), 255) + ", " +
+                sqlStr(dialect, limitSize(comments(comments), 250), 255) + ", " +
+                sqlStr(dialect, execType, 10) + ", " +
+                "NULL, NULL, " +
+                sqlStr(dialect, liquibaseVersion, 20) + ", " +
+                sqlStr(dialect, deploymentId, 10) +
                 ")";
+    }
+
+    /** Liquibase quotes {@code DESCRIPTION} on MySQL/MariaDB, where it is a reserved word. */
+    private static String descriptionColumn(SqlDialect dialect) {
+        return dialect == SqlDialect.MYSQL || dialect == SqlDialect.MARIADB ? "`DESCRIPTION`" : "DESCRIPTION";
+    }
+
+    /** The function Liquibase uses for the current timestamp of each database. */
+    private static String currentDateTimeFunction(SqlDialect dialect) {
+        return switch (dialect) {
+            case ORACLE -> "SYSTIMESTAMP";
+            case MSSQL -> "GETDATE()";
+            case OTHER -> "CURRENT_TIMESTAMP";
+            default -> "NOW()";
+        };
+    }
+
+    private static String comments(String comments) {
+        return comments == null ? "" : comments.trim();
+    }
+
+    /** Same as Liquibase's {@code StringUtil.limitSize}: cut to {@code max} characters, ending in "...". */
+    private static String limitSize(String s, int max) {
+        if (s == null) return null;
+        return s.length() > max ? s.substring(0, max - 3) + "..." : s;
     }
 
     // -------------------------------------------------------------------------
@@ -258,10 +257,7 @@ public class HistoryTableManager {
         return s.length() > max ? s.substring(0, max) : s;
     }
 
-    private static String sqlStr(String s, int max) {
-        if (s == null) return "NULL";
-        String v = truncate(s, max);
-        // Escape single quotes
-        return "'" + v.replace("'", "''") + "'";
+    private static String sqlStr(SqlDialect dialect, String s, int max) {
+        return NativeSqlHelper.sqlLiteral(truncate(s, max), dialect);
     }
 }

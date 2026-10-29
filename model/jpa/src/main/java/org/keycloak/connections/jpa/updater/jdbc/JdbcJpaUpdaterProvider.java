@@ -328,7 +328,7 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
                         script.execute(HistoryTableManager.createTableSql(sqlDialect, defaultSchema, historyTable),
                                 "create-changelog-table");
                         if (sqlDialect == SqlDialect.MYSQL || sqlDialect == SqlDialect.MARIADB) {
-                            script.comment("Add primary key to DATABASECHANGELOG table for MySQL/MariaDB");
+                            script.comment("Add primary key to DATABASECHANGELOG table for MySQL");
                             script.execute(HistoryTableManager.mysqlAddPrimaryKeySql(defaultSchema, historyTable),
                                     "create-changelog-pk");
                         }
