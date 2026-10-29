@@ -44,6 +44,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Standalone dialect checks use the same Oracle database supplier as the server tests. -->
+        <dependency>
+            <groupId>org.hibernate.accessor</groupId>
+            <artifactId>hibernate-accessor-bytebuddy</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-core</artifactId>
