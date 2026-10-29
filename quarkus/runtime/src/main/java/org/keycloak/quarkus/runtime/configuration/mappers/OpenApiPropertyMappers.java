@@ -15,11 +15,11 @@ public final class OpenApiPropertyMappers implements PropertyMapperGrouping {
     return List.of(
         fromOption(OpenApiOptions.OPENAPI_ENABLED)
             .isEnabled(OpenApiPropertyMappers::isClientApiEnabled, "OpenAPI feature is enabled")
-            .to("quarkus.smallrye-openapi.enable")
+            .to("quarkus.smallrye-openapi.enabled")
             .build(),
         fromOption(OpenApiOptions.OPENAPI_UI_ENABLED)
             .isEnabled(OpenApiPropertyMappers::isOpenApiEnabled, "OpenAPI Endpoint is enabled")
-            .to("quarkus.swagger-ui.enable")
+            .to("quarkus.swagger-ui.enabled")
             .build()
     );
   }

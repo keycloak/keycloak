@@ -107,13 +107,13 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
-                        .to("quarkus.log.console.enable")
+                        .to("quarkus.log.console.enabled")
                         .build(),
                 // Console async
                 fromOption(LoggingOptions.LOG_CONSOLE_ASYNC)
                         .mapFrom(LoggingOptions.LOG_ASYNC)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
-                        .to("quarkus.log.console.async")
+                        .to("quarkus.log.console.async.enabled")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ASYNC_QUEUE_LENGTH)
                         .isEnabled(LoggingPropertyMappers::isConsoleAsyncEnabled, "%s and asynchronous logging is enabled".formatted(CONSOLE_ENABLED_MSG))
@@ -123,7 +123,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                 // File
                 fromOption(LoggingOptions.LOG_FILE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("file"))
-                        .to("quarkus.log.file.enable")
+                        .to("quarkus.log.file.enabled")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
@@ -174,7 +174,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                 fromOption(LoggingOptions.LOG_FILE_ASYNC)
                         .mapFrom(LoggingOptions.LOG_ASYNC)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
-                        .to("quarkus.log.file.async")
+                        .to("quarkus.log.file.async.enabled")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_ASYNC_QUEUE_LENGTH)
                         .isEnabled(LoggingPropertyMappers::isFileAsyncEnabled, "%s and asynchronous logging is enabled".formatted(FILE_ENABLED_MSG))
@@ -223,7 +223,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                 // Syslog
                 fromOption(LoggingOptions.LOG_SYSLOG_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler("syslog"))
-                        .to("quarkus.log.syslog.enable")
+                        .to("quarkus.log.syslog.enabled")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_ENDPOINT)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
@@ -299,7 +299,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                 fromOption(LoggingOptions.LOG_SYSLOG_ASYNC)
                         .mapFrom(LoggingOptions.LOG_ASYNC)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
-                        .to("quarkus.log.syslog.async")
+                        .to("quarkus.log.syslog.async.enabled")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_ASYNC_QUEUE_LENGTH)
                         .isEnabled(LoggingPropertyMappers::isSyslogAsyncEnabled, "%s and asynchronous logging is enabled".formatted(SYSLOG_ENABLED_MSG))
