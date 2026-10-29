@@ -163,13 +163,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         }
 
         if (clockSkewDetectionEnabled) {
-            logger.infof("Clock skew detection enabled: threshold=%d ms, sample interval=%d seconds",
+            logger.debugf("Clock skew detection enabled: threshold=%d ms, sample interval=%d seconds",
                     clockSkewThresholdMillis, clockSkewSampleIntervalSeconds);
             if (clockSkewThresholdMillis == 0) {
-                logger.infof("Clock skew threshold is 0 ms - will warn on ANY detected skew");
+                logger.warnf("Clock skew threshold is 0 ms - will warn on ANY detected skew");
             }
         } else {
-            logger.info("Clock skew detection disabled");
+            logger.debug("Clock skew detection disabled");
         }
     }
 
@@ -189,7 +189,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
             ClockSkewDetectionTask task = new ClockSkewDetectionTask(nodeName, sampleTtlSeconds);
 
-            logger.infof("Scheduling clock skew detection task for node '%s': interval=%d seconds, TTL=%d seconds",
+            logger.debugf("Scheduling clock skew detection task for node '%s': interval=%d seconds, TTL=%d seconds",
                     nodeName, clockSkewSampleIntervalSeconds, sampleTtlSeconds);
 
             org.keycloak.timer.TimerProvider timer = session.getProvider(org.keycloak.timer.TimerProvider.class);
