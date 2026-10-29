@@ -17,7 +17,7 @@ export const ClientScopesRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/clientScopes/:tab",
   element: <ClientDetails />,
   handle: {
-    access: "view-clients",
+    access: "query-clients",
     breadcrumb: (t) => t("clientSettings"),
   },
 };

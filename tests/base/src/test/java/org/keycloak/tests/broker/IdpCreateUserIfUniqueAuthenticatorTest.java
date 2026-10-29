@@ -2,6 +2,7 @@ package org.keycloak.tests.broker;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -11,6 +12,9 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -22,11 +26,14 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.userprofile.UserProfileConstants;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -59,6 +66,9 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
 
     @InjectPage
     LoginPage loginPage;
+
+    @InjectRunOnServer(realmRef = "consumer")
+    RunOnServerClient runOnServer;
 
     @Test // #50903
     public void testIdpBrokerLoginRejectsUsernameLongerThanMaxLength() {
@@ -106,6 +116,33 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
         assertFalse(created.isEmpty(),
                 "A user with a boundary-length username must be created in the consumer realm");
         created.forEach(u -> consumerRealm.cleanup().add(r -> r.users().get(u.getId()).remove()));
+    }
+
+    @Test // #50505
+    public void testIdpBrokerLoginSetsDefaultValueForReadOnlyAttribute() {
+        UPConfig originalConfig = consumerRealm.admin().users().userProfile().getConfiguration();
+        UPConfig config = consumerRealm.admin().users().userProfile().getConfiguration();
+        UPAttribute adminOnly = new UPAttribute("adminOnly", new UPAttributePermissions(Set.of(UserProfileConstants.ROLE_ADMIN), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        adminOnly.setDefaultValue("def");
+        config.addOrReplaceAttribute(adminOnly);
+        consumerRealm.admin().users().userProfile().update(config);
+        consumerRealm.cleanup().add(r -> r.users().userProfile().update(originalConfig));
+
+        createProviderUser();
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin(PROVIDER_USERNAME, "password");
+        loginPage.submit();
+
+        List<UserRepresentation> created = consumerRealm.admin().users().search(PROVIDER_USERNAME, true);
+        Assertions.assertEquals(1, created.size());
+        String userId = created.get(0).getId();
+        consumerRealm.cleanup().add(r -> r.users().get(userId).remove());
+
+        // the admin API shows default values even if not stored, so check the stored value
+        String stored = runOnServer.fetchString(session -> String.valueOf(
+                session.users().getUserById(session.getContext().getRealm(), userId).getAttributes().get("adminOnly")));
+        Assertions.assertEquals("[def]", stored);
     }
 
     private void addUsernameTemplateMapper(String mapperName, String usernameTemplate) {

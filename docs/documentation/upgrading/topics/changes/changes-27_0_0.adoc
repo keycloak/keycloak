@@ -12,6 +12,24 @@ Previously `manage-clients` was sufficient, even though these lists determine wh
 Administrators who hold only `manage-clients` can still create, update, and delete individual client scopes, and can still read the realm-level lists; they can no longer change which of them are realm defaults.
 If you have automation that manages realm default client scopes with a `manage-clients` account, grant it `manage-realm` or run it with an account that already has it.
 
+=== Client scope management restored for per-client delegated administrators
+// https://github.com/keycloak/keycloak/issues/54002
+
+The additional client scope permission checks introduced for CVE-2026-14614 have been removed from client scope assignment endpoints.
+Those checks incorrectly restricted the intended delegated client administration model and prevented administrators from managing scope assignments for their clients.
+
+With Fine-Grained Admin Permissions (FGAP), a per-client `view` permission allows an administrator to see the scopes assigned to that client, including their descriptions and parameterized-scope indicators.
+A per-client `manage` permission allows assigning any existing realm client scope to that client, removing assignments, and changing the assigned type (default ↔ optional).
+Global `manage-clients` or type-level Clients `manage` permission is no longer required for these operations.
+In FGAP v2, `manage` does not imply `view`; grant both permissions to manage scope assignments through the Admin Console.
+
+The Admin Console obtains summaries of available scopes from `GET .../clients/\{id}/available-client-scopes`, which requires `manage` permission on that client.
+This does not grant access to protocol mapper configurations, other scope attributes, or permission to edit shared client scope definitions.
+The realm-wide client scope catalog retains its existing permissions.
+
+Grant per-client `manage` only to administrators trusted to assign any existing realm client scope to that client, including the scope's protocol mappers and role scope mappings.
+This change does not introduce restrictions on which scopes a delegated administrator may assign.
+
 === Deleting required client scopes
 // https://github.com/keycloak/keycloak/issues/51248
 
@@ -57,6 +75,15 @@ The following conditions are now enforced:
 After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
+
+=== SAML broker IdP-initiated logins enforce a recipient bound to the target client
+// https://github.com/keycloak/keycloak/issues/54342
+
+When processing a SAML assertion received from an identity provider through identity brokering, {project_name} now always validates the Bearer `SubjectConfirmationData` `Recipient` against the broker endpoint expected for that specific login -- the per-client IdP-initiated endpoint for IdP-initiated logins, or the generic broker endpoint for SP-initiated logins -- regardless of whether the outer SAML response `Destination` is present.
+
+Previously, when the identity provider's response omitted the (optional, and not necessarily signed) `Destination` attribute, the `Recipient` attribute was not validated at all for broker logins. This allowed an assertion that an identity provider legitimately issued for one IdP-initiated client to be replayed, unmodified, against a different IdP-initiated client configured on the same broker, bypassing client-specific login policy.
+
+After upgrading, a Bearer `SubjectConfirmationData` whose `Recipient` is missing or does not match the expected broker endpoint is rejected, even when the response's `Destination` is absent or matches. If you operate an identity provider that issues assertions without a `Recipient`, or with a `Recipient` that does not point at the expected {project_name} broker endpoint, update it to send a spec-compliant Bearer `SubjectConfirmationData`.
 
 === SAML logins with an empty principal are rejected
 // https://github.com/keycloak/keycloak/issues/53816
@@ -213,6 +240,14 @@ In the Admin Console, these roles are no longer listed in the *Scope* tab of cli
 The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}/evaluate-scopes/scope-mappings/\{role-container}/granted` and `not-granted`) apply the same role visibility rules under both legacy RBAC and fine-grained admin permissions V2.
 After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
 Callers allowed only to map roles to client scopes can still see those roles, and roles in the effective scope appear under `granted` rather than `not-granted`.
+
+=== Group lookup by path filters role mappings by visibility
+// https://github.com/keycloak/keycloak/issues/54356
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/group-by-path/\{path}` now omits the role mappings that the caller is not allowed to view or to map to users, as the `groups/\{id}` endpoint and the group listings already do.
+Previously, any caller allowed to view the group received all of its role mappings in `realmRoles` and `clientRoles`.
+For example, an administrator with only the `view-users` role no longer receives them, while an administrator with the `manage-users` role still does.
+If an integration reads group role mappings through this endpoint, make sure its account is allowed to view the roles, for example through the `view-realm` and `view-clients` roles or the corresponding fine-grained permissions.
 
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790

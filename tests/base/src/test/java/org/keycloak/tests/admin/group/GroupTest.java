@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.group;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -562,6 +563,103 @@ public class GroupTest extends AbstractGroupTest {
         GroupRepresentation finalGroup = group;
         assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
         group.setName(" ");
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+    }
+
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 255;
+    private static final int MAX_ATTRIBUTE_NAME_LENGTH = 255;
+
+    @Test
+    public void createGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-long-attr-" + UUID.randomUUID())
+                .attribute("key", tooLongValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void createGroupWithTooLongAttributeNameReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        String tooLongName = "a".repeat(MAX_ATTRIBUTE_NAME_LENGTH + 1);
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-long-attr-name-" + UUID.randomUUID())
+                .attribute(tooLongName, "val")
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void updateGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        group.setAttributes(Map.of("key", List.of(tooLongValue)));
+        GroupRepresentation finalGroup = group;
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+    }
+
+    @Test
+    public void createGroupWithMaxLengthAttributeValueSucceeds() {
+        RealmResource realm = managedRealm.admin();
+        String maxValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH);
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create()
+                .name(groupName)
+                .attribute("key", maxValue)
+                .build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+        assertEquals(maxValue, group.getAttributes().get("key").get(0));
+    }
+
+
+    @Test
+    public void createGroupWithTooManyUnicodeUnitsReturnsBadRequest() {
+        // 254 ASCII chars + 1 emoji (2 UTF-16 units) = 256 UTF-16 units, exceeds NVARCHAR(255)
+        RealmResource realm = managedRealm.admin();
+        String tooLongUnicodeValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH - 1) + "😀";
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-unicode-overflow-" + UUID.randomUUID())
+                .attribute("key", tooLongUnicodeValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void createGroupWithNullAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-null-attr-" + UUID.randomUUID())
+                .build();
+        group.setAttributes(Collections.singletonMap("key", Collections.singletonList(null)));
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void updateGroupWithNullAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+
+        group.setAttributes(Collections.singletonMap("key", Collections.singletonList(null)));
+        GroupRepresentation finalGroup = group;
         assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
     }
 

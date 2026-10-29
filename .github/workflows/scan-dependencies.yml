@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep in sync with the "Configure Maven for CI" step in .github/actions/java-setup, which this workflow cannot use.
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
+
 jobs:
   define-refs:
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'

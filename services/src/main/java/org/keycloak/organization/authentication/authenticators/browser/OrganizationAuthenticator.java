@@ -346,17 +346,18 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
+        String loginHint = getAttemptedUsernameOrDefault(context, username);
         List<IdentityProviderModel> broker = resolveHomeBroker(session, user);
 
         if (broker.size() == 1) {
             // user is a managed member and associated with a broker, redirect automatically
-            redirect(context, broker.get(0).getAlias(), user.getEmail());
+            redirect(context, broker.get(0).getAlias(), loginHint);
             return true;
         }
 
         domain = domain == null ? getEmailDomain(user) : domain;
 
-        return redirect(context, organization, username, domain);
+        return redirect(context, organization, loginHint, domain);
     }
 
     private boolean redirect(AuthenticationFlowContext context, OrganizationModel organization, String username, String domain) {
@@ -468,7 +469,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             context.success();
         } else {
             // user is re-authenticating, there is no organization to process
-            attempted(context, user.getUsername());
+            String username = getAttemptedUsernameOrDefault(context, null);
+            attempted(context, username == null ? user.getUsername() : username);
         }
     }
 
@@ -505,6 +507,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         return formCreator == null ? form.createLoginUsername() : formCreator.apply(form);
+    }
+
+    private String getAttemptedUsernameOrDefault(AuthenticationFlowContext context, String username) {
+        return username != null ? username
+                : context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
     }
 
     private void attempted(AuthenticationFlowContext context) {

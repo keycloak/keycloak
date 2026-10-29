@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the
@@ -134,5 +135,31 @@ public class PartialImportGroupTest extends AbstractPartialImportTest {
     public void testAddSingleGroupOverwrite() {
         addGroups(1);
         testOverwrite(1);
+    }
+
+    @Test
+    public void testAddGroupWithOversizedAttributeValueFails() {
+        setFail();
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("oversized-attr-val-group");
+        group.singleAttribute("key", "a".repeat(256));
+        piRep.setGroups(List.of(group));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testAddGroupWithOversizedAttributeNameFails() {
+        setFail();
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("oversized-attr-name-group");
+        group.singleAttribute("a".repeat(256), "val");
+        piRep.setGroups(List.of(group));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
     }
 }

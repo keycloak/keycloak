@@ -12,9 +12,6 @@ on:
      branches: [main]
   workflow_dispatch:
 
-env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-
 concurrency:
   # Only cancel jobs for PR updates
   group: codeql-analysis-${{ github.ref }}
@@ -31,6 +28,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       java: ${{ steps.conditional.outputs.codeql-java }}
       javascript: ${{ steps.conditional.outputs.codeql-javascript }}
@@ -41,6 +39,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -51,11 +51,10 @@ jobs:
     name: CodeQL Java
     needs: conditional
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.java == 'true'
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,11 +78,10 @@ jobs:
     name: CodeQL JavaScript
     needs: conditional
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.javascript == 'true'
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -107,11 +105,10 @@ jobs:
     name: CodeQL TypeScript
     needs: conditional
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.typescript == 'true'
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -135,11 +132,10 @@ jobs:
     name: CodeQL GitHub Actions
     needs: conditional
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.actions == 'true'
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -168,8 +164,11 @@ jobs:
       - typescript
       - actions
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

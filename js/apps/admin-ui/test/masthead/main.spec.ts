@@ -17,7 +17,7 @@ import {
 
 test.describe.serial("Masthead tests", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await login(page, { freshSession: true });
   });
 
   test.describe.serial("Desktop view", () => {
@@ -116,6 +116,51 @@ test.describe.serial("Masthead tests", () => {
 
     test("Check a11y violations on load/ masthead", async ({ page }) => {
       await assertAxeViolations(page);
+    });
+  });
+
+  test.describe.serial("Right-to-left view", () => {
+    const realmName = `test-realm-${uuid()}`;
+    const username = `test-user-${uuid()}`;
+
+    test.beforeAll(async () => {
+      await adminClient.createRealm(realmName, {
+        enabled: true,
+        internationalizationEnabled: true,
+        supportedLocales: ["en", "ar"],
+      });
+      const { id } = await adminClient.createUser({
+        realm: realmName,
+        username,
+        enabled: true,
+        emailVerified: true,
+        credentials: [{ type: "password", value: "test" }],
+        firstName: "Test",
+        lastName: "User",
+        email: "test@keycloak.org",
+        attributes: { locale: ["ar"] },
+      });
+      await adminClient.addClientRoleToUser(
+        id!,
+        "realm-management",
+        ["realm-admin"],
+        realmName,
+      );
+    });
+
+    test.afterAll(() => adminClient.deleteRealm(realmName));
+
+    test("Help menu opens inside the viewport", async ({ page }) => {
+      await logout(page);
+      await login(page, { realm: realmName, username, password: "test" });
+      await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+      await clickGlobalHelp(page);
+      const menu = page.getByRole("menu");
+      // Popper sets this attribute once the menu is in its final position
+      await expect(
+        page.locator("[data-popper-placement]", { has: menu }),
+      ).toBeVisible();
+      await expect(menu).toBeInViewport({ ratio: 1 });
     });
   });
 });

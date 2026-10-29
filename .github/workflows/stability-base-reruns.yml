@@ -12,9 +12,6 @@ on:
         description: Number of re-runs
         default: 50
 
-env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-
 defaults:
   run:
     shell: bash

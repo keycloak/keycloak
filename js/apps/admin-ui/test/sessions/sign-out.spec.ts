@@ -2,17 +2,39 @@ import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { expect, type Page, test } from "@playwright/test";
 import { assertIsDesktopView } from "../masthead/main.ts";
 import adminClient from "../utils/AdminClient.ts";
-import { ADMIN_USER, DEFAULT_REALM } from "../utils/constants.ts";
+import { createTestBed } from "../support/testbed.ts";
 import { login, navigateTo } from "../utils/login.ts";
 
-async function loginWithSession(page: Page) {
+type RealmAdmin = { realm: string; username: string; password: string };
+
+async function createRealmAdmin(realm: string): Promise<RealmAdmin> {
+  const admin = { realm, username: "session-admin", password: "password" };
+  const { id } = await adminClient.createUser({
+    realm,
+    username: admin.username,
+    enabled: true,
+    email: "session-admin@example.com",
+    firstName: "Session",
+    lastName: "Admin",
+    credentials: [{ type: "password", value: admin.password }],
+  });
+  await adminClient.addClientRoleToUser(
+    id!,
+    "realm-management",
+    ["realm-admin"],
+    realm,
+  );
+  return admin;
+}
+
+async function loginWithSession(page: Page, admin: RealmAdmin) {
   const [response] = await Promise.all([
     page.waitForResponse(
       (response) =>
         response.url().endsWith("/protocol/openid-connect/token") &&
         response.request().method() === "POST",
     ),
-    login(page),
+    login(page, admin),
   ]);
   const tokenResponse = await response.json();
   expect(
@@ -35,16 +57,23 @@ async function loginWithSession(page: Page) {
   return session;
 }
 
-async function signOutSession(page: Page, userId: string, sessionId: string) {
+async function signOutSession(
+  page: Page,
+  realm: string,
+  userId: string,
+  sessionId: string,
+) {
   const sessionsResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith(`/users/${userId}/sessions`) &&
       response.request().method() === "GET" &&
       response.ok(),
   );
-  await navigateTo(page, {
-    pathname: `/${DEFAULT_REALM}/users/${userId}/sessions`,
-  });
+  await navigateTo(
+    page,
+    { pathname: `/${realm}/users/${userId}/sessions` },
+    realm,
+  );
   const sessions: UserSessionRepresentation[] = await (
     await sessionsResponse
   ).json();
@@ -62,28 +91,22 @@ async function signOutSession(page: Page, userId: string, sessionId: string) {
 }
 
 test.describe("Sign out a specific session", () => {
-  test.beforeEach(async () => {
-    const user = await adminClient.findUserByUsername(
-      DEFAULT_REALM,
-      ADMIN_USER,
-    );
-    await adminClient.logoutUserSessions(user.id!, DEFAULT_REALM);
-  });
-
   test("keeps the admin console authenticated when another browser session is removed", async ({
     page,
     browser,
   }) => {
-    const { sid, sub } = await loginWithSession(page);
+    await using testBed = await createTestBed({ enabled: true });
+    const admin = await createRealmAdmin(testBed.realm);
+    const { sid, sub } = await loginWithSession(page, admin);
 
     const otherContext = await browser.newContext();
     try {
       const otherPage = await otherContext.newPage();
-      const otherSession = await loginWithSession(otherPage);
+      const otherSession = await loginWithSession(otherPage, admin);
       expect(otherSession.sub).toBe(sub);
       expect(otherSession.sid).not.toBe(sid);
 
-      await signOutSession(page, sub, otherSession.sid);
+      await signOutSession(page, testBed.realm, sub, otherSession.sid);
       await assertIsDesktopView(page);
       const sessionsResponse = page.waitForResponse(
         (response) =>
@@ -106,9 +129,11 @@ test.describe("Sign out a specific session", () => {
   test("logs out the admin console when its current session is removed", async ({
     page,
   }) => {
-    const { sid, sub } = await loginWithSession(page);
+    await using testBed = await createTestBed({ enabled: true });
+    const admin = await createRealmAdmin(testBed.realm);
+    const { sid, sub } = await loginWithSession(page, admin);
 
-    await signOutSession(page, sub, sid);
+    await signOutSession(page, testBed.realm, sub, sid);
 
     await expect(page).toHaveURL(/\/auth/);
   });

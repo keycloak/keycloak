@@ -11,7 +11,6 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.38.0
   KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
@@ -33,6 +32,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       operator: ${{ steps.conditional.outputs.operator }}
     permissions:
@@ -40,6 +40,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -50,6 +52,7 @@ jobs:
     name: Build distribution
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,6 +66,7 @@ jobs:
   test-local-apiserver:
     name: Test local apiserver
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -73,10 +77,6 @@ jobs:
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
 
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
-
       - name: Test operator running locally
         run: |
           ./mvnw install -Poperator -pl :keycloak-operator -am
@@ -84,6 +84,7 @@ jobs:
   test-remote:
     name: Test remote
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     needs: [build]
     strategy:
           matrix:
@@ -100,10 +101,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -124,7 +121,7 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
@@ -146,6 +143,7 @@ jobs:
     name: Helm chart lint and smoke render
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,10 +153,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -179,11 +173,11 @@ jobs:
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm)
           # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
           # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
-          crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
+          crds=$(grep -cE '^kind: "?CustomResourceDefinition"?$' <<<"$out" || true)
           if [ "$crds" -ne 4 ]; then echo "expected 4 CRDs, got $crds"; exit 1; fi
-          echo "$out" | grep -qE '^kind: Deployment$'
+          grep -qE '^kind: Deployment$' <<<"$out"
           # Cluster-wide install binds the controllers via ClusterRoleBinding.
-          echo "$out" | grep -qE '^kind: ClusterRoleBinding$'
+          grep -qE '^kind: ClusterRoleBinding$' <<<"$out"
           # No resource should be rendered twice (kind+name+namespace must be unique).
           dupes=$(echo "$out" | awk '
             /^kind:/{k=$2} /^  name:/{n=$2} /^  namespace:/{ns=$2}
@@ -196,10 +190,11 @@ jobs:
           set -euo pipefail
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm --set crds.enabled=false)
           # CRDs are excluded; everything else still renders.
-          if echo "$out" | grep -qE '^kind: "?CustomResourceDefinition"?$'; then
+          if grep -qE '^kind: "?CustomResourceDefinition"?$' <<<"$out"; then
             echo "expected no CRDs with crds.enabled=false"; exit 1
           fi
-          echo "$out" | grep -cE '^kind: Deployment$' | grep -q '^1$'
+          deployments=$(grep -cE '^kind: Deployment$' <<<"$out" || true)
+          if [ "$deployments" -ne 1 ]; then echo "expected 1 Deployment, got $deployments"; exit 1; fi
 
       - name: helm template — resource overrides
         run: |
@@ -207,13 +202,15 @@ jobs:
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --set-string operator.resources.limits.cpu=1500m \
             --set-string operator.resources.limits.memory=1Gi)
-          echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
-          echo "$out" | grep -A4 'resources:' | grep -q 'memory: 1Gi'
+          resources=$(grep -A4 'resources:' <<<"$out")
+          grep -q 'cpu: 1500m' <<<"$resources"
+          grep -q 'memory: 1Gi' <<<"$resources"
 
   test-helm-install:
     name: Helm chart install on Kubernetes
     if: needs.conditional.outputs.operator == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: conditional
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -223,10 +220,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
@@ -286,6 +279,7 @@ jobs:
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -295,10 +289,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -327,6 +317,12 @@ jobs:
         with:
           name: keycloak-dist
           path: quarkus/container
+
+      - name: Wait for Minikube registry
+        run: |
+          # minikube start can return before the registry addon accepts connections on port 5000
+          kubectl -n kube-system wait --for=condition=ready pod -l kubernetes.io/minikube-addons=registry --timeout=120s
+          timeout 120 bash -c 'until curl -sf "http://$(minikube ip):5000/v2/" > /dev/null; do sleep 2; done'
 
       - name: Arrange OLM test installation
         working-directory: operator
@@ -393,6 +389,7 @@ jobs:
   test-kustomize:
     name: Test kustomize installation
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -406,10 +403,6 @@ jobs:
 
       - name: Restore Maven cache
         uses: ./.github/actions/maven-cache
-
-      - name: Restore Quarkus snapshot cache
-        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@001b9f30165b2a875b835ec5183ced75b94bc269 # v2.19.0
@@ -438,7 +431,7 @@ jobs:
       - name: Build Keycloak Docker image
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
       - name: Arrange kustomize test installation for own namespace
         run: |
@@ -520,8 +513,11 @@ jobs:
       - test-olm
       - test-kustomize
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

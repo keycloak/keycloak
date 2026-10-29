@@ -3,9 +3,6 @@ name: Stability - Keycloak JavaScript CI
 on:
   workflow_dispatch:
 
-env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-
 defaults:
   run:
     shell: bash
@@ -32,6 +29,7 @@ jobs:
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
+          retention-days: 1
 
   account-ui-e2e:
     name: Account UI E2E
@@ -68,13 +66,30 @@ jobs:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
+          browser: ${{ matrix.browser }}
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
+
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: account-ui
+          title: Account UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: account-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/account-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -129,13 +144,30 @@ jobs:
           KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
           KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
-      - name: Install Playwright browsers
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
+      - uses: ./.github/actions/playwright-setup
+        with:
+          workspace: ${{ env.WORKSPACE }}
+          browser: ${{ matrix.browser }}
 
       - name: Run Playwright tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
         working-directory: js
+
+      - name: Summarize Playwright results
+        if: "!cancelled()"
+        uses: ./.github/actions/playwright-summary
+        with:
+          workspace-dir: admin-ui
+          title: Admin UI E2E (${{ matrix.browser }})
+
+      - name: Upload Playwright results
+        if: "!cancelled()"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: admin-ui-playwright-results-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-results.json
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -165,8 +197,8 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Delete artifacts (excluding Playwright reports and server logs)
+      - name: Delete artifacts (excluding Playwright reports, results and server logs)
         run: |
           gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
-          | jq '.artifacts[] | select(.name | test("playwright-report|server-log") | not) | .id' \
+          | jq '.artifacts[] | select(.name | test("playwright-report|server-log|playwright-results") | not) | .id' \
           | xargs -I {} gh api -X DELETE /repos/${{ github.repository }}/actions/artifacts/{}

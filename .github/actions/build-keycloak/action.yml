@@ -24,11 +24,6 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: restore-quarkus-snapshot
-      name: Restore Quarkus snapshot cache
-      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
-      uses: ./.github/actions/quarkus-snapshot-cache
-
     - id: pnpm-store-cache
       name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache
@@ -39,19 +34,7 @@ runs:
       run: |
         # Ensure this plugin is built first to avoid warnings in the build
         ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
-        # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests.
-        # "dependency:resolve-plugins" pre-downloads declared plugin runtime dependencies so test jobs
-        # don't need to fetch them from Maven Central (avoiding transient 403 rate-limit failures).
-        ./mvnw install dependency:resolve dependency:resolve-plugins -V -e -DskipTests -DskipExamples -DexcludeGroupIds=org.keycloak -Dsilent=true -DcommitProtoLockChanges=true
-        # Surefire auto-detects its JUnit Platform provider at test runtime, so it is not a declared
-        # plugin dependency and won't be fetched by dependency:resolve-plugins. Pre-download it
-        # explicitly so it is cached and test jobs don't hit Maven Central for it.
-        SUREFIRE_VER=$(./mvnw help:evaluate -Dexpression=version.surefire.plugin -q -DforceStdout)
-        ./mvnw dependency:get -Dartifact=org.apache.maven.surefire:surefire-junit-platform:${SUREFIRE_VER}
-        # Surefire auto-provisions junit-jupiter-engine when it finds junit-jupiter-api on the
-        # classpath, so it is not a declared dependency and won't be fetched by dependency:resolve.
-        JUNIT5_VER=$(./mvnw help:evaluate -Dexpression=junit5.version -q -DforceStdout -pl testsuite/integration-arquillian/tests/base)
-        ./mvnw dependency:get -Dartifact=org.junit.jupiter:junit-jupiter-engine:${JUNIT5_VER}
+        ./mvnw install -V -e -DskipTests -DskipExamples -DcommitProtoLockChanges=true
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts
@@ -79,3 +62,34 @@ runs:
         name: keycloak-dist
         path: quarkus/dist/target/keycloak*.tar.gz
         retention-days: 1
+
+    # Download everything that later jobs need, but that the build itself doesn't resolve. This only matters while the
+    # weekly Maven cache is created, so skip it when the cache already exists. It runs after the Keycloak artifacts
+    # have been archived, so the archive isn't changed.
+    - id: prefetch-dependencies
+      name: Pre-fetch dependencies for later jobs
+      if: steps.maven-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests.
+        # "dependency:resolve-plugins" pre-downloads declared plugin runtime dependencies so test jobs
+        # don't need to fetch them from Maven Central (avoiding transient 403 rate-limit failures).
+        ./mvnw dependency:resolve dependency:resolve-plugins -e -DskipExamples -DexcludeGroupIds=org.keycloak -Dsilent=true
+        # Surefire auto-detects its JUnit Platform provider at test runtime, so it is not a declared
+        # plugin dependency and won't be fetched by dependency:resolve-plugins. Pre-download it
+        # explicitly so it is cached and test jobs don't hit Maven Central for it.
+        SUREFIRE_VER=$(./mvnw help:evaluate -Dexpression=version.surefire.plugin -q -DforceStdout)
+        ./mvnw dependency:get -Dartifact=org.apache.maven.surefire:surefire-junit-platform:${SUREFIRE_VER}
+        # Surefire auto-provisions junit-jupiter-engine when it finds junit-jupiter-api on the
+        # classpath, so it is not a declared dependency and won't be fetched by dependency:resolve.
+        JUNIT5_VER=$(./mvnw help:evaluate -Dexpression=junit5.version -q -DforceStdout -pl testsuite/integration-arquillian/tests/base)
+        ./mvnw dependency:get -Dartifact=org.junit.jupiter:junit-jupiter-engine:${JUNIT5_VER}
+        # Surefire also resolves junit-platform-launcher at test runtime. Its version matches the JUnit 5
+        # version with the major version replaced (5.10.3 -> 1.10.3).
+        ./mvnw dependency:get -Dartifact=org.junit.platform:junit-platform-launcher:1.${JUNIT5_VER#5.}
+        # The adapter distributions and app servers are built by later jobs only, and the Galleon plugin resolves its
+        # WildFly artifacts on its own, so they are built here to avoid downloading roughly 1,500 artifacts per job.
+        ./mvnw install -DskipTests -f distribution/pom.xml
+        ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
+        # The operator jobs would otherwise download roughly 300 artifacts each.
+        ./mvnw install -DskipTests -Poperator -pl :keycloak-operator -am

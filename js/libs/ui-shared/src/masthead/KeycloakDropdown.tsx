@@ -26,7 +26,7 @@ export const KeycloakDropdown = ({
     <Dropdown
       {...rest}
       popperProps={{
-        position: "right",
+        position: "end",
       }}
       onOpenChange={(isOpen) => setOpen(isOpen)}
       toggle={(ref) => (

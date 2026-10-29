@@ -542,7 +542,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
             if (null != requestAbstractType.isForceAuthn()
                     && requestAbstractType.isForceAuthn()) {
-                authSession.setAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN, SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT);
+                // The request's reauthentication requirement must survive authentication flow restarts.
+                authSession.setClientNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN, SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT);
             }
 
             for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
