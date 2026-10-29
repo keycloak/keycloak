@@ -38,6 +38,8 @@ For example, to reload the system truststore every hour:
 
 The reload does not apply to database (JDBC) connections, HTTP Client v2 connection, or to connections to a remote {jdgserver_name} server; these continue to use the trust material loaded at startup.
 
+The HTTPS and management interfaces adopt the reloaded system truststore when they use it to validate client certificates. That is the case when mutual TLS is enabled with `--https-client-auth` and no dedicated truststore is set with `--https-trust-store-file`, or with `--https-management-trust-store-file` for the management interface. A dedicated truststore is reloaded according to `--https-certificates-reload-period` instead.
+
 Removing a certificate takes effect for new connections only. Existing pooled or keep-alive connections keep using the trust established when they were opened, until those connections are closed.
 
 To stop trusting certificates, delete their file from a directory listed in `--truststore-paths`, or remove them from a file listed in `--truststore-paths`.

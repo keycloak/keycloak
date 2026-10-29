@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,12 +13,18 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.truststore.TruststoreProviderReloadEvent;
 import org.keycloak.truststore.TruststoreReloadEvent;
 
+import io.quarkus.tls.TrustStoreAndTrustOptions;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.TrustOptions;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.truststore.TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY;
@@ -32,7 +39,27 @@ public final class SystemTruststoreReload {
                                                     KeystoreUtil.TruststoreFormat preferredType, KeyStore systemTruststore) {
     }
 
+    record SystemTrustOptions(TrustManagerFactory trustManagerFactory) implements TrustOptions {
+
+        @Override
+        public TrustOptions copy() {
+            return this;
+        }
+
+        @Override
+        public TrustManagerFactory getTrustManagerFactory(Vertx vertx) {
+            return trustManagerFactory;
+        }
+
+        @Override
+        public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) {
+            return serverName -> trustManagerFactory.getTrustManagers();
+        }
+    }
+
     public static final String TLS_BUCKET_NAME = "keycloak-system-truststore";
+
+    public static final String TRUST_STORE_TYPE = "keycloak-system-truststore";
 
     private static final Logger LOGGER = Logger.getLogger(SystemTruststoreReload.class);
 
@@ -40,7 +67,7 @@ public final class SystemTruststoreReload {
 
     private final SystemTruststoreSource systemTruststoreSource;
 
-    private volatile KeyStore systemTruststore;
+    private volatile TrustStoreAndTrustOptions systemTruststore;
 
     private volatile String lastSourceFingerprint;
 
@@ -50,7 +77,7 @@ public final class SystemTruststoreReload {
 
     public SystemTruststoreReload(SystemTruststoreSourceAndKeystore r) {
         this.systemTruststoreSource = new SystemTruststoreSource(r.paths, r.includeDefault, r.dataDir, r.preferredType);
-        this.systemTruststore = r.systemTruststore;
+        this.systemTruststore = toTrustStoreAndTrustOptions(r.systemTruststore);
         this.lastSourceFingerprint = computeSourceFingerprint(this.systemTruststoreSource);
     }
 
@@ -59,7 +86,7 @@ public final class SystemTruststoreReload {
         return RELOAD_COUNT.get();
     }
 
-    KeyStore getSystemTruststore() {
+    TrustStoreAndTrustOptions getSystemTruststore() {
         return systemTruststore;
     }
 
@@ -87,9 +114,12 @@ public final class SystemTruststoreReload {
         return true;
     }
 
-    void notifyConsumers(KeycloakSessionFactory sessionFactory) {
+    /**
+     * @return {@code true} if the system truststore was reloaded and its consumers were notified
+     */
+    boolean notifyConsumers(KeycloakSessionFactory sessionFactory) {
         if (!reloadIfChanged()) {
-            return;
+            return false;
         }
         long count = RELOAD_COUNT.get();
         LOGGER.debugf("Refreshing system truststore consumers after reload (reloadCount=%d)", count);
@@ -101,6 +131,7 @@ public final class SystemTruststoreReload {
         } catch (RuntimeException e) {
             LOGGER.warn("Failed to refresh a system truststore consumer after reload", e);
         }
+        return true;
     }
 
     private boolean reloadSystemTruststoreIfChanged() {
@@ -119,8 +150,19 @@ public final class SystemTruststoreReload {
     }
 
     private void rebuildAndPublish(String sourceFingerprint) {
-        systemTruststore = setAndGetSystemTruststore(systemTruststoreSource.paths, systemTruststoreSource.includeDefault, systemTruststoreSource.dataDir, systemTruststoreSource.preferredType);
+        systemTruststore = toTrustStoreAndTrustOptions(setAndGetSystemTruststore(systemTruststoreSource.paths,
+                systemTruststoreSource.includeDefault, systemTruststoreSource.dataDir, systemTruststoreSource.preferredType));
         lastSourceFingerprint = sourceFingerprint;
+    }
+
+    private static TrustStoreAndTrustOptions toTrustStoreAndTrustOptions(KeyStore keyStore) {
+        try {
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+            return new TrustStoreAndTrustOptions(keyStore, new SystemTrustOptions(trustManagerFactory));
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Fingerprint the reload SOURCES (truststore-paths files, files inside directory sources, and the default

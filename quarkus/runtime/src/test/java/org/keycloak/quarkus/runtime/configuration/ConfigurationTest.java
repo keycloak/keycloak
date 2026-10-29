@@ -34,6 +34,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
@@ -654,6 +655,39 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=BCFKS", "--https-trust-store-file=trust.bcfks");
         assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
+    }
+
+    @Test
+    public void testHttpTrustStoreIsReloadedSystemTruststore() {
+        String otherTypeProp = HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type";
+        String[] https = { "--https-certificate-file=cert.pem", "--https-certificate-key-file=key.pem" };
+
+        ConfigArgsConfigSource.setCliArgs(concat(https, "--https-client-auth=request", "--truststore-paths-reload-period=1h"));
+        assertEquals(SystemTruststoreReload.TRUST_STORE_TYPE, createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs(concat(https, "--fips-mode=strict", "--https-client-auth=required", "--truststore-paths-reload-period=1h"));
+        assertEquals(SystemTruststoreReload.TRUST_STORE_TYPE, createConfig().getConfigValue(otherTypeProp).getValue());
+
+        // a dedicated truststore is preserved
+        ConfigArgsConfigSource.setCliArgs(concat(https, "--https-client-auth=request", "--truststore-paths-reload-period=1h",
+                "--https-trust-store-file=trust.pem"));
+        assertNull(createConfig().getConfigValue(otherTypeProp).getValue());
+        assertEquals("trust.pem", createConfig().getConfigValue(HttpPropertyMappers.TLS_PREFIX + "trust-store.pem.certs").getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.bcfks", "--fips-mode=strict", "--https-client-auth=request",
+                "--truststore-paths-reload-period=1h", "--https-trust-store-file=trust.bcfks");
+        assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
+
+        // the system truststore is only needed to validate client certificates, and only reloaded with a reload period
+        ConfigArgsConfigSource.setCliArgs(concat(https, "--truststore-paths-reload-period=1h"));
+        assertNull(createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs(concat(https, "--https-client-auth=request"));
+        assertNull(createConfig().getConfigValue(otherTypeProp).getValue());
+    }
+
+    private static String[] concat(String[] first, String... second) {
+        return Stream.concat(Arrays.stream(first), Arrays.stream(second)).toArray(String[]::new);
     }
 
     @Test

@@ -22,6 +22,7 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
 
 import org.junit.Test;
 
@@ -569,6 +570,44 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", "BCFKS",
                 ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type", "BCFKS"
         ));
+    }
+
+    @Test
+    public void managementTrustStoreIsReloadedSystemTruststore() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CLIENT_AUTH", "request",
+                "KC_TRUSTSTORE_PATHS_RELOAD_PERIOD", "1h"
+        ));
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", SystemTruststoreReload.TRUST_STORE_TYPE,
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type", SystemTruststoreReload.TRUST_STORE_TYPE
+        ));
+    }
+
+    @Test
+    public void managementDedicatedTrustStoreOrNoClientAuthKeepsSystemTruststoreOut() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CLIENT_AUTH", "request",
+                "KC_TRUSTSTORE_PATHS_RELOAD_PERIOD", "1h",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE", "mgmt-trust.pem"
+        ));
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", SystemTruststoreReload.TRUST_STORE_TYPE);
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type");
+        assertExternalConfig(ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.pem.certs", "mgmt-trust.pem");
+
+        removeEnvVar("KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE");
+        putEnvVar("KC_HTTPS_MANAGEMENT_CLIENT_AUTH", "none");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", SystemTruststoreReload.TRUST_STORE_TYPE);
+        assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type");
     }
 
     @Test

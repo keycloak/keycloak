@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
@@ -17,12 +18,14 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.SecurityOptions;
+import org.keycloak.config.TruststoreOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.integration.tls.SystemTruststoreReload;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.DurationConverter;
@@ -287,11 +290,30 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         mappers.add(
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .mapFrom(HttpOptions.HTTPS_TRUST_STORE_TYPE, (name, value, ctx) ->
-                                filterOtherStoreType(value, HttpOptions.HTTPS_TRUST_STORE_FILE))
+                                systemTruststoreTypeOr(getReloadedSystemTruststoreType(), () -> filterOtherStoreType(value, HttpOptions.HTTPS_TRUST_STORE_FILE)))
+                        // applies instead of the parent mapper when no truststore type is set
+                        .transformer((name, value, ctx) -> systemTruststoreTypeOr(getReloadedSystemTruststoreType(), () -> value))
                         .to(TLS_PREFIX + "trust-store.other.type")
                         .paramLabel("type")
                         .build()
         );
+    }
+
+    private static String getReloadedSystemTruststoreType() {
+        return getReloadedSystemTruststoreType(HttpOptions.HTTPS_TRUST_STORE_FILE, HttpOptions.HTTPS_CLIENT_AUTH, isHttpsEnabled());
+    }
+
+    static String getReloadedSystemTruststoreType(Option<File> trustStoreFileOption, Option<?> clientAuthOption, boolean tlsEnabled) {
+        boolean reloaded = getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD).filter(period -> !period.isBlank()).isPresent();
+        boolean clientAuth = getOptionalKcValue(clientAuthOption).filter(value -> !HttpOptions.ClientAuth.none.name().equals(value)).isPresent();
+        if (tlsEnabled && reloaded && clientAuth && getOptionalKcValue(trustStoreFileOption).isEmpty()) {
+            return SystemTruststoreReload.TRUST_STORE_TYPE;
+        }
+        return null;
+    }
+
+    static String systemTruststoreTypeOr(String systemTruststoreType, Supplier<String> otherwise) {
+        return systemTruststoreType != null ? systemTruststoreType : otherwise.get();
     }
 
     static String keyStoreSubPath(StoreType type, String property) {
