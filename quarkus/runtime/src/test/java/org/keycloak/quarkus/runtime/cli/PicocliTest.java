@@ -2145,12 +2145,6 @@ Environment.setHomeDir(tmp);
     }
 
     @Test
-    public void poolMaxSizeLowAllowedWithKubernetesStack() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
-        assertNoError(nonRunningPicocli);
-    }
-    
-    @Test
     public void commandSuggestions() {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
             @Override

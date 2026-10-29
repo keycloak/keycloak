@@ -112,28 +112,9 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start", "--cache-stack=jdbc-ping-udp"})
-    void testJdbcPingTCP(CLIResult result) {
-        result.assertClusteredCache();
-        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping-udp`");
-    }
-
-    @Test
-    @Launch({ "start", "--cache-stack=azure" })
-    void warnDeprecatedCloudStack(CLIResult result) {
-        result.assertMessage("Stack 'azure' is deprecated. We recommend to use 'jdbc-ping' instead");
-    }
-
-    @Test
     @Launch({ "start", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(CLIResult result) {
         result.assertError("Cache config file 'invalid' does not exist in the conf directory");
-    }
-
-    @Test
-    @Launch({ "start", "--cache-stack=kubernetes" })
-    void failMisConfiguredClusterStack(CLIResult result) {
-        result.assertMessage("ERROR: dns_query can not be null or empty");
     }
 
     @Test

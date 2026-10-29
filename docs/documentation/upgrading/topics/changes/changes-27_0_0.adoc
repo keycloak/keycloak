@@ -319,3 +319,28 @@ The organization Redirect URL field is now deprecated and will be removed in a f
 === Organization invitation endpoints without `client_id`
 
 The `invite-user` and `invite-existing-user` admin client overloads that do not accept a `client_id` parameter are now deprecated. Use the overloads that accept an explicit `client_id` instead. When omitted, the endpoints default to the `account` client, but callers should migrate to always specify a client.
+
+// ------------------------ End of Life features ------------------------ //
+== End of Life features
+
+End of Life features have been previously deprecated and are removed in this release.
+
+=== Deprecated cache stacks removed
+// https://github.com/keycloak/keycloak/issues/53461
+
+The following cache transport stacks that were deprecated in 26.1.0 and 26.3.0 have been removed:
+
+* `azure`
+* `ec2`
+* `google`
+* `jdbc-ping-udp`
+* `kubernetes`
+* `tcp`
+* `udp`
+
+The default `jdbc-ping` stack is now the only built-in stack. It uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
+
+If your deployment is using one of these deprecated stacks via the `--cache-stack` option, you must migrate to `jdbc-ping` or configure a custom transport stack in the cache configuration file.
+For most deployments, simply removing the `--cache-stack` option will use the default `jdbc-ping` stack, which is recommended for production use.
+
+For information about configuring custom transport stacks, refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks].
