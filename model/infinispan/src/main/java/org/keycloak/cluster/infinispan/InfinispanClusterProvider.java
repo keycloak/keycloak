@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
@@ -67,11 +68,28 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache, ExecutorService localExecutor) {
+    private final long clockSkewThresholdMillis;
+    private final AtomicLong lastClockSkewWarningTime = new AtomicLong(0);
+    private static final long CLOCK_SKEW_WARNING_INTERVAL_MILLIS = 60_000;
+    private static final long DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS = 100;
+
+    /**
+     * Constructor with default clock skew threshold for backward compatibility.
+     * @deprecated Use {@link #InfinispanClusterProvider(int, NodeInfo, Cache, ExecutorService, long)} to specify threshold
+     */
+    @Deprecated
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
+                                      ExecutorService localExecutor) {
+        this(clusterStartupTime, nodeInfo, workCache, localExecutor, DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS);
+    }
+
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
+                                      ExecutorService localExecutor, long clockSkewThresholdMillis) {
         this.nodeInfo = nodeInfo;
         this.clusterStartupTime = clusterStartupTime;
         this.workCache = workCache;
         this.localExecutor = localExecutor;
+        this.clockSkewThresholdMillis = clockSkewThresholdMillis;
     }
 
 
@@ -221,15 +239,20 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     private void eventReceived(String key, Object obj) {
-        if (!(obj instanceof WrapperClusterEvent event)) {
+        if (obj instanceof WrapperClusterEvent event) {
+            handleWrapperClusterEvent(event);
+        } else if (obj instanceof ClockSkewTimestampSample sample) {
+            handleClockSkewSample(sample);
+        } else {
             // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
             // It is still good to have the warning in case of real events return null because they have been, for example, expired
-            if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
+            if (obj == null && !key.startsWith(TASK_KEY_PREFIX) && !key.startsWith(ClockSkewDetectionTask.CLOCK_SKEW_SAMPLE_KEY_PREFIX)) {
                 logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
             }
-            return;
         }
+    }
 
+    private void handleWrapperClusterEvent(WrapperClusterEvent event) {
         if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
             return;
         }
@@ -244,6 +267,36 @@ public class InfinispanClusterProvider implements ClusterProvider {
         if (myListeners != null) {
             for (var e : event.getDelegateEvents()) {
                 myListeners.forEach(e);
+            }
+        }
+    }
+
+    private void handleClockSkewSample(ClockSkewTimestampSample sample) {
+        // Ignore samples from this node
+        if (sample.nodeName().equals(nodeInfo.nodeName())) {
+            return;
+        }
+
+        long localTime = Time.currentTimeMillis();
+        long remoteTime = sample.timestampMillis();
+        long skew = remoteTime - localTime;
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Received clock skew sample from node %s: remote=%d, local=%d, skew=%d ms",
+                    sample.nodeName(), remoteTime, localTime, skew);
+        }
+
+        // Only warn if the remote node is ahead by more than the threshold
+        if (skew > clockSkewThresholdMillis) {
+            // Rate-limit warnings to avoid flooding logs (thread-safe with compareAndSet)
+            long now = Time.currentTimeMillis();
+            long lastWarning = lastClockSkewWarningTime.get();
+            if (now - lastWarning > CLOCK_SKEW_WARNING_INTERVAL_MILLIS) {
+                if (lastClockSkewWarningTime.compareAndSet(lastWarning, now)) {
+                    logger.warnf("Clock skew detected: node '%s' is ahead by %d ms (threshold: %d ms). " +
+                                    "This node's time may be behind. Ensure NTP is properly configured on all cluster nodes.",
+                            sample.nodeName(), skew, clockSkewThresholdMillis);
+                }
             }
         }
     }
