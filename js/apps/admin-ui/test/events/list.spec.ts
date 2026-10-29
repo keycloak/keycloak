@@ -70,6 +70,7 @@ test.describe.serial("Events tests", () => {
 
   test.describe.serial("User events with events", () => {
     let page: Page;
+
     test.beforeAll(async ({ browser }) => {
       page = await browser.newPage();
       await login(page);

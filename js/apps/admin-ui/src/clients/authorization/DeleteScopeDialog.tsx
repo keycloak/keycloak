@@ -9,9 +9,7 @@ import type { PermissionScopeRepresentation } from "./Scopes";
 type DeleteScopeDialogProps = {
   clientId: string;
   selectedScope:
-    | PermissionScopeRepresentation
-    | ScopeRepresentation
-    | undefined;
+    PermissionScopeRepresentation | ScopeRepresentation | undefined;
   refresh: () => void;
   open: boolean;
   toggleDialog: () => void;

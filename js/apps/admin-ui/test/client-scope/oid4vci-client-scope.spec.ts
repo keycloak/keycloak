@@ -20,9 +20,7 @@ import {
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
 type Oid4vciFormat =
-  | "SD-JWT VC (dc+sd-jwt)"
-  | "JWT VC (jwt_vc_json)"
-  | "ISO mDoc (mso_mdoc)";
+  "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)" | "ISO mDoc (mso_mdoc)";
 const OID4VCI_OPTION_VISIBLE_TIMEOUT_MS = 5_000;
 
 async function getVisibleOID4VCIProtocolOption(page: Page) {

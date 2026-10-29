@@ -24,6 +24,7 @@ test.describe.serial("Realm Settings - Keys", () => {
   const searchPlaceholder = "Search key";
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

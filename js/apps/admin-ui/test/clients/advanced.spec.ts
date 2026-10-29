@@ -124,6 +124,7 @@ test.describe.serial("Client Offline Session Max", () => {
     });
     await adminClient.createClient({ clientId, realm: realmName });
   });
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

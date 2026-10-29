@@ -39,8 +39,8 @@ export async function assertAttributeLength(
   length: number,
   name: string = "attributes",
 ) {
-  const rows = await page.getByTestId(`${name}-key`).all();
-  expect(rows.length).toBe(length);
+  const rows = page.getByTestId(`${name}-key`);
+  await expect(rows).toHaveCount(length);
 }
 
 export async function assertAttribute(

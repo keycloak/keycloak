@@ -14,6 +14,7 @@ test.describe.serial("Realm settings tabs tests", () => {
   const realmName = `realm-settings_${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
