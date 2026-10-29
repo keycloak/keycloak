@@ -346,7 +346,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             setupSessionContext(session);
             CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
             try {
-                credentialScope.setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "0");
+                credentialScope.setProofKeyIndex(0);
 
                 SupportedCredentialConfiguration config = SupportedCredentialConfiguration.parse(
                         session, credentialScope, List.of("ES256"));
@@ -365,7 +365,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             setupSessionContext(session);
             CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
             try {
-                credentialScope.setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "1");
+                credentialScope.setProofKeyIndex(1);
 
                 IllegalStateException exception = assertThrows(IllegalStateException.class,
                         () -> SupportedCredentialConfiguration.parse(session, credentialScope, List.of("ES256")));
