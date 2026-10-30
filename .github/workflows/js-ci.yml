@@ -237,7 +237,6 @@ jobs:
     timeout-minutes: 90
     env:
       WORKSPACE: "@keycloak/keycloak-admin-ui"
-      RETRY_COUNT: 3
     strategy:
       matrix:
         browser: [chromium, firefox]

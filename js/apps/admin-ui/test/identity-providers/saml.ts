@@ -30,6 +30,8 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
   await clickTableRowItem(page, samlProviderName);
   await expect(providerEnabledSwitch).not.toBeChecked();
   await switchOn(page, providerEnabledSwitch);
+  // Enabling the provider saves immediately and reloads the form, which would otherwise reset the URLs entered below.
+  await assertNotificationMessage(page, "Provider successfully updated");
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
