@@ -289,21 +289,24 @@ Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
 === Running inside a service mesh
 
-When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
-Otherwise, you might see error messages like `JGRP000006: failed accepting connection from peer SSLSocket` that indicate that a wrong certificate was presented, and the cluster will not form correctly.
+Keep {project_name}'s transport encryption enabled when running inside a service mesh.
+Configure the mesh to forward cluster connections as opaque TCP traffic without terminating {project_name}'s TLS connections.
+The mesh can additionally encrypt these connections using its own mTLS.
 
-You then have the option to allow direct mTLS communication between the {project_name} Pods, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
+Cluster nodes connect directly to other nodes using the addresses obtained through database discovery.
+Ensure your mesh configuration allows these connections on the ports listed in <<network-ports>>.
 
-To allow direct mTLS communication for {project_name} when using Istio:
+With Istio, connections that are not recognized as mesh traffic might be rejected when the receiving proxy requires Istio mTLS.
+{project_name}'s own mTLS does not satisfy this requirement because it uses different certificates and trust settings.
 
-* Apply the following configuration to allow direct communication.
-+
+To allow connections protected by {project_name}'s own mTLS on the data transmission port, you can configure a port-specific `PERMISSIVE` policy:
+
 [source,yaml]
 ----
-apiVersion: security.istio.io/v1beta1
+apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
-  name: infinispan-allow-nomtls
+  name: keycloak-cluster-transport
 spec:
   selector:
     matchLabels:
@@ -313,12 +316,17 @@ spec:
       mode: PERMISSIVE
 ----
 <1> Update the labels to match your {project_name} deployment.
-<2> Port 7800 is the default. Adjust it if you change the data transmission port.
+<2> Port 7800 is the default.
+Adjust it if you change the data transmission port.
 
-As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
+`PERMISSIVE` relaxes the requirement for Istio's mTLS on this port.
+It does not disable {project_name}'s encryption or peer authentication.
+Leave `cache-embedded-mtls-enabled` enabled.
 
-* Set the option `cache-embedded-mtls-enabled` to `false`.
-* Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
+Alternatively, retain Istio's `STRICT` policy and configure the mesh to establish its own mTLS connections for the direct node-to-node traffic.
+In this arrangement, {project_name}'s encrypted connections should be carried inside the mesh's encrypted connections.
+Configuration for this is outside of the scope of this guide.
+Refer to your service mesh documentation for the required traffic discovery and routing configuration.
 
 === Providing your own keys and certificates
 

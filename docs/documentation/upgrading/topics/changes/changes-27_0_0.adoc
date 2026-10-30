@@ -325,10 +325,10 @@ The `invite-user` and `invite-existing-user` admin client overloads that do not 
 
 End of Life features have been previously deprecated and are removed in this release.
 
-=== Deprecated cache stacks removed
+=== Deprecated cache stacks no longer supported
 // https://github.com/keycloak/keycloak/issues/53461
 
-The following cache transport stacks that were deprecated in 26.1.0 and 26.3.0 have been removed:
+The following cache transport stacks are no longer supported:
 
 * `azure`
 * `ec2`
@@ -338,9 +338,9 @@ The following cache transport stacks that were deprecated in 26.1.0 and 26.3.0 h
 * `tcp`
 * `udp`
 
-The default `jdbc-ping` stack is now the only built-in stack. It uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
+The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery.
+Communication between nodes is encrypted using TLS by default.
 
-If your deployment is using one of these deprecated stacks via the `--cache-stack` option, you must migrate to `jdbc-ping` or configure a custom transport stack in the cache configuration file.
-For most deployments, simply removing the `--cache-stack` option will use the default `jdbc-ping` stack, which is recommended for production use.
-
-For information about configuring custom transport stacks, refer to the https://infinispan.org/docs/stable/titles/embedding/embedding.html#cluster-transport[Infinispan documentation].
+Remove the `cache-stack` setting from your configuration to use the default `jdbc-ping` stack.
+If your cache configuration XML explicitly selects another transport stack, remove that selection as well.
+Remove any discovery settings specific to the previous stack, such as `jgroups.dns.query`.

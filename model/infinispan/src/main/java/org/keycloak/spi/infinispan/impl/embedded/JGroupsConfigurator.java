@@ -433,7 +433,8 @@ public final class JGroupsConfigurator {
                     name.equals(UDP.class.getName()) ||
                     name.equals(TCP_NIO2.class.getSimpleName()) ||
                     name.equals(TCP_NIO2.class.getName())) {
-                throw new RuntimeException("Cache TLS is not available with protocol " + name);
+                throw new RuntimeException("Cache TLS is not available with protocol " + name
+                        + ". Use the supported jdbc-ping transport stack. For a custom transport stack, set --cache-embedded-mtls-enabled=false and configure encryption in the JGroups stack.");
             }
         }
     }
