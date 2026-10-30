@@ -268,7 +268,9 @@ public class SamlProtocol implements LoginProtocol {
         SamlClient samlClient = new SamlClient(client);
         boolean postBinding = samlClient.forcePostBinding() || SamlProtocol.SAML_POST_BINDING.equals(clientData.getResponseMode());
         event.detail(Details.REDIRECT_URI, clientData.getRedirectUri());
-        String validRedirectUri = RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), client);
+        // a SAML response never appends OIDC response parameters to the redirect URI, so the redirect
+        // URI of a SAML client is not checked against them (see keycloak/keycloak#53823)
+        String validRedirectUri = RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), client, true, RedirectUtils.resolveForbiddenParams(client));
         if (validRedirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
