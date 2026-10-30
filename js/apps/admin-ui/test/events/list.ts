@@ -1,26 +1,23 @@
 import { type Page, expect } from "@playwright/test";
 import { selectItem, switchOn } from "../utils/form.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 
 export async function goToEventsConfig(page: Page) {
   await page.getByRole("link", { name: "Event configs" }).click();
-}
-
-async function removeLastAlert(page: Page) {
-  await page.getByTestId("last-alert").locator("button").click();
 }
 
 async function turnOnUserEvents(page: Page) {
   await page.getByTestId("rs-events-tab").click();
   await switchOn(page, "[data-testid='eventsEnabled']");
   await page.getByTestId("save-user").click();
-  await removeLastAlert(page);
+  await assertNotificationMessage(page, "Successfully saved configuration");
 }
 
 async function turnOnAdminEvents(page: Page) {
   await page.getByTestId("rs-admin-events-tab").click();
   await switchOn(page, "[data-testid='adminEventsEnabled']");
   await page.getByTestId("save-admin").click();
-  await removeLastAlert(page);
+  await assertNotificationMessage(page, "Successfully saved configuration");
 }
 
 export async function enableSaveEvents(page: Page) {

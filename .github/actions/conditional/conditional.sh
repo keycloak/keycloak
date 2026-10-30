@@ -57,7 +57,7 @@ for C in "${CONDITIONS[@]}"; do
     fi
 
     # Check if changed files matches regex
-    if ( echo "$CHANGED_FILES" | grep -q -E "^$REGEX$"); then
+    if grep -q -E "^$REGEX$" <<<"$CHANGED_FILES"; then
       RUN_JOB=true
       echo "*  $REGEX"
     else

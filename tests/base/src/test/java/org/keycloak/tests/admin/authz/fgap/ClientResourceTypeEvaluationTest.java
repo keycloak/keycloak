@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -36,6 +37,7 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -169,8 +171,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
         try {
-            ClientScopeRepresentation clientScopeRep = clientResource.getDefaultClientScopes().get(1);
-            clientResource.removeDefaultClientScope(clientScopeRep.getId());
+            clientResource.getDefaultClientScopes();
             fail("Expected exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -180,11 +181,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
 
         // the caller can view myclient
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-
-        // client representation should not expose client scopes without view-client-scopes permission
-        assertThat(clientRep.getDefaultClientScopes(), empty());
-        assertThat(clientRep.getOptionalClientScopes(), empty());
+        clientResource.toRepresentation();
 
         // the caller can list myclient
         List<ClientRepresentation> allClients = realmAdminClient.realm(realm.getName()).clients().findAll();
@@ -193,28 +190,6 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // can update myclient
         myclient.setName("somethingNew");
         clientResource.update(myclient);
-
-        // can't view default or optional client scopes without view-client-scopes permission
-        assertThat(clientResource.getDefaultClientScopes(), empty());
-        assertThat(clientResource.getOptionalClientScopes(), empty());
-
-        // can't remove a default client scope without manage-client-scopes permission
-        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
-        ClientScopeRepresentation clientScopeRep = adminDefaultScopes.get(1);
-        try {
-            clientResource.removeDefaultClientScope(clientScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
-        }
-
-        // can't add an optional client scope without manage-client-scopes permission
-        try {
-            clientResource.addOptionalClientScope(clientScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
-        }
 
         // can't update a different client
         ClientRepresentation realmClientRep = realm.admin().clients().get(realmClient.getId()).toRepresentation();
@@ -228,68 +203,128 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testClientScopeAssignmentRequiresManageClientScopes() {
+    public void testClientScopeAssignmentPermissions() {
         ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
-        createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
-
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myclient.getId());
 
-        // per-client MANAGE is not enough to view or manage client scopes
-        assertThat(clientResource.getDefaultClientScopes(), empty());
-        assertThat(clientResource.getOptionalClientScopes(), empty());
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
 
-        List<ClientScopeRepresentation> adminDefaultScopes = realm.admin().clients().get(myclient.getId()).getDefaultClientScopes();
-        assertThat(adminDefaultScopes, not(empty()));
-        ClientScopeRepresentation defaultScopeRep = adminDefaultScopes.get(1);
+        ClientResource fullAdminClient = realm.admin().clients().get(myclient.getId());
+        for (boolean defaultScope : List.of(true, false)) {
+            ClientScopeRepresentation scope = new ClientScopeRepresentation();
+            scope.setName(defaultScope ? "assigned-default" : "assigned-optional");
+            scope.setDescription("Description of " + scope.getName());
+            scope.setProtocol("openid-connect");
+            scope.setAttributes(Map.of(
+                    ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.toString(!defaultScope),
+                    ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string",
+                    "non-display-attribute", "hidden-value"));
+            ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+            mapper.setName("assigned-scope-mapper");
+            mapper.setProtocol("openid-connect");
+            mapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+            mapper.setConfig(Map.of("claim.name", "hidden-claim", "claim.value", "hidden-value"));
+            scope.setProtocolMappers(List.of(mapper));
+            try (Response response = realm.admin().clientScopes().create(scope)) {
+                String scopeId = ApiUtil.getCreatedId(response);
+                if (defaultScope) {
+                    fullAdminClient.addDefaultClientScope(scopeId);
+                } else {
+                    fullAdminClient.addOptionalClientScope(scopeId);
+                }
+            }
+        }
+        List<ClientScopeRepresentation> defaultScopes = fullAdminClient.getDefaultClientScopes();
+        List<ClientScopeRepresentation> optionalScopes = fullAdminClient.getOptionalClientScopes();
+        ClientScopeRepresentation unassignedScope = new ClientScopeRepresentation();
+        unassignedScope.setName("unassigned-scope");
+        unassignedScope.setProtocol("openid-connect");
+        try (Response response = realm.admin().clientScopes().create(unassignedScope)) {
+            unassignedScope.setId(ApiUtil.getCreatedId(response));
+        }
+        Set<String> expectedAvailableIds = realm.admin().clientScopes().findAll().stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet());
+        Set<String> expectedDefaultIds = defaultScopes.stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet());
+        Set<String> expectedOptionalIds = optionalScopes.stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet());
+        ClientRepresentation expectedClient = fullAdminClient.toRepresentation();
+        ClientScopeRepresentation assignedScope = defaultScopes.stream().filter(scope -> "assigned-default".equals(scope.getName())).findFirst().orElseThrow();
+        ClientScopeRepresentation optionalScope = optionalScopes.stream().filter(scope -> "assigned-optional".equals(scope.getName())).findFirst().orElseThrow();
 
-        List<ClientScopeRepresentation> adminOptionalScopes = realm.admin().clients().get(myclient.getId()).getOptionalClientScopes();
-        assertThat(adminOptionalScopes, not(empty()));
-        ClientScopeRepresentation optionalScopeRep = adminOptionalScopes.get(0);
+        // per-client VIEW: can see scopes currently assigned to this client
+        createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(VIEW), onlyMyAdminUserPolicy);
+        assertThat(clientResource.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet()), is(expectedDefaultIds));
+        assertThat(clientResource.getOptionalClientScopes().stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet()), is(expectedOptionalIds));
+        ClientRepresentation viewedClient = clientResource.toRepresentation();
+        assertThat(Set.copyOf(viewedClient.getDefaultClientScopes()), is(Set.copyOf(expectedClient.getDefaultClientScopes())));
+        assertThat(Set.copyOf(viewedClient.getOptionalClientScopes()), is(Set.copyOf(expectedClient.getOptionalClientScopes())));
 
-        try {
-            clientResource.removeDefaultClientScope(defaultScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
+        // Assigned scope metadata is available without access to the realm-wide catalog.
+        assertThat(realmAdminClient.realm(realm.getName()).clientScopes().findAll(), empty());
+        for (ClientScopeRepresentation scope : List.of(
+                clientResource.getDefaultClientScopes().stream().filter(s -> assignedScope.getId().equals(s.getId())).findFirst().orElseThrow(),
+                clientResource.getOptionalClientScopes().stream().filter(s -> optionalScope.getId().equals(s.getId())).findFirst().orElseThrow())) {
+            assertThat(scope.getDescription(), is("Description of " + scope.getName()));
+            assertThat(scope.getAttributes(), is(Map.of(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.toString("assigned-optional".equals(scope.getName())))));
+            assertThat(scope.getProtocolMappers(), nullValue());
+            assertThat(realm.admin().clientScopes().get(scope.getId()).toRepresentation().getProtocolMappers(), not(empty()));
         }
 
-        try {
-            clientResource.addDefaultClientScope(defaultScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
-        }
+        // VIEW alone must not permit changes to either kind of assignment.
+        Assertions.assertThrows(ForbiddenException.class, clientResource::getAvailableClientScopes);
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.removeDefaultClientScope(assignedScope.getId()));
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.removeOptionalClientScope(optionalScope.getId()));
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.addDefaultClientScope(assignedScope.getId()));
+        Assertions.assertThrows(ForbiddenException.class, () -> clientResource.addOptionalClientScope(optionalScope.getId()));
 
-        try {
-            clientResource.removeOptionalClientScope(optionalScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
+        // per-client MANAGE: can remove an already-assigned scope (scope is currently on this client)
+        createPermission(adminPermissionsClient, myclient.getId(), clientsType, Set.of(MANAGE), onlyMyAdminUserPolicy);
+        List<ClientScopeRepresentation> availableScopes = clientResource.getAvailableClientScopes();
+        assertThat(availableScopes.stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet()), is(expectedAvailableIds));
+        for (ClientScopeRepresentation scope : availableScopes) {
+            assertThat(scope.getProtocolMappers(), nullValue());
+            assertThat(scope.getAttributes().keySet(), is(Set.of(ClientScopeModel.IS_PARAMETERIZED_SCOPE)));
+            assertThat(scope.getProtocol(), notNullValue());
         }
+        clientResource.removeDefaultClientScope(assignedScope.getId());
+        clientResource.removeOptionalClientScope(optionalScope.getId());
+        assertThat(clientResource.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), not(hasItem(assignedScope.getId())));
+        assertThat(clientResource.getOptionalClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), not(hasItem(optionalScope.getId())));
 
-        try {
-            clientResource.addOptionalClientScope(optionalScopeRep.getId());
-            fail("Expected exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
-        }
+        // Per-client MANAGE permits assigning any scope, including one never assigned to this client.
+        clientResource.addDefaultClientScope(unassignedScope.getId());
+        assertThat(clientResource.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), hasItem(unassignedScope.getId()));
+        clientResource.removeDefaultClientScope(unassignedScope.getId());
+        clientResource.addOptionalClientScope(optionalScope.getId());
+        assertThat(clientResource.getOptionalClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), hasItem(optionalScope.getId()));
 
-        // grant type-level MANAGE on all Clients — implies manage-client-scopes
+        // Changing an ordinary scope from default to optional and back requires only per-client MANAGE.
+        clientResource.addOptionalClientScope(assignedScope.getId());
+        assertThat(clientResource.getOptionalClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), hasItem(assignedScope.getId()));
+        clientResource.removeOptionalClientScope(assignedScope.getId());
+        clientResource.addDefaultClientScope(assignedScope.getId());
+        assertThat(clientResource.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getId).toList(), hasItem(assignedScope.getId()));
+
+        // Scope definitions remain protected even though their assignment to this client is allowed.
+        assertThat(realmAdminClient.realm(realm.getName()).clientScopes().findAll(), empty());
+        Assertions.assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clientScopes().get(unassignedScope.getId()).toRepresentation());
+        Assertions.assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clientScopes().get(unassignedScope.getId()).update(unassignedScope));
+
+        ClientResource otherClient = realmAdminClient.realm(realm.getName()).clients().get(realmClient.getId());
+        Assertions.assertThrows(ForbiddenException.class, otherClient::getDefaultClientScopes);
+        Assertions.assertThrows(ForbiddenException.class, otherClient::getAvailableClientScopes);
+        Assertions.assertThrows(ForbiddenException.class, () -> otherClient.addDefaultClientScope(assignedScope.getId()));
+        Assertions.assertThrows(ForbiddenException.class, () -> otherClient.removeDefaultClientScope(assignedScope.getId()));
+
+        // Removing an absent assignment remains an idempotent operation for a delegated manager.
+        clientResource.removeDefaultClientScope(unassignedScope.getId());
+
+        assertThat(clientResource.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet()), is(expectedDefaultIds));
+        assertThat(clientResource.getOptionalClientScopes().stream().map(ClientScopeRepresentation::getId).collect(Collectors.toSet()), is(expectedOptionalIds));
+
+        // the realm-wide client scopes catalog requires type-level view — that is not affected by this change
         createAllPermission(adminPermissionsClient, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
-
-        // now all client scope operations succeed
-        List<ClientScopeRepresentation> defaultClientScopes = clientResource.getDefaultClientScopes();
-        assertThat(defaultClientScopes, not(empty()));
-        List<ClientScopeRepresentation> optionalClientScopes = clientResource.getOptionalClientScopes();
-        assertThat(optionalClientScopes, not(empty()));
-
-        clientResource.removeDefaultClientScope(defaultScopeRep.getId());
-        clientResource.addDefaultClientScope(defaultScopeRep.getId());
-        clientResource.removeOptionalClientScope(optionalScopeRep.getId());
-        clientResource.addOptionalClientScope(optionalScopeRep.getId());
+        assertThat(realmAdminClient.realm(realm.getName()).clientScopes().findAll(), not(empty()));
     }
 
     @Test
@@ -993,13 +1028,24 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         GroupRepresentation flatGroup = assertSingleGroup(flat, targetGroup.getId(), briefRepresentation);
         assertThat(flatGroup.getSubGroups(), empty());
 
+        String targetPath = "/" + parent.getName() + "/" + targetGroup.getName();
+        if (canViewParent) {
+            assertGroup(adminRealm.getGroupByPath(targetPath), targetGroup.getId(), false);
+        } else {
+            // the path cannot be resolved through a parent the caller cannot view
+            Assertions.assertThrows(NotFoundException.class, () -> adminRealm.getGroupByPath(targetPath));
+        }
+
         List<GroupRepresentation> memberGroups = adminRealm.users().get(member.getId()).groups(null, null, briefRepresentation);
         assertSingleGroup(memberGroups, targetGroup.getId(), briefRepresentation);
     }
 
     private static GroupRepresentation assertSingleGroup(List<GroupRepresentation> groups, String groupId, boolean briefRepresentation) {
         assertThat(groups, hasSize(1));
-        GroupRepresentation group = groups.get(0);
+        return assertGroup(groups.get(0), groupId, briefRepresentation);
+    }
+
+    private static GroupRepresentation assertGroup(GroupRepresentation group, String groupId, boolean briefRepresentation) {
         assertThat(group.getId(), is(groupId));
         if (briefRepresentation) {
             assertThat(group.getRealmRoles(), nullValue());

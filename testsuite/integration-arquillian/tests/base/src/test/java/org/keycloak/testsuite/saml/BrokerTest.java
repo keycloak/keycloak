@@ -121,6 +121,8 @@ public class BrokerTest extends AbstractSamlTest {
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
               .sessionIndex("idp:" + UUID.randomUUID())
+              // not the email format, which would set the email of brokered users
+              .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "idp-user")
               .buildModel();
 
             AttributeStatementType attrStatement = new AttributeStatementType();
@@ -466,6 +468,8 @@ public class BrokerTest extends AbstractSamlTest {
                 8082,
                 realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
         )) {
+
+            samlBackchannelArtifactResolveReceiver.setDestination(getSamlBrokerUrl(REALM_NAME).toString());
 
             IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");
             rep.getConfig().put(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlBackchannelArtifactResolveReceiver.getUrl());

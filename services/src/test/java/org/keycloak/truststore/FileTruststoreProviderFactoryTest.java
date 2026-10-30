@@ -19,8 +19,12 @@ package org.keycloak.truststore;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +45,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,19 +58,23 @@ public class FileTruststoreProviderFactoryTest {
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig",
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig",
-            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig"
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig",
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY + ".orig"
     };
 
     private final Map<String, String> originalSystemProperties = new HashMap<>();
     private CryptoProvider originalCryptoProvider;
+    private TruststoreProvider originalTruststoreProvider;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void before() {
+        originalTruststoreProvider = TruststoreProviderSingleton.get();
         originalCryptoProvider = CryptoIntegration.isInitialised() ? CryptoIntegration.getProvider() : null;
         CryptoIntegration.setProvider(new DefaultCryptoProvider());
         for (String key : SYSTEM_PROPERTY_KEYS) {
@@ -81,6 +92,7 @@ public class FileTruststoreProviderFactoryTest {
                 System.setProperty(key, value);
             }
         }
+        TruststoreProviderSingleton.set(originalTruststoreProvider);
         CryptoIntegration.setProvider(originalCryptoProvider);
     }
 
@@ -123,6 +135,33 @@ public class FileTruststoreProviderFactoryTest {
 
         assertEquals(2, Collections.list(provider.getTruststore().aliases()).size());
         assertFalse(provider.getRootCertificates().isEmpty());
+    }
+
+    @Test
+    public void generatedTruststoreIsReadWithItsWriterProvider() throws Exception {
+        // given
+        URL pem = getClass().getResource("/truststores/keycloak.pem");
+        Collection<? extends Certificate> certificates;
+        try (InputStream input = pem.openStream()) {
+            certificates = CertificateFactory.getInstance("X.509").generateCertificates(input);
+        }
+
+        FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
+
+        // when
+        TruststoreBuilder.setSystemTruststore(new String[] { new File(pem.toURI()).getAbsolutePath() }, false,
+                temporaryFolder.getRoot().getAbsolutePath());
+        factory.init(rootScope(Map.of()));
+        KeyStore truststore = factory.create(null).getTruststore();
+
+        // then
+        assertThat(System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY), equalTo("BC"));
+        assertThat(truststore.getProvider().getName(), equalTo("BC"));
+        assertThat(truststore.getType(), equalTo(TruststoreFormat.PKCS12.name()));
+        assertThat(truststore.size(), equalTo(certificates.size()));
+        for (Certificate certificate : certificates) {
+            assertThat(truststore.getCertificateAlias(certificate), notNullValue());
+        }
     }
 
     @Test

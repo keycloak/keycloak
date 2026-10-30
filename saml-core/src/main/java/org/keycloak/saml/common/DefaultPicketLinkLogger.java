@@ -2272,9 +2272,8 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      *@see org.picketlink.identity.federation.PicketLinkLogger#samlMetaDataFailedToCreateCacheDuration(java.lang.String)
      */
     @Override
-    public IllegalArgumentException samlMetaDataFailedToCreateCacheDuration(String timeValue) {
-        return new IllegalArgumentException("Cache duration could not be created using '" + timeValue
-                + "'. This value must be an ISO-8601 period or a numeric value representing the duration in milliseconds.");
+    public IllegalArgumentException samlMetaDataFailedToCreateCacheDuration() {
+        return new IllegalArgumentException("Cache duration could not be created. This value must be an ISO-8601 period or a numeric value representing the duration in milliseconds.");
     }
 
     @Override

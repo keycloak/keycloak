@@ -94,6 +94,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.TemplatingUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeResources;
 import org.keycloak.theme.ThemeResourcesParser;
@@ -507,7 +508,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null) {
             RealmBean realmBean = new RealmBean(realm);
             attributes.put("realm", realmBean);
-            attributes.put("title", formatMessage(new FormMessage(null, "loginTitle", realmBean.getDisplayName()), messagesBundle, locale));
+            // resolve ${} placeholders in the display name like the FreeMarker "msg" method did
+            // when the title was still rendered in the template
+            String displayName = TemplatingUtil.resolveVariables(realmBean.getDisplayName(), messagesBundle);
+            attributes.put("title", formatMessage(new FormMessage(null, "loginTitle", displayName), messagesBundle, locale));
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 

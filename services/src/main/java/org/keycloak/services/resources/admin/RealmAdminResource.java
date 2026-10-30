@@ -1328,6 +1328,7 @@ public class RealmAdminResource {
         }
         auth.groups().requireView(found);
         GroupRepresentation groupRep = ModelToRepresentation.toRepresentation(found, true);
+        GroupUtils.filterRolesInRepresentation(groupRep, realm, session, auth);
         return GroupUtils.populateSubGroupCount(found, groupRep);
     }
 

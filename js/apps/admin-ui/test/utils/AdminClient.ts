@@ -7,10 +7,10 @@ import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation.js";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
-import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
 import {
   ADMIN_PASSWORD,
   ADMIN_USER,
@@ -24,17 +24,47 @@ class AdminClient {
     realmName: DEFAULT_REALM,
   });
 
+  // Authenticates and refreshes tokens against master only, as the resource client switches realms temporarily.
+  readonly #authClient = new KeycloakAdminClient({
+    baseUrl: SERVER_URL,
+    realmName: DEFAULT_REALM,
+  });
+
+  constructor() {
+    this.#client.registerTokenProvider({
+      getAccessToken: () => this.#authClient.getAccessToken(),
+    });
+  }
+
+  #signedInAsAdmin = false;
+  #pendingLogin?: Promise<void>;
+
+  // Signs in once with the password grant, then relies on the client to refresh the access token.
+  // A new sign-in happens only if the refresh fails, to avoid creating a session for every call.
   #login() {
-    return this.#client.auth({
+    this.#pendingLogin ??= this.#ensureAdminToken().finally(() => {
+      this.#pendingLogin = undefined;
+    });
+    return this.#pendingLogin;
+  }
+
+  async #ensureAdminToken() {
+    if (this.#signedInAsAdmin) {
+      try {
+        await this.#authClient.getAccessToken();
+        return;
+      } catch {
+        // The refresh token expired or was rejected, sign in again.
+      }
+    }
+
+    await this.#authClient.auth({
       username: ADMIN_USER,
       password: ADMIN_PASSWORD,
       grantType: "password",
       clientId: "admin-cli",
     });
-  }
-
-  async auth(credentials: Credentials) {
-    return this.#client.auth(credentials);
+    this.#signedInAsAdmin = true;
   }
 
   async createRealm(realm: string, payload?: RealmRepresentation) {
@@ -95,16 +125,19 @@ class AdminClient {
     return await this.#client.groups.create({ name: groupName, realm });
   }
 
-  async createSubGroups(groups: string[]) {
+  async createSubGroups(
+    groups: string[],
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     let parentGroup = undefined;
     const createdGroups = [];
     for (const group of groups) {
       if (!parentGroup) {
-        parentGroup = await this.#client.groups.create({ name: group });
+        parentGroup = await this.#client.groups.create({ name: group, realm });
       } else {
         parentGroup = await this.#client.groups.createChildGroup(
-          { id: parentGroup.id },
+          { id: parentGroup.id, realm },
           { name: group },
         );
       }
@@ -152,9 +185,13 @@ class AdminClient {
     );
   }
 
-  async addUserToGroup(userId: string, groupId: string) {
+  async addUserToGroup(
+    userId: string,
+    groupId: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
-    await this.#client.users.addToGroup({ id: userId, groupId });
+    await this.#client.users.addToGroup({ id: userId, groupId, realm });
   }
 
   async addClientRoleToUser(
@@ -462,10 +499,14 @@ class AdminClient {
     );
   }
 
-  async deleteIdentityProvider(idpAlias: string) {
+  async deleteIdentityProvider(
+    idpAlias: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     await this.#client.identityProviders.del({
       alias: idpAlias,
+      realm,
     });
   }
 
@@ -493,15 +534,15 @@ class AdminClient {
     });
   }
 
-  async removeAllLocalizationTexts() {
+  async removeAllLocalizationTexts(realm: string = this.#client.realmName) {
     await this.#login();
     const localesWithTexts = await this.#client.realms.getRealmSpecificLocales({
-      realm: this.#client.realmName,
+      realm,
     });
     await Promise.all(
       localesWithTexts.map((locale) =>
         this.#client.realms.deleteRealmLocalizationTexts({
-          realm: this.#client.realmName,
+          realm,
           selectedLocale: locale,
         }),
       ),
@@ -796,6 +837,59 @@ class AdminClient {
         resourceId: foundResource._id,
       });
     }
+  }
+
+  async #findClientByClientId(clientId: string, realm: string) {
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    return client;
+  }
+
+  async createAuthorizationScope(
+    clientId: string,
+    scope: ScopeRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = scope;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createAuthorizationScope(
+      { id: client.id!, realm },
+      payload,
+    );
+  }
+
+  async createAuthzPolicy(
+    clientId: string,
+    policy: PolicyRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = policy;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createPolicy(
+      { id: client.id!, type: payload.type!, realm },
+      payload,
+    );
+  }
+
+  async createAuthzPermission(
+    clientId: string,
+    permission: PolicyRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = permission;
+    const client = await this.#findClientByClientId(clientId, realm);
+
+    return await this.#client.clients.createPermission(
+      { id: client.id!, type: payload.type!, realm },
+      payload,
+    );
   }
 
   async findUserByUsername(

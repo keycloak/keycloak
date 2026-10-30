@@ -28,8 +28,10 @@
         "../keycloak-admin-client:build"
       ],
       "files": [
+        "package.json",
         "src",
         "tsconfig.json",
+        "../../tsconfig.json",
         "vite.config.ts"
       ],
       "output": [

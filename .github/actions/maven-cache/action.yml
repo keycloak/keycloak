@@ -9,6 +9,11 @@ inputs:
     required: false
     default: 'false'
 
+outputs:
+  cache-hit:
+    description: Whether the Maven cache was found for the exact key; only set when create-cache-if-it-doesnt-exist is true
+    value: ${{ steps.cache-maven-repository.outputs.cache-hit }}
+
 runs:
   using: composite
   steps:
@@ -43,6 +48,15 @@ runs:
           ~/.m2/wrapper/dists
           !~/.m2/repository/org/keycloak
         key: mvn-and-wrapper-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+        # Fall back to an older cache (for example from the previous week) to avoid a cold start.
+        # This must not be added to the writing step above, as it would then grow the cache every week.
+        restore-keys: |
+          mvn-and-wrapper-${{ runner.os }}-mvn-
+
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
 
     - id: node-cache
       name: Node cache

@@ -700,7 +700,8 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     /**
      * Returns parent and child representations as produced by the listing endpoints:
-     * {@code GET /groups} (hierarchy and flat) and {@code GET /users/{id}/groups}.
+     * {@code GET /groups} (hierarchy and flat) and {@code GET /users/{id}/groups},
+     * and for full representations also by {@code GET /group-by-path/{path}}.
      */
     private List<GroupRepresentation> groupListings(String adminRole, String userUuid, String groupUuid, String childUuid, boolean briefRepresentation) {
         RealmResource realm = clients.get(adminRole).realm(REALM_NAME);
@@ -718,6 +719,11 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
             List<GroupRepresentation> flat = realm.groups().groups(groupName, true, null, null, briefRepresentation, true, false);
             reps.add(singleGroup(flat, searchChild ? childUuid : groupUuid));
+        }
+
+        if (!briefRepresentation) {
+            reps.add(realm.getGroupByPath("/role-mapping-group"));
+            reps.add(realm.getGroupByPath("/role-mapping-group/role-mapping-group-child"));
         }
 
         return reps;
