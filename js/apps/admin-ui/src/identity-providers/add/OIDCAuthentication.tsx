@@ -25,7 +25,6 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
     control: control,
     name: "config.clientAuthMethod",
   });
-  const isClientSecretJwt = clientAuthMethod === "client_secret_jwt";
 
   return (
     <>
@@ -47,16 +46,8 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
       />
       <SelectControl
         name="config.clientAssertionSigningAlg"
-        label={
-          isClientSecretJwt
-            ? t("clientAssertionMacAlg")
-            : t("clientAssertionSigningAlg")
-        }
-        labelIcon={
-          isClientSecretJwt
-            ? t("macAlgorithmHelp")
-            : t("clientAssertionSigningAlgHelp")
-        }
+        label={t("clientAssertionSigningAlg")}
+        labelIcon={t("clientAssertionSigningAlgHelp")}
         options={[
           { key: "", value: t("algorithmNotSpecified") },
           ...sortProviders(providers).map((p) => ({ key: p, value: p })),

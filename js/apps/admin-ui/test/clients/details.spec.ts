@@ -170,7 +170,6 @@ test.describe.serial("Clients details test", () => {
     await assertSignatureAlgorithmLabel(page);
     await assertJwtAlgorithmOptions(page, ["RS256", "ES256"], ["HS256"]);
   });
-
 });
 
 test.describe.serial("Client admin without manage-realm", () => {
