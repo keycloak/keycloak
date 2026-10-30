@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
@@ -47,7 +46,7 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelTimeTask implements Jp
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String tableName = NativeSqlHelper.qualified("MIGRATION_MODEL", defaultSchema);
+        String tableName = SqlDialect.qualified("MIGRATION_MODEL", defaultSchema);
         Map<String, ModelVersion> itemsToDelete = new HashMap<>();
         List<String> stmts = new ArrayList<>();
 
@@ -79,7 +78,7 @@ public class JpaUpdate26_2_6_RemoveDuplicateMigrationModelTimeTask implements Jp
         for (int i = 0; i < idsToDelete.size(); i += 20) {
             List<String> chunk = idsToDelete.subList(i, Math.min(i + 20, idsToDelete.size()));
             String inList = chunk.stream()
-                    .map(NativeSqlHelper::sqlLiteral)
+                    .map(dialect::literal)
                     .collect(java.util.stream.Collectors.joining(", "));
             stmts.add("DELETE FROM " + tableName + " WHERE ID IN (" + inList + ")");
         }

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -44,10 +43,7 @@ public class JpaUpdate1_4_0_FinalTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String table = NativeSqlHelper.qualified("USER_ATTRIBUTE", defaultSchema);
+        String table = SqlDialect.qualified("USER_ATTRIBUTE", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -58,9 +54,9 @@ public class JpaUpdate1_4_0_FinalTask implements JpaMigrationTask {
                 String userId = rs.getString(2);
                 // Use literal values in WHERE clause
                 stmts.add("UPDATE " + table
-                        + " SET ID = " + NativeSqlHelper.sqlLiteral(KeycloakModelUtils.generateId())
-                        + " WHERE NAME = " + NativeSqlHelper.sqlLiteral(name)
-                        + " AND USER_ID = " + NativeSqlHelper.sqlLiteral(userId));
+                        + " SET ID = " + dialect.literal(KeycloakModelUtils.generateId())
+                        + " WHERE NAME = " + dialect.literal(name)
+                        + " AND USER_ID = " + dialect.literal(userId));
             }
         }
         return stmts;

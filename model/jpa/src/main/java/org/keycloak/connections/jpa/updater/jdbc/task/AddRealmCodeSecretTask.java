@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -44,10 +43,10 @@ public class AddRealmCodeSecretTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
+        String realmTable = SqlDialect.qualified("REALM", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
-        String sql = NativeSqlHelper.firstRowSql(realmTable, dialect);
+        String sql = dialect.firstRowSql(realmTable);
         // Check table exists and has rows
         try (Statement st = connection.createStatement();
              ResultSet check = st.executeQuery(sql)) {
@@ -64,8 +63,8 @@ public class AddRealmCodeSecretTask implements JpaMigrationTask {
             while (rs.next()) {
                 String id = rs.getString(1);
                 stmts.add("UPDATE " + realmTable + " SET CODE_SECRET = "
-                        + NativeSqlHelper.sqlLiteral(KeycloakModelUtils.generateCodeSecret())
-                        + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id));
+                        + dialect.literal(KeycloakModelUtils.generateCodeSecret())
+                        + " WHERE ID = " + dialect.literal(id));
             }
         }
         return stmts;

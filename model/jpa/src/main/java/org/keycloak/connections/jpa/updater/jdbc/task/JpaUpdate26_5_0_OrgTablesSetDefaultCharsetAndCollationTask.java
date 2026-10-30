@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -58,8 +57,8 @@ public class JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollationTask implemen
             return List.of();
         }
 
-        String orgTable = NativeSqlHelper.qualified("ORG", defaultSchema);
-        String orgInvTable = NativeSqlHelper.qualified("ORG_INVITATION", defaultSchema);
+        String orgTable = SqlDialect.qualified("ORG", defaultSchema);
+        String orgInvTable = SqlDialect.qualified("ORG_INVITATION", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         // Read current schema charset and collation

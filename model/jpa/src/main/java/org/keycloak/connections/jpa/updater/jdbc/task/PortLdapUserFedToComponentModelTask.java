@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -42,9 +41,6 @@ public class PortLdapUserFedToComponentModelTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
         List<String> stmts = new ArrayList<>();
         AbstractUserFedToComponentHelper.convertFedProviderToComponent(
                 connection, defaultSchema,

@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -41,8 +40,8 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealmTask implements JpaMigrati
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String cs = NativeSqlHelper.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
-        String us = NativeSqlHelper.qualified("OFFLINE_USER_SESSION", defaultSchema);
+        String cs = SqlDialect.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
+        String us = SqlDialect.qualified("OFFLINE_USER_SESSION", defaultSchema);
 
         return switch (dialect) {
             case POSTGRESQL -> List.of(

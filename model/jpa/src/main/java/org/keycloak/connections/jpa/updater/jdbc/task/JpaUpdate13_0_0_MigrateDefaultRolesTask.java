@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -47,16 +46,12 @@ public class JpaUpdate13_0_0_MigrateDefaultRolesTask implements JpaMigrationTask
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-
-        String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
-        String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", defaultSchema);
-        String compositeTable = NativeSqlHelper.qualified("COMPOSITE_ROLE", defaultSchema);
-        String realmDefaultRoles = NativeSqlHelper.qualified("REALM_DEFAULT_ROLES", defaultSchema);
-        String clientDefaultRoles = NativeSqlHelper.qualified("CLIENT_DEFAULT_ROLES", defaultSchema);
-        String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
+        String realmTable = SqlDialect.qualified("REALM", defaultSchema);
+        String roleTable = SqlDialect.qualified("KEYCLOAK_ROLE", defaultSchema);
+        String compositeTable = SqlDialect.qualified("COMPOSITE_ROLE", defaultSchema);
+        String realmDefaultRoles = SqlDialect.qualified("REALM_DEFAULT_ROLES", defaultSchema);
+        String clientDefaultRoles = SqlDialect.qualified("CLIENT_DEFAULT_ROLES", defaultSchema);
+        String clientTable = SqlDialect.qualified("CLIENT", defaultSchema);
 
         Map<String, String> realms = new HashMap<>(); // id → name
         try (PreparedStatement ps = connection.prepareStatement(
@@ -77,30 +72,30 @@ public class JpaUpdate13_0_0_MigrateDefaultRolesTask implements JpaMigrationTask
             // Create new default role
             stmts.add("INSERT INTO " + roleTable
                     + " (ID, CLIENT_REALM_CONSTRAINT, CLIENT_ROLE, DESCRIPTION, NAME, REALM_ID, REALM) VALUES ("
-                    + NativeSqlHelper.sqlLiteral(roleId) + ", "
-                    + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                    + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
-                    + NativeSqlHelper.sqlLiteral("${role_" + roleName + "}") + ", "
-                    + NativeSqlHelper.sqlLiteral(roleName) + ", "
-                    + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                    + NativeSqlHelper.sqlLiteral(realmId) + ")");
+                    + dialect.literal(roleId) + ", "
+                    + dialect.literal(realmId) + ", "
+                    + dialect.literal(false) + ", "
+                    + dialect.literal("${role_" + roleName + "}") + ", "
+                    + dialect.literal(roleName) + ", "
+                    + dialect.literal(realmId) + ", "
+                    + dialect.literal(realmId) + ")");
 
             // Assign role to realm
             stmts.add("UPDATE " + realmTable
-                    + " SET DEFAULT_ROLE = " + NativeSqlHelper.sqlLiteral(roleId)
-                    + " WHERE ID = " + NativeSqlHelper.sqlLiteral(realmId));
+                    + " SET DEFAULT_ROLE = " + dialect.literal(roleId)
+                    + " WHERE ID = " + dialect.literal(realmId));
 
             // Copy realm default roles to composite_role
             stmts.add("INSERT INTO " + compositeTable + " (COMPOSITE, CHILD_ROLE) "
-                    + "SELECT " + NativeSqlHelper.sqlLiteral(roleId) + ", ROLE_ID FROM " + realmDefaultRoles
-                    + " WHERE REALM_ID = " + NativeSqlHelper.sqlLiteral(realmId));
+                    + "SELECT " + dialect.literal(roleId) + ", ROLE_ID FROM " + realmDefaultRoles
+                    + " WHERE REALM_ID = " + dialect.literal(realmId));
 
             // Copy client default roles to composite_role
             stmts.add("INSERT INTO " + compositeTable + " (COMPOSITE, CHILD_ROLE) "
-                    + "SELECT " + NativeSqlHelper.sqlLiteral(roleId) + ", " + clientDefaultRoles + ".ROLE_ID FROM "
+                    + "SELECT " + dialect.literal(roleId) + ", " + clientDefaultRoles + ".ROLE_ID FROM "
                     + clientDefaultRoles + " INNER JOIN " + clientTable + " ON " + clientTable + ".ID = "
                     + clientDefaultRoles + ".CLIENT_ID AND " + clientTable + ".REALM_ID = "
-                    + NativeSqlHelper.sqlLiteral(realmId));
+                    + dialect.literal(realmId));
         }
         return stmts;
     }

@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -40,8 +39,8 @@ public class JpaUpdate26_7_0_RealmDisplayNameTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
-        String realmAttributeTable = NativeSqlHelper.qualified("REALM_ATTRIBUTE", defaultSchema);
+        String realmTable = SqlDialect.qualified("REALM", defaultSchema);
+        String realmAttributeTable = SqlDialect.qualified("REALM_ATTRIBUTE", defaultSchema);
         return List.of(
                 "UPDATE " + realmTable + " SET DISPLAY_NAME = ("
                         + "SELECT VALUE FROM " + realmAttributeTable

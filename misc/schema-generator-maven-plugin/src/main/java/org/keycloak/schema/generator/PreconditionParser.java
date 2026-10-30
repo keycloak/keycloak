@@ -1,7 +1,5 @@
 package org.keycloak.schema.generator;
 
-import java.lang.reflect.Method;
-
 import org.keycloak.representations.migration.PreconditionContainerDescriptor;
 import org.keycloak.representations.migration.PreconditionDescriptor;
 
@@ -11,6 +9,7 @@ import liquibase.precondition.core.AndPrecondition;
 import liquibase.precondition.core.ChangeSetExecutedPrecondition;
 import liquibase.precondition.core.ColumnExistsPrecondition;
 import liquibase.precondition.core.DBMSPrecondition;
+import liquibase.precondition.core.ForeignKeyExistsPrecondition;
 import liquibase.precondition.core.IndexExistsPrecondition;
 import liquibase.precondition.core.NotPrecondition;
 import liquibase.precondition.core.OrPrecondition;
@@ -28,14 +27,23 @@ public class PreconditionParser {
         }
 
         PreconditionContainerDescriptor descriptor = new PreconditionContainerDescriptor();
+        // The JDBC migration engine (PreconditionEvaluator) only implements a subset of the Liquibase
+        // container options; reject the rest rather than have them silently behave differently at runtime.
         if (container.getOnFail() != null) {
-            descriptor.setOnFail(container.getOnFail().name());
+            String onFail = container.getOnFail().name();
+            requireSupported("onFail", onFail, "HALT", "MARK_RAN");
+            descriptor.setOnFail(onFail);
         }
         if (container.getOnError() != null) {
-            descriptor.setOnError(container.getOnError().name());
+            String onError = container.getOnError().name();
+            // Errors while evaluating a precondition always abort the migration at runtime.
+            requireSupported("onError", onError, "HALT");
+            descriptor.setOnError(onError);
         }
         if (container.getOnSqlOutput() != null) {
-            descriptor.setOnSqlOutput(container.getOnSqlOutput().name());
+            String onSqlOutput = container.getOnSqlOutput().name();
+            requireSupported("onSqlOutput", onSqlOutput, "IGNORE", "TEST");
+            descriptor.setOnSqlOutput(onSqlOutput);
         }
 
         for (Precondition precondition : container.getNestedPreconditions()) {
@@ -46,6 +54,16 @@ public class PreconditionParser {
         }
 
         return descriptor;
+    }
+
+    private static void requireSupported(String attribute, String value, String... supported) {
+        for (String s : supported) {
+            if (s.equals(value)) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported preConditions " + attribute + "=" + value
+                + " (supported: " + String.join(", ", supported) + ")");
     }
 
     public static PreconditionDescriptor parsePrecondition(Precondition precondition) {
@@ -113,18 +131,12 @@ public class PreconditionParser {
         } else if (precondition instanceof CustomPreconditionWrapper custom) {
             desc.setType("custom");
             desc.setSql(custom.getClassName());
-        } else if (precondition.getName() != null && precondition.getName().equalsIgnoreCase("foreignKeyConstraintExists")) {
+        } else if (precondition instanceof ForeignKeyExistsPrecondition fk) {
             desc.setType("foreignKeyExists");
-            try {
-                Method getFkName = precondition.getClass().getMethod("getForeignKeyName");
-                desc.setForeignKeyName((String) getFkName.invoke(precondition));
-            } catch (Exception ignored) {}
-            try {
-                Method getTableName = precondition.getClass().getMethod("getForeignKeyTableName");
-                desc.setTableName((String) getTableName.invoke(precondition));
-            } catch (Exception ignored) {}
+            desc.setForeignKeyName(fk.getForeignKeyName());
+            desc.setTableName(fk.getForeignKeyTableName());
         } else {
-            desc.setType(precondition.getName());
+            throw new IllegalArgumentException("Unsupported Liquibase precondition type: " + precondition.getClass().getName());
         }
 
         return desc;

@@ -2,9 +2,11 @@ package org.keycloak.schema.generator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,10 +14,17 @@ import java.util.stream.Collectors;
 import org.keycloak.representations.migration.ExpectedIndexDescriptor;
 
 import liquibase.change.Change;
+import liquibase.change.ColumnConfig;
+import liquibase.change.core.AddColumnChange;
+import liquibase.change.core.AddForeignKeyConstraintChange;
 import liquibase.change.core.CreateIndexChange;
 import liquibase.change.core.CreateTableChange;
+import liquibase.change.core.DropColumnChange;
+import liquibase.change.core.DropForeignKeyConstraintChange;
 import liquibase.change.core.DropIndexChange;
 import liquibase.change.core.DropTableChange;
+import liquibase.change.core.RenameColumnChange;
+import liquibase.change.core.RenameTableChange;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
@@ -26,7 +35,9 @@ import liquibase.precondition.FailedPrecondition;
 import liquibase.precondition.Precondition;
 import liquibase.precondition.core.AndPrecondition;
 import liquibase.precondition.core.ChangeSetExecutedPrecondition;
+import liquibase.precondition.core.ColumnExistsPrecondition;
 import liquibase.precondition.core.DBMSPrecondition;
+import liquibase.precondition.core.ForeignKeyExistsPrecondition;
 import liquibase.precondition.core.IndexExistsPrecondition;
 import liquibase.precondition.core.NotPrecondition;
 import liquibase.precondition.core.OrPrecondition;
@@ -38,10 +49,14 @@ import liquibase.statement.SqlStatement;
 /**
  * Computes, for one dialect, the set of indexes that exist after the whole changelog has been applied.
  *
- * <p>The changelog is replayed without touching a database: {@code createIndex}/{@code dropIndex} and
- * {@code createTable}/{@code dropTable} changes maintain a transient model, and change-set preconditions are
- * evaluated against that transient model (only {@code dbms}, {@code changeSetExecuted}, {@code indexExists},
- * {@code tableExists} and the logical operators are evaluated; every other precondition defaults to true).
+ * <p>The changelog is replayed without touching a database: {@code createIndex}/{@code dropIndex},
+ * {@code createTable}/{@code dropTable}/{@code renameTable} and {@code addColumn}/{@code dropColumn}/
+ * {@code renameColumn} changes, and foreign key constraints, maintain a transient model, and change-set
+ * preconditions are evaluated against that transient model (only {@code dbms}, {@code changeSetExecuted},
+ * {@code indexExists}, {@code tableExists}, {@code columnExists}, {@code foreignKeyConstraintExists} and the
+ * logical operators are evaluated). Any other precondition is assumed to be true,
+ * which is only acceptable for change-sets that do not alter the modelled indexes/tables; for a change-set that
+ * does, such a precondition fails the build.
  * The result is stored in the manifest so the runtime index checker does not need Liquibase.
  */
 final class ExpectedIndexComputer {
@@ -53,6 +68,12 @@ final class ExpectedIndexComputer {
     private final Map<String, ExpectedIndexDescriptor> expectedIndexes = new LinkedHashMap<>();
     private final Set<ChangesetInfo> runChangesets = new HashSet<>();
     private final Set<String> tables = new HashSet<>();
+    /** Upper-cased table name to upper-cased column names. */
+    private final Map<String, Set<String>> columns = new HashMap<>();
+    /** Upper-cased foreign key constraint name to upper-cased base table name. */
+    private final Map<String, String> foreignKeys = new HashMap<>();
+    /** Set when a precondition that is not modelled here was assumed to be true while evaluating a change-set. */
+    private boolean assumedUnmodelled;
 
     private ExpectedIndexComputer(Database database) {
         this.database = database;
@@ -79,10 +100,60 @@ final class ExpectedIndexComputer {
             expectedIndexes.remove(dic.getIndexName().toUpperCase());
         } else if (change instanceof CreateTableChange ctc) {
             tables.add(ctc.getTableName());
+            Set<String> tableColumns = columnsOf(ctc.getTableName());
+            tableColumns.clear();
+            addColumns(tableColumns, ctc.getColumns());
+            if (ctc.getColumns() != null) {
+                for (ColumnConfig c : ctc.getColumns()) {
+                    if (c.getConstraints() != null && c.getConstraints().getForeignKeyName() != null) {
+                        foreignKeys.put(key(c.getConstraints().getForeignKeyName()), key(ctc.getTableName()));
+                    }
+                }
+            }
         } else if (change instanceof DropTableChange dtc && dtc.getTableName() != null) {
             String droppedTable = dtc.getTableName();
             expectedIndexes.values().removeIf(info -> info.getTableName().equalsIgnoreCase(droppedTable));
             tables.remove(droppedTable);
+            columns.remove(key(droppedTable));
+            foreignKeys.values().removeIf(base -> base.equals(key(droppedTable)));
+        } else if (change instanceof RenameTableChange rtc) {
+            tables.remove(rtc.getOldTableName());
+            tables.add(rtc.getNewTableName());
+            columns.put(key(rtc.getNewTableName()), columnsOf(rtc.getOldTableName()));
+            columns.remove(key(rtc.getOldTableName()));
+            foreignKeys.replaceAll((fk, base) -> base.equals(key(rtc.getOldTableName())) ? key(rtc.getNewTableName()) : base);
+        } else if (change instanceof AddForeignKeyConstraintChange afk && afk.getConstraintName() != null) {
+            foreignKeys.put(key(afk.getConstraintName()), key(afk.getBaseTableName()));
+        } else if (change instanceof DropForeignKeyConstraintChange dfk && dfk.getConstraintName() != null) {
+            foreignKeys.remove(key(dfk.getConstraintName()));
+        } else if (change instanceof AddColumnChange acc) {
+            addColumns(columnsOf(acc.getTableName()), acc.getColumns());
+        } else if (change instanceof DropColumnChange dcc) {
+            Set<String> tableColumns = columnsOf(dcc.getTableName());
+            if (dcc.getColumnName() != null) {
+                tableColumns.remove(key(dcc.getColumnName()));
+            }
+            if (dcc.getColumns() != null) {
+                dcc.getColumns().forEach(c -> tableColumns.remove(key(c.getName())));
+            }
+        } else if (change instanceof RenameColumnChange rcc) {
+            Set<String> tableColumns = columnsOf(rcc.getTableName());
+            tableColumns.remove(key(rcc.getOldColumnName()));
+            tableColumns.add(key(rcc.getNewColumnName()));
+        }
+    }
+
+    private static String key(String name) {
+        return name.toUpperCase(Locale.ROOT);
+    }
+
+    private Set<String> columnsOf(String tableName) {
+        return columns.computeIfAbsent(key(tableName), k -> new HashSet<>());
+    }
+
+    private static void addColumns(Set<String> target, List<? extends ColumnConfig> configs) {
+        if (configs != null) {
+            configs.forEach(c -> target.add(key(c.getName())));
         }
     }
 
@@ -105,19 +176,37 @@ final class ExpectedIndexComputer {
         if (preconditions == null) {
             return true;
         }
+        assumedUnmodelled = false;
+        boolean applies = true;
         for (var precondition : preconditions.getNestedPreconditions()) {
             try {
                 evaluate(precondition);
-            } catch (PreconditionFailedException | PreconditionErrorException e) {
-                return false;
+            } catch (PreconditionFailedException e) {
+                applies = false;
+                break;
+            } catch (PreconditionErrorException e) {
+                throw new IllegalStateException("Failed to evaluate precondition of change-set " + changeSet.getId()
+                        + " by " + changeSet.getAuthor() + " in " + changeSet.getFilePath(), e);
             }
         }
-        return true;
+        if (assumedUnmodelled && alters(changeSet)) {
+            throw new IllegalStateException("Change-set " + changeSet.getId() + " by " + changeSet.getAuthor()
+                    + " in " + changeSet.getFilePath() + " has a precondition that cannot be evaluated when computing"
+                    + " the expected indexes, but the change-set creates/drops indexes or tables. Add support for the"
+                    + " precondition to " + ExpectedIndexComputer.class.getSimpleName() + ".");
+        }
+        return applies;
+    }
+
+    /** Whether the change-set contains a change that {@link #apply} uses to maintain the transient model. */
+    private static boolean alters(ChangeSet changeSet) {
+        return changeSet.getChanges().stream().anyMatch(c -> c instanceof CreateIndexChange
+                || c instanceof DropIndexChange || c instanceof CreateTableChange || c instanceof DropTableChange);
     }
 
     /**
      * Evaluate the precondition against the transient state for indexes, tables and change-sets.
-     * All conditions that are not implemented here default to "true".
+     * Conditions that are not implemented here are assumed to be "true" and recorded in {@link #assumedUnmodelled}.
      */
     private void evaluate(Precondition p) throws PreconditionFailedException, PreconditionErrorException {
         if (p instanceof DBMSPrecondition dbmsPrecondition) {
@@ -168,7 +257,17 @@ final class ExpectedIndexComputer {
             if (!tables.contains(tep.getTableName())) {
                 throw new PreconditionFailedException("Precondition failed", null, tep);
             }
+        } else if (p instanceof ColumnExistsPrecondition cep && cep.getTableName() != null && cep.getColumnName() != null) {
+            if (!columnsOf(cep.getTableName()).contains(key(cep.getColumnName()))) {
+                throw new PreconditionFailedException("Precondition failed", null, cep);
+            }
+        } else if (p instanceof ForeignKeyExistsPrecondition fkp && fkp.getForeignKeyName() != null) {
+            String base = foreignKeys.get(key(fkp.getForeignKeyName()));
+            if (base == null || (fkp.getForeignKeyTableName() != null && !base.equals(key(fkp.getForeignKeyTableName())))) {
+                throw new PreconditionFailedException("Precondition failed", null, fkp);
+            }
+        } else {
+            assumedUnmodelled = true;
         }
-        // All other conditions default to true
     }
 }

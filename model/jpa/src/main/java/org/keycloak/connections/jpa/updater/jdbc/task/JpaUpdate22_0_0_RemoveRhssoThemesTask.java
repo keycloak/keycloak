@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
@@ -41,8 +40,8 @@ public class JpaUpdate22_0_0_RemoveRhssoThemesTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
-        String clientAttributesTable = NativeSqlHelper.qualified("CLIENT_ATTRIBUTES", defaultSchema);
+        String realmTable = SqlDialect.qualified("REALM", defaultSchema);
+        String clientAttributesTable = SqlDialect.qualified("CLIENT_ATTRIBUTES", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         // remove login theme
@@ -59,7 +58,7 @@ public class JpaUpdate22_0_0_RemoveRhssoThemesTask implements JpaMigrationTask {
                 + " OR ACCOUNT_THEME = 'keycloak'");
 
         // remove login theme from clients — Oracle needs DBMS_LOB.substr
-        String loginThemeKey = NativeSqlHelper.sqlLiteral(DefaultThemeSelectorProvider.LOGIN_THEME_KEY);
+        String loginThemeKey = dialect.literal(DefaultThemeSelectorProvider.LOGIN_THEME_KEY);
         if (dialect == SqlDialect.ORACLE) {
             stmts.add("DELETE FROM " + clientAttributesTable
                     + " WHERE NAME = " + loginThemeKey

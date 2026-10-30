@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -41,14 +40,14 @@ public class JpaUpdate19_0_0_DefaultPostLogoutRedirectUriTask implements JpaMigr
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String clientAttributesTable = NativeSqlHelper.qualified("CLIENT_ATTRIBUTES", defaultSchema);
-        String redirectUrisTable = NativeSqlHelper.qualified("REDIRECT_URIS", defaultSchema);
+        String clientAttributesTable = SqlDialect.qualified("CLIENT_ATTRIBUTES", defaultSchema);
+        String redirectUrisTable = SqlDialect.qualified("REDIRECT_URIS", defaultSchema);
         return List.of(
                 "INSERT INTO " + clientAttributesTable + " (CLIENT_ID, NAME, VALUE) "
-                        + "SELECT DISTINCT CLIENT_ID, " + NativeSqlHelper.sqlLiteral(POST_LOGOUT_REDIRECT_URIS) + ", '+' "
+                        + "SELECT DISTINCT CLIENT_ID, " + dialect.literal(POST_LOGOUT_REDIRECT_URIS) + ", '+' "
                         + "FROM " + redirectUrisTable + " WHERE CLIENT_ID NOT IN "
                         + "(SELECT CLIENT_ID FROM " + clientAttributesTable
-                        + " WHERE NAME = " + NativeSqlHelper.sqlLiteral(POST_LOGOUT_REDIRECT_URIS) + ")"
+                        + " WHERE NAME = " + dialect.literal(POST_LOGOUT_REDIRECT_URIS) + ")"
         );
     }
 }

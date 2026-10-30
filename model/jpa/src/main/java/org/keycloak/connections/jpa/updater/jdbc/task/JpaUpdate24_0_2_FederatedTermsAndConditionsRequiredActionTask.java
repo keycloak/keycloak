@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -42,9 +41,9 @@ public class JpaUpdate24_0_2_FederatedTermsAndConditionsRequiredActionTask imple
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String table = NativeSqlHelper.qualified("FED_USER_REQUIRED_ACTION", defaultSchema);
-        String newAlias = NativeSqlHelper.sqlLiteral(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
-        String legacyAlias = NativeSqlHelper.sqlLiteral(TERMS_AND_CONDITION_LEGACY_ALIAS);
+        String table = SqlDialect.qualified("FED_USER_REQUIRED_ACTION", defaultSchema);
+        String newAlias = dialect.literal(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        String legacyAlias = dialect.literal(TERMS_AND_CONDITION_LEGACY_ALIAS);
         return List.of(
                 "UPDATE " + table
                         + " SET REQUIRED_ACTION = " + newAlias

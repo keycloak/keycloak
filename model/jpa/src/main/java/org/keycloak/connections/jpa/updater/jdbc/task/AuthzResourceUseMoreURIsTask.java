@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -43,8 +42,8 @@ public class AuthzResourceUseMoreURIsTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String resourceTable = NativeSqlHelper.qualified("RESOURCE_SERVER_RESOURCE", defaultSchema);
-        String urisTable = NativeSqlHelper.qualified("RESOURCE_URIS", defaultSchema);
+        String resourceTable = SqlDialect.qualified("RESOURCE_SERVER_RESOURCE", defaultSchema);
+        String urisTable = SqlDialect.qualified("RESOURCE_URIS", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -54,8 +53,8 @@ public class AuthzResourceUseMoreURIsTask implements JpaMigrationTask {
                 String resourceId = rs.getString(1);
                 String uri = rs.getString(2);
                 stmts.add("INSERT INTO " + urisTable + " (RESOURCE_ID, VALUE) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(resourceId, dialect) + ", "
-                        + NativeSqlHelper.sqlLiteral(uri, dialect) + ")");
+                        + dialect.literal(resourceId) + ", "
+                        + dialect.literal(uri) + ")");
             }
         }
         return stmts;

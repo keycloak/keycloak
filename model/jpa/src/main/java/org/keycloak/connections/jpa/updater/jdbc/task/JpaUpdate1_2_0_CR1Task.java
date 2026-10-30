@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -44,12 +43,9 @@ public class JpaUpdate1_2_0_CR1Task implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
-        String realmClientTable = NativeSqlHelper.qualified("REALM_CLIENT", defaultSchema);
-        String trueValue = NativeSqlHelper.trueLiteral(dialect);
+        String clientTable = SqlDialect.qualified("CLIENT", defaultSchema);
+        String realmClientTable = SqlDialect.qualified("REALM_CLIENT", defaultSchema);
+        String trueValue = dialect.trueLiteral();
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -61,8 +57,8 @@ public class JpaUpdate1_2_0_CR1Task implements JpaMigrationTask {
                 String clientId = rs.getString(2);
                 stmts.add("INSERT INTO " + realmClientTable
                         + " (REALM_ID, CLIENT_ID) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                        + NativeSqlHelper.sqlLiteral(clientId) + ")");
+                        + dialect.literal(realmId) + ", "
+                        + dialect.literal(clientId) + ")");
             }
         }
         return stmts;

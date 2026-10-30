@@ -25,7 +25,6 @@ import java.util.HexFormat;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.jpa.JpaHashUtils;
@@ -52,7 +51,7 @@ public class FederatedUserAttributeTextColumnMigrationTask implements JpaMigrati
             return List.of();
         }
 
-        String table = NativeSqlHelper.qualified("FED_USER_ATTRIBUTE", defaultSchema);
+        String table = SqlDialect.qualified("FED_USER_ATTRIBUTE", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -68,8 +67,8 @@ public class FederatedUserAttributeTextColumnMigrationTask implements JpaMigrati
                             + " SET VALUE = NULL"
                             + ", LONG_VALUE_HASH = 0x" + HexFormat.of().formatHex(hash)
                             + ", LONG_VALUE_HASH_LOWER_CASE = 0x" + HexFormat.of().formatHex(hashLower)
-                            + ", LONG_VALUE = " + NativeSqlHelper.sqlLiteral(value, dialect)
-                            + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
+                            + ", LONG_VALUE = " + dialect.literal(value)
+                            + " WHERE ID = " + dialect.literal(id));
                 }
             }
         }

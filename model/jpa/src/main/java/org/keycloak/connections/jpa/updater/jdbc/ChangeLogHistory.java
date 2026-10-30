@@ -208,7 +208,7 @@ public class ChangeLogHistory {
     // -------------------------------------------------------------------------
 
     static String qualifiedName(String table, String schema) {
-        return NativeSqlHelper.qualified(table, schema);
+        return SqlDialect.qualified(table, schema);
     }
 
     /**
@@ -221,7 +221,7 @@ public class ChangeLogHistory {
         if (schema == null || schema.isBlank()) {
             return connection.getSchema();
         }
-        if (!NativeSqlHelper.SIMPLE_IDENTIFIER.matcher(schema).matches()) {
+        if (!SqlDialect.isSimpleIdentifier(schema)) {
             return schema;
         }
         java.sql.DatabaseMetaData meta = connection.getMetaData();

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -49,9 +48,9 @@ public class JpaUpdate26_8_0_IdpMapperOrganizationIdTask implements JpaMigration
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String mapperConfigTable = NativeSqlHelper.qualified("IDP_MAPPER_CONFIG", defaultSchema);
-        String mapperTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER_MAPPER", defaultSchema);
-        String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", defaultSchema);
+        String mapperConfigTable = SqlDialect.qualified("IDP_MAPPER_CONFIG", defaultSchema);
+        String mapperTable = SqlDialect.qualified("IDENTITY_PROVIDER_MAPPER", defaultSchema);
+        String idpTable = SqlDialect.qualified("IDENTITY_PROVIDER", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         Set<String> alreadyMigrated = getMappersWithOrganizationId(connection, mapperConfigTable);
@@ -73,9 +72,9 @@ public class JpaUpdate26_8_0_IdpMapperOrganizationIdTask implements JpaMigration
                     }
                     stmts.add("INSERT INTO " + mapperConfigTable
                             + " (IDP_MAPPER_ID, NAME, VALUE) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(mapperId) + ", "
-                            + NativeSqlHelper.sqlLiteral(ORGANIZATION_ID) + ", "
-                            + NativeSqlHelper.sqlLiteral(organizationId) + ")");
+                            + dialect.literal(mapperId) + ", "
+                            + dialect.literal(ORGANIZATION_ID) + ", "
+                            + dialect.literal(organizationId) + ")");
                     alreadyMigrated.add(mapperId);
                 }
             }

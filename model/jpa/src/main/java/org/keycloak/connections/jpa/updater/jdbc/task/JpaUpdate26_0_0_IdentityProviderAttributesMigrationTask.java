@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -45,41 +44,41 @@ public class JpaUpdate26_0_0_IdentityProviderAttributesMigrationTask implements 
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", defaultSchema);
-        String idpConfigTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER_CONFIG", defaultSchema);
+        String idpTable = SqlDialect.qualified("IDENTITY_PROVIDER", defaultSchema);
+        String idpConfigTable = SqlDialect.qualified("IDENTITY_PROVIDER_CONFIG", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         // Move organization id
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT c.IDENTITY_PROVIDER_ID, c.VALUE FROM " + idpConfigTable
-                        + " c WHERE c.NAME = " + NativeSqlHelper.sqlLiteral(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+                        + " c WHERE c.NAME = " + dialect.literal(OrganizationModel.ORGANIZATION_ATTRIBUTE));
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String id = rs.getString(1);
                 String value = rs.getString(2);
                 stmts.add("UPDATE " + idpTable
-                        + " SET ORGANIZATION_ID = " + NativeSqlHelper.sqlLiteral(value)
-                        + " WHERE INTERNAL_ID = " + NativeSqlHelper.sqlLiteral(id));
+                        + " SET ORGANIZATION_ID = " + dialect.literal(value)
+                        + " WHERE INTERNAL_ID = " + dialect.literal(id));
             }
         }
         stmts.add("DELETE FROM " + idpConfigTable
-                + " WHERE NAME = " + NativeSqlHelper.sqlLiteral(OrganizationModel.ORGANIZATION_ATTRIBUTE));
+                + " WHERE NAME = " + dialect.literal(OrganizationModel.ORGANIZATION_ATTRIBUTE));
 
         // Move hide on login page
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT c.IDENTITY_PROVIDER_ID, c.VALUE FROM " + idpConfigTable
-                        + " c WHERE c.NAME = " + NativeSqlHelper.sqlLiteral(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR));
+                        + " c WHERE c.NAME = " + dialect.literal(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR));
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String id = rs.getString(1);
                 boolean value = Boolean.parseBoolean(rs.getString(2));
                 stmts.add("UPDATE " + idpTable
-                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(value, dialect)
-                        + " WHERE INTERNAL_ID = " + NativeSqlHelper.sqlLiteral(id));
+                        + " SET HIDE_ON_LOGIN = " + dialect.literal(value)
+                        + " WHERE INTERNAL_ID = " + dialect.literal(id));
             }
         }
         stmts.add("DELETE FROM " + idpConfigTable
-                + " WHERE NAME = " + NativeSqlHelper.sqlLiteral(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR));
+                + " WHERE NAME = " + dialect.literal(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR));
 
         // Move kc.org.broker.public (inverted)
         try (PreparedStatement ps = connection.prepareStatement(
@@ -91,8 +90,8 @@ public class JpaUpdate26_0_0_IdentityProviderAttributesMigrationTask implements 
                 boolean orgBrokerPublic = Boolean.parseBoolean(rs.getString(2));
                 // hide_on_login is the inverse of kc.org.broker.public
                 stmts.add("UPDATE " + idpTable
-                        + " SET HIDE_ON_LOGIN = " + NativeSqlHelper.sqlLiteral(!orgBrokerPublic, dialect)
-                        + " WHERE INTERNAL_ID = " + NativeSqlHelper.sqlLiteral(id));
+                        + " SET HIDE_ON_LOGIN = " + dialect.literal(!orgBrokerPublic)
+                        + " WHERE INTERNAL_ID = " + dialect.literal(id));
             }
         }
         stmts.add("DELETE FROM " + idpConfigTable + " WHERE NAME = 'kc.org.broker.public'");

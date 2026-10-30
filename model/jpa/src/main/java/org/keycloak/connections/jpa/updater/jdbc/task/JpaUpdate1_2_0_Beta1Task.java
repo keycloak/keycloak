@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
@@ -52,12 +51,9 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
         List<String> stmts = new ArrayList<>();
         convertSocialToIdFedRealms(connection, dialect, defaultSchema, stmts);
-        convertSocialToIdFedUsers(connection, defaultSchema, stmts);
+        convertSocialToIdFedUsers(connection, dialect, defaultSchema, stmts);
         addAccessCodeLoginTimeout(defaultSchema, stmts);
         addNewAdminRoles(connection, dialect, defaultSchema, stmts);
         addDefaultProtocolMappers(session, connection, dialect, defaultSchema, stmts);
@@ -70,10 +66,10 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
 
     private void convertSocialToIdFedRealms(Connection conn, SqlDialect dialect, String schema, List<String> stmts)
             throws SQLException {
-        String realmSocialConfigTable = NativeSqlHelper.qualified("REALM_SOCIAL_CONFIG", schema);
-        String realmTable = NativeSqlHelper.qualified("REALM", schema);
-        String idpTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER", schema);
-        String idpConfigTable = NativeSqlHelper.qualified("IDENTITY_PROVIDER_CONFIG", schema);
+        String realmSocialConfigTable = SqlDialect.qualified("REALM_SOCIAL_CONFIG", schema);
+        String realmTable = SqlDialect.qualified("REALM", schema);
+        String idpTable = SqlDialect.qualified("IDENTITY_PROVIDER", schema);
+        String idpConfigTable = SqlDialect.qualified("IDENTITY_PROVIDER_CONFIG", schema);
 
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT RSC.NAME, VALUE, REALM_ID, UPDATE_PROFILE_ON_SOC_LOGIN FROM " + realmSocialConfigTable
@@ -106,22 +102,22 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                     stmts.add("INSERT INTO " + idpTable
                             + " (INTERNAL_ID, ENABLED, PROVIDER_ALIAS, PROVIDER_ID, UPDATE_PROFILE_FIRST_LOGIN,"
                             + " STORE_TOKEN, AUTHENTICATE_BY_DEFAULT, REALM_ID) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(internalId) + ", "
-                            + NativeSqlHelper.sqlLiteral(true, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(socialProviderId) + ", "
-                            + NativeSqlHelper.sqlLiteral(socialProviderId) + ", "
-                            + NativeSqlHelper.sqlLiteral(updateProfileOnSocialLogin, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(realmId) + ")");
+                            + dialect.literal(internalId) + ", "
+                            + dialect.literal(true) + ", "
+                            + dialect.literal(socialProviderId) + ", "
+                            + dialect.literal(socialProviderId) + ", "
+                            + dialect.literal(updateProfileOnSocialLogin) + ", "
+                            + dialect.literal(false) + ", "
+                            + dialect.literal(false) + ", "
+                            + dialect.literal(realmId) + ")");
                     stmts.add("INSERT INTO " + idpConfigTable
                             + " (IDENTITY_PROVIDER_ID, NAME, VALUE) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(internalId) + ", 'clientId', "
-                            + NativeSqlHelper.sqlLiteral(clientId) + ")");
+                            + dialect.literal(internalId) + ", 'clientId', "
+                            + dialect.literal(clientId) + ")");
                     stmts.add("INSERT INTO " + idpConfigTable
                             + " (IDENTITY_PROVIDER_ID, NAME, VALUE) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(internalId) + ", 'clientSecret', "
-                            + NativeSqlHelper.sqlLiteral(clientSecret) + ")");
+                            + dialect.literal(internalId) + ", 'clientSecret', "
+                            + dialect.literal(clientSecret) + ")");
                     providerInProgress = false;
                 }
             }
@@ -132,10 +128,10 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     // Social Links → Federated Identities
     // -------------------------------------------------------------------------
 
-    private void convertSocialToIdFedUsers(Connection conn, String schema, List<String> stmts)
+    private void convertSocialToIdFedUsers(Connection conn, SqlDialect dialect, String schema, List<String> stmts)
             throws SQLException {
-        String userSocialLinkTable = NativeSqlHelper.qualified("USER_SOCIAL_LINK", schema);
-        String fedIdentityTable = NativeSqlHelper.qualified("FEDERATED_IDENTITY", schema);
+        String userSocialLinkTable = SqlDialect.qualified("USER_SOCIAL_LINK", schema);
+        String fedIdentityTable = SqlDialect.qualified("FEDERATED_IDENTITY", schema);
 
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT REALM_ID, USER_ID, SOCIAL_PROVIDER, SOCIAL_USER_ID, SOCIAL_USERNAME FROM "
@@ -144,11 +140,11 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
             while (rs.next()) {
                 stmts.add("INSERT INTO " + fedIdentityTable
                         + " (REALM_ID, USER_ID, IDENTITY_PROVIDER, FEDERATED_USER_ID, FEDERATED_USERNAME) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(rs.getString("REALM_ID")) + ", "
-                        + NativeSqlHelper.sqlLiteral(rs.getString("USER_ID")) + ", "
-                        + NativeSqlHelper.sqlLiteral(rs.getString("SOCIAL_PROVIDER")) + ", "
-                        + NativeSqlHelper.sqlLiteral(rs.getString("SOCIAL_USER_ID")) + ", "
-                        + NativeSqlHelper.sqlLiteral(rs.getString("SOCIAL_USERNAME")) + ")");
+                        + dialect.literal(rs.getString("REALM_ID")) + ", "
+                        + dialect.literal(rs.getString("USER_ID")) + ", "
+                        + dialect.literal(rs.getString("SOCIAL_PROVIDER")) + ", "
+                        + dialect.literal(rs.getString("SOCIAL_USER_ID")) + ", "
+                        + dialect.literal(rs.getString("SOCIAL_USERNAME")) + ")");
             }
         }
     }
@@ -158,7 +154,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     // -------------------------------------------------------------------------
 
     private void addAccessCodeLoginTimeout(String schema, List<String> stmts) {
-        String realmTable = NativeSqlHelper.qualified("REALM", schema);
+        String realmTable = SqlDialect.qualified("REALM", schema);
         stmts.add("UPDATE " + realmTable + " SET LOGIN_LIFESPAN = 1800 WHERE LOGIN_LIFESPAN IS NULL");
     }
 
@@ -174,8 +170,8 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     private void addNewMasterAdminRoles(Connection conn, SqlDialect dialect, String schema, List<String> stmts) throws SQLException {
         String adminRoleId = getAdminRoleId(conn, schema);
         String masterRealmId = Config.getAdminRealm();
-        String realmTable = NativeSqlHelper.qualified("REALM", schema);
-        String clientTable = NativeSqlHelper.qualified("CLIENT", schema);
+        String realmTable = SqlDialect.qualified("REALM", schema);
+        String clientTable = SqlDialect.qualified("CLIENT", schema);
 
         try (PreparedStatement ps = conn.prepareStatement("SELECT NAME FROM " + realmTable);
              ResultSet rs = ps.executeQuery()) {
@@ -202,7 +198,7 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     }
 
     private String getAdminRoleId(Connection conn, String schema) throws SQLException {
-        String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", schema);
+        String roleTable = SqlDialect.qualified("KEYCLOAK_ROLE", schema);
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT ID FROM " + roleTable + " WHERE NAME = ? AND REALM = ?")) {
             ps.setString(1, AdminRoles.ADMIN);
@@ -215,8 +211,8 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
     }
 
     private void addNewRealmAdminRoles(Connection conn, SqlDialect dialect, String schema, List<String> stmts) throws SQLException {
-        String clientTable = NativeSqlHelper.qualified("CLIENT", schema);
-        String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", schema);
+        String clientTable = SqlDialect.qualified("CLIENT", schema);
+        String roleTable = SqlDialect.qualified("KEYCLOAK_ROLE", schema);
 
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT CLIENT.ID, CLIENT.REALM_ID, KEYCLOAK_ROLE.ID FROM "
@@ -238,23 +234,23 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
 
     private void addAdminRole(String schema, List<String> stmts, SqlDialect dialect, String roleName,
             String realmId, String applicationId, String realmAdminAppRoleId) {
-        String roleTable = NativeSqlHelper.qualified("KEYCLOAK_ROLE", schema);
-        String compositeRoleTable = NativeSqlHelper.qualified("COMPOSITE_ROLE", schema);
+        String roleTable = SqlDialect.qualified("KEYCLOAK_ROLE", schema);
+        String compositeRoleTable = SqlDialect.qualified("COMPOSITE_ROLE", schema);
         String newRoleId = KeycloakModelUtils.generateId();
 
         stmts.add("INSERT INTO " + roleTable
                 + " (ID, APP_REALM_CONSTRAINT, APPLICATION_ROLE, NAME, REALM_ID, APPLICATION) VALUES ("
-                + NativeSqlHelper.sqlLiteral(newRoleId) + ", "
-                + NativeSqlHelper.sqlLiteral(applicationId) + ", "
-                + NativeSqlHelper.sqlLiteral(true, dialect) + ", "
-                + NativeSqlHelper.sqlLiteral(roleName) + ", "
-                + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                + NativeSqlHelper.sqlLiteral(applicationId) + ")");
+                + dialect.literal(newRoleId) + ", "
+                + dialect.literal(applicationId) + ", "
+                + dialect.literal(true) + ", "
+                + dialect.literal(roleName) + ", "
+                + dialect.literal(realmId) + ", "
+                + dialect.literal(applicationId) + ")");
 
         stmts.add("INSERT INTO " + compositeRoleTable
                 + " (COMPOSITE, CHILD_ROLE) VALUES ("
-                + NativeSqlHelper.sqlLiteral(realmAdminAppRoleId) + ", "
-                + NativeSqlHelper.sqlLiteral(newRoleId) + ")");
+                + dialect.literal(realmAdminAppRoleId) + ", "
+                + dialect.literal(newRoleId) + ")");
     }
 
     // -------------------------------------------------------------------------
@@ -263,9 +259,9 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
 
     private void addDefaultProtocolMappers(KeycloakSession session, Connection conn, SqlDialect dialect, String schema,
             List<String> stmts) throws SQLException {
-        String clientTable = NativeSqlHelper.qualified("CLIENT", schema);
-        String protocolMapperTable = NativeSqlHelper.qualified("PROTOCOL_MAPPER", schema);
-        String protocolMapperCfgTable = NativeSqlHelper.qualified("PROTOCOL_MAPPER_CONFIG", schema);
+        String clientTable = SqlDialect.qualified("CLIENT", schema);
+        String protocolMapperTable = SqlDialect.qualified("PROTOCOL_MAPPER", schema);
+        String protocolMapperCfgTable = SqlDialect.qualified("PROTOCOL_MAPPER_CONFIG", schema);
         MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
 
         try (PreparedStatement ps = conn.prepareStatement(
@@ -281,19 +277,19 @@ public class JpaUpdate1_2_0_Beta1Task implements JpaMigrationTask {
                     String mapperId = KeycloakModelUtils.generateId();
                     stmts.add("INSERT INTO " + protocolMapperTable
                             + " (ID, PROTOCOL, NAME, CONSENT_REQUIRED, PROTOCOL_MAPPER_NAME, CLIENT_ID) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(mapperId) + ", "
-                            + NativeSqlHelper.sqlLiteral(mapper.getProtocol()) + ", "
-                            + NativeSqlHelper.sqlLiteral(mapper.getName()) + ", "
-                            + NativeSqlHelper.sqlLiteral(false, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(mapper.getProtocolMapper()) + ", "
-                            + NativeSqlHelper.sqlLiteral(clientId) + ")");
+                            + dialect.literal(mapperId) + ", "
+                            + dialect.literal(mapper.getProtocol()) + ", "
+                            + dialect.literal(mapper.getName()) + ", "
+                            + dialect.literal(false) + ", "
+                            + dialect.literal(mapper.getProtocolMapper()) + ", "
+                            + dialect.literal(clientId) + ")");
 
                     for (Map.Entry<String, String> cfgEntry : mapper.getConfig().entrySet()) {
                         stmts.add("INSERT INTO " + protocolMapperCfgTable
                                 + " (PROTOCOL_MAPPER_ID, NAME, VALUE) VALUES ("
-                                + NativeSqlHelper.sqlLiteral(mapperId) + ", "
-                                + NativeSqlHelper.sqlLiteral(cfgEntry.getKey()) + ", "
-                                + NativeSqlHelper.sqlLiteral(cfgEntry.getValue()) + ")");
+                                + dialect.literal(mapperId) + ", "
+                                + dialect.literal(cfgEntry.getKey()) + ", "
+                                + dialect.literal(cfgEntry.getValue()) + ")");
                     }
                 }
             }

@@ -25,7 +25,6 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Retry;
@@ -51,8 +50,6 @@ public class JdbcDBLockProvider implements DBLockProvider {
     private static final Logger logger = Logger.getLogger(JdbcDBLockProvider.class);
 
     static final String LOCK_TABLE_NAME = "DATABASECHANGELOGLOCK";
-
-    private static final Pattern SIMPLE_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     // 10 should be sufficient
     private final int DEFAULT_MAX_ATTEMPTS = 10;
@@ -96,7 +93,7 @@ public class JdbcDBLockProvider implements DBLockProvider {
     }
 
     private String quote(String identifier) throws SQLException {
-        if (SIMPLE_IDENTIFIER.matcher(identifier).matches()) {
+        if (SqlDialect.isSimpleIdentifier(identifier)) {
             return identifier;
         }
         String quoteString = dbConnection.getMetaData().getIdentifierQuoteString();

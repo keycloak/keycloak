@@ -245,7 +245,7 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
             return null;
         }
         // Only safe to embed when the schema is a plain identifier (no quoting needed).
-        if (!NativeSqlHelper.SIMPLE_IDENTIFIER.matcher(schema).matches()) {
+        if (!SqlDialect.isSimpleIdentifier(schema)) {
             return null;
         }
         return switch (dialect) {
@@ -254,7 +254,7 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
             case ORACLE -> "ALTER SESSION SET CURRENT_SCHEMA = " + schema;
             case H2 -> "SET SCHEMA " + schema;
             // MSSQL has no session-level schema switch; tables in the manifest are already
-            // qualified via NativeSqlHelper.qualified() for the history inserts, and full
+            // qualified via SqlDialect.qualified() for the history inserts, and full
             // schema qualification of all application DDL is not yet supported.
             default -> null;
         };

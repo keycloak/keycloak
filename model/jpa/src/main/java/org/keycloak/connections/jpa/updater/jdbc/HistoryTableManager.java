@@ -258,6 +258,6 @@ public class HistoryTableManager {
     }
 
     private static String sqlStr(SqlDialect dialect, String s, int max) {
-        return NativeSqlHelper.sqlLiteral(truncate(s, max), dialect);
+        return dialect.literal(truncate(s, max));
     }
 }

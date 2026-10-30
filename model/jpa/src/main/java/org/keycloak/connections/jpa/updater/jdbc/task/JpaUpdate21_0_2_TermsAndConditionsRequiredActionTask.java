@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -43,10 +42,10 @@ public class JpaUpdate21_0_2_TermsAndConditionsRequiredActionTask implements Jpa
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String requiredActionTable = NativeSqlHelper.qualified("REQUIRED_ACTION_PROVIDER", defaultSchema);
-        String userRequiredActionTable = NativeSqlHelper.qualified("USER_REQUIRED_ACTION", defaultSchema);
-        String newAlias = NativeSqlHelper.sqlLiteral(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
-        String legacyAlias = NativeSqlHelper.sqlLiteral(TERMS_AND_CONDITION_LEGACY_ALIAS);
+        String requiredActionTable = SqlDialect.qualified("REQUIRED_ACTION_PROVIDER", defaultSchema);
+        String userRequiredActionTable = SqlDialect.qualified("USER_REQUIRED_ACTION", defaultSchema);
+        String newAlias = dialect.literal(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        String legacyAlias = dialect.literal(TERMS_AND_CONDITION_LEGACY_ALIAS);
 
         List<String> stmts = new ArrayList<>();
         stmts.add("UPDATE " + requiredActionTable

@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
@@ -48,10 +47,10 @@ final class AbstractUserFedToComponentHelper {
      */
     static void convertFedProviderToComponent(Connection connection, String schema,
             String providerId, String newMapperType, List<String> stmts, SqlDialect dialect) throws SQLException {
-        String ufpTable = NativeSqlHelper.qualified("USER_FEDERATION_PROVIDER", schema);
-        String ufcTable = NativeSqlHelper.qualified("USER_FEDERATION_CONFIG", schema);
-        String componentTable = NativeSqlHelper.qualified("COMPONENT", schema);
-        String componentConfigTable = NativeSqlHelper.qualified("COMPONENT_CONFIG", schema);
+        String ufpTable = SqlDialect.qualified("USER_FEDERATION_PROVIDER", schema);
+        String ufcTable = SqlDialect.qualified("USER_FEDERATION_CONFIG", schema);
+        String componentTable = SqlDialect.qualified("COMPONENT", schema);
+        String componentConfigTable = SqlDialect.qualified("COMPONENT_CONFIG", schema);
 
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT ID, REALM_ID, PRIORITY, DISPLAY_NAME, FULL_SYNC_PERIOD, CHANGED_SYNC_PERIOD, LAST_SYNC"
@@ -69,12 +68,12 @@ final class AbstractUserFedToComponentHelper {
 
                     stmts.add("INSERT INTO " + componentTable
                             + " (ID, REALM_ID, PARENT_ID, NAME, PROVIDER_ID, PROVIDER_TYPE) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(id, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(realmId, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(realmId, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(displayName, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(providerId, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(UserStorageProvider.class.getName(), dialect) + ")");
+                            + dialect.literal(id) + ", "
+                            + dialect.literal(realmId) + ", "
+                            + dialect.literal(realmId) + ", "
+                            + dialect.literal(displayName) + ", "
+                            + dialect.literal(providerId) + ", "
+                            + dialect.literal(UserStorageProvider.class.getName()) + ")");
 
                     stmts.add(componentConfigInsert(componentConfigTable, id, "priority", Integer.toString(priority), dialect));
                     stmts.add(componentConfigInsert(componentConfigTable, id, "fullSyncPeriod", Integer.toString(fullSyncPeriod), dialect));
@@ -99,9 +98,9 @@ final class AbstractUserFedToComponentHelper {
 
                     // Delete the old federation config and provider records
                     stmts.add("DELETE FROM " + ufcTable
-                            + " WHERE USER_FEDERATION_PROVIDER_ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
+                            + " WHERE USER_FEDERATION_PROVIDER_ID = " + dialect.literal(id));
                     stmts.add("DELETE FROM " + ufpTable
-                            + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
+                            + " WHERE ID = " + dialect.literal(id));
                 }
             }
         }
@@ -109,10 +108,10 @@ final class AbstractUserFedToComponentHelper {
 
     private static void convertFedMapperToComponent(Connection connection, String schema,
             String parentId, String realmId, String newMapperType, List<String> stmts, SqlDialect dialect) throws SQLException {
-        String ufmTable = NativeSqlHelper.qualified("USER_FEDERATION_MAPPER", schema);
-        String ufmcTable = NativeSqlHelper.qualified("USER_FEDERATION_MAPPER_CONFIG", schema);
-        String componentTable = NativeSqlHelper.qualified("COMPONENT", schema);
-        String componentConfigTable = NativeSqlHelper.qualified("COMPONENT_CONFIG", schema);
+        String ufmTable = SqlDialect.qualified("USER_FEDERATION_MAPPER", schema);
+        String ufmcTable = SqlDialect.qualified("USER_FEDERATION_MAPPER_CONFIG", schema);
+        String componentTable = SqlDialect.qualified("COMPONENT", schema);
+        String componentConfigTable = SqlDialect.qualified("COMPONENT_CONFIG", schema);
 
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT ID, NAME, FEDERATION_MAPPER_TYPE FROM " + ufmTable
@@ -126,12 +125,12 @@ final class AbstractUserFedToComponentHelper {
 
                     stmts.add("INSERT INTO " + componentTable
                             + " (ID, REALM_ID, PARENT_ID, NAME, PROVIDER_ID, PROVIDER_TYPE) VALUES ("
-                            + NativeSqlHelper.sqlLiteral(id, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(realmId, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(parentId, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(mapperName, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(fedMapperType, dialect) + ", "
-                            + NativeSqlHelper.sqlLiteral(newMapperType, dialect) + ")");
+                            + dialect.literal(id) + ", "
+                            + dialect.literal(realmId) + ", "
+                            + dialect.literal(parentId) + ", "
+                            + dialect.literal(mapperName) + ", "
+                            + dialect.literal(fedMapperType) + ", "
+                            + dialect.literal(newMapperType) + ")");
 
                     try (PreparedStatement cfgPs = connection.prepareStatement(
                             "SELECT NAME, VALUE FROM " + ufmcTable
@@ -146,9 +145,9 @@ final class AbstractUserFedToComponentHelper {
                     }
 
                     stmts.add("DELETE FROM " + ufmcTable
-                            + " WHERE USER_FEDERATION_MAPPER_ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
+                            + " WHERE USER_FEDERATION_MAPPER_ID = " + dialect.literal(id));
                     stmts.add("DELETE FROM " + ufmTable
-                            + " WHERE ID = " + NativeSqlHelper.sqlLiteral(id, dialect));
+                            + " WHERE ID = " + dialect.literal(id));
                 }
             }
         }
@@ -158,9 +157,9 @@ final class AbstractUserFedToComponentHelper {
             String name, String value, SqlDialect dialect) {
         return "INSERT INTO " + componentConfigTable
                 + " (ID, COMPONENT_ID, NAME, VALUE) VALUES ("
-                + NativeSqlHelper.sqlLiteral(KeycloakModelUtils.generateId(), dialect) + ", "
-                + NativeSqlHelper.sqlLiteral(componentId, dialect) + ", "
-                + NativeSqlHelper.sqlLiteral(name, dialect) + ", "
-                + NativeSqlHelper.sqlLiteral(value, dialect) + ")";
+                + dialect.literal(KeycloakModelUtils.generateId()) + ", "
+                + dialect.literal(componentId) + ", "
+                + dialect.literal(name) + ", "
+                + dialect.literal(value) + ")";
     }
 }

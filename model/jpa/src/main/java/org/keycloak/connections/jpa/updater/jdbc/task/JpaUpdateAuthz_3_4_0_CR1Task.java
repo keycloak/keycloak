@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -42,13 +41,10 @@ public class JpaUpdateAuthz_3_4_0_CR1Task implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String rsTable = NativeSqlHelper.qualified("RESOURCE_SERVER", defaultSchema);
+        String rsTable = SqlDialect.qualified("RESOURCE_SERVER", defaultSchema);
         List<String> stmts = new ArrayList<>();
         for (String detail : new String[]{"RESOURCE_SERVER_POLICY", "RESOURCE_SERVER_RESOURCE", "RESOURCE_SERVER_SCOPE"}) {
-            String detailTable = NativeSqlHelper.qualified(detail, defaultSchema);
+            String detailTable = SqlDialect.qualified(detail, defaultSchema);
             stmts.add(buildUpdate(dialect, rsTable, detailTable));
         }
         return stmts;

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -43,8 +42,8 @@ public class JpaUpdate26_8_0_PopulateOrgDomainRealmIdTask implements JpaMigratio
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String orgDomainTable = NativeSqlHelper.qualified("ORG_DOMAIN", defaultSchema);
-        String orgTable = NativeSqlHelper.qualified("ORG", defaultSchema);
+        String orgDomainTable = SqlDialect.qualified("ORG_DOMAIN", defaultSchema);
+        String orgTable = SqlDialect.qualified("ORG", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -55,8 +54,8 @@ public class JpaUpdate26_8_0_PopulateOrgDomainRealmIdTask implements JpaMigratio
                 String domainId = rs.getString(1);
                 String realmId = rs.getString(2);
                 stmts.add("UPDATE " + orgDomainTable
-                        + " SET REALM_ID = " + NativeSqlHelper.sqlLiteral(realmId)
-                        + " WHERE ID = " + NativeSqlHelper.sqlLiteral(domainId));
+                        + " SET REALM_ID = " + dialect.literal(realmId)
+                        + " WHERE ID = " + dialect.literal(domainId));
             }
         }
         return stmts;

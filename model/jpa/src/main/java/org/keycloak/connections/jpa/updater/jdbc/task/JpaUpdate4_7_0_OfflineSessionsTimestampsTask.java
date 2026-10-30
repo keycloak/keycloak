@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -41,10 +40,7 @@ public class JpaUpdate4_7_0_OfflineSessionsTimestampsTask implements JpaMigratio
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String table = NativeSqlHelper.qualified("OFFLINE_USER_SESSION", defaultSchema);
+        String table = SqlDialect.qualified("OFFLINE_USER_SESSION", defaultSchema);
         int currentTime = Time.currentTime();
         return List.of(
                 "UPDATE " + table + " SET LAST_SESSION_REFRESH = " + currentTime

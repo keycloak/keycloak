@@ -36,7 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit tests for {@link JpaMigrationTaskRegistry}, {@link NativeSqlHelper},
+ * Unit tests for {@link JpaMigrationTaskRegistry}, {@link SqlDialect} SQL helpers,
  * and the {@link ChangeSetRunner} customTask dispatch.
  */
 public class JpaMigrationTaskRegistryTest {
@@ -122,81 +122,66 @@ public class JpaMigrationTaskRegistryTest {
     }
 
     // -------------------------------------------------------------------------
-    // NativeSqlHelper
+    // SqlDialect
     // -------------------------------------------------------------------------
 
     @Test
     public void testQualifiedWithSchema() {
-        Assert.assertEquals("myschema.REALM", NativeSqlHelper.qualified("REALM", "myschema"));
+        Assert.assertEquals("myschema.REALM", SqlDialect.qualified("REALM", "myschema"));
     }
 
     @Test
     public void testQualifiedWithoutSchema() {
-        Assert.assertEquals("REALM", NativeSqlHelper.qualified("REALM", null));
-        Assert.assertEquals("REALM", NativeSqlHelper.qualified("REALM", ""));
-        Assert.assertEquals("REALM", NativeSqlHelper.qualified("REALM", "   "));
+        Assert.assertEquals("REALM", SqlDialect.qualified("REALM", null));
+        Assert.assertEquals("REALM", SqlDialect.qualified("REALM", ""));
+        Assert.assertEquals("REALM", SqlDialect.qualified("REALM", "   "));
     }
 
     @Test
     public void testQualifiedOmitsSchemaThatNeedsQuoting() {
         // a schema such as "keycloak-t" is applied with Connection.setSchema, not embedded in SQL
-        Assert.assertEquals("REALM", NativeSqlHelper.qualified("REALM", "keycloak-t"));
+        Assert.assertEquals("REALM", SqlDialect.qualified("REALM", "keycloak-t"));
     }
 
     @Test
     public void testSqlLiteralNull() {
-        Assert.assertEquals("NULL", NativeSqlHelper.sqlLiteral(null));
+        Assert.assertEquals("NULL", SqlDialect.POSTGRESQL.literal(null));
     }
 
     @Test
     public void testSqlLiteralBoolean() {
-        Assert.assertEquals("TRUE", NativeSqlHelper.sqlLiteral(true));
-        Assert.assertEquals("FALSE", NativeSqlHelper.sqlLiteral(false));
+        Assert.assertEquals("TRUE", SqlDialect.POSTGRESQL.literal(true));
+        Assert.assertEquals("FALSE", SqlDialect.POSTGRESQL.literal(false));
+        Assert.assertEquals("1", SqlDialect.ORACLE.literal(true));
+        Assert.assertEquals("0", SqlDialect.MSSQL.literal(false));
     }
 
     @Test
     public void testSqlLiteralNumber() {
-        Assert.assertEquals("42", NativeSqlHelper.sqlLiteral(42));
-        Assert.assertEquals("3.14", NativeSqlHelper.sqlLiteral(3.14));
+        Assert.assertEquals("42", SqlDialect.POSTGRESQL.literal(42));
+        Assert.assertEquals("3.14", SqlDialect.POSTGRESQL.literal(3.14));
     }
 
     @Test
     public void testSqlLiteralString() {
-        Assert.assertEquals("'hello'", NativeSqlHelper.sqlLiteral("hello"));
-        Assert.assertEquals("'it''s'", NativeSqlHelper.sqlLiteral("it's"));
-    }
-
-    @Test
-    public void testIsApplicableEmptyDb() throws Exception {
-        // No REALM table → not applicable
-        Assert.assertFalse(NativeSqlHelper.isApplicable(connection, null, SqlDialect.H2));
-    }
-
-    @Test
-    public void testIsApplicableEmptyRealmTable() throws Exception {
-        try (Statement st = connection.createStatement()) {
-            st.execute("CREATE TABLE IF NOT EXISTS REALM (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
-        }
-        // REALM table exists but has no rows → not applicable
-        Assert.assertFalse(NativeSqlHelper.isApplicable(connection, null, SqlDialect.H2));
-    }
-
-    @Test
-    public void testIsApplicableWithRow() throws Exception {
-        try (Statement st = connection.createStatement()) {
-            st.execute("CREATE TABLE IF NOT EXISTS REALM (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
-            st.execute("INSERT INTO REALM VALUES ('realm-1')");
-        }
-        Assert.assertTrue(NativeSqlHelper.isApplicable(connection, null, SqlDialect.H2));
+        Assert.assertEquals("'hello'", SqlDialect.POSTGRESQL.literal("hello"));
+        Assert.assertEquals("'it''s'", SqlDialect.POSTGRESQL.literal("it's"));
+        Assert.assertEquals("'a\\b'", SqlDialect.POSTGRESQL.literal("a\\b"));
+        Assert.assertEquals("'a\\\\b'", SqlDialect.MYSQL.literal("a\\b"));
     }
 
     @Test
     public void testTaskIsApplicableDefaultsToRealmRowCheck() throws Exception {
         JpaMigrationTask task = JpaMigrationTaskRegistry.get(
                 "org.keycloak.connections.jpa.updater.liquibase.custom.RemoveDuplicateOfflineSessions");
+        // No REALM table → not applicable
         Assert.assertFalse(task.isApplicable(connection, null, SqlDialect.H2));
         try (Statement st = connection.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS REALM (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
+        }
+        // REALM table exists but has no rows → not applicable
+        Assert.assertFalse(task.isApplicable(connection, null, SqlDialect.H2));
+        try (Statement st = connection.createStatement()) {
             st.execute("INSERT INTO REALM VALUES ('realm-1')");
         }
         Assert.assertTrue(task.isApplicable(connection, null, SqlDialect.H2));

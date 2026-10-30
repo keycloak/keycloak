@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -41,8 +40,8 @@ public class JpaUpdate26_0_0_OrganizationGroupTypeTask implements JpaMigrationTa
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String groupTable = NativeSqlHelper.qualified("KEYCLOAK_GROUP", defaultSchema);
-        String orgTable = NativeSqlHelper.qualified("ORG", defaultSchema);
+        String groupTable = SqlDialect.qualified("KEYCLOAK_GROUP", defaultSchema);
+        String orgTable = SqlDialect.qualified("ORG", defaultSchema);
 
         if (dialect == SqlDialect.MYSQL || dialect == SqlDialect.MARIADB) {
             return List.of(

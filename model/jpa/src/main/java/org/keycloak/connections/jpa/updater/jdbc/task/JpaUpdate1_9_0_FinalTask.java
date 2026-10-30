@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -43,11 +42,8 @@ public class JpaUpdate1_9_0_FinalTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String fedProvidersTable = NativeSqlHelper.qualified("FED_PROVIDERS", defaultSchema);
-        String ufpTable = NativeSqlHelper.qualified("USER_FEDERATION_PROVIDER", defaultSchema);
+        String fedProvidersTable = SqlDialect.qualified("FED_PROVIDERS", defaultSchema);
+        String ufpTable = SqlDialect.qualified("USER_FEDERATION_PROVIDER", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -57,8 +53,8 @@ public class JpaUpdate1_9_0_FinalTask implements JpaMigrationTask {
                 String realmId = rs.getString(1);
                 String providerId = rs.getString(2);
                 stmts.add("UPDATE " + ufpTable
-                        + " SET REALM_ID = " + NativeSqlHelper.sqlLiteral(realmId)
-                        + " WHERE ID = " + NativeSqlHelper.sqlLiteral(providerId));
+                        + " SET REALM_ID = " + dialect.literal(realmId)
+                        + " WHERE ID = " + dialect.literal(providerId));
             }
         }
         return stmts;

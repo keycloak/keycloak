@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
@@ -45,13 +44,9 @@ public class ExtractRealmKeysFromRealmTableTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-
-        String realmTable = NativeSqlHelper.qualified("REALM", defaultSchema);
-        String componentTable = NativeSqlHelper.qualified("COMPONENT", defaultSchema);
-        String componentConfigTable = NativeSqlHelper.qualified("COMPONENT_CONFIG", defaultSchema);
+        String realmTable = SqlDialect.qualified("REALM", defaultSchema);
+        String componentTable = SqlDialect.qualified("COMPONENT", defaultSchema);
+        String componentConfigTable = SqlDialect.qualified("COMPONENT_CONFIG", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -65,27 +60,28 @@ public class ExtractRealmKeysFromRealmTableTask implements JpaMigrationTask {
 
                 stmts.add("INSERT INTO " + componentTable
                         + " (ID, REALM_ID, PARENT_ID, NAME, PROVIDER_ID, PROVIDER_TYPE) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(componentId) + ", "
-                        + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                        + NativeSqlHelper.sqlLiteral(realmId) + ", "
-                        + NativeSqlHelper.sqlLiteral("rsa") + ", "
-                        + NativeSqlHelper.sqlLiteral("rsa") + ", "
-                        + NativeSqlHelper.sqlLiteral(KeyProvider.class.getName()) + ")");
+                        + dialect.literal(componentId) + ", "
+                        + dialect.literal(realmId) + ", "
+                        + dialect.literal(realmId) + ", "
+                        + dialect.literal("rsa") + ", "
+                        + dialect.literal("rsa") + ", "
+                        + dialect.literal(KeyProvider.class.getName()) + ")");
 
-                stmts.add(componentConfigInsert(componentConfigTable, componentId, "priority", "100"));
-                stmts.add(componentConfigInsert(componentConfigTable, componentId, "privateKey", privateKeyPem));
-                stmts.add(componentConfigInsert(componentConfigTable, componentId, "certificate", certificatePem));
+                stmts.add(componentConfigInsert(componentConfigTable, componentId, "priority", "100", dialect));
+                stmts.add(componentConfigInsert(componentConfigTable, componentId, "privateKey", privateKeyPem, dialect));
+                stmts.add(componentConfigInsert(componentConfigTable, componentId, "certificate", certificatePem, dialect));
             }
         }
         return stmts;
     }
 
-    static String componentConfigInsert(String componentConfigTable, String componentId, String name, String value) {
+    static String componentConfigInsert(String componentConfigTable, String componentId, String name, String value,
+            SqlDialect dialect) {
         return "INSERT INTO " + componentConfigTable
                 + " (ID, COMPONENT_ID, NAME, VALUE) VALUES ("
-                + NativeSqlHelper.sqlLiteral(KeycloakModelUtils.generateId()) + ", "
-                + NativeSqlHelper.sqlLiteral(componentId) + ", "
-                + NativeSqlHelper.sqlLiteral(name) + ", "
-                + NativeSqlHelper.sqlLiteral(value) + ")";
+                + dialect.literal(KeycloakModelUtils.generateId()) + ", "
+                + dialect.literal(componentId) + ", "
+                + dialect.literal(name) + ", "
+                + dialect.literal(value) + ")";
     }
 }

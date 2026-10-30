@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
@@ -48,16 +47,13 @@ public class JpaUpdate14_0_0_MigrateSamlArtifactAttributeTask implements JpaMigr
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-        String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
-        String clientAttrsTable = NativeSqlHelper.qualified("CLIENT_ATTRIBUTES", defaultSchema);
+        String clientTable = SqlDialect.qualified("CLIENT", defaultSchema);
+        String clientAttrsTable = SqlDialect.qualified("CLIENT_ATTRIBUTES", defaultSchema);
         Map<String, String> clientIds = new HashMap<>(); // internal id → CLIENT_ID name
 
         String query = "SELECT C.ID, C.CLIENT_ID FROM " + clientTable + " C "
                 + "LEFT JOIN " + clientAttrsTable + " CA "
-                + "ON C.ID = CA.CLIENT_ID AND CA.NAME = " + NativeSqlHelper.sqlLiteral(SAML_ARTIFACT_BINDING_IDENTIFIER) + " "
+                + "ON C.ID = CA.CLIENT_ID AND CA.NAME = " + dialect.literal(SAML_ARTIFACT_BINDING_IDENTIFIER) + " "
                 + "WHERE C.PROTOCOL = 'saml' AND CA.NAME IS NULL";
 
         try (PreparedStatement ps = connection.prepareStatement(query);
@@ -76,9 +72,9 @@ public class JpaUpdate14_0_0_MigrateSamlArtifactAttributeTask implements JpaMigr
             String identifier = ArtifactBindingUtils.computeArtifactBindingIdentifierString(entry.getValue());
             stmts.add("INSERT INTO " + clientAttrsTable
                     + " (CLIENT_ID, NAME, VALUE) VALUES ("
-                    + NativeSqlHelper.sqlLiteral(entry.getKey()) + ", "
-                    + NativeSqlHelper.sqlLiteral(SAML_ARTIFACT_BINDING_IDENTIFIER) + ", "
-                    + NativeSqlHelper.sqlLiteral(identifier) + ")");
+                    + dialect.literal(entry.getKey()) + ", "
+                    + dialect.literal(SAML_ARTIFACT_BINDING_IDENTIFIER) + ", "
+                    + dialect.literal(identifier) + ")");
         }
         return stmts;
     }

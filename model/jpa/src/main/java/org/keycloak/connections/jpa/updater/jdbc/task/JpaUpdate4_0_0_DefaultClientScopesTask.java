@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -43,12 +42,8 @@ public class JpaUpdate4_0_0_DefaultClientScopesTask implements JpaMigrationTask 
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        if (!NativeSqlHelper.isApplicable(connection, defaultSchema, dialect)) {
-            return List.of();
-        }
-
-        String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
-        String scopeClientTable = NativeSqlHelper.qualified("CLIENT_SCOPE_CLIENT", defaultSchema);
+        String clientTable = SqlDialect.qualified("CLIENT", defaultSchema);
+        String scopeClientTable = SqlDialect.qualified("CLIENT_SCOPE_CLIENT", defaultSchema);
         List<String> stmts = new ArrayList<>();
 
         try (PreparedStatement ps = connection.prepareStatement(
@@ -61,9 +56,9 @@ public class JpaUpdate4_0_0_DefaultClientScopesTask implements JpaMigrationTask 
                 if (templateId == null || templateId.isBlank()) continue;
                 stmts.add("INSERT INTO " + scopeClientTable
                         + " (CLIENT_ID, SCOPE_ID, DEFAULT_SCOPE) VALUES ("
-                        + NativeSqlHelper.sqlLiteral(clientId.trim()) + ", "
-                        + NativeSqlHelper.sqlLiteral(templateId.trim()) + ", "
-                        + NativeSqlHelper.trueLiteral(dialect) + ")");
+                        + dialect.literal(clientId.trim()) + ", "
+                        + dialect.literal(templateId.trim()) + ", "
+                        + dialect.trueLiteral() + ")");
             }
         }
         return stmts;

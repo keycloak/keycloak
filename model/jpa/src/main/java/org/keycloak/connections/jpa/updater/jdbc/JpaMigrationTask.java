@@ -50,13 +50,25 @@ public interface JpaMigrationTask {
     String getTaskId();
 
     /**
-     * Whether this task should run at all. The default mirrors the former {@code CustomKeycloakTask}
-     * behaviour: a task is only applicable when the {@code REALM} table exists and has at least one row.
-     * This keeps tasks from querying tables that do not exist yet (export mode on an empty database) and
-     * from migrating data that is not there (initial database creation).
+     * Whether this task should run at all; checked by the runner before {@link #generateStatements}, so
+     * implementations do not need to repeat the check. The default mirrors the former
+     * {@code CustomKeycloakTask} behaviour: a task is only applicable when the {@code REALM} table exists
+     * and has at least one row. This keeps tasks from querying tables that do not exist yet (export mode
+     * on an empty database) and from migrating data that is not there (initial database creation).
      */
     default boolean isApplicable(Connection connection, String defaultSchema, SqlDialect dialect) throws SQLException {
-        return NativeSqlHelper.isApplicable(connection, defaultSchema, dialect);
+        // Check via metadata first: a failing query would abort the transaction on PostgreSQL
+        if (!ChangeLogHistory.namedTableExists(connection, defaultSchema, "REALM")) {
+            return false;
+        }
+        String sql = dialect.firstRowSql(SqlDialect.qualified("REALM", defaultSchema));
+        try (var st = connection.createStatement();
+             var rs = st.executeQuery(sql)) {
+            return rs.next();
+        } catch (SQLException e) {
+            // Table does not exist or is not accessible — not applicable
+            return false;
+        }
     }
 
     /**

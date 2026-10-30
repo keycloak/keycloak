@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -41,24 +40,24 @@ public class JpaUpdate26_4_0_SamlEncryptionAttributesTask implements JpaMigratio
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String clientTable = NativeSqlHelper.qualified("CLIENT", defaultSchema);
-        String clientAttributesTable = NativeSqlHelper.qualified("CLIENT_ATTRIBUTES", defaultSchema);
+        String clientTable = SqlDialect.qualified("CLIENT", defaultSchema);
+        String clientAttributesTable = SqlDialect.qualified("CLIENT_ATTRIBUTES", defaultSchema);
         List<String> stmts = new ArrayList<>();
         stmts.add(insertAttr(clientTable, clientAttributesTable, "saml.encryption.algorithm",
-                "http://www.w3.org/2001/04/xmlenc#aes128-cbc"));
+                "http://www.w3.org/2001/04/xmlenc#aes128-cbc", dialect));
         stmts.add(insertAttr(clientTable, clientAttributesTable, "saml.encryption.keyAlgorithm",
-                "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"));
+                "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p", dialect));
         stmts.add(insertAttr(clientTable, clientAttributesTable, "saml.encryption.digestMethod",
-                "http://www.w3.org/2000/09/xmldsig#sha1"));
+                "http://www.w3.org/2000/09/xmldsig#sha1", dialect));
         return stmts;
     }
 
     private static String insertAttr(String clientTable, String clientAttributesTable,
-            String attribute, String value) {
+            String attribute, String value, SqlDialect dialect) {
         return "INSERT INTO " + clientAttributesTable + " (CLIENT_ID, NAME, VALUE) "
-                + "SELECT ID, " + NativeSqlHelper.sqlLiteral(attribute) + ", " + NativeSqlHelper.sqlLiteral(value)
+                + "SELECT ID, " + dialect.literal(attribute) + ", " + dialect.literal(value)
                 + " FROM " + clientTable + " WHERE PROTOCOL = 'saml' AND ID NOT IN "
                 + "(SELECT CLIENT_ID FROM " + clientAttributesTable
-                + " WHERE NAME = " + NativeSqlHelper.sqlLiteral(attribute) + ")";
+                + " WHERE NAME = " + dialect.literal(attribute) + ")";
     }
 }

@@ -243,7 +243,7 @@ The existing classes extending `CustomKeycloakTask` were migrated to native Keyc
 **Behavioural changes to be aware of:**
 - `JdbcJpaUpdaterProviderFactory` (id `jdbc`) is the only `JpaUpdaterProviderFactory`; `order()` is no longer needed. It now owns the `index-creation-threshold` option (default 300000): `--spi-connections-jpa-updater--jdbc--index-creation-threshold`. The old `connections-liquibase` SPI no longer exists. `JdbcJpaUpdaterProvider` takes the threshold through its constructor.
 - `QuarkusJpaConnectionProviderFactory` imports `VERIFY_AND_RUN_MASTER_CHANGELOG` from `JdbcJpaUpdaterProvider`.
-- Schemas that are not simple identifiers (for example `keycloak-t`) are not embedded in SQL any more: `NativeSqlHelper.qualified()` omits them and the updater relies on `connection.setSchema()` (which the driver quotes). Covered by `PreserveSchemaCaseLiquibaseTest` and `JpaMigrationTaskRegistryTest#testQualifiedOmitsSchemaThatNeedsQuoting`.
+- Schemas that are not simple identifiers (for example `keycloak-t`) are not embedded in SQL any more: `SqlDialect.qualified()` omits them and the updater relies on `connection.setSchema()` (which the driver quotes). Covered by `PreserveSchemaCaseLiquibaseTest` and `JpaMigrationTaskRegistryTest#testQualifiedOmitsSchemaThatNeedsQuoting`.
 - `PropertyMappingInterceptor` used `org.apache.commons.collections4.IteratorUtils`, which only arrived transitively through Liquibase. It now chains the two iterators itself (must stay lazy: `Stream.concat` causes a `ConcurrentModificationException` during Quarkus augmentation).
 - The testsuite loggers moved from `org.keycloak.connections.jpa.updater.liquibase` to `...updater.jdbc`; `LoggingDistTest` no longer asserts on `liquibase.servicelocator`.
 - Documentation: `migrate_db.adoc` (new SPI name, no Liquibase wording) and a "Notable changes" entry in `changes-27_0_0.adoc`.
@@ -373,7 +373,7 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 - `JpaMigrationTaskRegistry` maps the 35 historic `org.keycloak.connections.jpa.updater.liquibase.custom.*` class names to fresh `JpaMigrationTask` instances, with dynamic class lookup fallback for custom tasks.
 - Tasks: `AddRealmCodeSecretTask`, `AuthzResourceUseMoreURIsTask`, `ExtractRealmKeysFromRealmTableTask`, `FederatedUserAttributeTextColumnMigrationTask`, `MigrateUserFedToComponentTask`, `PortLdapUserFedToComponentModelTask`, `RemoveDuplicateOfflineSessionsTask`, `JpaUpdateAuthz_3_4_0_CR1Task` and the `JpaUpdate<version>_*Task` classes for versions 1.2.0 (Beta1, CR1), 1.4.0, 1.9.0, 4.0.0, 4.7.0, 13.0.0, 14.0.0, 19.0.0, 21.0.2, 22.0.0, 22.0.5, 24.0.2, 25.0.0 (plain and MySQL), 26.0.0 (two), 26.2.6 (two), 26.4.0, 26.5.0, 26.6.0, 26.7.0 and 26.8.0 (four).
 - `ChangeSetRunner` looks up the task by `className`, checks `isApplicable()`, calls `generateStatements(session, connection, schema)` and sends each statement to the sink. An unknown class logs a warning and is skipped.
-- `JpaMigrationTaskRegistryTest` (19 tests) checks that every task the manifest references is registered, lookup by FQN and reflection fallback, fresh instances, `NativeSqlHelper` contracts, the `isApplicable()` contract and end-to-end dispatch through the runner.
+- `JpaMigrationTaskRegistryTest` (16 tests) checks that every task the manifest references is registered, lookup by FQN and reflection fallback, fresh instances, `SqlDialect.qualified()`, the `isApplicable()` contract and end-to-end dispatch through the runner.
 - The old `CustomKeycloakTask` classes and `ThreadLocalSessionContext` were deleted in Phase 7.
 
 ### 7.4 Resolved decisions
@@ -445,7 +445,7 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 
 ### 8.10 Schema Qualification in Exported Scripts for Complex Schema Names
 
-`NativeSqlHelper.qualified()` only embeds a schema prefix when the schema name is a plain SQL identifier (matches `[A-Za-z_][A-Za-z0-9_]*`).  When a complex schema name is used (e.g. `my-schema`), the schema is applied via `Connection.setSchema()` at runtime so that unqualified table names resolve to it; but the exported script carries no such directive.  If the consumer of the exported script runs it with a different default schema, the application tables are created in the wrong schema.
+`SqlDialect.qualified()` only embeds a schema prefix when the schema name is a plain SQL identifier (matches `[A-Za-z_][A-Za-z0-9_]*`).  When a complex schema name is used (e.g. `my-schema`), the schema is applied via `Connection.setSchema()` at runtime so that unqualified table names resolve to it; but the exported script carries no such directive.  If the consumer of the exported script runs it with a different default schema, the application tables are created in the wrong schema.
 
 - Follow-up: Before writing the first statement in `export()`, emit a dialect-specific schema-selection statement when the configured schema is complex (i.e. would not be embedded by `qualified()`).  Candidates: `USE <schema>` (MySQL, MariaDB, MSSQL), `SET search_path TO "<schema>"` (PostgreSQL), `ALTER SESSION SET CURRENT_SCHEMA = "<schema>"` (Oracle).  This ensures the exported script is self-contained regardless of the session's default schema.
 
@@ -473,8 +473,15 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
    - Extension authors using the plugin (8.1) get a new layout to document, and a custom or unknown dialect (`SqlDialect.OTHER`) needs defined behaviour.
    - Only consider this if option 4 and the cheaper options are not enough, or if the parse time of the full file proves significant at startup.
 7. **Streaming or lazy parsing.** Parse the change-set list eagerly but deserialize each step's SQL only when the change-set is pending. This only helps if most change-sets are already applied (the normal case after the first start), but it needs a custom Jackson deserializer or a two-pass read, so it is the most complex option. Prefer option 4 or 6 if this is ever needed.
+8. **Quarkus build-time pre-parsing (analogous to §8.7).** This is the most complete solution and directly parallels the `JpaMigrationTaskRegistry` optimization in §8.7. The idea is to parse `migration-manifest.json` during Quarkus augmentation (a `@BuildStep` in `KeycloakProcessor`) rather than at first runtime call, and to inject the resulting object into the application via a Quarkus `@Recorder`. Steps:
+   - The `BuildStep` reads the manifest JSON from the classpath (`MigrationManifestLoader.loadFresh()` or equivalent), optionally applying options 1–4 above at augmentation time (for example, retaining only the Quarkus-configured active dialect's SQL).
+   - The pruned `MigrationManifest` is passed to a `@Recorder` method that stores it in a static field accessed by `MigrationManifestLoader.load()` at startup.
+   - `MigrationManifestLoader` detects the pre-loaded value and skips the classpath parse entirely when it is present.
+   - At native-image time this means: no Jackson parse on the hot path, no classpath resource scan, and the active-dialect-only object graph is baked into the image heap. The full multi-dialect manifest can be omitted from the native image resource includes if `export` mode is not needed in the native binary (a separate decision).
+   - **Note:** the dialect is chosen at `kc build` time for native image, but at first `kc start` for JVM mode. The build step runs during `kc build`, so dialect-specific pruning can only be applied unconditionally for native image. For JVM mode, option 4 (runtime pruning) achieves the same heap saving without Quarkus changes.
+   - This option combines best with option 4 for JVM and with a full Quarkus build step + recorder for native image. See also §8.7, which targets the same lifecycle point for `JpaMigrationTaskRegistry`.
 
-**Suggested order if work is ever taken on:** 1 and 2 (trivial, low risk) first, then 3 together with 8.2, then 4. Treat 5 to 7 as a manifest format change that needs a version bump and a migration of the tests in `SchemaGeneratorTest` and the `model/jpa` migration tests.
+**Suggested order if work is ever taken on:** 1 and 2 (trivial, low risk) first, then 3 together with 8.2, then 4. Treat 5 to 7 as a manifest format change that needs a version bump and a migration of the tests in `SchemaGeneratorTest` and the `model/jpa` migration tests. Option 8 (Quarkus pre-parsing) is best tackled together with §8.7 since both require the same `BuildStep`/`Recorder` infrastructure in `KeycloakProcessor`.
 
 ---
 
@@ -494,7 +501,7 @@ The native engine encodes database awareness in these places:
 | **History table DDL** | `HistoryTableManager.java` | Dialect-specific CREATE TABLE / ALTER COLUMN syntax for `DATABASECHANGELOG` |
 | **Export script delimiters** | `ScriptSqlSink.java` | Dialect-specific statement terminators emitted into the exported SQL file |
 | **Locking** | `JdbcDBLockProvider` (`SqlDialect`) | Column types of `DATABASECHANGELOGLOCK` and the `SELECT ... FOR UPDATE` form. An unknown database gets **no lock** |
-| **Helpers and tasks** | `NativeSqlHelper` (row-limit syntax, boolean literals) and the tasks that branch on dialect: `FederatedUserAttributeTextColumnMigrationTask`, `JpaUpdate22_0_0_RemoveRhssoThemesTask`, `JpaUpdate26_0_0_OrganizationGroupTypeTask`, `JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollationTask`, `JpaUpdateAuthz_3_4_0_CR1Task` | Data-migration SQL that differs per database |
+| **Helpers and tasks** | `SqlDialect` (row-limit syntax, literals, schema qualification) and the tasks that branch on dialect: `FederatedUserAttributeTextColumnMigrationTask`, `JpaUpdate22_0_0_RemoveRhssoThemesTask`, `JpaUpdate26_0_0_OrganizationGroupTypeTask`, `JpaUpdate26_5_0_OrgTablesSetDefaultCharsetAndCollationTask`, `JpaUpdateAuthz_3_4_0_CR1Task` | Data-migration SQL that differs per database |
 
 The Quarkus configuration layer (`Database.Vendor`) is an orthogonal concern described separately in 9.6.
 
@@ -674,7 +681,7 @@ The following checks should be completed before considering a new dialect produc
 | `model/jpa/.../updater/jdbc/HistoryTableManager.java` | Add DDL cases for the new dialect | History table DDL may be wrong (falls to `default`) |
 | `model/jpa/.../updater/jdbc/ScriptSqlSink.java` | Add a delimiter case if the database does not use `;` | Exported script not runnable with the vendor client |
 | `model/jpa/.../lock/JdbcDBLockProvider.java` | Add cases to `createTableSql()` (column types) and `selectForUpdateSql()` | **No cluster lock** (warning only) and possibly wrong lock-table DDL |
-| `model/jpa/.../updater/jdbc/NativeSqlHelper.java` and the dialect-specific tasks listed in 9.1 | Row-limit syntax, boolean literals, and per-dialect migration SQL | Data migrations may fail on the new database |
+| `core/.../enums/SqlDialect.java` and the dialect-specific tasks listed in 9.1 | Row-limit syntax, boolean literals, and per-dialect migration SQL | Data migrations may fail on the new database |
 | `quarkus/config-api/.../database/Database.java` | Add `Vendor` constant | `--db` option won't accept the new name |
 | `quarkus/runtime/pom.xml` | Add JDBC driver dependency | Runtime `ClassNotFoundException` |
 | Changelog XML files | Add `<dbms>` precondition blocks if behaviour must differ | Same SQL for all dialects |

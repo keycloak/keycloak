@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.keycloak.connections.jpa.updater.jdbc.JpaMigrationTask;
-import org.keycloak.connections.jpa.updater.jdbc.NativeSqlHelper;
 import org.keycloak.enums.SqlDialect;
 import org.keycloak.models.KeycloakSession;
 
@@ -48,7 +47,7 @@ public class RemoveDuplicateOfflineSessionsTask implements JpaMigrationTask {
     public List<String> generateStatements(KeycloakSession session, Connection connection, String defaultSchema,
             SqlDialect dialect)
             throws SQLException {
-        String tableName = NativeSqlHelper.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
+        String tableName = SqlDialect.qualified("OFFLINE_CLIENT_SESSION", defaultSchema);
         Set<String> idsToDelete = new HashSet<>();
         List<String> stmts = new ArrayList<>();
 
@@ -84,7 +83,7 @@ public class RemoveDuplicateOfflineSessionsTask implements JpaMigrationTask {
         for (int i = 0; i < idList.size(); i += 20) {
             List<String> chunk = idList.subList(i, Math.min(i + 20, idList.size()));
             String inList = chunk.stream()
-                    .map(NativeSqlHelper::sqlLiteral)
+                    .map(dialect::literal)
                     .collect(java.util.stream.Collectors.joining(", "));
             stmts.add("DELETE FROM " + tableName + " WHERE CLIENT_SESSION_ID IN (" + inList + ")");
         }
