@@ -121,6 +121,10 @@ public class LDAPEmbeddedServer {
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
 
+    public String getBindHost() {
+        return bindHost;
+    }
+
     public int getBindPort() {
         return bindPort;
     }

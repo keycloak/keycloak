@@ -52,6 +52,8 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -105,7 +107,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
         AccessToken accessToken = auth.getToken();
-        this.identity = new KeycloakIdentity(accessToken, session, adminsRealm, true);
+        this.identity = runWithoutAuthorization(session, () -> new KeycloakIdentity(accessToken, session, adminsRealm, true, admin));
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel adminsRealm, UserModel admin) {
@@ -165,6 +167,11 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean hasOneAdminRole(RealmModel realm, String... adminRoles) {
+        // Authorization must resolve the admin's roles independently of filtered resource queries.
+        return runWithoutAuthorization(session, () -> hasOneAdminRoleUnfiltered(realm, adminRoles));
+    }
+
+    private boolean hasOneAdminRoleUnfiltered(RealmModel realm, String... adminRoles) {
         String clientId;
         RealmManager realmManager = new RealmManager(session);
         boolean masterAdminRealm = false;
@@ -390,7 +397,8 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
-            return authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class);
+            // policies resolve the admin's roles, groups and attributes, which must not be subject to query filtering
+            return runWithoutAuthorization(session, () -> authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class));
         } finally {
             session.getContext().setRealm(oldRealm);
         }
@@ -409,7 +417,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     @Override
     public boolean isAdmin() {
         if (RealmManager.isAdministrationRealm(adminsRealm)) {
-            if (identity.hasRealmRole(AdminRoles.ADMIN) || identity.hasRealmRole(AdminRoles.CREATE_REALM)) {
+            if (runWithoutAuthorization(session, () -> identity.hasRealmRole(AdminRoles.ADMIN) || identity.hasRealmRole(AdminRoles.CREATE_REALM))) {
                 return true;
             }
             return session.realms().getRealmsStream().anyMatch(this::isAdmin);
@@ -423,7 +431,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (!RealmManager.isAdministrationRealm(auth.getRealm())) {
            return false;
         }
-        return identity.hasRealmRole(AdminRoles.CREATE_REALM);
+        return runWithoutAuthorization(session, () -> identity.hasRealmRole(AdminRoles.CREATE_REALM));
     }
 
     @Override
@@ -435,6 +443,10 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public boolean isRealmAdmin() {
+        return runWithoutAuthorization(session, this::isRealmAdminUnfiltered);
+    }
+
+    private boolean isRealmAdminUnfiltered() {
         RealmModel masterRealm = getMasterRealm();
         UserModel admin = admin();
         RoleModel masterAdminRole = masterRealm.getRole(AdminRoles.ADMIN);

@@ -23,6 +23,7 @@ import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.urls.UrlType;
 
 import org.jboss.logging.Logger;
@@ -85,7 +86,10 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                                 .build());
                     }
 
-                    return new ScimRealmResource(session);
+                    // Binds the admin identity to the session, enabling fine-grained admin permission query filtering.
+                    AdminAuth auth = new AdminAuth(session, realm, accessToken, authResult.user(), client);
+
+                    return new ScimRealmResource(session, auth);
                 }
 
                 @Override

@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -1012,8 +1011,10 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         GroupRepresentation groupRep = adminRealm.groups().group(targetGroup.getId()).toRepresentation();
         assertGroupRepresentationFiltered(groupRep);
 
+        String parentPath = "/" + parent.getName();
         if (!canViewParent) {
             Assertions.assertThrows(ForbiddenException.class, () -> adminRealm.groups().group(parent.getId()).toRepresentation());
+            Assertions.assertThrows(ForbiddenException.class, () -> adminRealm.getGroupByPath(parentPath));
         }
 
         List<GroupRepresentation> listed = adminRealm.groups().groups(targetGroup.getName(), true, null, null, briefRepresentation);
@@ -1028,13 +1029,9 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         GroupRepresentation flatGroup = assertSingleGroup(flat, targetGroup.getId(), briefRepresentation);
         assertThat(flatGroup.getSubGroups(), empty());
 
-        String targetPath = "/" + parent.getName() + "/" + targetGroup.getName();
-        if (canViewParent) {
-            assertGroup(adminRealm.getGroupByPath(targetPath), targetGroup.getId(), false);
-        } else {
-            // the path cannot be resolved through a parent the caller cannot view
-            Assertions.assertThrows(NotFoundException.class, () -> adminRealm.getGroupByPath(targetPath));
-        }
+        String targetPath = parentPath + "/" + targetGroup.getName();
+        // The target group is visible even when its parent is not; path lookup must resolve it before checking its permission.
+        assertGroup(adminRealm.getGroupByPath(targetPath), targetGroup.getId(), false);
 
         List<GroupRepresentation> memberGroups = adminRealm.users().get(member.getId()).groups(null, null, briefRepresentation);
         assertSingleGroup(memberGroups, targetGroup.getId(), briefRepresentation);
