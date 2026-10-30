@@ -7,6 +7,7 @@ import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
 import { OID4VCI_SERVER_FEATURE } from "../utils/oid4vci.ts";
 import { createDefaultTrustProvider } from "../identity-providers/main.ts";
 import {
+  assertAccessTokenAlgorithmLabel,
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
   assertBrowserFlowInput,
@@ -72,6 +73,34 @@ test.describe.serial("Advanced tab test", () => {
     await assertTestClusterAvailability(page, true);
     await deleteClusterNode(page, host);
     await assertEmptyTable(page);
+  });
+
+  test("Fine grain algorithm labels and tooltips follow the selection", async ({
+    page,
+  }) => {
+    const neutral = [
+      "Access token algorithm",
+      "JWA algorithm used to authenticate access tokens. Asymmetric algorithms create digital signatures; HS algorithms create an HMAC with a realm key.",
+    ] as const;
+
+    await assertAccessTokenAlgorithmLabel(page, ...neutral);
+
+    await selectAccessTokenSignatureAlgorithm(page, "HS384");
+    await assertAccessTokenAlgorithmLabel(
+      page,
+      "Access token MAC algorithm",
+      "HS JWA algorithm used to create an HMAC for access tokens with the realm's active symmetric key.",
+    );
+
+    await selectAccessTokenSignatureAlgorithm(page, "ES384");
+    await assertAccessTokenAlgorithmLabel(
+      page,
+      "Access token signature algorithm",
+      "Asymmetric JWA algorithm used to create a digital signature for access tokens.",
+    );
+
+    await revertFineGrain(page);
+    await assertAccessTokenAlgorithmLabel(page, ...neutral);
   });
 
   test("Fine grain OpenID connect configuration", async ({ page }) => {
