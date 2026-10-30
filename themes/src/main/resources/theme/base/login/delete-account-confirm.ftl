@@ -1,32 +1,39 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
+
 <@layout.registrationLayout; section>
+<!-- template: delete-account-confirm.ftl -->
 
     <#if section = "header">
-            ${msg("deleteAccountConfirm")}
+      ${msg("deleteAccountConfirm")}
 
    <#elseif section = "form">
 
-    <form action="${url.loginAction}" class="form-vertical" method="post">
+    <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-deleteaccount-form" method="post">
 
-       <div class="alert alert-warning kc-alert-delete-account">
-           <span class="pficon pficon-warning-triangle-o"></span>
-           ${msg("irreversibleAction")}
-       </div>
+      <div class="${properties.kcAlertClass!} ${properties.kcAlertWarningClass!}">
+        <div class="${properties.kcAlertIconClass!}">
+          <i class="${properties.kcFeedbackWarningIcon!}" aria-hidden="true"></i>
+        </div>
+        <span class="${properties.kcAlertTitleClass!}">
+          ${msg("irreversibleAction")}
+        </span>
+      </div>
 
-       <p>${msg("deletingImplies")}</p>
-       <ul class="kc-delete-account-list">
-         <li>${msg("loggingOutImmediately")}</li>
-         <li>${msg("errasingData")}</li>
-       </ul>
+      <p>${msg("deletingImplies")}</p>
+      <ul class="${properties.kcListClass!}" role="list">
+        <li>${msg("loggingOutImmediately")}</li>
+        <li>${msg("errasingData")}</li>
+      </ul>
 
-        <p class="delete-account-text">${msg("finalDeletionConfirmation")}</p>
+      <p class="delete-account-text">${msg("finalDeletionConfirmation")}</p>
 
-      <div id="kc-form-buttons">
-            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doConfirmDelete")}" />
-            <#if triggered_from_aia>
-            <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} kc-delete-account-cancel" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
-            </#if>
-       </div>
+      <@buttons.actionGroup>
+        <@buttons.button id="kc-submit" label="doConfirmDelete"/>
+        <#if triggered_from_aia>
+          <@buttons.button id="kc-cancel" name="cancel-aia" label="doCancel" type="secondary"/>
+        </#if>
+      </@buttons.actionGroup>
     </form>
    </#if>
 

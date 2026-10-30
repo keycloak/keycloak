@@ -205,6 +205,23 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== Login pages moved from `keycloak.v2` into the Base theme
+// https://github.com/keycloak/keycloak/issues/52723
+
+The `keycloak.v2` login theme no longer contains any templates. It keeps its theme properties and resources, and every page as well as the layout (`template.ftl`) now renders from the Base theme.
+
+Field and action-button markup lives in the Base macros `field.ftl` and `buttons.ftl`, and all CSS classes come from theme properties. To restyle fields or buttons, override these macros or the relevant properties instead of copying whole pages.
+
+Custom themes that extend `keycloak.v2` and override individual pages are not affected by the move, but they no longer receive changes made to those pages in Base.
+
+=== Previous Base login theme available as `base-legacy`
+// https://github.com/keycloak/keycloak/issues/52723
+
+The previous Base login pages are available as the deprecated `base-legacy` login theme, and the `keycloak` login theme now extends it.
+Custom login themes that extend Base directly render the new markup after the upgrade.
+To keep the previous markup, change `parent=base` to `parent=base-legacy` in the `theme.properties` of the login theme.
+The `base-legacy` theme receives only security fixes and will be removed in a future release.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

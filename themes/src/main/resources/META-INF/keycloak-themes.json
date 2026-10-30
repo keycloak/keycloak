@@ -3,6 +3,9 @@
         "name" : "base",
         "types": [ "admin", "account", "login", "email" ]
     }, {
+        "name" : "base-legacy",
+        "types": [ "login" ]
+    }, {
         "name" : "keycloak",
         "types": [ "login", "common", "email", "welcome" ]
     }, {

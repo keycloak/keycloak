@@ -169,7 +169,7 @@ public class LoginForm extends Form {
         @FindBy(id = "totpSecret")
         private WebElement totpSecret;
 
-        @FindBy(xpath = ".//input[@value='Submit']")
+        @FindBy(id = "saveTOTPBtn")
         private WebElement submit;
 
         public void setTotp(String value) {
