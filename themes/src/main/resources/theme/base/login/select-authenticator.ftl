@@ -14,8 +14,10 @@
                 <form id="kc-select-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
                     <input type="hidden" name="authenticationExecution" value="${authenticationSelection.authExecId}">
                 </form>
-                <div role="button" class="${properties.kcSelectAuthListItemClass!}" onclick="document.forms[${authenticationSelection?index}].requestSubmit()" tabindex="0">
-                    <div class="pf-v5-c-data-list__item-content pf-v5-u-flex-wrap-wrap">
+                <div role="button" class="${properties.kcSelectAuthListItemClass!}" tabindex="0"
+                     onclick="this.closest('li').querySelector('form').requestSubmit()"
+                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">
+                    <div class="${properties.kcSelectAuthListItemContentClass!}">
                         <div class="${properties.kcSelectAuthListItemIconClass!}">
                             <i class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
                         </div>

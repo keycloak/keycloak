@@ -1,9 +1,9 @@
 <#macro templates>
     <template id="errorTemplate">
-        <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-            <div class="${properties.kcInputHelperTextClass}">
-                <div class="${properties.kcInputHelperTextItemClass} ${properties.kcError}">
-                    <ul class="${properties.kcInputErrorMessageClass}">
+        <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
+            <div class="${properties.kcInputHelperTextClass!}">
+                <div class="${properties.kcInputHelperTextItemClass!} ${properties.kcError!}">
+                    <ul class="${properties.kcInputErrorMessageClass!}">
                     </ul>
                 </div>
             </div>

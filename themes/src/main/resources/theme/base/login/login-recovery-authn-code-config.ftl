@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
 <!-- template: login-recovery-authn-code-config.ftl -->
 <#if section = "header">
@@ -8,7 +9,7 @@
     <!-- warning -->
     <div class="${properties.kcRecoveryCodesWarning!}" aria-label="Warning alert">
         <div class="${properties.kcAlertIconClass!}">
-            <i class="fas fa-fw fa-bell" aria-hidden="true"></i>
+            <i class="${properties.kcRecoveryCodesWarningIconClass!}" aria-hidden="true"></i>
         </div>
         <h4 class="${properties.kcAlertTitleClass!}">
             <span class="pf-screen-reader">Warning alert:</span>
@@ -33,48 +34,39 @@
 
     <!-- actions -->
     <div class="${properties.kcRecoveryCodesActions!}">
-        <button id="printRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="printRecoveryCodes()">
-            <i class="fas fa-print"></i> ${msg("recovery-codes-print")}
+        <button id="printRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass!}" type="button" onclick="printRecoveryCodes()">
+            <i class="${properties.kcPrintIconClass!}" aria-hidden="true"></i> ${msg("recovery-codes-print")}
         </button>
-        <button id="downloadRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="downloadRecoveryCodes()">
-            <i class="fas fa-download"></i> ${msg("recovery-codes-download")}
+        <button id="downloadRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass!}" type="button" onclick="downloadRecoveryCodes()">
+            <i class="${properties.kcDownloadIconClass!}" aria-hidden="true"></i> ${msg("recovery-codes-download")}
         </button>
-        <button id="copyRecoveryCodes" class="${properties.kcButtonLinkClass}" type="button" onclick="copyRecoveryCodes()">
-            <i class="fas fa-copy"></i> ${msg("recovery-codes-copy")}
+        <button id="copyRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass!}" type="button" onclick="copyRecoveryCodes()">
+            <i class="${properties.kcCopyIconClass!}" aria-hidden="true"></i> ${msg("recovery-codes-copy")}
         </button>
     </div>
 
     <!-- confirmation checkbox -->
-    <div class="${properties.kcFormOptionsClass!} pf-v5-u-mt-md">
+    <div class="${properties.kcFormOptionsClass!} ${properties.kcMarginTopClass!}">
         <input class="${properties.kcCheckInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
         onchange="document.getElementById('saveRecoveryAuthnCodesBtn').disabled = !this.checked;"
         />
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
     </div>
 
-    <form action="${url.loginAction}" class="${properties.kcFormGroupClass!}" id="kc-recovery-codes-settings-form" method="post">
+    <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-recovery-codes-settings-form" method="post">
         <input type="hidden" name="generatedRecoveryAuthnCodes" value="${recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesAsString}" />
         <input type="hidden" name="generatedAt" value="${recoveryAuthnCodesConfigBean.generatedAt?c}" />
         <input type="hidden" id="userLabel" name="userLabel" value="${msg("recovery-codes-label-default")}" />
         <@passwordCommons.logoutOtherSessions/>
 
-        <#if isAppInitiatedAction??>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-            <button type="submit"
-                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} pf-m-link"
-                id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" value="true">${msg("recovery-codes-action-cancel")}
-            </button>
-        <#else>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-        </#if>
+        <@buttons.actionGroup horizontal=isAppInitiatedAction?? id="kc-form-buttons">
+            <#if isAppInitiatedAction??>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" fullWidth=false class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
+                <@buttons.button id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" label="recovery-codes-action-cancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" />
+            <#else>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
+            </#if>
+        </@buttons.actionGroup>
     </form>
 
     <script>

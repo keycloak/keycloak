@@ -6,16 +6,18 @@
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
   </#assign>
   <@field.group name="username" label=label>
-    <div class="${properties.kcInputGroup}">
-      <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
-        <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">
+    <div class="${properties.kcInputGroup!}">
+      <div class="${properties.kcInputGroupItemClass!} ${properties.kcFill!}">
+        <span class="${properties.kcInputClass!} ${properties.kcFormReadOnlyClass!}">
           <input id="kc-attempted-username" value="${auth.attemptedUsername}" readonly>
         </span>
       </div>
-      <div class="${properties.kcInputGroupItemClass}">
-        <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" 
+      <div class="${properties.kcInputGroupItemClass!}">
+        <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass!} kc-login-tooltip" type="button" 
               aria-label="${msg('restartLoginTooltip')}" onclick="location.href='${url.loginRestartFlowUrl}'">
+            <#if properties.kcButtonIconClass?has_content><span class="${properties.kcButtonIconClass!}"></#if>
             <i class="fa-sync-alt fas" aria-hidden="true"></i>
+            <#if properties.kcButtonIconClass?has_content></span></#if>
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
       </div>
@@ -68,7 +70,7 @@
     <#if darkMode>
       <script type="module" async blocking="render">
           <#outputformat "JavaScript">
-          const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
+          const DARK_MODE_CLASS = ${(properties.kcDarkModeClass!"")?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
@@ -99,6 +101,7 @@
         </#list>
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
+    <#global passwordVisibilityScriptLoaded=true>
     <script type="module">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
@@ -151,9 +154,9 @@
 <body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
-    <header id="kc-header" class="pf-v5-c-login__header">
+    <header id="kc-header" class="${properties.kcLoginHeader!}">
       <div id="kc-header-wrapper"
-              class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+              class="${properties.kcLoginBrand!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </header>
     <main class="${properties.kcLoginMain!}">
       <div class="${properties.kcLoginMainHeader!}">
@@ -175,10 +178,10 @@
                 </option>
               </#list>
             </select>
-            <span class="${properties.kcFormControlUtilClass}">
+            <span class="${properties.kcFormControlUtilClass!}">
               <span class="${properties.kcFormControlToggleIcon!}">
                 <svg
-                  class="pf-v5-svg"
+                  class="${properties.kcSvgIconClass!}"
                   viewBox="0 0 320 512"
                   fill="currentColor"
                   aria-hidden="true"
@@ -216,13 +219,13 @@
                           <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
                         </span>
                     </div>
-                    <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
+                    <div class="${properties.kcFormClass!} ${properties.kcContentWrapperClass!}">
                         <#nested "show-username">
                         <@username />
                     </div>
                 </div>
             <#else>
-                <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
+                <div class="${properties.kcFormClass!} ${properties.kcContentWrapperClass!}">
                   <#nested "show-username">
                   <@username />
                 </div>
@@ -232,7 +235,7 @@
         <#-- App-initiated actions should not see warning messages about the need to complete the action -->
         <#-- during login.                                                                               -->
         <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
-            <div class="${properties.kcAlertClass!} pf-m-${(message.type = 'error')?then('danger', message.type)}">
+            <div class="${properties.kcAlertClass!} ${properties['kcAlert' + message.type?cap_first + 'Class']!}">
                 <div class="${properties.kcAlertIconClass!}">
                     <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
                     <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
@@ -249,7 +252,7 @@
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>
               <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
-                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                  class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
                     ${msg("doTryAnotherWay")}
               </a>
           </form>
@@ -259,7 +262,7 @@
           <form id="kc-switch-organization-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="switchOrganization" value="true"/>
               <a id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()"
-                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                  class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
                     ${msg("doSwitchOrganization")}
               </a>
           </form>
@@ -269,7 +272,7 @@
               <#nested "socialProviders">
 
               <#if displayInfo>
-                  <div id="kc-info" class="${properties.kcLoginMainFooterBand!} ${properties.kcFormClass}">
+                  <div id="kc-info" class="${properties.kcLoginMainFooterBand!} ${properties.kcFormClass!}">
                       <div id="kc-info-wrapper" class="${properties.kcLoginMainFooterBandItem!}">
                           <#nested "info">
                       </div>
