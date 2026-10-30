@@ -33,6 +33,7 @@ import org.keycloak.cookie.CookieType;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -531,6 +532,37 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("dev", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
+    }
+
+    @Test
+    public void testBuildIgnoresPersistedOptionsWhenEnablingMappers() {
+        build("build", "--db=dev-file", "--metrics-enabled=true");
+
+        // metrics are not enabled for this build, so the options that depend on them must not be enabled by the persisted value
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--http-metrics-histograms-enabled=true");
+        assertError(nonRunningPicocli, "Disabled option: '--http-metrics-histograms-enabled'. Available only when metrics are enabled");
+    }
+
+    @Test
+    public void testAutoBuildIgnoresPersistedOptionsWhenEnablingMappers() {
+        build("build", "--db=dev-file", "--metrics-enabled=true");
+
+        // the implicit build will not have metrics enabled, so the dependent option must not be enabled by the persisted value
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--http-metrics-histograms-enabled=true");
+        assertError(nonRunningPicocli, "Disabled option: '--http-metrics-histograms-enabled'. Available only when metrics are enabled");
+    }
+
+    @Test
+    public void testBuildIgnoresPersistedFeatures() {
+        build("build", "--db=dev-file", "--features=token-exchange");
+
+        // the persisted features must not influence the artifacts selected for the new build
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--db=dev-file", "--features=token-exchange,client-admin-api:v2");
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.reaug);
+        assertTrue(Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2));
+        assertThat(System.getProperty(Build.QUARKUS_REMOVED_ARTIFACTS_PROPERTY),
+                not(containsString("io.quarkus:quarkus-hibernate-validator")));
     }
 
     /**
