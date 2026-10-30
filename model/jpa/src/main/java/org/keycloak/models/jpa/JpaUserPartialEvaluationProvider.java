@@ -38,12 +38,15 @@ import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationConte
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.common.Profile;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 /**
@@ -96,8 +99,21 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
         EntityManager em = getEntityManager();
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        if (allowedGroups.contains(GROUPS_RESOURCE_TYPE)) {
-            return cb.exists(createUserMembershipSubquery(context));
+        boolean allowGroups = allowedGroups.contains(GROUPS_RESOURCE_TYPE);
+        boolean allowOrganizations = allowedGroups.contains(ORGANIZATIONS_RESOURCE_TYPE);
+
+        if (allowGroups || allowOrganizations) {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (allowGroups) {
+                predicates.add(cb.exists(createUserMembershipSubquery(context)));
+            }
+
+            if (allowOrganizations) {
+                predicates.add(cb.exists(createOrganizationMembershipSubquery(context)));
+            }
+
+            return cb.or(predicates);
         }
 
         return cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
@@ -108,27 +124,70 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
         Set<String> allowedGroups = context.getAllowedGroups();
         Set<String> deniedGroups = context.getDeniedGroups();
 
-        if (deniedGroups.contains(GROUPS_RESOURCE_TYPE)) {
-            // no access granted to group resources
-            Predicate notMembers = cb.not(cb.exists(createUserMembershipSubquery(context)));
+        boolean denyGroups = deniedGroups.contains(GROUPS_RESOURCE_TYPE);
+        boolean denyOrganizations = deniedGroups.contains(ORGANIZATIONS_RESOURCE_TYPE);
 
-            // access denied for the group resource type
+        if (denyGroups || denyOrganizations) {
+            List<Predicate> notMembersPredicates = new ArrayList<>();
+
+            if (denyGroups) {
+                notMembersPredicates.add(cb.not(cb.exists(createUserMembershipSubquery(context))));
+            }
+
+            if (denyOrganizations) {
+                notMembersPredicates.add(cb.not(cb.exists(createOrganizationMembershipSubquery(context))));
+            }
+
+            Predicate notMembers = cb.or(notMembersPredicates);
+
+            // access denied for the group/organization resource type
             if (context.isResourceTypeAllowed()) {
-                // access granted to all resources
+                // access granted to all user resources
                 if (allowedGroups.isEmpty()) {
                     if (context.getDeniedGroupIds().isEmpty()) {
-                        // filter group members but allow
-                        return cb.and(cb.or(notMembers, context.inPredicate(context.getPath().get("id"), context.getAllowedResourceIds())));
+                        // Filter the affected members but keep explicitly allowed users.
+                        return cb.and(
+                                cb.or(notMembers, context.inPredicate(context.getPath().get("id"), context.getAllowedResourceIds()))
+                        );
                     }
 
                     return notMembers;
                 }
 
-                Predicate onlySpecificGroups = cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
+                Predicate onlySpecificGroups;
+
+                if (allowedGroups.contains(GROUPS_RESOURCE_TYPE)) {
+                    onlySpecificGroups = cb.exists(createUserMembershipSubquery(context));
+                } else if (allowedGroups.contains(ORGANIZATIONS_RESOURCE_TYPE)) {
+                    onlySpecificGroups = cb.exists(createOrganizationMembershipSubquery(context));
+                } else {
+                    onlySpecificGroups = cb.exists(
+                            createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups))
+                    );
+                }
+
                 return cb.and(cb.or(notMembers, onlySpecificGroups));
             }
 
-            return cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandGroupsToDescendants(context.getDeniedGroupIds())))));
+            if (denyGroups) {
+                Set<String> expandedDenied = expandGroupsToDescendants(context.getDeniedGroupIds());
+
+                return cb.not(
+                        cb.exists(
+                                createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandedDenied))
+                        )
+                );
+            }
+
+            Set<String> deniedOrganizationIds = new HashSet<>(deniedGroups);
+            deniedOrganizationIds.remove(ORGANIZATIONS_RESOURCE_TYPE);
+
+            if (deniedOrganizationIds.isEmpty()) {
+                return notMembers;
+            }
+
+            Set<String> expandedDenied = expandGroupsToDescendants(deniedOrganizationIds);
+            return cb.not(cb.exists(createUserMembershipSubquery(context, membership -> context.inPredicate(membership.get("groupId"), expandedDenied))));
         }
 
         if (context.getAllowedResources().isEmpty() && (allowedGroups.isEmpty() || context.deniedResources().contains(USERS_RESOURCE_TYPE))) {
@@ -172,6 +231,56 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
         finalPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
 
         subquery.where(finalPredicates.toArray(Predicate[]::new));
+
+        return subquery;
+    }
+
+    private Subquery<?> createOrganizationMembershipSubquery(PartialEvaluationContext context) {
+        return createOrganizationMembershipSubquery(context, null);
+    }
+
+    private Subquery<?> createOrganizationMembershipSubquery(PartialEvaluationContext context, Function<Root<GroupEntity>, Predicate> predicate) {
+        EntityManager em = getEntityManager();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<?> query = context.criteriaQuery();
+
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<UserGroupMembershipEntity> membership =
+                subquery.from(UserGroupMembershipEntity.class);
+        Root<GroupEntity> group = subquery.from(GroupEntity.class);
+
+        subquery.select(cb.literal(1));
+
+        Path<?> userRoot = context.getPath();
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(
+                cb.equal(
+                        membership.get("user").get("id"),
+                        userRoot.get("id")
+                )
+        );
+
+        predicates.add(
+                cb.equal(
+                        membership.get("groupId"),
+                        group.get("id")
+                )
+        );
+
+        predicates.add(
+                cb.equal(
+                        group.get("type"),
+                        GroupModel.Type.ORGANIZATION.intValue()
+                )
+        );
+
+        if (predicate != null) {
+            predicates.add(predicate.apply(group));
+        }
+
+        subquery.where(predicates.toArray(Predicate[]::new));
 
         return subquery;
     }
