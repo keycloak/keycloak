@@ -24,15 +24,15 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@NamedQueries({
-        @NamedQuery(name="deleteResourceAttributesByNameAndResource", query="delete from ResourceAttributeEntity attr where attr.resource.id = :resourceId and attr.name = :name")
+@NamedStatements({
+        @NamedStatement(name="deleteResourceAttributesByNameAndResource", statement="delete from ResourceAttributeEntity attr where attr.resource.id = :resourceId and attr.name = :name")
 })
 @Table(name="RESOURCE_ATTRIBUTE")
 @Entity

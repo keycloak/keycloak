@@ -26,6 +26,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
@@ -84,24 +86,6 @@ import org.hibernate.annotations.Nationalized;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.ownerId = :ownerId"
                         + "   AND e.correlationId = :correlationId"),
-        // Race-safe enqueue. The ON CONFLICT DO NOTHING clause (HQL,
-        // available since Hibernate 6.5) makes the unique-constraint
-        // dedup happen at the storage engine — concurrent inserts of
-        // the same (entryKind, ownerId, correlationId) triple from
-        // sibling nodes silently no-op instead of throwing
-        // ConstraintViolationException and marking the JTA transaction
-        // rollback-only. executeUpdate() returns 0 on conflict, 1 on
-        // successful insert; the caller distinguishes via that count
-        // and re-fetches via findByOwnerAndCorrelationId on conflict
-        // to return the racing row's id. See OutboxStore#enqueueInStatus.
-        @NamedQuery(
-                name = "OutboxEntryEntity.insertIfAbsent",
-                query = "INSERT INTO OutboxEntryEntity"
-                        + " (id, entryKind, realmId, ownerId, containerId, correlationId,"
-                        + "  entryType, payload, metadata, status, attempts, nextAttemptAt, createdAt)"
-                        + " VALUES (:id, :entryKind, :realmId, :ownerId, :containerId, :correlationId,"
-                        + "         :entryType, :payload, :metadata, :status, :attempts, :nextAttemptAt, :createdAt)"
-                        + " ON CONFLICT (entryKind, ownerId, correlationId) DO NOTHING"),
         @NamedQuery(
                 name = "OutboxEntryEntity.countByEntryKindRealmAndStatus",
                 query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"
@@ -126,77 +110,6 @@ import org.hibernate.annotations.Nationalized;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.ownerId = :ownerId"
                         + " GROUP BY e.status"),
-        // Bulk DML primitives — all scoped on (feature) so multi-consumer
-        // tables stay isolated.
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindAndRealm",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind AND e.realmId = :realmId"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatus",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.realmId = :realmId"
-                        + "   AND e.status = :status"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatusOlderThan",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.realmId = :realmId"
-                        + "   AND e.status = :status"
-                        + "   AND e.createdAt < :olderThan"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindAndOwner",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind AND e.ownerId = :ownerId"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatus",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.ownerId = :ownerId"
-                        + "   AND e.status = :status"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatusOlderThan",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.ownerId = :ownerId"
-                        + "   AND e.status = :status"
-                        + "   AND e.createdAt < :olderThan"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndRealm",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.realmId = :realmId"
-                        + "   AND e.status IN :statuses"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndOwner",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.ownerId = :ownerId"
-                        + "   AND e.status IN :statuses"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanDelivered",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.status = :status"
-                        + "   AND e.deliveredAt < :olderThan"),
-        @NamedQuery(
-                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanCreated",
-                query = "DELETE FROM OutboxEntryEntity e"
-                        + " WHERE e.entryKind = :entryKind"
-                        + "   AND e.status = :status"
-                        + "   AND e.createdAt < :olderThan"),
-        // Backstop: promote rows that have been waiting too long to a
-        // terminal state so the dead-letter retention purge can sweep
-        // them. Bumps neither attempts nor deliveredAt — these rows
-        // never actually retried; they aged out.
-        @NamedQuery(
-                name = "OutboxEntryEntity.promoteStaleQueuedToDeadLetter",
-                query = "UPDATE OutboxEntryEntity e"
-                        + "    SET e.status = :dead, e.lastError = :reason"
-                        + "  WHERE e.entryKind = :entryKind"
-                        + "    AND e.status IN :statuses"
-                        + "    AND e.createdAt < :olderThan"),
         // Receiver-driven read paths (e.g. SSF POLL endpoint). The
         // per-owner read is on-demand — no next_attempt_at gate; the
         // ack/nack lookup additionally filters by correlation id set
@@ -220,35 +133,126 @@ import org.hibernate.annotations.Nationalized;
                 query = "SELECT COUNT(e) FROM OutboxEntryEntity e"
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status")
+})
+@NamedStatements({
+        // Race-safe enqueue. The ON CONFLICT DO NOTHING clause (HQL,
+        // available since Hibernate 6.5) makes the unique-constraint
+        // dedup happen at the storage engine — concurrent inserts of
+        // the same (entryKind, ownerId, correlationId) triple from
+        // sibling nodes silently no-op instead of throwing
+        // ConstraintViolationException and marking the JTA transaction
+        // rollback-only. executeUpdate() returns 0 on conflict, 1 on
+        // successful insert; the caller distinguishes via that count
+        // and re-fetches via findByOwnerAndCorrelationId on conflict
+        // to return the racing row's id. See OutboxStore#enqueueInStatus.
+        @NamedStatement(
+                name = "OutboxEntryEntity.insertIfAbsent",
+                statement= "INSERT INTO OutboxEntryEntity"
+                        + " (id, entryKind, realmId, ownerId, containerId, correlationId,"
+                        + "  entryType, payload, metadata, status, attempts, nextAttemptAt, createdAt)"
+                        + " VALUES (:id, :entryKind, :realmId, :ownerId, :containerId, :correlationId,"
+                        + "         :entryType, :payload, :metadata, :status, :attempts, :nextAttemptAt, :createdAt)"
+                        + " ON CONFLICT (entryKind, ownerId, correlationId) DO NOTHING"),
+        // Bulk DML primitives — all scoped on (feature) so multi-consumer
+        // tables stay isolated.
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindAndRealm",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind AND e.realmId = :realmId"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatus",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
                         + "   AND e.status = :status"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatusOlderThan",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindAndOwner",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind AND e.ownerId = :ownerId"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatus",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatusOlderThan",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndRealm",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + "   AND e.status IN :statuses"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndOwner",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status IN :statuses"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanDelivered",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.deliveredAt < :olderThan"),
+        @NamedStatement(
+                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanCreated",
+                statement= "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        // Backstop: promote rows that have been waiting too long to a
+        // terminal state so the dead-letter retention purge can sweep
+        // them. Bumps neither attempts nor deliveredAt — these rows
+        // never actually retried; they aged out.
+        @NamedStatement(
+                name = "OutboxEntryEntity.promoteStaleQueuedToDeadLetter",
+                statement= "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.status IN :statuses"
+                        + "    AND e.createdAt < :olderThan"),
         // Owner-scoped lifecycle: pause/resume, disable, narrowed
         // type allow-list. Drives consumer-side lifecycle operations
         // such as SSF stream pause / resume / disable / events_requested
         // narrowing.
-        @NamedQuery(
+        @NamedStatement(
                 name = "OutboxEntryEntity.releaseHeldForOwner",
-                query = "UPDATE OutboxEntryEntity e"
+                statement= "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :pending, e.nextAttemptAt = :now"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :held"),
-        @NamedQuery(
+        @NamedStatement(
                 name = "OutboxEntryEntity.holdPendingForOwner",
-                query = "UPDATE OutboxEntryEntity e"
+                statement= "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :held"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status = :pending"),
-        @NamedQuery(
+        @NamedStatement(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwner",
-                query = "UPDATE OutboxEntryEntity e"
+                statement= "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :dead, e.lastError = :reason"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
                         + "    AND e.status IN :statuses"),
-        @NamedQuery(
+        @NamedStatement(
                 name = "OutboxEntryEntity.deadLetterQueuedForOwnerNotMatchingTypes",
-                query = "UPDATE OutboxEntryEntity e"
+                statement= "UPDATE OutboxEntryEntity e"
                         + "    SET e.status = :dead, e.lastError = :reason"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.ownerId = :ownerId"
@@ -259,9 +263,9 @@ import org.hibernate.annotations.Nationalized;
         // (DELIVERED, DEAD_LETTER) are left alone — they're audit/dedup
         // artifacts of the previous channel and migrating them would
         // confuse correlation-id dedup on the new channel.
-        @NamedQuery(
+        @NamedStatement(
                 name = "OutboxEntryEntity.migrateEntryKindForOwner",
-                query = "UPDATE OutboxEntryEntity e"
+                statement= "UPDATE OutboxEntryEntity e"
                         + "    SET e.entryKind = :newKind"
                         + "  WHERE e.entryKind = :currentKind"
                         + "    AND e.ownerId = :ownerId"

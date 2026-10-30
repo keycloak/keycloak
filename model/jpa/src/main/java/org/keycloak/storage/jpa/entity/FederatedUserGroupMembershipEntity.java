@@ -25,6 +25,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.KeyUtils;
@@ -37,13 +39,14 @@ import org.keycloak.storage.jpa.KeyUtils;
         @NamedQuery(name="feduserMemberOf", query="select m from FederatedUserGroupMembershipEntity m where m.userId = :userId and m.groupId = :groupId"),
         @NamedQuery(name="feduserGroupMembership", query="select m from FederatedUserGroupMembershipEntity m where m.userId = :userId"),
         @NamedQuery(name="fedgroupMembership", query="select g.userId from FederatedUserGroupMembershipEntity g where g.groupId = :groupId and g.realmId = :realmId"),
-        @NamedQuery(name="feduserGroupIds", query="select m.groupId from FederatedUserGroupMembershipEntity m where m.userId = :userId"),
-        @NamedQuery(name="deleteFederatedUserGroupMembershipByRealm", query="delete from  FederatedUserGroupMembershipEntity mapping where mapping.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserGroupMembershipByStorageProvider", query="delete from FederatedUserGroupMembershipEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserGroupMembershipsByRealmAndLink", query="delete from  FederatedUserGroupMembershipEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
-        @NamedQuery(name="deleteFederatedUserGroupMembershipsByGroup", query="delete from FederatedUserGroupMembershipEntity m where m.groupId = :groupId"),
-        @NamedQuery(name="deleteFederatedUserGroupMembershipsByUser", query="delete from FederatedUserGroupMembershipEntity m where m.userId = :userId and m.realmId = :realmId")
-
+        @NamedQuery(name="feduserGroupIds", query="select m.groupId from FederatedUserGroupMembershipEntity m where m.userId = :userId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserGroupMembershipByRealm", statement="delete from  FederatedUserGroupMembershipEntity mapping where mapping.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUserGroupMembershipByStorageProvider", statement="delete from FederatedUserGroupMembershipEntity e where e.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUserGroupMembershipsByRealmAndLink", statement="delete from  FederatedUserGroupMembershipEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
+        @NamedStatement(name="deleteFederatedUserGroupMembershipsByGroup", statement="delete from FederatedUserGroupMembershipEntity m where m.groupId = :groupId"),
+        @NamedStatement(name="deleteFederatedUserGroupMembershipsByUser", statement="delete from FederatedUserGroupMembershipEntity m where m.userId = :userId and m.realmId = :realmId")
 })
 @Table(name="FED_USER_GROUP_MEMBERSHIP")
 @Entity

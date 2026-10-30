@@ -25,6 +25,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.KeyUtils;
@@ -36,12 +38,14 @@ import org.keycloak.storage.jpa.KeyUtils;
 @NamedQueries({
         @NamedQuery(name= "findBrokerLinkByUser", query="select link from BrokerLinkEntity link where link.userId = :userId"),
         @NamedQuery(name= "findBrokerLinkByUserAndProvider", query="select link from BrokerLinkEntity link where link.identityProvider = :identityProvider and link.userId = :userId and link.realmId = :realmId"),
-        @NamedQuery(name= "findUserByBrokerLinkAndRealm", query="select link.userId from BrokerLinkEntity link where link.realmId = :realmId and link.identityProvider = :identityProvider and link.brokerUserId = :brokerUserId"),
-        @NamedQuery(name= "deleteBrokerLinkByStorageProvider", query="delete from BrokerLinkEntity social where social.storageProviderId = :storageProviderId"),
-        @NamedQuery(name= "deleteBrokerLinkByRealm", query="delete from BrokerLinkEntity social where social.realmId = :realmId"),
-        @NamedQuery(name= "deleteBrokerLinkByIdentityProvider", query="delete from BrokerLinkEntity b where b.realmId = :realmId and b.identityProvider = :providerAlias"),
-        @NamedQuery(name= "deleteBrokerLinkByRealmAndLink", query="delete from BrokerLinkEntity social where social.userId IN (select u.id from UserEntity u where realmId=:realmId and u.federationLink=:link)"),
-        @NamedQuery(name= "deleteBrokerLinkByUser", query="delete from BrokerLinkEntity social where social.userId = :userId and social.realmId = :realmId")
+        @NamedQuery(name= "findUserByBrokerLinkAndRealm", query="select link.userId from BrokerLinkEntity link where link.realmId = :realmId and link.identityProvider = :identityProvider and link.brokerUserId = :brokerUserId")
+})
+@NamedStatements({
+        @NamedStatement(name= "deleteBrokerLinkByStorageProvider", statement="delete from BrokerLinkEntity social where social.storageProviderId = :storageProviderId"),
+        @NamedStatement(name= "deleteBrokerLinkByRealm", statement="delete from BrokerLinkEntity social where social.realmId = :realmId"),
+        @NamedStatement(name= "deleteBrokerLinkByIdentityProvider", statement="delete from BrokerLinkEntity b where b.realmId = :realmId and b.identityProvider = :providerAlias"),
+        @NamedStatement(name= "deleteBrokerLinkByRealmAndLink", statement="delete from BrokerLinkEntity social where social.userId IN (select u.id from UserEntity u where realmId=:realmId and u.federationLink=:link)"),
+        @NamedStatement(name= "deleteBrokerLinkByUser", statement="delete from BrokerLinkEntity social where social.userId = :userId and social.realmId = :realmId")
 })
 @Table(name="BROKER_LINK")
 @Entity

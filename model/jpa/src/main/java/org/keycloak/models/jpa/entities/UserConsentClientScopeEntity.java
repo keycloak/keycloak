@@ -27,21 +27,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@NamedQueries({
-        @NamedQuery(name="deleteUserConsentClientScopesByRealm", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select user from UserEntity user where user.realmId = :realmId))"),
-        @NamedQuery(name="deleteUserConsentClientScopesByRealmAndLink", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link))"),
-        @NamedQuery(name="deleteUserConsentClientScopesByUser", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user = :user)"),
-        @NamedQuery(name="deleteUserConsentClientScopesByClientScope", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.scopeId = :scopeId"),
-        @NamedQuery(name="deleteUserConsentClientScopesByClient", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId)"),
-        @NamedQuery(name="deleteUserConsentClientScopesByExternalClient", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
-        @NamedQuery(name="deleteUserConsentClientScopesByClientStorageProvider", query="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)"),
+@NamedStatements({
+        @NamedStatement(name="deleteUserConsentClientScopesByRealm", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select user from UserEntity user where user.realmId = :realmId))"),
+        @NamedStatement(name="deleteUserConsentClientScopesByRealmAndLink", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link))"),
+        @NamedStatement(name="deleteUserConsentClientScopesByUser", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.user = :user)"),
+        @NamedStatement(name="deleteUserConsentClientScopesByClientScope", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.scopeId = :scopeId"),
+        @NamedStatement(name="deleteUserConsentClientScopesByClient", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId)"),
+        @NamedStatement(name="deleteUserConsentClientScopesByExternalClient", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
+        @NamedStatement(name="deleteUserConsentClientScopesByClientStorageProvider", statement="delete from UserConsentClientScopeEntity grantedScope where grantedScope.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)")
 })
 @Entity
 @Table(name="USER_CONSENT_CLIENT_SCOPE")

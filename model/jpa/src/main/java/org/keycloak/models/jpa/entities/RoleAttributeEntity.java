@@ -25,8 +25,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
@@ -34,8 +34,8 @@ import org.hibernate.annotations.Nationalized;
 /**
  * @author <a href="mailto:leon.graser@bosch-si.com">Leon Graser</a>
  */
-@NamedQueries({
-        @NamedQuery(name = "deleteRoleAttributesByNameAndUser", query = "delete from RoleAttributeEntity attr where attr.role.id = :roleId and attr.name = :name"),
+@NamedStatements({
+        @NamedStatement(name = "deleteRoleAttributesByNameAndUser", statement= "delete from RoleAttributeEntity attr where attr.role.id = :roleId and attr.name = :name")
 })
 @Table(name = "ROLE_ATTRIBUTE")
 @Entity

@@ -23,6 +23,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.KeyUtils;
@@ -33,11 +35,13 @@ import org.keycloak.storage.jpa.KeyUtils;
  */
 @NamedQueries({
         @NamedQuery(name="getFederatedUserIds", query="select f.id from FederatedUser f where f.realmId=:realmId"),
-        @NamedQuery(name="getFederatedUserCount", query="select count(u) from FederatedUser u where u.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedUserByUser", query="delete from  FederatedUser f where f.id = :userId and f.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUsersByRealm", query="delete from  FederatedUser f where f.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUsersByStorageProvider", query="delete from FederatedUser f where f.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUsersByRealmAndLink", query="delete from  FederatedUser f where f.id IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
+        @NamedQuery(name="getFederatedUserCount", query="select count(u) from FederatedUser u where u.realmId = :realmId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserByUser", statement="delete from  FederatedUser f where f.id = :userId and f.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUsersByRealm", statement="delete from  FederatedUser f where f.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUsersByStorageProvider", statement="delete from FederatedUser f where f.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUsersByRealmAndLink", statement="delete from  FederatedUser f where f.id IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })
 @Entity
 @Table(name="FEDERATED_USER")

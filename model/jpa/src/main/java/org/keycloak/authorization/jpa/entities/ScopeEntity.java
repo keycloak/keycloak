@@ -28,6 +28,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -38,13 +40,13 @@ import jakarta.persistence.UniqueConstraint;
 @Table(name = "RESOURCE_SERVER_SCOPE", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
 })
-@NamedQueries(
-        {
+@NamedQueries({
                 @NamedQuery(name="findScopeIdByName", query="select s.id from ScopeEntity s where s.resourceServer.id = :serverId and s.name = :name"),
-                @NamedQuery(name="findScopeIdByResourceServer", query="select s.id from ScopeEntity s where s.resourceServer.id = :serverId"),
-                @NamedQuery(name="deleteScopeByResourceServer", query="delete from ScopeEntity s where s.resourceServer.id = :serverId")
-        }
-)
+                @NamedQuery(name="findScopeIdByResourceServer", query="select s.id from ScopeEntity s where s.resourceServer.id = :serverId")
+})
+@NamedStatements({
+                @NamedStatement(name="deleteScopeByResourceServer", statement="delete from ScopeEntity s where s.resourceServer.id = :serverId")
+})
 public class ScopeEntity {
 
     @Id

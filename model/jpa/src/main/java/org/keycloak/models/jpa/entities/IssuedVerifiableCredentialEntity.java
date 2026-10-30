@@ -10,18 +10,22 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name="ISSUED_VER_CREDENTIAL")
 @NamedQueries({
-        @NamedQuery(name="issuedVcsByUser", query="select vc from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId order by vc.issuedAt desc"),
-        @NamedQuery(name="deleteIssuedVcsByRealm", query="delete from IssuedVerifiableCredentialEntity vc where vc.user IN (select u from UserEntity u where u.realmId = :realmId)"),
-        @NamedQuery(name="deleteIssuedVcsByUser",  query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId"),
-        @NamedQuery(name="deleteIssuedVcsByClientScope", query="delete from IssuedVerifiableCredentialEntity vc where vc.verifiableCredentialId in (select uvc.id from UserVerifiableCredentialEntity uvc where uvc.clientScopeId = :scopeId)"),
-        @NamedQuery(name="deleteIssuedVcsByClient", query="delete from IssuedVerifiableCredentialEntity vc where vc.clientId = :clientId"),
-        @NamedQuery(name="deleteExpiredIssuedVcs", query="delete from IssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
-        @NamedQuery(name="deleteIssuedVcsByUserAndType", query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId and vc.verifiableCredentialId = :verifiableCredentialId"),
+        @NamedQuery(name="issuedVcsByUser", query="select vc from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId order by vc.issuedAt desc")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteIssuedVcsByRealm", statement="delete from IssuedVerifiableCredentialEntity vc where vc.user IN (select u from UserEntity u where u.realmId = :realmId)"),
+        @NamedStatement(name="deleteIssuedVcsByUser",  statement="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId"),
+        @NamedStatement(name="deleteIssuedVcsByClientScope", statement="delete from IssuedVerifiableCredentialEntity vc where vc.verifiableCredentialId in (select uvc.id from UserVerifiableCredentialEntity uvc where uvc.clientScopeId = :scopeId)"),
+        @NamedStatement(name="deleteIssuedVcsByClient", statement="delete from IssuedVerifiableCredentialEntity vc where vc.clientId = :clientId"),
+        @NamedStatement(name="deleteExpiredIssuedVcs", statement="delete from IssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
+        @NamedStatement(name="deleteIssuedVcsByUserAndType", statement="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId and vc.verifiableCredentialId = :verifiableCredentialId")
 })
 public class IssuedVerifiableCredentialEntity {
 

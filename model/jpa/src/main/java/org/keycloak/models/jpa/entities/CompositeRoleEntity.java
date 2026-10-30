@@ -26,8 +26,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -37,9 +37,9 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name="COMPOSITE_ROLE")
-@NamedQueries({
-        @NamedQuery(name="deleteRoleFromComposites", query="delete CompositeRoleEntity c where c.parentRole = :role or c.childRole = :role"),
-        @NamedQuery(name="deleteSingleCompositeFromRole", query="delete CompositeRoleEntity c where c.parentRole = :parentRole and c.childRole = :childRole"),
+@NamedStatements({
+        @NamedStatement(name="deleteRoleFromComposites", statement="delete CompositeRoleEntity c where c.parentRole = :role or c.childRole = :role"),
+        @NamedStatement(name="deleteSingleCompositeFromRole", statement="delete CompositeRoleEntity c where c.parentRole = :parentRole and c.childRole = :childRole")
 })
 @IdClass(CompositeRoleEntity.Key.class)
 public class CompositeRoleEntity {

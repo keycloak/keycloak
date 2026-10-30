@@ -22,6 +22,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -35,28 +37,30 @@ import jakarta.persistence.Table;
                 query = "select t.id from RevokedTokenEntity t where t.expire <= :currentTime"
         ),
         @NamedQuery(
-                name = "deleteExpiredRevokedTokenByIds",
-                query = "delete from RevokedTokenEntity where id in :ids and expire <= :currentTime"
-        ),
-        @NamedQuery(
                 name = "findRevokeTokenExpireTime",
                 query = "select t.expire from RevokedTokenEntity t where t.id = :id"
+        )
+})
+@NamedStatements({
+        @NamedStatement(
+                name = "deleteExpiredRevokedTokenByIds",
+                statement= "delete from RevokedTokenEntity where id in :ids and expire <= :currentTime"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "insertRevokeTokenIfAbsent",
-                query = "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
+                statement= "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
                         " on conflict (id) do update set expire = :expire" +
                         " where expire <= :currentTime"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "deleteExpiredRevokeToken",
-                query = "delete from RevokedTokenEntity t where t.id = :id and t.expire <= :currentTime"
+                statement= "delete from RevokedTokenEntity t where t.id = :id and t.expire <= :currentTime"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "insertRevokeTokenIfAbsentNoUpdate",
-                query = "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
+                statement= "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
                         " on conflict (id) do nothing"
-        ),
+        )
 })
 @Table(name="REVOKED_TOKEN")
 @Entity

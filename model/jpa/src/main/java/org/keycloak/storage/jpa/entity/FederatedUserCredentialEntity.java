@@ -24,6 +24,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -33,14 +35,15 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="federatedUserCredentialByUser", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId order by cred.priority"),
         @NamedQuery(name="federatedUserCredentialByUserAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type order by cred.priority"),
-        @NamedQuery(name="federatedUserCredentialByNameAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel order by cred.priority"),
-        @NamedQuery(name="deleteFederatedUserCredentialByUser", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedUserCredentialByUserAndType", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
-        @NamedQuery(name="deleteFederatedUserCredentialByUserAndTypeAndUserLabel", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel"),
-        @NamedQuery(name="deleteFederatedUserCredentialsByRealm", query="delete from FederatedUserCredentialEntity cred where cred.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserCredentialsByStorageProvider", query="delete from FederatedUserCredentialEntity cred where cred.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserCredentialsByRealmAndLink", query="delete from FederatedUserCredentialEntity cred where cred.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
-
+        @NamedQuery(name="federatedUserCredentialByNameAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel order by cred.priority")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserCredentialByUser", statement="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedUserCredentialByUserAndType", statement="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
+        @NamedStatement(name="deleteFederatedUserCredentialByUserAndTypeAndUserLabel", statement="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel"),
+        @NamedStatement(name="deleteFederatedUserCredentialsByRealm", statement="delete from FederatedUserCredentialEntity cred where cred.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUserCredentialsByStorageProvider", statement="delete from FederatedUserCredentialEntity cred where cred.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUserCredentialsByRealmAndLink", statement="delete from FederatedUserCredentialEntity cred where cred.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })
 @Table(name="FED_USER_CREDENTIAL")
 @Entity

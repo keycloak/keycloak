@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 
@@ -14,21 +16,23 @@ import jakarta.persistence.Table;
 @Table(name="FED_ISSUED_VER_CREDENTIAL")
 @NamedQueries({
         @NamedQuery(name="federatedIssuedVcsByUser",
-                    query="select vc from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId order by vc.issuedAt desc"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByRealm",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByUser",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByClientScope",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.verifiableCredentialId in (select fuvc.id from FederatedUserVerifiableCredentialEntity fuvc where fuvc.clientScopeId = :scopeId)"),
-        @NamedQuery(name="deleteExpiredFederatedIssuedVcs",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByUserAndType",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId and vc.verifiableCredentialId = :verifiableCredentialId"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByStorageProvider",
-                    query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId"),
-        @NamedQuery(name="deleteFederatedIssuedVcsByClient",
-                query="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.clientId = :clientId")
+                    query="select vc from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId order by vc.issuedAt desc")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedIssuedVcsByRealm",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedIssuedVcsByUser",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedIssuedVcsByClientScope",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.verifiableCredentialId in (select fuvc.id from FederatedUserVerifiableCredentialEntity fuvc where fuvc.clientScopeId = :scopeId)"),
+        @NamedStatement(name="deleteExpiredFederatedIssuedVcs",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
+        @NamedStatement(name="deleteFederatedIssuedVcsByUserAndType",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId and vc.verifiableCredentialId = :verifiableCredentialId"),
+        @NamedStatement(name="deleteFederatedIssuedVcsByStorageProvider",
+                    statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId"),
+        @NamedStatement(name="deleteFederatedIssuedVcsByClient",
+                statement="delete from FederatedUserIssuedVerifiableCredentialEntity vc where vc.clientId = :clientId")
 })
 public class FederatedUserIssuedVerifiableCredentialEntity {
 

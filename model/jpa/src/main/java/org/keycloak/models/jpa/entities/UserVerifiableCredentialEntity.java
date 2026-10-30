@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
@@ -19,10 +21,12 @@ import jakarta.persistence.Version;
         @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_SCOPE_ID"})
 })
 @NamedQueries({
-        @NamedQuery(name="verifiableCredentialsByUser", query="select vc from UserVerifiableCredentialEntity vc where vc.user.id = :userId"),
-        @NamedQuery(name="deleteVerifiableCredentialsByRealm", query="delete from UserVerifiableCredentialEntity vc where vc.user IN (select user from UserEntity user where user.realmId = :realmId)"),
-        @NamedQuery(name="deleteVerifiableCredentialsByClientScope", query="delete from UserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
-        @NamedQuery(name="deleteVerifiableCredentialsByUser", query="delete from UserVerifiableCredentialEntity vc where vc.user = :user"),
+        @NamedQuery(name="verifiableCredentialsByUser", query="select vc from UserVerifiableCredentialEntity vc where vc.user.id = :userId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteVerifiableCredentialsByRealm", statement="delete from UserVerifiableCredentialEntity vc where vc.user IN (select user from UserEntity user where user.realmId = :realmId)"),
+        @NamedStatement(name="deleteVerifiableCredentialsByClientScope", statement="delete from UserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
+        @NamedStatement(name="deleteVerifiableCredentialsByUser", statement="delete from UserVerifiableCredentialEntity vc where vc.user = :user")
 })
 public class UserVerifiableCredentialEntity {
 

@@ -28,6 +28,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
@@ -37,8 +39,10 @@ import org.hibernate.annotations.Nationalized;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="deleteRealmAttributesByRealm", query="delete from RealmAttributeEntity attr where attr.realm = :realm"),
         @NamedQuery(name="selectRealmAttributesNotEmptyByName", query="select ra from RealmAttributeEntity ra WHERE ra.name = :name and length(ra.value) > 0")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteRealmAttributesByRealm", statement="delete from RealmAttributeEntity attr where attr.realm = :realm")
 })
 @Table(name="REALM_ATTRIBUTE")
 @Entity

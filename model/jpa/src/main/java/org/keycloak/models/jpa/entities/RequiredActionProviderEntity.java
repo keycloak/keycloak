@@ -30,8 +30,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -40,8 +40,9 @@ import jakarta.persistence.Table;
  */
 @Table(name="REQUIRED_ACTION_PROVIDER")
 @Entity
-@NamedQueries({
-        @NamedQuery(name="deleteRequiredActionProviderByRealm", query="delete from RequiredActionProviderEntity action where action.realm = :realm"),})
+@NamedStatements({
+        @NamedStatement(name="deleteRequiredActionProviderByRealm", statement="delete from RequiredActionProviderEntity action where action.realm = :realm")
+})
 public class RequiredActionProviderEntity {
     @Id
     @Column(name="ID", length = 36)

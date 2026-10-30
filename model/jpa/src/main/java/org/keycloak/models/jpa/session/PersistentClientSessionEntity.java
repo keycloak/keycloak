@@ -26,6 +26,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
@@ -37,16 +39,6 @@ import org.hibernate.annotations.DynamicUpdate;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteClientSessionsByRealm", query="delete from PersistentClientSessionEntity sess where sess.realmId = :realmId"),
-        @NamedQuery(name="deleteClientSessionsByClient", query="delete from PersistentClientSessionEntity sess where sess.clientId = :clientId and sess.clientId != 'external'"),
-        @NamedQuery(name="deleteClientSessionsByExternalClient", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider and sess.externalClientId = :externalClientId and sess.clientStorageProvider != 'internal'"),
-        @NamedQuery(name="deleteClientSessionsByClientStorageProvider", query="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider"),
-        @NamedQuery(name="deleteClientSessionsByUser", query="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
-        @NamedQuery(name="deleteClientSessionsByUserSession", query="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
-        @NamedQuery(name="deleteClientSessionsByUserSessions", query="delete from PersistentClientSessionEntity sess where sess.userSessionId in (:userSessionId) and sess.offline = :offline"),
-        // The query "deleteExpiredClientSessions" is deprecated (since 26.5) and may be removed in the future.
-        @NamedQuery(name="deleteExpiredClientSessions", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
-        @NamedQuery(name="deleteClientSessionsByRealmSessionType", query="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.realmId = :realmId"),
         @NamedQuery(name="findClientSessionsByUserSession", query="select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline"),
         @NamedQuery(name="findClientSessionsOrderedByIdInterval", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId >= :fromSessionId and sess.userSessionId <= :toSessionId order by sess.userSessionId"),
         @NamedQuery(name="findClientSessionsOrderedByIdExact", query="select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds)"),
@@ -64,7 +56,19 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "SELECT new org.keycloak.models.jpa.session.ImmutablePersistentClientSessionEntity(sess.userSessionId, sess.clientId, sess.clientStorageProvider, sess.externalClientId, sess.offline, sess.data, sess.realmId, sess.timestamp)" +
                         " FROM PersistentClientSessionEntity sess" +
                         " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"
-        ),
+        )
+})
+@NamedStatements({
+        @NamedStatement(name="deleteClientSessionsByRealm", statement="delete from PersistentClientSessionEntity sess where sess.realmId = :realmId"),
+        @NamedStatement(name="deleteClientSessionsByClient", statement="delete from PersistentClientSessionEntity sess where sess.clientId = :clientId and sess.clientId != 'external'"),
+        @NamedStatement(name="deleteClientSessionsByExternalClient", statement="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider and sess.externalClientId = :externalClientId and sess.clientStorageProvider != 'internal'"),
+        @NamedStatement(name="deleteClientSessionsByClientStorageProvider", statement="delete from PersistentClientSessionEntity sess where sess.clientStorageProvider = :clientStorageProvider"),
+        @NamedStatement(name="deleteClientSessionsByUser", statement="delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.userId = :userId)"),
+        @NamedStatement(name="deleteClientSessionsByUserSession", statement="delete from PersistentClientSessionEntity sess where sess.userSessionId = :userSessionId and sess.offline = :offline"),
+        @NamedStatement(name="deleteClientSessionsByUserSessions", statement="delete from PersistentClientSessionEntity sess where sess.userSessionId in (:userSessionId) and sess.offline = :offline"),
+        // The query "deleteExpiredClientSessions" is deprecated (since 26.5) and may be removed in the future.
+        @NamedStatement(name="deleteExpiredClientSessions", statement="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)"),
+        @NamedStatement(name="deleteClientSessionsByRealmSessionType", statement="delete from PersistentClientSessionEntity sess where sess.offline = :offline AND sess.realmId = :realmId")
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity

@@ -25,6 +25,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -35,22 +37,24 @@ import jakarta.persistence.Table;
  */
 @NamedQueries({
         @NamedQuery(
-                name = "insertLoginFailure",
-                query = "insert into LoginFailureEntity (realmId, userId) values (:realmId, :userId)" +
-                        " on conflict (realmId, userId) do nothing"
-        ),
-        @NamedQuery(
-                name = "deleteLoginFailureByRealm",
-                query = "delete from LoginFailureEntity e where e.realmId = :realmId"
-        ),
-        @NamedQuery(
                 name = "findExpiredLoginFailureUserIdsByRealm",
                 query = "select e.userId from LoginFailureEntity e where e.realmId = :realmId and e.lastFailure < :expire"
+        )
+})
+@NamedStatements({
+        @NamedStatement(
+                name = "insertLoginFailure",
+                statement= "insert into LoginFailureEntity (realmId, userId) values (:realmId, :userId)" +
+                        " on conflict (realmId, userId) do nothing"
         ),
-        @NamedQuery(
+        @NamedStatement(
+                name = "deleteLoginFailureByRealm",
+                statement= "delete from LoginFailureEntity e where e.realmId = :realmId"
+        ),
+        @NamedStatement(
                 name = "deleteExpiredLoginFailureByRealmAndUserIds",
-                query = "delete from LoginFailureEntity e where e.realmId = :realmId and e.userId in :userIds and e.lastFailure < :expire"
-        ),
+                statement= "delete from LoginFailureEntity e where e.realmId = :realmId and e.userId in :userIds and e.lastFailure < :expire"
+        )
 })
 @Entity
 @IdClass(LoginFailureKey.class)

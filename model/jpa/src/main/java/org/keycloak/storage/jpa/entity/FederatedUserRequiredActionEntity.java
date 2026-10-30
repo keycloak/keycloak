@@ -26,6 +26,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.KeyUtils;
@@ -35,11 +37,13 @@ import org.keycloak.storage.jpa.KeyUtils;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getFederatedUserRequiredActionsByUser", query="select action from FederatedUserRequiredActionEntity action where action.userId = :userId and action.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserRequiredActionsByUser", query="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId and action.userId = :userId"),
-        @NamedQuery(name="deleteFederatedUserRequiredActionsByRealm", query="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserRequiredActionsByStorageProvider", query="delete from FederatedUserRequiredActionEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserRequiredActionsByRealmAndLink", query="delete from FederatedUserRequiredActionEntity action where action.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
+        @NamedQuery(name="getFederatedUserRequiredActionsByUser", query="select action from FederatedUserRequiredActionEntity action where action.userId = :userId and action.realmId=:realmId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserRequiredActionsByUser", statement="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId and action.userId = :userId"),
+        @NamedStatement(name="deleteFederatedUserRequiredActionsByRealm", statement="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUserRequiredActionsByStorageProvider", statement="delete from FederatedUserRequiredActionEntity e where e.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUserRequiredActionsByRealmAndLink", statement="delete from FederatedUserRequiredActionEntity action where action.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })
 @Entity
 @Table(name="FED_USER_REQUIRED_ACTION")

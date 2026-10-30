@@ -37,6 +37,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -52,8 +54,7 @@ import org.hibernate.annotations.FetchMode;
 @Table(name = "RESOURCE_SERVER_RESOURCE", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID", "OWNER"})
 })
-@NamedQueries(
-        {
+@NamedQueries({
                 @NamedQuery(name="findResourceIdByOwner", query="select r from ResourceEntity r  where r.resourceServer = :serverId and r.owner = :owner"),
                 @NamedQuery(name="findResourceIdByOwnerOrdered", query="select r from ResourceEntity r where r.resourceServer = :serverId and r.owner = :owner order by r.id"),
                 @NamedQuery(name="findAnyResourceIdByOwner", query="select r from ResourceEntity r where r.owner = :owner"),
@@ -64,10 +65,11 @@ import org.hibernate.annotations.FetchMode;
                 @NamedQuery(name="findResourceIdByTypeNoOwner", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId  and r.type = :type"),
                 @NamedQuery(name="findResourceIdByTypeInstance", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId and r.type = :type and r.owner <> :serverId"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer = :serverId "),
-                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
-                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer = :serverId")
-        }
-)
+                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))")
+})
+@NamedStatements({
+                @NamedStatement(name="deleteResourceByResourceServer", statement="delete from ResourceEntity r where r.resourceServer = :serverId")
+})
 public class ResourceEntity {
 
     @Id

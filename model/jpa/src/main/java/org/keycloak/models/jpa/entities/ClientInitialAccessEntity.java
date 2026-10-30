@@ -27,6 +27,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -35,10 +37,12 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="CLIENT_INITIAL_ACCESS")
 @NamedQueries({
-        @NamedQuery(name="findClientInitialAccessByRealm", query="select ia from ClientInitialAccessEntity ia where ia.realm = :realm order by timestamp"),
-        @NamedQuery(name="removeClientInitialAccessByRealm", query="delete from ClientInitialAccessEntity ia where ia.realm = :realm"),
-        @NamedQuery(name="removeExpiredClientInitialAccess", query="delete from ClientInitialAccessEntity ia where (ia.expiration > 0 and (ia.timestamp + ia.expiration) < :currentTime) or ia.remainingCount = 0"),
-        @NamedQuery(name="decreaseClientInitialAccessRemainingCount", query="update ClientInitialAccessEntity ia set ia.remainingCount = ia.remainingCount - 1 where ia.id = :id")
+        @NamedQuery(name="findClientInitialAccessByRealm", query="select ia from ClientInitialAccessEntity ia where ia.realm = :realm order by timestamp")
+})
+@NamedStatements({
+        @NamedStatement(name="removeClientInitialAccessByRealm", statement="delete from ClientInitialAccessEntity ia where ia.realm = :realm"),
+        @NamedStatement(name="removeExpiredClientInitialAccess", statement="delete from ClientInitialAccessEntity ia where (ia.expiration > 0 and (ia.timestamp + ia.expiration) < :currentTime) or ia.remainingCount = 0"),
+        @NamedStatement(name="decreaseClientInitialAccessRemainingCount", statement="update ClientInitialAccessEntity ia set ia.remainingCount = ia.remainingCount - 1 where ia.id = :id")
 })
 public class ClientInitialAccessEntity {
 

@@ -28,6 +28,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -52,10 +54,12 @@ import org.hibernate.annotations.Nationalized;
         @NamedQuery(name="getRealmUsersByAttributeNameAndValue", query="select u from UserEntity u join u.attributes attr " +
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndLongValue", query="select u from UserEntity u join u.attributes attr " +
-                "where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash"),
-        @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
-        @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
-        @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
+                "where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteUsersByRealm", statement="delete from UserEntity u where u.realmId = :realmId"),
+        @NamedStatement(name="deleteUsersByRealmAndLink", statement="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
+        @NamedStatement(name="unlinkUsers", statement="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
 })
 @Entity
 @Table(name="USER_ENTITY", uniqueConstraints = {
