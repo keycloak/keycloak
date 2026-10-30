@@ -222,6 +222,22 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testChangeCacheStack() throws IOException {
+        var jsonFile = createTempFile("compatible", ".json");
+        var result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        assertThat(result.getOutString(), containsString("Metadata:"));
+        assertEquals(0, result.exitCode);
+
+        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
+        info.remove(FeatureCompatibilityMetadataProvider.ID);
+        assertEquals(defaultMeta(), info);
+
+        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--cache-stack", "kubernetes");
+        assertEquals(CompatibilityResult.ExitCode.RECREATE.value(), result.exitCode);
+        assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.stack' is incompatible: null -> kubernetes".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
+    }
+
+    @Test
     public void testDatabaseTypeChanged() throws IOException {
         var jsonFile = createTempFile("compatible", ".json");
         var result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());

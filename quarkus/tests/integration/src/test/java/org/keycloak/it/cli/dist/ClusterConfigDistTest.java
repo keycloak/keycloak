@@ -112,6 +112,12 @@ public class ClusterConfigDistTest {
     }
 
     @Test
+    @Launch({ "start", "--cache-stack=azure" })
+    void warnDeprecatedCloudStack(CLIResult result) {
+        result.assertMessage("Stack 'azure' is no longer supported. Use 'jdbc-ping' instead");
+    }
+
+    @Test
     @Launch({ "start", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(CLIResult result) {
         result.assertError("Cache config file 'invalid' does not exist in the conf directory");
