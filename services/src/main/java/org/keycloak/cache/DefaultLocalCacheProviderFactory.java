@@ -1,6 +1,7 @@
 package org.keycloak.cache;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -10,6 +11,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 
@@ -43,6 +45,14 @@ public class DefaultLocalCacheProviderFactory implements LocalCacheProvider, Loc
 
         if (configuration.maxSize() > 0) {
             builder.maximumSize(configuration.maxSize());
+        }
+
+        if (configuration.hasRemovalListener()) {
+            // run the listener on the removing thread so it has run for every value when close() returns
+            builder.executor(Runnable::run).<K, V>removalListener((key, value, cause) ->
+                    configuration.removalListener().accept(value));
+            // expire entries without waiting for the next access so their values are released
+            builder.scheduler(Scheduler.systemScheduler());
         }
 
         switch (configuration.expirationMode()) {
@@ -93,7 +103,14 @@ public class DefaultLocalCacheProviderFactory implements LocalCacheProvider, Loc
         }
 
         @Override
+        public V computeIfAbsent(K key, Function<K, V> mapper) {
+            Objects.requireNonNull(key);
+            return cache.get(key, mapper);
+        }
+
+        @Override
         public void close() {
+            cache.invalidateAll();
             cache.cleanUp();
         }
     }

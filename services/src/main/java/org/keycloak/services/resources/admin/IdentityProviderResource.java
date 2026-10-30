@@ -246,6 +246,8 @@ public class IdentityProviderResource {
             }
         }
 
+        IdentityProviderMtlsResource.validateOnSave(session, realm, identityProviderModel, updated);
+
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());

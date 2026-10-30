@@ -323,6 +323,7 @@ public class IdentityProvidersResource {
                         + "' role can enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
                         Response.Status.FORBIDDEN);
             }
+            IdentityProviderMtlsResource.validateOnSave(session, realm, null, identityProvider);
             session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
@@ -346,6 +347,11 @@ public class IdentityProvidersResource {
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
+    }
+
+    @Path("mtls")
+    public IdentityProviderMtlsResource getMtls() {
+        return new IdentityProviderMtlsResource(session, realm, auth);
     }
 
     @Path("instances/{alias}")
