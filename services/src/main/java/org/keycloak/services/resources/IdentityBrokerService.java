@@ -671,6 +671,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (!oidcClient.getExternalTokenEnabled() || !oidcClient.getExternalAllowedIdentityProviders().contains(providerAlias)) {
                 event.detail(Details.REASON, "Client not allowed to retrieve token for the provider");
                 event.error(Errors.NOT_ALLOWED);
+                errorEventSent = true;
                 return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not allowed to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
             }
 
