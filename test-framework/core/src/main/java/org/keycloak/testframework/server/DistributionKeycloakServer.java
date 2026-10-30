@@ -149,10 +149,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
         List<String> cmd = new LinkedList<>();
         if (Environment.isWindows()) {
             cmd.add(keycloakHomeDir.toPath().resolve("bin").resolve(CMD).toString());
+            args.stream().map(DistributionKeycloakServer::quoteWindowsBatchArgument).forEach(cmd::add);
         } else {
             cmd.add("./" + CMD);
+            cmd.addAll(args);
         }
-        cmd.addAll(args);
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(new File(keycloakHomeDir, "bin"));
@@ -195,6 +196,12 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
 
         return outputHandler;
+    }
+
+    // cmd.exe splits unquoted batch file arguments on commas, which breaks list values such as --features=a,b.
+    // kc.bat passes the quoted argument on to java, which removes the quotes again.
+    static String quoteWindowsBatchArgument(String argument) {
+        return argument.indexOf(',') >= 0 ? '"' + argument + '"' : argument;
     }
 
     @Override
