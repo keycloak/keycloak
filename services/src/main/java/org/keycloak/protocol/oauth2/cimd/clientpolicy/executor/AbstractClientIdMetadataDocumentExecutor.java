@@ -950,7 +950,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // between the redirect_uris and the client_id or client_uri properties
 
         // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri,
-        // backchannel_logout_uri, backchannel_client_notification_endpoint
+        // backchannel_logout_uri, backchannel_client_notification_endpoint, sector_identifier_uri, request_uris
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -962,8 +962,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
-                            clientOIDC.getBackchannelLogoutUri(), clientOIDC.getBackchannelClientNotificationEndpoint())
+            List<String> l = Stream.concat(
+                            Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
+                                    clientOIDC.getBackchannelLogoutUri(), clientOIDC.getBackchannelClientNotificationEndpoint(), clientOIDC.getSectorIdentifierUri()),
+                            convertContentFilledList(clientOIDC.getRequestUris()).stream())
                     .filter(StringUtil::isNotBlank).toList();
             validateSameDomain(l, redirectUriURI, trustedDomains);
         }
