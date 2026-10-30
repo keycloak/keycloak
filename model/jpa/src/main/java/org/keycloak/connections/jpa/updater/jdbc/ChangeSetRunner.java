@@ -136,46 +136,57 @@ public class ChangeSetRunner {
      */
     private int processChangeSet(ChangeSetDescriptor cs, SqlSink sink,
             Set<ChangeSetKey> inProgressKeys, String deploymentId, int order) throws SQLException {
-        PreconditionEvaluator evaluator = new PreconditionEvaluator(
-                connection, schema, dialect, inProgressKeys, sink.isExportMode());
+        try {
+            PreconditionEvaluator evaluator = new PreconditionEvaluator(
+                    connection, schema, dialect, inProgressKeys, sink.isExportMode());
 
-        PreconditionEvaluator.Outcome outcome = evaluator.evaluate(cs.getPreConditions());
+            PreconditionEvaluator.Outcome outcome = evaluator.evaluate(cs.getPreConditions());
 
-        String execType;
-        switch (outcome) {
-            case RUN, SKIP_EXPORT -> {
-                execType = "EXECUTED";
-                if (sink.isExportMode()) {
-                    sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor());
+            String execType;
+            switch (outcome) {
+                case RUN, SKIP_EXPORT -> {
+                    execType = "EXECUTED";
+                    if (sink.isExportMode()) {
+                        sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor());
+                    }
+                    executeSteps(cs, sink);
                 }
-                executeSteps(cs, sink);
+                case MARK_RAN -> {
+                    execType = "MARK_RAN";
+                    logger.debugf("Marking change-set %s as ran (precondition not met)", cs.getId());
+                    if (sink.isExportMode()) {
+                        sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor()
+                                + " skipped (precondition not met — MARK_RAN)");
+                    }
+                }
+                case HALT -> throw new RuntimeException(
+                        "Migration halted: precondition failed (onFail=HALT) for change-set " + cs.getId());
+                default -> throw new IllegalStateException("Unknown outcome: " + outcome);
             }
-            case MARK_RAN -> {
-                execType = "MARK_RAN";
-                logger.debugf("Marking change-set %s as ran (precondition not met)", cs.getId());
-                if (sink.isExportMode()) {
-                    sink.comment("Changeset " + cs.getChangeLogFile() + "::" + cs.getId() + "::" + cs.getAuthor()
-                            + " skipped (precondition not met — MARK_RAN)");
+
+            // Emit history INSERT
+            int nextOrder = order + 1;
+            emitHistoryInsert(cs, sink, execType, nextOrder, deploymentId);
+
+            // Record in in-progress set so changeSetExecuted preconditions work within this run
+            inProgressKeys.add(new ChangeSetKey(cs.getId(), cs.getAuthor(), cs.getChangeLogFile()));
+
+            // Commit after each change-set in update mode (DDL auto-commits on some DBs; always commit here)
+            if (!sink.isExportMode()) {
+                connection.commit();
+            }
+
+            return nextOrder;
+        } catch (Exception | Error e) {
+            if (!sink.isExportMode()) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    logger.warn("Failed to rollback transaction after changeset failure", ex);
                 }
             }
-            case HALT -> throw new RuntimeException(
-                    "Migration halted: precondition failed (onFail=HALT) for change-set " + cs.getId());
-            default -> throw new IllegalStateException("Unknown outcome: " + outcome);
+            throw e;
         }
-
-        // Emit history INSERT
-        int nextOrder = order + 1;
-        emitHistoryInsert(cs, sink, execType, nextOrder, deploymentId);
-
-        // Record in in-progress set so changeSetExecuted preconditions work within this run
-        inProgressKeys.add(new ChangeSetKey(cs.getId(), cs.getAuthor(), cs.getChangeLogFile()));
-
-        // Commit after each change-set in update mode (DDL auto-commits on some DBs; always commit here)
-        if (!sink.isExportMode()) {
-            connection.commit();
-        }
-
-        return nextOrder;
     }
 
     /** Iterates the steps of a change-set and dispatches each to the sink. */

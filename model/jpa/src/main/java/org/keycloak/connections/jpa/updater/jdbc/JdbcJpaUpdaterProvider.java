@@ -385,6 +385,15 @@ public class JdbcJpaUpdaterProvider implements JpaUpdaterProvider {
             ChangeSetRunner runner = new ChangeSetRunner(connection, defaultSchema, historyTable,
                     sqlDialect, manifest, indexCreationThreshold, session);
             runner.run(sink, executed, deploymentId, startOrder);
+        } catch (Exception | Error e) {
+            if (writer == null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    logger.warn("Failed to rollback transaction after changelog failure", ex);
+                }
+            }
+            throw e;
         } finally {
             connection.setAutoCommit(wasAutoCommit);
         }

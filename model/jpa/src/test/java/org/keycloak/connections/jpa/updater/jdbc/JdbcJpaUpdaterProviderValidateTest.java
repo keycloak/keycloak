@@ -18,11 +18,13 @@ package org.keycloak.connections.jpa.updater.jdbc;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider.Status;
 import org.keycloak.connections.jpa.updater.jdbc.ChangeLogHistory.ChangeSetKey;
 import org.keycloak.enums.SqlDialect;
@@ -63,9 +65,11 @@ public class JdbcJpaUpdaterProviderValidateTest {
         try (Statement st = connection.createStatement()) {
             st.execute("DROP TABLE IF EXISTS DATABASECHANGELOG");
             st.execute("DROP TABLE IF EXISTS DATABASECHANGELOG_SAMPLE");
+            st.execute("DROP TABLE IF EXISTS DATABASECHANGELOG_TEST_FACTORY");
             st.execute("DROP TABLE IF EXISTS TEST_TABLE");
             st.execute("DROP TABLE IF EXISTS ANOTHER_TABLE");
             st.execute("DROP TABLE IF EXISTS CUSTOM_ENTITY");
+            st.execute("DROP TABLE IF EXISTS ROLLBACK_TABLE");
         }
         connection.close();
     }
@@ -893,5 +897,184 @@ public class JdbcJpaUpdaterProviderValidateTest {
         manifest.getChangeSets().add(cs2);
 
         return manifest;
+    }
+
+    // -------------------------------------------------------------------------
+    // Rollback tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testChangeSetFailureRollsBackChangeSet() throws Exception {
+        connection.setAutoCommit(false);
+        try (Statement st = connection.createStatement()) {
+            st.execute("CREATE TABLE IF NOT EXISTS ROLLBACK_TABLE (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
+            st.execute(HistoryTableManager.createTableSql(SqlDialect.H2, null, ChangeLogHistory.CHANGELOG_TABLE));
+        }
+        connection.commit();
+
+        MigrationManifest manifest = new MigrationManifest();
+        ChangeSetDescriptor cs = makeChangeSet("failing-cs", "author", "file.xml");
+        ChangeSetStep step1 = new ChangeSetStep();
+        step1.setType("sql");
+        step1.addStatement("h2", "INSERT INTO ROLLBACK_TABLE (ID) VALUES ('row-1')");
+        cs.getSteps().add(step1);
+
+        ChangeSetStep step2 = new ChangeSetStep();
+        step2.setType("sql");
+        step2.addStatement("h2", "INSERT INTO NON_EXISTENT_TABLE VALUES ('err')");
+        cs.getSteps().add(step2);
+
+        manifest.getChangeSets().add(cs);
+
+        JdbcSqlSink sink = new JdbcSqlSink(connection);
+        Set<ChangeSetKey> executed = ChangeLogHistory.loadExecuted(connection, null, ChangeLogHistory.CHANGELOG_TABLE);
+        ChangeSetRunner runner = new ChangeSetRunner(connection, null, ChangeLogHistory.CHANGELOG_TABLE,
+                SqlDialect.H2, manifest);
+
+        try {
+            runner.run(sink, executed, "1234567890", 0);
+            Assert.fail("Expected SQLException on invalid SQL step");
+        } catch (SQLException e) {
+            // Expected
+        }
+
+        // Verify that row-1 was rolled back
+        try (Statement st = connection.createStatement();
+             java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM ROLLBACK_TABLE")) {
+            Assert.assertTrue(rs.next());
+            Assert.assertEquals(0, rs.getInt(1));
+        }
+
+        // Verify no history row recorded
+        Set<ChangeSetKey> after = ChangeLogHistory.loadExecuted(connection, null, ChangeLogHistory.CHANGELOG_TABLE);
+        Assert.assertTrue(after.isEmpty());
+
+        connection.setAutoCommit(true);
+    }
+
+    @Test
+    public void testPartialMigrationRollbackIsolation() throws Exception {
+        connection.setAutoCommit(false);
+        try (Statement st = connection.createStatement()) {
+            st.execute("CREATE TABLE IF NOT EXISTS ROLLBACK_TABLE (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
+            st.execute(HistoryTableManager.createTableSql(SqlDialect.H2, null, ChangeLogHistory.CHANGELOG_TABLE));
+        }
+        connection.commit();
+
+        MigrationManifest manifest = new MigrationManifest();
+
+        // Successful changeset 1
+        ChangeSetDescriptor cs1 = makeChangeSet("success-cs", "author", "file.xml");
+        ChangeSetStep step1 = new ChangeSetStep();
+        step1.setType("sql");
+        step1.addStatement("h2", "INSERT INTO ROLLBACK_TABLE (ID) VALUES ('row-1')");
+        cs1.getSteps().add(step1);
+        manifest.getChangeSets().add(cs1);
+
+        // Failing changeset 2
+        ChangeSetDescriptor cs2 = makeChangeSet("failing-cs", "author", "file.xml");
+        ChangeSetStep step2 = new ChangeSetStep();
+        step2.setType("sql");
+        step2.addStatement("h2", "INSERT INTO ROLLBACK_TABLE (ID) VALUES ('row-2')");
+        cs2.getSteps().add(step2);
+
+        ChangeSetStep step3 = new ChangeSetStep();
+        step3.setType("sql");
+        step3.addStatement("h2", "INSERT INTO NON_EXISTENT_TABLE VALUES ('err')");
+        cs2.getSteps().add(step3);
+        manifest.getChangeSets().add(cs2);
+
+        JdbcSqlSink sink = new JdbcSqlSink(connection);
+        Set<ChangeSetKey> executed = ChangeLogHistory.loadExecuted(connection, null, ChangeLogHistory.CHANGELOG_TABLE);
+        ChangeSetRunner runner = new ChangeSetRunner(connection, null, ChangeLogHistory.CHANGELOG_TABLE,
+                SqlDialect.H2, manifest);
+
+        try {
+            runner.run(sink, executed, "1234567890", 0);
+            Assert.fail("Expected SQLException on invalid SQL step");
+        } catch (SQLException e) {
+            // Expected
+        }
+
+        // Verify that row-1 remains committed, but row-2 was rolled back
+        try (Statement st = connection.createStatement();
+             java.sql.ResultSet rs = st.executeQuery("SELECT ID FROM ROLLBACK_TABLE")) {
+            Assert.assertTrue(rs.next());
+            Assert.assertEquals("row-1", rs.getString(1));
+            Assert.assertFalse(rs.next());
+        }
+
+        // Verify only success-cs is recorded in history
+        Set<ChangeSetKey> after = ChangeLogHistory.loadExecuted(connection, null, ChangeLogHistory.CHANGELOG_TABLE);
+        Assert.assertEquals(1, after.size());
+        Assert.assertTrue(after.contains(new ChangeSetKey("success-cs", "author", "file.xml")));
+
+        connection.setAutoCommit(true);
+    }
+
+    @Test
+    public void testProviderUpdateRollbackAndAutoCommitRestoration() throws Exception {
+        Assert.assertTrue(connection.getAutoCommit());
+
+        try (Statement st = connection.createStatement()) {
+            st.execute("CREATE TABLE IF NOT EXISTS ROLLBACK_TABLE (ID VARCHAR(36) NOT NULL PRIMARY KEY)");
+        }
+
+        MigrationManifest manifest = new MigrationManifest();
+        ChangeSetDescriptor cs = makeChangeSet("custom-fail-cs", "author", "custom-file.xml");
+        ChangeSetStep step1 = new ChangeSetStep();
+        step1.setType("sql");
+        step1.addStatement("h2", "INSERT INTO ROLLBACK_TABLE (ID) VALUES ('row-1')");
+        cs.getSteps().add(step1);
+
+        ChangeSetStep step2 = new ChangeSetStep();
+        step2.setType("sql");
+        step2.addStatement("h2", "INSERT INTO NON_EXISTENT_TABLE VALUES ('err')");
+        cs.getSteps().add(step2);
+        manifest.getChangeSets().add(cs);
+
+        JpaEntityProvider entityProvider =
+                (JpaEntityProvider) java.lang.reflect.Proxy.newProxyInstance(
+                        getClass().getClassLoader(),
+                        new Class<?>[] { JpaEntityProvider.class },
+                        (proxy, method, args) -> {
+                            switch (method.getName()) {
+                                case "getFactoryId": return "test_factory";
+                                case "getMigrationManifest": return manifest;
+                                default: return null;
+                            }
+                        });
+
+        KeycloakSession session = (KeycloakSession) java.lang.reflect.Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] { KeycloakSession.class }, (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getAttributeOrDefault":
+                            if (JdbcJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG.equals(args[0])) {
+                                return Boolean.FALSE;
+                            }
+                            return args[1];
+                        case "getAllProviders": return Set.of(entityProvider);
+                        default: throw new UnsupportedOperationException(method.getName());
+                    }
+                });
+
+        JdbcJpaUpdaterProvider provider = new JdbcJpaUpdaterProvider(session, ChangeSetRunner.DEFAULT_INDEX_THRESHOLD);
+
+        try {
+            provider.update(connection, null);
+            Assert.fail("Expected RuntimeException from provider.update");
+        } catch (RuntimeException e) {
+            // Expected
+        }
+
+        // Auto-commit must be restored to true
+        Assert.assertTrue(connection.getAutoCommit());
+
+        // Uncommitted changes must be rolled back (not auto-committed when auto-commit was restored)
+        try (Statement st = connection.createStatement();
+             java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM ROLLBACK_TABLE")) {
+            Assert.assertTrue(rs.next());
+            Assert.assertEquals(0, rs.getInt(1));
+        }
     }
 }
