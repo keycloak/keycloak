@@ -29,4 +29,8 @@ public interface PasswordPolicyManagerProvider extends Provider {
     PolicyError validate(RealmModel realm, UserModel user, String password);
     PolicyError validate(String user, String password);
 
+    default PolicyError validate(PasswordPolicyContext context, String password) {
+        return validate(context.username(), password);
+    }
+
 }
