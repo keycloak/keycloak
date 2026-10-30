@@ -725,6 +725,10 @@ class KeycloakProcessor {
         for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
             String datasourceName = pu.getDataSourceName().orElse(pu.getPersistenceUnitName());
             Map<String, String> puProps = getUserPersistenceUnitOverrides(datasourceName);
+            // Quarkus replaces the descriptor's validation mode with its default when building additional units.
+            // Reapply the explicit persistence.xml mode to the final boot configuration.
+            Optional.ofNullable(pu.getProperties().get(AvailableSettings.JAKARTA_VALIDATION_MODE))
+                    .ifPresent(mode -> puProps.put(AvailableSettings.JAKARTA_VALIDATION_MODE, mode));
             if (!puProps.isEmpty()) {
                 staticConfigured.produce(new HibernateOrmIntegrationStaticConfiguredBuildItem("keycloak", pu.getPersistenceUnitName())
                         .setInitListener(recorder.createStaticPropertiesListener(puProps)));

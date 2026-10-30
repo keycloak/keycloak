@@ -4,6 +4,15 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Unresolved JAR references in custom JPA providers
+// https://github.com/keycloak/keycloak/issues/55438
+
+The server build now fails if a `<jar-file>` entry in a custom JPA provider's `META-INF/persistence.xml` cannot be resolved.
+For example, when a relative path points to a missing JAR, Hibernate reports `Could not resolve jar-file`.
+
+Before upgrading, remove the unresolved entries from `persistence.xml`.
+To register entities in a custom persistence unit, package them in the provider JAR and declare them with `<class>` or a mapping file.
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 
