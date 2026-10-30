@@ -39,22 +39,27 @@ const PF5_TO_PF6_TOKEN_MAP: Record<string, string> = {
   // Page / shell backgrounds (from backgroundColor + dependencies)
   // Main content surface
   "BackgroundColor--light-100": "background--color--primary--default",
-  // Dark-theme accent / elevated surface
-  "BackgroundColor--300": "background--color--secondary--default",
+  // Dark-theme accent / elevated surface (keep distinct from nav)
+  "BackgroundColor--300": "background--color--floating--default",
   // Form control surface (input background in dark theme)
   "BackgroundColor--400": "background--color--control--default",
-  // Nav / masthead shell (PF5 "dark-*" names are palette shades, not dark mode)
+  // Nav / shell (distinct from header so both controls survive export)
   "BackgroundColor--dark-300": "background--color--secondary--default",
   "BackgroundColor--100": "background--color--secondary--default",
-  // Header / masthead
-  "BackgroundColor--dark-100": "background--color--secondary--default",
-  "palette--black-1000": "background--color--secondary--default",
+  // Header / masthead (distinct from nav)
+  "BackgroundColor--dark-100": "background--color--tertiary--default",
+  "palette--black-1000": "background--color--tertiary--default",
 
   // Text / icons
   "Color--100": "text--color--regular",
   "Color--light-100": "text--color--inverse",
-  "Color--dark-100": "text--color--regular",
   "Color--light-200": "icon--color--inverse",
+};
+
+/** PF5 suffixes that must not share a global PF6 text token with Color--100. */
+const PF5_TO_PF6_COMPONENT_OVERRIDES: Record<string, string[]> = {
+  // inputTextColor: keep distinct from text--color--regular
+  "Color--dark-100": ["--pf-v6-c-form-control--Color"],
 };
 
 export function toPf6CssVar(pf5Suffix: string): string | undefined {
@@ -64,11 +69,15 @@ export function toPf6CssVar(pf5Suffix: string): string | undefined {
 
 export function pf5VarsToPf6Css(obj?: object): string {
   return Object.entries(obj || {})
-    .map(([key, value]) => {
+    .flatMap(([key, value]) => {
+      if (Object.hasOwn(PF5_TO_PF6_COMPONENT_OVERRIDES, key)) {
+        return PF5_TO_PF6_COMPONENT_OVERRIDES[key].map(
+          (cssVar) => `${cssVar}: ${value};`,
+        );
+      }
       const cssVar = toPf6CssVar(key);
-      return cssVar ? `${cssVar}: ${value};` : undefined;
+      return cssVar ? [`${cssVar}: ${value};`] : [];
     })
-    .filter((line): line is string => line !== undefined)
     .join("\n");
 }
 
