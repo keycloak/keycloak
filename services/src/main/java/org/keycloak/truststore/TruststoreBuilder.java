@@ -222,12 +222,12 @@ public class TruststoreBuilder {
         String password = null;
         String provider = null;
         File defaultTrustStore = null;
-        boolean isJreTruststore = false;
+        boolean isImplicitJreTruststore = false;
         if (trustStorePath == null) {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (trustStorePath == null) {
-                defaultTrustStore = getJRETruststore();
-                isJreTruststore = true;
+                defaultTrustStore = getImplicitJRETruststore();
+                isImplicitJreTruststore = true;
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
@@ -256,13 +256,13 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadJreTruststore(path, type, password, provider, isJreTruststore));
+            mergeTrustStore(truststore, path, loadDefaultTruststore(path, type, password, provider, isImplicitJreTruststore));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
     }
 
-    static File getJRETruststore() {
+    static File getImplicitJRETruststore() {
         // try jre locations - there doesn't seem to be a good default mechanism for this
         String securityDirectory = System.getProperty("java.home") + File.separator + "lib" + File.separator
                 + "security";
@@ -276,14 +276,14 @@ public class TruststoreBuilder {
     /**
      * Load a truststore, with extra fallbacks for the JRE cacerts file.
      * cacerts uses "changeit" as a conventional default password, and may be JKS on older JDKs.
-     * When isJreTruststore is true, password and provider are always null.
+     * When isImplicitJreTruststore is true, password and provider are always null.
      */
-    private static KeyStore loadJreTruststore(String path, String type, String password, String provider, boolean isJreTruststore) {
+    private static KeyStore loadDefaultTruststore(String path, String type, String password, String provider, boolean isImplicitJreTruststore) {
         try {
             return loadStore(path, type, password, provider);
         } catch (Exception e) {
-            if (isJreTruststore) {
-                // cacerts conventionally uses "changeit" as its password; try that before giving up
+            if (isImplicitJreTruststore) {
+                // cacerts in JRE 17 and earlier conventionally uses "changeit" as its password; try that before giving up
                 try {
                     return loadStore(path, KeyStore.getDefaultType(), "changeit", null);
                 } catch (Exception e1) {
