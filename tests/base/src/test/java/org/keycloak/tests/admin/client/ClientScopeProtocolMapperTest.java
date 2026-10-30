@@ -152,12 +152,36 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "account.manage-account");
+        rep.setName("renamed-saml-role-mapper");
         rep.setId(createdId);
         samlMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = samlMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
+    }
+
+    @Test
+    public void testUpdateSamlMapperWithoutName() {
+        ProtocolMapperRepresentation rep = makeSamlMapper("saml-scope-name-preserved");
+
+        String createdId = ApiUtil.getCreatedId(samlMappersRsc.createMapper(rep));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE,
+                AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId),
+                rep, ResourceType.PROTOCOL_MAPPER);
+
+        rep.setId(createdId);
+        rep.setName(null);
+        rep.getConfig().put("role", "account.manage-account");
+
+        samlMappersRsc.update(createdId, rep);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId),
+                rep, ResourceType.PROTOCOL_MAPPER);
+
+        ProtocolMapperRepresentation updated = samlMappersRsc.getMapperById(createdId);
+        Assertions.assertEquals("saml-scope-name-preserved", updated.getName());
+        Assertions.assertEquals("account.manage-account", updated.getConfig().get("role"));
     }
 
     @Test
@@ -169,6 +193,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
+        rep.setName("renamed-oidc-role-mapper");
         rep.setId(createdId);
         oidcMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
