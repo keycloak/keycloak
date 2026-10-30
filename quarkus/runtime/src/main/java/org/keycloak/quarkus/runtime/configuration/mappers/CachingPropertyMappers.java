@@ -199,6 +199,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
 
     private static boolean getDefaultMtlsEnabled() {
         // MTLS is always enabled by default for TCP-based jdbc-ping stack
+        // If people use a custom stack, they must disable it by setting the property to false
         return cacheSetToInfinispan();
     }
 
