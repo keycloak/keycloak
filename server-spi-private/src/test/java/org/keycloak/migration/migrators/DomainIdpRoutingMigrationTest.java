@@ -16,12 +16,15 @@
  */
 package org.keycloak.migration.migrators;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Domain;
+import org.keycloak.migration.migrators.DomainIdpRoutingMigration.DomainLookup;
 import org.keycloak.migration.migrators.DomainIdpRoutingMigration.IdentityProvider;
 import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Result;
 
@@ -280,11 +283,32 @@ public class DomainIdpRoutingMigrationTest {
         idp("ip", "p", "ANY", "x.café.o.com", true);
         idp("iq", "q", "ANY", "cafe.q.com, a.q.com, Á.q.com", true);
 
-        Result result = DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, true);
+        // the caller inserts a.q.com and Á.q.com in this order, and skips the second if the database treats them as the
+        // same name
+        assertThat(newDomains(migrate(this::findAccentSensitive)),
+                containsInAnyOrder("o x.cafe.o.com -", "p x.café.o.com -", "q a.q.com -", "q Á.q.com -", "q cafe.q.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), contains("q a.q.com -", "q Á.q.com -"));
+    }
 
-        // the database adds the names of one organization that its collation does not treat as names of other
-        // domains, in this order; the names of different organizations are still not added
-        assertThat(newDomains(result), contains("q a.q.com -", "q Á.q.com -", "q cafe.q.com -"));
+    @Test
+    public void testExcludedDomainOverlapsDomainWithNameThatOnlyDiffersInAccents() {
+        org("o", "*.o.com");
+        org("p", "*.café.o.com");
+        idp("io", "o", "ANY", "x.cafe.o.com", true);
+
+        // with an accent-insensitive collation, the emails of x.cafe.o.com go to p
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o x.cafe.o.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), empty());
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedDomainThatOnlyDiffersInDotlessI() {
+        // i and ı are the same letter ignoring case, but not in lower case, which is how domains are matched
+        org("o", "*.o.com", "i.o.com");
+        idp("io", "o", "ANY", "ı.o.com", true);
+
+        assertThat(newDomains(migrate()), contains("o ı.o.com -"));
     }
 
     @Test
@@ -304,7 +328,7 @@ public class DomainIdpRoutingMigrationTest {
         idp("io", "o", "ANY", "straße.o.com, strasse.o.com, æ.o.com, ae.o.com", true);
 
         assertThat(newDomains(migrate()), contains("o ae.o.com -", "o strasse.o.com -"));
-        assertThat(newDomains(DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, true)),
+        assertThat(newDomains(migrate(this::findAccentInsensitive)),
                 contains("o ae.o.com -", "o æ.o.com -", "o strasse.o.com -", "o straße.o.com -"));
     }
 
@@ -361,7 +385,27 @@ public class DomainIdpRoutingMigrationTest {
     }
 
     private Result migrate() {
-        return DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, false);
+        return DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, null);
+    }
+
+    private Result migrate(DomainLookup databaseLookup) {
+        return DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, databaseLookup);
+    }
+
+    /**
+     * Like a case-insensitive and accent-sensitive collation.
+     */
+    private List<Domain> findAccentSensitive(String name) {
+        return domains.stream().filter(domain -> domain.name().toLowerCase().equals(name.toLowerCase())).toList();
+    }
+
+    /**
+     * Like a case- and accent-insensitive collation.
+     */
+    private List<Domain> findAccentInsensitive(String name) {
+        Collator collator = Collator.getInstance(Locale.ROOT);
+        collator.setStrength(Collator.PRIMARY);
+        return domains.stream().filter(domain -> collator.compare(domain.name(), name) == 0).toList();
     }
 
     private void org(String id, String... names) {

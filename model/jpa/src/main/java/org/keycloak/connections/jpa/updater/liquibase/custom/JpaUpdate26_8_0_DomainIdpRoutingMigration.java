@@ -40,11 +40,8 @@ import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.RawSqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.jboss.logging.Logger;
 
 public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTask {
-
-    private static final Logger logger = Logger.getLogger(JpaUpdate26_8_0_DomainIdpRoutingMigration.class);
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
@@ -142,7 +139,8 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                 String realmId = entry.getKey();
                 Map<String, String> realmDomainIds = domainIds.getOrDefault(realmId, Map.of());
                 Result result = DomainIdpRoutingMigration.migrate(organizationNames,
-                        domains.getOrDefault(realmId, List.of()), entry.getValue(), true);
+                        domains.getOrDefault(realmId, List.of()), entry.getValue(),
+                        name -> findDomainsByName(orgDomainTable, realmId, name));
 
                 for (Routing routing : result.routings()) {
                     statements.add(new UpdateStatement(null, null, orgDomainTable)
@@ -154,12 +152,6 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
 
                 // domains for excluded domains, routed to the identity provider that redirected their emails, if any
                 for (Routing domain : result.newDomains()) {
-                    String existing = findDomainWithSameName(orgDomainTable, realmId, domain.name());
-                    if (existing != null) {
-                        logger.warnf("Excluded domain '%s' of organization '%s' is not migrated: the database treats it as the same name as the domain '%s'. Review the domains of organization '%s'",
-                                domain.name(), organizationNames.get(domain.organizationId()), existing, organizationNames.get(domain.organizationId()));
-                        continue;
-                    }
                     statements.add(insertDomainIfAbsent(orgDomainTable, orgTable, domain));
                 }
             }
@@ -170,17 +162,23 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
     }
 
     /**
-     * The name of a domain of the realm that the database treats as the same name, as the collation of the column
-     * compares names, or {@code null}.
+     * The domains of the realm whose name the database treats as the same name, as the collation of the column compares
+     * names.
      */
-    private String findDomainWithSameName(String orgDomainTable, String realmId, String name) throws SQLException {
+    private List<Domain> findDomainsByName(String orgDomainTable, String realmId, String name) {
         try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT d.NAME FROM " + getTableName(orgDomainTable) + " d WHERE d.REALM_ID = ? AND d.NAME = ?")) {
+                "SELECT d.ORG_ID, d.NAME FROM " + getTableName(orgDomainTable) + " d WHERE d.REALM_ID = ? AND d.NAME = ?")) {
             ps.setString(1, realmId);
             ps.setString(2, name);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString(1) : null;
+                List<Domain> found = new ArrayList<>();
+                while (rs.next()) {
+                    found.add(new Domain(rs.getString(1), rs.getString(2)));
+                }
+                return found;
             }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to find the domains named '" + name + "'", e);
         }
     }
 

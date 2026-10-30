@@ -204,7 +204,23 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTest {
 
         migrate();
 
-        assertDomains("r o *.o.com io redirect", "r p *.café.o.com ip redirect", "r q *.q.com iq redirect", "r q café.q.com iq redirect", "r q a.q.com -");
+        // for the collation, the emails of x.cafe.o.com go to p, so only p adds its exclusion
+        assertDomains("r o *.o.com io redirect", "r p *.café.o.com ip redirect", "r p x.café.o.com -", "r q *.q.com iq redirect", "r q café.q.com iq redirect", "r q a.q.com -");
+    }
+
+    @Test
+    public void testExcludedDomainOverlapsDomainWithNameThatOnlyDiffersInAccents() throws Exception {
+        connection.close();
+        createSchema("ENGLISH STRENGTH PRIMARY");
+        realm("r");
+        org("r", "o", "*.o.com");
+        org("r", "p", "*.café.o.com");
+        idp("r", "io", "o", "ANY", "x.cafe.o.com");
+
+        migrate();
+
+        // adding x.cafe.o.com to o would move its emails from p to o
+        assertDomains("r o *.o.com io redirect", "r p *.café.o.com -");
     }
 
     @Test
