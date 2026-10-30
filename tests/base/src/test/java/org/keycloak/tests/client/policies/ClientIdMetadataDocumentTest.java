@@ -1328,6 +1328,17 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        cimd.getRepresentation().setClientUri("http://localhost:8500");
+        cimd.getRepresentation().setTosUri("https://localhost:8500/tos");
+
+        cimd.getRepresentation().setSectorIdentifierUri("https://www.example.com/sector");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setSectorIdentifierUri(null);
+
+        cimd.getRepresentation().setRequestUris(List.of("https://www.example.com/request"));
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setRequestUris(null);
     }
 
     @Test
