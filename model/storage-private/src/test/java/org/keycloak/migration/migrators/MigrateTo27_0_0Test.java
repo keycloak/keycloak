@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -118,38 +119,23 @@ public class MigrateTo27_0_0Test {
     }
 
     private static ClientModel clientWithAttributes(Map<String, String> attributes) {
-        return (ClientModel) java.lang.reflect.Proxy.newProxyInstance(
-                ClientModel.class.getClassLoader(),
-                new Class<?>[] { ClientModel.class },
-                (proxy, method, args) -> {
-                    return switch (method.getName()) {
-                        case "getAttribute" -> attributes.get(args[0]);
-                        case "setAttribute" -> {
-                            attributes.put((String) args[0], (String) args[1]);
-                            yield null;
-                        }
-                        case "getAttributes" -> attributes;
-                        case "equals" -> proxy == args[0];
-                        case "hashCode" -> System.identityHashCode(proxy);
-                        case "toString" -> "TestClient";
-                        default -> defaultValue(method.getReturnType());
-                    };
-                });
-    }
+        return new ClientModelLazyDelegate(() -> {
+            throw new UnsupportedOperationException("Unexpected delegate access");
+        }) {
+            @Override
+            public String getAttribute(String name) {
+                return attributes.get(name);
+            }
 
-    private static Object defaultValue(Class<?> returnType) {
-        if (returnType == boolean.class) {
-            return false;
-        }
-        if (returnType == int.class) {
-            return 0;
-        }
-        if (returnType == long.class) {
-            return 0L;
-        }
-        if (returnType.isPrimitive()) {
-            throw new UnsupportedOperationException("Unhandled primitive type: " + returnType);
-        }
-        return null;
+            @Override
+            public void setAttribute(String name, String value) {
+                attributes.put(name, value);
+            }
+
+            @Override
+            public Map<String, String> getAttributes() {
+                return attributes;
+            }
+        };
     }
 }

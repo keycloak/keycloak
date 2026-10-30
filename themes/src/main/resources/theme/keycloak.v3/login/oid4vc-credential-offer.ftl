@@ -9,7 +9,7 @@
     <#if section = "header">
         ${msg("credentialOfferTitle", credentialDisplayName)}
     <#elseif section = "form">
-        <ol id="kc-cred-offer-settings" class="pf-v6-c-list pf-v6-u-mb-md">
+        <ol id="kc-cred-offer-settings" class="${properties.kcListClass!} ${properties.kcContentWrapperClass!}">
             <li>
                 <p>${msg("credentialOfferStep1", credentialDisplayName)}</p>
                 <@qr.qrCode id="kc-credential-offer-qr-code" content=credentialOffer.qrCode alt="QR code to claim a credential with a wallet">

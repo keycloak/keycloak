@@ -165,7 +165,7 @@
 		<span class="${properties.kcFormControlUtilClass}">
 			<span class="${properties.kcFormControlToggleIcon!}">
 				<svg
-					class="pf-v6-svg"
+					class="${properties.kcSvgClass!}"
 					viewBox="0 0 320 512"
 					fill="currentColor"
 					aria-hidden="true"

@@ -26,7 +26,7 @@ test.describe("Realm settings quick theme", () => {
     await page.getByTestId("quickTheme-tab").click();
 
     const stylesheet = page.locator(
-      'link[rel="stylesheet"][href$="/login/keycloak.v2/css/styles.css"]',
+      'link[rel="stylesheet"][href$="/login/keycloak.v3/css/styles.css"]',
     );
     await expect(stylesheet).toHaveCount(1);
 
