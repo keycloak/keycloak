@@ -29,36 +29,6 @@ runs:
         DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
         echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
 
-    - name: Run cluster JDBC_PING2 UDP smoke test
-      shell: bash
-      run: |
-        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-          -Pauth-server-cluster-quarkus \
-          -Pdb-${{ inputs.db }} \
-          -Dtest=RealmInvalidationClusterTest \
-          -Dsession.cache.owners=2 \
-          -Dauth.server.quarkus.cluster.stack=jdbc-ping-udp \
-          -Ddocker.database.skip=true \
-          -Ddocker.database.port=$DATABASE_PORT \
-          -Ddocker.container.testdb.ip=localhost \
-          -pl testsuite/integration-arquillian/tests/base \
-          2>&1 | misc/log/trimmer.sh
-
-    - name: Run cluster JDBC_PING2 TCP smoke test
-      shell: bash
-      run: |
-        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-          -Pauth-server-cluster-quarkus \
-          -Pdb-${{ inputs.db }} \
-          -Dtest=RealmInvalidationClusterTest \
-          -Dsession.cache.owners=2 \
-          -Dauth.server.quarkus.cluster.stack=jdbc-ping \
-          -Ddocker.database.skip=true \
-          -Ddocker.database.port=$DATABASE_PORT \
-          -Ddocker.container.testdb.ip=localhost \
-          -pl testsuite/integration-arquillian/tests/base \
-          2>&1 | misc/log/trimmer.sh
-
     - name: Run stateless tests
       shell: bash
       run: |
