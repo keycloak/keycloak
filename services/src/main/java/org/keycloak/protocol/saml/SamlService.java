@@ -385,7 +385,8 @@ public class SamlService extends AuthorizationEndpointBase {
          * workflows.
          *
          * <p>SOAP artifact resolution runs on {@code saml-artifact-pool} so a slow SP does not block a shared HTTP
-         * worker. Browser security headers are applied to the resumed response while a Keycloak session is available.
+         * worker. {@link AsyncResponseTransaction} applies browser security headers to the response that is actually
+         * resumed after commit or rollback.
          *
          * @param artifact the received artifact
          * @param relayState the current relay state
@@ -1554,7 +1555,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
                     if (art.getAny() == null) {
                         AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                withBrowserSecurityHeaders(session, ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE)));
+                                ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
                         return;
                     }
 
@@ -1579,12 +1580,12 @@ public class SamlService extends AuthorizationEndpointBase {
                         String response = protocol.encodeSamlDocument(clientMessage);
 
                         AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                withBrowserSecurityHeaders(session, protocol.handleSamlResponse(response, relayState)));
+                                protocol.handleSamlResponse(response, relayState));
                     } else if (art.getAny() instanceof RequestAbstractType) {
                         Document clientMessage = SAML2Request.convert((RequestAbstractType) art.getAny());
                         String request = protocol.encodeSamlDocument(clientMessage);
                         AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                withBrowserSecurityHeaders(session, protocol.handleSamlRequest(request, relayState)));
+                                protocol.handleSamlRequest(request, relayState));
                     } else {
                         throw new ProcessingException("Cannot recognise message contained in ArtifactResponse");
                     }
@@ -1599,13 +1600,13 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);
 
                 AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                        withBrowserSecurityHeaders(session, ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE)));
+                        ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
             } catch (ConfigurationException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);
                 AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                        withBrowserSecurityHeaders(session, ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST)));
+                        ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST));
             }
         }
     }

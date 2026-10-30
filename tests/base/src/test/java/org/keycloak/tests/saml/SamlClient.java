@@ -18,6 +18,7 @@ package org.keycloak.tests.saml;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.w3c.dom.Document;
 
@@ -55,6 +57,18 @@ public class SamlClient {
             @Override
             public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
                 return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY);
+            }
+
+            @Override
+            public HttpUriRequest createSamlArtifactRequest(URI samlEndpoint, String relayState, String artifact) {
+                HttpPost post = new HttpPost(samlEndpoint);
+                List<NameValuePair> parameters = new LinkedList<>();
+                parameters.add(new BasicNameValuePair(GeneralConstants.SAML_ARTIFACT_KEY, artifact));
+                if (relayState != null) {
+                    parameters.add(new BasicNameValuePair(RELAY_STATE, relayState));
+                }
+                post.setEntity(new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8));
+                return post;
             }
 
             private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType) {
@@ -103,12 +117,29 @@ public class SamlClient {
             }
 
             @Override
+            public HttpUriRequest createSamlArtifactRequest(URI samlEndpoint, String relayState, String artifact) {
+                try {
+                    URIBuilder builder = new URIBuilder(samlEndpoint)
+                            .setParameter(GeneralConstants.SAML_ARTIFACT_KEY, artifact);
+                    if (relayState != null) {
+                        builder.setParameter(RELAY_STATE, relayState);
+                    }
+                    return new HttpGet(builder.build());
+                } catch (URISyntaxException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+
+            @Override
             public URI getBindingUri() {
                 return JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
             }
         };
 
         public abstract HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
+
+        public abstract HttpUriRequest createSamlArtifactRequest(URI samlEndpoint, String relayState, String artifact);
+
         public abstract URI getBindingUri();
     }
 

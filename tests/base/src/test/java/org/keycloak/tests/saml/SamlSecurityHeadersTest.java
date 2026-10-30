@@ -8,6 +8,8 @@ import java.util.Collection;
 
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.protocol.saml.DefaultSamlArtifactResolver;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -51,6 +53,25 @@ public class SamlSecurityHeadersTest extends AbstractSamlTest {
     public void testBrowserSecurityHeadersOnRedirectBinding() throws Exception {
         // Redirect binding renders the login form directly from /protocol/saml.
         assertBrowserSecurityHeaders(SamlClient.Binding.REDIRECT, false);
+    }
+
+    /**
+     * Artifact resolution goes through {@code AsyncResponseTransaction}. When resolution fails the transaction
+     * rolls back; headers must still be applied to the final resumed error page.
+     */
+    @Test
+    public void testBrowserSecurityHeadersOnArtifactResolutionRollback() throws Exception {
+        samlRealm.updateClientWithCleanup(SAML_CLIENT_ID_SALES_POST, builder -> builder
+                .attribute(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "http://127.0.0.1:1/"));
+
+        String artifact = new DefaultSamlArtifactResolver().createArtifact(SAML_CLIENT_ID_SALES_POST);
+        URI samlEndpoint = getAuthServerSamlEndpoint(REALM_NAME);
+        HttpUriRequest request = SamlClient.Binding.POST.createSamlArtifactRequest(samlEndpoint, null, artifact);
+
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertHeaders(response, Arrays.asList(BrowserSecurityHeaders.values()));
+        }
     }
 
     private void assertBrowserSecurityHeaders(SamlClient.Binding binding, boolean expectRedirect) throws URISyntaxException,
