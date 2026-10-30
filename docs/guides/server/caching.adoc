@@ -274,69 +274,13 @@ It ensures that if multiple pods are scheduled on the same node, data replicas a
 We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure causing data loss.
 ====
 
-== Transport stacks
+== Transport stack
 
-Transport stacks ensure that {project_name} nodes in a cluster communicate in a reliable fashion.
-{project_name} supports a wide range of transport stacks:
+The transport stack ensures that {project_name} nodes in a cluster communicate in a reliable fashion.
+The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
 
-<@opts.expectedValues option="cache-stack"/>
-
-To apply a specific cache stack, enter this command:
-
-<@kc.start parameters="--cache-stack=<stack>"/>
-
-The default stack is set to `jdbc-ping` when distributed caches are enabled, which is backwards compatible with the defaults in the 26.x release stream of {project_name}.
-
-=== Available transport stacks
-
-The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` runtime option:
-
-[%autowidth]
-|===
-|Stack name|Transport protocol|Discovery
-
-|`jdbc-ping`|TCP|Database registry using the JGroups `JDBC_PING2` protocol.
-|`jdbc-ping-udp` (deprecated)|UDP|Database registry using the JGroups `JDBC_PING2` protocol.
-|===
-
-The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
-
-[%autowidth]
-|===
-|Stack name|Transport protocol|Discovery
-
-|`kubernetes` (deprecated) |TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
-|`tcp` (deprecated)|TCP|IP multicast using the JGroups `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
-|`udp` (deprecated)|UDP|IP multicast using the JGroups `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
-|===
-
-When using the `tcp`, `udp` or `jdbc-ping-udp` stack, each cluster must use a different multicast address and/or port so that their nodes form distinct clusters.
-By default, {project_name} uses `239.6.7.8` as multicast address for `jgroups.mcast_addr` and `46655` for the multicast port `jgroups.mcast_port`.
-
-NOTE: Use `-D<property>=<value>` to pass the properties via the `JAVA_OPTS_APPEND` environment variable or in the CLI command.
-
-// Keeping this paragraph in 26.x as stacks like `ec2` where mentioned in the 26.0 docs.
-// Should be removed for 27.0 when `jdbc-ping` is the general purpose default for everyone.
-====
-*Additional Stacks*
-
-It is recommended to use one of the stacks available above.
-Additional stacks are provided by Infinispan, but it is outside the scope of this guide how to configure them.
-Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks] for further documentation.
-====
-
-== Securing transport stacks
-
-Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration.
-No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack.
-
-[NOTE]
-====
-If you are using a transport stack based on `UDP` or `TCP_NIO2`, proceed as follows to configure the encryption of the transport stack:
-
-. Set the option `cache-embedded-mtls-enabled` to `false`.
-. Follow the documentation in http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] and {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport].
-====
+Encryption using TLS is enabled by default for the TCP-based `jdbc-ping` transport stack.
+No additional CLI options or modifications of the cache XML are required.
 
 With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
 The keys and the certificate are stored in the database so they are available to all nodes.
@@ -345,21 +289,24 @@ Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
 === Running inside a service mesh
 
-When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
-Otherwise, you might see error messages like `JGRP000006: failed accepting connection from peer SSLSocket` that indicate that a wrong certificate was presented, and the cluster will not form correctly.
+Keep {project_name}'s transport encryption enabled when running inside a service mesh.
+Configure the mesh to forward cluster connections as opaque TCP traffic without terminating {project_name}'s TLS connections.
+The mesh can additionally encrypt these connections using its own mTLS.
 
-You then have the option to allow direct mTLS communication between the {project_name} Pods, or rely on the service mesh transport security to encrypt the communication and to authenticate peers.
+Cluster nodes connect directly to other nodes using the addresses obtained through database discovery.
+Ensure your mesh configuration allows these connections on the ports listed in <<network-ports>>.
 
-To allow direct mTLS communication for {project_name} when using Istio:
+With Istio, connections that are not recognized as mesh traffic might be rejected when the receiving proxy requires Istio mTLS.
+{project_name}'s own mTLS does not satisfy this requirement because it uses different certificates and trust settings.
 
-* Apply the following configuration to allow direct communication.
-+
+To allow connections protected by {project_name}'s own mTLS on the data transmission port, you can configure a port-specific `PERMISSIVE` policy:
+
 [source,yaml]
 ----
-apiVersion: security.istio.io/v1beta1
+apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
-  name: infinispan-allow-nomtls
+  name: keycloak-cluster-transport
 spec:
   selector:
     matchLabels:
@@ -369,12 +316,17 @@ spec:
       mode: PERMISSIVE
 ----
 <1> Update the labels to match your {project_name} deployment.
-<2> Port 7800 is the default. Adjust it if you change the data transmission port.
+<2> Port 7800 is the default.
+Adjust it if you change the data transmission port.
 
-As an alternative, to disable the mTLS communication, and rely on the service mesh to encrypt the traffic:
+`PERMISSIVE` relaxes the requirement for Istio's mTLS on this port.
+It does not disable {project_name}'s encryption or peer authentication.
+Leave `cache-embedded-mtls-enabled` enabled.
 
-* Set the option `cache-embedded-mtls-enabled` to `false`.
-* Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
+Alternatively, retain Istio's `STRICT` policy and configure the mesh to establish its own mTLS connections for the direct node-to-node traffic.
+In this arrangement, {project_name}'s encrypted connections should be carried inside the mesh's encrypted connections.
+Configuration for this is outside of the scope of this guide.
+Refer to your service mesh documentation for the required traffic discovery and routing configuration.
 
 === Providing your own keys and certificates
 
