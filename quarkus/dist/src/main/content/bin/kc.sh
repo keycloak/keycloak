@@ -16,8 +16,8 @@ case "$(uname)" in
         RESOLVED_NAME="$(readlink -f "$0")"
         JAVA_HOME="$(/usr/local/bin/javaPathHelper -h keycloak)"
         ;;
-    Linux)
-        RESOLVED_NAME="$(readlink -f "$0")"
+    Linux | SunOS*)
+        RESOLVED_NAME="$(readlink -f "$0" 2>/dev/null)"
         ;;
 esac
 
@@ -49,6 +49,8 @@ esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
 }
 
+CONFIG_ARGS=""
+
 while [ "$#" -gt 0 ]
 do
     case "$1" in
@@ -58,10 +60,6 @@ do
               DEBUG_ADDRESS=$2
               shift
           fi
-          ;;
-      --)
-          shift
-          break
           ;;
       *)
           OPT=$(esceval "$1")
@@ -145,6 +143,7 @@ if [ "$DEBUG_MODE" = "true" ]; then
 fi
 
 esceval_args() {
+  result=""
   while IFS= read -r entry; do
     result="$result $(esceval "$entry")"
   done
@@ -162,19 +161,26 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
+SERVER_STATUS=""
+# duplicate stdin to fd 3 so background job receives original stdin in dash/ksh93
+exec 3<&0
+# run the java process in the background using fd 3, and close fd 3 in the child
+eval "'$JAVA' $JAVA_RUN_OPTS <&3 3<&- &"
+PID=$!
+# close fd 3 in the parent shell
+exec 3<&-
 # trap the signals that should be forwarded to the java process
-trap 'status=143; while [ -z "$PID" ]; do sleep 0.1; done; kill -TERM $PID; wait $PID' TERM INT
-# run the java process in the background using the current stdin
-eval "{ '$JAVA' $JAVA_RUN_OPTS <&3 3<&- & } 3<&0"
-# obtain the pid, and await the exit status
-PID=$!; wait $PID; status=$?
+trap 'SERVER_STATUS=143; kill -TERM "$PID" 2>/dev/null; wait "$PID" 2>/dev/null' TERM INT
+# await the exit status
+wait "$PID" 2>/dev/null
+SERVER_STATUS=${SERVER_STATUS:-$?}
 # remove the trap as signals can be directly handled
 trap - TERM INT
-# only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed 
-if [ $status = 10 ]; then
+# only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed
+if [ "$SERVER_STATUS" = "10" ]; then
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
 
   eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
 else
-  exit $status
-fi 
+  exit "$SERVER_STATUS"
+fi
