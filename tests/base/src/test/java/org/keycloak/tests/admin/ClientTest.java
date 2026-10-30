@@ -58,8 +58,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -502,7 +504,7 @@ public class ClientTest {
 
     @Test
     public void testInvalidUrlClientValidation() {
-        List<String> urlsToValidate = List.of("Root URL", "Base URL");
+        List<String> urlsToValidate = List.of("Root URL", "Base URL", "Sector identifier URI");
         testClientUriValidation(urlsToValidate, " is not a valid URL",
                 "invalid", "myapp://some-fake-app");
     }
@@ -510,7 +512,8 @@ public class ClientTest {
     @Test
     public void testIllegalSchemeClientValidation() {
         List<String> urlsToValidate = List.of("Root URL", "Base URL", "Backchannel logout URL", "A redirect URI", "A post-logout redirect URI",
-                "Admin URL", "JWKS URL", "Logo URL", "Front-channel logout URL", "CIBA notification endpoint", "Valid request URIs");
+                "Admin URL", "JWKS URL", "Logo URL", "Front-channel logout URL", "CIBA notification endpoint", "Valid request URIs",
+                "Policy URL", "Terms of service URL", "Sector identifier URI", "A web origin");
         testClientUriValidation(urlsToValidate, " uses an illegal scheme",
                 "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+",
                 "DaTa:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+",
@@ -526,6 +529,97 @@ public class ClientTest {
         testClientUriValidation(urlsToValidate, " must not contain an URL fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testMalformedWebOriginClientValidation() {
+        for (boolean create : List.of(false, true)) {
+            ClientRepresentation client = create ? ClientBuilder.create().clientId("invalid-web-origin").build() : createClient();
+            for (String origin : List.of("https://localhost/white space", "127.0.0.1:invalid", "[::1", "123.example.com:8080/path", "123@example.com:8080",
+                    "${authAdminUrl}.example.org", "${unknownOrigin}", "file://white space")) {
+                client.setWebOrigins(List.of(origin));
+                createOrUpdateClientExpectingValidationErrors(client, create, "A web origin is not a valid URI");
+            }
+        }
+    }
+
+    @Test
+    public void testLegacyWebOriginsOnCreateAndUpdate() {
+        for (String origin : List.of(Constants.AUTH_ADMIN_URL_PROP, Constants.AUTH_BASE_URL_PROP, "file://", "FILE://")) {
+            ClientRepresentation client = ClientBuilder.create().clientId("legacy-web-origin").build();
+            // Match the Account UI linked-accounts fixture, including its relative redirects.
+            client.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+            client.setRedirectUris(List.of("/realms/*"));
+            client.setWebOrigins(List.of(origin));
+            String id;
+            try (Response response = managedRealm.admin().clients().create(client)) {
+                id = ApiUtil.getCreatedId(response);
+            }
+            ClientResource resource = managedRealm.admin().clients().get(id);
+            try {
+                assertEquals(List.of(origin), resource.toRepresentation().getWebOrigins());
+                client.setWebOrigins(List.of(origin, "https://localhost"));
+                resource.update(client);
+                assertEquals(Set.copyOf(client.getWebOrigins()), Set.copyOf(resource.toRepresentation().getWebOrigins()));
+                ClientRepresentation unrelatedUpdate = new ClientRepresentation();
+                unrelatedUpdate.setName("Updated without changing web origins");
+                resource.update(unrelatedUpdate);
+                assertEquals(Set.copyOf(client.getWebOrigins()), Set.copyOf(resource.toRepresentation().getWebOrigins()));
+            } finally {
+                resource.remove();
+            }
+        }
+    }
+
+    @Test
+    public void testUriAttributesAreValidatedRegardlessOfProtocol() {
+        ClientRepresentation client = createClient();
+        for (String protocol : List.of(OIDCLoginProtocol.LOGIN_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL)) {
+            client.setProtocol(protocol);
+            client.setWebOrigins(null);
+            for (Map.Entry<String, String> field : Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, "Metadata descriptor URL",
+                    OIDCConfigAttributes.SECTOR_IDENTIFIER_URI, "Sector identifier URI").entrySet()) {
+                client.setAttributes(Map.of(field.getKey(), "javascript:alert(1)"));
+                createOrUpdateClientExpectingValidationErrors(client, false, field.getValue() + " uses an illegal scheme");
+            }
+            client.setAttributes(Map.of());
+            client.setWebOrigins(List.of("javascript:alert(1)"));
+            createOrUpdateClientExpectingValidationErrors(client, false, "A web origin uses an illegal scheme");
+        }
+    }
+
+    @Test
+    public void testClientUriSpecialValues() {
+        ClientRepresentation client = createClient();
+        client.setRootUrl("https://localhost");
+        client.setBaseUrl("/home");
+        client.setAdminUrl("/admin");
+        client.setRedirectUris(List.of("/callback", "https://localhost/*"));
+        client.setWebOrigins(List.of("+", "*", "null", "127.0.0.1:8080", "123.example.com:8443", "[::1]:8080"));
+        client.setAttributes(Map.of(
+                OIDCConfigAttributes.LOGO_URI, "data:image/png;base64,aW1hZ2U=",
+                OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##-",
+                OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "/backchannel-logout",
+                OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "/frontchannel-logout"));
+        ClientResource resource = managedRealm.admin().clients().get(client.getId());
+        resource.update(client);
+        assertEquals(client.getAttributes().get(OIDCConfigAttributes.LOGO_URI), resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        assertEquals(Set.copyOf(client.getWebOrigins()), Set.copyOf(resource.toRepresentation().getWebOrigins()));
+    }
+
+    @Test
+    public void testClearingCibaEndpointPreservesDeliveryModeValidation() {
+        ClientRepresentation client = createClient();
+        ClientResource resource = managedRealm.admin().clients().get(client.getId());
+        client.setAttributes(Map.of(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "https://localhost/notify"));
+        resource.update(client);
+        client.setAttributes(Map.of(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, ""));
+        resource.update(client);
+        assertNull(resource.toRepresentation().getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT));
+        client.setAttributes(Map.of(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, CibaConfig.CIBA_PING_MODE));
+        createOrUpdateClientExpectingValidationErrors(client, false, "CIBA Backchannel Client Notification Endpoint must be set for the CIBA ping mode");
     }
 
     @Test
@@ -667,6 +761,25 @@ public class ClientTest {
                 createOrUpdateClientExpectingValidationErrors(rep, create, expectedValidRequestURIsError);
             }
             OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setRequestUris(null);
+
+            for (Map.Entry<String, String> field : Map.of(
+                    OIDCConfigAttributes.POLICY_URI, "Policy URL",
+                    OIDCConfigAttributes.TOS_URI, "Terms of service URL",
+                    OIDCConfigAttributes.SECTOR_IDENTIFIER_URI, "Sector identifier URI").entrySet()) {
+                if (urlsToValidate.contains(field.getValue())) {
+                    if (rep.getAttributes() == null) {
+                        rep.setAttributes(new HashMap<>());
+                    }
+                    rep.getAttributes().put(field.getKey(), testUrl);
+                    createOrUpdateClientExpectingValidationErrors(rep, create, field.getValue() + errorSuffix);
+                    rep.getAttributes().remove(field.getKey());
+                }
+            }
+            if (urlsToValidate.contains("A web origin")) {
+                rep.setWebOrigins(List.of(testUrl));
+                createOrUpdateClientExpectingValidationErrors(rep, create, "A web origin" + errorSuffix);
+                rep.setWebOrigins(null);
+            }
 
             if (expectedRootUrlError != null) {
                 rep.setRootUrl(testUrl);

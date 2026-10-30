@@ -4,6 +4,23 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Validation of client URI fields
+// https://github.com/keycloak/keycloak/issues/54046
+
+Client URI validation and client policies now share a catalog of URI fields. Existing policy configuration keys, selected field names, regular expressions, and wildcard options retain their meaning.
+The following additional checks can reject previously accepted client configurations:
+
+* With *Client URIs Must Match* enabled, the *Trusted Hosts* client registration policy checks all supplied URI fields on creation and update, including post-logout redirects, logout endpoints, web origins, JWKS and request URIs, CIBA notification endpoints, logo, policy, terms of service, sector identifier attributes, and SAML endpoints and metadata URLs. Add any legitimate external hosts to the trusted-host list before updating these clients. Post-logout `*` is rejected because it permits redirects to any host. Explicit URLs accompanying `+` or `-` are also checked.
+* The *Secure Client URIs* executor additionally requires HTTPS without wildcards for sector identifier attributes and SAML endpoints and metadata URLs, regardless of the configured client protocol.
+* The *SAML Secure Client URIs* executor checks all catalog fields on SAML clients, including stored metadata during login and logout. Replace HTTP URLs with HTTPS URLs or remove unused values before upgrading with this executor enabled or enabling it for the first time. Stored `*` or `null` web origins and embedded `data:` logos also fail its HTTPS check, even if they are unused by SAML. The `allow-wildcard-redirects` option still applies only to redirect URIs.
+* General client validation additionally checks web origins, sector identifier attributes, and supplied SAML URL attributes even on clients using another protocol. Malformed or disallowed values must be corrected before saving or importing those clients.
+
+These changes close gaps where a URL could evade a policy simply because it was stored in a different client field. A policy configuration migration is not required, but continuing to accept those previously unchecked URLs would leave the gaps open.
+Relative URLs, embedded `data:` logos, and web origin markers `+`, `*`, and `null` retain their meaning in general validation and Trusted Hosts. The HTTPS executors still enforce their own scheme restrictions.
+General validation also preserves the legacy web origin literals `${authAdminUrl}`, `${authBaseUrl}`, and `file://`. These values remain subject to the host, HTTPS, and pattern restrictions of any enabled client policies.
+Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
+The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 

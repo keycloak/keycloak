@@ -238,9 +238,29 @@ It is good practice to add as much protection as possible for these URIs to prev
 
 Keycloak, with client policies, provides specific executors to protect the various client URIs:
 
-* *Secure Client URIs*: A generic executor that enforces all client URIs to only accept HTTPS and to not accept any wildcards.
+* *Secure Client URIs*: Enforces HTTPS without wildcards for all configured client URI fields, including sector identifier attributes and SAML endpoint and metadata URLs. Supplied fields are checked regardless of the client's protocol.
+* *SAML Secure Client URIs*: Enforces HTTPS for all configured URI fields of SAML clients, including metadata and attributes for other protocols. It checks the stored configuration on creation, update, login and logout. Wildcard redirect URIs can be enabled through its configuration.
 * *Secure Redirect URIs Enforcer*: An executor that allows different levels of validations for redirect URIs, such as IPv4 and IPv6 loopback addresses, HTTP scheme, wildcards, only permitted domains, or ensuring OAuth 2.1 compliance.
 * *Secure Client URIs Pattern Executor*: This executor is the most generic and flexible for validating client URLs. It allows you to select from a list only the URIs you want to validate, and then validates them providing a list of permitted pattern using regular expressions. Explore this <<ssrf,dedicated section>> to see how this executor can be used to prevent an SSRF attack.
+
+The URI validators read client fields from a common catalog. Each validator applies its own constraints:
+
+* Basic client validation checks the syntax of all configured URI fields, including attributes for inactive protocols. It accepts relative URLs where supported, embedded `data:` logos, valid web origin markers and legacy origins without a scheme. CIBA notification endpoints also follow the realm SSL requirements.
+* The *Trusted Hosts* client registration policy checks all configured client URI fields against its trusted hosts and domains. This includes logout endpoints, post-logout redirects, web origins, JWKS and request URIs, the CIBA notification endpoint, logo, policy, terms of service and sector identifier attributes, and SAML endpoints and metadata URLs. The check runs on registration and update when *Client URIs Must Match* is enabled.
+* The *Secure Client URIs* executor checks all URI fields in the catalog. The *SAML Secure Client URIs* executor checks the same catalog for SAML clients. Use the *Secure Client URIs Pattern* executor to apply custom constraints to selected fields.
+
+Trusted Hosts checks supplied URI fields regardless of the client's protocol. Web origins without a scheme are checked against their host.
+It preserves web origin markers `+`, `*` and `null`, post-logout markers `+` and `-`, and embedded `data:` logos.
+The `+` marker refers to the client's redirect URIs, which Trusted Hosts checks separately. Explicit URLs supplied alongside a marker are also checked.
+For front-channel logout and its home URL fallback, a scheme-relative URL such as `//example.org/logout` is checked against `example.org`, even if the client has a different root URL.
+Relative logo URLs are checked against the host of the {project_name} frontend URL, where the browser loads them, independently of the client's root URL. The configured logo value is preserved.
+Redirect paths retain the runtime resolution against the root URL, including paths starting with `//`.
+
+The Secure Client URIs executor resolves `+` in web origins and post-logout redirects using the client's redirect URIs; `-` disables post-logout redirects.
+The Secure Client URIs Pattern executor matches configured values literally, including `+`, `-`, and `*`, in the configured field order.
+Include patterns for these literal values when your policy allows them. Selected attributes are checked regardless of the client's protocol.
+
+The sector identifier URL stored in a pairwise protocol mapper is validated separately and is outside this catalog.
 
 [[_full_scope_disabled_policy]]
 == Enforcing Full Scope Allowed to be disabled
