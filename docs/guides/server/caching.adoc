@@ -274,33 +274,10 @@ It ensures that if multiple pods are scheduled on the same node, data replicas a
 We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure causing data loss.
 ====
 
-== Transport stacks
+== Transport stack
 
-Transport stacks ensure that {project_name} nodes in a cluster communicate in a reliable fashion.
-{project_name} supports a wide range of transport stacks:
-
-<@opts.expectedValues option="cache-stack"/>
-
-To apply a specific cache stack, enter this command:
-
-<@kc.start parameters="--cache-stack=<stack>"/>
-
-The default stack is set to `jdbc-ping` when distributed caches are enabled, which is backwards compatible with the defaults in the 26.x release stream of {project_name}.
-
-=== Available transport stack
-
-The default transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
-
-[%autowidth]
-|===
-|Stack name|Transport protocol|Discovery
-
-|`jdbc-ping`|TCP|Database registry using the JGroups `JDBC_PING2` protocol.
-|===
-
-Custom transport stacks can be configured in the cache configuration file. Refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks] for further documentation.
-
-== Securing transport stacks
+The transport stack ensures that {project_name} nodes in a cluster communicate in a reliable fashion.
+The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
 
 Encryption using TLS is enabled by default for the TCP-based `jdbc-ping` transport stack.
 No additional CLI options or modifications of the cache XML are required.
