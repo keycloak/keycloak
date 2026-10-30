@@ -104,7 +104,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             workCache.getCacheManager().addListener(workCacheListener);
 
             var clusterStartupTime = initClusterStartupTime(session);
-            var cp = new InfinispanClusterProvider(clusterStartupTime, ispnConnections.getNodeInfo(), workCache, localExecutor, clockSkewThresholdMillis);
+            var cp = new InfinispanClusterProvider(clusterStartupTime, ispnConnections.getNodeInfo(), workCache, localExecutor, clockSkewThresholdMillis, clockSkewDetectionEnabled);
 
             // We need CacheEntryListener for communication within current DC
             workCache.addListener(cp.new CacheEntryListener());

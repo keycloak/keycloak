@@ -107,10 +107,6 @@ public class ClockSkewDetectionTest {
             // Clean up
             workCache.remove(key);
         });
-
-        // Note: In a real production test, we would capture and verify the log output.
-        // For now, this test verifies the mechanism works without causing exceptions.
-        // The warning log can be manually verified in test output.
     }
 
     @Test

@@ -68,25 +68,32 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private final ExecutorService localExecutor;
 
     private final long clockSkewThresholdMillis;
+    private final boolean clockSkewDetectionEnabled;
     private static final long DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS = 100;
 
     /**
      * Constructor with default clock skew threshold for backward compatibility.
-     * @deprecated Use {@link #InfinispanClusterProvider(int, NodeInfo, Cache, ExecutorService, long)} to specify threshold
+     * @deprecated Use {@link #InfinispanClusterProvider(int, NodeInfo, Cache, ExecutorService, long, boolean)} to specify threshold and enabled state
      */
     @Deprecated
     public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
                                       ExecutorService localExecutor) {
-        this(clusterStartupTime, nodeInfo, workCache, localExecutor, DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS);
+        this(clusterStartupTime, nodeInfo, workCache, localExecutor, DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS, true);
     }
 
     public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
                                       ExecutorService localExecutor, long clockSkewThresholdMillis) {
+        this(clusterStartupTime, nodeInfo, workCache, localExecutor, clockSkewThresholdMillis, true);
+    }
+
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
+                                      ExecutorService localExecutor, long clockSkewThresholdMillis, boolean clockSkewDetectionEnabled) {
         this.nodeInfo = nodeInfo;
         this.clusterStartupTime = clusterStartupTime;
         this.workCache = workCache;
         this.localExecutor = localExecutor;
         this.clockSkewThresholdMillis = clockSkewThresholdMillis;
+        this.clockSkewDetectionEnabled = clockSkewDetectionEnabled;
     }
 
 
@@ -269,6 +276,11 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     private void handleClockSkewSample(ClockSkewTimestampSample sample) {
+        // Ignore if clock skew detection is disabled on this node
+        if (!clockSkewDetectionEnabled) {
+            return;
+        }
+
         // Ignore samples from this node
         if (sample.nodeName().equals(nodeInfo.nodeName())) {
             return;
