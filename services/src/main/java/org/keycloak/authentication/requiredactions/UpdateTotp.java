@@ -165,13 +165,14 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                 return;
             }
         } catch (ModelDuplicateException e) {
-            String field = switch (e.getDuplicateFieldName()) {
-                case CredentialModel.USER_LABEL ->  Validation.FIELD_OTP_LABEL;
+
+            FormMessage formMessage = switch (e.getDuplicateFieldName()) {
+                case CredentialModel.USER_LABEL -> new FormMessage(Validation.FIELD_OTP_LABEL, Messages.DUPLICATE_TOTP_DEVICE_NAME);
                 default -> null;
             };
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .addError(new FormMessage(field, e.getMessage()))
+                    .addError(formMessage)
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
