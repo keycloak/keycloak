@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import javax.xml.transform.dom.DOMSource;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -28,6 +29,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -294,6 +296,67 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         ArtifactResponseType artifactResponse = (ArtifactResponseType)response.getSamlObject();
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getAny(), nullValue());
+    }
+
+    @Test
+    public void testArtifactResolveWithWrongDestinationIsRejected() {
+        SamlClientBuilder clientBuilder = new SamlClientBuilder();
+
+        AtomicReference<String> artifact = new AtomicReference<>();
+        URI resolveEndpoint = UriBuilder.fromUri(getAuthServerSamlEndpoint(REALM_NAME)).path(SamlService.ARTIFACT_RESOLUTION_SERVICE_PATH).build();
+
+        SAMLDocumentHolder response = clientBuilder.authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST,
+                SAML_ASSERTION_CONSUMER_URL_SALES_POST, SamlClient.Binding.POST)
+                .setProtocolBinding(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri())
+                .build()
+                .login().user(bburkeUser).build()
+
+                .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST)
+                .storeArtifact(artifact)
+                .transformObject(ar -> {
+                    ar.setDestination(URI.create("https://evil.example.com/protocol/saml/resolve"));
+                })
+                .build()
+                .assertResponse(r -> assertThat(r, bodyHC(containsString(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get()))))
+
+                .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST)
+                .useArtifact(artifact)
+                .transformObject(ar -> {
+                    ar.setDestination(resolveEndpoint);
+                })
+                .build()
+                .executeAndTransform(ARTIFACT_RESPONSE::extractResponse);
+
+        assertThat(response.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+    }
+
+    @Test
+    public void testSignedArtifactResolveWithoutDestinationIsRejected() {
+        SamlClientBuilder clientBuilder = new SamlClientBuilder();
+
+        AtomicReference<String> artifact = new AtomicReference<>();
+
+        SAMLDocumentHolder response = clientBuilder.authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .setProtocolBinding(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri())
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .login().user(bburkeUser).build()
+
+                .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG)
+                .storeArtifact(artifact)
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .destination(null)
+                .build()
+                .assertResponse(r -> assertThat(r, bodyHC(containsString(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get()))))
+
+                .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG)
+                .useArtifact(artifact)
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .executeAndTransform(ARTIFACT_RESPONSE::extractResponse);
+
+        assertThat(response.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
