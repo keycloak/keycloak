@@ -1,8 +1,5 @@
 <#import "template.ftl" as layout>
-<#import "field.ftl" as field>
-<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayInfo=(realm.registrationAllowed && !registrationDisabled??); section>
-<!-- template: login-passkeys-conditional-authenticate.ftl -->
     <#if section = "title">
      title
     <#elseif section = "header">
@@ -73,9 +70,23 @@
             <div id="kc-form">
                 <div id="kc-form-wrapper">
                     <#if realm.password>
-                        <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" style="display:none">
+                        <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" style="display:none">
                             <#if !usernameHidden??>
-                                <@field.input name="username" label=msg("passkey-autofill-select") value=login.username!'' autofocus=true autocomplete="username webauthn" />
+                                <div class="${properties.kcFormGroupClass!}">
+                                    <label for="username" class="${properties.kcLabelClass!}">${msg("passkey-autofill-select")}</label>
+                                    <input tabindex="1" id="username"
+                                        aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
+                                        class="${properties.kcInputClass!}" name="username"
+                                        value="${(login.username!'')}"
+                                        autocomplete="username webauthn"
+                                        type="text" autofocus autocomplete="off"
+                                        dir="ltr"/>
+                                    <#if messagesPerField.existsError('username')>
+                                        <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+                                            ${kcSanitize(messagesPerField.get('username'))?no_esc}
+                                        </span>
+                                    </#if>
+                                </div>
                             </#if>
                         </form>
                     </#if>

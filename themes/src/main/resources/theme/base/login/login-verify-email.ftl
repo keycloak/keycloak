@@ -1,7 +1,5 @@
 <#import "template.ftl" as layout>
-<#import "buttons.ftl" as buttons>
-<@layout.registrationLayout displayInfo=!isAppInitiatedAction??; section>
-<!-- template: login-verify-email.ftl -->
+<@layout.registrationLayout displayInfo=true; section>
     <#if section = "header">
         ${msg("emailVerifyTitle")}
     <#elseif section = "form">
@@ -14,14 +12,16 @@
         </p>
         <#if isAppInitiatedAction??>
             <form id="kc-verify-email-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
-                <@buttons.actionGroup horizontal=true>
-                    <#if verifyEmail??>
-                        <@buttons.button id="kc-resend" label="emailVerifyResend" type="secondary"/>
-                    <#else>
-                        <@buttons.button id="kc-send" label="emailVerifySend"/>
-                    </#if>
-                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
-                </@buttons.actionGroup>
+                <div class="${properties.kcFormGroupClass!}">
+                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                        <#if verifyEmail??>
+                            <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("emailVerifyResend")}" />
+                        <#else>
+                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("emailVerifySend")}" />
+                        </#if>
+                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" formnovalidate>${msg("doCancel")}</button>
+                    </div>
+                </div>
             </form>
         </#if>
     <#elseif section = "info">
