@@ -1,4 +1,3 @@
-<#import "buttons.ftl" as buttons>
 <#macro conditionalUIData>
     <#if enableWebAuthnConditionalUI?has_content>
         <form id="webauth" action="${url.loginAction}" method="post">
@@ -41,6 +40,8 @@
            }
            </#outputformat>
         </script>
-        <@buttons.buttonLink id="authenticateWebAuthnButton" href="#" label="webauthn-doAuthenticate" class=["kcButtonSecondaryClass", "kcButtonBlockClass", "kcMarginTopClass"] />
+        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
+            ${msg("webauthn-doAuthenticate")}
+        </a>
     </#if>
 </#macro>
