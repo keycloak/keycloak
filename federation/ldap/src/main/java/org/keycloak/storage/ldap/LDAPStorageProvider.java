@@ -1176,7 +1176,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
                                 query.initPagination();
                                 //returning true for first iteration as the LDAP was not queried yet
                                 return true;
-                            } catch (NameNotFoundException | CommunicationException e) {
+                            } catch (NameNotFoundException | CommunicationException | AuthenticationException e) {
+                                // same failures as handled by LDAPQuery#getResultList when the LDAP server is unavailable
                                 logger.errorf(e, "Failed to init LDAP query pagination %s", query);
                                 return false;
                             } catch (NamingException e) {
