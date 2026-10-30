@@ -9,7 +9,7 @@
     <#if section = "header">
         ${msg("loginTotpTitle")}
     <#elseif section = "form">
-        <ol id="kc-totp-settings" class="pf-v6-c-list pf-v6-u-mb-md">
+        <ol id="kc-totp-settings" class="${properties.kcListClass!} ${properties.kcContentWrapperClass!}">
             <li>
                 <p>${msg("loginTotpStep1")}</p>
 
@@ -58,11 +58,11 @@
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post" novalidate="novalidate">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelClass!}">
-                    <label class="pf-v6-c-form__label" for="form-vertical-name">
-                        <span class="pf-v6-c-form__label-text">${msg("authenticatorCode")}</span>&nbsp;<span class="pf-v6-c-form__label-required" aria-hidden="true">&#42;</span>
+                    <label class="${properties.kcFormLabelClass!}" for="totp">
+                        <span class="${properties.kcFormLabelTextClass!}">${msg("authenticatorCode")}</span>&nbsp;<span class="${properties.kcInputRequiredClass!}" aria-hidden="true">&#42;</span>
                     </label>
                 </div>
-                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>pf-m-error</#if>">
+                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>${properties.kcError!}</#if>">
                     <input type="text" required id="totp" name="totp" autocomplete="one-time-code"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
                            inputmode="numeric"
@@ -80,12 +80,12 @@
             </div>
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelClass!}">
-                    <label class="pf-v6-c-form__label" for="form-vertical-name">
-                        <span class="pf-v6-c-form__label-text">${msg("loginTotpDeviceName")}</span><#if totp.otpCredentials?size gte 1>&nbsp;<span class="pf-v6-c-form__label-required" aria-hidden="true">&#42;</span></#if>
+                    <label class="${properties.kcFormLabelClass!}" for="userLabel">
+                        <span class="${properties.kcFormLabelTextClass!}">${msg("loginTotpDeviceName")}</span><#if totp.otpCredentials?size gte 1>&nbsp;<span class="${properties.kcInputRequiredClass!}" aria-hidden="true">&#42;</span></#if>
                     </label>
                 </div>
 
-                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('userLabel')>pf-m-error</#if>">
+                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('userLabel')>${properties.kcError!}</#if>">
                     <input type="text" id="userLabel" name="userLabel" autocomplete="off"
                            aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
                     />

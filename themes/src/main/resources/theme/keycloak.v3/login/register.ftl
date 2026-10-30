@@ -52,8 +52,8 @@
                 </div>
             </#if>
 
-            <div class="${properties.kcFormGroupClass!} pf-v6-c-login__main-footer-band">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!} pf-v6-c-login__main-footer-band-item">
+            <div class="${properties.kcFormGroupClass!} ${properties.kcLoginMainFooterBand!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!} ${properties.kcLoginMainFooterBandItem!}">
                     <div class="${properties.kcFormOptionsWrapperClass!}">
                         <span><a href="${url.loginUrl}">${msg("backToLogin")}</a></span>
                     </div>

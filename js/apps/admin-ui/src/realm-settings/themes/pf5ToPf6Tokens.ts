@@ -1,5 +1,7 @@
 // PF5 global token suffixes (without --pf-v5-global--) mapped to PF6 token suffixes
 // (without --pf-t--global--). Used by login preview and quick-theme export.
+// Preview still renders PatternFly React 5 LoginPage/LoginForm, so callers also emit
+// the original PF5 variables via pf5VarsToPf5Css until that preview is migrated.
 const PF5_TO_PF6_TOKEN_MAP: Record<string, string> = {
   "FontFamily--text": "font--family--body",
   "danger-color--100": "color--status--danger--default",
@@ -10,11 +12,11 @@ const PF5_TO_PF6_TOKEN_MAP: Record<string, string> = {
   "active-color--100": "color--brand--clicked",
   "link--Color": "text--color--link--default",
   "link--Color--hover": "text--color--link--hover",
-  "BackgroundColor--light-100": "background--color--100",
-  "BackgroundColor--100": "dark--background--color--100",
-  "BackgroundColor--300": "background--color--200",
-  "BackgroundColor--400": "background--color--400",
-  "BackgroundColor--dark-100": "background--color--highlight--default",
+  "BackgroundColor--light-100": "background--color--primary--default",
+  "BackgroundColor--100": "background--color--secondary--default",
+  "BackgroundColor--300": "background--color--secondary--default",
+  "BackgroundColor--400": "background--color--secondary--hover",
+  "BackgroundColor--dark-100": "background--color--inverse--default",
   "BackgroundColor--dark-300": "background--color--disabled--default",
   "palette--black-1000": "background--color--primary--default",
   "Color--100": "text--color--100",
@@ -38,6 +40,7 @@ export function pf5VarsToPf6Css(obj?: object): string {
     .join("\n");
 }
 
+/** Keep emitting PF5 variables while the Admin UI login preview still uses PF5 components. */
 export function pf5VarsToPf5Css(obj?: object): string {
   return Object.entries(obj || {})
     .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)

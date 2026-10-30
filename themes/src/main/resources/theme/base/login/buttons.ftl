@@ -6,11 +6,11 @@
   </div>
 </#macro>
 
-<#macro button label id="" name="" type="primary" fullWidth=true class=[] extra...>
+<#macro button label="" id="" name="" type="primary" fullWidth=true class=[] htmlType="submit" extra...>
   <button class="${properties.kcButtonClass!} ${properties['kcButton' + type?cap_first + 'Class']!}<#if fullWidth> ${properties.kcButtonBlockClass!}</#if><#list class as c> ${properties[c]!}</#list>"
           <#if name?has_content>name="${name}"</#if> <#if id?has_content>id="${id}"</#if>
-          type="submit" <#list extra as attrName, attrVal>${attrName}="${attrVal}"</#list>>
-  ${msg(label)}
+          type="${htmlType}" <#list extra as attrName, attrVal>${attrName}="${attrVal}"</#list>>
+  <#if label?has_content>${msg(label)}<#else><#nested></#if>
   </button>
 </#macro>
 

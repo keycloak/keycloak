@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout; section>
 <!-- template: login-recovery-authn-code-config.ftl -->
@@ -33,20 +34,20 @@
 
     <!-- actions -->
     <div class="${properties.kcRecoveryCodesActions!}">
-        <button id="printRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="printRecoveryCodes()">
+        <@buttons.button id="printRecoveryCodes" type="link" fullWidth=false htmlType="button" onclick="printRecoveryCodes()">
             <i class="fas fa-print"></i> ${msg("recovery-codes-print")}
-        </button>
-        <button id="downloadRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="downloadRecoveryCodes()">
+        </@buttons.button>
+        <@buttons.button id="downloadRecoveryCodes" type="link" fullWidth=false htmlType="button" onclick="downloadRecoveryCodes()">
             <i class="fas fa-download"></i> ${msg("recovery-codes-download")}
-        </button>
-        <button id="copyRecoveryCodes" class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass}" type="button" onclick="copyRecoveryCodes()">
+        </@buttons.button>
+        <@buttons.button id="copyRecoveryCodes" type="link" fullWidth=false htmlType="button" onclick="copyRecoveryCodes()">
             <i class="fas fa-copy"></i> ${msg("recovery-codes-copy")}
-        </button>
+        </@buttons.button>
     </div>
 
     <!-- confirmation checkbox -->
-    <div class="${properties.kcFormOptionsClass!} pf-v6-u-mt-md">
-        <input class="${properties.kcCheckInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
+    <div class="${properties.kcFormOptionsClass!} ${properties.kcMarginTopClass!}">
+        <input class="${properties.kcCheckboxInputClass!}" type="checkbox" id="kcRecoveryCodesConfirmationCheck" name="kcRecoveryCodesConfirmationCheck"
         onchange="document.getElementById('saveRecoveryAuthnCodesBtn').disabled = !this.checked;"
         />
         <label for="kcRecoveryCodesConfirmationCheck">${msg("recovery-codes-confirmation-message")}</label>
@@ -59,21 +60,14 @@
         <@passwordCommons.logoutOtherSessions/>
 
         <#if isAppInitiatedAction??>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
-            <button type="submit"
-                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} pf-m-link"
-                id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" value="true">${msg("recovery-codes-action-cancel")}
-            </button>
+            <@buttons.actionGroup>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" fullWidth=false disabled="disabled" />
+                <@buttons.button id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" label="recovery-codes-action-cancel" type="link" fullWidth=false value="true" />
+            </@buttons.actionGroup>
         <#else>
-            <input type="submit"
-            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-            id="saveRecoveryAuthnCodesBtn" value="${msg("recovery-codes-action-complete")}"
-            disabled
-            />
+            <@buttons.actionGroup>
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" disabled="disabled" />
+            </@buttons.actionGroup>
         </#if>
     </form>
 

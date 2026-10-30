@@ -1,4 +1,5 @@
 <#import "field.ftl" as field>
+<#import "buttons.ftl" as buttons>
 <#import "footer.ftl" as loginFooter>
 <#import "theme-resources.ftl" as themeResourceTags>
 <#macro username>
@@ -15,7 +16,7 @@
       <div class="${properties.kcInputGroupItemClass}">
         <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass} kc-login-tooltip" type="button" 
               aria-label="${msg('restartLoginTooltip')}" onclick="location.href='${url.loginRestartFlowUrl}'">
-            <span class="pf-v6-c-button__icon">
+            <span class="${properties.kcButtonIconClass!}">
               <i class="fa-sync-alt fas" aria-hidden="true"></i>
             </span>
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
@@ -153,9 +154,9 @@
 <body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
-    <header id="kc-header" class="pf-v6-c-login__header">
+    <header id="kc-header" class="${properties.kcLoginHeaderClass!}">
       <div id="kc-header-wrapper"
-              class="pf-v6-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+              class="${properties.kcBrandClass!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </header>
     <main class="${properties.kcLoginMain!}">
       <div class="${properties.kcLoginMainHeader!}">
@@ -180,7 +181,7 @@
             <span class="${properties.kcFormControlUtilClass}">
               <span class="${properties.kcFormControlToggleIcon!}">
                 <svg
-                  class="pf-v6-svg"
+                  class="${properties.kcSvgClass!}"
                   viewBox="0 0 320 512"
                   fill="currentColor"
                   aria-hidden="true"
@@ -250,20 +251,14 @@
         <#if auth?has_content && auth.showTryAnotherWayLink()>
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>
-              <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
-                  class="${properties.kcButtonClass} ${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
-                    ${msg("doTryAnotherWay")}
-              </a>
+              <@buttons.buttonLink id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()" label="doTryAnotherWay" class=["kcButtonSecondaryClass", "kcButtonBlockClass", "kcMarginTopClass"] />
           </form>
         </#if>
 
         <#if switchOrganizationEnabled?? && switchOrganizationEnabled>
           <form id="kc-switch-organization-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="switchOrganization" value="true"/>
-              <a id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()"
-                  class="${properties.kcButtonClass} ${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
-                    ${msg("doSwitchOrganization")}
-              </a>
+              <@buttons.buttonLink id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()" label="doSwitchOrganization" class=["kcButtonSecondaryClass", "kcButtonBlockClass", "kcMarginTopClass"] />
           </form>
         </#if>
 

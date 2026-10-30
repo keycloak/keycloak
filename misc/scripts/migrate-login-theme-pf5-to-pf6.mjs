@@ -118,6 +118,7 @@ async function resolveLoginDir(themePath) {
 function isBuiltinTheme(loginDir) {
   const normalized = path.resolve(loginDir);
   const builtinRoots = [
+    path.resolve(REPO_ROOT, "themes", "src", "main", "resources", "theme", "base"),
     path.resolve(REPO_ROOT, "themes", "src", "main", "resources", "theme", "keycloak"),
     path.resolve(REPO_ROOT, "themes", "src", "main", "resources", "theme", "keycloak.v3"),
     path.resolve(REPO_ROOT, "themes", "src", "main", "resources-community", "theme", "keycloak"),
@@ -182,7 +183,7 @@ async function scanResiduals(loginDir) {
 
   for (const filePath of filePaths) {
     const ext = path.extname(filePath).toLowerCase();
-    if (![".ftl", ".properties", ".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx", ".md"].includes(ext)) {
+    if (![".ftl", ".properties", ".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx", ".html", ".md"].includes(ext)) {
       continue;
     }
 

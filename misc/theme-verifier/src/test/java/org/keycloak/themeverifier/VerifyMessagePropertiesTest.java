@@ -131,30 +131,22 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
-    void resolveEnglishReferenceFileFallsBackToKeycloakV3LoginTheme() throws Exception {
-        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("theme-verifier");
-        java.nio.file.Path v3English = tempDir.resolve(
-                "resources" + File.separator + "theme" + File.separator + "keycloak.v3"
-                        + File.separator + "login" + File.separator + "messages"
-                        + File.separator + "messages_en.properties");
-        java.nio.file.Files.createDirectories(v3English.getParent());
-        java.nio.file.Files.writeString(v3English, "theme.keycloak.v3.login.description=English\n");
-
-        java.nio.file.Path v2Translation = tempDir.resolve(
-                "resources-community" + File.separator + "theme" + File.separator + "keycloak.v2"
+    void resolveEnglishReferenceFileMapsCommunityToResources() {
+        File translation = new File(
+                "resources-community" + File.separator + "theme" + File.separator + "keycloak.v3"
                         + File.separator + "login" + File.separator + "messages"
                         + File.separator + "messages_pt_BR.properties");
-        java.nio.file.Files.createDirectories(v2Translation.getParent());
-        java.nio.file.Files.writeString(v2Translation, "theme.keycloak.v3.login.description=Portuguese\n");
 
-        File resolved = VerifyMessageProperties.resolveEnglishReferenceFile(v2Translation.toFile());
+        File resolved = VerifyMessageProperties.resolveEnglishReferenceFile(translation);
         MatcherAssert.assertThat(
                 resolved.getName(),
                 Matchers.equalTo("messages_en.properties"));
         MatcherAssert.assertThat(
-                resolved.getAbsolutePath(),
-                Matchers.containsString("keycloak.v3" + File.separator + "login"));
-        MatcherAssert.assertThat(resolved.isFile(), Matchers.is(true));
+                resolved.getPath(),
+                Matchers.containsString("resources" + File.separator + "theme"));
+        MatcherAssert.assertThat(
+                resolved.getPath(),
+                Matchers.not(Matchers.containsString("resources-community")));
     }
 
     private static VerifyMessageProperties getFile(String fixture) {

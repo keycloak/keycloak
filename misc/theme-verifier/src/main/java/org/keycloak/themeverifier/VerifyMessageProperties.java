@@ -333,16 +333,7 @@ public class VerifyMessageProperties {
         String englishFilePath = translationFile.getAbsolutePath()
                 .replaceAll("resources-community", "resources")
                 .replaceAll("_[a-zA-Z-_]*\\.properties", "_en.properties");
-        File englishFile = new File(englishFilePath);
-        String v2LoginPath = "theme" + File.separator + "keycloak.v2" + File.separator + "login" + File.separator;
-        String v3LoginPath = "theme" + File.separator + "keycloak.v3" + File.separator + "login" + File.separator;
-        if (!englishFile.isFile() && englishFilePath.contains(v2LoginPath)) {
-            File remapped = new File(englishFilePath.replace(v2LoginPath, v3LoginPath));
-            if (remapped.isFile()) {
-                return remapped;
-            }
-        }
-        return englishFile;
+        return new File(englishFilePath);
     }
 
     private static String getEnglishValue(String key, PropertyResourceBundle bundleEnglish) {
