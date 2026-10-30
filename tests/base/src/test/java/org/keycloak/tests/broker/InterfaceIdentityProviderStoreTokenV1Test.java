@@ -45,6 +45,12 @@ public interface InterfaceIdentityProviderStoreTokenV1Test extends InterfaceIden
         Assertions.assertFalse(externalTokens.isSuccess());
     }
 
+    @Override
+    default void assertPublicClientTokenResponse(AbstractHttpResponse response) {
+        Assertions.assertEquals(200, response.getStatusCode());
+        checkSuccessfulTokenResponse(response);
+    }
+
     @Test
     default void testOIDCIdentityProviderStoreTokenManualRoleGrant() {
         ManagedRealm realm = getRealm();
