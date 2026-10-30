@@ -767,7 +767,7 @@ The following properties have no `db-orm-` option:
 
 * Properties set by a dedicated option: `db-dialect`, `db-schema` and `db-log-slow-queries-threshold`.
 * Properties that {project_name} configures itself, such as `quarkus.hibernate-orm.packages`, and properties that {project_name} cannot work with, such as `quarkus.hibernate-orm.enabled` and `quarkus.hibernate-orm.schema-management.strategy`.
-* `quarkus.hibernate-orm.multitenant` for the main persistence unit of {project_name}. The persistence unit of an additional datasource has the `db-orm-multitenant-<datasource>` option, see <<persistence-unit-multitenancy,Multi-tenancy>>.
+* `quarkus.hibernate-orm.multitenant` and `quarkus.hibernate-orm.flush.mode` for the main persistence unit of {project_name}, which is not multi-tenant and requires the automatic flush mode. The persistence unit of an additional datasource has the `db-orm-flush-mode-<datasource>` option, and the `db-orm-multitenant-<datasource>` option described in <<persistence-unit-multitenancy,Multi-tenancy>>.
 * Properties without a fixed name, such as `quarkus.hibernate-orm.unsupported-properties."<property>"`.
 * Deprecated properties.
 
@@ -905,7 +905,7 @@ export KC_DB_ORM_MULTITENANT_USER_STORE=database
 
 Your extension resolves the current tenant with a `TenantResolver` bean annotated with `@PersistenceUnitExtension("<datasource>")`, as described in the Quarkus guide.
 
-With the `database` strategy, the tenant identifiers are the names of additional datasources, which you configure like any other datasource, for example with `db-kind-tenant1` and `db-url-tenant1`.
+With the `database` strategy, the tenant identifiers are the names of additional datasources, which you configure like any other datasource, for example with `db-kind-tenant1` and `db-url-full-tenant1`.
 The datasource of the persistence unit itself only provides the database kind for the dialect: {project_name} does not connect to it, and you can disable it with `db-enabled-<datasource>=false`.
 With the `schema` strategy, the tenant identifiers are schemas of the datasource of the persistence unit.
 

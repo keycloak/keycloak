@@ -48,11 +48,13 @@ public class ConfigUnitResource implements RealmResourceProvider {
         if (provider == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        Map<String, Object> properties = provider.getEntityManager().getEntityManagerFactory().unwrap(SessionFactory.class).getProperties();
+        EntityManager entityManager = provider.getEntityManager();
+        Map<String, Object> properties = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getProperties();
         String json = SETTINGS.stream()
                 .filter(properties::containsKey)
                 .map(key -> "\"" + key + "\":\"" + properties.get(key) + "\"")
-                .collect(Collectors.joining(",", "{", "}"));
+                // the flush mode of the entity managers of the unit, which Keycloak hands out
+                .collect(Collectors.joining(",", "{", ",\"entityManager.flushMode\":\"" + entityManager.getFlushMode() + "\"}"));
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
 

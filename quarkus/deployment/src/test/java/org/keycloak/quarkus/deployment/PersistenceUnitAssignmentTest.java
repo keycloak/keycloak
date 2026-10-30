@@ -163,6 +163,17 @@ public class PersistenceUnitAssignmentTest {
     }
 
     @Test
+    public void packageRulesOfTheSamePackageAreMerged() {
+        // the Hibernate ORM extension assigns the entities of a package configured with and without the trailing delimiter
+        // to both units, so their unresolved hierarchy belongs to both units as well
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of(PACKAGE, Set.of("my-store"), PACKAGE.substring(0, PACKAGE.length() - 1), Set.of("other-store")));
+
+        assertEquals(Set.of("my-store", "other-store"), assignments.get(name(ModelInterface.class)));
+        assertEquals(Set.of("my-store", "other-store"), assignments.get(name(OtherInterface.class)));
+        assertNull(assignments.get(name(ProviderEntity.class)));
+    }
+
+    @Test
     public void packageRuleMatchesPackagePrefixOnly() {
         // a rule for a package whose name is a prefix of the test package name, but which is not a parent package, claims nothing
         String truncated = PACKAGE.substring(0, PACKAGE.length() - 4);

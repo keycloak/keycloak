@@ -77,8 +77,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     private static final String QUARKUS_HIBERNATE_ORM_PREFIX = "quarkus.hibernate-orm.";
-    // the multi-tenancy strategy of a persistence unit, see HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY
+    // the multi-tenancy strategy and the flush mode of a persistence unit, see HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY
     private static final String MULTITENANT = "multitenant";
+    private static final String FLUSH_MODE = "flush.mode";
     private static final List<String> MULTITENANT_STRATEGIES = List.of("none", "database", "schema", "discriminator");
     private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
@@ -377,9 +378,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     /**
      * Hibernate ORM properties of a persistence unit that have the {@code db-orm-*-<datasource>} option for the persistence
      * units that {@code db-jpa-packages-<datasource>} defines only, and no {@code db-orm-*} option for the default persistence
-     * unit: the default persistence unit of Keycloak is not multi-tenant, a persistence unit of an extension may be.
+     * unit: the default persistence unit of Keycloak is not multi-tenant and requires the automatic flush mode (see
+     * {@code AbstractJpaConnectionProviderFactory#isAutoFlushModeRequired}), a persistence unit of an extension is free in both.
      */
-    static final Set<String> HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY = Set.of(MULTITENANT);
+    static final Set<String> HIBERNATE_ORM_PROPERTIES_OF_NAMED_UNITS_ONLY = Set.of(MULTITENANT, FLUSH_MODE);
 
     private static boolean isHibernateOrmPropertyExposed(String suffix) {
         return matchesNone(suffix, HIBERNATE_ORM_PROPERTIES_NOT_EXPOSED);

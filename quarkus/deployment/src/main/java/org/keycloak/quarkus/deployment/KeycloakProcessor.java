@@ -903,8 +903,9 @@ class KeycloakProcessor {
             this.computingIndex = computingIndex;
             this.userUnitClasses = userUnitClasses;
             this.packageRules = new HashMap<>();
-            // same package matching as the Hibernate ORM extension: prefix of the class name, package delimiter included
-            packageRules.forEach((pkg, units) -> this.packageRules.put(pkg.endsWith(".") ? pkg : pkg + ".", units));
+            // same package matching as the Hibernate ORM extension: prefix of the class name, package delimiter included,
+            // and the units of a package configured with and without the delimiter merged
+            packageRules.forEach((pkg, units) -> this.packageRules.computeIfAbsent(pkg.endsWith(".") ? pkg : pkg + ".", p -> new HashSet<>()).addAll(units));
         }
 
         /**

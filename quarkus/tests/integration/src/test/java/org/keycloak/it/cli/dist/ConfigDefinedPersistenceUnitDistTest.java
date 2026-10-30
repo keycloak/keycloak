@@ -165,6 +165,7 @@ public class ConfigDefinedPersistenceUnitDistTest {
         rawDist.setProperty("db-orm-query-query-plan-cache-max-size-my-store", "256");
         rawDist.setProperty("db-orm-log-sql-my-store", "true");
         rawDist.setProperty("db-orm-log-format-sql-my-store", "false"); // the Quarkus default is true
+        rawDist.setProperty("db-orm-flush-mode-my-store", "commit"); // the default unit has no flush mode option
         try {
             // a build time option set after the build triggers a rebuild on start
             result = runner.run(START_AUTO_BUILD);
@@ -178,6 +179,9 @@ public class ConfigDefinedPersistenceUnitDistTest {
             assertEquals("true", settings("default").get("hibernate.format_sql"));
             assertEquals("true", settings(UNIT).get("hibernate.show_sql"));
             assertNull(settings(UNIT).get("hibernate.format_sql"));
+            // the entity managers of the unit use the configured flush mode, those of the default unit always flush automatically
+            assertEquals("COMMIT", settings(UNIT).get("entityManager.flushMode"));
+            assertEquals("AUTO", settings("default").get("entityManager.flushMode"));
             runner.stop();
 
             // a run time option changes without a rebuild; Quarkus does not set show_sql when false
@@ -203,6 +207,7 @@ public class ConfigDefinedPersistenceUnitDistTest {
             rawDist.removeProperty("db-orm-query-query-plan-cache-max-size-my-store");
             rawDist.removeProperty("db-orm-log-sql-my-store");
             rawDist.removeProperty("db-orm-log-format-sql-my-store");
+            rawDist.removeProperty("db-orm-flush-mode-my-store");
         }
     }
 

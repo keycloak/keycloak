@@ -1160,7 +1160,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         putEnvVar("KC_DB_ORM_LOG_SQL", "true");
         putEnvVar("KC_DB_ORM_LOG_SQL_MY_STORE", "true");
         putEnvVar("KC_DB_ORM_LOG_SQL_OTHER_STORE", "true");
-        putEnvVar("KC_DB_ORM_FLUSH_MODE", "commit");
+        putEnvVar("KC_DB_ORM_DATABASE_DEFAULT_CATALOG", "main");
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-my-store=mariadb", "--db-jpa-packages-my-store=org.example.entities",
                 "--db-kind-other-store=mariadb");
         initConfig();
@@ -1178,11 +1178,11 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig(Map.of(
                 "db-orm-log-sql", "true",
                 "db-orm-log-sql-my-store", "true",
-                "db-orm-flush-mode", "commit"));
+                "db-orm-database-default-catalog", "main"));
         assertExternalConfig(Map.of(
                 "quarkus.hibernate-orm.log.sql", "true",
                 "quarkus.hibernate-orm.\"my-store\".log.sql", "true",
-                "quarkus.hibernate-orm.flush.mode", "commit"));
+                "quarkus.hibernate-orm.database.default-catalog", "main"));
         // db-jpa-packages-other-store does not define a persistence unit for other-store
         assertExternalConfigNull("quarkus.hibernate-orm.\"other-store\".log.sql");
     }
@@ -1226,6 +1226,19 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void flushModeOfConfiguredPersistenceUnit() {
+        putEnvVar("KC_DB_ORM_FLUSH_MODE_MY_STORE", "commit");
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-my-store=mariadb", "--db-jpa-packages-my-store=org.example.entities",
+                "--db-kind-other-store=mariadb");
+        initConfig();
+
+        assertConfig("db-orm-flush-mode-my-store", "commit");
+        assertExternalConfig("quarkus.hibernate-orm.\"my-store\".flush.mode", "commit");
+        assertExternalConfigNull("quarkus.hibernate-orm.flush.mode");
+        assertExternalConfigNull("quarkus.hibernate-orm.\"other-store\".flush.mode");
+    }
+
+    @Test
     public void hibernateOrmOptionsNotExposed() {
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-kind-my-store=mariadb", "--db-jpa-packages-my-store=org.example.entities");
         initConfig();
@@ -1249,6 +1262,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertFalse(multitenant.getOption().isCli());
         assertEquals(List.of("none", "database", "schema", "discriminator"), multitenant.getExpectedValues());
         assertTrue(multitenant.getOption().isCaseInsensitiveExpectedValues());
+        // like the multi-tenancy strategy, the flush mode exists for the persistence units of named datasources only: the
+        // default persistence unit requires the automatic flush mode
+        assertNull(PropertyMappers.getMapper("kc.db-orm-flush-mode"));
+        PropertyMapper<?> flushMode = PropertyMappers.getMapper("kc.db-orm-flush-mode-my-store");
+        assertEquals("quarkus.hibernate-orm.\"<datasource>\".flush.mode", flushMode.getTo());
+        assertTrue(flushMode.isRunTime());
         // a property of the extension as a whole has no named datasource variant
         assertEquals("quarkus.hibernate-orm.metrics.enabled", PropertyMappers.getMapper("kc.db-orm-metrics-enabled").getTo());
         assertTrue(PropertyMappers.getMapper("kc.db-orm-metrics-enabled").isBuildTime());

@@ -68,6 +68,15 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
         return super.create(session);
     }
 
+    /**
+     * The persistence unit of an extension uses the flush mode of its configuration, see {@code db-orm-flush-mode-<datasource>};
+     * the Quarkus default is the automatic flush mode as well.
+     */
+    @Override
+    protected boolean isAutoFlushModeRequired() {
+        return false;
+    }
+
     @Override
     public Connection getConnection() {
         throwIfDatasourceInactive();
