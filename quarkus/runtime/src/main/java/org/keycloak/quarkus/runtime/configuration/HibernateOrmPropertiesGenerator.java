@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -183,7 +184,7 @@ public final class HibernateOrmPropertiesGenerator {
         sorted.forEach((name, property) -> result.append(name).append('=')
                 .append(property.buildTime() ? HibernateOrmProperties.BUILD_TIME : HibernateOrmProperties.RUN_TIME).append(',')
                 .append(property.perUnit() ? HibernateOrmProperties.PERSISTENCE_UNIT : HibernateOrmProperties.GLOBAL).append(',')
-                .append(property.type().getSimpleName().toLowerCase())
+                .append(property.type().getSimpleName().toLowerCase(Locale.ROOT))
                 .append('\n'));
         return result.toString().getBytes(StandardCharsets.UTF_8);
     }

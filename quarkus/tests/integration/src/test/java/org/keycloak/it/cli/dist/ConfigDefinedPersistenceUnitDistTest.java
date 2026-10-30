@@ -213,6 +213,14 @@ public class ConfigDefinedPersistenceUnitDistTest {
     }
 
     @Test
+    void persistenceUnitMustNotBeNamedAfterAProvider(KeycloakRunner runner) {
+        // jpa is the id of several providers, which the persistence unit of that name would replace
+        CLIResult result = runner.run("build", "--db=dev-file", "--db-kind-jpa=dev-mem", "--db-jpa-packages-jpa=com.acme.provider.configunit");
+        result.assertError("The persistence unit 'jpa' cannot use this name, which is the name of a provider or of another persistence unit. "
+                + "Rename the persistence unit, or the datasource that defines it.");
+    }
+
+    @Test
     void persistenceUnitMustNotOverlapKeycloakPackages(KeycloakRunner runner) {
         CLIResult result = runner.run("build", "--db=dev-file", "--db-kind-my-store=dev-mem", "--db-jpa-packages-my-store=com.acme.provider.configunit,org.keycloak.models.jpa");
         result.assertError("The package 'org.keycloak.models.jpa' of the persistence unit 'my-store' overlaps with the package 'org.keycloak.models.jpa.entities' of the default persistence unit, "

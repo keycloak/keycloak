@@ -1090,8 +1090,12 @@ class KeycloakProcessor {
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
 
-        for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
-                .entrySet()) {
+        Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadedFactories = loadFactories(preConfiguredProviders);
+        // the ids of the providers of all SPIs, which a persistence unit must not be named after, see checkPersistenceUnitName
+        Set<String> providerIds = new HashSet<>(preConfiguredProviders.keySet());
+        loadedFactories.values().forEach(byProvider -> byProvider.values().forEach(byId -> providerIds.addAll(byId.keySet())));
+
+        for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadedFactories.entrySet()) {
             Spi spi = entry.getKey();
 
             checkProviders(spi, entry.getValue(), defaultProviders);
@@ -1105,7 +1109,7 @@ class KeycloakProcessor {
             }
 
             if (spi instanceof JpaConnectionSpi) {
-                configureUserDefinedPersistenceUnits(additionalPUs, hibernateOrmConfig, factories, preConfiguredProviders, spi);
+                configureUserDefinedPersistenceUnits(additionalPUs, hibernateOrmConfig, providerIds, factories, preConfiguredProviders, spi);
             }
 
             if (spi instanceof ThemeResourceSpi) {
@@ -1151,20 +1155,35 @@ class KeycloakProcessor {
     }
 
     private void configureUserDefinedPersistenceUnits(List<AdditionalPersistenceUnitBuildItem> additionalPUs, HibernateOrmConfig hibernateOrmConfig,
-            Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
+            Set<String> providerIds, Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<String, ProviderFactory> preConfiguredProviders, Spi spi) {
         for (AdditionalPersistenceUnitBuildItem pu : additionalPUs) {
+            checkPersistenceUnitName(pu.getPersistenceUnitName(), providerIds, preConfiguredProviders).ifPresent(this::throwConfigError);
             registerNamedJpaConnectionProvider(pu.getPersistenceUnitName(), pu.getDataSourceName().orElse(pu.getPersistenceUnitName()), factories, preConfiguredProviders, spi);
         }
         // persistence units defined through configuration are named after their datasource, see validateConfiguredPersistenceUnits
         for (Map.Entry<String, HibernateOrmConfigPersistenceUnit> unit : hibernateOrmConfig.namedPersistenceUnits().entrySet()) {
             String unitName = unit.getKey();
+            checkPersistenceUnitName(unitName, providerIds, preConfiguredProviders).ifPresent(this::throwConfigError);
             NamedJpaConnectionProviderFactory factory = registerNamedJpaConnectionProvider(unitName, unitName, factories, preConfiguredProviders, spi);
             // the tenants of a DATABASE multi-tenant unit are datasources of their own, resolved by the TenantResolver of
             // the extension: Quarkus derives the dialect from the datasource of the unit but never connects to it, so the
             // unit must work when that datasource is disabled (db-enabled-<datasource>=false)
             factory.setDataSourceRequired(getMultiTenancyStrategy(unit.getValue()) != MultiTenancyStrategy.DATABASE);
         }
+    }
+
+    /**
+     * The factory of a persistence unit is registered as the JPA connection provider of the unit's name, and the session
+     * factory resolves the pre-configured factories of all SPIs by provider id (see {@code QuarkusKeycloakSessionFactory}):
+     * a unit named after a provider, or after another unit, would replace that provider.
+     */
+    static Optional<String> checkPersistenceUnitName(String unitName, Set<String> providerIds, Map<String, ProviderFactory> preConfiguredProviders) {
+        if (providerIds.contains(unitName) || preConfiguredProviders.containsKey(unitName)) {
+            return Optional.of(("The persistence unit '%s' cannot use this name, which is the name of a provider or of another persistence unit. "
+                    + "Rename the persistence unit, or the datasource that defines it.").formatted(unitName));
+        }
+        return Optional.empty();
     }
 
     private static NamedJpaConnectionProviderFactory registerNamedJpaConnectionProvider(String unitName, String dataSourceName,

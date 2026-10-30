@@ -15,6 +15,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.MappedSuperclass;
 
+import org.keycloak.provider.ProviderFactory;
+
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfigPersistenceUnit;
 import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
@@ -224,6 +226,21 @@ public class PersistenceUnitAssignmentTest {
                 KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak.models.jpa.entities.custom")), KEYCLOAK_PACKAGES)).orElseThrow());
         assertEquals(expected.formatted("org.keycloak", "org.keycloak.models.jpa.entities"),
                 KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak")), Set.of("org.keycloak.models.jpa.entities"))).orElseThrow());
+    }
+
+    @Test
+    public void persistenceUnitMustNotBeNamedAfterAProvider() {
+        Set<String> providerIds = Set.of("quarkus", "jpa", "default");
+        Map<String, ProviderFactory> preConfigured = Map.of("script-authenticator", mock(ProviderFactory.class), "user-store", mock(ProviderFactory.class));
+        assertTrue(KeycloakProcessor.checkPersistenceUnitName("my-store", providerIds, preConfigured).isEmpty());
+
+        String expected = "The persistence unit '%s' cannot use this name, which is the name of a provider or of another persistence unit. "
+                + "Rename the persistence unit, or the datasource that defines it.";
+        // the id of a provider of any SPI, a pre-configured provider and a persistence unit registered before
+        assertEquals(expected.formatted("quarkus"), KeycloakProcessor.checkPersistenceUnitName("quarkus", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("default"), KeycloakProcessor.checkPersistenceUnitName("default", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("script-authenticator"), KeycloakProcessor.checkPersistenceUnitName("script-authenticator", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("user-store"), KeycloakProcessor.checkPersistenceUnitName("user-store", Set.of(), preConfigured).orElseThrow());
     }
 
     @Test

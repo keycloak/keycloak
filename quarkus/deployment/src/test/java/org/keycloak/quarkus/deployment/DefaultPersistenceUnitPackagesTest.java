@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
@@ -83,33 +85,27 @@ public class DefaultPersistenceUnitPackagesTest {
     }
 
     /**
-     * The packages of the classes annotated with {@code @Entity} in the Keycloak jars of the test class path.
+     * The packages of the classes annotated with {@code @Entity} in the Keycloak code of the test class path: the jars of
+     * the Keycloak modules, or their class directories when the modules are built in the same Maven run or in an IDE.
      */
     private static Set<String> getEntityPackagesOfKeycloak() throws IOException {
         Indexer indexer = new Indexer();
-        int jars = 0;
+        int sources = 0;
         // surefire runs the tests with a manifest-only jar, and lists the real class path in a property of its own
         String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
         for (String entry : classPath.split(File.pathSeparator)) {
             Path path = Paths.get(entry);
-            String fileName = path.getFileName() == null ? "" : path.getFileName().toString();
-            if (!fileName.startsWith("keycloak-") || !fileName.endsWith(".jar")) {
-                continue;
-            }
-            jars++;
-            try (JarFile jar = new JarFile(path.toFile())) {
-                Enumeration<JarEntry> entries = jar.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry jarEntry = entries.nextElement();
-                    if (jarEntry.getName().endsWith(".class") && !jarEntry.getName().startsWith("META-INF/")) {
-                        try (InputStream in = jar.getInputStream(jarEntry)) {
-                            indexer.index(in);
-                        }
-                    }
+            if (Files.isDirectory(path)) {
+                if (isKeycloakClassDirectory(path)) {
+                    indexDirectory(indexer, path);
+                    sources++;
                 }
+            } else if (isKeycloakJar(path)) {
+                indexJar(indexer, path);
+                sources++;
             }
         }
-        assertFalse(jars == 0, "No Keycloak jar found in the class path " + classPath);
+        assertFalse(sources == 0, "No Keycloak classes found in the class path " + classPath);
 
         Index index = indexer.complete();
         Set<String> packages = new TreeSet<>();
@@ -118,7 +114,59 @@ public class DefaultPersistenceUnitPackagesTest {
                 packages.add(annotation.target().asClass().name().packagePrefix());
             }
         }
-        assertFalse(packages.isEmpty(), "No entity found in the Keycloak jars of the class path");
+        assertFalse(packages.isEmpty(), "No entity found in the Keycloak code of the class path");
         return packages;
+    }
+
+    private static boolean isKeycloakJar(Path path) {
+        String fileName = path.getFileName() == null ? "" : path.getFileName().toString();
+        return fileName.startsWith("keycloak-") && fileName.endsWith(".jar") && !fileName.endsWith("-tests.jar");
+    }
+
+    /**
+     * The class directory of a Keycloak module, such as {@code target/classes} of a module built in the same Maven run.
+     * Test class directories are excluded: tests define entities of their own.
+     */
+    private static boolean isKeycloakClassDirectory(Path path) {
+        if (!Files.isDirectory(path.resolve("org").resolve("keycloak"))) {
+            return false;
+        }
+        for (Path segment : path.toAbsolutePath()) {
+            String name = segment.toString();
+            if (name.equals("test-classes") || name.equals("test")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void indexJar(Indexer indexer, Path jarPath) throws IOException {
+        try (JarFile jar = new JarFile(jarPath.toFile())) {
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry jarEntry = entries.nextElement();
+                if (isClassFile(jarEntry.getName())) {
+                    try (InputStream in = jar.getInputStream(jarEntry)) {
+                        indexer.index(in);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void indexDirectory(Indexer indexer, Path directory) throws IOException {
+        try (Stream<Path> files = Files.walk(directory)) {
+            for (Path file : files.filter(Files::isRegularFile).toList()) {
+                if (isClassFile(directory.relativize(file).toString().replace(File.separatorChar, '/'))) {
+                    try (InputStream in = Files.newInputStream(file)) {
+                        indexer.index(in);
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isClassFile(String relativeName) {
+        return relativeName.endsWith(".class") && !relativeName.startsWith("META-INF/") && !relativeName.endsWith("module-info.class");
     }
 }
