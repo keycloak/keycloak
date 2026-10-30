@@ -64,7 +64,7 @@ export const RealmSettingsTokensTab = ({
 
   const defaultSigAlgOptions = sortProviders(
     serverInfo.providers!["signature"].providers,
-  );
+  ).filter((algorithm) => !algorithm.startsWith("ML-DSA-"));
 
   const asymmetricSigAlgOptions =
     serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
