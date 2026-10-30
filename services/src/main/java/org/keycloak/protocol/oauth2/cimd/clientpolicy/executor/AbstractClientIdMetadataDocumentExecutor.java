@@ -863,7 +863,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // An authorization server MAY impose restrictions or relationships
         // between the redirect_uris and the client_id or client_uri properties
 
-        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri
+        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri, sector_identifier_uri, request_uris
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -875,7 +875,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
+            List<String> l = Stream.concat(
+                            Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
+                                    clientOIDC.getSectorIdentifierUri()),
+                            convertContentFilledList(clientOIDC.getRequestUris()).stream())
                     .filter(Objects::nonNull).toList();
             try {
                 for (String s : l) {
