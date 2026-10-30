@@ -195,6 +195,10 @@ public final class Constants {
     // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
     public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
 
+    // Authentication session client note (transferred to the client session) containing a serialized list of the authentication executions
+    // completed during the current authentication, as opposed to executions carried over from earlier authentications in the SSO session
+    public static final String AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION = "authenticators-completed-current-authentication";
+
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
     // so it is possible to check when particular level expires and needs to be re-authenticated
     public static final String LOA_MAP = "loa-map";

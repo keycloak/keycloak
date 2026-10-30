@@ -17,8 +17,10 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Time;
@@ -37,19 +39,42 @@ public class AmrUtils {
     /**
      * Get the configured authenticator reference values for the specified executions. If no
      * value is configured for the execution, null is returned instead of throwing an error.
+     * Every execution is subject to its configured max age; use
+     * {@link #getAuthenticationExecutionReferences(Map, Set, RealmModel)} to exempt the executions
+     * of the current authentication.
      *
-     * @param executions List of authenticator execution ids
+     * @param executions Map of authenticator execution ids to the time the execution completed
      * @param realmModel The realm the executions are configured in
      * @return The list of amr values.
      */
     public static List<String> getAuthenticationExecutionReferences(Map<String, Integer> executions, RealmModel realmModel) {
+        return getAuthenticationExecutionReferences(executions, Collections.emptySet(), realmModel);
+    }
+
+    /**
+     * Get the configured authenticator reference values for the specified executions. If no
+     * value is configured for the execution, null is returned instead of throwing an error.
+     * <p>
+     * An execution completed during the current authentication is always reported. The configured max age
+     * only decides whether an execution carried over from an earlier authentication in the SSO session is
+     * still reported, in the same way the max age of a level of authentication only applies to levels
+     * reused from a previous authentication.
+     *
+     * @param executions Map of authenticator execution ids to the time the execution completed
+     * @param currentAuthenticationExecutions Ids of the executions completed during the current authentication
+     * @param realmModel The realm the executions are configured in
+     * @return The list of amr values.
+     */
+    public static List<String> getAuthenticationExecutionReferences(Map<String, Integer> executions,
+                                                                    Set<String> currentAuthenticationExecutions,
+                                                                    RealmModel realmModel) {
         return executions.entrySet().stream()
             .map(
                 entry -> {
                     try {
                         // extract the authenticator config and get the authenticator reference value
                         Map<String, String> config = realmModel.getAuthenticatorConfigById(realmModel.getAuthenticationExecutionById(entry.getKey()).getAuthenticatorConfig()).getConfig();
-                        if (isAmrValid(config, entry.getValue())){
+                        if (currentAuthenticationExecutions.contains(entry.getKey()) || isAmrValid(config, entry.getValue())){
                             return config.get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE);
                         }
                     } catch (NullPointerException e){
@@ -64,7 +89,7 @@ public class AmrUtils {
     }
 
     /**
-     * Check if the AMR is still valid by determining if the execution time + the configured max age is less than the current time
+     * Check if a carried over AMR is still valid by determining if the execution time + the configured max age is not yet in the past
      * @param config The authenticator execution config
      * @param authTime The time that the authentication occurred
      * @return True if the amr value is still valid for this session

@@ -113,6 +113,7 @@ image:images/Create-authentication-execution.png[Adding an Authentication Execut
 
 Authentication executions can optionally have a reference value configured. This can be utilized by the _Authentication Method Reference (AMR)_ protocol mapper to populate the _amr_ claim in OIDC access and ID tokens (for more information on the
 AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the _Authentication Method Reference (AMR)_ protocol mapper is configured for a client, it will populate the _amr_ claim with the reference value for any authenticator execution the user successfully completes during the authentication flow.
+An execution can also have a *Max age* configured, in seconds. When the user authenticates again in the same SSO session, for example through the SSO cookie, the reference value of an execution completed in an earlier authentication is only populated if that execution completed within the max age. The default of 0 means the reference value is only populated in the tokens of the authentication that completed the execution.
 
 .Adding an authenticator reference value
 image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
