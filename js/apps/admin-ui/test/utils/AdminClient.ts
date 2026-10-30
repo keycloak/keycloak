@@ -288,6 +288,14 @@ class AdminClient {
     await this.#client.users.logout({ id: userId, realm });
   }
 
+  async listUserSessions(
+    userId: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.users.listSessions({ id: userId, realm });
+  }
+
   async createClientScope(
     scope: ClientScopeRepresentation & { realm?: string },
   ) {

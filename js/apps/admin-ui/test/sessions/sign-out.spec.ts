@@ -108,15 +108,10 @@ test.describe("Sign out a specific session", () => {
 
       await signOutSession(page, testBed.realm, sub, otherSession.sid);
       await assertIsDesktopView(page);
-      const sessionsResponse = page.waitForResponse(
-        (response) =>
-          response.url().endsWith(`/users/${sub}/sessions`) && response.ok(),
-      );
       await page.reload();
       await assertIsDesktopView(page);
-      const sessions: UserSessionRepresentation[] = await (
-        await sessionsResponse
-      ).json();
+      // A response body can be gone if the page navigates before it is read, so read the sessions from the API.
+      const sessions = await adminClient.listUserSessions(sub, testBed.realm);
       expect(sessions.some((session) => session.id === sid)).toBe(true);
       expect(sessions.some((session) => session.id === otherSession.sid)).toBe(
         false,

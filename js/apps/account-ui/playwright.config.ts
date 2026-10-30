@@ -1,4 +1,5 @@
 import { type ViewportSize, defineConfig, devices } from "@playwright/test";
+import { sharedConfig } from "../../playwright.shared";
 
 const viewport: ViewportSize = { width: 1920, height: 1080 };
 
@@ -8,19 +9,7 @@ const viewport: ViewportSize = { width: 1920, height: 1080 };
 export default defineConfig({
   testDir: "./test",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  reporter: process.env.CI
-    ? [
-        ["github"],
-        ["list"],
-        ["html"],
-        ["json", { outputFile: "playwright-results.json" }],
-      ]
-    : "list",
-
-  use: {
-    trace: "retain-on-failure",
-  },
+  ...sharedConfig,
 
   projects: [
     {
