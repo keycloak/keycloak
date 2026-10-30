@@ -194,6 +194,9 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            rejectInternalComponent(
+                    rep.getProviderType() != null ? rep.getProviderType() : model.getProviderType(),
+                    rep.getProviderId() != null ? rep.getProviderId() : model.getProviderId());
             // Record which config fields have the SECRET_VALUE placeholder or are omitted/empty before merging,
             // so downstream validation can detect auto-preserved (not re-entered) secrets.
             Set<String> secretPlaceholderFields = new HashSet<>();
