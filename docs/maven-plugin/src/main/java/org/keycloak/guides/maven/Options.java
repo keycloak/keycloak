@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -237,23 +239,23 @@ public class Options {
             return key.toUpperCase().replace('.', '_').replace('-', '_');
         }
 
+        private static final Pattern SENTENCE_BREAK = Pattern.compile("\\.\\s");
+
         public String getDescription() {
-            int i = description.indexOf('.');
-            if (i == -1) {
-                return description;
-            } else {
-                return description.substring(0, i + 1).trim();
+            Matcher m = SENTENCE_BREAK.matcher(description);
+            if (!m.find()) {
+                return description.trim();
             }
+            return description.substring(0, m.start() + 1).trim();
         }
 
         public String getDescriptionExtended() {
-            int i = description.indexOf('.');
-            if (i == -1) {
+            Matcher m = SENTENCE_BREAK.matcher(description);
+            if (!m.find()) {
                 return null;
-            } else {
-                String extended = description.substring(i + 1).trim();
-                return extended.length() > 0 ? extended : null;
             }
+            String extended = description.substring(m.end()).trim();
+            return !extended.isEmpty() ? extended : null;
         }
 
         public String getDefaultValue() {

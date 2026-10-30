@@ -4,6 +4,32 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Realm-level default client scopes require `manage-realm`
+// https://github.com/keycloak/keycloak/issues/50588
+
+Changing the realm-level default and optional client scopes through the Admin REST API endpoints `default-default-client-scopes/{clientScopeId}` and `default-optional-client-scopes/{clientScopeId}` now requires the `manage-realm` role.
+Previously `manage-clients` was sufficient, even though these lists determine which client scopes every newly created client in the realm receives.
+Administrators who hold only `manage-clients` can still create, update, and delete individual client scopes, and can still read the realm-level lists; they can no longer change which of them are realm defaults.
+If you have automation that manages realm default client scopes with a `manage-clients` account, grant it `manage-realm` or run it with an account that already has it.
+
+=== Client scope management restored for per-client delegated administrators
+// https://github.com/keycloak/keycloak/issues/54002
+
+The additional client scope permission checks introduced for CVE-2026-14614 have been removed from client scope assignment endpoints.
+Those checks incorrectly restricted the intended delegated client administration model and prevented administrators from managing scope assignments for their clients.
+
+With Fine-Grained Admin Permissions (FGAP), a per-client `view` permission allows an administrator to see the scopes assigned to that client, including their descriptions and parameterized-scope indicators.
+A per-client `manage` permission allows assigning any existing realm client scope to that client, removing assignments, and changing the assigned type (default ↔ optional).
+Global `manage-clients` or type-level Clients `manage` permission is no longer required for these operations.
+In FGAP v2, `manage` does not imply `view`; grant both permissions to manage scope assignments through the Admin Console.
+
+The Admin Console obtains summaries of available scopes from `GET .../clients/\{id}/available-client-scopes`, which requires `manage` permission on that client.
+This does not grant access to protocol mapper configurations, other scope attributes, or permission to edit shared client scope definitions.
+The realm-wide client scope catalog retains its existing permissions.
+
+Grant per-client `manage` only to administrators trusted to assign any existing realm client scope to that client, including the scope's protocol mappers and role scope mappings.
+This change does not introduce restrictions on which scopes a delegated administrator may assign.
+
 === Deleting required client scopes
 // https://github.com/keycloak/keycloak/issues/51248
 
@@ -49,6 +75,22 @@ The following conditions are now enforced:
 After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
+
+=== SAML broker IdP-initiated logins enforce a recipient bound to the target client
+// https://github.com/keycloak/keycloak/issues/54342
+
+When processing a SAML assertion received from an identity provider through identity brokering, {project_name} now always validates the Bearer `SubjectConfirmationData` `Recipient` against the broker endpoint expected for that specific login -- the per-client IdP-initiated endpoint for IdP-initiated logins, or the generic broker endpoint for SP-initiated logins -- regardless of whether the outer SAML response `Destination` is present.
+
+Previously, when the identity provider's response omitted the (optional, and not necessarily signed) `Destination` attribute, the `Recipient` attribute was not validated at all for broker logins. This allowed an assertion that an identity provider legitimately issued for one IdP-initiated client to be replayed, unmodified, against a different IdP-initiated client configured on the same broker, bypassing client-specific login policy.
+
+After upgrading, a Bearer `SubjectConfirmationData` whose `Recipient` is missing or does not match the expected broker endpoint is rejected, even when the response's `Destination` is absent or matches. If you operate an identity provider that issues assertions without a `Recipient`, or with a `Recipient` that does not point at the expected {project_name} broker endpoint, update it to send a spec-compliant Bearer `SubjectConfirmationData`.
+
+=== SAML logins with an empty principal are rejected
+// https://github.com/keycloak/keycloak/issues/53816
+
+When processing a SAML assertion received from an identity provider, {project_name} now rejects the login when the principal that identifies the user is empty or contains only whitespace.
+Depending on the Principal type of the identity provider, the principal is the subject `NameID` or the value of the configured attribute.
+Accounts whose link to the identity provider has an empty user ID can no longer log in through it; remove this link so that their owners can link the accounts again once the identity provider sends a non-empty principal.
 
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
@@ -141,11 +183,47 @@ Providers extending `OAuth2IdentityProviderConfig` can instead override `getClie
 The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
 Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
 
+=== Service account user endpoint removed from Admin REST API
+// https://github.com/keycloak/keycloak/issues/54047
+
+The `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
+The service account user ID is now available directly on the client representation as the `serviceAccountUserId` field, which is populated when `serviceAccountsEnabled` is `true`.
+This field is read-only and managed by the server.
+
+If you previously called this endpoint to obtain the service account user ID for role mapping or other operations, retrieve the client representation instead:
+
+[source,java]
+----
+// Before:
+UserRepresentation sa = clientResource.getServiceAccountUser();
+String saUserId = sa.getId();
+
+// After:
+String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
+----
+
+The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
+If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== SAML assertions with a OneTimeUse condition are no longer replayable
+// https://github.com/keycloak/keycloak/issues/46325
+
+When {project_name} acts as a SAML service provider through identity brokering, an assertion that contains a `OneTimeUse` condition is now accepted only once.
+Previously, the condition was parsed but not enforced, so the same assertion could be presented again within its validity period.
+
+After upgrading, a replayed assertion is rejected with an error page and an `IDENTITY_PROVIDER_RESPONSE_ERROR` event, and the user is not logged in.
+The event has a plain-text `reason` detail that explains why the assertion was rejected, for example that it was already used or that it exceeds the maximum age.
+This affects only identity providers that include the condition in their assertions, including a {project_name} realm acting as the identity provider when the *Include OneTimeUse Condition* option is enabled on the SAML client.
+Assertions without the condition are not affected.
+The new *OneTimeUse maximum age* setting of the SAML identity provider defaults to 1 hour (3,600 seconds).
+Assertions with a `OneTimeUse` condition that are older than this are rejected.
+Increase the setting if users need more time to complete a login with such an assertion.
 
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
@@ -157,6 +235,19 @@ Roles that the caller is allowed only to map to client scopes are returned witho
 For example, an administrator with the `view-clients` role but without the `view-realm` role no longer sees the realm roles in the scope of a client, unless they are allowed to map these roles to users, for example through the `manage-users` role, or to client scopes.
 With fine-grained admin permissions V2, an administrator with a *view* permission on a client no longer sees the roles of other clients in its scope, unless they are also allowed to view these other clients, or to map their roles to users (*map-role* on the role or *map-roles* on the client) or to client scopes (*map-role-client-scope* on the role or *map-roles-client-scope* on the client).
 In the Admin Console, these roles are no longer listed in the *Scope* tab of client scopes and of dedicated client scopes.
+
+// https://github.com/keycloak/keycloak/issues/53555
+The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}/evaluate-scopes/scope-mappings/\{role-container}/granted` and `not-granted`) apply the same role visibility rules under both legacy RBAC and fine-grained admin permissions V2.
+After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
+Callers allowed only to map roles to client scopes can still see those roles, and roles in the effective scope appear under `granted` rather than `not-granted`.
+
+=== Group lookup by path filters role mappings by visibility
+// https://github.com/keycloak/keycloak/issues/54356
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/group-by-path/\{path}` now omits the role mappings that the caller is not allowed to view or to map to users, as the `groups/\{id}` endpoint and the group listings already do.
+Previously, any caller allowed to view the group received all of its role mappings in `realmRoles` and `clientRoles`.
+For example, an administrator with only the `view-users` role no longer receives them, while an administrator with the `manage-users` role still does.
+If an integration reads group role mappings through this endpoint, make sure its account is allowed to view the roles, for example through the `view-realm` and `view-clients` roles or the corresponding fine-grained permissions.
 
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790
@@ -201,6 +292,20 @@ A regression caused a sync to run only on every other scheduled tick, so the eff
 The provider's last-sync time is now recorded when a sync starts rather than when it finishes, so the schedule no longer drifts by the sync duration.
 
 If you previously lowered `fullSyncPeriod` or `changedSyncPeriod` to compensate for the doubled interval, review those values.
+
+=== Stricter enforcement of the requested level of authentication
+// https://github.com/keycloak/keycloak/issues/53157
+
+Previously, {project_name} could complete a login at a lower level of authentication than the client requested, when the authentication flow skipped the steps for the requested level, usually because the user already had a session.
+{project_name} now rejects such logins.
+For OpenID Connect clients, the requested level is the level of an essential `acr` claim.
+For SAML clients, it is the level of the requested authentication context or of the minimum ACR value of the client.
+The level is now enforced in every authentication flow, including flows without a `Conditional - Level Of Authentication` condition and the registration and reset credentials flows.
+An active login in a flow without the condition now always reaches at least level 1, and the `acr` claim reports it accordingly.
+
+A rejected interactive login ends on an error page.
+A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
+For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

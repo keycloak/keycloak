@@ -19,12 +19,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
@@ -51,6 +52,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -289,6 +291,96 @@ public class SsfTransmitterEventEmitterTests {
             Assertions.assertEquals(403, res.getStatus(),
                     "caller without the emitter role must be refused");
             Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+        }
+    }
+
+    @Test
+    public void emit_roleInjectedByHardcodedRoleMapper_returns403() throws Exception {
+        // Regression guard for keycloak/keycloak#54070: a Hardcoded Role
+        // mapper on a client the caller controls puts the emitter role
+        // into the token's resource_access claim without granting it.
+        // The gate must check the actual role grant, not the claim.
+        String mapperId = addHardcodedRoleMapper(MGMT_NO_ROLE, RECEIVER + "." + EMITTER_ROLE);
+        try {
+            String mgmtToken = obtainServiceAccountToken(MGMT_NO_ROLE, MGMT_NO_ROLE_SECRET);
+            JsonNode claims = decodeSet(mgmtToken);
+            Assertions.assertTrue(claims.path("resource_access").path(RECEIVER).path("roles").toString()
+                            .contains(EMITTER_ROLE),
+                    "sanity: the mapper must inject the emitter role into the token claims");
+
+            try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                    Map.of("credential_type", "password"))) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "a mapper-injected role claim without a role grant must not authorize emission");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+            Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                    "refused call must not result in any push");
+        } finally {
+            removeProtocolMapper(MGMT_NO_ROLE, mapperId);
+        }
+    }
+
+    @Test
+    public void emit_ambiguousDottedRoleValue_returns403() throws Exception {
+        // The picker stores role "events.emit" on RECEIVER as
+        // "<RECEIVER>.events.emit". A client named "<RECEIVER>.events"
+        // with role "emit" makes that value denote a second role, which
+        // longest-prefix resolution would pick. The gate must refuse an
+        // ambiguous value rather than authorize whichever role wins.
+        // The collision is in place before the value is first resolved:
+        // KeycloakModelUtils.getRoleFromString caches its result, and a
+        // warm cache would hide the longest-prefix pick until eviction.
+        String dottedRole = "events.emit";
+        String collidingClientId = RECEIVER + ".events";
+        Map<String, Object> event = Map.of("credential_type", "password", "change_type", "update");
+        ensureReceiverRole(dottedRole);
+        grantRoleToServiceAccount(MGMT_EMITTER, RECEIVER, dottedRole);
+        String collidingClientUuid = null;
+        try {
+            ClientRepresentation colliding = new ClientRepresentation();
+            colliding.setClientId(collidingClientId);
+            try (Response response = realm.admin().clients().create(colliding)) {
+                Assertions.assertEquals(201, response.getStatus(), "colliding client should be created");
+                collidingClientUuid = ApiUtil.getCreatedId(response);
+            }
+            RoleRepresentation collidingRole = new RoleRepresentation();
+            collidingRole.setName("emit");
+            realm.admin().clients().get(collidingClientUuid).roles().create(collidingRole);
+            grantRoleToServiceAccount(MGMT_NO_ROLE, collidingClientId, "emit");
+            setReceiverAttributes(true, RECEIVER + "." + dottedRole);
+
+            String collidingToken = obtainServiceAccountToken(MGMT_NO_ROLE, MGMT_NO_ROLE_SECRET);
+            try (SimpleHttpResponse res = emit(collidingToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "holding the colliding role must not satisfy the configured emit-events role");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+
+            String emitterToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+            try (SimpleHttpResponse res = emit(emitterToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(403, res.getStatus(),
+                        "an ambiguous role value must be denied for every caller");
+                Assertions.assertEquals("emit_role_missing", res.asJson().get("error").asText());
+            }
+            Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                    "refused calls must not result in any push");
+
+            // Control: once the collision is gone the dotted role
+            // resolves unambiguously and authorizes its holder again.
+            realm.admin().clients().get(collidingClientUuid).remove();
+            collidingClientUuid = null;
+            try (SimpleHttpResponse res = emit(emitterToken, "CaepCredentialChange", TEST_EMAIL, event)) {
+                Assertions.assertEquals(200, res.getStatus(),
+                        "an unambiguous dotted role value must authorize its holder");
+            }
+            Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                    "control emit should reach the mock receiver");
+        } finally {
+            if (collidingClientUuid != null) {
+                realm.admin().clients().get(collidingClientUuid).remove();
+            }
+            realm.admin().clients().get(findClientByClientId(RECEIVER).getId()).roles().deleteRole(dottedRole);
         }
     }
 
@@ -1375,14 +1467,32 @@ public class SsfTransmitterEventEmitterTests {
 
     protected void grantRoleToServiceAccount(String mgmtClientId, String targetClientId, String roleName) {
         ClientRepresentation mgmt = findClientByClientId(mgmtClientId);
-        UserRepresentation saUser = realm.admin().clients().get(mgmt.getId()).getServiceAccountUser();
+        String saUserId = realm.admin().clients().get(mgmt.getId()).toRepresentation().getServiceAccountUserId();
 
         String targetUuid = findClientByClientId(targetClientId).getId();
         RoleRepresentation role = realm.admin().clients().get(targetUuid).roles().get(roleName).toRepresentation();
 
         // The admin API is idempotent for add() — if the mapping already
         // exists it's a no-op, which is what we want for @BeforeEach.
-        realm.admin().users().get(saUser.getId()).roles().clientLevel(targetUuid).add(List.of(role));
+        realm.admin().users().get(saUserId).roles().clientLevel(targetUuid).add(List.of(role));
+    }
+
+    protected String addHardcodedRoleMapper(String clientId, String role) {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("hardcoded-" + role);
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
+        mapper.setConfig(Map.of(HardcodedRole.ROLE_CONFIG, role));
+        ClientResource client = realm.admin().clients().get(findClientByClientId(clientId).getId());
+        try (Response response = client.getProtocolMappers().createMapper(mapper)) {
+            Assertions.assertEquals(201, response.getStatus(), "hardcoded role mapper should be created");
+            return ApiUtil.getCreatedId(response);
+        }
+    }
+
+    protected void removeProtocolMapper(String clientId, String mapperId) {
+        realm.admin().clients().get(findClientByClientId(clientId).getId())
+                .getProtocolMappers().delete(mapperId);
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {

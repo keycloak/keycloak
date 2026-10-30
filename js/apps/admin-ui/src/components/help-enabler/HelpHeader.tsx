@@ -50,7 +50,7 @@ export const HelpHeader = () => {
   return (
     <Dropdown
       popperProps={{
-        position: "right",
+        position: "end",
       }}
       onOpenChange={(isOpen) => setOpen(isOpen)}
       isOpen={open}

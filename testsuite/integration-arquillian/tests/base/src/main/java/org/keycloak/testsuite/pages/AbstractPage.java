@@ -27,6 +27,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
@@ -57,9 +58,23 @@ public abstract class AbstractPage {
     private void waitForPage(AbstractPage page) {
         String expectedPageId = page.getExpectedPageId();
         try {
-            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(getCurrentPageId()));
+            createDefaultWait().until(d -> isCurrentPageId(expectedPageId));
         } catch (TimeoutException e) {
             Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + getCurrentPageId() + "' after timeout");
+        }
+    }
+
+    private boolean isCurrentPageId(String expectedPageId) {
+        try {
+            return expectedPageId.equals(getCurrentPageId());
+        } catch (StaleElementReferenceException e) {
+            return false;
+        } catch (WebDriverException e) {
+            // ChromeDriver reports this instead of a stale element when the document is swapped during a navigation
+            if (e.getMessage() != null && e.getMessage().contains("does not belong to the document")) {
+                return false;
+            }
+            throw e;
         }
     }
 

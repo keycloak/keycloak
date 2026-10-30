@@ -54,6 +54,15 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
                     .setParameter(1, id)
                     .setParameter(2, expire)
                     .executeUpdate();
+        } else if (JpaUtils.isConflictUpdateRacy(em)) {
+            em.createNamedQuery("deleteExpiredRevokeToken")
+                    .setParameter("id", id)
+                    .setParameter("currentTime", currentTime)
+                    .executeUpdate();
+            rows = em.createNamedQuery("insertRevokeTokenIfAbsentNoUpdate")
+                    .setParameter("id", id)
+                    .setParameter("expire", expire)
+                    .executeUpdate();
         } else {
             rows = em.createNamedQuery("insertRevokeTokenIfAbsent")
                     .setParameter("id", id)

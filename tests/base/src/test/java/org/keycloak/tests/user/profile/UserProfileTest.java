@@ -2601,6 +2601,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfigDefaultValue);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValue);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoDefaultValueForRootAttributes);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValueForReadOnlyAttribute);
     }
 
     private static void testInvalidConfigDefaultValue(KeycloakSession session) {
@@ -2637,6 +2638,33 @@ public class UserProfileTest extends AbstractUserProfileTest {
         List<String> actualValue = user.getAttributes().get("foo");
         List<String> expectedValue = List.of("def");
         assertThat(actualValue, Matchers.equalTo(expectedValue));
+    }
+
+    private static void testDefaultValueForReadOnlyAttribute(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute adminOnly = new UPAttribute("adminOnly", new UPAttributePermissions(Set.of(UserProfileConstants.ROLE_ADMIN), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        adminOnly.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(adminOnly);
+        UPAttribute userView = new UPAttribute("userView", new UPAttributePermissions(Set.of(UserProfileConstants.ROLE_USER, UserProfileConstants.ROLE_ADMIN), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        userView.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(userView);
+        provider.setConfiguration(upConfig);
+
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, List.of(userName));
+        attributes.put(UserModel.EMAIL, List.of(userName + "@keycloak.org"));
+        attributes.put(UserModel.FIRST_NAME, List.of("Joe"));
+        attributes.put(UserModel.LAST_NAME, List.of("Doe"));
+        // values provided for read-only attributes are ignored in favor of the default value
+        attributes.put("userView", List.of("changed"));
+
+        UserModel user = provider.create(UserProfileContext.REGISTRATION, attributes).create();
+        user = session.users().getUserById(session.getContext().getRealm(), user.getId());
+
+        assertThat(user.getAttributes().get("adminOnly"), Matchers.equalTo(List.of("def")));
+        assertThat(user.getAttributes().get("userView"), Matchers.equalTo(List.of("def")));
     }
 
     private static void testNoDefaultValueForRootAttributes(KeycloakSession session) {

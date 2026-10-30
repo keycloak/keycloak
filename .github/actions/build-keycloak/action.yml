@@ -52,6 +52,9 @@ runs:
         # classpath, so it is not a declared dependency and won't be fetched by dependency:resolve.
         JUNIT5_VER=$(./mvnw help:evaluate -Dexpression=junit5.version -q -DforceStdout -pl testsuite/integration-arquillian/tests/base)
         ./mvnw dependency:get -Dartifact=org.junit.jupiter:junit-jupiter-engine:${JUNIT5_VER}
+        # Surefire also resolves junit-platform-launcher at test runtime. Its version matches the JUnit 5
+        # version with the major version replaced (5.10.3 -> 1.10.3).
+        ./mvnw dependency:get -Dartifact=org.junit.platform:junit-platform-launcher:1.${JUNIT5_VER#5.}
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts

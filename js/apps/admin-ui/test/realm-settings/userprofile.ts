@@ -55,16 +55,8 @@ export async function switchOffIfOn(page: Page, selector: string) {
 export async function clickCreateUser(page: Page) {
   const emptyAction = page.getByTestId("no-users-found-empty-action");
   const addUser = page.getByTestId("add-user");
-  await expect(emptyAction.or(addUser).first()).toBeVisible({
-    timeout: 15_000,
-  });
-
-  if ((await emptyAction.count()) > 0 && (await emptyAction.isVisible())) {
-    await emptyAction.click();
-    return;
-  }
-
-  await addUser.click();
+  // The table briefly shows its empty state before the spinner appears, so don't decide on a single look.
+  await emptyAction.or(addUser).first().click({ timeout: 15_000 });
 }
 
 export async function fillEmailAndOptionalUsername(

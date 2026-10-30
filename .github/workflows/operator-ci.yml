@@ -11,7 +11,6 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.38.0
   KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
@@ -124,7 +123,7 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
@@ -179,11 +178,11 @@ jobs:
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm)
           # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
           # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
-          crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
+          crds=$(grep -cE '^kind: "?CustomResourceDefinition"?$' <<<"$out" || true)
           if [ "$crds" -ne 4 ]; then echo "expected 4 CRDs, got $crds"; exit 1; fi
-          echo "$out" | grep -qE '^kind: Deployment$'
+          grep -qE '^kind: Deployment$' <<<"$out"
           # Cluster-wide install binds the controllers via ClusterRoleBinding.
-          echo "$out" | grep -qE '^kind: ClusterRoleBinding$'
+          grep -qE '^kind: ClusterRoleBinding$' <<<"$out"
           # No resource should be rendered twice (kind+name+namespace must be unique).
           dupes=$(echo "$out" | awk '
             /^kind:/{k=$2} /^  name:/{n=$2} /^  namespace:/{ns=$2}
@@ -196,10 +195,11 @@ jobs:
           set -euo pipefail
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm --set crds.enabled=false)
           # CRDs are excluded; everything else still renders.
-          if echo "$out" | grep -qE '^kind: "?CustomResourceDefinition"?$'; then
+          if grep -qE '^kind: "?CustomResourceDefinition"?$' <<<"$out"; then
             echo "expected no CRDs with crds.enabled=false"; exit 1
           fi
-          echo "$out" | grep -cE '^kind: Deployment$' | grep -q '^1$'
+          deployments=$(grep -cE '^kind: Deployment$' <<<"$out" || true)
+          if [ "$deployments" -ne 1 ]; then echo "expected 1 Deployment, got $deployments"; exit 1; fi
 
       - name: helm template — resource overrides
         run: |
@@ -207,8 +207,9 @@ jobs:
           out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --set-string operator.resources.limits.cpu=1500m \
             --set-string operator.resources.limits.memory=1Gi)
-          echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
-          echo "$out" | grep -A4 'resources:' | grep -q 'memory: 1Gi'
+          resources=$(grep -A4 'resources:' <<<"$out")
+          grep -q 'cpu: 1500m' <<<"$resources"
+          grep -q 'memory: 1Gi' <<<"$resources"
 
   test-helm-install:
     name: Helm chart install on Kubernetes
@@ -328,6 +329,12 @@ jobs:
           name: keycloak-dist
           path: quarkus/container
 
+      - name: Wait for Minikube registry
+        run: |
+          # minikube start can return before the registry addon accepts connections on port 5000
+          kubectl -n kube-system wait --for=condition=ready pod -l kubernetes.io/minikube-addons=registry --timeout=120s
+          timeout 120 bash -c 'until curl -sf "http://$(minikube ip):5000/v2/" > /dev/null; do sleep 2; done'
+
       - name: Arrange OLM test installation
         working-directory: operator
         run: |
@@ -438,7 +445,7 @@ jobs:
       - name: Build Keycloak Docker image
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
       - name: Arrange kustomize test installation for own namespace
         run: |

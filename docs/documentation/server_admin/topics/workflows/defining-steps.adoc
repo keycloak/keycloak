@@ -91,6 +91,8 @@ on the realm resource associated with the event, so that each realm resource typ
 ** List of values (e.g., `[value1, value2]`)
 ** `*` to unlink user from all linked Identity Providers
 | `disable-user` | Disable the user | None
+| `logout-user` | Log out the user from all sessions a|
+* `include-offline-sessions`: Also log out the user's offline sessions. Defaults to `false`.
 | `delete-user` | Delete the user | None
 | `invite-user` | Send an invitation email with an action token link to the user a|
 * `actions`: Required action names the user must complete. Defaults to `UPDATE_PASSWORD` and `VERIFY_EMAIL`.
@@ -99,6 +101,8 @@ on the realm resource associated with the event, so that each realm resource typ
 |===
 
 The `invite-user` step builds invitation links from the configured hostname, resolved from the realm `frontendUrl` attribute or the `--hostname` option when it is set to a full URL. Because the step runs on a background thread without an active request, one of these must be configured: a workflow containing an `invite-user` step is rejected at creation time with a `400 Bad Request` if none is set. The step is only skipped at runtime if the hostname configuration is removed after the workflow was created.
+
+The `disable-user` step does not end the user's existing sessions. To also log the user out, add a `logout-user` step after it. The `logout-user` step sets the user's not-before time, so tokens issued before the step ran can no longer be refreshed. This includes offline tokens, even when `include-offline-sessions` is `false`. The step also sends backchannel logout requests to the clients of each session and to the identity provider the user logged in with. Because the step runs on a background thread without an active request, set the realm `frontendUrl` attribute or the `--hostname` option to a full URL so that the step can notify all of them. Otherwise, the step notifies only OpenID Connect identity providers, and OpenID Connect clients that have an absolute backchannel logout URL or an absolute root URL.
 
 [[_workflow_notification_placeholders_]]
 == Using placeholders in notifications

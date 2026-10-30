@@ -154,6 +154,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             // skip and clear UPDATE_EMAIL required action if email is readonly
             if (profile.getAttributes().isReadOnly(UserModel.EMAIL)) {
                 user.removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+                context.ignore();
                 return;
             }
 
@@ -179,12 +180,15 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
                     context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
                 }
             }
+        } else {
+            context.ignore();
         }
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
         if (!isEnabled(context.getRealm())) {
+            context.success();
             return;
         }
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();

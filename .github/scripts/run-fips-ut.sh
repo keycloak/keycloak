@@ -10,6 +10,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 export JAVA_HOME="/etc/alternatives/java_sdk_${JAVA_VERSION}"
+# JDK 25.0.5+ offers the X25519MLKEM768 hybrid TLS group, which fails in FIPS mode when resolving from Maven Central
+export MAVEN_OPTS="$MAVEN_OPTS -Djdk.tls.namedGroups=secp256r1,secp384r1,secp521r1,x25519,ffdhe2048,ffdhe3072"
 
 # Build all dependent modules
 ./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402 -DskipTests

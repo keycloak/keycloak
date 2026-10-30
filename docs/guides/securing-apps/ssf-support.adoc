@@ -361,7 +361,8 @@ decides which `add` requests are honoured:
 Regardless of the policy, a receiver cannot add a subject that an administrator has explicitly ignored, and
 re-adding a subject that is already subscribed always succeeds. A rejected `add` returns `200 OK` like any other
 `add`; with verbose error responses enabled it returns `403 Forbidden`. The policy does not apply to `remove`
-or to subjects managed from the admin console.
+or to subjects managed from the admin console. A receiver cannot lift an explicit ignore by removing the subject
+either. Such `remove` returns `204 No Content`, and the subject stays ignored until an administrator adds or removes it.
 
 Administrators can manage subjects from the *Subjects* sub-tab in the admin console. The sub-tab also exposes
 an *ignore* operation that explicitly excludes a subject (distinct from removing them from the subscription

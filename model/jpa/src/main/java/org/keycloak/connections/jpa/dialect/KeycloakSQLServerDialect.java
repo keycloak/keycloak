@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.dialect;
 
+import org.hibernate.LockMode;
 import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.dialect.sql.ast.SQLServerSqlAstTranslator;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -24,12 +25,16 @@ import org.hibernate.sql.ast.SqlAstTranslator;
 import org.hibernate.sql.ast.SqlAstTranslatorFactory;
 import org.hibernate.sql.ast.spi.StandardSqlAstTranslatorFactory;
 import org.hibernate.sql.ast.tree.Statement;
+import org.hibernate.sql.ast.tree.from.NamedTableReference;
 import org.hibernate.sql.ast.tree.insert.InsertSelectStatement;
 import org.hibernate.sql.exec.spi.JdbcOperation;
 
 /**
  * Fixes Hibernate's SQL Server dialect to correctly handle HQL {@code insert ... on conflict ... do nothing}
  * by emitting a MERGE statement instead of a plain INSERT that silently drops the conflict clause.
+ * <p>
+ * The MERGE target gets a {@code HOLDLOCK} hint for all conflict clauses. Without it, two concurrent upserts of the
+ * same new key can both take the "not matched" branch, and one fails with a unique constraint violation.
  * <p>
  * See <a href="https://hibernate.atlassian.net/browse/HHH-20826">HHH-20826</a> for the upstream tracker.
  */
@@ -42,15 +47,32 @@ public class KeycloakSQLServerDialect extends SQLServerDialect {
             protected <T extends JdbcOperation> SqlAstTranslator<T> buildTranslator(
                     SessionFactoryImplementor sessionFactory, Statement statement) {
                 return new SQLServerSqlAstTranslator<>(sessionFactory, statement) {
+                    private boolean renderingMergeTarget;
+
                     @Override
                     protected void visitInsertStatementOnly(InsertSelectStatement statement) {
                         if (statement.getConflictClause() != null
                                 && !statement.getConflictClause().getConstraintColumnNames().isEmpty()) {
+                            renderingMergeTarget = true;
                             visitInsertStatementEmulateMerge(statement);
                             appendSql(';');
                         } else {
                             super.visitInsertStatementOnly(statement);
                         }
+                    }
+
+                    @Override
+                    protected boolean renderNamedTableReference(NamedTableReference tableReference, LockMode lockMode) {
+                        if (renderingMergeTarget) {
+                            renderingMergeTarget = false;
+                            // In a MERGE the table hint goes between the table name and the alias
+                            appendSql(tableReference.getTableExpression());
+                            registerAffectedTable(tableReference);
+                            appendSql(" with (holdlock)");
+                            renderTableReferenceIdentificationVariable(tableReference);
+                            return true;
+                        }
+                        return super.renderNamedTableReference(tableReference, lockMode);
                     }
                 };
             }

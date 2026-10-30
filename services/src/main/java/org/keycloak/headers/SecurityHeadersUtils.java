@@ -48,7 +48,8 @@ public final class SecurityHeadersUtils {
      * Apply realm browser security headers while a session is available, returning a rebuilt {@link Response}.
      * Needed for AsyncResponse flows where {@code KeycloakSecurityHeadersFilter} runs after the session is closed.
      * Rebuilds the response rather than mutating {@code response.getHeaders()}, which Quarkus REST does not
-     * propagate when an AsyncResponse is resumed.
+     * propagate when an AsyncResponse is resumed. Existing values for applied header names are replaced
+     * (matching {@code putSingle}) so a prior CSP is not kept alongside the realm policy.
      */
     public static Response applyBrowserSecurityHeaders(KeycloakSession session, Response response) {
         if (response == null || session.getContext().getRealm() == null) {
@@ -64,7 +65,10 @@ public final class SecurityHeadersUtils {
             return response;
         }
         Response.ResponseBuilder builder = Response.fromResponse(response);
-        headers.forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
+        headers.forEach((name, values) -> {
+            builder.header(name, null); // remove values copied by fromResponse
+            values.forEach(value -> builder.header(name, value));
+        });
         return builder.build();
     }
 

@@ -114,4 +114,18 @@ public class KeycloakLogFilterTest {
         assertFalse(keycloakLogFilter.isDefaultPersistenceUnitUnsupportedPropertiesWarning(
                 record(Level.WARNING, FASTBOOT, GENERIC_WARN)));
     }
+
+    @Test
+    public void suppressesJgroupsTcpGracefulCloseError() {
+        assertFalse(keycloakLogFilter.isLoggable(
+                record(Level.SEVERE, "org.jgroups.protocols.TCP",
+                        "failed sending graceful close to 10.0.0.1:7800: closing inbound before receiving peer's close_notify")));
+    }
+
+    @Test
+    public void keepsOtherJgroupsTcpErrors() {
+        assertTrue(keycloakLogFilter.isLoggable(
+                record(Level.SEVERE, "org.jgroups.protocols.TCP",
+                        "failed sending message to 10.0.0.1:7800: connection refused")));
+    }
 }

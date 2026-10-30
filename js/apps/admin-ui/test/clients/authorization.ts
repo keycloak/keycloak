@@ -183,3 +183,39 @@ export async function assertDownload(page: Page) {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBeDefined();
 }
+
+// The server renames an evaluated resource to "<name> with scopes [...]", so
+// match on the start of the cell text rather than the exact resource name.
+export async function expandEvaluateResource(page: Page, resourceName: string) {
+  await page
+    .getByRole("row")
+    .filter({
+      has: page.getByRole("gridcell", { name: new RegExp(`^${resourceName}`) }),
+    })
+    .getByRole("button", { name: "Details" })
+    .click();
+}
+
+// The permission table is nested inside the expanded resource row, so take
+// the closest row around the permission link, not any row containing it.
+export function getEvaluatePermissionRow(page: Page, permissionName: string) {
+  return page
+    .getByRole("link", { name: permissionName, exact: true })
+    .locator("xpath=ancestor::tr[1]");
+}
+
+// Cells of an expanded permission row: expand toggle, permission, result,
+// decision strategy, granted scopes, denied scopes.
+export async function assertEvaluatePermissionScopes(
+  page: Page,
+  permissionName: string,
+  expected: { status: string; granted: string; denied: string },
+) {
+  const cells = getEvaluatePermissionRow(page, permissionName).getByRole(
+    "gridcell",
+  );
+
+  await expect(cells.nth(2)).toHaveText(expected.status);
+  await expect(cells.nth(4)).toHaveText(expected.granted);
+  await expect(cells.nth(5)).toHaveText(expected.denied);
+}
