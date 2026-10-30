@@ -24,10 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,6 +37,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -57,6 +56,7 @@ import org.keycloak.models.sessions.infinispan.changes.JpaChangesPerformer;
 import org.keycloak.models.sessions.infinispan.changes.MergedUpdate;
 import org.keycloak.models.sessions.infinispan.changes.PersistentSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.SessionImportResult;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdatesList;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -69,11 +69,9 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
-import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -468,26 +466,25 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     private static void removeEntriesByRealm(String realmId, Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionsCache, AtomicInteger userSessionsSize, Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessions) {
-        FuturesHelper futures = new FuturesHelper();
-
-        sessionsCache
-                .entrySet()
-                .stream()
-                .filter(SessionWrapperPredicate.create(realmId))
-                .map(Mappers.userSessionEntity())
-                .forEach((Consumer<UserSessionEntity>) userSessionEntity -> {
-                    userSessionsSize.incrementAndGet();
-
-                    // Remove session from remoteCache too. Use removeAsync for better perf
-                    Future<SessionEntityWrapper<UserSessionEntity>> future = sessionsCache.removeAsync(userSessionEntity.getId());
-                    futures.addTask(future);
-                    userSessionEntity.getClientSessions().forEach(clientUUID -> {
-                        Future<SessionEntityWrapper<AuthenticatedClientSessionEntity>> f = clientSessions.removeAsync(new EmbeddedClientSessionKey(userSessionEntity.getId(), clientUUID));
-                        futures.addTask(f);
+        var parentRemovals = CompletionStages.<Void>aggregateCompletionStage();
+        try (var entries = sessionsCache.entrySet().stream()) {
+            entries.filter(SessionWrapperPredicate.create(realmId))
+                    .forEach(entry -> {
+                        userSessionsSize.incrementAndGet();
+                        parentRemovals.dependsOn(sessionsCache.removeAsync(entry.getKey()));
                     });
-                });
+        }
+        // Fence parent loaders before sweeping children, including their pending publications.
+        CompletionStages.join(parentRemovals.freeze());
 
-        futures.waitForAllToFinish();
+        // Parents may be absent, loading markers, or have incomplete membership. Child markers
+        // carry a realm ID, but their session identity is only available from the cache key.
+        var childRemovals = CompletionStages.<Void>aggregateCompletionStage();
+        try (var entries = clientSessions.entrySet().stream()) {
+            entries.filter(SessionWrapperPredicate.create(realmId))
+                    .forEach(entry -> childRemovals.dependsOn(clientSessions.removeAsync(entry.getKey())));
+        }
+        CompletionStages.join(childRemovals.freeze());
     }
 
     @Override
@@ -525,8 +522,21 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         var offlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, true);
         var onlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, false);
         userSessionPersister.onUserRemoved(realm, user);
-        removeCachedUserAndClientSessions(offlineForRemoval, true);
-        removeCachedUserAndClientSessions(onlineForRemoval, false);
+
+        // Defer cache removal to after the DB transaction commits.
+        // If we removed from cache first, a concurrent reader could re-load the session
+        // from the DB (which hasn't committed the delete yet) and CAS it back into the cache.
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                removeCachedUserAndClientSessions(offlineForRemoval, true);
+                removeCachedUserAndClientSessions(onlineForRemoval, false);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+            }
+        });
     }
 
     @Override
@@ -714,22 +724,34 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         SessionEntityWrapper<UserSessionEntity> wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
 
-        SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
-        if (existingSession != null) {
-            // skip import the client sessions, they should have been imported too.
-            log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
-            return existingSession;
-        }
+        try {
+            clientSessionTx.placeLoadingMarkers(clientSessionsById, offline);
+            SessionImportResult<UserSessionEntity> importResult = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
+            if (importResult.status() == SessionImportResult.Status.EXISTING) {
+                log.debugf("The user-session already imported by another transaction for sessionId=%s offline=%s", sessionId, offline);
+                return importResult.existingSession();
+            }
+            if (importResult.status() == SessionImportResult.Status.REQUEST_LOCAL) {
+                log.debugf("Publication ownership lost for sessionId=%s offline=%s — keeping the database snapshot request-local", sessionId, offline);
+                clientSessionTx.bindSessionsWithoutCaching(realm, clientSessionsById, offline);
+                clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
+                return wrappedUserSessionEntity;
+            }
 
-        // importing here when the transaction has the changelog available.
-        if (!offline) {
-            migrateRememberMe(persistentUserSession);
-        }
+            // importing here when the transaction has the changelog available.
+            if (!offline) {
+                migrateRememberMe(persistentUserSession);
+            }
 
-        // Import client sessions
-        clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
-        clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
-        return wrappedUserSessionEntity;
+            // Client mutations revoke the parent marker before publishing their cache change.
+            // Therefore a successful parent CAS proves that these snapshots are still eligible
+            // for conditional publication under their own markers.
+            clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
+            clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
+            return wrappedUserSessionEntity;
+        } finally {
+            clientSessionTx.cleanupAllLoadingMarkers(offline);
+        }
     }
 
     // new import logic has been added to PersistentSessionsChangelogBasedTransaction, no longer in use.
@@ -856,7 +878,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
             // Update userSession entity with the clientSession
             userSessionEntity.getClientSessions().add(key.clientId());
-            clientSessionTx.addTask(key, null, clientSession, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            clientSessionTx.bindSessionsWithoutCaching(realm, Map.of(key, new SessionEntityWrapper<>(clientSession)), offline);
         }
 
         return sessionTx.get(userSessionEntity.getId(), offline);

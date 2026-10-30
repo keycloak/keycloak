@@ -54,7 +54,10 @@ import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StreamsUtil;
 
+import org.hibernate.engine.spi.EntityKey;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.jpa.HibernateHints;
+import org.hibernate.persister.entity.EntityPersister;
 import org.jboss.logging.Logger;
 
 import static jakarta.persistence.PersistenceConfiguration.LOCK_TIMEOUT;
@@ -329,6 +332,34 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         }
 
         return handleSingleQuery(entity, offlineStr);
+    }
+
+    @Override
+    public boolean isUserSessionCacheImportEligible(String userSessionId, boolean offline) {
+        SharedSessionContractImplementor hibernateSession = em.unwrap(SharedSessionContractImplementor.class);
+        String offlineStr = offlineToString(offline);
+        if (isManaged(hibernateSession, PersistentUserSessionEntity.class,
+                new PersistentUserSessionEntity.Key(userSessionId, offlineStr))) {
+            return false;
+        }
+        return hibernateSession.getPersistenceContextInternal().getEntitiesByKey().values().stream()
+                .filter(PersistentClientSessionEntity.class::isInstance)
+                .map(PersistentClientSessionEntity.class::cast)
+                .noneMatch(entity -> Objects.equals(userSessionId, entity.getUserSessionId())
+                        && Objects.equals(offlineStr, entity.getOffline()));
+    }
+
+    @Override
+    public boolean isClientSessionCacheImportEligible(String userSessionId, String clientId, boolean offline) {
+        SharedSessionContractImplementor hibernateSession = em.unwrap(SharedSessionContractImplementor.class);
+        return !isManaged(hibernateSession, PersistentClientSessionEntity.class,
+                getClientSessionKey(clientId, userSessionId, offline));
+    }
+
+    private static boolean isManaged(SharedSessionContractImplementor session, Class<?> entityType, Object key) {
+        EntityPersister persister = session.getFactory().getMappingMetamodel().getEntityDescriptor(entityType);
+        EntityKey entityKey = session.generateEntityKey(key, persister);
+        return session.getPersistenceContextInternal().containsEntity(entityKey);
     }
 
     public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isDelete) {

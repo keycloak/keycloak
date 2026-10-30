@@ -18,6 +18,8 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -40,10 +42,12 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                           CacheHolder<String, UserSessionEntity> cacheHolder,
                                                           CacheHolder<String, UserSessionEntity> offlineCacheHolder,
-                                                          boolean pessimisticLockingAuthenticationSession) {
-        super(session, USER_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
+                                                          boolean pessimisticLockingAuthenticationSession,
+                                                          long maxCacheLifespanMs) {
+        super(session, USER_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder, maxCacheLifespanMs);
         this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
     }
+
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
         SessionUpdatesList<UserSessionEntity> myUpdates = getUpdates(offline).get(key);
@@ -51,37 +55,69 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
             if (cache != null) {
-                wrappedEntity = cache.get(key);
-                if (wrappedEntity != null && wrappedEntity.isTombstoneMarker()) {
-                    // A tombstone marker is a short-lived leftover of a concurrent removal (see
-                    // SessionResurrectionGuardListener); it must never be treated as real session data.
-                    wrappedEntity = null;
+                if (userSession != null && userSession.isOffline() == offline) {
+                    // Bulk-query path: pre-loaded data from a stream query may be stale if a concurrent
+                    // delete committed after the query. Check cache only — do not place a loading marker,
+                    // because the stale data must not be imported into the cache.
+                    SessionEntityWrapper<UserSessionEntity> existing = cache.get(key);
+                    if (existing != null && !existing.isLoadingMarker()) {
+                        wrappedEntity = existing;
+                        getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
+                        LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
+                    }
+                } else {
+                    // Single-session lookup: place a loading marker to prevent concurrent reads
+                    // from resurrecting a deleted session via cache import.
+                    UserSessionEntity markerEntity = new UserSessionEntity(key);
+                    markerEntity.setRealmId(realm.getId());
+                    SessionEntityWrapper<UserSessionEntity> marker = SessionEntityWrapper.createLoadingMarker(markerEntity);
+                    SessionEntityWrapper<UserSessionEntity> existing = cache.putIfAbsent(key, marker, SessionEntityWrapper.LOADING_MARKER_LIFESPAN_MS, TimeUnit.MILLISECONDS);
+
+                    if (existing == null) {
+                        storeLoadingMarker(key, marker, offline);
+                    } else if (!existing.isLoadingMarker()) {
+                        wrappedEntity = existing;
+                        getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
+                        LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
+                    }
                 }
             }
 
-            if (wrappedEntity == null) {
-                LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
-                wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
-            } else {
-                getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
-                LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
+            try {
+                if (wrappedEntity == null) {
+                    LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
+                    UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
+                    if (hasStoredLoadingMarker(key, offline) && persister.isUserSessionCacheImportEligible(key, offline)) {
+                        // We own the marker — load from DB and import into cache with CAS protection
+                        wrappedEntity = getSessionEntityFromPersister(realm, key, offline);
+                    } else if (cache != null) {
+                        // Another thread's marker, a bulk-query path, or a persistence context that
+                        // may contain an older session snapshot — use data without caching.
+                        wrappedEntity = loadFromPersisterWithoutCaching(realm, key, userSession, offline);
+                    } else {
+                        // No cache — reuse matching bulk-query data and avoid loading its client sessions again.
+                        wrappedEntity = loadFromPersisterWithoutCaching(realm, key, userSession, offline);
+                    }
+                }
+
+                if (wrappedEntity == null) {
+                    LOG.debugf("user-session not found in persister for sessionId=%s offline=%s", key, offline);
+                    return null;
+                }
+
+                // Cache does not contain the offline flag value so adding it
+                wrappedEntity.getEntity().setOffline(offline);
+
+                RealmModel realmFromSession = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
+                if (!realmFromSession.getId().equals(realm.getId())) {
+                    LOG.warnf("Realm mismatch for session %s. Expected realm %s, but found realm %s", wrappedEntity.getEntity(), realm.getId(), realmFromSession.getId());
+                    return null;
+                }
+
+                return wrappedEntity;
+            } finally {
+                cleanupLoadingMarker(key, offline);
             }
-
-            if (wrappedEntity == null) {
-                LOG.debugf("user-session not found in persister for sessionId=%s offline=%s", key, offline);
-                return null;
-            }
-
-            // Cache does not contain the offline flag value so adding it
-            wrappedEntity.getEntity().setOffline(offline);
-
-            RealmModel realmFromSession = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
-            if (!realmFromSession.getId().equals(realm.getId())) {
-                LOG.warnf("Realm mismatch for session %s. Expected realm %s, but found realm %s", wrappedEntity.getEntity(), realm.getId(), realmFromSession.getId());
-                return null;
-            }
-
-            return wrappedEntity;
         } else {
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream()
@@ -92,11 +128,23 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         }
     }
 
-    private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
-        if (userSession == null) {
+    private SessionEntityWrapper<UserSessionEntity> loadFromPersisterWithoutCaching(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
+        if (userSession == null || userSession.isOffline() != offline) {
             UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
             userSession = persister.loadUserSession(realm, key, offline);
         }
+        if (userSession == null || isScheduledForRemove(key, offline)) {
+            return null;
+        }
+        return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class))
+                .wrapPersistentEntity(realm, offline, userSession);
+    }
+
+    private SessionEntityWrapper<UserSessionEntity> getSessionEntityFromPersister(RealmModel realm, String key, boolean offline) {
+        UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
+        // Eligibility was checked after marker acquisition, so this load cannot reuse an older
+        // session entity from the provider's persistence context.
+        UserSessionModel userSession = persister.loadUserSession(realm, key, offline);
 
         if (userSession == null) {
             return null;

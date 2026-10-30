@@ -42,6 +42,8 @@ public class SessionUpdatesList<S extends SessionEntity> {
 
     private final UserSessionModel.SessionPersistenceState persistenceState;
 
+    private boolean creationSnapshotComplete;
+
     public SessionUpdatesList(RealmModel realm, SessionEntityWrapper<S> entityWrapper) {
         this(realm, entityWrapper, UserSessionModel.SessionPersistenceState.PERSISTENT);
     }
@@ -80,6 +82,19 @@ public class SessionUpdatesList<S extends SessionEntity> {
 
     public UserSessionModel.SessionPersistenceState getPersistenceState() {
         return persistenceState;
+    }
+
+    /**
+     * Whether the last database write stored the complete creation snapshot. A user-session
+     * creation that merged into an existing row cannot publish its incomplete local entity.
+     * This transaction-local result is reset for each database attempt, including retries.
+     */
+    public boolean isCreationSnapshotComplete() {
+        return creationSnapshotComplete;
+    }
+
+    public void setCreationSnapshotComplete(boolean creationSnapshotComplete) {
+        this.creationSnapshotComplete = creationSnapshotComplete;
     }
 
     public void addAndExecute(SessionUpdateTask<S> task) {

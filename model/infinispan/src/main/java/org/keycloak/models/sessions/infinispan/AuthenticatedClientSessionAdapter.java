@@ -80,7 +80,8 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
         this.userSession = null;
 
-        clientSessionManager.addChange(cacheKey, Tasks.removeSync(offline));
+        // Use cache-only for offline: the persister call above already handled the DB deletion
+        clientSessionManager.addChange(cacheKey, offline ? Tasks.removeSyncCacheOnly(true) : Tasks.removeSync(false));
     }
 
     @Override
@@ -150,6 +151,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             @Override
             public boolean isOffline() {
                 return offline;
+            }
+
+            @Override
+            public boolean requiresDatabasePersistence() {
+                return false;
             }
 
             @Override

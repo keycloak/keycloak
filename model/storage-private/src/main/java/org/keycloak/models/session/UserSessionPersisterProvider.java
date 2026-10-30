@@ -66,6 +66,23 @@ public interface UserSessionPersisterProvider extends Provider {
     UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline);
 
     /**
+     * Returns whether a subsequent session load in this provider is eligible for publication to a
+     * shared cache. Implementations with a persistence-context identity map must return {@code false}
+     * when the load could reuse session state read before the current cache publication claim.
+     */
+    default boolean isUserSessionCacheImportEligible(String userSessionId, boolean offline) {
+        return false;
+    }
+
+    /**
+     * Returns whether a subsequent client-session load for this primary key is eligible for
+     * publication to a shared cache.
+     */
+    default boolean isClientSessionCacheImportEligible(String userSessionId, String clientId, boolean offline) {
+        return false;
+    }
+
+    /**
      * Loads the user sessions for the given {@link UserModel} in the given {@link RealmModel} if present.
      * @param realm
      * @param user
@@ -85,9 +102,7 @@ public interface UserSessionPersisterProvider extends Provider {
      * @param offline If {@code true}, returns offline sessions, otherwise online sessions.
      * @return A map of user-session id to the set of associated client UUIDs (the set may be empty).
      */
-    default Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
-        throw new IllegalStateException("not implemented");
-    }
+    Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline);
 
     /**
      * Loads the user sessions for the given {@link ClientModel} in the given {@link RealmModel} if present.

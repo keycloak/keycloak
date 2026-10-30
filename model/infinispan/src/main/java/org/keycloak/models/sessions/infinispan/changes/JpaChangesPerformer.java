@@ -89,7 +89,10 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
     }
 
     private PersistentUpdate newUpdate(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        return new PersistentUpdate(innerSession -> processor.accept(innerSession, entry, merged));
+        return new PersistentUpdate(innerSession -> {
+            entry.getValue().setCreationSnapshotComplete(false);
+            processor.accept(innerSession, entry, merged);
+        });
     }
 
     private TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor(String cacheName) {
@@ -114,7 +117,11 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                 AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
                 userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), entity.isOffline());
             }
-            case ADD, ADD_IF_ABSENT -> createClientSession(session, sessionWrapper, userSessionPersister);
+            case ADD, ADD_IF_ABSENT -> {
+                createClientSession(session, sessionWrapper, userSessionPersister);
+                // Client creation overwrites the complete stored snapshot, even for an existing row.
+                sessionUpdates.setCreationSnapshotComplete(true);
+            }
             case REPLACE -> mergeClientSession(sessionWrapper, userSessionPersister, realm, sessionUpdates);
         }
 
@@ -387,6 +394,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                     mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
                 } else {
                     createUserSession(userSessionPersister, entity, realm);
+                    sessionUpdates.setCreationSnapshotComplete(true);
                 }
             }
             case REPLACE -> {
