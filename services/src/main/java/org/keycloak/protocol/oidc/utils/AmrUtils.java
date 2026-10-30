@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,13 +69,19 @@ public class AmrUtils {
     public static List<String> getAuthenticationExecutionReferences(Map<String, Integer> executions,
                                                                     Set<String> currentAuthenticationExecutions,
                                                                     RealmModel realmModel) {
-        return executions.entrySet().stream()
+        // The executions of the current authentication are reported even when another client's later authentication
+        // has replaced the user session's map of completed executions, so they are visited on their own.
+        Set<String> executionIds = new LinkedHashSet<>(currentAuthenticationExecutions);
+        executionIds.addAll(executions.keySet());
+
+        return executionIds.stream()
             .map(
-                entry -> {
+                executionId -> {
                     try {
                         // extract the authenticator config and get the authenticator reference value
-                        Map<String, String> config = realmModel.getAuthenticatorConfigById(realmModel.getAuthenticationExecutionById(entry.getKey()).getAuthenticatorConfig()).getConfig();
-                        if (currentAuthenticationExecutions.contains(entry.getKey()) || isAmrValid(config, entry.getValue())){
+                        Map<String, String> config = realmModel.getAuthenticatorConfigById(realmModel.getAuthenticationExecutionById(executionId).getAuthenticatorConfig()).getConfig();
+                        Integer authTime = executions.get(executionId);
+                        if (currentAuthenticationExecutions.contains(executionId) || (authTime != null && isAmrValid(config, authTime))){
                             return config.get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE);
                         }
                     } catch (NullPointerException e){
