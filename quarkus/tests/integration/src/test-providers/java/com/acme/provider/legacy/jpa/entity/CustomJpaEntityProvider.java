@@ -17,18 +17,40 @@
 
 package com.acme.provider.legacy.jpa.entity;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+
 import org.keycloak.it.TestProvider;
+
+import com.acme.provider.legacy.jpa.unused.IgnoredJarEntity;
 
 public class CustomJpaEntityProvider implements TestProvider {
 
     @Override
     public Class[] getClasses() {
-        return new Class[] { Realm.class, KeycloakItH2Dialect.class, UnlistedEntity.class, OrmMappedEntity.class };
+        return new Class[] { Realm.class, KeycloakItH2Dialect.class, UnlistedEntity.class, OrmMappedEntity.class, ValidationModeObserver.class };
     }
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Map.of("persistence.xml", "persistence.xml", "orm.xml", "orm.xml", "custom.xml", "custom.xml");
+        try {
+            var jar = Files.createTempFile("keycloak-ignored-persistence-", ".jar");
+            jar.toFile().deleteOnExit();
+            String classFile = IgnoredJarEntity.class.getName().replace('.', '/') + ".class";
+            try (var output = new JarOutputStream(Files.newOutputStream(jar));
+                    var input = IgnoredJarEntity.class.getClassLoader().getResourceAsStream(classFile)) {
+                output.putNextEntry(new JarEntry(classFile));
+                input.transferTo(output);
+                output.closeEntry();
+            }
+            return Map.of("persistence.xml", "persistence.xml", "orm.xml", "orm.xml", "custom.xml", "custom.xml",
+                    jar.toString(), "ignored.jar");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -30,6 +30,16 @@ ifeval::[{project_product}==true]
 If your deployment requires more than one non-XA datasource, open a support ticket for {project_name} and describe your use case.
 endif::[]
 
+=== Unresolved JAR references in custom JPA providers
+// https://github.com/keycloak/keycloak/issues/55438
+
+Previously, {project_name} logged a warning and ignored `<jar-file>` entries in a custom JPA provider's `META-INF/persistence.xml`.
+With Hibernate ORM 8, the server build fails if any of those entries cannot be resolved.
+For example, when a relative path points to a missing JAR, Hibernate reports `Could not resolve jar-file`.
+
+Before upgrading, remove the unresolved entries from `persistence.xml`.
+To register entities in a custom persistence unit, package them in the provider JAR and declare them with `<class>` or a mapping file.
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 
