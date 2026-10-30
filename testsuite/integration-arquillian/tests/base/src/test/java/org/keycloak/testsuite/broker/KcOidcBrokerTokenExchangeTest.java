@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -202,6 +203,82 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
                 assertThat(response.getStatus(), equalTo(200));
                 AccessTokenResponse internalToExternalTokenResponse = response.readEntity(AccessTokenResponse.class);
                 assertThat(internalToExternalTokenResponse.getTokenType(), equalTo(TokenUtil.TOKEN_TYPE_BEARER));
+            }
+        }
+    }
+
+    @Test
+    public void testExternalInternalTokenExchangeFilteredByClaims() throws Exception {
+        assertExternalToInternalExchangeFilteredByClaims(true);
+    }
+
+    @Test
+    public void testExternalInternalTokenExchangeOpaqueAccessTokenFilteredByClaims() throws Exception {
+        assertExternalToInternalExchangeFilteredByClaims(false);
+    }
+
+    private void assertExternalToInternalExchangeFilteredByClaims(boolean idToken) throws Exception {
+        RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
+        ClientRepresentation brokerApp = providerRealm.clients().findByClientId("brokerapp").get(0);
+        brokerApp.setDirectAccessGrantsEnabled(true);
+        providerRealm.clients().get(brokerApp.getId()).update(brokerApp);
+
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+        Map<String, String> originalConfig = new HashMap<>(representation.getConfig());
+        // an id token is validated by signature, an opaque access token is validated through the user info endpoint
+        representation.getConfig().put("isAccessTokenJWT", Boolean.FALSE.toString());
+        representation.getConfig().put("validateSignature", Boolean.TRUE.toString());
+        representation.getConfig().put("userInfoUrl", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider/protocol/openid-connect/userinfo");
+        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
+        if (!representation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
+            representation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
+        }
+        representation.getConfig().put(IdentityProviderModel.FILTERED_BY_CLAIMS, Boolean.TRUE.toString());
+        representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_NAME, "preferred_username");
+        representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_VALUE, "other-user");
+        identityProviderResource.update(representation);
+        getCleanup().addCleanup(() -> {
+            IdentityProviderRepresentation current = identityProviderResource.toRepresentation();
+            current.setConfig(new HashMap<>(originalConfig));
+            identityProviderResource.update(current);
+        });
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
+        assertThat(tokenResponse.getIdToken(), notNullValue());
+
+        testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
+
+        String subjectToken = idToken ? tokenResponse.getIdToken() : tokenResponse.getAccessToken();
+        String subjectTokenType = idToken ? OAuth2Constants.ID_TOKEN_TYPE : OAuth2Constants.ACCESS_TOKEN_TYPE;
+
+        try (Client httpClient = AdminClientUtil.createResteasyClient()) {
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
+
+            // the claim value excluded by the filter is rejected
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType)) {
+                assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            }
+            assertThat(consumerRealm.users().search(bc.getUserLogin()).size(), equalTo(0));
+
+            // the claim is not present in the token
+            representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_NAME, "missing-claim");
+            representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_VALUE, ".*");
+            identityProviderResource.update(representation);
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType)) {
+                assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            }
+            assertThat(consumerRealm.users().search(bc.getUserLogin()).size(), equalTo(0));
+
+            // the claim value allowed by the filter is accepted
+            representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_NAME, "preferred_username");
+            representation.getConfig().put(IdentityProviderModel.CLAIM_FILTER_VALUE, bc.getUserLogin());
+            identityProviderResource.update(representation);
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, subjectToken, subjectTokenType)) {
+                assertThat(response.getStatus(), equalTo(Status.OK.getStatusCode()));
+                UserRepresentation user = consumerRealm.users().search(bc.getUserLogin()).get(0);
+                getCleanup(bc.consumerRealmName()).addUserId(user.getId());
             }
         }
     }
