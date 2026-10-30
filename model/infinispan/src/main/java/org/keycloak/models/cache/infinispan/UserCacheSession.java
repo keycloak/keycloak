@@ -443,7 +443,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
-        ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
+        if (getDelegate() instanceof OnUserCache onUserCache) {
+            onUserCache.onCache(realm, adapter, delegate);
+        }
     }
 
     @Override
