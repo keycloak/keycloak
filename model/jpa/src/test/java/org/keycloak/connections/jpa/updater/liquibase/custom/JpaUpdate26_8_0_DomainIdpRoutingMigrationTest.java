@@ -208,6 +208,46 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTest {
     }
 
     @Test
+    public void testExcludedDomainLongerThanDomainName() throws Exception {
+        realm("r");
+        org("r", "o", "*.o.com");
+        // a valid domain, but with the wildcard longer than ORG_DOMAIN.NAME
+        String name = "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(56) + ".o.com";
+        idp("r", "i1", "o", "ANY", "*." + name + ", x.o.com");
+
+        migrate();
+
+        assertDomains("r o *.o.com i1 redirect", "r o x.o.com -");
+    }
+
+    @Test
+    public void testExcludedDomainsWithExpansionsWithAccentInsensitiveCollation() throws Exception {
+        connection.close();
+        createSchema("ENGLISH STRENGTH PRIMARY");
+        realm("r");
+        org("r", "o", "*.o.com", "Æ.o.com");
+        idp("r", "io", "o", "ANY", "straße.o.com, strasse.o.com, ae.o.com, á.o.com, a.o.com");
+
+        migrate();
+
+        // the collation treats straße.o.com as strasse.o.com, ae.o.com as Æ.o.com and á.o.com as a.o.com, so only the
+        // first of them is added
+        assertDomains("r o *.o.com io redirect", "r o Æ.o.com io redirect", "r o a.o.com -", "r o strasse.o.com -");
+    }
+
+    @Test
+    public void testExcludedDomainsThatOnlyDifferInAccents() throws Exception {
+        realm("r");
+        org("r", "o", "*.o.com");
+        idp("r", "io", "o", "ANY", "straße.o.com, strasse.o.com, á.o.com, a.o.com");
+
+        migrate();
+
+        // the default collation of H2, like the one of PostgreSQL, keeps all names
+        assertDomains("r o *.o.com io redirect", "r o a.o.com -", "r o strasse.o.com -", "r o straße.o.com -", "r o á.o.com -");
+    }
+
+    @Test
     public void testSameExcludedDomainInTwoRealms() throws Exception {
         realm("r1");
         realm("r2");

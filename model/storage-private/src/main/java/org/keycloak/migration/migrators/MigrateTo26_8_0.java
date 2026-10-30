@@ -140,7 +140,9 @@ public class MigrateTo26_8_0 extends RealmMigration {
             });
         });
 
-        Result result = DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders);
+        // the organization provider claims an existing domain whose name the database treats as the same, so the names
+        // are not checked by the database
+        Result result = DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, false);
 
         // organization ID -> domain name -> domain
         Map<String, Map<String, OrganizationDomainModel>> changedDomains = new LinkedHashMap<>();

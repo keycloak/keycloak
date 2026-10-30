@@ -272,6 +272,43 @@ public class DomainIdpRoutingMigrationTest {
     }
 
     @Test
+    public void testExcludedDomainsThatOnlyDifferInAccentsCheckedByDatabase() {
+        org("o", "*.cafe.o.com");
+        org("p", "*.café.o.com");
+        org("q", "*.q.com", "café.q.com");
+        idp("io", "o", "ANY", "x.cafe.o.com", true);
+        idp("ip", "p", "ANY", "x.café.o.com", true);
+        idp("iq", "q", "ANY", "cafe.q.com, a.q.com, Á.q.com", true);
+
+        Result result = DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, true);
+
+        // the database adds the names of one organization that its collation does not treat as names of other
+        // domains, in this order; the names of different organizations are still not added
+        assertThat(newDomains(result), contains("q a.q.com -", "q Á.q.com -", "q cafe.q.com -"));
+    }
+
+    @Test
+    public void testExcludedDomainsThatOnlyDifferInHyphens() {
+        // database collations do not ignore '-', unlike a collator
+        org("o", "*.o.com");
+        idp("io", "o", "ANY", "a-b.o.com, ab.o.com, a-bc.o.com, ab-c.o.com", true);
+
+        assertThat(newDomains(migrate()),
+                containsInAnyOrder("o a-b.o.com -", "o ab.o.com -", "o a-bc.o.com -", "o ab-c.o.com -"));
+    }
+
+    @Test
+    public void testExcludedDomainsWithExpansions() {
+        // the Unicode collation algorithm compares ß as ss and æ as ae
+        org("o", "*.o.com");
+        idp("io", "o", "ANY", "straße.o.com, strasse.o.com, æ.o.com, ae.o.com", true);
+
+        assertThat(newDomains(migrate()), contains("o ae.o.com -", "o strasse.o.com -"));
+        assertThat(newDomains(DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, true)),
+                contains("o ae.o.com -", "o æ.o.com -", "o strasse.o.com -", "o straße.o.com -"));
+    }
+
+    @Test
     public void testIdentityProviderThatRedirectedWinsTheDomain() {
         org("o", "o.com", "p.com");
         idp("a", "o", "ANY", null, false);
@@ -307,10 +344,24 @@ public class DomainIdpRoutingMigrationTest {
         assertThat(DomainIdpRoutingMigration.isValidDomain("x.*.com"), is(false));
         assertThat(DomainIdpRoutingMigration.isValidDomain("*.*.o.com"), is(false));
         assertThat(DomainIdpRoutingMigration.isValidDomain("o..com"), is(false));
+        // ORG_DOMAIN.NAME has 255 characters
+        assertThat(DomainIdpRoutingMigration.isValidDomain(longDomain(255)), is(true));
+        assertThat(DomainIdpRoutingMigration.isValidDomain("*." + longDomain(253)), is(true));
+        assertThat(DomainIdpRoutingMigration.isValidDomain("*." + longDomain(254)), is(false));
+        // some databases count bytes: 81 characters and 225 bytes in UTF-8, then 100 characters and 280 bytes
+        assertThat(DomainIdpRoutingMigration.isValidDomain(("中".repeat(18) + ".").repeat(4) + "o.com"), is(true));
+        assertThat(DomainIdpRoutingMigration.isValidDomain(("中".repeat(18) + ".").repeat(5) + "o.com"), is(false));
+    }
+
+    /**
+     * A valid domain under o.com with the given length, made of labels of at most 63 characters.
+     */
+    static String longDomain(int length) {
+        return "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(length - 198) + ".o.com";
     }
 
     private Result migrate() {
-        return DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders);
+        return DomainIdpRoutingMigration.migrate(organizationNames, domains, identityProviders, false);
     }
 
     private void org(String id, String... names) {

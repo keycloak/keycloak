@@ -18,6 +18,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,13 +32,19 @@ import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Result;
 import org.keycloak.migration.migrators.DomainIdpRoutingMigration.Routing;
 import org.keycloak.migration.migrators.MigrationUtils;
 
+import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.CustomChangeException;
+import liquibase.statement.SqlStatement;
 import liquibase.statement.core.DeleteStatement;
 import liquibase.statement.core.InsertStatement;
+import liquibase.statement.core.RawSqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
+import org.jboss.logging.Logger;
 
 public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTask {
+
+    private static final Logger logger = Logger.getLogger(JpaUpdate26_8_0_DomainIdpRoutingMigration.class);
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
@@ -135,7 +142,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                 String realmId = entry.getKey();
                 Map<String, String> realmDomainIds = domainIds.getOrDefault(realmId, Map.of());
                 Result result = DomainIdpRoutingMigration.migrate(organizationNames,
-                        domains.getOrDefault(realmId, List.of()), entry.getValue());
+                        domains.getOrDefault(realmId, List.of()), entry.getValue(), true);
 
                 for (Routing routing : result.routings()) {
                     statements.add(new UpdateStatement(null, null, orgDomainTable)
@@ -147,24 +154,55 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
 
                 // domains for excluded domains, routed to the identity provider that redirected their emails, if any
                 for (Routing domain : result.newDomains()) {
-                    IdentityProvider idp = domain.identityProvider();
-                    InsertStatement insert = new InsertStatement(null, null, orgDomainTable)
-                            .addColumnValue("ID", UUID.randomUUID().toString())
-                            .addColumnValue("NAME", domain.name())
-                            .addColumnValue("VERIFIED", false)
-                            .addColumnValue("REALM_ID", realmId)
-                            .addColumnValue("ORG_ID", domain.organizationId())
-                            .addColumnValue("AUTO_REDIRECT", idp != null && idp.autoRedirect());
-                    if (idp != null) {
-                        insert.addColumnValue("IDP_ID", idp.id());
+                    String existing = findDomainWithSameName(orgDomainTable, realmId, domain.name());
+                    if (existing != null) {
+                        logger.warnf("Excluded domain '%s' of organization '%s' is not migrated: the database treats it as the same name as the domain '%s'. Review the domains of organization '%s'",
+                                domain.name(), organizationNames.get(domain.organizationId()), existing, organizationNames.get(domain.organizationId()));
+                        continue;
                     }
-                    statements.add(insert);
+                    statements.add(insertDomainIfAbsent(orgDomainTable, orgTable, domain));
                 }
             }
             confirmationMessage.append("Migrated domain-IdP routing to DOMAIN.IDP_ID.");
         } catch (Exception e) {
             throw new CustomChangeException(getTaskId() + ": Exception when populating DOMAIN.IDP_ID", e);
         }
+    }
+
+    /**
+     * The name of a domain of the realm that the database treats as the same name, as the collation of the column
+     * compares names, or {@code null}.
+     */
+    private String findDomainWithSameName(String orgDomainTable, String realmId, String name) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT d.NAME FROM " + getTableName(orgDomainTable) + " d WHERE d.REALM_ID = ? AND d.NAME = ?")) {
+            ps.setString(1, realmId);
+            ps.setString(2, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
+    /**
+     * Inserts the domain unless the realm already has a domain with the same name, as the collation of the column
+     * compares names: two new domains can have names that the collation treats as the same, and adding both would
+     * violate UK_ORG_DOMAIN_REALM_NAME.
+     */
+    private SqlStatement insertDomainIfAbsent(String orgDomainTable, String orgTable, Routing domain) {
+        IdentityProvider idp = domain.identityProvider();
+        String table = getTableName(orgDomainTable);
+        String name = toSql(domain.name());
+
+        return new RawSqlStatement("INSERT INTO " + table + " (ID, NAME, VERIFIED, REALM_ID, ORG_ID, AUTO_REDIRECT" + (idp == null ? "" : ", IDP_ID") + ")"
+                + " SELECT " + toSql(UUID.randomUUID().toString()) + ", " + name + ", " + toSql(false) + ", o.REALM_ID, o.ID, "
+                + toSql(idp != null && idp.autoRedirect()) + (idp == null ? "" : ", " + toSql(idp.id()))
+                + " FROM " + getTableName(orgTable) + " o WHERE o.ID = " + toSql(domain.organizationId())
+                + " AND NOT EXISTS (SELECT 1 FROM " + table + " d WHERE d.REALM_ID = o.REALM_ID AND d.NAME = " + name + ")");
+    }
+
+    private String toSql(Object value) {
+        return DataTypeFactory.getInstance().fromObject(value, database).objectToSql(value, database);
     }
 
     private void cleanupIdpConfig() {
