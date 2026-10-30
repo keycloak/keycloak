@@ -230,7 +230,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
-        // Fallback with null if the realm was removed from the database after it was cached.
+        // No fallback is configured; loading device config for a removed realm throws a NullPointerException.
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
