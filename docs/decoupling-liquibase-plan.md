@@ -201,7 +201,7 @@ The existing classes extending `CustomKeycloakTask` were migrated to native Keyc
    ```
    Tasks that need Java-side processing (e.g. loading and rewriting JSON via the `KeycloakSession`) are expressed as generated `UPDATE`/`INSERT` statements, exactly as `CustomKeycloakTask` did. Read-only queries in `generateStatements` (including the `isApplicable()` check on `REALM`) are allowed in export mode.
 2. **Migrate Existing Tasks:**
-   - The 35 tasks that the manifest references were converted to plain-JDBC statement generators in `model/jpa/.../updater/jdbc/task/` and are mapped from their historic manifest class names by `JpaMigrationTaskRegistry`.
+   - The 35 tasks that the manifest references were converted to plain-JDBC statement generators in `model/jpa/.../updater/jdbc/task/` and are mapped from their historic manifest class names by `JpaMigrationTaskRegistry` to maintain change-set MD5 checksum stability.
    - Tasks receive direct access to `Connection` and `KeycloakSession` without needing `ThreadLocalSessionContext` or Liquibase's `CustomSqlChange`.
 
 ### Phase 5: Refactor Database Index Checker (`DatabaseIndexChecker`) — ✅ **Done**
@@ -370,7 +370,7 @@ All of Phases 1-7 are implemented (see Section 4). This section records the find
 - `quarkus/tests/integration` and `testsuite/model` compile.
 
 **Phase 4 task classes** — ✅ **Done** (`model/jpa/.../updater/jdbc/task/`, 35 registered tasks plus `AbstractUserFedToComponentHelper`)
-- `JpaMigrationTaskRegistry` maps the 35 historic `org.keycloak.connections.jpa.updater.liquibase.custom.*` class names to fresh `JpaMigrationTask` instances, with dynamic class lookup fallback for custom tasks.
+- `JpaMigrationTaskRegistry` maps the 35 historic `org.keycloak.connections.jpa.updater.liquibase.custom.*` class names to fresh `JpaMigrationTask` instances, with dynamic class lookup fallback for custom tasks. Historic names are preserved in the changelog XML files and mapped here to maintain exact Liquibase change-set MD5 checksum stability (`MD5SUM`) across Keycloak releases and prevent baseline manifest drift.
 - Tasks: `AddRealmCodeSecretTask`, `AuthzResourceUseMoreURIsTask`, `ExtractRealmKeysFromRealmTableTask`, `FederatedUserAttributeTextColumnMigrationTask`, `MigrateUserFedToComponentTask`, `PortLdapUserFedToComponentModelTask`, `RemoveDuplicateOfflineSessionsTask`, `JpaUpdateAuthz_3_4_0_CR1Task` and the `JpaUpdate<version>_*Task` classes for versions 1.2.0 (Beta1, CR1), 1.4.0, 1.9.0, 4.0.0, 4.7.0, 13.0.0, 14.0.0, 19.0.0, 21.0.2, 22.0.0, 22.0.5, 24.0.2, 25.0.0 (plain and MySQL), 26.0.0 (two), 26.2.6 (two), 26.4.0, 26.5.0, 26.6.0, 26.7.0 and 26.8.0 (four).
 - `ChangeSetRunner` looks up the task by `className`, checks `isApplicable()`, calls `generateStatements(session, connection, schema)` and sends each statement to the sink. An unknown class logs a warning and is skipped.
 - `JpaMigrationTaskRegistryTest` (16 tests) checks that every task the manifest references is registered, lookup by FQN and reflection fallback, fresh instances, `SqlDialect.qualified()`, the `isApplicable()` contract and end-to-end dispatch through the runner.

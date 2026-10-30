@@ -60,12 +60,18 @@ import org.keycloak.connections.jpa.updater.jdbc.task.RemoveDuplicateOfflineSess
  * Registry that maps the {@code className} strings stored in the migration manifest to
  * {@link JpaMigrationTask} instances.
  *
- * <p>The manifest is generated from the Liquibase changelogs, which reference the tasks by their historic
- * {@code org.keycloak.connections.jpa.updater.liquibase.custom.*} class names. Those classes no longer exist;
- * the registry maps the historic names to the current implementations.
+ * <p>The manifest is generated from the Liquibase changelog XML files, which reference the tasks by their historic
+ * {@code org.keycloak.connections.jpa.updater.liquibase.custom.*} class names. Those historic classes no longer
+ * exist and have been migrated to {@link JpaMigrationTask} implementations in the
+ * {@code org.keycloak.connections.jpa.updater.jdbc.task} package.
+ *
+ * <p>The historic class names are deliberately preserved in the changelog XML files and in this registry to maintain
+ * exact Liquibase change-set MD5 checksum ({@code MD5SUM}) stability across Keycloak releases and prevent baseline
+ * manifest drift (see {@code ManifestDriftChecker}).
  *
  * <p>Tasks are created fresh for each lookup (they are stateless beyond the scope of one
- * {@code generateStatements} call).
+ * {@code generateStatements} call). For any newly authored tasks or custom extensions, the registry falls back
+ * to dynamic reflection lookup via {@link Class#forName(String)}.
  */
 public final class JpaMigrationTaskRegistry {
 

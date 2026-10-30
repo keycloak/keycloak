@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import liquibase.ChecksumVersion;
 import liquibase.Scope;
 import liquibase.change.Change;
+import liquibase.change.ChangeFactory;
 import liquibase.change.core.CreateIndexChange;
 import liquibase.change.custom.CustomChangeWrapper;
 import liquibase.changelog.ChangeLogParameters;
@@ -28,6 +29,7 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.DatabaseList;
 import liquibase.database.OfflineConnection;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 import liquibase.sql.Sql;
 import liquibase.sql.visitor.SqlVisitor;
@@ -60,15 +62,14 @@ public class SchemaGenerator {
         this.changelogFile = changelogFile;
         this.outputDirectory = outputDirectory;
         this.dialects = (dialects == null || dialects.isEmpty()) ? DEFAULT_DIALECTS : dialects;
-        LenientClassLoaderResourceAccessor accessor = new LenientClassLoaderResourceAccessor(
-                classLoader != null ? classLoader : getClass().getClassLoader());
-        this.classLoader = accessor.getClassLoader();
-        this.resourceAccessor = accessor;
+        this.classLoader = classLoader != null ? classLoader : getClass().getClassLoader();
+        this.resourceAccessor = new ClassLoaderResourceAccessor(this.classLoader);
         this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     public MigrationManifest generate() throws Exception {
         System.setProperty("liquibase.duplicateFileMode", "WARN");
+        ChangeFactory.getInstance().register(new CustomTaskChange());
         Map<String, Object> scopeValues = new HashMap<>();
         scopeValues.put(Scope.Attr.resourceAccessor.name(), resourceAccessor);
         scopeValues.put(Scope.Attr.classLoader.name(), classLoader);
@@ -185,7 +186,15 @@ public class SchemaGenerator {
         ChangeSetStep currentSqlStep = null;
 
         for (Change change : changeSet.getChanges()) {
-            if (change instanceof CustomChangeWrapper customWrapper) {
+            if (change instanceof CustomTaskChange customTask) {
+                // Flush any open SQL step first
+                if (currentSqlStep != null && hasAnyStatements(currentSqlStep)) {
+                    steps.add(currentSqlStep);
+                }
+                currentSqlStep = null;
+                steps.add(ChangeSetStep.customTask(customTask.getClassName()));
+
+            } else if (change instanceof CustomChangeWrapper customWrapper) {
                 // Flush any open SQL step first
                 if (currentSqlStep != null && hasAnyStatements(currentSqlStep)) {
                     steps.add(currentSqlStep);
