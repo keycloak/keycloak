@@ -37,6 +37,7 @@ import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -57,8 +58,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
@@ -183,6 +186,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertTrue(oneTimeCodePage.isOtpLabelPresent());
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+
+        // The default credential is pre-selected before any interaction
+        Assertions.assertEquals("first", loginTotpPage.getSelectedOtpCredential());
         loginTotpPage.selectOtpCredential("first");
 
         // Check that selected credential is "first"
@@ -200,6 +206,26 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
         // Select "second" factor and try to connect with its OTP code
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
+        loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
+        Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+    }
+
+    @Test
+    @IgnoreBrowserDriver(HtmlUnitDriver.class) // HtmlUnit doesn't move focus or selection with Tab and arrow keys
+    public void testUserWithTwoAdditionalFactorsSelectedWithKeyboard() {
+        provideUsernamePassword("user-with-two-configured-otp");
+        loginTotpPage.assertCurrent();
+        loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+        Assertions.assertEquals("first", loginTotpPage.getSelectedOtpCredential());
+
+        // Shift+Tab from the one-time code field reaches the checked credential
+        WebElement focused = loginTotpPage.focusOtpCredentialSelectorWithKeyboard();
+        Assertions.assertEquals("radio", focused.getAttribute("type"));
+        Assertions.assertTrue(focused.isSelected());
+
+        // Arrow key selects the "second" factor, then connect with its OTP code
+        focused.sendKeys(Keys.ARROW_DOWN);
+        Assertions.assertEquals(OTPFormAuthenticator.UNNAMED, loginTotpPage.getSelectedOtpCredential());
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
         Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
     }
