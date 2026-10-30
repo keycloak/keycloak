@@ -156,7 +156,7 @@ public final class JGroupsConfigurator {
         var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);
         configureDiscovery(holder, session, tracingEnabled, fdSockEnabled);
         configureTls(holder, session);
-        warnDeprecatedStack(holder);
+        rejectDeprecatedStack(holder);
     }
 
     /**
@@ -392,7 +392,7 @@ public final class JGroupsConfigurator {
         return list;
     }
 
-    private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {
+    private static void rejectDeprecatedStack(ConfigurationBuilderHolder holder) {
         var stackName = transportStackOf(holder).get();
         switch (stackName) {
             case "jdbc-ping-udp":
@@ -401,7 +401,11 @@ public final class JGroupsConfigurator {
             case "azure":
             case "ec2":
             case "google":
-                logger.warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
+            case "kubernetes":
+                throw new RuntimeException(String.format(
+                    "Cache stack '%s' has been removed. Use 'jdbc-ping' or configure a custom stack. " +
+                    "See https://www.keycloak.org/docs/latest/upgrading/index.html for migration instructions.",
+                    stackName));
         }
     }
 
