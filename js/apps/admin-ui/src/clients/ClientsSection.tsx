@@ -30,7 +30,7 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { Environment } from "../environment-types";
 import helpUrls from "../help-urls";
-import { emptyFormatter, exportClient } from "../util";
+import { exportClient } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
 import { translationFormatter } from "../utils/translationFormatter";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
@@ -78,11 +78,14 @@ const ClientName = (client: ClientRepresentation) => {
   );
 };
 
-const ClientDescription = (client: ClientRepresentation) => (
-  <TableText wrapModifier="truncate">
-    {emptyFormatter()(client.description) as string}
-  </TableText>
-);
+const ClientDescription = (client: ClientRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <TableText wrapModifier="truncate">
+      {translationFormatter(t)(client.description) as string}
+    </TableText>
+  );
+};
 
 const ClientHomeLink = (client: ClientRepresentation) => {
   const { environment } = useEnvironment<Environment>();
