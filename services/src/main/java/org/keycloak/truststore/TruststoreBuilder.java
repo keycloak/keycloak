@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -36,6 +37,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -220,10 +222,12 @@ public class TruststoreBuilder {
         String password = null;
         String provider = null;
         File defaultTrustStore = null;
+        boolean isImplicitJreTruststore = false;
         if (trustStorePath == null) {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (trustStorePath == null) {
-                defaultTrustStore = getJRETruststore();
+                defaultTrustStore = getImplicitJRETruststore();
+                isImplicitJreTruststore = true;
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
@@ -252,13 +256,13 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadStore(path, type, password, provider));
+            mergeTrustStore(truststore, path, loadDefaultTruststore(path, type, password, provider, isImplicitJreTruststore));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
     }
 
-    static File getJRETruststore() {
+    static File getImplicitJRETruststore() {
         // try jre locations - there doesn't seem to be a good default mechanism for this
         String securityDirectory = System.getProperty("java.home") + File.separator + "lib" + File.separator
                 + "security";
@@ -269,6 +273,29 @@ public class TruststoreBuilder {
         return new File(securityDirectory, "cacerts");
     }
 
+    /**
+     * Load a truststore, with extra fallbacks for the JRE cacerts file.
+     * cacerts uses "changeit" as a conventional default password, and may be JKS on older JDKs.
+     * When isImplicitJreTruststore is true, password and provider are always null.
+     */
+    private static KeyStore loadDefaultTruststore(String path, String type, String password, String provider, boolean isImplicitJreTruststore) {
+        try {
+            return loadStore(path, type, password, provider);
+        } catch (Exception e) {
+            if (isImplicitJreTruststore) {
+                // cacerts in JRE 17 and earlier conventionally uses "changeit" as its password; try that before giving up
+                try {
+                    return loadStore(path, KeyStore.getDefaultType(), "changeit", null);
+                } catch (Exception e1) {
+                    LOGGER.debugf("Could not load jre truststore %s with default password", path, e1);
+                    // didn't work either - just let the original exception happen
+                }
+            }
+            throw new RuntimeException(
+                    "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
+        }
+    }
+
     static KeyStore loadStore(String path, String type, String password) {
         return loadStore(path, type, password, null);
     }
@@ -277,6 +304,17 @@ public class TruststoreBuilder {
         try {
             return KeystoreUtil.loadKeyStore(path, password, type, provider);
         } catch (Exception e) {
+            // passwordless pkcs12 is not supported by all providers (e.g. BCFIPS non-strict mode);
+            // try SUN if available - it may not be present on OS-level FIPS JVMs
+            if (StringUtil.isNullOrEmpty(password) && StringUtil.isNullOrEmpty(provider)
+                    && PKCS12.equalsIgnoreCase(type) && Security.getProvider("SUN") != null) {
+                try {
+                    return KeystoreUtil.loadKeyStore(path, password, type, "SUN");
+                } catch (Exception e1) {
+                    LOGGER.debugf("Could not load passwordless %s with SUN provider", path, e1);
+                    // didn't work either - just let the original exception happen
+                }
+            }
             throw new RuntimeException(
                     "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
         }
