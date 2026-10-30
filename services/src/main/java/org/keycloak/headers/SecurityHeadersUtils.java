@@ -20,7 +20,12 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.KeycloakSession;
 
 public final class SecurityHeadersUtils {
 
@@ -37,6 +42,30 @@ public final class SecurityHeadersUtils {
 
     public static void addHeaderIfAbsent(BrowserSecurityHeaders header, Map<String, String> sourceHeaders, Predicate<String> hasHeader, BiConsumer<String, String> headerWriter) {
         writeIfAbsent(header, sourceHeaders.getOrDefault(header.getKey(), header.getDefaultValue()), hasHeader, headerWriter);
+    }
+
+    /**
+     * Apply realm browser security headers while a session is available, returning a rebuilt {@link Response}.
+     * Needed for AsyncResponse flows where {@code KeycloakSecurityHeadersFilter} runs after the session is closed.
+     * Rebuilds the response rather than mutating {@code response.getHeaders()}, which Quarkus REST does not
+     * propagate when an AsyncResponse is resumed.
+     */
+    public static Response applyBrowserSecurityHeaders(KeycloakSession session, Response response) {
+        if (response == null || session.getContext().getRealm() == null) {
+            return response;
+        }
+        SecurityHeadersProvider securityHeaders = session.getProvider(SecurityHeadersProvider.class);
+        if (securityHeaders == null) {
+            return response;
+        }
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        securityHeaders.addHeaders(headers);
+        if (headers.isEmpty()) {
+            return response;
+        }
+        Response.ResponseBuilder builder = Response.fromResponse(response);
+        headers.forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
+        return builder.build();
     }
 
     private static void writeIfAbsent(BrowserSecurityHeaders header, String value, Predicate<String> hasHeader, BiConsumer<String, String> headerWriter) {
