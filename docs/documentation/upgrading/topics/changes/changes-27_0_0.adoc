@@ -14,6 +14,8 @@ Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` 
 
 The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
 
+The `login:v2` feature value has also been removed. If you explicitly enable it (for example `--features=login:v2` or `KC_FEATURES=login:v2`), replace it with `login:v3`, or remove the entry because `login:v3` is enabled by default. Servers that still request `login:v2` fail feature validation at startup.
+
 Login field and action-button markup for PatternFly 6 lives in the `keycloak.v3` theme macros (`field.ftl` and `buttons.ftl`), with CSS classes supplied by theme properties. The Base login theme is unchanged as the stable inheritance surface for custom themes that do not extend `keycloak.v3`. Custom themes that extend `keycloak.v3` can restyle fields and buttons by overriding those macros or a few properties, instead of copying whole pages such as `login.ftl` or `register.ftl`.
 
 To assist with migration, use the new script:
