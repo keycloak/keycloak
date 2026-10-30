@@ -398,7 +398,7 @@ public class OID4VCIssuerEndpoint {
      * Creates a Credential Offer that is bound to a specific user.
      */
     public Response createCredentialOffer(String credConfigId, boolean preAuthorized, String targetUser) {
-        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
+        return createCredentialOffer(credConfigId, preAuthorized, false, targetUser, null, OfferResponseType.URI, 0, 0);
     }
 
     /**
@@ -454,6 +454,7 @@ public class OID4VCIssuerEndpoint {
      *
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
+     * @param withTxCode    A flag whether a tx_code should be generated for a pre-auth offer
      * @param targetUser    The username that the offer is authorized for
      * @param expiresAt     The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
@@ -466,6 +467,7 @@ public class OID4VCIssuerEndpoint {
     public Response createCredentialOffer(
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
+            @QueryParam("tx_code") @DefaultValue("false") Boolean withTxCode,
             @QueryParam("target_user") String targetUser,
             @QueryParam("expire") Long expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
@@ -547,9 +549,16 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferState offerState;
         try {
 
+            boolean generateTxCode = preAuthorized && withTxCode;
+            if (generateTxCode && responseType == OfferResponseType.QR) {
+                var errorMessage = "Cannot use tx_code with QR-only response type; the tx_code cannot be delivered in a QR image";
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
+                throw new CorsErrorResponseException(cors,
+                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
+            }
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
-                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+                    credentialConfigurationIds, targetClientId, targetUser, generateTxCode, expiresAt);
             if (preAuthorized) {
                 offerState.setOriginatingUserId(loginUserModel.getId());
                 // Bearer authentication reconstructs request-scoped sessions for stateless tokens. Bind the offer to
@@ -600,7 +609,8 @@ public class OID4VCIssuerEndpoint {
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
-                .setNonce(offerState.getNonce());
+                .setNonce(offerState.getNonce())
+                .setTxCode(offerState.getTxCode());
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {

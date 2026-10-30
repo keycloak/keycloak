@@ -94,8 +94,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         // Get token request parameters
         // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
         String preAuthCode = formParams.getFirst(PreAuthorizedCodeGrant.CODE_REQUEST_PARAM);
-        String txCode = formParams.getFirst(PreAuthorizedCodeGrant.TX_CODE_PARAM);
-
         if (preAuthCode == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
             String errorMessage = "Missing parameter: " + PRE_AUTH_GRANT_TYPE;
@@ -137,6 +135,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         // Validate tx_code BEFORE marking the pre-authorized code as used.
         // This prevents an attacker who only has the QR code (but not the PIN)
         // from permanently invalidating the credential offer by submitting a wrong tx_code.
+        String txCode = formParams.getFirst(PreAuthorizedCodeGrant.TX_CODE_PARAM);
         String expTxCode = offerState.getTxCode();
         if (expTxCode != null) {
             if (Strings.isEmpty(txCode)) {
@@ -154,7 +153,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         // Mark the pre-authorized code as used only after all validations pass
         markPreAuthCodeAsUsed(preAuthCode, offerState.getExpiresAt());
-
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
         var targetUserId = offerState.getTargetUserId();
@@ -292,19 +290,21 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         return Collections.emptySet();
     }
 
+    // Private ---------------------------------------------------------------------------------------------------------
+
     /**
      * Runs the pre-auth code verification logic using the configured PreAuthCodeHandler provider.
-     * A public, partial view of the CredentialOfferState is returned upon successful verification.
+     * @return PreAuthCodeCtx upon successful verification
      */
-    private PreAuthCodeCtx verifyPreAuthCode(String code) {
+    private PreAuthCodeCtx verifyPreAuthCode(String preAuthCode) {
+
         PreAuthCodeHandler preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
         if (preAuthCodeHandler == null) {
             throw new IllegalStateException("No PreAuthCodeHandler provider available");
         }
 
-        PreAuthCodeCtx preAuthCodeCtx;
         try {
-            preAuthCodeCtx = preAuthCodeHandler.verifyPreAuthCode(code);
+            return preAuthCodeHandler.verifyPreAuthCode(preAuthCode);
         } catch (VerificationException e) {
             String errorType = Optional.ofNullable(e.getErrorType()).orElse(Errors.INVALID_CODE);
             String errorMessage = String.format("Pre-authorized code failed handler verification (%s)", errorType);
@@ -316,8 +316,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                             : OAuthErrorException.EXPIRED_TOKEN,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-
-        return preAuthCodeCtx;
     }
 
     private void markPreAuthCodeAsUsed(String code, long expiresAt) {
@@ -399,8 +397,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
     }
 
-    private static String getPreAuthCodeSingleObjectKey(String code) {
-        String hash = HashUtils.sha256UrlEncodedHash(code.trim(), StandardCharsets.UTF_8);
+    private static String getPreAuthCodeSingleObjectKey(String preAuthCode) {
+        String hash = HashUtils.sha256UrlEncodedHash(preAuthCode.trim(), StandardCharsets.UTF_8);
         String fqcn = PreAuthorizedCodeGrantType.class.getName().toLowerCase();
         return fqcn + "." + hash;
     }

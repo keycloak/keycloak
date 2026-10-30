@@ -15,6 +15,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
 
     private String credConfigId;
     private Boolean preAuthorized;
+    private Boolean txCode;
     private String targetUser;
     private Long expireAt;
     private OfferResponseType responseType;
@@ -37,6 +38,15 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
 
     public boolean isPreAuthorized() {
         return Boolean.TRUE.equals(preAuthorized);
+    }
+
+    public CredentialOfferUriRequest txCode(Boolean txCode) {
+        this.txCode = txCode;
+        return this;
+    }
+
+    public boolean hasTxCode() {
+        return txCode == Boolean.TRUE;
     }
 
     public CredentialOfferUriRequest targetUser(String targetUser) {
@@ -74,6 +84,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         UriBuilder builder = UriBuilder.fromUri(client.getEndpoints().getOid4vcCredentialOfferUri());
         if (!Strings.isEmpty(credConfigId)) builder.queryParam("credential_configuration_id", credConfigId);
         if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
+        if (txCode != null) builder.queryParam("tx_code", txCode);
         if (!Strings.isEmpty(targetUser)) builder.queryParam("target_user", targetUser);
         if (expireAt != null) builder.queryParam("expire", expireAt);
         if (responseType != null) builder.queryParam("type", responseType.getValue());
