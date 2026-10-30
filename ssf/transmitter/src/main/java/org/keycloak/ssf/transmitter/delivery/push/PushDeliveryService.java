@@ -12,9 +12,9 @@ import org.keycloak.ssf.event.token.SecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 
 /**
@@ -24,7 +24,7 @@ public class PushDeliveryService {
 
     protected static final Logger log = Logger.getLogger(PushDeliveryService.class);
 
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
 
     private final SsfTransmitterConfig transmitterConfig;
 

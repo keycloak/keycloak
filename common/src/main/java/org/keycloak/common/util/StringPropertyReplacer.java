@@ -114,15 +114,17 @@ public final class StringPropertyReplacer
         if (index == -1) {
             return string;
         }
-        try {
-            return string.substring(0, index).concat(StreamUtil
-                    .readString(replaceProperties(new ByteArrayInputStream(string.substring(index).getBytes(StandardCharsets.UTF_8)),
-                            resolver), StandardCharsets.UTF_8));
+        try (InputStream is = replaceProperties(new ByteArrayInputStream(string.substring(index).getBytes(StandardCharsets.UTF_8)),
+                resolver)) {
+            return string.substring(0, index).concat(StreamUtil.readString(is, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e); // not expected
         }
     }
 
+    // Ownership: the returned InputStream takes responsibility for closing source via its close() method.
+    // The recursive call at line 172 reuses the same source non-owningly — only the outermost close() closes it.
+    @SuppressWarnings("required.method.not.called")
     public static InputStream replaceProperties(final InputStream source, PropertyResolver resolver) {
         return replaceProperties(source, false, resolver);
     }
@@ -167,6 +169,7 @@ public final class StringPropertyReplacer
                 }
                 // determine the key
                 int keyChar = -1;
+                @SuppressWarnings("required.method.not.called") // non-owning view into same source; must not close
                 InputStream keyStream = replaceProperties(source, true, resolver);
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 while ((keyChar = keyStream.read()) > -1) {

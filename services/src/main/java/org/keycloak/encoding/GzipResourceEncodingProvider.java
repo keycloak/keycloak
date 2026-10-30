@@ -49,23 +49,28 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
     }
 
     private InputStream createEncodedStream(StreamSupplier producer, File target) throws IOException {
-        InputStream is = producer.getInputStream();
-        if (is == null) {
-            return null;
-        }
-
-        File parent = target.getParentFile();
-        if (!parent.isDirectory()) {
-            if (parent.mkdirs() && !parent.isDirectory()) {
-                logger.warnf("Fail to create cache directory %s", parent.toString());
+        File tmpEncodedFile = null;
+        try (InputStream is = producer.getInputStream()) {
+            if (is == null) {
+                return null;
             }
-        }
-        File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
 
-        try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
-            IOUtils.copy(is, gos);
+            File parent = target.getParentFile();
+            if (!parent.isDirectory()) {
+                if (parent.mkdirs() && !parent.isDirectory()) {
+                    logger.warnf("Fail to create cache directory %s", parent.toString());
+                }
+            }
+            tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
+
+            try (FileOutputStream fos = new FileOutputStream(tmpEncodedFile);
+                 GZIPOutputStream gos = new GZIPOutputStream(fos)) {
+                IOUtils.copy(is, gos);
+            }
         } catch (IOException e) {
-            Files.deleteIfExists(tmpEncodedFile.toPath());
+            if (tmpEncodedFile != null) {
+                Files.deleteIfExists(tmpEncodedFile.toPath());
+            }
             throw e;
         }
 

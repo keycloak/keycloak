@@ -45,6 +45,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 
+import org.checkerframework.checker.mustcall.qual.MustCall;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -279,6 +280,7 @@ public class DocumentUtil {
 
     /**
      * Stream a DOM Node as an input stream
+     * The returned stream is backed by an in-memory byte array, so closing it is unnecessary.
      *
      * @param node
      *
@@ -287,12 +289,13 @@ public class DocumentUtil {
      * @throws TransformerFactoryConfigurationError
      * @throws TransformerException
      */
-    public static InputStream getNodeAsStream(Node node) throws ConfigurationException, ProcessingException {
+    public static @MustCall({}) InputStream getNodeAsStream(Node node) throws ConfigurationException, ProcessingException {
         return getSourceAsStream(new DOMSource(node));
     }
 
     /**
      * Get the {@link Source} as an {@link InputStream}
+     * The returned stream is backed by an in-memory byte array, so closing it is unnecessary.
      *
      * @param source
      *
@@ -301,7 +304,7 @@ public class DocumentUtil {
      * @throws ConfigurationException
      * @throws ProcessingException
      */
-    public static InputStream getSourceAsStream(Source source) throws ConfigurationException, ProcessingException {
+    public static @MustCall({}) InputStream getSourceAsStream(Source source) throws ConfigurationException, ProcessingException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Result streamResult = new StreamResult(baos);
         // Write the DOM document to the stream
