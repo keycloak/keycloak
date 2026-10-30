@@ -263,8 +263,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return getUserByFederatedIdentityCacheKey(realmId, socialLink.getIdentityProvider(), socialLink.getUserId());
     }
 
+    private static String escapeCacheKeyComponent(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace(".", "\\.");
+    }
+
     static String getUserByFederatedIdentityCacheKey(String realmId, String identityProvider, String socialUserId) {
-        return realmId + ".idp." + identityProvider + "." + socialUserId;
+        return realmId + ".idp." + escapeCacheKeyComponent(identityProvider) + "." + escapeCacheKeyComponent(socialUserId);
     }
 
     static String getFederatedIdentityLinksCacheKey(String userId) {
