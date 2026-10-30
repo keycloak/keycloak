@@ -195,8 +195,9 @@ public final class Constants {
     // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
     public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
 
-    // Authentication session client note (transferred to the client session) containing a serialized list of the authentication executions
-    // completed during the current authentication, as opposed to executions carried over from earlier authentications in the SSO session
+    // Authentication session auth note, and client session note, containing a serialized list of the authentication executions
+    // completed during the current authentication, as opposed to executions carried over from earlier authentications in the SSO session.
+    // The auth note is cleared when the flow is reset, and written to the client session when the authentication is attached to it.
     public static final String AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION = "authenticators-completed-current-authentication";
 
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
