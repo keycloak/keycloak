@@ -29,9 +29,6 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
-    @FindBy(className = "pf-m-success")
-    private WebElement loginSuccessMessage;
-
     @FindBy(id = "input-error-username")
     private WebElement userNameInputError;
 
@@ -102,10 +99,6 @@ public class LoginPage extends AbstractLoginPage {
 
     public void resetPassword() {
         resetPasswordLink.click();
-    }
-
-    public String getSuccessMessage() {
-        return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
     }
 
     @Override

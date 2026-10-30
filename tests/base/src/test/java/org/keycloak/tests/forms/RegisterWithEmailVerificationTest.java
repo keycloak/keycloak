@@ -266,6 +266,9 @@ public class RegisterWithEmailVerificationTest {
             changePasswordPage2.assertCurrent();
             String password = generatePassword();
             changePasswordPage2.changePassword(password, password);
+            oauth2.openLoginForm();
+            loginPage2.fillLogin("john", password);
+            loginPage2.submit();
 
             String code = oauth2.parseLoginResponse().getCode();
             assertNotNull(code);
