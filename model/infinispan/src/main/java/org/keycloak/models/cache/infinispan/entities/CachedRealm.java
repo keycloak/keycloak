@@ -230,6 +230,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
+        // No fallback is configured; loading device config for a removed realm throws a NullPointerException.
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
@@ -269,10 +270,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
+        // Fallback with empty list when the realm was removed from the database after it was cached.
         defaultDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
-                .collect(Collectors.toList()), null);
+                .collect(Collectors.toList()), List::of);
+        // Fallback with empty list when the realm was removed from the database after it was cached.
         optionalDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
-                .collect(Collectors.toList()), null);
+                .collect(Collectors.toList()), List::of);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocalesStream().collect(Collectors.toSet());
