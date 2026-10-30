@@ -29,6 +29,22 @@ public class BasicAuthHelperTest {
         assertArrayEquals(new String[] {username, password}, actual);
     }
 
+    /**
+     * The scheme identifier is case-insensitive, see
+     * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1">RFC 9110, section 11.1</a>.
+     */
+    @Test
+    public void parseHeaderSchemeIsCaseInsensitive() {
+        String username = "Aladdin";
+        String password = "open sesame";
+        String credentials = BasicAuthHelper.createHeader(username, password).substring("Basic ".length());
+
+        for (String scheme : new String[] {"Basic", "basic", "BASIC", "BaSiC"}) {
+            assertArrayEquals(scheme, new String[] {username, password},
+                    BasicAuthHelper.parseHeader(scheme + " " + credentials));
+        }
+    }
+
     @Test
     public void rfc6749_createHeader() {
         String username = "user";
