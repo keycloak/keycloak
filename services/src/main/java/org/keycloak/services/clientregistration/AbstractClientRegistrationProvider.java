@@ -107,7 +107,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             // Service accounts and authorization services are
             // allowed during registration via grant types; escalation risk is guarded on client update.
-            validateUntrustedAttributes(client);
+            validateUntrustedAttributes(client, null);
             stripPrivilegedAttributes(client);
 
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
@@ -224,7 +224,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
         }
 
-        validateUntrustedAttributes(rep);
+        validateUntrustedAttributes(rep, client);
         stripPrivilegedAttributes(rep);
         if (auth.isRegistrationAccessToken()
                 && rep.isServiceAccountsEnabled() != null
@@ -295,12 +295,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         return rep;
     }
 
-    private void validateUntrustedAttributes(ClientRepresentation rep) {
+    private void validateUntrustedAttributes(ClientRepresentation rep, ClientModel existingClient) {
         if (auth.isBearerToken()) {
             // Admin callers retain authority to manage Vault expressions
             return;
         }
-        if (isVaultExpression(rep.getSecret())) {
+
+        if (isVaultExpression(rep.getSecret()) && (existingClient == null
+                || !Objects.equals(rep.getSecret(), existingClient.getSecret()))) {
             throw new ErrorResponseException(
                     ErrorCodes.INVALID_CLIENT_METADATA,
                     "Vault expressions cannot be set via client registration",
@@ -310,7 +312,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                if (isVaultExpression(entry.getValue())) {
+                if (isVaultExpression(entry.getValue()) && (existingClient == null
+                        || !Objects.equals(entry.getValue(),
+                                existingClient.getAttribute(entry.getKey())))) {
                     throw new ErrorResponseException(
                             ErrorCodes.INVALID_CLIENT_METADATA,
                             "Vault expressions cannot be set via client registration",
