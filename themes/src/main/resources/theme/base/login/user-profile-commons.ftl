@@ -87,7 +87,7 @@
 </#macro>
 
 <#macro inputTag attribute value>
-	<span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
+	<span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
 		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
 			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 			<#if attribute.readOnly>disabled</#if>
@@ -162,10 +162,10 @@
 				<option value="${option}" <#if selectedValues?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
 			</#list>
 		</select>
-		<span class="${properties.kcFormControlUtilClass}">
+		<span class="${properties.kcFormControlUtilClass!}">
 			<span class="${properties.kcFormControlToggleIcon!}">
 				<svg
-					class="pf-v5-svg"
+					class="${properties.kcSvgIconClass!}"
 					viewBox="0 0 320 512"
 					fill="currentColor"
 					aria-hidden="true"

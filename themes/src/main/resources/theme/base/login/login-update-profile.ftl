@@ -13,7 +13,7 @@
             <@buttons.actionGroup horizontal=true>
                 <@buttons.button id="kc-submit" label="doSubmit"/>
                 <#if isAppInitiatedAction??>
-                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
+                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true" formnovalidate="formnovalidate"/>
                 </#if>
             </@buttons.actionGroup>
         </form>

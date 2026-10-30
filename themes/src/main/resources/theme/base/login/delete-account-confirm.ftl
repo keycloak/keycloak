@@ -11,7 +11,7 @@
 
     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-deleteaccount-form" method="post">
 
-      <div class="${properties.kcAlertClass!} pf-m-warning">
+      <div class="${properties.kcAlertClass!} ${properties.kcAlertWarningClass!}">
         <div class="${properties.kcAlertIconClass!}">
           <i class="${properties.kcFeedbackWarningIcon!}" aria-hidden="true"></i>
         </div>
@@ -21,7 +21,7 @@
       </div>
 
       <p>${msg("deletingImplies")}</p>
-      <ul class="pf-v5-c-list" role="list">
+      <ul class="${properties.kcListClass!}" role="list">
         <li>${msg("loggingOutImmediately")}</li>
         <li>${msg("errasingData")}</li>
       </ul>

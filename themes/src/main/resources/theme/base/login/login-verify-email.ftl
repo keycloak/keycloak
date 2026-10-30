@@ -20,7 +20,7 @@
                     <#else>
                         <@buttons.button id="kc-send" label="emailVerifySend"/>
                     </#if>
-                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true"/>
+                    <@buttons.button id="kc-cancel" label="doCancel" type="secondary" name="cancel-aia" value="true" formnovalidate="formnovalidate"/>
                 </@buttons.actionGroup>
             </form>
         </#if>

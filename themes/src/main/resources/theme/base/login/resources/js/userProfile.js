@@ -38,21 +38,34 @@ function onMutate(mutations) {
       continue;
     }
 
-    const handleRemovedElement = cleanupFunctions.get(node);
+    for (const element of [node, ...node.querySelectorAll('*')]) {
+      const handleRemovedElement = cleanupFunctions.get(element);
 
-    if (handleRemovedElement) {
-      handleRemovedElement();
+      if (handleRemovedElement) {
+        handleRemovedElement();
+      }
+
+      cleanupFunctions.delete(element);
     }
-
-    cleanupFunctions.delete(node);
   }
 
   const addedNodes = mutations.flatMap((mutation) => Array.from(mutation.addedNodes));
 
   for (const descriptor of descriptors) {
+    const selector = `[data-${descriptor.name}]`;
+
     for (const node of addedNodes) {
-      if (node instanceof HTMLElement && node.hasAttribute(`data-${descriptor.name}`)) {
-        handleNewElement(node, descriptor);
+      if (!(node instanceof HTMLElement)) {
+        continue;
+      }
+
+      const elements = node.matches(selector) ? [node] : [];
+      elements.push(...node.querySelectorAll(selector));
+
+      for (const element of elements) {
+        if (element instanceof HTMLElement) {
+          handleNewElement(element, descriptor);
+        }
       }
     }
   }
