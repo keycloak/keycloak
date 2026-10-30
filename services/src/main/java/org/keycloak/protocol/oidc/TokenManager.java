@@ -49,7 +49,6 @@ import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult;
 import org.keycloak.authentication.authenticators.util.AcrStore;
-import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -553,7 +552,6 @@ public class TokenManager {
         }
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(session, authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
-        clientSession.setNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION, AuthenticatorUtils.serializeCurrentAuthenticationExecutions(authSession));
         clientSession.setTimestamp(userSession.getLastSessionRefresh());
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
         new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(realm, authSession);

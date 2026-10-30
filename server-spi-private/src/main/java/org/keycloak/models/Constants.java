@@ -197,7 +197,8 @@ public final class Constants {
 
     // Authentication session auth note, and client session note, containing a serialized list of the authentication executions
     // completed during the current authentication, as opposed to executions carried over from earlier authentications in the SSO session.
-    // The auth note is cleared when the flow is reset, and written to the client session when the authentication is attached to it.
+    // The auth note is cleared when the flow is reset, and written to the client session when an authentication completes. Grants that
+    // attach a synthetic authentication session to an existing client session, such as token exchange, leave it untouched.
     public static final String AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION = "authenticators-completed-current-authentication";
 
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
