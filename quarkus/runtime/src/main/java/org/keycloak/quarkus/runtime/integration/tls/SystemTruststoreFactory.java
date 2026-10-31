@@ -1,0 +1,36 @@
+package org.keycloak.quarkus.runtime.integration.tls;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import io.quarkus.arc.properties.IfBuildProperty;
+import io.quarkus.tls.OtherTrustStoreConfiguration;
+import io.quarkus.tls.TrustStoreAndTrustOptions;
+import io.quarkus.tls.TrustStoreFactory;
+import io.smallrye.common.annotation.Identifier;
+import io.vertx.core.Vertx;
+
+import static org.keycloak.config.TruststoreOptions.TRUSTSTORE_PATHS_RELOAD_PERIOD_KEY;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
+import static io.quarkus.arc.properties.StringValueMatch.REGEX;
+
+@IfBuildProperty(name = NS_KEYCLOAK_PREFIX + TRUSTSTORE_PATHS_RELOAD_PERIOD_KEY, stringValue = ".*\\S.*", match = REGEX)
+@Identifier(SystemTruststoreReload.TRUST_STORE_TYPE)
+@ApplicationScoped
+class SystemTruststoreFactory implements TrustStoreFactory {
+
+    private final SystemTruststoreReload systemTruststoreReload;
+
+    SystemTruststoreFactory(SystemTruststoreReload systemTruststoreReload) {
+        this.systemTruststoreReload = systemTruststoreReload;
+    }
+
+    @Override
+    public TrustStoreAndTrustOptions createTrustStore(OtherTrustStoreConfiguration config, Vertx vertx, String name) {
+        TrustStoreAndTrustOptions systemTruststore = systemTruststoreReload.getSystemTruststore();
+        if (systemTruststore == null) {
+            throw new IllegalStateException("System truststore does not exist, but trust store reload period was configured");
+        }
+        return systemTruststore;
+    }
+}

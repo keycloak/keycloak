@@ -92,7 +92,7 @@ public class FileTruststoreProviderFactoryTest {
                 System.setProperty(key, value);
             }
         }
-        TruststoreProviderSingleton.set(originalTruststoreProvider);
+        TruststoreProviderSingleton.setAndNotifyListeners(originalTruststoreProvider);
         CryptoIntegration.setProvider(originalCryptoProvider);
     }
 
@@ -149,8 +149,8 @@ public class FileTruststoreProviderFactoryTest {
         FileTruststoreProviderFactory factory = new FileTruststoreProviderFactory();
 
         // when
-        TruststoreBuilder.setSystemTruststore(new String[] { new File(pem.toURI()).getAbsolutePath() }, false,
-                temporaryFolder.getRoot().getAbsolutePath());
+        TruststoreBuilder.setAndGetSystemTruststore(new String[] { new File(pem.toURI()).getAbsolutePath() }, false,
+                temporaryFolder.getRoot().getAbsolutePath(), null);
         factory.init(rootScope(Map.of()));
         KeyStore truststore = factory.create(null).getTruststore();
 

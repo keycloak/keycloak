@@ -41,7 +41,7 @@ public class ManagementPropertyMappers implements PropertyMapperGrouping {
 
     private static final String HTTP_MANAGEMENT_SCHEME_IS_INHERITED = "http-management-scheme is inherited";
 
-    static final String MGMT_TLS_BUCKET = "keycloak-management-server";
+    public static final String MGMT_TLS_BUCKET = "keycloak-management-server";
     public static final String MGMT_TLS_PREFIX = "quarkus.tls.\"" + MGMT_TLS_BUCKET + "\".";
 
     private static final Option<String> SYNTHETIC_MGMT_TLS_CONFIG_NAME = new OptionBuilder<>("https-management-tls-config-name-hidden", String.class)
@@ -271,11 +271,20 @@ public class ManagementPropertyMappers implements PropertyMapperGrouping {
                 fromOption(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_TYPE)
                         .isEnabled(ManagementPropertyMappers::isInheritedScheme, HTTP_MANAGEMENT_SCHEME_IS_INHERITED)
                         .mapFrom(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_TYPE, (name, value, context) ->
-                                HttpPropertyMappers.filterOtherStoreType(value, ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_FILE))
+                                HttpPropertyMappers.systemTruststoreTypeOr(getReloadedSystemTruststoreType(),
+                                        () -> HttpPropertyMappers.filterOtherStoreType(value, ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_FILE)))
+                        // applies instead of the parent mapper when no truststore type is set
+                        .transformer((name, value, context) -> HttpPropertyMappers.systemTruststoreTypeOr(getReloadedSystemTruststoreType(), () -> value))
                         .to(MGMT_TLS_PREFIX + "trust-store.other.type")
                         .paramLabel("type")
                         .build()
         );
+    }
+
+    private static String getReloadedSystemTruststoreType() {
+        return HttpPropertyMappers.getReloadedSystemTruststoreType(ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_FILE,
+                ManagementOptions.HTTPS_MANAGEMENT_CLIENT_AUTH,
+                isManagementTlsEnabled() || (isInheritedScheme() && HttpPropertyMappers.isHttpsEnabled()));
     }
 
     public static boolean isManagementEnabled() {
